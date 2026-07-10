@@ -1,4 +1,4 @@
-﻿# Task Breakdown & MoM Implementation — Pilah Sampah Cerdas
+# Task Breakdown & MoM Implementation — Pilah Sampah Cerdas
 
 ## 1. Rangkuman MoM (Kamis, 09 Juli 2026)
 
@@ -30,7 +30,7 @@ Setiap branch hanya berisi kode relevan dan folder `docs/` yang disinkronkan:
 ---
 
 ## 3. Milestones Sprint 1
-1.  **Setup Database Schema (BE):** Migrasi database PostgreSQL (11 tabel) dan setup Prisma ORM.
+1.  **Setup Database Schema (BE):** Migrasi database PostgreSQL (13 tabel: roles, users, refresh_tokens, kelurahan, rt_rw_areas, households, bins, waste_categories, waste_logs, ai_request_logs, point_history, notifications, bin_reset_requests) dan setup Prisma ORM.
 2.  **Setup Web Shell (FE):** Dashboard berbasis react dengan framework Vite. Setup halaman Master Data & Live Monitoring.
 3.  **Setup Mobile Shell (Mobile):** Project Flutter minimalis dengan menyertakan assets acuan `/mobile/assets/stitch_ui`.
 4.  **Integrasi AI Mock (BE):** API deteksi sampah mock sukses, timeout, dan unreadable.
