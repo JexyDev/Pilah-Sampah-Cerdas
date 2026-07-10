@@ -1,4 +1,4 @@
-﻿# UI/UX Specification & Flow — Pilah Sampah Cerdas
+# UI/UX Specification & Flow — Pilah Sampah Cerdas
 
 ## 1. Panduan Visual & Desain
 *   **Tema:** Light Mode Only. Tidak ada toggle dark/light mode.
@@ -10,6 +10,7 @@
 *   **Palet Warna:**
     *   **Primary Green (Hijau Daun):** `#4CAF50` (Sampah organik, tombol konfirmasi utama, status patuh).
     *   **Primary Blue (Biru Priangan):** `#0056A4` (Sampah non-organik, teknologi GIS).
+    *   **Peta GIS Engine:** Menggunakan library gratis **Leaflet.js** dan **OpenStreetMap** (OSM) sebagai penyedia basemap gratis untuk fase testing awal sistem.
     *   **Danger Red (Merah Alarm):** `#EF4444` (Kapasitas tong kritis >90%, error, mismatch).
     *   **Warning Yellow (Kuning Transisi):** `#F59E0B` (Kapasitas sedang 70-90%).
     *   **Background Canvas:** `#F9FAFB` (Abu-abu sangat terang).
