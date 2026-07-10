@@ -1,8 +1,8 @@
-﻿# Software Requirement Specification (SRS) — Pilah Sampah Cerdas
+# Software Requirement Specification (SRS) — Pilah Sampah Cerdas
 
 ## 1. Spesifikasi Fungsional (Functional Requirements)
 * **FR-01 (Deteksi AI):** Sistem harus mampu menerima request foto, memproses antrian secara FIFO (First In First Out), dan memprediksi tipe serta volume sampah dalam batas timeout 2000 ms.
-* **FR-02 (Validasi QR & Kapasitas):** Sistem harus menolak transaksi jika jenis sampah tidak sesuai dengan tipe peruntukan tong (misal, membuang plastik ke tong organik) atau jika volume sisa tong (maksimal 25L) terlampaui.
+* **FR-02 (Validasi QR, Kapasitas & Jarak):** Sistem harus menolak transaksi jika jenis sampah tidak sesuai dengan tipe peruntukan tong (misal, membuang plastik ke tong organik), volume sisa tong (maksimal 25L) terlampaui, atau jarak antara GPS handphone warga dengan koordinat lokasi tong sampah melebihi 10 meter (Geofencing).
 * **FR-03 (Sistem Poin):** Sistem harus mengonversi liter ke kilogram berdasarkan massa jenis (`ORGANIC = 0.4 kg/L`, `NON_ORGANIC = 0.2 kg/L`) dan memberikan 100 poin per kg.
 * **FR-04 (Notifikasi & Monitoring):** Sistem harus memicu notifikasi "Tong Penuh" jika kapasitas tong mencapai >90%.
 * **FR-05 (Master Data CRUD):** Admin dan Petugas Kelurahan dapat mengelola seluruh entitas master data melalui halaman Master Data dengan navigasi dropdown.

@@ -14,9 +14,10 @@ graph TD
 
 ---
 
-## 2. Desain Database (12 Tabel Utama)
+## 2. Desain Database (13 Tabel Utama)
 * **`roles`**: Menyimpan level hak akses (ADMIN, PETUGAS_KELURAHAN, PETUGAS_RW, PETUGAS_RT, WARGA).
 * **`users`**: Kredensial akun dan profil warga/petugas.
+* **`refresh_tokens`**: Token rotasi refresh session untuk keamanan login (id, user_id, token, expires_at, created_at).
 * **`kelurahan`**: Data kelurahan dalam Kecamatan Coblong (Dago, Sadangserang, Sekeloa, Lebak Siliwangi, Cipaganti, Coblong).
 * **`rt_rw_areas`**: Penanda area administratif pengelolaan sampah (berelasi ke `kelurahan`).
 * **`households`**: Data rumah tangga warga dengan koordinat presisi DECIMAL(11,8) untuk peta GIS.
@@ -125,3 +126,26 @@ graph TD
     }
   }
   ```
+
+---
+
+## 4. Spesifikasi Keamanan & Autentikasi
+
+### 4.1 Penyimpanan Token Login
+*   **Web Dashboard (Frontend):** Token JWT disimpan di **HttpOnly Cookie** dengan flag `Secure` dan `SameSite=Strict`. Ini mencegah pencurian token melalui serangan Cross-Site Scripting (XSS).
+*   **Aplikasi Mobile (Warga):** Token JWT disimpan menggunakan **Flutter Secure Storage** (Keystore untuk Android, Keychain untuk iOS).
+*   **Rotasi Token (Refresh Token):** Sistem backend mengimplementasikan tabel `refresh_tokens`. Saat token akses JWT habis (misal: 15 menit), aplikasi secara otomatis meminta token baru dengan mengirimkan Refresh Token (masa aktif 7 hari) untuk menghindari logout paksa pada pengguna.
+
+### 4.2 Verifikasi Lokasi Geofencing
+*   Saat mengirim transaksi scan QR (`POST /api/v1/bins/scan`), aplikasi mengirim koordinat GPS warga (`lat` & `lng`).
+*   Backend membandingkan koordinat GPS tersebut dengan koordinat GPS rumah tangga (`households` yang berelasi ke `bin`).
+*   Rumus Haversine digunakan untuk menghitung jarak: jika jarak > 10 meter, transaksi ditolak (`400 Bad Request` dengan error `LOCATION_OUT_OF_RANGE`).
+
+---
+
+## 5. Sinkronisasi Skema API (Swagger & OpenAPI)
+
+Untuk menyelaraskan struktur data tanpa menyalin manual antar-branch:
+1.  **Ekspor Swagger:** Backend secara otomatis mengekspor skema dalam format JSON/YAML (`swagger.json`) ke folder `/docs/swagger.json` saat build atau commit.
+2.  **TypeScript Generator:** Tim Frontend Web dan Mobile menggunakan command npm generator (`openapi-generator-cli`) di branch masing-masing untuk mengubah `swagger.json` tersebut langsung menjadi *TypeScript Types* / *Dart Models* secara otomatis.
+3.  **MCP Integration:** IDE Antigravity dapat membaca file `swagger.json` tersebut langsung melalui MCP tool untuk memverifikasi keselarasan tipe data API secara instan saat penulisan kode.
