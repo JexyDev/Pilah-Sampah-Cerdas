@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // e.g., "ADMIN", "RT_RW", "CITIZEN"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]
+
+  @@map("roles")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  roleId        Int            @map("role_id")
+  role          Role           @relation(fields: [roleId], references: [id])
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  households    Household[]
+  aiRequestLogs AiRequestLog[]
+  pointHistory  PointHistory[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model RtRwArea {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique // e.g., "RT 01 / RW 05"
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  households Household[]
+  bins       Bin[]
+
+  @@map("rt_rw_areas")
+}
+
+model Household {
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id])
+  address   String
+  rtRwId    Int        @map("rt_rw_id")
+  rtRw      RtRwArea   @relation(fields: [rtRwId], references: [id])
+  latitude  Decimal    @db.Decimal(11, 8)
+  longitude Decimal    @db.Decimal(11, 8)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  wasteLogs WasteLog[]
+
+  @@map("households")
+}
+
+model Bin {
+  id                 String     @id @default(uuid())
+  qrCode             String     @unique @map("qr_code")
+  type               BinType    @default(ORGANIC)
+  maxCapacityLiter   Decimal    @default(25.0) @map("max_capacity_liter") @db.Decimal(5, 2)
+  currentVolumeLiter Decimal    @default(0.0) @map("current_volume_liter") @db.Decimal(5, 2)
+  rtRwId             Int        @map("rt_rw_id")
+  rtRw               RtRwArea   @relation(fields: [rtRwId], references: [id])
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  wasteLogs          WasteLog[]
+
+  @@map("bins")
+}
+
+enum BinType {
+  ORGANIC
+  NON_ORGANIC
+}
+
+model WasteLog {
+  id           String    @id @default(uuid())
+  householdId  String    @map("household_id")
+  household    Household @relation(fields: [householdId], references: [id])
+  binId        String    @map("bin_id")
+  bin          Bin       @relation(fields: [binId], references: [id])
+  weightKg     Decimal   @map("weight_kg") @db.Decimal(5, 2)
+  volumeLiter  Decimal   @map("volume_liter") @db.Decimal(5, 2)
+  type         BinType
+  requestId    String    @map("request_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("waste_logs")
+}
+
+model AiRequestLog {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  requestId    String   @unique @map("request_id") @db.Uuid
+  imageUrl     String   @map("image_url")
+  resultStatus String   @map("result_status") // e.g., "SUCCESS", "TIMEOUT", "IMAGE_UNREADABLE"
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("ai_request_logs")
+}
+
+model PointHistory {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  points      Int
+  description String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("point_history")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
