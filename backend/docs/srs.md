@@ -59,7 +59,7 @@
 |----|-------------|
 | FR-05.1 | Server WebSocket berjalan di path `/ws` |
 | FR-05.2 | Client harus mengirim token saat koneksi: `ws://host/ws?token=<jwt>` |
-| FR-05.3 | Event `bin_full_alert`: dikirim ke semua client dengan role RT_RW di rtRwId yang sama |
+| FR-05.3 | Event `bin_full_alert`: dikirim ke semua client dengan role PETUGAS_RT / PETUGAS_RW / PETUGAS_KELURAHAN di wilayah yang bersangkutan |
 | FR-05.4 | Event `capacity_update`: dikirim setelah setiap transaksi scan berhasil |
 | FR-05.5 | Event `notification_new`: dikirim saat notifikasi baru dibuat di database |
 

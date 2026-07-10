@@ -53,7 +53,7 @@ graph TD
 ```
 
 ### 3.2 Desain Database (9 Tabel Utama)
-* **`roles`**: Menyimpan level hak akses (ADMIN, RT_RW, CITIZEN).
+* **`roles`**: Menyimpan level hak akses (ADMIN, PETUGAS_KELURAHAN, PETUGAS_RW, PETUGAS_RT, WARGA).
 * **`users`**: Kredensial akun dan profil warga/petugas.
 * **`rt_rw_areas`**: Penanda area administratif pengelolaan sampah.
 * **`households`**: Data rumah tangga warga dengan koordinat presisi DECIMAL(11,8) untuk peta GIS.

@@ -52,7 +52,7 @@
 - [ ] Buat `prisma/schema.prisma` dengan 9 model sesuai `sdd.md` Section 4
 - [ ] Jalankan: `npx prisma migrate dev --name init`
 - [ ] Buat `prisma/seed.ts`:
-  - Seed 3 role (ADMIN, RT_RW, CITIZEN)
+  - Seed 5 role (ADMIN, PETUGAS_KELURAHAN, PETUGAS_RW, PETUGAS_RT, WARGA)
   - Seed 6 kelurahan (Dago, Sadangserang, Sekeloa, Lebak Siliwangi, Cipaganti, Coblong)
   - Seed 10 RT/RW area
   - Seed 1 admin user: `admin@coblong.go.id` / `admin123`
@@ -73,7 +73,7 @@
   - Verify JWT dengan `JWT_SECRET`
   - Set `req.user` = JWT payload
 - [ ] Buat `src/middleware/authorize.ts`:
-  - Terima array role yang diizinkan: `authorize(['ADMIN', 'RT_RW'])`
+  - Terima array role yang diizinkan: `authorize(['ADMIN', 'PETUGAS_KELURAHAN', 'PETUGAS_RW', 'PETUGAS_RT'])`
   - Bandingkan dengan `req.user.role`
 - [ ] Buat `src/middleware/validate.ts`:
   - Generic middleware: `validate(schema: ZodSchema)`
@@ -106,8 +106,8 @@
 ### Task BE-06: Bin Endpoints
 - [ ] `GET /api/v1/bins` dengan filter rtRwId
 - [ ] `GET /api/v1/bins/:id/status`
-- [ ] `POST /api/v1/bins/:id/empty` (ADMIN / RT_RW) + WS broadcast
-- [ ] `POST /api/v1/bins/scan` (CITIZEN) — full transaksi flow dengan DB transaction
+- [ ] `POST /api/v1/bins/:id/empty` (ADMIN / PETUGAS_RT / PETUGAS_RW) + WS broadcast
+- [ ] `POST /api/v1/bins/scan` (WARGA) — full transaksi flow dengan DB transaction
 
 **Verifikasi transaksi:** Jalankan 2 request `/bins/scan` secara bersamaan → hanya 1 yang sukses jika hampir overflow
 

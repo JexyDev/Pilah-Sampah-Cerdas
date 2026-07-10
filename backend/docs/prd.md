@@ -18,7 +18,9 @@
 | Role | Akses |
 |------|-------|
 | Admin Kecamatan | Full read/write semua endpoint |
-| Petugas RT/RW | Read semua, write terbatas pada area RT-nya |
+| Petugas Kelurahan | Read semua RW di kelurahan, write terbatas |
+| Petugas RW | Read semua RT di RW, write terbatas |
+| Petugas RT | Read & write terbatas pada area RT-nya |
 | Warga (via Mobile) | Write waste log, read profil & poin sendiri |
 | Sistem (Internal) | Cron job, WebSocket broadcast |
 
@@ -37,7 +39,7 @@
 - JWT diissue oleh server:
   - **Web Client:** dikirim sebagai `httpOnly Cookie` (SameSite=Strict, Secure)
   - **Mobile Client:** dikirim sebagai JSON response body, disimpan di `flutter_secure_storage`
-- Role-Based Access Control (RBAC): ADMIN / RT_RW / CITIZEN
+- Role-Based Access Control (RBAC): ADMIN / PETUGAS_KELURAHAN / PETUGAS_RW / PETUGAS_RT / WARGA
 - Middleware validasi token di setiap protected endpoint
 - Logout: invalidasi cookie (web) atau hapus token dari client (mobile)
 

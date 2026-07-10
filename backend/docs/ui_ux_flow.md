@@ -219,7 +219,7 @@ CLIENT                                    BACKEND
 
 ```
 POST /api/v1/bins/:id/empty
-→ Authenticate + Authorize: ADMIN atau RT_RW (hanya RT yang sama)
+→ Authenticate + Authorize: ADMIN atau PETUGAS_RT / PETUGAS_RW / PETUGAS_KELURAHAN (hanya di wilayah yang bersangkutan)
 → Set bin.currentVolumeLiter = 0.0
 → Insert WasteLog dengan flag isReset: true
 → Broadcast WS: { "event": "capacity_update", "data": { binId, newVolume: 0 } }

@@ -197,7 +197,7 @@ const result = await prisma.$transaction(async (tx) => {
 
 model Role {
   id    Int    @id @default(autoincrement())
-  name  String @unique  // ADMIN | RT_RW | CITIZEN
+  name  String @unique  // ADMIN | PETUGAS_KELURAHAN | PETUGAS_RW | PETUGAS_RT | WARGA
   users User[]
   @@map("roles")
 }
