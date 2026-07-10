@@ -164,3 +164,59 @@ Satu halaman khusus bernama "Live Monitoring" yang menampilkan kondisi real-time
   }
 }
 ```
+## 7. Alur Pengosongan Tong Sampah On-Demand (Reset Volume)
+
+Untuk menjaga akurasi kapasitas tanpa perlu sensor IoT real-time mahal di tiap rumah, sistem menggunakan mekanisme **On-Demand Reset dengan Verifikasi Foto oleh Petugas**.
+
+### 7.1 Alur UX Warga (Mobile)
+1. **Pemberitahuan Penuh:** Ketika kapasitas tong warga sudah mencapai status kritis (>90%), warga masuk ke menu **"Ajukan Pengosongan Tong"**.
+2. **Foto Bukti Fisik:** Warga memotret kondisi tong sampahnya yang penuh sebagai bukti fisik pengosongan.
+3. **Kirim Pengajuan:** Warga menekan tombol **"Ajukan Reset"**. Request dikirim ke backend dengan membawa parameter:
+   - `binId`
+   - `userId` (warga)
+   - `photoBase64` / `photoUrl`
+4. **Status Pending:** Status tong tetap penuh di sistem, dan status pengajuan warga tercatat `PENDING`.
+
+### 7.2 Alur UX Petugas RT/RW (Web Dashboard / Mobile View)
+1. **Notifikasi Masuk:** Petugas RT/RW mendapatkan notifikasi bahwa ada warga di lingkungannya yang mengajukan pengosongan tong.
+2. **Review Pengajuan:** Petugas masuk ke menu **"Persetujuan Pengosongan"** (Approval Dashboard):
+   - Petugas melihat nama warga, RT/RW, dan foto bukti fisik tong sampah yang dikirim.
+3. **Konfirmasi Pengosongan (Approve/Reject):**
+   - **Approve:** Petugas menyetujui (kapasitas tong warga tersebut langsung ter-reset kembali ke `0 Liter` di database).
+   - **Reject:** Petugas menolak jika foto tidak sesuai/bohong (status tong tetap penuh, warga mendapatkan notifikasi penolakan).
+
+---
+
+## 8. Spesifikasi Bulk Actions Tong Sampah (Master Data)
+
+Disediakan menu khusus di dalam Master Data Tong Sampah untuk mempermudah pendaftaran masal:
+
+### 8.1 Bulk Generate Bins (Pre-Registration)
+* **Fungsi:** Menghasilkan (generate) nomor ID Tong Sampah dan QR Serial secara masal (misal: generate 100 tong sekaligus).
+* **Hasil Output:** File Excel/CSV berisi kolom `bin_id` dan `qr_serial_code`. 
+* **Tujuan:** Data ini di-print oleh kelurahan menjadi stiker QR Code fisik untuk ditempel di tong sampah baru sebelum didistribusikan ke warga.
+* **Aktivasi Mobile:** Saat warga menerima tong, mereka melakukan scan pertama kali lewat aplikasi mobile untuk mengasosiasikan `bin_id` tersebut dengan akun warga mereka.
+
+### 8.2 Bulk Import & Verify Bins (Linked to Master Data)
+* **Fungsi:** Mengimpor file Excel/CSV berisi tong sampah yang sudah diverifikasi dan langsung diasosiasikan dengan Master Data Warga (`user_id` / NIK).
+* **Format File CSV/Excel:**
+  ```csv
+  nik_warga,nama_kk,bin_id,qr_serial_code,tipe_sampah
+  327301XXXXXXXXXX,Budi Santoso,BIN-CBL-001,QR-ORGANIC-001,ORGANIC
+  327301XXXXXXXXXX,Ibu Siti Nurhayati,BIN-CBL-002,QR-NON-ORGANIC-002,NON_ORGANIC
+  ```
+* **Proses Sistem:** Backend secara otomatis mencocokkan NIK warga dengan data User, membuat entry pada tabel `bins`, dan menandai tong sampah tersebut berstatus `ACTIVE` & `VERIFIED`.
+
+---
+
+## 9. Penyesuaian Skema Database (Tabel Baru)
+
+* **`bin_reset_requests`** (Persetujuan Pengosongan Tong):
+  - `id` (UUID, Primary Key)
+  - `bin_id` (FK to `bins`)
+  - `user_id` (FK to `users`, pemohon)
+  - `evidence_photo_url` (String, bukti foto)
+  - `status` (Enum: PENDING, APPROVED, REJECTED)
+  - `reviewed_by` (FK to `users`, petugas RT/RW yang memproses)
+  - `created_at` (DateTime)
+  - `updated_at` (DateTime)
