@@ -47,3 +47,50 @@ Semua screen acuan desain terletak di branch `mobile` pada folder `/mobile/asset
 8.  `aktivasi_bin.png`: Halaman scan QR untuk mengaktivasi/menghubungkan tong sampah baru dengan akun warga.
 9.  `bin_mismatch.png`: Penanganan error (peringatan tipe sampah tidak sesuai dengan peruntukan tong).
 10. `success_scan_step_1.png` & `success_final_step.png`: Alur sukses deteksi AI hingga transaksi berhasil dan poin bertambah.
+
+---
+
+## 4. Spesifikasi Responsif — Web Dashboard (Frontend)
+
+Seluruh halaman Web Dashboard **wajib responsif** menggunakan breakpoint standar CSS berikut:
+
+| Breakpoint | Lebar Layar | Perilaku Layout |
+|:---|:---|:---|
+| **Mobile (sm)** | ≥ 360px | Sidebar tersembunyi. Navigasi bergeser ke **Bottom Navigation Bar** (5 ikon utama). Konten 1 kolom penuh. |
+| **Tablet (md)** | ≥ 768px | Sidebar tampil sebagai **ikon saja** (collapsed). Konten 2 kolom. Peta Live Monitoring mengecil. |
+| **Desktop (lg)** | ≥ 1280px | Sidebar tampil **penuh** (ikon + teks menu). Konten multi-kolom. Tampilan standar utama. |
+| **Large Desktop (xl)** | ≥ 1536px | Layout lebar penuh. Panel statistik KPI melebar. Tabel data lebih banyak kolom terlihat. |
+
+### Ketentuan Tambahan Responsif FE:
+*   **Tabel Data:** Pada breakpoint Mobile dan Tablet, kolom tabel yang tidak esensial disembunyikan. Scroll horizontal diperbolehkan untuk tabel dengan data padat.
+*   **Peta Geospatial (Leaflet):** Tinggi peta menyesuaikan viewport secara dinamis (`height: calc(100vh - topbar_height)`).
+*   **Modal & Dialog:** Selalu tampil lebar penuh di Mobile (100vw), terpusat dengan lebar maksimum di Desktop.
+*   **Tombol Aksi:** Di Mobile, tombol aksi (Approve/Reject) pindah ke bagian bawah layar sebagai Fixed Action Button (FAB).
+
+---
+
+## 5. Spesifikasi Responsif — Aplikasi Mobile Flutter
+
+### 5.1 Prinsip Dasar Responsif Flutter
+*   Gunakan `LayoutBuilder` dan `MediaQuery` untuk mendeteksi ukuran layar secara dinamis.
+*   Semua dimensi menggunakan **persentase relatif** (`MediaQuery.of(context).size.width * 0.XX`) atau widget `Flexible` / `Expanded`, **bukan nilai pixel statis**.
+*   Target perangkat utama: **Smartphone Android** (layar 360dp–480dp lebar).
+*   Target perangkat sekunder: **Tablet Android** (layar 600dp–840dp lebar).
+
+### 5.2 Breakpoint Flutter
+
+| Kondisi | Lebar (dp) | Perilaku Layout |
+|:---|:---|:---|
+| **Compact (HP kecil)** | < 360dp | Font dikurangi 10%. Padding minimal. Elemen di-stack vertikal. |
+| **Medium (HP standar)** | 360dp – 479dp | Tampilan standar. Layout utama 1 kolom. |
+| **Large (HP besar/Tablet kecil)** | 480dp – 599dp | Elemen dapat tampil 2 kolom di beranda. |
+| **Tablet** | ≥ 600dp | Grid 2 kolom. Navigasi pindah ke **NavigationRail** (sidebar kiri). |
+
+### 5.3 Ketentuan Koneksi Internet (Online-Only)
+*   **Semua fitur inti wajib online:** Deteksi AI foto sampah, scan QR, melihat riwayat, dan menambah poin memerlukan koneksi internet aktif karena bergantung pada Backend API dan AI Mock Service.
+*   **Penanganan Offline:** Ketika koneksi terputus (`DioException.type == connectionTimeout` atau `connectionError`):
+    1.  Tampilkan **Banner merah** di bagian atas layar: *"Tidak ada koneksi internet. Beberapa fitur tidak tersedia."*
+    2.  Tombol **"Foto & Pilah Sampah"** dan **"Scan QR Tong"** dinonaktifkan (`onPressed: null`).
+    3.  Halaman **Riwayat** dan **Poin** dapat tetap tampil menggunakan **cache terakhir** (dari `SharedPreferences`).
+*   **Cek Koneksi:** Gunakan package `connectivity_plus` untuk memantau perubahan status jaringan secara real-time.
+
