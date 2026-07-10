@@ -1,4 +1,4 @@
-﻿# Software Design Document (SDD) — Pilah Sampah Cerdas
+# Software Design Document (SDD) — Pilah Sampah Cerdas
 
 ## 1. Arsitektur Sistem
 
@@ -14,7 +14,7 @@ graph TD
 
 ---
 
-## 2. Desain Database (11 Tabel Utama)
+## 2. Desain Database (12 Tabel Utama)
 * **`roles`**: Menyimpan level hak akses (ADMIN, PETUGAS_KELURAHAN, PETUGAS_RW, PETUGAS_RT, WARGA).
 * **`users`**: Kredensial akun dan profil warga/petugas.
 * **`kelurahan`**: Data kelurahan dalam Kecamatan Coblong (Dago, Sadangserang, Sekeloa, Lebak Siliwangi, Cipaganti, Coblong).
