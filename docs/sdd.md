@@ -428,6 +428,8 @@ Semua endpoint menggunakan format error yang seragam:
 | State Management | flutter_riverpod | ^2.6.1 |
 | Auth Storage | flutter_secure_storage | ^9.2.4 |
 | Push Notification | firebase_messaging | ^15.2.5 |
+| Koneksi Monitor | connectivity_plus | ^6.1.4 |
+| Cache Lokal | shared_preferences | ^2.5.3 |
 | API Model Generator | openapi_generator_annotations | ^6.0.0 |
 | Min Android SDK | API Level 24 | (Android 7.0 Nougat) |
 | Min iOS Version | 13.0 | — |
