@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Loader2 } from 'lucide-react';
+import { useMonitoringStore } from '../../store/useMonitoringStore';
 import styles from './Monitoring.module.css';
 
 // Fix untuk Leaflet icon default di Vite/React
@@ -27,15 +29,36 @@ const createBinIcon = (status: 'aman' | 'waspada' | 'penuh') => {
 };
 
 const Monitoring: React.FC = () => {
-  // Dummy data (Kecamatan Coblong, Bandung)
-  const mapCenter: [number, number] = [-6.8903, 107.6110];
+  const { bins, isLoading, error, fetchBins } = useMonitoringStore();
+
+  useEffect(() => {
+    fetchBins();
+  }, [fetchBins]);
+
+  // Determine map center. If there are bins with lat/lng, use the first one. Otherwise default.
+  const mapCenter: [number, number] = useMemo(() => {
+    const binWithLoc = bins.find(b => b.latitude && b.longitude);
+    if (binWithLoc) return [Number(binWithLoc.latitude), Number(binWithLoc.longitude)];
+    return [-6.8903, 107.6110]; // Default: Kecamatan Coblong, Bandung
+  }, [bins]);
   
-  const dummyBins = [
-    { id: 1, name: 'Tong 01 - Bp. Asep', lat: -6.8903, lng: 107.6110, status: 'aman' as const, volume: '10%' },
-    { id: 2, name: 'Tong 02 - Ibu Siti', lat: -6.8915, lng: 107.6120, status: 'penuh' as const, volume: '95%' },
-    { id: 3, name: 'Tong 03 - Bp. Dedi', lat: -6.8890, lng: 107.6135, status: 'waspada' as const, volume: '80%' },
-    { id: 4, name: 'Tong 04 - Pos RW', lat: -6.8920, lng: 107.6095, status: 'aman' as const, volume: '25%' },
-  ];
+  if (isLoading && bins.length === 0) {
+    return (
+      <div className={styles.monitoringContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Loader2 className={styles.spinner} size={48} color="var(--primary-green)" style={{ animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.monitoringContainer}>
+        <div style={{ padding: '20px', backgroundColor: 'var(--danger-red)', color: 'white', borderRadius: '8px' }}>
+          Error: {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.monitoringContainer}>
@@ -69,17 +92,27 @@ const Monitoring: React.FC = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {dummyBins.map(bin => (
-            <Marker key={bin.id} position={[bin.lat, bin.lng]} icon={createBinIcon(bin.status)}>
-              <Popup>
-                <div className={styles.popupContent}>
-                  <strong>{bin.name}</strong><br/>
-                  Kapasitas Terisi: {bin.volume}<br/>
-                  Status: {bin.status.toUpperCase()}
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          {bins.filter(bin => bin.latitude && bin.longitude).map(bin => {
+            const vol = Number(bin.currentVolumeLiter);
+            const max = Number(bin.maxCapacityLiter);
+            const percentage = max > 0 ? (vol / max) * 100 : 0;
+            
+            let status: 'aman' | 'waspada' | 'penuh' = 'aman';
+            if (percentage >= 90) status = 'penuh';
+            else if (percentage >= 70) status = 'waspada';
+
+            return (
+              <Marker key={bin.id} position={[Number(bin.latitude), Number(bin.longitude)]} icon={createBinIcon(status)}>
+                <Popup>
+                  <div className={styles.popupContent}>
+                    <strong>Tong {bin.category.name}</strong><br/>
+                    Kapasitas Terisi: {percentage.toFixed(1)}% ({vol}L / {max}L)<br/>
+                    Status: {status.toUpperCase()}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
       </div>
     </div>

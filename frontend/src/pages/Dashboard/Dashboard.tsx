@@ -1,21 +1,38 @@
-import React from 'react';
-import { Users, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Users, Trash2, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { useDashboardStore } from '../../store/useDashboardStore';
 import styles from './Dashboard.module.css';
 
 const Dashboard: React.FC = () => {
-  const kpiData = [
-    { title: 'Total Warga Aktif', value: '1,245', icon: <Users size={24} />, color: 'var(--primary-blue)' },
-    { title: 'Sampah Terkumpul (Kg)', value: '3,842', icon: <Trash2 size={24} />, color: 'var(--primary-green)' },
-    { title: 'Akurasi AI Rata-rata', value: '94.2%', icon: <CheckCircle size={24} />, color: 'var(--primary-green)' },
-    { title: 'Peringatan Tong Penuh', value: '4', icon: <AlertTriangle size={24} />, color: 'var(--danger-red)' },
-  ];
+  const { kpi, transactions, isLoading, error, fetchDashboardData } = useDashboardStore();
 
-  const recentTransactions = [
-    { id: 'TRX-001', nama: 'Bapak Asep', waktu: '10:45', tipe: 'Organik', volume: '2.5L', poin: '+100' },
-    { id: 'TRX-002', nama: 'Ibu Siti', waktu: '10:30', tipe: 'Anorganik', volume: '1.2L', poin: '+24' },
-    { id: 'TRX-003', nama: 'Bapak Jeremy', waktu: '10:15', tipe: 'Organik', volume: '5.0L', poin: '+200' },
-    { id: 'TRX-004', nama: 'Ibu Lani', waktu: '09:50', tipe: 'Anorganik', volume: '3.4L', poin: '+68' },
-    { id: 'TRX-005', nama: 'Bapak Dedi', waktu: '09:20', tipe: 'Organik', volume: '1.5L', poin: '+60' },
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  if (isLoading && !kpi) {
+    return (
+      <div className={styles.dashboardContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Loader2 className={styles.spinner} size={48} color="var(--primary-green)" style={{ animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.dashboardContainer}>
+        <div style={{ padding: '20px', backgroundColor: 'var(--danger-red)', color: 'white', borderRadius: '8px' }}>
+          Error: {error}
+        </div>
+      </div>
+    );
+  }
+
+  const kpiData = [
+    { title: 'Total Warga Aktif', value: kpi?.totalWarga?.toLocaleString() || '0', icon: <Users size={24} />, color: 'var(--primary-blue)' },
+    { title: 'Sampah Terkumpul (Kg)', value: kpi?.totalSampahKg?.toLocaleString() || '0', icon: <Trash2 size={24} />, color: 'var(--primary-green)' },
+    { title: 'Akurasi AI Rata-rata', value: `${kpi?.averageAiAccuracy?.toFixed(1) || 0}%`, icon: <CheckCircle size={24} />, color: 'var(--primary-green)' },
+    { title: 'Peringatan Tong Penuh', value: kpi?.alertTongPenuh?.toString() || '0', icon: <AlertTriangle size={24} />, color: 'var(--danger-red)' },
   ];
 
   return (
@@ -54,20 +71,26 @@ const Dashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {recentTransactions.map((trx) => (
-                <tr key={trx.id}>
-                  <td>{trx.id}</td>
-                  <td>{trx.nama}</td>
-                  <td>{trx.waktu}</td>
-                  <td>
-                    <span className={`${styles.badge} ${trx.tipe === 'Organik' ? styles.badgeOrganic : styles.badgeAnorganic}`}>
-                      {trx.tipe}
-                    </span>
-                  </td>
-                  <td>{trx.volume}</td>
-                  <td className={styles.poinText}>{trx.poin}</td>
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>Belum ada data transaksi</td>
                 </tr>
-              ))}
+              ) : (
+                transactions.map((trx) => (
+                  <tr key={trx.id}>
+                    <td>{trx.id.substring(0, 8)}...</td>
+                    <td>{trx.nama}</td>
+                    <td>{new Date(trx.waktu).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                    <td>
+                      <span className={`${styles.badge} ${trx.tipe.toLowerCase() === 'organic' ? styles.badgeOrganic : styles.badgeAnorganic}`}>
+                        {trx.tipe}
+                      </span>
+                    </td>
+                    <td>{trx.volume}</td>
+                    <td className={styles.poinText}>{trx.poin}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
