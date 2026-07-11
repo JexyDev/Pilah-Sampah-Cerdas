@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import wasteRouter from "./routes/wasteRoutes.js";
 import authRouter from "./routes/authRoutes.js";
+import householdRouter from "./routes/householdRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -26,6 +27,7 @@ app.use(cookieParser());
 
 // Main APIs
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/households", householdRouter);
 app.use("/api/v1", wasteRouter);
 
 // Initialize Swagger Docs
