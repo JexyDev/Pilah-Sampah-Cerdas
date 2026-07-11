@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import wasteRouter from "./routes/wasteRoutes.js";
+import authRouter from "./routes/authRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -20,8 +22,10 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Main APIs
+app.use("/api/v1/auth", authRouter);
 app.use("/api/v1", wasteRouter);
 
 // Initialize Swagger Docs
