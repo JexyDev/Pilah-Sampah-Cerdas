@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout/MainLayout';
 import Dashboard from '../pages/Dashboard/Dashboard';
+import Monitoring from '../pages/Monitoring/Monitoring';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -10,8 +11,7 @@ const AppRoutes: React.FC = () => {
         {/* Halaman utama */}
         <Route index element={<Dashboard />} />
         
-        {/* Placeholder untuk halaman lain sesuai Sidebar */}
-        <Route path="monitoring" element={<div>Halaman Live Monitoring (GIS)</div>} />
+        <Route path="monitoring" element={<Monitoring />} />
         <Route path="master-data" element={<div>Halaman Master Data</div>} />
         <Route path="peta" element={<div>Halaman Peta Wilayah</div>} />
         <Route path="warga-tong" element={<div>Halaman Data Warga & Tong</div>} />

@@ -1,0 +1,84 @@
+.monitoringContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  background-color: var(--bg-card);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.legendColor {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.mapWrapper {
+  flex: 1;
+  min-height: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  /* The z-index is required to prevent leaflet controls from overlapping fixed headers/bottom navs */
+  position: relative;
+  z-index: 10; 
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.popupContent {
+  font-family: var(--font-family);
+  font-size: 14px;
+}
+
+/* Responsiveness */
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .legend {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .mapWrapper {
+    min-height: 400px;
+  }
+}
