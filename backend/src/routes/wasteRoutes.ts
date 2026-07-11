@@ -12,8 +12,39 @@ const DENSITY = {
   NON_ORGANIC: 0.2   // Non-organic (plastic, paper, etc.) is lighter
 };
 
-// 1. POST /api/v1/waste/detect-mock
-// Simulate AI Image Detection with Redis queues, timeout, and quotas
+/**
+ * @swagger
+ * /api/v1/waste/detect-mock:
+ *   post:
+ *     summary: Simulasi Deteksi Gambar Sampah AI
+ *     description: Mengirim gambar sampah untuk dideteksi kategorinya secara otomatis menggunakan antrian Redis FIFO dengan limitasi kuota harian.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID User yang melakukan request
+ *                 example: "usr-12345"
+ *               imageUrl:
+ *                 type: string
+ *                 description: URL gambar sampah yang diunggah
+ *                 example: "http://mock-storage/waste.jpg"
+ *     responses:
+ *       200:
+ *         description: Deteksi berhasil
+ *       400:
+ *         description: Bad Request (Missing parameter)
+ *       429:
+ *         description: Quota Exceeded (Batas harian terlampaui)
+ *       408:
+ *         description: AI Timeout (Proses deteksi melebihi 2 detik)
+ */
 router.post("/waste/detect-mock", async (req: Request, res: Response) => {
   const { userId } = req.body;
 
@@ -140,7 +171,7 @@ router.get("/bins/:id/status", async (req: Request, res: Response) => {
       return res.status(200).json({
         id,
         qrCode: `QR-BIN-${id.slice(0, 5).toUpperCase()}`,
-        type: "ORGANIC",
+        categoryId: "ORGANIC",
         maxCapacityLiter: 25.0,
         currentVolumeLiter: 5.4,
         rtRw: { name: "RT 01 / RW 05" }
@@ -170,11 +201,12 @@ router.post("/bins/scan", async (req: Request, res: Response) => {
 
     // Create a mock bin if not found in db for ease of direct API test
     if (!bin) {
-      const area = await prisma.rtRwArea.findFirst() || await prisma.rtRwArea.create({ data: { name: "RT 01 / RW 05" } });
+      const kel = await prisma.kelurahan.findFirst() || await prisma.kelurahan.create({ data: { name: "Mock Kelurahan" } });
+      const area = await prisma.rtRwArea.findFirst() || await prisma.rtRwArea.create({ data: { name: "RT 01 / RW 05", kelurahanId: kel.id } });
       bin = await prisma.bin.create({
         data: {
           qrCode,
-          type: detectedType === "NON_ORGANIC" ? "NON_ORGANIC" : "ORGANIC",
+          categoryId: detectedType === "NON_ORGANIC" ? "NON_ORGANIC" : "ORGANIC",
           maxCapacityLiter: 25.0,
           currentVolumeLiter: 10.0,
           rtRwId: area.id
@@ -183,10 +215,10 @@ router.post("/bins/scan", async (req: Request, res: Response) => {
     }
 
     // 2. Validate trash type matching
-    if (bin.type !== detectedType) {
+    if (bin.categoryId !== detectedType) {
       return res.status(400).json({
         error: "INVALID_BIN_TYPE",
-        message: `Tong tidak sesuai! Anda memasukkan sampah ${detectedType} ke tong sampah khusus ${bin.type}.`
+        message: `Tong tidak sesuai! Anda memasukkan sampah ${detectedType} ke tong sampah khusus ${bin.categoryId}.`
       });
     }
 
@@ -220,7 +252,7 @@ router.post("/bins/scan", async (req: Request, res: Response) => {
     });
 
     // 5. Convert liters to weight based on density
-    const factor = bin.type === "ORGANIC" ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
+    const factor = bin.categoryId === "ORGANIC" ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
     const weightKg = parseFloat((est * factor).toFixed(2));
 
     // 6. Create Waste Log
@@ -230,7 +262,7 @@ router.post("/bins/scan", async (req: Request, res: Response) => {
         binId: bin.id,
         weightKg,
         volumeLiter: est,
-        type: bin.type,
+        categoryId: bin.categoryId,
         requestId: uuidv4() // Generate standard mock request UUID
       }
     });
@@ -242,7 +274,7 @@ router.post("/bins/scan", async (req: Request, res: Response) => {
         data: {
           userId,
           points: calculatedPoints,
-          description: `Disetor sampah ${bin.type} seberat ${weightKg} kg.`
+          description: `Disetor sampah ${bin.categoryId} seberat ${weightKg} kg.`
         }
       });
     }

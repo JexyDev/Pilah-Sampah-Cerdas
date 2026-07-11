@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import wasteRouter from "./routes/wasteRoutes.js";
+import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
 
@@ -23,6 +24,9 @@ app.use(express.json());
 // Main APIs
 app.use("/api/v1", wasteRouter);
 
+// Initialize Swagger Docs
+setupSwagger(app);
+
 // Health check
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
@@ -33,3 +37,4 @@ app.listen(PORT, () => {
   console.log(`pilahsampah.id Backend running on port ${PORT}`);
   console.log(`===============================================`);
 });
+
