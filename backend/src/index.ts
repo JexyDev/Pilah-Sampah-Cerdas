@@ -1,11 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import wasteRouter from "./routes/wasteRoutes.js";
+
 import authRouter from "./routes/authRoutes.js";
 import householdRouter from "./routes/householdRoutes.js";
 import binRouter from "./routes/binRoutes.js";
 import pointRouter from "./routes/pointRoutes.js";
+import aiRouter from "./routes/aiRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -32,7 +33,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/households", householdRouter);
 app.use("/api/v1/bins", binRouter);
 app.use("/api/v1/points", pointRouter);
-app.use("/api/v1", wasteRouter);
+app.use("/api/v1/waste", aiRouter);
 
 // Initialize Swagger Docs
 setupSwagger(app);

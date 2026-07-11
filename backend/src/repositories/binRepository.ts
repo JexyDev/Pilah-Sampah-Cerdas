@@ -14,6 +14,18 @@ export class BinRepository {
       }
     });
   }
+
+  /**
+   * Find bin by ID
+   */
+  async findById(id: string): Promise<(Bin & { rtRw?: any }) | null> {
+    return prisma.bin.findUnique({
+      where: { id },
+      include: {
+        rtRw: true
+      }
+    });
+  }
   
   /**
    * Update Bin volume

@@ -97,6 +97,29 @@ export class BinService {
       newBinVolume: newVolume
     };
   }
+
+  /**
+   * Get bin status by ID
+   */
+  async getBinStatus(binId: string) {
+    // Requires findById in repository
+    const bin = await binRepository.findById(binId);
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+    return bin;
+  }
+
+  /**
+   * Empty bin
+   */
+  async emptyBin(binId: string) {
+    const bin = await binRepository.findById(binId);
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+    await binRepository.updateVolume(bin.id, 0);
+  }
 }
 
 export const binService = new BinService();

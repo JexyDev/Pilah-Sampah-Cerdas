@@ -64,4 +64,50 @@ router.post(
   binController.scan
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/{id}/status:
+ *   get:
+ *     summary: Get status of a bin
+ *     tags: [Bins]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get(
+  "/:id/status",
+  binController.getStatus
+);
+
+/**
+ * @swagger
+ * /api/v1/bins/{id}/empty:
+ *   post:
+ *     summary: Empty bin capacity
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.post(
+  "/:id/empty",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  binController.emptyBin
+);
+
 export default router;

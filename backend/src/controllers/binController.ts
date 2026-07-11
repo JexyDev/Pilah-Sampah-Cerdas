@@ -67,6 +67,46 @@ export class BinController {
       }
     }
   }
+
+  /**
+   * Get Bin Status
+   */
+  async getStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const bin = await binService.getBinStatus(id);
+      res.status(200).json({
+        success: true,
+        data: bin
+      });
+    } catch (error: any) {
+      if (error.message === "BIN_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status tong sampah" });
+      }
+    }
+  }
+
+  /**
+   * Empty Bin Capacity (Reset)
+   */
+  async emptyBin(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      await binService.emptyBin(id);
+      res.status(200).json({
+        success: true,
+        message: "Kapasitas tong sampah berhasil dikosongkan ke 0 Liter."
+      });
+    } catch (error: any) {
+      if (error.message === "BIN_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengosongkan tong sampah" });
+      }
+    }
+  }
 }
 
 export const binController = new BinController();
