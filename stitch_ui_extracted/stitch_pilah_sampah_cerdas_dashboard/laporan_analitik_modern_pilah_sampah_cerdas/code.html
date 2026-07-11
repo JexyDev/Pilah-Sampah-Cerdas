@@ -1,0 +1,716 @@
+<!DOCTYPE html><html lang="id" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e0e3e6",
+                        "tertiary-fixed": "#c8e7fd",
+                        "on-secondary-container": "#00476e",
+                        "surface-container": "#eceef1",
+                        "surface": "#f8fafc",
+                        "primary-fixed": "#7efba4",
+                        "inverse-on-surface": "#eff1f4",
+                        "surface-container-low": "#f2f4f7",
+                        "surface-variant": "#e0e3e6",
+                        "on-background": "#1B3A4B",
+                        "on-secondary-fixed": "#001d31",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#e6f8f0",
+                        "error": "#ef4444",
+                        "on-surface-variant": "#475569",
+                        "error-container": "#fee2e2",
+                        "on-surface": "#1B3A4B",
+                        "tertiary": "#446274",
+                        "on-tertiary-container": "#143444",
+                        "surface-container-high": "#e6e8eb",
+                        "tertiary-container": "#7e9cb0",
+                        "outline": "#cbd5e1",
+                        "secondary": "#3b82f6",
+                        "on-tertiary-fixed-variant": "#2c4a5c",
+                        "inverse-surface": "#1e293b",
+                        "on-secondary-fixed-variant": "#1e3a8a",
+                        "outline-variant": "#e2e8f0",
+                        "surface-dim": "#d8dadd",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#10b981",
+                        "secondary-fixed": "#dbeafe",
+                        "tertiary-fixed-dim": "#accbe0",
+                        "primary": "#10b981",
+                        "on-primary-container": "#064e3b",
+                        "on-error-container": "#7f1d1d",
+                        "primary-fixed-dim": "#34d399",
+                        "on-primary-fixed": "#022c22",
+                        "background": "#f8fafc",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#93c5fd",
+                        "on-primary-fixed-variant": "#047857",
+                        "surface-bright": "#f8fafc",
+                        "inverse-primary": "#34d399",
+                        "secondary-container": "#bfdbfe"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "container-margin": "24px",
+                        "stack-md": "12px",
+                        "sidebar-width": "260px",
+                        "gutter": "24px",
+                        "card-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "data-display": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-xl": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "data-display": ["22px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    }catch(_e){}</script></head><body class="bg-background text-on-surface flex min-h-screen">
+<!-- SideNavBar -->
+<nav class="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col py-container-margin z-50">
+<div class="px-gutter mb-8 flex items-center gap-3">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj6WWNRQvO_iWwwSiLWjxb9s4CB0XnOzCeN8svPrPKWHJsI47eU2kAlO2-DEZBWBBTAgTjg-Q-hcZHMAS0DHly28lnV6MvhCk3B0ckM2RmlCH7YgT4qUHDynf2tah4_Q5UQY8D9rUbrDWCXQLKnLqPUt82lKPV111Vze--0H4l54dKXwNerb4cP-vwmztmQP3bO-_KBLb3ugblFUmZ35Fq2C67FFWA8feLPM-kVPEVncQ_iH3FnPjtT1xau3rBjsal1guknzodVyu3" alt="Pilah Sampah Cerdas Logo" class="w-10 h-10 object-cover bg-transparent">
+<div>
+<h1 class="text-headline-md font-bold text-on-surface dark:text-inverse-primary leading-tight">Pilah Sampah<br>Cerdas</h1>
+<p class="text-[10px] text-on-surface-variant leading-tight mt-1">Sampah Terdata,<br>Lingkungan Tertata</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto w-full px-2">
+<ul class="space-y-1">
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> <span class="font-label-md text-label-md">Dashboard</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="group">group</span> <span class="font-label-md text-label-md">Manajemen Pengguna</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="delete">delete</span> <span class="font-label-md text-label-md">Manajemen Tempat Sampah</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="location_on">location_on</span> <span class="font-label-md text-label-md">Manajemen Lokasi</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="recycling">recycling</span> <span class="font-label-md text-label-md">Pemilahan Sampah</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span> <span class="font-label-md text-label-md">Pemanfaatan Sampah</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span> <span class="font-label-md text-label-md">Jadwal Kegiatan</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="category">category</span> <span class="font-label-md text-label-md">Kategori Sampah</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span> <span class="font-label-md text-label-md">Rekap Setoran</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="stars">stars</span> <span class="font-label-md text-label-md">Poin Warga</span></a></li>
+<li class=""><a class="bg-secondary/10 text-secondary border-l-4 border-secondary font-bold flex items-center gap-3 px-4 py-3 rounded-r-xl" href="#"><span class="material-symbols-outlined" data-icon="analytics" data-weight="fill">analytics</span> <span class="font-label-md text-label-md">Laporan &amp; Analitik</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="notifications">notifications</span> <span class="font-label-md text-label-md flex-1">Notifikasi</span> <span class="bg-primary text-on-primary text-xs rounded-full h-5 w-5 flex items-center justify-center">8</span></a></li>
+<li class=""><a class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors duration-200" href="#"><span class="material-symbols-outlined" data-icon="settings">settings</span> <span class="font-label-md text-label-md">Pengaturan</span></a></li>
+</ul>
+</div>
+<div class="px-4 mt-6">
+<div class="bg-primary-container rounded-2xl p-4 text-center">
+<span class="material-symbols-outlined text-primary text-3xl mb-2" data-icon="eco">eco</span>
+<p class="font-label-sm text-on-primary-container mb-3">Bersama memilah sampah, bersama jaga bumi.</p>
+<div class="flex items-center gap-3 mt-4 pt-4 border-t border-primary/10">
+<div class="h-10 w-10 rounded-full bg-primary/20 overflow-hidden border-2 border-surface-container-lowest">
+<img alt="Admin Utama" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeOQLf45TgPjy_lA9V_xZ0PETnV3PB5irr1yGqYSZYJ_GuxeXh_6WW6uaC-DVC0XqTmLBhM3xzDjKlDsJEmR6R8rCV-eGeDimjx3c3ygF6iToD0_tko60jtNs05VquBCCRxxDJ3CbnEqTEWsZiPHzMYLI8AbLonoiUFey67-6wdQWD0nK5nYqYhcSGAyFb3M0v9cxlHhCAACUTmxiO6QAcC0ok45TZIKo7l7j2k5cNDRmqCcBuel_zom1szTT7u1cyrh2BBkgoSsQj">
+</div>
+<div class="text-left">
+<p class="font-label-md text-on-surface font-bold">Admin Utama</p>
+<p class="text-[10px] text-on-surface-variant">Super Admin</p>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="ml-[260px] flex-1 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="h-[72px] w-[calc(100%-260px)] fixed top-0 right-0 z-40 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm flex justify-between items-center px-gutter">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Laporan &amp; Analitik Teknikal</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-background border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="location_on">location_on</span>
+<span class="font-label-md text-label-md text-on-surface font-medium">Kecamatan Coblong</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</div>
+<div class="flex items-center gap-3 border-l border-outline-variant pl-4"><div class="flex items-center gap-2 px-4 py-2 rounded-full bg-background border border-outline-variant">
+  <span class="font-label-md text-label-md text-on-surface-variant">RT:</span>
+  <span class="font-label-md text-label-md text-on-surface font-medium">469</span>
+  <span class="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer">keyboard_arrow_down</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-background border border-outline-variant">
+  <span class="font-label-md text-label-md text-on-surface-variant">RW:</span>
+  <span class="font-label-md text-label-md text-on-surface font-medium">076</span>
+  <span class="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer">keyboard_arrow_down</span>
+</div><div class="flex items-center gap-2 px-4 py-2 rounded-full bg-background border border-outline-variant cursor-pointer hover:bg-surface-container-low transition-colors">
+  <span class="font-label-md text-label-md text-on-surface-variant">Kategori:</span>
+  <span class="font-label-md text-label-md text-on-surface font-medium">Semua Kategori</span>
+  <span class="material-symbols-outlined text-on-surface-variant text-sm">keyboard_arrow_down</span>
+</div><button class="flex items-center gap-2 px-3 py-2 text-secondary border border-secondary hover:bg-secondary/10 rounded-xl transition-colors cursor-pointer active:opacity-80 font-label-md">
+  <span class="material-symbols-outlined text-[20px]" data-icon="picture_as_pdf">picture_as_pdf</span>
+  <span class="">Export PDF</span>
+</button><button class="flex items-center gap-2 px-3 py-2 text-secondary border border-secondary hover:bg-secondary/10 rounded-xl transition-colors cursor-pointer active:opacity-80 font-label-md">
+  <span class="material-symbols-outlined text-[20px]" data-icon="grid_on">grid_on</span>
+  <span class="">Export CSV</span>
+</button>
+<button class="relative p-2 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-full transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1 right-1 h-2.5 w-2.5 bg-error rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-full transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="apps">apps</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 mt-[72px] p-container-margin">
+<div class="mb-6">
+<p class="font-body-md text-body-md text-on-surface-variant">Monitoring performa sistem dan metrik teknikal secara real-time.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter"><div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">System Uptime</h3>
+      <p class="font-label-sm text-on-surface-variant mt-1">Current Availability (30d)</p>
+    </div>
+    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-primary font-label-sm font-bold">
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      Stable
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col justify-center items-center py-8">
+    <p class="text-4xl font-bold text-primary tracking-tight">99.98%</p>
+    <p class="text-label-sm text-on-surface-variant mt-2 uppercase tracking-wider">Total Uptime</p>
+  </div>
+  <div class="mt-6 pt-6 border-t border-outline-variant">
+    <div class="flex justify-between items-center">
+      <span class="text-label-sm text-on-surface-variant">Last Incident</span>
+      <span class="text-label-sm font-medium text-on-surface">14 days ago</span>
+    </div>
+  </div>
+</div>
+<!-- Chart 1: AI Computer-Vision Accuracy (Spans 8 cols) -->
+<div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card"><div class="flex items-center gap-1.5 mb-2 px-2 py-1 bg-surface-container-low rounded-lg w-fit"><span class="material-symbols-outlined text-[14px] text-on-surface-variant">filter_list</span><span class="text-[10px] font-label-sm text-on-surface-variant uppercase tracking-wider">Filtered by: Coblong • RT 469 • RW 076</span></div>
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">AI Accuracy</h3>
+<p class="font-label-sm text-on-surface-variant mt-1">30-Day Moving Avg</p>
+</div>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-primary font-label-sm font-bold">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span> 94.2%
+</span>
+</div>
+<div class="chart-container flex-1 h-[200px]">
+<canvas id="accuracyChart" width="323" height="414" style="display: block; box-sizing: border-box; height: 331.8px; width: 258.4px;"></canvas>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-outline-variant">
+  <div class="text-center">
+    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Peak</p>
+    <p class="text-headline-md font-bold text-primary">98.4%</p>
+  </div>
+  <div class="text-center border-l border-outline-variant">
+    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Confidence</p>
+    <p class="text-headline-md font-bold text-secondary">91.2%</p>
+  </div>
+</div>
+</div>
+<!-- Chart 2: Response Latency-->
+<div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card"><div class="flex items-center gap-1.5 mb-2 px-2 py-1 bg-surface-container-low rounded-lg w-fit"><span class="material-symbols-outlined text-[14px] text-on-surface-variant">filter_list</span><span class="text-[10px] font-label-sm text-on-surface-variant uppercase tracking-wider">Filtered by: Coblong • RT 469 • RW 076</span></div>
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Response Latency</h3>
+<p class="font-label-sm text-on-surface-variant mt-1">Hourly Average Today (ms)</p>
+</div>
+<button class="text-on-surface-variant hover:text-secondary transition-colors"><span class="material-symbols-outlined text-xl" data-icon="more_vert">more_vert</span></button>
+</div>
+<div class="chart-container flex-1 h-[280px]">
+<canvas id="latencyChart" width="323" height="416" style="display: block; box-sizing: border-box; height: 332.8px; width: 258.4px;"></canvas>
+</div>
+<div class="grid grid-cols-1 gap-4 mt-6 pt-6 border-t border-outline-variant">
+  <div class="text-center">
+    <p class="text-label-sm text-on-surface-variant uppercase tracking-wider">Peak Latency Today</p>
+    <p class="text-headline-md font-bold text-error">612ms</p>
+  </div>
+</div></div>
+<!-- Chart 3: Redis Quota Metrics (Spans 12 cols) -->
+<div class="md:col-span-12 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card mt-gutter"><div class="flex items-center gap-1.5 mb-2 px-2 py-1 bg-surface-container-low rounded-lg w-fit"><span class="material-symbols-outlined text-[14px] text-on-surface-variant">filter_list</span><span class="text-[10px] font-label-sm text-on-surface-variant uppercase tracking-wider">Filtered by: Coblong • RT 469 • RW 076</span></div>
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Redis Cache &amp; Queue Metrics</h3>
+<p class="font-label-sm text-on-surface-variant mt-1">Daily Hits vs Misses in Coblong (Last 14 Days)</p>
+</div>
+<div class="flex items-center gap-6 text-sm font-label-md bg-background px-4 py-2 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-secondary"></div> <span class="text-on-surface">Cache Hits</span></div>
+<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-error"></div> <span class="text-on-surface">Cache Misses</span></div>
+</div>
+</div>
+<div class="chart-container h-[280px] w-full">
+<canvas id="redisChart" width="1153" height="350" style="display: block; box-sizing: border-box; height: 280px; width: 922.4px;"></canvas>
+</div>
+<div class="grid grid-cols-1 gap-4 mt-6 pt-6 border-t border-outline-variant">
+  <div class="text-center">
+    <p class="text-label-sm text-on-surface-variant uppercase tracking-wider">Total Cache Misses</p>
+    <p class="text-headline-md font-bold text-error">1,248</p>
+  </div>
+</div></div>
+<div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">Server CPU Usage</h3>
+      <p class="font-label-sm text-on-surface-variant mt-1">Real-time Load (60m)</p>
+    </div>
+    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary font-label-sm font-bold">
+      <span class="material-symbols-outlined text-[16px]" data-icon="memory">memory</span>
+      Optimal
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col justify-center items-center py-4">
+    <p class="text-4xl font-bold text-secondary tracking-tight">42%</p>
+    <p class="text-label-sm text-on-surface-variant mt-2 uppercase tracking-wider">Current Load</p>
+  </div>
+  <div class="h-[100px] w-full mt-2">
+    <canvas id="cpuChart" width="323" height="125" style="display: block; box-sizing: border-box; height: 100px; width: 258.4px;"></canvas>
+  </div>
+  <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-outline-variant">
+    <div class="text-center">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Peak Usage</p>
+      <p class="text-headline-md font-bold text-secondary">88.2%</p>
+    </div>
+    <div class="text-center border-l border-outline-variant">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Core Count</p>
+      <p class="text-headline-md font-bold text-on-surface">16 vCPU</p>
+    </div>
+  </div>
+</div><div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">Active Connections</h3>
+      <p class="font-label-sm text-on-surface-variant mt-1">Real-time WebSocket &amp; API</p>
+    </div>
+    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-primary font-label-sm font-bold">
+      <span class="material-symbols-outlined text-[16px]" data-icon="hub">hub</span>
+      Optimal
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col justify-center items-center py-8">
+    <p class="text-4xl font-bold text-primary tracking-tight">1,842</p>
+    <p class="text-label-sm text-on-surface-variant mt-2 uppercase tracking-wider">Current Active</p>
+  </div>
+  <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-outline-variant">
+    <div class="text-center">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Peak (24h)</p>
+      <p class="text-headline-md font-bold text-on-surface">2,450</p>
+    </div>
+    <div class="text-center border-l border-outline-variant">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Avg Duration</p>
+      <p class="text-headline-md font-bold text-on-surface">14m 22s</p>
+    </div>
+  </div>
+</div><div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">Network Bandwidth</h3>
+      <p class="font-label-sm text-on-surface-variant mt-1">Real-time Traffic (60m)</p>
+    </div>
+    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-primary font-label-sm font-bold">
+      <span class="material-symbols-outlined text-[16px]">swap_vert</span>
+      Active
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col justify-center items-center py-4">
+    <p class="text-4xl font-bold text-primary tracking-tight">128.5 Mbps</p>
+    <p class="text-label-sm text-on-surface-variant mt-2 uppercase tracking-wider">Current Usage</p>
+  </div>
+  <div class="h-[100px] w-full mt-2">
+    <canvas id="bandwidthChart" width="323" height="125" style="display: block; box-sizing: border-box; height: 100px; width: 258.4px;"></canvas>
+  </div>
+  <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-outline-variant">
+    <div class="text-center">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Incoming</p>
+      <p class="text-headline-md font-bold text-primary">82.1 Mbps</p>
+    </div>
+    <div class="text-center border-l border-outline-variant">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Outgoing</p>
+      <p class="text-headline-md font-bold text-secondary">46.4 Mbps</p>
+    </div>
+  </div>
+</div><div class="md:col-span-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_-4px_rgba(27,58,75,0.05)] border border-outline-variant p-card-padding flex flex-col glass-card">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="font-headline-md text-headline-md text-on-surface">Disk I/O Performance</h3>
+      <p class="font-label-sm text-on-surface-variant mt-1">Real-time Read/Write</p>
+    </div>
+    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-primary font-label-sm font-bold">
+      <span class="material-symbols-outlined text-[16px]">storage</span>
+      Healthy
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col justify-center items-center py-4">
+    <p class="text-4xl font-bold text-primary tracking-tight">45.2 MB/s</p>
+    <p class="text-label-sm text-on-surface-variant mt-2 uppercase tracking-wider">Current Speed</p>
+  </div>
+  <div class="h-[100px] w-full mt-2">
+    <canvas id="diskIoChart" width="323" height="125" style="display: block; box-sizing: border-box; height: 100px; width: 258.4px;"></canvas>
+  </div>
+  <div class="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-outline-variant">
+    <div class="text-center">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Read</p>
+      <p class="text-label-md font-bold text-primary">32.1 MB/s</p>
+    </div>
+    <div class="text-center border-l border-outline-variant">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Write</p>
+      <p class="text-label-md font-bold text-secondary">13.1 MB/s</p>
+    </div>
+    <div class="text-center border-l border-outline-variant">
+      <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Latency</p>
+      <p class="text-label-md font-bold text-on-surface">1.2ms</p>
+    </div>
+  </div>
+</div></div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-6 bg-transparent flex justify-between items-center px-container-margin mt-8">
+<p class="font-label-sm text-label-sm text-on-surface-variant">© 2026 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.</p>
+<div class="flex gap-6">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-secondary transition-colors hover:underline" href="#">Kebijakan Privasi</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-secondary transition-colors hover:underline" href="#">Syarat &amp; Ketentuan</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-secondary transition-colors hover:underline" href="#">Bantuan</a>
+</div>
+</footer>
+</div>
+<!-- Chart Initializations -->
+<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Chart Styling Defaults
+            Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+            Chart.defaults.color = '#475569'; // on-surface-variant
+            Chart.defaults.scale.grid.color = '#e2e8f0'; // outline-variant
+            Chart.defaults.scale.grid.borderColor = 'transparent';
+
+            // 1. AI Computer-Vision Accuracy Chart
+            const ctxAccuracy = document.getElementById('accuracyChart').getContext('2d');
+            
+            // Create gradient
+            let gradient = ctxAccuracy.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)'); // primary with opacity
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+            const labels30Days = Array.from({length: 30}, (_, i) => `Day ${i+1}`);
+            const dataAccuracy = [92, 93, 91, 94, 95, 96, 92, 90, 89, 93, 95, 97, 98, 96, 94, 91, 90, 93, 95, 94, 92, 96, 98, 97, 95, 91, 90, 93, 96, 95];
+
+            new Chart(ctxAccuracy, {
+                type: 'line',
+                data: {
+                    labels: labels30Days,
+                    datasets: [{
+                        label: 'Accuracy %',
+                        data: dataAccuracy,
+                        borderColor: '#10b981', // emerald green
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        tension: 0.4, // smoother spline
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 2,
+                        pointRadius: 0, // hide points unless hover
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#10b981',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1B3A4B',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 13 },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 14, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 60,
+                            max: 100,
+                            ticks: { callback: function(value) { return value + '%' }, padding: 10 }
+                        },
+                        x: {
+                            ticks: { maxTicksLimit: 10, padding: 10 },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+            
+            // Simplified threshold visualization
+            Chart.register({
+                id: 'thresholdLine',
+                beforeDraw: chart => {
+                    if (chart.canvas.id === 'accuracyChart') {
+                        const ctx = chart.ctx;
+                        const yAxis = chart.scales.y;
+                        const yPixel = yAxis.getPixelForValue(75);
+                        const xAxis = chart.scales.x;
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(xAxis.left, yPixel);
+                        ctx.lineTo(xAxis.right, yPixel);
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)'; // elegant red
+                        ctx.setLineDash([4, 4]);
+                        ctx.stroke();
+                        ctx.restore();
+                        
+                        // Label
+                        ctx.font = '11px Plus Jakarta Sans';
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillText('75% Threshold', xAxis.right - 85, yPixel - 8);
+                    }
+                }
+            });
+
+
+            // 2. Response Latency Chart (Bar)
+            const ctxLatency = document.getElementById('latencyChart').getContext('2d');
+            const labelsHours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
+            const dataLatency = [210, 205, 195, 190, 220, 280, 350, 420, 580, 550, 480, 410, 450, 430, 390, 380, 420, 590, 610, 520, 410, 320, 260, 230];
+
+            new Chart(ctxLatency, {
+                type: 'bar',
+                data: {
+                    labels: labelsHours,
+                    datasets: [{
+                        label: 'Avg Latency (ms)',
+                        data: dataLatency,
+                        backgroundColor: dataLatency.map(val => val > 500 ? '#f87171' : '#93c5fd'), // softer colors
+                        borderRadius: 6, // rounded caps
+                        borderSkipped: false,
+                        barPercentage: 0.7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1B3A4B',
+                            padding: 10,
+                            cornerRadius: 8,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { maxTicksLimit: 12 },
+                            grid: { display: false }
+                        },
+                        y: { 
+                            beginAtZero: true, 
+                            max: 700,
+                            ticks: { padding: 8 }
+                        }
+                    }
+                }
+            });
+
+
+            // 3. Redis Quota Metrics (Stacked Bar)
+            const ctxRedis = document.getElementById('redisChart').getContext('2d');
+            const labels14Days = ['Oct 10', 'Oct 11', 'Oct 12', 'Oct 13', 'Oct 14', 'Oct 15', 'Oct 16', 'Oct 17', 'Oct 18', 'Oct 19', 'Oct 20', 'Oct 21', 'Oct 22', 'Oct 23'];
+            const dataHits = [12500, 8200, 8400, 10100, 7800, 6200, 9500, 7100, 13200, 8100, 10500, 9200, 7800, 8300];
+            const dataMisses = [450, 320, 210, 580, 310, 180, 420, 250, 610, 380, 490, 410, 290, 330];
+
+            new Chart(ctxRedis, {
+                type: 'bar',
+                data: {
+                    labels: labels14Days,
+                    datasets: [
+                        {
+                            label: 'Cache Hits',
+                            data: dataHits,
+                            backgroundColor: '#3b82f6', // bright blue
+                            borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 6, bottomRight: 6 },
+                            borderSkipped: false,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.8
+                        },
+                        {
+                            label: 'Cache Misses',
+                            data: dataMisses,
+                            backgroundColor: '#ef4444', // red
+                            borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+                            borderSkipped: false,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1B3A4B',
+                            padding: 12,
+                            cornerRadius: 8,
+                            usePointStyle: true,
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { padding: 8 }
+                        },
+                        y: { 
+                            stacked: true,
+                            ticks: { padding: 8 }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+
+
+<script class="">
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctxCpu = document.getElementById('cpuChart').getContext('2d');
+    let gradient = ctxCpu.createLinearGradient(0, 0, 0, 100);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    new Chart(ctxCpu, {
+      type: 'line',
+      data: {
+        labels: Array.from({length: 20}, (_, i) => i),
+        datasets: [{
+          data: [35, 38, 42, 40, 45, 52, 48, 42, 38, 40, 42, 45, 41, 39, 42, 44, 42, 40, 41, 42],
+          borderColor: '#3b82f6',
+          backgroundColor: gradient,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false, min: 0, max: 100 }
+        }
+      }
+    });
+  });
+</script><script class="">
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctxBandwidth = document.getElementById('bandwidthChart').getContext('2d');
+    let gradient = ctxBandwidth.createLinearGradient(0, 0, 0, 100);
+    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+    new Chart(ctxBandwidth, {
+      type: 'line',
+      data: {
+        labels: Array.from({length: 20}, (_, i) => i),
+        datasets: [{
+          data: [110, 115, 128, 122, 135, 140, 132, 125, 118, 120, 125, 130, 128, 124, 126, 132, 130, 125, 127, 128.5],
+          borderColor: '#10b981',
+          backgroundColor: gradient,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false, min: 0, max: 200 }
+        }
+      }
+    });
+  });
+</script><script class="">
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctxDisk = document.getElementById('diskIoChart').getContext('2d');
+    let gradient = ctxDisk.createLinearGradient(0, 0, 0, 100);
+    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+    new Chart(ctxDisk, {
+      type: 'line',
+      data: {
+        labels: Array.from({length: 20}, (_, i) => i),
+        datasets: [{
+          data: [40, 42, 38, 45, 50, 48, 44, 46, 42, 40, 43, 47, 45, 42, 44, 46, 48, 45, 44, 45.2],
+          borderColor: '#10b981',
+          backgroundColor: gradient,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false, min: 0, max: 100 }
+        }
+      }
+    });
+  });
+</script>
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

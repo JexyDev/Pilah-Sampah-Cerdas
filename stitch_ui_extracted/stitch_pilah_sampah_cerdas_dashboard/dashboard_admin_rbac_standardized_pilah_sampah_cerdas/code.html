@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard Admin - Pilah Sampah Cerdas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#bccabc",
+                    "outline": "#6d7a6e",
+                    "on-surface-variant": "#3d4a3f",
+                    "primary": "#006d37",
+                    "on-primary-fixed": "#00210c",
+                    "surface-dim": "#d8dadd",
+                    "surface-tint": "#006d37",
+                    "surface-bright": "#f7f9fc",
+                    "surface-container-highest": "#e0e3e6",
+                    "surface": "#f7f9fc",
+                    "secondary-fixed": "#cce5ff",
+                    "surface-container": "#eceef1",
+                    "primary-fixed-dim": "#61de8a",
+                    "primary-container": "#27ae60",
+                    "surface-container-low": "#f2f4f7",
+                    "inverse-surface": "#2d3133",
+                    "tertiary-fixed-dim": "#accbe0",
+                    "secondary": "#006397",
+                    "on-tertiary-container": "#143444",
+                    "inverse-primary": "#61de8a",
+                    "tertiary": "#446274",
+                    "on-secondary-fixed-variant": "#004b73",
+                    "background": "#f7f9fc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eff1f4",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#7e9cb0",
+                    "secondary-fixed-dim": "#92ccff",
+                    "on-primary-container": "#00391a",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed": "#c8e7fd",
+                    "on-secondary-fixed": "#001d31",
+                    "secondary-container": "#5cb8fd",
+                    "on-secondary-container": "#00476e",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e6e8eb",
+                    "primary-fixed": "#7efba4",
+                    "on-surface": "#191c1e",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#005228",
+                    "on-tertiary-fixed": "#001e2d",
+                    "on-secondary": "#ffffff",
+                    "on-background": "#191c1e",
+                    "surface-variant": "#e0e3e6",
+                    "on-tertiary-fixed-variant": "#2c4a5c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sidebar-width": "260px",
+                    "stack-md": "12px",
+                    "stack-sm": "8px",
+                    "card-padding": "24px",
+                    "gutter": "24px",
+                    "container-margin": "24px"
+            },
+            "fontFamily": {
+                    "label-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "data-display": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-xl": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "data-display": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f9fc; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #bccabc; border-radius: 10px; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.06); }
+        .sidebar-active { background-color: #cce5ff; color: #004b73; border-left: 4px solid #006397; font-weight: 700; }
+        .line-chart-gradient { background: linear-gradient(180deg, rgba(0, 109, 55, 0.1) 0%, rgba(255, 255, 255, 0) 100%); }
+
+        /* Role Display Logic */
+        .role-admin-only, .role-petugas-only, .role-warga-only, .role-rt-only { display: none; }
+        [data-role="admin"] .role-admin-only { display: block; }
+        [data-role="admin"] .role-admin-flex { display: flex; }
+        [data-role="admin"] .role-admin-grid { display: grid; }
+        
+        [data-role="petugas_kelurahan"] .role-petugas-only,
+        [data-role="petugas_rw"] .role-petugas-only { display: block; }
+        [data-role="petugas_kelurahan"] .role-petugas-flex,
+        [data-role="petugas_rw"] .role-petugas-flex { display: flex; }
+        [data-role="petugas_kelurahan"] .role-petugas-grid,
+        [data-role="petugas_rw"] .role-petugas-grid { display: grid; }
+        
+        [data-role="petugas_rt"] .role-rt-only { display: block; }
+        [data-role="petugas_rt"] .role-rt-flex { display: flex; }
+        [data-role="petugas_rt"] .role-rt-grid { display: grid; }
+
+        [data-role="warga"] .role-warga-only { display: block; }
+        [data-role="warga"] .role-warga-flex { display: flex; }
+        [data-role="warga"] .role-warga-grid { display: grid; }
+
+    </style>
+</head>
+<body class="overflow-x-hidden" data-role="admin">
+<!-- Fixed Sidebar -->
+<aside class="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50">
+<!-- Brand Header -->
+<div class="px-6 py-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center overflow-hidden"><img alt="Pilah Sampah Cerdas Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj6WWNRQvO_iWwwSiLWjxb9s4CB0XnOzCeN8svPrPKWHJsI47eU2kAlO2-DEZBWBBTAgTjg-Q-hcZHMAS0DHly28lnV6MvhCk3B0ckM2RmlCH7YgT4qUHDynf2tah4_Q5UQY8D9rUbrDWCXQLKnLqPUt82lKPV111Vze--0H4l54dKXwNerb4cP-vwmztmQP3bO-_KBLb3ugblFUmZ35Fq2C67FFWA8feLPM-kVPEVncQ_iH3FnPjtT1xau3rBjsal1guknzodVyu3"/></div>
+<div>
+<h1 class="text-base font-semibold text-primary">Pilah Sampah Cerdas</h1>
+<p class="text-[10px] text-on-surface-variant leading-tight">Sampah Terdata, Lingkungan Tertata</p>
+</div>
+</div>
+</div>
+<!-- Navigation Menu -->
+<nav class="flex-1 overflow-y-auto custom-scrollbar px-2 space-y-1">
+<a class="sidebar-active flex items-center px-4 py-3 rounded-r-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="text-sm">Dashboard</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only role-rt-only" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="text-sm">Manajemen Pengguna</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only role-rt-only" href="#">
+<span class="material-symbols-outlined mr-3">delete</span>
+<span class="text-sm">Manajemen Tempat Sampah</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only" href="#">
+<span class="material-symbols-outlined mr-3">location_on</span>
+<span class="text-sm">Manajemen Lokasi</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only" href="#">
+<span class="material-symbols-outlined mr-3">calendar_today</span>
+<span class="text-sm">Jadwal Kegiatan</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only" href="#">
+<span class="material-symbols-outlined mr-3">category</span>
+<span class="text-sm">Kategori Sampah</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only role-rt-only role-warga-only" href="#">
+<span class="material-symbols-outlined mr-3">receipt_long</span>
+<span class="text-sm role-warga-only" style="display:none">Riwayat Setoran</span>
+<span class="text-sm role-admin-only role-petugas-only role-rt-only">Rekap Setoran</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only role-warga-only" href="#">
+<span class="material-symbols-outlined mr-3">stars</span>
+<span class="text-sm">Poin Warga</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-admin-only role-petugas-only" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="text-sm">Laporan &amp; Analitik</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all role-warga-only" href="#" style="display: none;">
+<span class="material-symbols-outlined mr-3">redeem</span>
+<span class="text-sm">Tukar Poin</span>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">notifications</span>
+<div class="flex justify-between items-center w-full">
+<span class="text-sm">Notifikasi</span>
+<span class="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">8</span>
+</div>
+</a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-r-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="text-sm">Pengaturan</span>
+</a>
+</nav>
+<!-- Sidebar Footer -->
+<div class="p-4 border-t border-outline-variant bg-surface-container-low">
+<div class="bg-primary-container/10 p-4 rounded-xl mb-4 text-center">
+<p class="text-xs text-primary font-bold">Bersama memilah sampah, bersama jaga bumi.</p>
+</div>
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full border-2 border-primary" data-alt="Professional studio headshot of a friendly Indonesian male administrator in his 30s, wearing a clean formal white shirt with a green lanyard. The background is a clean, out-of-focus office environment with soft natural lighting and a modern, trustworthy corporate feel, high resolution digital photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZiuSPCKMK_7jtK3JGOHdjROV1TJUvGNS4aHbXzifHIsaWx1m1TrA9GFjiSBbIR8wfCWE-HfbR6IA3eZKvyd5G2NGutYsC4FXUzmzVWAxzNGHSPrvXdq_o3OsrPwTncqfcsUoVIRjLAvbbIrCRTz8D_kG0ti1klXAC0UT1B9OIftf2Lxoxz0QQ-_UiObt9Oq4zF2HdA-_0Yj-QkFDaoO47PMIq9NTvF502TLXNNiu0U_zhxYVBe5PImzLPJae_QrfHRUEoZOrClfEP"/>
+<div class="overflow-hidden">
+<p class="text-sm text-on-surface font-bold truncate">Admin Utama</p>
+<p class="text-[10px] text-on-surface-variant">Super Admin</p>
+</div>
+<button class="ml-auto text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[260px] min-h-screen">
+<!-- Header Section -->
+<header class="sticky top-0 h-[72px] bg-white border-b border-outline-variant px-6 flex items-center justify-between z-40">
+<div>
+<h2 class="text-2xl font-semibold text-on-surface">Selamat datang kembali, Admin 👋</h2>
+<p class="text-sm text-on-surface-variant">Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.</p>
+</div>
+<div class="flex items-center gap-6">
+<!-- Role Switcher -->
+<div class="flex items-center gap-2">
+<label class="text-xs font-semibold text-on-surface-variant" for="roleSwitcher">Preview Peran:</label>
+<select class="h-10 text-sm bg-surface-container border-transparent rounded-lg focus:border-primary focus:ring-0" id="roleSwitcher">
+<option value="admin">Admin</option>
+<option value="petugas_kelurahan">Petugas Kelurahan</option>
+<option value="petugas_rt">Petugas RT</option>
+<option value="warga">Warga</option>
+</select>
+</div>
+<!-- Location Picker -->
+<div class="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-lg cursor-pointer hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-primary text-[20px]">location_on</span>
+<span class="text-sm font-semibold text-on-surface">Kecamatan Coblong</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">keyboard_arrow_down</span>
+</div>
+<!-- Icons -->
+<div class="flex items-center gap-4">
+<button class="relative w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-4 h-4 bg-error text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">8</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all">
+<span class="material-symbols-outlined">apps</span>
+</button>
+</div>
+<!-- Profile -->
+<div class="flex items-center gap-3 ml-2 border-l border-outline-variant pl-6">
+<div class="text-right">
+<p class="text-sm font-bold text-on-surface leading-tight">Admin Utama</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Super Admin</p>
+</div>
+<img class="w-10 h-10 rounded-full bg-surface-container-high object-cover" data-alt="Close-up profile avatar of a professional government administrator, Indonesian male, wearing a minimalist modern polo shirt with a subtle recycling logo. Soft studio lighting, bright light mode aesthetic, clean white background, high resolution 8k portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGSjKuvGkGdFv56w1NfN-HakfQCsyxejzA2bEnb6WRApOqQyba6-jqw1oUAPclC_Ugqi7fLl8cx1qQkbrn7ArdIy5EhZL68kyS7l6LR9X6fPZbJa2azK88QzLNf0rJduGiVgJwcuy2h9fukt8MurMaryr5XSH5Wd3Z2JiGlxlMsDTUCwx8iZega-Pi8neRzO7ejfFR4hFK4RihNIRrU_DAPuIv4sm_FiJJ5kIRIFUtHjt-UbPbC6BWin2RwfXFo6Nzb0_YLOelJmU2"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-6 space-y-6">
+<!-- Warga Profile Section -->
+<div class="role-warga-only space-y-6" style="display: none;">
+<div class="glass-card rounded-xl p-6 flex items-center justify-between">
+<div class="flex items-center gap-6">
+<img alt="Profile Warga" class="w-20 h-20 rounded-full border-4 border-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGHADswoikiZDKchds4Oq1dbKUkpYgwECA0UJvoJtDiJtylqGkg8H_jhu7Aw56s9IQqNle4Bi4a_OayuQSa55qjfCVuU_xuzKONyxrYlCoFp-icigzUlPBp1cM07y5h5mzgAMhg2YSDqU_VWuugagzt_vOVHmqBLitvN_MNrM0IsTxwcg9wtCfJopqq1E4vPytW9kzHs16Iba5aPvgKJgfVq9ddAyUuyX6UJEChsvX6AxbdPc9VU0_TL59xqnWRHToN4Dq5TALkoAW"/>
+<div>
+<h3 class="text-2xl font-semibold text-on-surface">Asep Maulana</h3>
+<p class="text-sm text-on-surface-variant">Warga • RW 06 Dago, RT 04</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-semibold">Aktif Memilah</span>
+<span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded font-semibold">Member Gold</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm text-on-surface-variant">Total Poin Anda</p>
+<h2 class="text-4xl font-bold text-amber-500 flex items-center gap-2 justify-end">
+<span class="material-symbols-outlined text-[32px]">stars</span> 12.450
+            </h2>
+</div>
+</div>
+<!-- Warga Dashboard Grid -->
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-8 glass-card rounded-xl p-6">
+<h4 class="text-base font-semibold text-on-surface mb-4">Riwayat Setoran Terbaru</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between border-b border-outline-variant/30 pb-4">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">recycling</span>
+</div>
+<div>
+<p class="text-sm font-semibold">Organik (Kompos)</p>
+<p class="text-xs text-on-surface-variant">Hari ini, 08:30</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">+ 150 Poin</p>
+<p class="text-xs text-on-surface-variant">5.2 kg</p>
+</div>
+</div>
+<div class="flex items-center justify-between border-b border-outline-variant/30 pb-4">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">delete</span>
+</div>
+<div>
+<p class="text-sm font-semibold">Anorganik (Plastik)</p>
+<p class="text-xs text-on-surface-variant">Kemarin, 16:15</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">+ 320 Poin</p>
+<p class="text-xs text-on-surface-variant">2.1 kg</p>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-4 glass-card rounded-xl p-6">
+<h4 class="text-base font-semibold text-on-surface mb-4">Tukar Poin Tersedia</h4>
+<div class="space-y-4">
+<div class="p-4 border border-outline-variant/30 rounded-lg hover:border-primary transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="material-symbols-outlined text-primary">shopping_bag</span>
+<span class="text-xs font-bold text-primary">5.000 Poin</span>
+</div>
+<p class="text-sm font-semibold">Sembako Gratis</p>
+<p class="text-xs text-on-surface-variant">Paket Beras 5kg &amp; Minyak 1L</p>
+<button class="w-full mt-3 h-8 bg-primary text-white text-xs rounded-lg font-semibold hover:bg-primary/90">Tukar</button>
+</div>
+<div class="p-4 border border-outline-variant/30 rounded-lg hover:border-primary transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="material-symbols-outlined text-amber-500">bolt</span>
+<span class="text-xs font-bold text-amber-600">3.000 Poin</span>
+</div>
+<p class="text-sm font-semibold">Token Listrik 20k</p>
+<button class="w-full mt-3 h-8 border border-primary text-primary text-xs rounded-lg font-semibold hover:bg-primary/10">Tukar</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Admin / Petugas KPI Section (6 Cards) -->
+<div class="grid grid-cols-6 gap-6 role-admin-grid role-petugas-grid">
+<!-- KPI 1 -->
+<div class="glass-card p-6 rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">group</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Total Pengguna</p>
+<h3 class="text-2xl font-bold text-on-surface">1.248</h3>
+<div class="flex items-center text-[11px] text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">12.4%</span>
+</div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="glass-card p-6 rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">delete</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Tempat Sampah Aktif</p>
+<h3 class="text-2xl font-bold text-on-surface">324</h3>
+<div class="flex items-center text-[11px] text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">8.7%</span>
+</div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="glass-card p-6 rounded-xl border border-outline-variant/30 flex items-center gap-4 role-admin-flex role-petugas-flex">
+<div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Lokasi Terdaftar</p>
+<h3 class="text-2xl font-bold text-on-surface">469</h3>
+<div class="flex items-center text-[11px] text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">5.3%</span>
+</div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="glass-card p-6 rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Setoran Hari Ini</p>
+<h3 class="text-2xl font-bold text-on-surface">1.236 kg</h3>
+<div class="flex items-center text-[11px] text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">15.6%</span>
+</div>
+</div>
+</div>
+<!-- KPI 5 -->
+<div class="glass-card p-6 rounded-xl border border-outline-variant/30 flex items-center gap-4 role-admin-flex role-petugas-flex">
+<div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Total Poin</p>
+<h3 class="text-2xl font-bold text-on-surface">124.560</h3>
+<div class="flex items-center text-[11px] text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">10.2%</span>
+</div>
+</div>
+</div>
+<!-- KPI 6 -->
+<div class="glass-card p-6 rounded-xl border border-outline-variant/30 flex items-center gap-4 role-admin-flex role-petugas-flex">
+<div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Jadwal Minggu Ini</p>
+<h3 class="text-2xl font-bold text-on-surface">8</h3>
+<div class="flex items-center text-[11px] text-on-surface-variant font-bold">
+<span class="">Kegiatan</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Charts Grid Section (Admin / Petugas) -->
+<div class="flex gap-6 h-[320px] role-admin-flex role-petugas-flex">
+<!-- Trend Chart (50%) -->
+<div class="w-1/2 glass-card rounded-xl p-6 relative overflow-hidden" style="transform: translateY(0px); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-base font-semibold text-on-surface">Trend Setoran Sampah per Minggu <span class="text-xs text-on-surface-variant font-normal">(kg)</span></h4>
+<div class="bg-surface-container px-3 py-1.5 rounded-lg text-xs flex items-center gap-2">
+<span class="">8 Minggu Terakhir</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</div>
+</div>
+<!-- Chart Placeholder -->
+<div class="h-[200px] w-full flex items-end justify-between px-2">
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[40%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 12</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[55%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 13</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[65%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 14</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary rounded-t-lg h-[75%] shadow-lg shadow-primary/20"></div>
+<span class="text-[10px] text-on-surface-variant font-bold">Mng 15</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[70%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 16</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[80%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 17</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[95%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 18</span>
+</div>
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="w-8 bg-primary/20 rounded-t-lg h-[85%] transition-all group-hover:bg-primary/40"></div>
+<span class="text-[10px] text-on-surface-variant">Mng 19</span>
+</div>
+</div>
+</div>
+<!-- Donut Chart (25%) -->
+<div class="w-1/4 glass-card rounded-xl p-6 flex flex-col">
+<h4 class="text-base font-semibold text-on-surface mb-6">Komposisi Sampah</h4>
+<div class="flex-1 flex flex-col items-center justify-center relative">
+<div class="w-32 h-32 rounded-full border-[12px] border-primary-container relative flex items-center justify-center">
+<div class="absolute inset-[-12px] border-[12px] border-secondary-container rounded-full border-t-transparent border-l-transparent"></div>
+<div class="text-center">
+<span class="block text-2xl font-bold text-on-surface">62%</span>
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">Organik</span>
+</div>
+</div>
+<div class="mt-6 w-full space-y-2">
+<div class="flex justify-between items-center text-xs">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<span class="text-on-surface">Organik</span>
+</div>
+<span class="text-on-surface font-bold">2.894 kg (62%)</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-secondary-container"></div>
+<span class="text-on-surface">Non Organik</span>
+</div>
+<span class="text-on-surface font-bold">1.786 kg (38%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Widget (25%) -->
+<div class="w-1/4 glass-card rounded-xl overflow-hidden relative group role-admin-only">
+<div class="absolute top-4 left-4 z-10">
+<h4 class="text-base font-semibold text-on-surface">Peta Kepatuhan Area</h4>
+<p class="text-[10px] text-on-surface-variant">Kec. Coblong / Dago</p>
+</div>
+<div class="absolute top-4 right-4 z-10">
+<button class="bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-lg hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+<div class="w-full h-full bg-surface-container-high bg-cover bg-center" data-alt="A clean, minimalist high-fidelity map of the Dago area in Bandung, Indonesia, rendered in a modern professional GIS style. The map features clear street layouts, green park areas, and several interactive status markers in green and yellow indicating waste facility health. The design is light mode, featuring soft pastels and professional UI mapping aesthetic." data-location="Coblong, Bandung" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDn4DwsQNbvycV73cXNvCnd9hmfECFncMClv0FPcN3VLp0BvjhPEjuJsCLMIz4MxUDpN32TOQc_IunIfNLLUSyBjoReFEE16PrYX8lypXvHY8rTTf6anyN_A83miBTtrveqU59jVCOZCRUi1oUMP_pjCZzAXh3UOHa02yCDVxcpK0xI533bcciJMpiW7qnuqnHGoYDETMaEMcvloKOSOUIkba17naPlprCPNFLKp6tdasJvnvAnwqJ5MNvAcjlMji3QstHFQJrYlRrU')">
+<!-- Simulated Markers -->
+<div class="absolute top-1/2 left-1/3 w-4 h-4 bg-primary rounded-full border-2 border-white animate-pulse"></div>
+<div class="absolute top-1/4 left-1/2 w-4 h-4 bg-primary rounded-full border-2 border-white"></div>
+<div class="absolute bottom-1/3 right-1/4 w-4 h-4 bg-yellow-500 rounded-full border-2 border-white"></div>
+</div>
+<div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-outline-variant shadow-lg">
+<div class="flex justify-between items-center">
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold">Total Lokasi</p>
+<p class="text-sm font-bold text-on-surface">76 Titik RW Aktif</p>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white"><span class="material-symbols-outlined text-[16px]">check</span></div>
+<div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white border-2 border-white font-bold text-[10px]">3</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Tables & Activity Grid -->
+<div class="grid grid-cols-12 gap-6 role-admin-grid role-petugas-grid role-rt-grid">
+<!-- Data Tempat Sampah Terbaru (Visible to Admin, Petugas, RT) -->
+<div class="col-span-5 glass-card rounded-xl p-6" style="transform: translateY(0px); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-base font-semibold text-on-surface">Data Tempat Sampah Terbaru</h4>
+<a class="text-primary text-xs font-bold hover:underline" href="#">Lihat Semua</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-xs text-on-surface-variant border-b border-outline-variant">
+<th class="pb-3 font-bold">ID &amp; Jenis</th>
+<th class="pb-3 font-bold">Pemilik / Lokasi</th>
+<th class="pb-3 font-bold">Status</th>
+<th class="pb-3 font-bold role-rt-only" style="display:none">Aksi</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+<td class="py-3">
+<div class="flex flex-col">
+<span class="font-bold">TS-COB-000324</span>
+<span class="text-[10px] text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">recycling</span> Organik</span>
+</div>
+</td>
+<td class="py-3">
+<div class="flex flex-col">
+<span class="">RW 06 Dago</span>
+<span class="text-[10px] text-on-surface-variant">Jl. Dago Giri No. 10</span>
+</div>
+</td>
+<td class="py-3">
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Aktif</span>
+</td>
+<td class="py-3 role-rt-only" style="display:none">
+<button class="h-8 px-3 bg-primary text-white text-xs rounded shadow hover:bg-primary/90">Reset Volume</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+<td class="py-3">
+<div class="flex flex-col">
+<span class="font-bold">TS-COB-000323</span>
+<span class="text-[10px] text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">delete</span> Non Organik</span>
+</div>
+</td>
+<td class="py-3">
+<div class="flex flex-col">
+<span class="">Kel. Lebakgede</span>
+<span class="text-[10px] text-on-surface-variant">Jl. Lebak Gede No. 21</span>
+</div>
+</td>
+<td class="py-3">
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Aktif</span>
+</td>
+<td class="py-3 role-rt-only" style="display:none">
+<button class="h-8 px-3 bg-primary text-white text-xs rounded shadow hover:bg-primary/90">Reset Volume</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Manajemen Pengguna Terbaru (Visible to Admin, Petugas, RT) -->
+<div class="col-span-4 glass-card rounded-xl p-6">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-base font-semibold text-on-surface">Manajemen Pengguna</h4>
+<a class="text-primary text-xs font-bold hover:underline" href="#">Lihat Semua</a>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer role-admin-flex">
+<img class="w-10 h-10 rounded-full border border-outline-variant" data-alt="A small circular profile avatar of an Indonesian male administrative staff member in a professional uniform. Bright lighting, clean corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBROnzK6rmUZGgZvhgSMmeki_TDGPMh-NFD2_5bHY-C8fj1gm6A5faBvMVS6DOcXkGHUOkg3aPTQYpVhNaB0XvmWe_tvN7Si_vz8pqHEjgSJm0tNs21QUixHrEULn1nRnjszxpyMQq8aDwD01WG2fb22MD5WvUJdhsAhRipbZshOjwwTnhymoc2qB9n-ze7Wc5lhvtJ7PkJn_3iwh22pkIchyZPWIxhrox7GlQ3V5KAd2VbAePH9YAyJXIFarBrDlDdLT-OTmSJHnPG"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface leading-none">Rudi Santoso</p>
+<p class="text-[10px] text-on-surface-variant">Admin • Kec. Coblong</p>
+</div>
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Aktif</span>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer role-admin-flex role-petugas-flex">
+<img class="w-10 h-10 rounded-full border border-outline-variant" data-alt="Small circular profile of a female waste management petugas in a professional green vest. Neutral background, clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8MPjMx7P2Gy0fJtHjElRZoTJglWiaHPw_X9TKuGx9UocQI-QB7tMKAGXtevQnI0LyW0p7p4Omta9GiSL4E3lfLDTlZ9SUddAI-qTzYIG6_974a6oTL-4znxBH6g25_0UCpokT94sS_2XqNUE1kVnyf4zZaPBr7pAMDO860wb9V6HLendeYkfwi9UF_cnT-8Cv0926epimAP-5f9oa9fZYLFUEYEFjGjBLHkQbvfgrxTIurLxy3xufH3DB46eRxmJqUeG4d_tY5g1U"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface leading-none">Siti Nurhaliza</p>
+<p class="text-[10px] text-on-surface-variant">Petugas • Kel. Lebakgede</p>
+</div>
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Aktif</span>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer">
+<img class="w-10 h-10 rounded-full border border-outline-variant" data-alt="Avatar of an Indonesian male citizen wearing casual clothes, clean and friendly profile. Soft natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGHADswoikiZDKchds4Oq1dbKUkpYgwECA0UJvoJtDiJtylqGkg8H_jhu7Aw56s9IQqNle4Bi4a_OayuQSa55qjfCVuU_xuzKONyxrYlCoFp-icigzUlPBp1cM07y5h5mzgAMhg2YSDqU_VWuugagzt_vOVHmqBLitvN_MNrM0IsTxwcg9wtCfJopqq1E4vPytW9kzHs16Iba5aPvgKJgfVq9ddAyUuyX6UJEChsvX6AxbdPc9VU0_TL59xqnWRHToN4Dq5TALkoAW"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface leading-none">Asep Maulana</p>
+<p class="text-[10px] text-on-surface-variant">Warga • RW 06 Dago</p>
+</div>
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Aktif</span>
+</div>
+</div>
+</div>
+<!-- Jadwal Kegiatan (Admin / Petugas) -->
+<div class="col-span-3 glass-card rounded-xl p-6 role-admin-block role-petugas-block role-rt-only" style="display:none;">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-base font-semibold text-on-surface">Jadwal Kegiatan</h4>
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded-lg text-primary hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-[20px]">calendar_add_on</span>
+</button>
+</div>
+<div class="space-y-4">
+<div class="flex gap-4">
+<div class="flex flex-col items-center bg-primary-container/10 rounded-lg px-2 py-1 min-w-[50px] h-fit">
+<span class="text-[10px] font-bold text-primary uppercase">Jum</span>
+<span class="text-lg font-bold text-primary">23</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-on-surface leading-tight">Sosialisasi Pilah Sampah</p>
+<p class="text-[10px] text-on-surface-variant">RW 06 Dago • 08:00</p>
+<span class="inline-block mt-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase">Sosialisasi</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Expanded Community Leaderboard (Admin Only) -->
+<div class="glass-card rounded-xl p-6 mt-6 role-admin-only">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="text-2xl font-semibold text-on-surface">Peringkat Komunitas Lestari</h4>
+<p class="text-sm text-on-surface-variant">Statistik keaktifan pemilahan sampah di 6 Kelurahan, 76 RW, dan 469 RT wilayah Kecamatan Coblong.</p>
+</div>
+<button class="h-12 px-6 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all text-base">
+<span class="material-symbols-outlined">download</span>
+<span class="">Unduh Laporan</span>
+</button>
+</div>
+<div class="grid grid-cols-4 gap-6">
+<!-- Column 1: Top Warga -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">person</span>
+<h5 class="text-base font-semibold">Top Warga</h5>
+</div>
+<div class="space-y-4">
+<!-- Ranked Items -->
+<div class="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-outline-variant/30">
+<span class="w-6 h-6 flex items-center justify-center bg-yellow-400 text-white font-bold rounded-full text-[10px]">1</span>
+<div class="flex-1">
+<p class="text-xs font-bold">Dewi Lestari</p>
+<p class="text-[9px] text-on-surface-variant">RW 06 Dago</p>
+</div>
+<span class="text-primary font-bold text-xs">12.3k</span>
+</div>
+</div>
+</div>
+<!-- Column 2: Top RT -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">neighborhood</span>
+<h5 class="text-base font-semibold">Top RT</h5>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-outline-variant/30">
+<span class="w-6 h-6 flex items-center justify-center bg-yellow-400 text-white font-bold rounded-full text-[10px]">1</span>
+<div class="flex-1">
+<p class="text-xs font-bold">RT 04 / RW 06</p>
+<p class="text-[9px] text-on-surface-variant">Kel. Dago</p>
+</div>
+<span class="text-secondary font-bold text-xs">850 kg</span>
+</div>
+</div>
+</div>
+<!-- Column 3: Top RW -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-amber-600" style="font-variation-settings: 'FILL' 1;">groups</span>
+<h5 class="text-base font-semibold">Top RW</h5>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-outline-variant/30">
+<span class="w-6 h-6 flex items-center justify-center bg-yellow-400 text-white font-bold rounded-full text-[10px]">1</span>
+<div class="flex-1">
+<p class="text-xs font-bold">RW 06 Dago</p>
+<p class="text-[9px] text-on-surface-variant">Total 48 KK Aktif</p>
+</div>
+<span class="text-amber-700 font-bold text-xs">2.4 ton</span>
+</div>
+</div>
+</div>
+<!-- Column 4: Top Kelurahan -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-indigo-600" style="font-variation-settings: 'FILL' 1;">home_work</span>
+<h5 class="text-base font-semibold">Top Kelurahan</h5>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-outline-variant/30">
+<span class="w-6 h-6 flex items-center justify-center bg-yellow-400 text-white font-bold rounded-full text-[10px]">1</span>
+<div class="flex-1">
+<p class="text-xs font-bold">Kel. Dago</p>
+<p class="text-[9px] text-on-surface-variant">Efisiensi 94%</p>
+</div>
+<span class="text-indigo-700 font-bold text-xs">12.5 ton</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="flex justify-between items-center pt-8 pb-12">
+<p class="text-xs text-on-surface-variant">© 2026 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.</p>
+<div class="flex gap-6">
+<a class="text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">Kebijakan Privasi</a>
+<a class="text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">Syarat &amp; Ketentuan</a>
+<a class="text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">Bantuan</a>
+</div>
+</footer>
+</div>
+</main>
+<script>
+    // Role Switcher Logic
+    const roleSwitcher = document.getElementById('roleSwitcher');
+    
+    roleSwitcher.addEventListener('change', (e) => {
+        document.body.setAttribute('data-role', e.target.value);
+    });
+
+    document.querySelectorAll('.glass-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-2px)';
+            card.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+        });
+    });
+
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            navLinks.forEach(l => l.classList.remove('sidebar-active'));
+            navLinks.forEach(l => l.classList.add('text-on-surface-variant'));
+            link.classList.add('sidebar-active');
+            link.classList.remove('text-on-surface-variant');
+        });
+    });
+</script>
+</body></html>

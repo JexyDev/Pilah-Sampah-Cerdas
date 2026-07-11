@@ -7,22 +7,39 @@ import MasterData from '../pages/MasterData/MasterData';
 import Leaderboard from '../pages/Leaderboard/Leaderboard';
 import NotFound from '../pages/NotFound/NotFound';
 
+// Placeholder page component
+const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+    <div className="bg-white/90 p-12 rounded-2xl shadow-sm border border-outline-variant text-center max-w-md">
+      <span className="material-symbols-outlined text-primary text-[64px]" style={{ fontVariationSettings: "'FILL' 1" }}>construction</span>
+      <h2 className="text-[22px] font-bold text-on-surface mt-4">{title}</h2>
+      <p className="text-[14px] text-on-surface-variant mt-2">Halaman ini sedang dalam tahap pengembangan. Fitur akan segera tersedia.</p>
+    </div>
+  </div>
+);
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<MainLayout />}>
-        {/* Halaman utama */}
         <Route index element={<Dashboard />} />
-        
         <Route path="monitoring" element={<Monitoring />} />
         <Route path="master-data" element={<MasterData />} />
-        <Route path="peta" element={<div>Halaman Peta Wilayah</div>} />
         <Route path="warga-tong" element={<MasterData />} />
         <Route path="leaderboard" element={<Leaderboard />} />
-        <Route path="evaluasi-ai" element={<div>Halaman Evaluasi AI</div>} />
-        <Route path="notifikasi" element={<div>Halaman Notifikasi</div>} />
-        <Route path="lainnya" element={<div>Menu Lainnya (Mobile)</div>} />
-        
+        <Route path="manajemen-pengguna" element={<PlaceholderPage title="Manajemen Pengguna" />} />
+        <Route path="manajemen-tempat-sampah" element={<PlaceholderPage title="Manajemen Tempat Sampah" />} />
+        <Route path="manajemen-lokasi" element={<PlaceholderPage title="Manajemen Lokasi" />} />
+        <Route path="jadwal-kegiatan" element={<PlaceholderPage title="Jadwal Kegiatan" />} />
+        <Route path="kategori-sampah" element={<PlaceholderPage title="Kategori Sampah" />} />
+        <Route path="rekap-setoran" element={<PlaceholderPage title="Rekap Setoran" />} />
+        <Route path="poin-warga" element={<PlaceholderPage title="Poin Warga" />} />
+        <Route path="laporan-analitik" element={<PlaceholderPage title="Laporan & Analitik" />} />
+        <Route path="notifikasi" element={<PlaceholderPage title="Notifikasi" />} />
+        <Route path="pengaturan" element={<PlaceholderPage title="Pengaturan" />} />
+        <Route path="peta" element={<PlaceholderPage title="Peta Wilayah" />} />
+        <Route path="evaluasi-ai" element={<PlaceholderPage title="Evaluasi AI" />} />
+        <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

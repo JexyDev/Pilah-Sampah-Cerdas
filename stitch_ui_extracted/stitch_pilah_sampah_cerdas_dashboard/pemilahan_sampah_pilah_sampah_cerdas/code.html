@@ -1,0 +1,509 @@
+<!DOCTYPE html><html lang="id" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed-dim": "#61de8a",
+                      "tertiary-fixed-dim": "#accbe0",
+                      "surface-tint": "#006d37",
+                      "outline": "#6d7a6e",
+                      "tertiary-fixed": "#c8e7fd",
+                      "surface-dim": "#d8dadd",
+                      "primary-fixed": "#7efba4",
+                      "primary": "#006d37",
+                      "on-error": "#ffffff",
+                      "surface-container-highest": "#e0e3e6",
+                      "on-tertiary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-container": "#143444",
+                      "surface": "#f7f9fc",
+                      "on-tertiary-fixed-variant": "#2c4a5c",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#cce5ff",
+                      "inverse-surface": "#2d3133",
+                      "background": "#f7f9fc",
+                      "surface-container-low": "#f2f4f7",
+                      "secondary-container": "#5cb8fd",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#e6e8eb",
+                      "on-surface-variant": "#3d4a3f",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e0e3e6",
+                      "on-tertiary-fixed": "#001e2d",
+                      "on-secondary-fixed-variant": "#004b73",
+                      "on-primary-fixed-variant": "#005228",
+                      "inverse-on-surface": "#eff1f4",
+                      "on-secondary-fixed": "#001d31",
+                      "surface-bright": "#f7f9fc",
+                      "primary-container": "#27ae60",
+                      "on-surface": "#191c1e",
+                      "inverse-primary": "#61de8a",
+                      "on-background": "#191c1e",
+                      "secondary": "#006397",
+                      "tertiary": "#446274",
+                      "secondary-fixed-dim": "#92ccff",
+                      "tertiary-container": "#7e9cb0",
+                      "on-primary-fixed": "#00210c",
+                      "on-secondary-container": "#00476e",
+                      "surface-container": "#eceef1",
+                      "outline-variant": "#bccabc",
+                      "on-primary-container": "#00391a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-md": "12px",
+                      "sidebar-width": "260px",
+                      "container-margin": "24px",
+                      "stack-sm": "8px",
+                      "card-padding": "20px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-xl": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "data-display": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-xl": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "data-display": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    }catch(_e){}</script></head><body class="font-body-md text-body-md text-on-surface bg-background">
+
+    <!-- Shell Container -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- SideNavBar -->
+        <nav class="hidden md:flex w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col h-full py-container-margin z-50">
+            <!-- Header -->
+            <div class="px-container-margin mb-8 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL1a9Aui95udPXPplt3gCQ4pYjEnPD8x-jbVP6Gg3MISXvm6_hgJxMhzDu1AjG_VZYirS_j_OTqZ5jogH2MtcBj6iGGRY5xJXMLndZg4x9EvW1KSgQousNQh1X-WYsZXppKBUpd_2gL850lEuzWbB9VyV5aDeaRg3wCKXt7Dp4KJfBUJzYH354MHlrSMNem_BprnTJzP5tSzHJuJq12iyVwMM-ICiLSMpfhah0ChFGZsGUmi7PGddxoBVwI4ky5wVGt_7s9JVfqi-1" alt="Pilah Sampah Cerdas Logo" class="w-full h-full object-contain"></div>
+                <div>
+                    <h1 class="text-headline-md font-bold text-primary truncate">Pilah Sampah Cerdas</h1>
+                    <p class="font-label-sm text-label-sm text-on-surface-variant truncate">Sampah Terdata, Lingkungan Tertata</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-1">
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">dashboard</span>
+                    <span class="font-label-md text-label-md">Dashboard</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">group</span>
+                    <span class="font-label-md text-label-md">Manajemen Pengguna</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">delete</span>
+                    <span class="font-label-md text-label-md">Manajemen Tempat Sampah</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">location_on</span>
+                    <span class="font-label-md text-label-md">Manajemen Lokasi</span>
+                </a>
+                
+                <!-- Active Tab -->
+                <a href="#" class="bg-secondary-fixed text-on-secondary-fixed-variant border-l-4 border-secondary font-bold flex items-center px-4 py-3 rounded-r-lg">
+                    <span class="material-symbols-outlined mr-3 text-secondary filled">recycling</span>
+                    <span class="font-label-md text-label-md">Pemilahan Sampah</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">auto_awesome</span>
+                    <span class="font-label-md text-label-md">Pemanfaatan Sampah</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">calendar_today</span>
+                    <span class="font-label-md text-label-md">Jadwal Kegiatan</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">category</span>
+                    <span class="font-label-md text-label-md">Kategori Sampah</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">receipt_long</span>
+                    <span class="font-label-md text-label-md">Rekap Setoran</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">stars</span>
+                    <span class="font-label-md text-label-md">Poin Warga</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">analytics</span>
+                    <span class="font-label-md text-label-md">Laporan &amp; Analitik</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">notifications</span>
+                    <span class="font-label-md text-label-md">Notifikasi</span>
+                </a>
+                
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-on-surface transition-colors">settings</span>
+                    <span class="font-label-md text-label-md">Pengaturan</span>
+                </a>
+            </div>
+
+            <!-- CTA / Info -->
+            <div class="px-4 mt-4">
+                <div class="bg-surface-container-low rounded-lg p-4">
+                    <p class="font-label-sm text-label-sm text-primary text-center">Bersama memilah sampah, bersama jaga bumi.</p>
+                </div>
+            </div>
+
+            <!-- Footer Tab -->
+            <div class="px-3 mt-4 pt-4 border-t border-outline-variant">
+                <a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 group">
+                    <span class="material-symbols-outlined mr-3">account_circle</span>
+                    <span class="font-label-md text-label-md">Admin Utama</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- TopNavBar -->
+        <header class="h-[56px] w-full md:w-[calc(100%-260px)] fixed top-0 right-0 z-40 bg-surface-container-lowest shadow-sm flex justify-between items-center px-gutter">
+            <!-- Mobile Menu Toggle (Visible only on small screens) -->
+            <button class="md:hidden p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            
+            <div class="flex items-center gap-2">
+                <span class="font-headline-md text-headline-md text-primary font-semibold hidden md:block">Dashboard</span>
+                <span class="text-outline-variant hidden md:block">/</span>
+                <span class="font-label-md text-label-md text-on-surface-variant font-medium">Kecamatan Coblong</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors relative cursor-pointer active:opacity-80">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+                </button>
+                <button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors cursor-pointer active:opacity-80">
+                    <span class="material-symbols-outlined">apps</span>
+                </button>
+                <div class="h-6 w-px bg-outline-variant mx-2"></div>
+                <button class="flex items-center gap-2 hover:bg-surface-container-low p-1.5 rounded-lg transition-colors cursor-pointer active:opacity-80">
+                    <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-label-sm">
+                        AU
+                    </div>
+                    <span class="font-label-md text-label-md text-primary hidden sm:block">Admin Utama</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="w-full md:ml-[260px] mt-[56px] h-[calc(100vh-56px)] overflow-y-auto flex flex-col">
+            
+            <div class="flex-1 p-container-margin">
+                
+                <!-- Page Header -->
+                <div class="mb-6">
+                    <h2 class="font-headline-xl text-headline-xl text-on-surface">Pencatatan Pemilahan Sampah</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant mt-1">Catat transaksi setoran sampah warga untuk dikonversi menjadi poin.</p>
+                </div>
+
+                <!-- Main Grid Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+                    
+                    <!-- Left Column: Transaction Form (Bento/Card Style) -->
+                    
+
+                    <!-- Right Column: Data Table -->
+                    <div class="col-span-1 flex flex-col h-full lg:col-span-12">
+                        
+                        <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden flex flex-col h-full">
+                            
+                            <!-- Table Header & Controls -->
+                            <div class="p-card-padding border-b border-outline-variant bg-surface-bright flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <h3 class="font-headline-md text-headline-md text-on-surface">Daftar Setoran Hari Ini</h3>
+                                    <p class="font-body-md text-body-md text-on-surface-variant text-sm mt-1">Total: 45 transaksi, 120 Kg Organik, 80 Kg Anorganik</p>
+                                </div>
+                                
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <div class="relative w-full sm:w-64">
+                                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                                        <input type="text" class="w-full pl-9 pr-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md text-body-md text-sm placeholder-on-surface-variant/50" placeholder="Cari nama atau NIK...">
+                                    </div>
+                                    <button class="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-center" title="Filter">
+                                        <span class="material-symbols-outlined text-[20px]">filter_list</span>
+                                    </button>
+                                    <button class="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-center" title="Unduh Laporan">
+                                        <span class="material-symbols-outlined text-[20px]">download</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Table Content (Scrollable) -->
+                            <div class="flex-1 overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse min-w-[800px]">
+                                    <thead class="bg-surface sticky top-0 z-10 border-b border-outline-variant">
+                                        <tr>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Waktu</th><th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">FOTO</th>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Warga (NIK)</th>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Jenis</th>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Berat (Kg)</th>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Poin</th>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-center">Status</th>
+                                            <th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+                                        
+                                        <!-- Row 1 -->
+                                        <tr class="hover:bg-surface-bright transition-colors group">
+                                            <td class="py-3 px-4 whitespace-nowrap text-on-surface-variant">09:45 WIB</td><td class="py-3 px-4"><div class="w-10 h-8 rounded overflow-hidden border border-outline-variant"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3vQs7wNNoKD3Y4HtB6w92reIGsMkixNgFE6oNW8c8ONDEjtCI9DXpfaXHLko__zWUl9QqxsWILbMgj9AVC65ALs7vtNqRlJS8Z-UZEphclzpgI8jbPRUKDeEAKeIRzVSTVEfS5PFjeLlODP6mFOJX0yVFvwLPNllaDfO09RW6ueYcetktQvCokNtUW5SXaT4APS1lCQ6lMGfY5U7gslLK2Jre3LhxeE8CWCkETMiioNCU9Ru9S4TAsJFW4XREdC3svSXV52PVhsqw" class="w-full h-full object-cover" alt="Trash Photo"></div></td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-medium text-on-surface">Budi Antoro</div>
+                                                <div class="text-xs text-on-surface-variant">327310...</div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/20 text-primary-fixed-dim text-xs font-medium border border-primary-fixed/30">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-primary-fixed-dim"></span> Organik
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-medium">2.0</td>
+                                            <td class="py-3 px-4 text-right text-primary font-medium">+200</td>
+                                            <td class="py-3 px-4 text-center">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-fixed/20 text-primary-fixed-dim text-[11px] font-bold tracking-wide uppercase">Berhasil</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                                    <span class="material-symbols-outlined text-[20px]">more_vert</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Row 2 -->
+                                        <tr class="hover:bg-surface-bright transition-colors group">
+                                            <td class="py-3 px-4 whitespace-nowrap text-on-surface-variant">09:30 WIB</td><td class="py-3 px-4"><div class="w-10 h-8 rounded overflow-hidden border border-outline-variant"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3vQs7wNNoKD3Y4HtB6w92reIGsMkixNgFE6oNW8c8ONDEjtCI9DXpfaXHLko__zWUl9QqxsWILbMgj9AVC65ALs7vtNqRlJS8Z-UZEphclzpgI8jbPRUKDeEAKeIRzVSTVEfS5PFjeLlODP6mFOJX0yVFvwLPNllaDfO09RW6ueYcetktQvCokNtUW5SXaT4APS1lCQ6lMGfY5U7gslLK2Jre3LhxeE8CWCkETMiioNCU9Ru9S4TAsJFW4XREdC3svSXV52PVhsqw" class="w-full h-full object-cover" alt="Trash Photo"></div></td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-medium text-on-surface">Siti Rahmawati</div>
+                                                <div class="text-xs text-on-surface-variant">327310...</div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary-fixed/20 text-secondary border border-secondary/20 text-xs font-medium">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Anorganik
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-medium">1.5</td>
+                                            <td class="py-3 px-4 text-right text-primary font-medium">+300</td>
+                                            <td class="py-3 px-4 text-center">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-fixed/20 text-primary-fixed-dim text-[11px] font-bold tracking-wide uppercase">Berhasil</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                                    <span class="material-symbols-outlined text-[20px]">more_vert</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Row 3 (Pending style example) -->
+                                        <tr class="hover:bg-surface-bright transition-colors group">
+                                            <td class="py-3 px-4 whitespace-nowrap text-on-surface-variant">09:15 WIB</td><td class="py-3 px-4"><div class="w-10 h-8 rounded overflow-hidden border border-outline-variant"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3vQs7wNNoKD3Y4HtB6w92reIGsMkixNgFE6oNW8c8ONDEjtCI9DXpfaXHLko__zWUl9QqxsWILbMgj9AVC65ALs7vtNqRlJS8Z-UZEphclzpgI8jbPRUKDeEAKeIRzVSTVEfS5PFjeLlODP6mFOJX0yVFvwLPNllaDfO09RW6ueYcetktQvCokNtUW5SXaT4APS1lCQ6lMGfY5U7gslLK2Jre3LhxeE8CWCkETMiioNCU9Ru9S4TAsJFW4XREdC3svSXV52PVhsqw" class="w-full h-full object-cover" alt="Trash Photo"></div></td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-medium text-on-surface">Ahmad Dahlan</div>
+                                                <div class="text-xs text-on-surface-variant">327310...</div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/20 text-primary-fixed-dim text-xs font-medium border border-primary-fixed/30">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-primary-fixed-dim"></span> Organik
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-medium">5.0</td>
+                                            <td class="py-3 px-4 text-right text-primary font-medium">+500</td>
+                                            <td class="py-3 px-4 text-center">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant text-[11px] font-bold tracking-wide uppercase border border-outline-variant">Diproses</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                                    <span class="material-symbols-outlined text-[20px]">more_vert</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 4 -->
+                                        <tr class="hover:bg-surface-bright transition-colors group">
+                                            <td class="py-3 px-4 whitespace-nowrap text-on-surface-variant">08:50 WIB</td><td class="py-3 px-4"><div class="w-10 h-8 rounded overflow-hidden border border-outline-variant"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3vQs7wNNoKD3Y4HtB6w92reIGsMkixNgFE6oNW8c8ONDEjtCI9DXpfaXHLko__zWUl9QqxsWILbMgj9AVC65ALs7vtNqRlJS8Z-UZEphclzpgI8jbPRUKDeEAKeIRzVSTVEfS5PFjeLlODP6mFOJX0yVFvwLPNllaDfO09RW6ueYcetktQvCokNtUW5SXaT4APS1lCQ6lMGfY5U7gslLK2Jre3LhxeE8CWCkETMiioNCU9Ru9S4TAsJFW4XREdC3svSXV52PVhsqw" class="w-full h-full object-cover" alt="Trash Photo"></div></td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-medium text-on-surface">Diana Kusuma</div>
+                                                <div class="text-xs text-on-surface-variant">327310...</div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary-fixed/20 text-secondary border border-secondary/20 text-xs font-medium">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Anorganik
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-medium">0.8</td>
+                                            <td class="py-3 px-4 text-right text-primary font-medium">+160</td>
+                                            <td class="py-3 px-4 text-center">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-fixed/20 text-primary-fixed-dim text-[11px] font-bold tracking-wide uppercase">Berhasil</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                                    <span class="material-symbols-outlined text-[20px]">more_vert</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 5 -->
+                                        <tr class="hover:bg-surface-bright transition-colors group border-b-transparent">
+                                            <td class="py-3 px-4 whitespace-nowrap text-on-surface-variant">08:30 WIB</td><td class="py-3 px-4"><div class="w-10 h-8 rounded overflow-hidden border border-outline-variant"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3vQs7wNNoKD3Y4HtB6w92reIGsMkixNgFE6oNW8c8ONDEjtCI9DXpfaXHLko__zWUl9QqxsWILbMgj9AVC65ALs7vtNqRlJS8Z-UZEphclzpgI8jbPRUKDeEAKeIRzVSTVEfS5PFjeLlODP6mFOJX0yVFvwLPNllaDfO09RW6ueYcetktQvCokNtUW5SXaT4APS1lCQ6lMGfY5U7gslLK2Jre3LhxeE8CWCkETMiioNCU9Ru9S4TAsJFW4XREdC3svSXV52PVhsqw" class="w-full h-full object-cover" alt="Trash Photo"></div></td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-medium text-on-surface">Agus Riyanto</div>
+                                                <div class="text-xs text-on-surface-variant">327310...</div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/20 text-primary-fixed-dim text-xs font-medium border border-primary-fixed/30">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-primary-fixed-dim"></span> Organik
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-medium">3.5</td>
+                                            <td class="py-3 px-4 text-right text-primary font-medium">+350</td>
+                                            <td class="py-3 px-4 text-center">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-fixed/20 text-primary-fixed-dim text-[11px] font-bold tracking-wide uppercase">Berhasil</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                                    <span class="material-symbols-outlined text-[20px]">more_vert</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="p-4 border-t border-outline-variant bg-surface-lowest flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div class="text-sm text-on-surface-variant">
+                                    Menampilkan <span class="font-medium text-on-surface">1</span> - <span class="font-medium text-on-surface">5</span> dari <span class="font-medium text-on-surface">45</span> data
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant disabled:opacity-50 hover:bg-surface-container-low transition-colors" disabled="">
+                                        <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+                                    </button>
+                                    <button class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container font-label-md transition-colors">1</button>
+                                    <button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">2</button>
+                                    <button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">3</button>
+                                    <span class="px-1 text-on-surface-variant">...</span>
+                                    <button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">9</button>
+                                    <button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                                        <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="w-full py-4 flex justify-between items-center px-container-margin bg-transparent mt-auto border-t border-outline-variant/30">
+                <div class="font-label-sm text-label-sm text-on-surface-variant">
+                    © 2025 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="#" class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors">Kebijakan Privasi</a>
+                    <a href="#" class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors">Syarat &amp; Ketentuan</a>
+                    </div></footer></main></div>
+
+</body></html>

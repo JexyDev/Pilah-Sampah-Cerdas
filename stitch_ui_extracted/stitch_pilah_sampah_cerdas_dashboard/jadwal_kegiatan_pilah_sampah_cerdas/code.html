@@ -1,0 +1,447 @@
+<!DOCTYPE html><html lang="id" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed-dim": "#61de8a",
+                      "tertiary-fixed-dim": "#accbe0",
+                      "surface-tint": "#006d37",
+                      "outline": "#6d7a6e",
+                      "tertiary-fixed": "#c8e7fd",
+                      "surface-dim": "#d8dadd",
+                      "primary-fixed": "#7efba4",
+                      "primary": "#006d37",
+                      "on-error": "#ffffff",
+                      "surface-container-highest": "#e0e3e6",
+                      "on-tertiary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-container": "#143444",
+                      "surface": "#f7f9fc",
+                      "on-tertiary-fixed-variant": "#2c4a5c",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#cce5ff",
+                      "inverse-surface": "#2d3133",
+                      "background": "#f7f9fc",
+                      "surface-container-low": "#f2f4f7",
+                      "secondary-container": "#5cb8fd",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#e6e8eb",
+                      "on-surface-variant": "#3d4a3f",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e0e3e6",
+                      "on-tertiary-fixed": "#001e2d",
+                      "on-secondary-fixed-variant": "#004b73",
+                      "on-primary-fixed-variant": "#005228",
+                      "inverse-on-surface": "#eff1f4",
+                      "on-secondary-fixed": "#001d31",
+                      "surface-bright": "#f7f9fc",
+                      "primary-container": "#27ae60",
+                      "on-surface": "#191c1e",
+                      "inverse-primary": "#61de8a",
+                      "on-background": "#191c1e",
+                      "secondary": "#006397",
+                      "tertiary": "#446274",
+                      "secondary-fixed-dim": "#92ccff",
+                      "tertiary-container": "#7e9cb0",
+                      "on-primary-fixed": "#00210c",
+                      "on-secondary-container": "#00476e",
+                      "surface-container": "#eceef1",
+                      "outline-variant": "#bccabc",
+                      "on-primary-container": "#00391a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-md": "12px",
+                      "sidebar-width": "260px",
+                      "container-margin": "24px",
+                      "stack-sm": "8px",
+                      "card-padding": "20px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-xl": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "data-display": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-xl": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "data-display": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      }catch(_e){}</script><meta charset="utf-8"></head><body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-container-margin z-20">
+<div class="px-container-margin mb-8 flex flex-col gap-2">
+<div class="font-headline-md font-bold text-primary flex items-center gap-2">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj6WWNRQvO_iWwwSiLWjxb9s4CB0XnOzCeN8svPrPKWHJsI47eU2kAlO2-DEZBWBBTAgTjg-Q-hcZHMAS0DHly28lnV6MvhCk3B0ckM2RmlCH7YgT4qUHDynf2tah4_Q5UQY8D9rUbrDWCXQLKnLqPUt82lKPV111Vze--0H4l54dKXwNerb4cP-vwmztmQP3bO-_KBLb3ugblFUmZ35Fq2C67FFWA8feLPM-kVPEVncQ_iH3FnPjtT1xau3rBjsal1guknzodVyu3" alt="Pilah Sampah Cerdas Logo" class="w-8 h-8 object-contain bg-transparent">
+                Pilah Sampah Cerdas
+            </div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Sampah Terdata, Lingkungan Tertata</p>
+</div>
+<div class="flex-1 overflow-y-auto px-4 flex flex-col gap-1">
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-label-md text-label-md">Manajemen Pengguna</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">delete</span>
+<span class="font-label-md text-label-md">Manajemen Tempat Sampah</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">location_on</span>
+<span class="font-label-md text-label-md">Manajemen Lokasi</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">recycling</span>
+<span class="font-label-md text-label-md">Pemilahan Sampah</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+<span class="font-label-md text-label-md">Pemanfaatan Sampah</span>
+</a>
+<a href="#" class="bg-secondary-fixed text-on-secondary-fixed-variant border-l-4 border-secondary font-bold flex items-center px-4 py-3 rounded-r-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-md text-label-md">Jadwal Kegiatan</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">category</span>
+<span class="font-label-md text-label-md">Kategori Sampah</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">receipt_long</span>
+<span class="font-label-md text-label-md">Rekap Setoran</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">stars</span>
+<span class="font-label-md text-label-md">Poin Warga</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="font-label-md text-label-md">Laporan &amp; Analitik</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">notifications</span>
+<span class="font-label-md text-label-md">Notifikasi</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-label-md text-label-md">Pengaturan</span>
+</a>
+</div>
+<div class="mt-auto px-4 pt-4 border-t border-outline-variant">
+<div class="p-4 bg-surface-container-low rounded-lg mb-4">
+<p class="font-label-sm text-label-sm text-primary mb-2">Bersama memilah sampah, bersama jaga bumi.</p>
+</div>
+<a href="#" class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 flex items-center px-4 py-3 rounded-lg scale-98 active:scale-95 transition-transform">
+<span class="material-symbols-outlined mr-3">account_circle</span>
+<span class="font-label-md text-label-md">Admin Utama</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="ml-[260px] flex-1 flex flex-col h-screen">
+<!-- TopNavBar -->
+<header class="h-[56px] w-full bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-gutter z-10 shadow-sm shrink-0">
+<div class="font-headline-md text-primary font-semibold"><div class="flex items-center gap-2"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj6WWNRQvO_iWwwSiLWjxb9s4CB0XnOzCeN8svPrPKWHJsI47eU2kAlO2-DEZBWBBTAgTjg-Q-hcZHMAS0DHly28lnV6MvhCk3B0ckM2RmlCH7YgT4qUHDynf2tah4_Q5UQY8D9rUbrDWCXQLKnLqPUt82lKPV111Vze--0H4l54dKXwNerb4cP-vwmztmQP3bO-_KBLb3ugblFUmZ35Fq2C67FFWA8feLPM-kVPEVncQ_iH3FnPjtT1xau3rBjsal1guknzodVyu3" alt="Logo" class="w-8 h-8 object-contain bg-transparent"><span class="">Jadwal Kegiatan</span></div></div>
+<div class="flex items-center gap-4">
+<span class="font-label-md text-label-md text-on-surface-variant">Kecamatan Coblong</span>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">apps</span>
+</button>
+<div class="flex items-center gap-2 ml-2 cursor-pointer">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A small, professional circular avatar portrait of an administrative user, simple grey background, clear lighting, neutral expression, highly detailed, realistic, corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibjYN2ks_g0EHCIOE9LfXcFnkt9bXJnCTLmAuU6ersjM7X8V8qPFy8d0S5lVhiuyMfKOZYMWvWjzL_Q9LxpW60DIpPsH3IC2dmEuh7aBmqLXSbiQzjjw1wljBRqbaw3zetiQVyXXS97_3mQkvRW1s1JJSfLwIujJZsqvh2kVSMdLxfvD4mXl_nt41pmv4pxr-tJYqqUe3o4rqSLAqZtibgPrIC-zjsMMxgPTXIQtAMzdghz77rqiSbqRzoWP6qMGWhHUPKBsrVKAk">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Admin Utama</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-hidden flex bg-background p-container-margin gap-gutter relative">
+<!-- Calendar Section -->
+<div class="flex-1 flex flex-col bg-surface-container-lowest rounded-xl shadow-ambient overflow-hidden">
+<!-- Calendar Header -->
+<div class="p-card-padding border-b border-outline-variant flex justify-between items-center shrink-0">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Oktober 2023</h2>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="font-label-md text-label-md px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">Hari Ini</button>
+<button class="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-surface-tint transition-colors active:scale-95 transform" id="btn-buat-jadwal">
+<span class="material-symbols-outlined text-sm">add</span>
+                        Buat Jadwal Baru
+                    </button>
+</div>
+<!-- Calendar Grid -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- Days Header -->
+<div class="grid grid-cols-7 border-b border-outline-variant shrink-0">
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant">Senin</div>
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant">Selasa</div>
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant">Rabu</div>
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant">Kamis</div>
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant">Jumat</div>
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant text-error">Sabtu</div>
+<div class="py-2 text-center font-label-sm text-label-sm text-on-surface-variant text-error">Minggu</div>
+</div>
+<!-- Days Grid -->
+<div class="flex-1 grid grid-cols-7 grid-rows-5 bg-outline-variant gap-[1px]">
+<!-- Row 1 -->
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface-variant mb-1">25</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface-variant mb-1">26</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface-variant mb-1">27</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface-variant mb-1">28</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface-variant mb-1">29</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-error opacity-50 mb-1">30</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-error opacity-50 mb-1">1</div>
+<div class="mt-1 bg-primary-container/20 border border-primary-container text-primary-container text-[10px] font-semibold px-1 rounded truncate w-full" title="Pengangkutan RW 06">Pengangkutan RW 06</div>
+</div>
+<!-- More rows would go here, simulating active day -->
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface mb-1">2</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface mb-1">3</div>
+<div class="mt-1 bg-secondary/20 border border-secondary text-secondary text-[10px] font-semibold px-1 rounded truncate w-full" title="Workshop Kompos">Workshop Kompos</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface mb-1">4</div>
+</div>
+<div class="bg-surface-container-lowest p-2 bg-secondary-fixed/30 border-2 border-secondary cursor-pointer relative shadow-sm">
+<div class="absolute top-1 left-1 w-2 h-2 rounded-full bg-secondary py-0.5"></div>
+<div class="text-right font-label-md text-label-md text-on-surface font-bold mb-1 py-0.5">5</div>
+<div class="flex flex-col gap-1 mt-1">
+<div class="bg-primary-container/20 border border-primary-container text-primary-container text-[10px] font-semibold px-1 rounded truncate w-full py-0.5">Pengangkutan RW 04</div>
+<div class="bg-tertiary/20 border border-tertiary text-tertiary text-[10px] font-semibold px-1 rounded truncate w-full py-0.5">Sosialisasi Warga</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-on-surface mb-1">6</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-error mb-1">7</div>
+</div>
+<div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="text-right font-label-md text-label-md text-error mb-1">8</div>
+</div>
+<!-- Row 3 --><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">9</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">10</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">11</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">12</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">13</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-error mb-1">14</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-error mb-1">15</div></div><!-- Row 4 --><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">16</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">17</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">18</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">19</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">20</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-error mb-1">21</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-error mb-1">22</div></div><!-- Row 5 --><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">23</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">24</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">25</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">26</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-on-surface mb-1">27</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-error mb-1">28</div></div><div class="bg-surface-container-lowest p-2 hover:bg-surface-container-low transition-colors cursor-pointer group"><div class="text-right font-label-md text-label-md text-error mb-1">29</div></div></div>
+</div>
+</div>
+<!-- Right Sidebar: Details -->
+<aside class="w-[320px] bg-surface-container-lowest rounded-xl shadow-ambient flex flex-col shrink-0 overflow-hidden transition-all">
+<div class="p-card-padding border-b border-outline-variant bg-surface-container-low/50">
+<h3 class="font-headline-md text-headline-md text-on-surface">Detail Kegiatan Hari Ini</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Kamis, 5 Oktober 2023</p>
+</div>
+<div class="p-card-padding flex-1 overflow-y-auto flex flex-col gap-4">
+<!-- Event Item 1 -->
+<div class="p-3 border border-outline-variant rounded-lg bg-surface hover:border-primary-container transition-colors cursor-pointer group relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<div class="flex justify-between items-start mb-2 pl-2">
+<span class="bg-primary-container/20 text-primary-container font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Pengangkutan</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> 08:00 - 11:00</span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1 pl-2">Pengangkutan Sampah Organik RW 04</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 pl-2"><span class="material-symbols-outlined text-[14px]">location_on</span> TPS RW 04, Jl. Merpati</p>
+</div>
+<!-- -->
+<div class="p-3 border border-outline-variant rounded-lg bg-surface hover:border-tertiary transition-colors cursor-pointer group relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+<div class="flex justify-between items-start mb-2 pl-2">
+<span class="bg-tertiary/20 text-tertiary font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Sosialisasi</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> 13:00 - 15:00</span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1 pl-2">Sosialisasi Pemilahan Sampah 3R</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 pl-2"><span class="material-symbols-outlined text-[14px]">location_on</span> Balai Warga RW 04</p>
+</div>
+<!-- Empty State for later in day -->
+<div class="mt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-lg text-center opacity-70">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2">event_available</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Tidak ada kegiatan lain dijadwalkan hari ini.</p>
+</div>
+</div>
+</aside>
+<!-- Modal Overlay (Placeholder) -->
+<div class="absolute inset-0 bg-on-surface/30 backdrop-blur-sm z-50 flex items-center justify-center hidden" id="modal-overlay">
+<div class="bg-surface-container-lowest rounded-xl shadow-modal w-[480px] max-w-[90%] overflow-hidden flex flex-col transform scale-95 opacity-0 transition-all duration-200" id="modal-content">
+<div class="p-card-padding border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50">
+<h3 class="font-headline-md text-headline-md text-on-surface">Buat Jadwal Baru</h3>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors" id="btn-close-modal">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-card-padding flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Judul Kegiatan</label>
+<input class="w-full border border-outline-variant rounded-md px-3 py-2 font-body-md focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-shadow" placeholder="Contoh: Pengangkutan RW 01" type="text">
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Tanggal</label>
+<input class="w-full border border-outline-variant rounded-md px-3 py-2 font-body-md focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-shadow" type="date">
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Waktu</label>
+<input class="w-full border border-outline-variant rounded-md px-3 py-2 font-body-md focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-shadow" type="time">
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Kategori</label>
+<select class="w-full border border-outline-variant rounded-md px-3 py-2 font-body-md focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-shadow bg-surface-container-lowest">
+<option>Pengangkutan</option>
+<option>Sosialisasi</option>
+<option>Workshop</option>
+<option>Validasi Data</option>
+</select>
+</div>
+</div>
+<div class="p-card-padding border-t border-outline-variant flex justify-end gap-3 bg-surface">
+<button class="font-label-md text-label-md text-on-surface-variant px-4 py-2 rounded-lg hover:bg-surface-container-high transition-colors" id="btn-cancel-modal">Batal</button>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg hover:bg-surface-tint transition-colors">Simpan Jadwal</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Simple Modal Logic
+        const btnBuatJadwal = document.getElementById('btn-buat-jadwal');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const btnCancelModal = document.getElementById('btn-cancel-modal');
+
+        function openModal() {
+            modalOverlay.classList.remove('hidden');
+            // Trigger reflow for animation
+            void modalContent.offsetWidth;
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 200);
+        }
+
+        btnBuatJadwal.addEventListener('click', openModal);
+        btnCloseModal.addEventListener('click', closeModal);
+        btnCancelModal.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if(e.target === modalOverlay) closeModal();
+        });
+    </script>
+
+</body></html>

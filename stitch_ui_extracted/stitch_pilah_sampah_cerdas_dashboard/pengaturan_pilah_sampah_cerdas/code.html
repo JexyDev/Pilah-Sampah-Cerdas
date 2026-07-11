@@ -1,0 +1,453 @@
+<!DOCTYPE html><html class="light" lang="id" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Pengaturan - Pilah Sampah Cerdas</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e0e3e6",
+                        "tertiary-fixed": "#c8e7fd",
+                        "on-secondary-container": "#00476e",
+                        "surface-container": "#eceef1",
+                        "surface": "#f7f9fc",
+                        "primary-fixed": "#7efba4",
+                        "inverse-on-surface": "#eff1f4",
+                        "surface-container-low": "#f2f4f7",
+                        "surface-variant": "#e0e3e6",
+                        "on-background": "#191c1e",
+                        "on-secondary-fixed": "#001d31",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#27ae60",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#3d4a3f",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#191c1e",
+                        "tertiary": "#446274",
+                        "on-tertiary-container": "#143444",
+                        "surface-container-high": "#e6e8eb",
+                        "tertiary-container": "#7e9cb0",
+                        "outline": "#6d7a6e",
+                        "secondary": "#006397",
+                        "on-tertiary-fixed-variant": "#2c4a5c",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-fixed-variant": "#004b73",
+                        "outline-variant": "#bccabc",
+                        "surface-dim": "#d8dadd",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "secondary-fixed": "#cce5ff",
+                        "tertiary-fixed-dim": "#accbe0",
+                        "primary": "#006d37",
+                        "on-primary-container": "#00391a",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#61de8a",
+                        "on-primary-fixed": "#00210c",
+                        "background": "#f7f9fc",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#92ccff",
+                        "on-primary-fixed-variant": "#005228",
+                        "surface-bright": "#f7f9fc",
+                        "inverse-primary": "#61de8a",
+                        "secondary-container": "#5cb8fd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "container-margin": "24px",
+                        "stack-md": "12px",
+                        "sidebar-width": "260px",
+                        "gutter": "16px",
+                        "card-padding": "20px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "data-display": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-xl": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "data-display": ["22px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar (JSON Component 1) -->
+<aside class="bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline w-[260px] h-screen fixed left-0 top-0 flex flex-col h-full py-container-margin z-50">
+<!-- Brand Header -->
+<div class="px-4 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL1a9Aui95udPXPplt3gCQ4pYjEnPD8x-jbVP6Gg3MISXvm6_hgJxMhzDu1AjG_VZYirS_j_OTqZ5jogH2MtcBj6iGGRY5xJXMLndZg4x9EvW1KSgQousNQh1X-WYsZXppKBUpd_2gL850lEuzWbB9VyV5aDeaRg3wCKXt7Dp4KJfBUJzYH354MHlrSMNem_BprnTJzP5tSzHJuJq12iyVwMM-ICiLSMpfhah0ChFGZsGUmi7PGddxoBVwI4ky5wVGt_7s9JVfqi-1" alt="Pilah Sampah Cerdas Logo" class="w-full h-full object-contain"></div>
+<div>
+<h1 class="text-headline-md font-bold text-primary dark:text-inverse-primary leading-tight">Pilah Sampah Cerdas</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Sampah Terdata, Lingkungan Tertata</p>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 overflow-y-auto px-2 space-y-1">
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-label-md text-label-md">Manajemen Pengguna</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">delete</span>
+<span class="font-label-md text-label-md">Manajemen Tempat Sampah</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">location_on</span>
+<span class="font-label-md text-label-md">Manajemen Lokasi</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">recycling</span>
+<span class="font-label-md text-label-md">Pemilahan Sampah</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+<span class="font-label-md text-label-md">Pemanfaatan Sampah</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">calendar_today</span>
+<span class="font-label-md text-label-md">Jadwal Kegiatan</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">category</span>
+<span class="font-label-md text-label-md">Kategori Sampah</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">receipt_long</span>
+<span class="font-label-md text-label-md">Rekap Setoran</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">stars</span>
+<span class="font-label-md text-label-md">Poin Warga</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="font-label-md text-label-md">Laporan &amp; Analitik</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">notifications</span>
+<span class="font-label-md text-label-md flex-1">Notifikasi</span>
+<span class="bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full">8</span>
+</a>
+<!-- Active Tab -->
+<a class="bg-secondary-fixed text-on-secondary-fixed-variant border-l-4 border-secondary font-bold flex items-center px-4 py-3 hover:bg-surface-container-high transition-colors duration-200 rounded-r-lg scale-98 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-md text-label-md">Pengaturan</span>
+</a>
+</nav>
+<!-- CTA & Footer Tab -->
+<div class="mt-auto px-4 pt-4 border-t border-outline-variant">
+<div class="bg-surface-container p-4 rounded-lg mb-4">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-2">Bersama memilah sampah, bersama jaga bumi.</p>
+<div class="w-full h-24 rounded bg-primary-container relative overflow-hidden flex items-end justify-center pb-2">
+<span class="material-symbols-outlined text-on-primary-container text-4xl" style="font-variation-settings: 'FILL' 1;">nature_people</span>
+</div>
+</div>
+<a class="text-on-surface-variant hover:text-on-surface flex items-center py-2 hover:bg-surface-container-high transition-colors duration-200 rounded scale-98 active:scale-95 transition-transform px-2" href="#">
+<img alt="Pilah Sampah Cerdas Logo" class="w-8 h-8 rounded-full object-cover mr-3" data-alt="A small, professional headshot of an administrator, clean lighting, white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeqH2JbUrPLYdZLU1vjhqy4UWaJ8uLKsD9eGzBB-kRoab5FH31jDXo5ICDPg_kXTW2uVGMrcjO80aV5Pt9nhnJDboAY1ojDM0xdReBWIEvBrFlzd7AyK-jsznb_yAfj-Wq1tSrJ81MQXxP3H65XfDiarO98J24zbcP4ch4PT2ItcuHBorAIAyxFKRHsMBFIF-AvqoKGrU9ZpGy96emoNbL5r8b238E4zl7v2G2Kqpk-M-RI0AELRkD7vP68g1l1eymgYvvvW2dKim4">
+<div class="flex-1">
+<p class="font-label-md text-label-md font-semibold text-on-surface">Admin Utama</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Super Admin</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<div class="ml-[260px] flex-1 flex flex-col min-h-screen">
+<!-- TopNavBar (JSON Component 2) -->
+<header class="bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm h-[56px] fixed top-0 right-0 z-40 flex justify-between items-center px-gutter w-[calc(100%-260px)]">
+<div class="flex items-center gap-4">
+<!-- While JSON says 'Dashboard', the context is Pengaturan, but rule says stick to JSON strings for components. I will render 'Dashboard' per strict rules, though visually it might feel off. The prompt asks to create 'Pengaturan' screen. The TopNavBar JSON says product_name is 'Dashboard'. I will follow the exact string. -->
+<span class="font-headline-md text-primary font-semibold">Dashboard</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-outline-variant text-on-surface-variant font-label-md text-label-md cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span class="">Kecamatan Coblong</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors relative cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">apps</span>
+</button>
+<div class="flex items-center gap-2 pl-2 border-l border-outline-variant cursor-pointer active:opacity-80">
+<img alt="Admin Avatar" class="w-8 h-8 rounded-full object-cover" data-alt="A small, professional headshot of an administrator, clean lighting, white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9lE_Y8LpBfegIdqgBf31ggZ3w8o_CELxzojU0JLWUNgHdpVDLj7ZE2I9h4lYdb_LA9nADTLIi15Zpd7HO9fpdjElAJfhwuwHX9JvL0ymmdk7szI6-W5nDkePQCKIasU5s5NhNsPtgwevARsVYu3Akg6zTwp3hlMQfD5RRLhZPhv8gPd3z4J4ILzKEYTRQOc7kS860PGQpuOJcrB_2szrpnzDpdMsSVUyGGf4HrzheVVCSOH3IPOJe4026kboj5T3xO7P0AJbNC3RN">
+<div class="hidden md:block">
+<p class="font-label-md text-label-md font-semibold text-on-surface">Admin Utama</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Super Admin</p>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pt-[76px] px-container-margin pb-container-margin flex-1 flex flex-col">
+<!-- Page Header -->
+<div class="mb-6">
+<h2 class="font-headline-xl text-headline-xl text-on-surface">Pengaturan Sistem</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Kelola preferensi akun, integrasi layanan, dan manajemen basis data.</p>
+</div>
+<!-- Custom Tab Navigation -->
+<div class="border-b border-outline-variant mb-6">
+<nav aria-label="Tabs" class="-mb-px flex space-x-8">
+<button class="tab-btn border-primary text-primary whitespace-nowrap py-4 px-1 border-b-2 font-label-md text-label-md font-semibold transition-colors duration-200" id="btn-profil" onclick="switchTab('tab-profil')">
+                        Profil Admin
+                    </button>
+<button class="tab-btn border-transparent text-on-surface-variant hover:text-on-surface hover:border-outline whitespace-nowrap py-4 px-1 border-b-2 font-label-md text-label-md font-medium transition-colors duration-200" id="btn-integrasi" onclick="switchTab('tab-integrasi')">
+                        Integrasi API
+                    </button>
+<button class="tab-btn border-transparent text-on-surface-variant hover:text-on-surface hover:border-outline whitespace-nowrap py-4 px-1 border-b-2 font-label-md text-label-md font-medium transition-colors duration-200" id="btn-database" onclick="switchTab('tab-database')">
+                        Database Management
+                    </button>
+</nav>
+</div>
+<!-- Tab Contents -->
+<div class="flex-1">
+<!-- Section 1: Profil Admin -->
+<div class="tab-content active space-y-6 max-w-4xl" id="tab-profil">
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-card-padding">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4">Informasi Pribadi</h3>
+<div class="flex flex-col md:flex-row gap-8">
+<!-- Avatar Upload -->
+<div class="flex flex-col items-center gap-4">
+<div class="relative group cursor-pointer">
+<img class="w-32 h-32 rounded-full object-cover border-2 border-outline-variant group-hover:border-primary transition-colors" data-alt="A clear, professional portrait photo of a user, centered, well-lit, suitable for a profile picture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCbCqiUygdsX_WkXS0A3ITriNMB8J0Cm2c79HzMps5oBBLWBFjL-_UGLqcskBE5Q6zQYBU5om0yWNtFI-J_qMDubiSpoDELDXNWxEbsVyHxQhyDvP-IFwloJ8cSur2_ckadvIfJ3hJt73nZr-jauWgbvPZ-_pdrk0Jp2cUCwo1okuw0KJy1Ue8X0cJjlxhHpPnXXK9N6tWHVuAUzoiiyEf17d3DHZ0W7slMCXEBMrTR05UD_yhADNWIg0EG3JnC5WUc1J98vU7iWjX">
+<div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white">photo_camera</span>
+</div>
+</div>
+<button class="font-label-md text-label-md text-primary hover:underline">Ubah Foto Profil</button>
+</div>
+<!-- Form Fields -->
+<div class="flex-1 space-y-4">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nama Lengkap</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface transition-colors" readonly="" type="text" value="Admin Utama">
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Peran Akses</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface-container-low text-on-surface-variant cursor-not-allowed" disabled="" type="text" value="Super Admin">
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Alamat Email</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface transition-colors" type="email" value="admin@pilahsampah.id">
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-card-padding">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4">Keamanan Akun</h3>
+<div class="space-y-4 max-w-lg">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Kata Sandi Saat Ini</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface transition-colors" placeholder="••••••••" type="password">
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Kata Sandi Baru</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface transition-colors" placeholder="Minimal 8 karakter" type="password">
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Konfirmasi Kata Sandi Baru</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface transition-colors" placeholder="Ulangi kata sandi baru" type="password">
+</div>
+<div class="pt-4 flex justify-end">
+<button class="bg-primary text-on-primary rounded-DEFAULT px-6 py-2.5 font-label-md text-label-md font-semibold hover:bg-primary/90 transition-colors shadow-sm">
+                                    Simpan Perubahan
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Integrasi API -->
+<div class="tab-content space-y-6 max-w-4xl" id="tab-integrasi">
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-card-padding">
+<div class="flex items-center gap-3 mb-4 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-secondary text-[28px]">router</span>
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Ngrok Port Tunnel</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Konfigurasi forwarding URL untuk akses lokal.</p>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Forwarding URL Saat Ini</label>
+<div class="flex gap-2">
+<input class="flex-1 rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md font-mono text-sm bg-surface-container-low text-on-surface-variant cursor-not-allowed" readonly="" type="text" value="https://a1b2-34-56-78-90.ngrok-free.app">
+<button class="px-4 py-2 border border-outline rounded-DEFAULT text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+<span class="font-label-md">Perbarui</span>
+</button>
+</div>
+<p class="font-label-sm text-label-sm text-tertiary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                                    Gunakan URL ini untuk endpoint aplikasi seluler.
+                                </p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-card-padding">
+<div class="flex items-center gap-3 mb-4 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-secondary text-[28px]">key</span>
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">API Token Generator</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Kredensial untuk autentikasi pihak ketiga.</p>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Bearer Token M2M</label>
+<div class="flex gap-2">
+<input class="flex-1 rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md font-mono text-sm bg-surface-container-low text-on-surface-variant" id="apiTokenInput" readonly="" type="password" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+<button class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-DEFAULT hover:bg-secondary-container/80 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+<span class="font-label-md">Salin</span>
+</button>
+</div>
+</div>
+<button class="text-error font-label-md text-label-md hover:underline flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[16px]">autorenew</span>
+                                Revoke &amp; Generate Token Baru
+                            </button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-card-padding">
+<div class="flex items-center gap-3 mb-4 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-secondary text-[28px]">webhook</span>
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Webhook Receiver</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Terima notifikasi real-time dari sensor smart bin.</p>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Endpoint URL</label>
+<input class="w-full rounded-DEFAULT border-outline-variant px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary bg-surface transition-colors" placeholder="https://domain-anda.com/api/v1/webhook" type="url">
+</div>
+<div class="flex items-center gap-2 mt-4">
+<input class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant" id="webhookActive" type="checkbox">
+<label class="font-body-md text-body-md text-on-surface" for="webhookActive">Aktifkan pengiriman payload webhook</label>
+</div>
+<div class="pt-4 flex justify-end">
+<button class="bg-primary text-on-primary rounded-DEFAULT px-6 py-2.5 font-label-md text-label-md font-semibold hover:bg-primary/90 transition-colors shadow-sm">
+                                    Simpan Konfigurasi
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Database Management -->
+<div class="tab-content space-y-6 max-w-4xl" id="tab-database">
+<div class="bg-error-container/20 rounded-lg shadow-sm border border-error/20 p-card-padding">
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-error text-[32px] mt-1">warning</span>
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-2">Area Berbahaya</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Tindakan di bagian ini dapat memengaruhi integritas data sistem dan kinerja aplikasi. Lakukan dengan hati-hati dan pastikan Anda memiliki wewenang untuk mengeksekusinya.</p>
+<div class="space-y-4">
+<!-- Action 1 -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-surface-container-lowest rounded border border-outline-variant gap-4">
+<div>
+<p class="font-label-md text-label-md font-semibold text-on-surface">Backup Database Manual</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Buat salinan data terbaru dalam format .sql.gz.</p>
+</div>
+<button class="bg-primary text-on-primary rounded-DEFAULT px-6 py-2 font-label-md text-label-md font-semibold hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                                            Buat Backup Database
+                                        </button>
+</div>
+<!-- Action 2 -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-surface-container-lowest rounded border border-outline-variant gap-4">
+<div>
+<p class="font-label-md text-label-md font-semibold text-on-surface">Optimasi Sistem</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Bersihkan cache aplikasi dan memori sementara.</p>
+</div>
+<button class="border border-outline text-on-surface rounded-DEFAULT px-6 py-2 font-label-md text-label-md font-semibold hover:bg-surface-container-low transition-colors whitespace-nowrap flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cleaning_services</span>
+                                            Bersihkan Cache System
+                                        </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (JSON Component 3) -->
+<footer class="bg-transparent flex justify-between items-center px-container-margin w-full py-4 mt-auto border-t border-outline-variant">
+<p class="font-label-sm text-label-sm text-on-surface-variant">© 2025 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.</p>
+<div class="flex gap-4 hidden md:flex">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Kebijakan Privasi</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Syarat &amp; Ketentuan</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Bantuan</a>
+</div>
+</footer>
+</div>
+<!-- Script for Tab Switching -->
+<script>
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Reset all tab buttons styling
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-primary', 'text-primary', 'font-semibold');
+                el.classList.add('border-transparent', 'text-on-surface-variant', 'font-medium');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Highlight selected tab button
+            const activeBtnId = tabId.replace('tab-', 'btn-');
+            const activeBtn = document.getElementById(activeBtnId);
+            activeBtn.classList.remove('border-transparent', 'text-on-surface-variant', 'font-medium');
+            activeBtn.classList.add('border-primary', 'text-primary', 'font-semibold');
+        }
+    </script>
+</body></html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html><html lang="id" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#61de8a",
+                        "tertiary-fixed-dim": "#accbe0",
+                        "surface-tint": "#006d37",
+                        "outline": "#6d7a6e",
+                        "tertiary-fixed": "#c8e7fd",
+                        "surface-dim": "#d8dadd",
+                        "primary-fixed": "#7efba4",
+                        "primary": "#006d37",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e0e3e6",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#143444",
+                        "surface": "#f7f9fc",
+                        "on-tertiary-fixed-variant": "#2c4a5c",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#cce5ff",
+                        "inverse-surface": "#2d3133",
+                        "background": "#f7f9fc",
+                        "surface-container-low": "#f2f4f7",
+                        "secondary-container": "#5cb8fd",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8eb",
+                        "on-surface-variant": "#3d4a3f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e0e3e6",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-secondary-fixed-variant": "#004b73",
+                        "on-primary-fixed-variant": "#005228",
+                        "inverse-on-surface": "#eff1f4",
+                        "on-secondary-fixed": "#001d31",
+                        "surface-bright": "#f7f9fc",
+                        "primary-container": "#27ae60",
+                        "on-surface": "#191c1e",
+                        "inverse-primary": "#61de8a",
+                        "on-background": "#191c1e",
+                        "secondary": "#006397",
+                        "tertiary": "#446274",
+                        "secondary-fixed-dim": "#92ccff",
+                        "tertiary-container": "#7e9cb0",
+                        "on-primary-fixed": "#00210c",
+                        "on-secondary-container": "#00476e",
+                        "surface-container": "#eceef1",
+                        "outline-variant": "#bccabc",
+                        "on-primary-container": "#00391a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "12px",
+                        "sidebar-width": "260px",
+                        "container-margin": "24px",
+                        "stack-sm": "8px",
+                        "card-padding": "20px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "data-display": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-xl": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "data-display": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    }catch(_e){}</script><meta charset="utf-8"></head><body class="text-on-surface flex w-full min-h-screen">
+<!-- SideNavBar -->
+<aside class="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col h-full py-container-margin z-50 overflow-y-auto custom-scrollbar">
+<!-- Brand -->
+<div class="px-container-margin mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-transparent"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj6WWNRQvO_iWwwSiLWjxb9s4CB0XnOzCeN8svPrPKWHJsI47eU2kAlO2-DEZBWBBTAgTjg-Q-hcZHMAS0DHly28lnV6MvhCk3B0ckM2RmlCH7YgT4qUHDynf2tah4_Q5UQY8D9rUbrDWCXQLKnLqPUt82lKPV111Vze--0H4l54dKXwNerb4cP-vwmztmQP3bO-_KBLb3ugblFUmZ35Fq2C67FFWA8feLPM-kVPEVncQ_iH3FnPjtT1xau3rBjsal1guknzodVyu3" alt="Pilah Sampah Cerdas Logo" class="w-full h-full object-contain"></div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary truncate" title="Pilah Sampah Cerdas">Pilah Sampah Cerdas</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Sampah Terdata, Lingkungan Tertata</p>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 px-4 flex flex-col gap-1">
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">dashboard</span>
+<span class="font-label-md text-label-md truncate">Dashboard</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">group</span>
+<span class="font-label-md text-label-md truncate">Manajemen Pengguna</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">delete</span>
+<span class="font-label-md text-label-md truncate">Manajemen Tempat Sampah</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">location_on</span>
+<span class="font-label-md text-label-md truncate">Manajemen Lokasi</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">recycling</span>
+<span class="font-label-md text-label-md truncate">Pemilahan Sampah</span>
+</a>
+<!-- Active Menu -->
+<a href="#" class="bg-secondary-fixed text-on-secondary-fixed-variant border-l-4 border-secondary font-bold flex items-center gap-3 px-4 py-3 rounded-r-lg scale-98 active:scale-95 transition-transform" aria-current="page">
+<span class="material-symbols-outlined shrink-0" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-label-md text-label-md truncate">Pemanfaatan Sampah</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">calendar_today</span>
+<span class="font-label-md text-label-md truncate">Jadwal Kegiatan</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">category</span>
+<span class="font-label-md text-label-md truncate">Kategori Sampah</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">receipt_long</span>
+<span class="font-label-md text-label-md truncate">Rekap Setoran</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">stars</span>
+<span class="font-label-md text-label-md truncate">Poin Warga</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">analytics</span>
+<span class="font-label-md text-label-md truncate">Laporan &amp; Analitik</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">notifications</span>
+<span class="font-label-md text-label-md truncate">Notifikasi</span>
+</a>
+<a href="#" class="text-on-surface-variant hover:text-on-surface flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined shrink-0">settings</span>
+<span class="font-label-md text-label-md truncate">Pengaturan</span>
+</a>
+</nav>
+<!-- CTA & Footer -->
+<div class="px-4 mt-auto pt-6 flex flex-col gap-4">
+<div class="bg-primary-container/20 rounded-xl p-4 border border-primary-container/30">
+<p class="font-label-sm text-label-sm text-primary font-semibold mb-2">Bersama memilah sampah, bersama jaga bumi.</p>
+</div>
+<div class="border-t border-outline-variant pt-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</div>
+<div class="flex-1 truncate">
+<p class="font-label-md text-label-md font-semibold text-on-surface truncate">Admin Utama</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[260px] flex-1 flex flex-col min-h-screen bg-background relative overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="h-[56px] w-[calc(100%-260px)] fixed top-0 right-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex justify-between items-center px-gutter">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-lg text-headline-lg font-semibold text-on-surface">Manajemen Pemanfaatan &amp; Kemitraan</h2>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<nav class="hidden md:flex items-center gap-2">
+<a href="#" class="font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low px-3 py-1.5 rounded-md transition-colors">Kecamatan Coblong</a>
+</nav>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border border-surface-container-lowest"></span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">apps</span>
+</button>
+<div class="ml-2 flex items-center gap-2 pl-4 border-l border-outline-variant cursor-pointer active:opacity-80">
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden">
+<img alt="Admin Avatar" class="w-full h-full object-cover" data-alt="Professional headshot of an Indonesian administrator in a modern office, bright natural light, crisp focus, representing 'Admin Utama'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgfjSuJJLrs62_5n8Ot3z1sCQ2Q-W9DUPv0HPHWzS-KMImnwSrp911gvmZYq0QCZbIcl7wqOmmP9ViDQhe5rFfx__nN9EboEtdyTp5t0mjhJGuxZlBmeZ879hqbbXCigM-Tz_wctChPRxUpiR3ji_y-osDWRq3dcTh2R0lO7a5377YU5tlRNLxSd3gU2IMC0nCsbj7HLoCxyf2Fb4AeZAMzTyFBXbcPGpiF6ReA6_E73MDHrnTzNdijeYZfC3Ms0_uq2jSy9zDZxw9">
+</div>
+<span class="font-label-md text-label-md font-semibold text-on-surface hidden md:block">Admin Utama</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm hidden md:block">expand_more</span>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="flex-1 mt-[56px] p-container-margin flex flex-col gap-container-margin max-w-[1400px] mx-auto w-full">
+<!-- Metrics Row (3 Cards) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Metric 1: Kompos Organik -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding ambient-shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-[#E8F5E9] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#27AE60]" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div class="bg-[#E8F5E9] px-2 py-1 rounded text-[#27AE60] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span class="font-label-sm text-label-sm">+12%</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Kompos Organik</p>
+<div class="flex items-baseline gap-1">
+<h3 class="font-data-display text-data-display text-on-surface">1.240</h3>
+<span class="font-body-md text-body-md text-on-surface-variant">Kg</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-2">Bulan Ini</p>
+</div>
+</div>
+<!-- Metric 2: Plastik Terdaur Ulang -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding ambient-shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-[#E3F2FD] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#3498DB]" style="font-variation-settings: 'FILL' 1;">recycling</span>
+</div>
+<div class="bg-[#E3F2FD] px-2 py-1 rounded text-[#3498DB] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span class="font-label-sm text-label-sm">+5%</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Plastik Terdaur Ulang</p>
+<div class="flex items-baseline gap-1">
+<h3 class="font-data-display text-data-display text-on-surface">850</h3>
+<span class="font-body-md text-body-md text-on-surface-variant">Kg</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-2">Bulan Ini</p>
+</div>
+</div>
+<!-- Metric 3: Kardus & Kertas -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding ambient-shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-[#FFF3E0] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#F39C12]" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<div class="bg-surface-container px-2 py-1 rounded text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">horizontal_rule</span>
+<span class="font-label-sm text-label-sm">0%</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Kardus &amp; Kertas</p>
+<div class="flex items-baseline gap-1">
+<h3 class="font-data-display text-data-display text-on-surface">620</h3>
+<span class="font-body-md text-body-md text-on-surface-variant">Kg</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-2">Bulan Ini</p>
+</div>
+</div>
+</section>
+<!-- Middle Section: Inventaris Bahan Baku -->
+<section class="bg-surface-container-lowest rounded-xl ambient-shadow-sm border border-outline-variant/30 overflow-hidden flex flex-col">
+<div class="p-card-padding border-b border-outline-variant/50 flex justify-between items-center bg-surface-container-lowest">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Inventaris Bahan Baku</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Raw Sorting Area - Siap Jual/Olah</p>
+</div>
+<button class="flex items-center gap-2 bg-surface text-primary border border-primary/20 px-4 py-2 rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Ekspor Data
+                    </button>
+</div>
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface border-b border-outline-variant/50">
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Kategori</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase tracking-wider text-right">Stok Tersedia (Kg)</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase tracking-wider text-right">Nilai Ekonomi (Rp/Kg)</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Terakhir Diperbarui</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase tracking-wider text-center">Aksi</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<tr class="border-b border-outline-variant/30 hover:bg-[#F8FAFB] transition-colors group">
+<td class="py-4 px-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#E3F2FD] flex items-center justify-center">
+<span class="material-symbols-outlined text-[#3498DB] text-sm">water_bottle</span>
+</div>
+<span class="font-semibold">PET (Botol Plastik)</span>
+</td>
+<td class="py-4 px-6 text-right font-mono">450</td>
+<td class="py-4 px-6 text-right font-mono text-[#27AE60]">Rp 3.500</td>
+<td class="py-4 px-6 text-on-surface-variant">2 Jam yang lalu</td>
+<td class="py-4 px-6 text-center">
+<button class="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-[#F8FAFB] transition-colors group">
+<td class="py-4 px-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#E3F2FD] flex items-center justify-center">
+<span class="material-symbols-outlined text-[#3498DB] text-sm">category</span>
+</div>
+<span class="font-semibold">HDPE (Plastik Keras)</span>
+</td>
+<td class="py-4 px-6 text-right font-mono">210</td>
+<td class="py-4 px-6 text-right font-mono text-[#27AE60]">Rp 4.000</td>
+<td class="py-4 px-6 text-on-surface-variant">Kemarin, 14:30</td>
+<td class="py-4 px-6 text-center">
+<button class="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-[#F8FAFB] transition-colors group">
+<td class="py-4 px-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#FFF3E0] flex items-center justify-center">
+<span class="material-symbols-outlined text-[#F39C12] text-sm">description</span>
+</div>
+<span class="font-semibold">Kertas &amp; Karton</span>
+</td>
+<td class="py-4 px-6 text-right font-mono">620</td>
+<td class="py-4 px-6 text-right font-mono text-[#27AE60]">Rp 1.500</td>
+<td class="py-4 px-6 text-on-surface-variant">Kemarin, 09:15</td>
+<td class="py-4 px-6 text-center">
+<button class="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-[#F8FAFB] transition-colors group">
+<td class="py-4 px-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#ECEFF1] flex items-center justify-center">
+<span class="material-symbols-outlined text-[#78909C] text-sm">hardware</span>
+</div>
+<span class="font-semibold">Logam &amp; Kaleng</span>
+</td>
+<td class="py-4 px-6 text-right font-mono">185</td>
+<td class="py-4 px-6 text-right font-mono text-[#27AE60]">Rp 5.200</td>
+<td class="py-4 px-6 text-on-surface-variant">3 Hari yang lalu</td>
+<td class="py-4 px-6 text-center">
+<button class="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Bottom Section: Daftar Mitra -->
+<section class="flex flex-col gap-4 mb-8">
+<div class="flex justify-between items-center">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Daftar Mitra Pengolah &amp; Bank Sampah</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Kemitraan penyaluran bahan baku sampah</p>
+</div>
+<button class="bg-primary text-on-primary hover:bg-primary/90 flex items-center gap-2 px-4 py-2 rounded-lg font-label-md text-label-md transition-colors ambient-shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        Tambah Mitra
+                    </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Partner Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 ambient-shadow-sm border border-outline-variant/30 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-outline-variant/30 overflow-hidden">
+<span class="material-symbols-outlined text-primary text-xl">storefront</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-on-surface font-semibold">Bank Sampah Bersinar</h4>
+<p class="font-label-sm text-on-surface-variant">ID: BSB-001</p>
+</div>
+</div>
+<span class="px-2 py-1 rounded-full bg-[#E8F5E9] text-[#27AE60] font-label-sm text-[10px] uppercase tracking-wider font-bold">Aktif</span>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2 border-t border-b border-outline-variant/20 py-3">
+<div>
+<p class="font-label-sm text-on-surface-variant">Spesialisasi</p>
+<p class="font-body-sm text-on-surface font-medium flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-[#3498DB]"></span>
+                                    Plastik &amp; PET
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-on-surface-variant">Total Transaksi</p>
+<p class="font-body-sm text-on-surface font-medium mt-1">1.240 Kg</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-1">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">call</span>
+<span class="font-body-sm text-sm">0812-3456-7890</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span class="font-body-sm text-sm truncate">Jl. Sangkuriang No. 12, Coblong</span>
+</div>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-2 border border-outline-variant/50 rounded-lg text-primary font-label-md hover:bg-surface transition-colors">Lihat Detail</button>
+</div>
+</div>
+<!-- Partner Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 ambient-shadow-sm border border-outline-variant/30 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-outline-variant/30 overflow-hidden">
+<span class="material-symbols-outlined text-secondary text-xl">factory</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-on-surface font-semibold">PT Daur Mulia</h4>
+<p class="font-label-sm text-on-surface-variant">ID: PDM-042</p>
+</div>
+</div>
+<span class="px-2 py-1 rounded-full bg-[#E8F5E9] text-[#27AE60] font-label-sm text-[10px] uppercase tracking-wider font-bold">Aktif</span>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2 border-t border-b border-outline-variant/20 py-3">
+<div>
+<p class="font-label-sm text-on-surface-variant">Spesialisasi</p>
+<p class="font-body-sm text-on-surface font-medium flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-[#F39C12]"></span>
+                                    Kertas &amp; Karton
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-on-surface-variant">Total Transaksi</p>
+<p class="font-body-sm text-on-surface font-medium mt-1">3.500 Kg</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-1">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">call</span>
+<span class="font-body-sm text-sm">022-7654321</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span class="font-body-sm text-sm truncate">Kawasan Industri Gedebage</span>
+</div>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-2 border border-outline-variant/50 rounded-lg text-primary font-label-md hover:bg-surface transition-colors">Lihat Detail</button>
+</div>
+</div>
+<!-- Partner Card 3 (New) -->
+<div class="bg-surface-container-lowest rounded-xl p-5 ambient-shadow-sm border border-outline-variant/30 flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-secondary/10 rounded-bl-full -z-10"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-outline-variant/30 overflow-hidden">
+<span class="material-symbols-outlined text-tertiary text-xl">agriculture</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-on-surface font-semibold">Koperasi Tani Subur</h4>
+<p class="font-label-sm text-on-surface-variant">ID: KTS-009</p>
+</div>
+</div>
+<span class="px-2 py-1 rounded-full bg-[#E3F2FD] text-[#3498DB] font-label-sm text-[10px] uppercase tracking-wider font-bold">Mitra Baru</span>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2 border-t border-b border-outline-variant/20 py-3 z-10">
+<div>
+<p class="font-label-sm text-on-surface-variant">Spesialisasi</p>
+<p class="font-body-sm text-on-surface font-medium flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-[#27AE60]"></span>
+                                    Kompos Organik
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-on-surface-variant">Total Transaksi</p>
+<p class="font-body-sm text-on-surface font-medium mt-1">0 Kg</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-1 z-10">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">call</span>
+<span class="font-body-sm text-sm">0819-8765-4321</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span class="font-body-sm text-sm truncate">Desa Lembang, KBB</span>
+</div>
+</div>
+<div class="mt-auto pt-2 z-10">
+<button class="w-full py-2 border border-outline-variant/50 rounded-lg text-primary font-label-md hover:bg-surface transition-colors">Atur Pengiriman Pertama</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full py-4 mt-auto bg-transparent flex justify-between items-center px-container-margin text-on-surface-variant border-t border-outline-variant/30">
+<p class="font-label-sm text-label-sm">© 2026 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.</p>
+<div class="flex gap-4">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Kebijakan Privasi</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Syarat &amp; Ketentuan</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Bantuan</a>
+</div>
+</footer>
+</main>
+
+
+</body></html>
