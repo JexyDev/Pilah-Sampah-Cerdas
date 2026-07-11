@@ -1,0 +1,74 @@
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  width: 100%;
+  padding: 24px;
+}
+
+.errorCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--danger-red);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(224, 36, 36, 0.1);
+}
+
+.iconWrapper {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+}
+
+.errorDetails {
+  background-color: var(--bg-canvas);
+  padding: 12px;
+  border-radius: 8px;
+  text-align: left;
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-light);
+}
+
+.errorDetails pre {
+  margin: 0;
+  font-size: 13px;
+  color: var(--danger-red);
+  white-space: pre-wrap;
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.retryButton:hover {
+  opacity: 0.9;
+}
