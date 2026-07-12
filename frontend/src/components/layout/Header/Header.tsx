@@ -1,12 +1,19 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const Header: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuthStore();
   
   const getHeaderInfo = (pathname: string) => {
     switch (pathname) {
-      case '/': return { title: 'Selamat datang kembali, Admin 👋', subtitle: 'Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.' };
+      case '/': return { 
+        title: `Selamat datang kembali, ${user?.nama || 'Pengguna'} 👋`, 
+        subtitle: user?.peran === 'WARGA' 
+          ? 'Pantau poin Anda, temukan tong terdekat, dan mulai memilah sampah secara pintar.'
+          : 'Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.' 
+      };
       case '/manajemen-pengguna': return { title: 'Manajemen Pengguna', subtitle: 'Kelola daftar akun, hak akses, dan data warga.' };
       case '/manajemen-tempat-sampah': return { title: 'Manajemen Tempat Sampah', subtitle: 'Pantau status kapasitas dan lokasi titik kumpul sampah.' };
       case '/manajemen-lokasi': return { title: 'Manajemen Lokasi', subtitle: 'Daftar wilayah dan RT/RW yang dilayani oleh sistem.' };
@@ -33,7 +40,7 @@ const Header: React.FC = () => {
         {/* Location Picker */}
         <div className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-lg cursor-pointer hover:bg-surface-container-high transition-all">
           <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
-          <span className="text-label-md font-label-md text-on-surface">Kecamatan Coblong</span>
+          <span className="text-label-md font-label-md text-on-surface">{user?.wilayah || 'Kecamatan Coblong'}</span>
           <span className="material-symbols-outlined text-on-surface-variant text-[18px]">keyboard_arrow_down</span>
         </div>
         
@@ -51,10 +58,12 @@ const Header: React.FC = () => {
         {/* Profile */}
         <div className="flex items-center gap-3 ml-2 border-l border-outline-variant pl-6">
           <div className="text-right">
-            <p className="text-label-md font-bold text-on-surface leading-tight">Admin Utama</p>
-            <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">Super Admin</p>
+            <p className="text-label-md font-bold text-on-surface leading-tight">{user?.nama || 'Pengguna'}</p>
+            <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">{user?.peran?.replace('_', ' ') || 'WARGA'}</p>
           </div>
-          <img className="w-10 h-10 rounded-full bg-surface-container-high object-cover" alt="Admin Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGSjKuvGkGdFv56w1NfN-HakfQCsyxejzA2bEnb6WRApOqQyba6-jqw1oUAPclC_Ugqi7fLl8cx1qQkbrn7ArdIy5EhZL68kyS7l6LR9X6fPZbJa2azK88QzLNf0rJduGiVgJwcuy2h9fukt8MurMaryr5XSH5Wd3Z2JiGlxlMsDTUCwx8iZega-Pi8neRzO7ejfFR4hFK4RihNIRrU_DAPuIv4sm_FiJJ5kIRIFUtHjt-UbPbC6BWin2RwfXFo6Nzb0_YLOelJmU2" />
+          <div className={`w-10 h-10 rounded-full ${user?.avatarBg || 'bg-blue-100'} ${user?.avatarColor || 'text-blue-700'} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0`}>
+            {user?.avatar || 'U'}
+          </div>
         </div>
       </div>
     </header>

@@ -1,38 +1,370 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/useAuthStore';
 
-// ========== Sub-Components ==========
+// ========== Warga Dashboard Component ==========
+const WargaDashboard: React.FC = () => {
+  const { user } = useAuthStore();
+  const [poin, setPoin] = useState(1250);
+  const [saldo, setSaldo] = useState(125000);
+  const [organik, setOrganik] = useState(24.5);
+  const [anorganik, setAnorganik] = useState(20.5);
 
-const KpiCard: React.FC<{ iconName: string; iconBg: string; iconColor: string; label: string; value: string; trend: string; trendLabel: string; trendUp?: boolean; }> = ({ iconName, iconBg, iconColor, label, value, trend, trendLabel, trendUp = true }) => (
-  <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm hover:-translate-y-0.5 transition-all duration-300">
-    <div className={`w-10 h-10 ${iconBg} ${iconColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
-      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>{iconName}</span>
-    </div>
-    <div className="min-w-0 w-full">
-      <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">{label}</p>
-      <h3 className="text-[20px] font-extrabold text-on-surface leading-tight mt-1">{value}</h3>
-      <div className={`flex items-center text-[11px] ${trendUp ? 'text-primary' : 'text-on-surface-variant'} font-bold mt-2`}>
-        {trendUp ? (
-          <span className="material-symbols-outlined text-[14px] mr-0.5">arrow_upward</span>
-        ) : (
-          <span className="material-symbols-outlined text-[14px] mr-0.5 text-on-surface-variant">arrow_downward</span>
-        )}
-        <span>{trend}</span>
-        <span className="text-on-surface-variant font-normal ml-1">{trendLabel}</span>
+  // AI & QR Scanner Simulation States
+  const [selectedTrash, setSelectedTrash] = useState<any>(null);
+  const [scanning, setScanning] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [selectedBin, setSelectedBin] = useState('');
+  const [successModal, setSuccessModal] = useState(false);
+
+  const trashOptions = [
+    { id: 1, name: 'Botol Plastik Bekas', type: 'ANORGANIK', icon: 'local_drink', img: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=200&auto=format&fit=crop&q=60' },
+    { id: 2, name: 'Kulit Pisang Segar', type: 'ORGANIK', icon: 'eco', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200&auto=format&fit=crop&q=60' },
+    { id: 3, name: 'Kardus Box Cokelat', type: 'ANORGANIK', icon: 'inventory_2', img: 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=200&auto=format&fit=crop&q=60' },
+    { id: 4, name: 'Sisa Sayur & Nasi', type: 'ORGANIK', icon: 'restaurant', img: 'https://images.unsplash.com/photo-1540340061722-9293d5163008?w=200&auto=format&fit=crop&q=60' },
+  ];
+
+  const handleSelectTrash = (item: any) => {
+    setSelectedTrash(item);
+    setAiResult(null);
+    setSelectedBin('');
+  };
+
+  const handleScanAI = () => {
+    if (!selectedTrash) return;
+    setScanning(true);
+    setTimeout(() => {
+      setScanning(false);
+      setAiResult({
+        detectedType: selectedTrash.type,
+        confidence: '98.6%',
+        label: selectedTrash.name
+      });
+      toast.success('Deteksi AI Berhasil!');
+    }, 1500);
+  };
+
+  const handleSetor = () => {
+    if (!aiResult || !selectedBin) return;
+
+    // Check mismatch
+    const isBinOrganik = selectedBin.includes('ORGANIK');
+    const isTrashOrganik = aiResult.detectedType === 'ORGANIK';
+
+    if (isBinOrganik !== isTrashOrganik) {
+      toast.error('Gagal: Tipe sampah tidak cocok dengan jenis Tong Sampah (Mismatch)!', { duration: 4000 });
+      return;
+    }
+
+    // Success transaction
+    setPoin((prev) => prev + 50);
+    setSaldo((prev) => prev + 5000);
+    if (isTrashOrganik) {
+      setOrganik((prev) => parseFloat((prev + 1.5).toFixed(1)));
+    } else {
+      setAnorganik((prev) => parseFloat((prev + 1.2).toFixed(1)));
+    }
+
+    setSuccessModal(true);
+    toast.success('Pintu Tong Sampah Terbuka secara otomatis!');
+  };
+
+  const resetScanner = () => {
+    setSelectedTrash(null);
+    setAiResult(null);
+    setSelectedBin('');
+    setSuccessModal(false);
+  };
+
+  return (
+    <div className="space-y-gutter pb-12">
+      {/* KPI Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
+          <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
+          </div>
+          <div>
+            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Poin Saya</p>
+            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{poin.toLocaleString()} Poin</h3>
+            <p className="text-[10px] text-primary font-bold mt-2">+50 Poin hari ini</p>
+          </div>
+        </div>
+
+        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
+          <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+          </div>
+          <div>
+            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Saldo Rupiah</p>
+            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">Rp {saldo.toLocaleString()}</h3>
+            <p className="text-[10px] text-on-surface-variant font-medium mt-2">Dapat dicairkan ke E-Wallet</p>
+          </div>
+        </div>
+
+        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
+          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
+          </div>
+          <div>
+            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Total Setoran Organik</p>
+            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{organik} Kg</h3>
+            <p className="text-[10px] text-emerald-700 font-bold mt-2">Penyumbang kompos aktif</p>
+          </div>
+        </div>
+
+        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
+          <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_drink</span>
+          </div>
+          <div>
+            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Total Setoran Anorganik</p>
+            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{anorganik} Kg</h3>
+            <p className="text-[10px] text-blue-700 font-bold mt-2">Penyumbang daur ulang aktif</p>
+          </div>
+        </div>
       </div>
+
+      {/* Main interactive area */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+        {/* Left column: Trash selector & AI Scanner */}
+        <div className="xl:col-span-8 bg-white/95 backdrop-blur-sm shadow-sm rounded-xl p-6 border border-outline-variant/30 flex flex-col gap-6">
+          <div>
+            <h4 className="font-extrabold text-[18px] text-on-surface">Pilah & Setor Sampah Cerdas (AI & QR Scan)</h4>
+            <p className="text-[12px] text-on-surface-variant mt-1">Pilih salah satu sampah di bawah untuk memotret sampah, deteksi menggunakan AI, lalu scan QR tong sampah terdekat.</p>
+          </div>
+
+          {/* Grid trash options */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {trashOptions.map((item) => (
+              <button 
+                key={item.id} 
+                onClick={() => handleSelectTrash(item)}
+                className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all cursor-pointer ${selectedTrash?.id === item.id ? 'border-primary bg-primary/5' : 'border-outline-variant/40 hover:bg-surface-container-low'}`}
+              >
+                <img src={item.img} alt={item.name} className="w-16 h-16 rounded-lg object-cover mb-2 border border-outline-variant/20" />
+                <span className="text-[11px] font-bold text-on-surface text-center truncate w-full">{item.name}</span>
+                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold mt-1 ${item.type === 'ORGANIK' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.type}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Scanner view */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40">
+            {/* Box 1: Simulated Camera & AI detector */}
+            <div className="flex flex-col gap-3">
+              <h5 className="text-[13px] font-bold text-on-surface uppercase tracking-wider flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px] text-primary">photo_camera</span>
+                Simulasi Kamera AI
+              </h5>
+              
+              <div className="relative aspect-video w-full rounded-xl bg-slate-900 overflow-hidden flex flex-col items-center justify-center border-2 border-slate-800 shadow-inner">
+                {selectedTrash ? (
+                  <>
+                    <img src={selectedTrash.img} alt="Trash" className="w-full h-full object-cover opacity-80" />
+                    {scanning && (
+                      <div className="absolute inset-0 bg-primary/10 flex flex-col items-center justify-center">
+                        <div className="w-full h-1 bg-primary shadow-lg animate-bounce absolute top-1/2"></div>
+                        <span className="material-symbols-outlined text-white text-[36px] animate-spin">sync</span>
+                        <span className="text-white text-xs font-bold mt-2 drop-shadow">Menganalisis Tipe Sampah...</span>
+                      </div>
+                    )}
+                    {aiResult && (
+                      <div className="absolute bottom-3 left-3 right-3 bg-slate-950/85 text-white p-3 rounded-lg border border-slate-700 backdrop-blur-sm">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deteksi Visi Komputer</p>
+                        <p className="text-[13px] font-bold text-white mt-0.5">{aiResult.label}</p>
+                        <div className="flex justify-between items-center mt-2 border-t border-slate-800 pt-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${aiResult.detectedType === 'ORGANIK' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}>{aiResult.detectedType}</span>
+                          <span className="text-[11px] font-bold text-primary">{aiResult.confidence} Akurasi</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center text-slate-400 flex flex-col items-center p-6 gap-2">
+                    <span className="material-symbols-outlined text-[40px]">center_focus_weak</span>
+                    <p className="text-xs">Silakan pilih item sampah di atas untuk mengaktifkan kamera AI</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedTrash && !scanning && !aiResult && (
+                <button 
+                  onClick={handleScanAI}
+                  className="w-full h-10 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-primary/20"
+                >
+                  <span className="material-symbols-outlined text-[18px]">photo_filter</span>
+                  Pindai dengan AI
+                </button>
+              )}
+            </div>
+
+            {/* Box 2: QR Scanner / Bin Selector */}
+            <div className="flex flex-col gap-4">
+              <h5 className="text-[13px] font-bold text-on-surface uppercase tracking-wider flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px] text-secondary">qr_code_scanner</span>
+                Pindai QR Tong Sampah
+              </h5>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-on-surface-variant uppercase">Pilih Tong Sampah Fisik Terdekat (Simulasi QR Scan)</label>
+                <div className="relative">
+                  <select 
+                    disabled={!aiResult}
+                    className="w-full pl-3 pr-8 h-10 bg-white border border-outline-variant/60 rounded-lg text-xs font-medium text-on-surface focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                    value={selectedBin}
+                    onChange={(e) => setSelectedBin(e.target.value)}
+                  >
+                    <option value="">-- Pilihlah Tong Sampah Terdekat --</option>
+                    <option value="TONG_ORGANIK_1">Tong ORGANIK #1 - RT 02 (Kapasitas: 45%)</option>
+                    <option value="TONG_ANORGANIK_2">Tong ANORGANIK #2 - RT 02 (Kapasitas: 55%)</option>
+                    <option value="TONG_ORGANIK_3">Tong ORGANIK #3 - RT 04 (Kapasitas: 20%)</option>
+                  </select>
+                  <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+                </div>
+              </div>
+
+              {aiResult && selectedBin && (
+                <div className="p-3 bg-surface-container rounded-lg border border-outline-variant/40 flex flex-col gap-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-on-surface-variant">Tipe Sampah:</span>
+                    <span className="font-bold text-on-surface">{aiResult.detectedType}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-on-surface-variant">Pilihan Tong:</span>
+                    <span className="font-bold text-on-surface">{selectedBin.includes('ORGANIK') ? 'ORGANIK' : 'ANORGANIK'}</span>
+                  </div>
+                  
+                  {/* Warning Mismatch */}
+                  {(selectedBin.includes('ORGANIK') !== (aiResult.detectedType === 'ORGANIK')) && (
+                    <div className="flex gap-2 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-[10px] font-semibold mt-1">
+                      <span className="material-symbols-outlined text-[14px]">warning</span>
+                      <span>Jenis sampah dan tong tidak cocok! Pintu tong tidak akan terbuka.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button 
+                onClick={handleSetor}
+                disabled={!aiResult || !selectedBin}
+                className="w-full h-11 bg-secondary disabled:bg-secondary/40 disabled:cursor-not-allowed hover:bg-secondary/95 text-on-secondary text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-auto"
+              >
+                <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                Buka Tong & Setorkan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right column: Bins capacity & History */}
+        <div className="xl:col-span-4 flex flex-col gap-gutter">
+          {/* Nearby bins list */}
+          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
+            <h5 className="font-bold text-[15px] text-on-surface">Kapasitas Tong Sampah Terdekat</h5>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
+                  <span>Tong Organik #1 - RT 02</span>
+                  <span>45% Terisi</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="bg-primary h-full rounded-full" style={{ width: '45%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
+                  <span>Tong Anorganik #2 - RT 02</span>
+                  <span>55% Terisi</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="bg-blue-600 h-full rounded-full" style={{ width: '55%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
+                  <span>Tong Organik #3 - RT 04</span>
+                  <span>20% Terisi</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="bg-primary h-full rounded-full" style={{ width: '20%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* History */}
+          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4 flex-1">
+            <h5 className="font-bold text-[15px] text-on-surface">Riwayat Setoran Saya</h5>
+            <div className="space-y-3">
+              {[
+                { date: '12 Juli 2026', desc: 'Anorganik (Botol PET)', pts: '+46 Poin' },
+                { date: '10 Juli 2026', desc: 'Organik (Kulit Buah)', pts: '+15 Poin' },
+                { date: '08 Juli 2026', desc: 'Organik (Sisa Makanan)', pts: '+30 Poin' },
+              ].map((item, i) => (
+                <div key={i} className="flex justify-between items-center p-3 rounded-lg border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-all">
+                  <div>
+                    <p className="text-[11px] text-on-surface-variant">{item.date}</p>
+                    <p className="text-[12px] font-bold text-on-surface mt-0.5">{item.desc}</p>
+                  </div>
+                  <span className="text-[12px] font-extrabold text-primary">{item.pts}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Modal */}
+      {successModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-2xl border border-outline-variant shadow-2xl p-8 max-w-sm w-full text-center flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-2">
+              <span className="material-symbols-outlined text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>lock_open</span>
+            </div>
+            <h3 className="text-[18px] font-extrabold text-on-surface leading-tight">Pintu Tong Sampah Terbuka!</h3>
+            <p className="text-xs text-on-surface-variant leading-relaxed">Pintu tong sampah fisik telah terbuka secara otomatis. Silakan masukkan sampah Anda. Sistem akan menutup pintu kembali dalam 30 detik.</p>
+            
+            <div className="w-full bg-slate-50 p-4 rounded-xl border border-outline-variant/40 flex flex-col gap-2 mt-2">
+              <div className="flex justify-between text-xs font-bold text-on-surface">
+                <span>Hadiah Poin:</span>
+                <span className="text-primary">+50 Poin</span>
+              </div>
+              <div className="flex justify-between text-xs font-bold text-on-surface">
+                <span>Hadiah Uang:</span>
+                <span className="text-primary">+Rp 5.000</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={resetScanner}
+              className="w-full h-10 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-lg mt-2 cursor-pointer"
+            >
+              Selesai & Setor Lagi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // ========== Main Dashboard ==========
-
 const Dashboard: React.FC = () => {
+  const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Skip API load for WARGA
+    if (user?.peran === 'WARGA') {
+      setLoading(false);
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         const response = await api.get('/dashboard/stats');
@@ -44,7 +376,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -66,6 +398,11 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // Render WARGA Dashboard
+  if (user?.peran === 'WARGA') {
+    return <WargaDashboard />;
   }
 
   return (
