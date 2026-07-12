@@ -36,11 +36,8 @@ const Login: React.FC = () => {
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 transform transition-all duration-300">
         
         {/* Header / Logo */}
-        <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-16 h-16 flex items-center justify-center overflow-hidden rounded-xl">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-          </div>
-          <h2 className="text-[22px] font-extrabold text-on-surface tracking-tight mt-2">Pilah Sampah Cerdas</h2>
+        <div className="flex flex-col items-center text-center gap-3">
+          <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-24 w-auto object-contain" />
           <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed">Masukkan detail kredensial Anda dan pilih peran sistem untuk melanjutkan.</p>
         </div>
 

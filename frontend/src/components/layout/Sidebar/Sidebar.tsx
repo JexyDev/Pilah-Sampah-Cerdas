@@ -48,16 +48,8 @@ const Sidebar: React.FC = () => {
   return (
     <aside className="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50">
       {/* Brand Header */}
-      <div className="px-6 py-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-lg">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-[16px] font-bold text-primary leading-tight">Pilah Sampah Cerdas</h1>
-            <p className="text-[10px] text-on-surface-variant leading-tight">Sampah Terdata, Lingkungan Tertata</p>
-          </div>
-        </div>
+      <div className="px-6 py-5 flex items-center justify-center border-b border-outline-variant/35 bg-white">
+        <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-16 w-auto object-contain" />
       </div>
 
       {/* Navigation Menu */}
