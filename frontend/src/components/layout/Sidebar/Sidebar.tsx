@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuthStore, UserRole } from '../../../store/useAuthStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import type { UserRole } from '../../../store/useAuthStore';
 
 interface NavItemProps {
   to: string;

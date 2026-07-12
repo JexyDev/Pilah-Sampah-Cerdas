@@ -18,7 +18,8 @@ import PoinWarga from '../pages/PoinWarga/PoinWarga';
 import LaporanAnalitik from '../pages/LaporanAnalitik/LaporanAnalitik';
 import Notifikasi from '../pages/Notifikasi/Notifikasi';
 import Pengaturan from '../pages/Pengaturan/Pengaturan';
-import { useAuthStore, UserRole } from '../store/useAuthStore';
+import { useAuthStore } from '../store/useAuthStore';
+import type { UserRole } from '../store/useAuthStore';
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({ children, allowedRoles }) => {

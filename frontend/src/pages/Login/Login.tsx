@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuthStore, UserRole } from '../../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import type { UserRole } from '../../store/useAuthStore';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
