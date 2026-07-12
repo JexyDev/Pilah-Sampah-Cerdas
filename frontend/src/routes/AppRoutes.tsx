@@ -67,7 +67,7 @@ const AppRoutes: React.FC = () => {
         <Route path="poin-warga" element={<PoinWarga />} />
         <Route path="laporan-analitik" element={<ProtectedRoute allowedRoles={['ADMIN']}><LaporanAnalitik /></ProtectedRoute>} />
         <Route path="notifikasi" element={<Notifikasi />} />
-        <Route path="pengaturan" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN']}><Pengaturan /></ProtectedRoute>} />
+        <Route path="pengaturan" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN', 'WARGA']}><Pengaturan /></ProtectedRoute>} />
         <Route path="peta" element={<PlaceholderPage title="Peta Wilayah" />} />
         <Route path="evaluasi-ai" element={<PlaceholderPage title="Evaluasi AI" />} />
         <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />

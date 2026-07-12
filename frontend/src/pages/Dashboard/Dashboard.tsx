@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
 
 // ========== Warga Dashboard Component ==========
+// ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
   const { user } = useAuthStore();
   const [poin, setPoin] = useState(1250);
@@ -18,6 +19,35 @@ const WargaDashboard: React.FC = () => {
   const [aiResult, setAiResult] = useState<any>(null);
   const [selectedBin, setSelectedBin] = useState('');
   const [successModal, setSuccessModal] = useState(false);
+
+  // Dynamic Bins based on user's active wilayah
+  const getBinsForLocation = (wilayah: string) => {
+    switch (wilayah) {
+      case 'RT 02 / RW 06':
+        return [
+          { id: 'TONG_ORGANIK_1', label: 'Tong ORGANIK #1 - RT 02', capacity: 45, type: 'ORGANIK' },
+          { id: 'TONG_ANORGANIK_2', label: 'Tong ANORGANIK #2 - RT 02', capacity: 55, type: 'ANORGANIK' }
+        ];
+      case 'RT 01 / RW 05':
+        return [
+          { id: 'TONG_ORGANIK_5', label: 'Tong ORGANIK #5 - RT 01', capacity: 35, type: 'ORGANIK' },
+          { id: 'TONG_ANORGANIK_6', label: 'Tong ANORGANIK #6 - RT 01', capacity: 92, type: 'ANORGANIK' }
+        ];
+      case 'RT 04 / RW 06':
+      default:
+        return [
+          { id: 'TONG_ORGANIK_3', label: 'Tong ORGANIK #3 - RT 04', capacity: 20, type: 'ORGANIK' },
+          { id: 'TONG_ANORGANIK_4', label: 'Tong ANORGANIK #4 - RT 04', capacity: 78, type: 'ANORGANIK' }
+        ];
+    }
+  };
+
+  const nearbyBins = getBinsForLocation(user?.wilayah || 'RT 04 / RW 06');
+
+  // Reset selected bin when location changes
+  useEffect(() => {
+    setSelectedBin('');
+  }, [user?.wilayah]);
 
   const trashOptions = [
     { id: 1, name: 'Botol Plastik Bekas', type: 'ANORGANIK', icon: 'local_drink', img: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=200&auto=format&fit=crop&q=60' },
@@ -49,8 +79,9 @@ const WargaDashboard: React.FC = () => {
   const handleSetor = () => {
     if (!aiResult || !selectedBin) return;
 
-    // Check mismatch
-    const isBinOrganik = selectedBin.includes('ORGANIK');
+    // Check mismatch dynamically
+    const selectedBinDetails = nearbyBins.find(b => b.id === selectedBin);
+    const isBinOrganik = selectedBinDetails?.type === 'ORGANIK';
     const isTrashOrganik = aiResult.detectedType === 'ORGANIK';
 
     if (isBinOrganik !== isTrashOrganik) {
@@ -218,9 +249,9 @@ const WargaDashboard: React.FC = () => {
                     onChange={(e) => setSelectedBin(e.target.value)}
                   >
                     <option value="">-- Pilihlah Tong Sampah Terdekat --</option>
-                    <option value="TONG_ORGANIK_1">Tong ORGANIK #1 - RT 02 (Kapasitas: 45%)</option>
-                    <option value="TONG_ANORGANIK_2">Tong ANORGANIK #2 - RT 02 (Kapasitas: 55%)</option>
-                    <option value="TONG_ORGANIK_3">Tong ORGANIK #3 - RT 04 (Kapasitas: 20%)</option>
+                    {nearbyBins.map((bin) => (
+                      <option key={bin.id} value={bin.id}>{bin.label} (Kapasitas: {bin.capacity}%)</option>
+                    ))}
                   </select>
                   <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
                 </div>
@@ -234,11 +265,13 @@ const WargaDashboard: React.FC = () => {
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-on-surface-variant">Pilihan Tong:</span>
-                    <span className="font-bold text-on-surface">{selectedBin.includes('ORGANIK') ? 'ORGANIK' : 'ANORGANIK'}</span>
+                    <span className="font-bold text-on-surface">
+                      {nearbyBins.find(b => b.id === selectedBin)?.type || 'N/A'}
+                    </span>
                   </div>
                   
                   {/* Warning Mismatch */}
-                  {(selectedBin.includes('ORGANIK') !== (aiResult.detectedType === 'ORGANIK')) && (
+                  {(nearbyBins.find(b => b.id === selectedBin)?.type !== aiResult.detectedType) && (
                     <div className="flex gap-2 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-[10px] font-semibold mt-1">
                       <span className="material-symbols-outlined text-[14px]">warning</span>
                       <span>Jenis sampah dan tong tidak cocok! Pintu tong tidak akan terbuka.</span>
@@ -249,7 +282,7 @@ const WargaDashboard: React.FC = () => {
 
               <button 
                 onClick={handleSetor}
-                disabled={!aiResult || !selectedBin}
+                disabled={!aiResult || !selectedBin || (nearbyBins.find(b => b.id === selectedBin)?.type !== aiResult.detectedType)}
                 className="w-full h-11 bg-secondary disabled:bg-secondary/40 disabled:cursor-not-allowed hover:bg-secondary/95 text-on-secondary text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-auto"
               >
                 <span className="material-symbols-outlined text-[18px]">lock_open</span>
@@ -263,35 +296,22 @@ const WargaDashboard: React.FC = () => {
         <div className="xl:col-span-4 flex flex-col gap-gutter">
           {/* Nearby bins list */}
           <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
-            <h5 className="font-bold text-[15px] text-on-surface">Kapasitas Tong Sampah Terdekat</h5>
+            <h5 className="font-bold text-[15px] text-on-surface">Kapasitas Tong Sampah Terdekat ({user?.wilayah || 'Kecamatan Coblong'})</h5>
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
-                  <span>Tong Organik #1 - RT 02</span>
-                  <span>45% Terisi</span>
+              {nearbyBins.map((bin) => (
+                <div key={bin.id}>
+                  <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
+                    <span>{bin.label}</span>
+                    <span>{bin.capacity}% Terisi</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${bin.capacity >= 90 ? 'bg-error' : bin.capacity >= 70 ? 'bg-amber-500' : bin.type === 'ORGANIK' ? 'bg-primary' : 'bg-blue-600'}`} 
+                      style={{ width: `${bin.capacity}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: '45%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
-                  <span>Tong Anorganik #2 - RT 02</span>
-                  <span>55% Terisi</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full rounded-full" style={{ width: '55%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
-                  <span>Tong Organik #3 - RT 04</span>
-                  <span>20% Terisi</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: '20%' }}></div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

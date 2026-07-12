@@ -16,6 +16,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (username: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
+  updateWilayah: (newWilayah: string) => void;
 }
 
 const getInitialUser = (): User | null => {
@@ -106,5 +107,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('psc_user');
     set({ user: null, isAuthenticated: false });
+  },
+  updateWilayah: (newWilayah: string) => {
+    set((state) => {
+      if (!state.user) return state;
+      const updatedUser = { ...state.user, wilayah: newWilayah };
+      localStorage.setItem('psc_user', JSON.stringify(updatedUser));
+      return { user: updatedUser };
+    });
   }
 }));

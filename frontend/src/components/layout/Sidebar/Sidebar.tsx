@@ -86,7 +86,7 @@ const Sidebar: React.FC = () => {
         
         <NavItem to="/notifikasi" icon="notifications" label="Notifikasi" badge={8} />
         
-        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN']) && (
+        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN', 'WARGA']) && (
           <NavItem to="/pengaturan" icon="settings" label="Pengaturan" />
         )}
       </nav>
