@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../services/api';
 
 // ========== Sub-Components ==========
 
 const KpiCard: React.FC<{ iconName: string; iconBg: string; iconColor: string; label: string; value: string; trend: string; trendLabel: string; trendUp?: boolean; }> = ({ iconName, iconBg, iconColor, label, value, trend, trendLabel, trendUp = true }) => (
-  <div className="bg-white/90 backdrop-blur-sm p-5 rounded-xl border border-outline-variant/30 flex items-center gap-4 shadow-sm hover:-translate-y-0.5 transition-transform duration-300">
-    <div className={`w-12 h-12 ${iconBg} ${iconColor} rounded-full flex items-center justify-center flex-shrink-0`}>
-      <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>{iconName}</span>
+  <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm hover:-translate-y-0.5 transition-all duration-300">
+    <div className={`w-10 h-10 ${iconBg} ${iconColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>{iconName}</span>
     </div>
-    <div className="min-w-0">
-      <p className="text-label-sm text-on-surface-variant">{label}</p>
-      <h3 className="text-data-display font-bold text-on-surface leading-tight">{value}</h3>
-      <div className={`flex items-center text-[11px] ${trendUp ? 'text-primary' : 'text-on-surface-variant'} font-bold`}>
-        {trendUp && <span className="material-symbols-outlined text-[14px]">arrow_upward</span>}
+    <div className="min-w-0 w-full">
+      <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">{label}</p>
+      <h3 className="text-[20px] font-extrabold text-on-surface leading-tight mt-1">{value}</h3>
+      <div className={`flex items-center text-[11px] ${trendUp ? 'text-primary' : 'text-on-surface-variant'} font-bold mt-2`}>
+        {trendUp ? (
+          <span className="material-symbols-outlined text-[14px] mr-0.5">arrow_upward</span>
+        ) : (
+          <span className="material-symbols-outlined text-[14px] mr-0.5 text-on-surface-variant">arrow_downward</span>
+        )}
         <span>{trend}</span>
         <span className="text-on-surface-variant font-normal ml-1">{trendLabel}</span>
       </div>
@@ -23,17 +28,57 @@ const KpiCard: React.FC<{ iconName: string; iconBg: string; iconColor: string; l
 // ========== Main Dashboard ==========
 
 const Dashboard: React.FC = () => {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/dashboard/stats');
+        setStats(response.data.data);
+      } catch (err) {
+        setError('Gagal memuat data dashboard dari server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <span className="material-symbols-outlined text-primary text-[48px] animate-spin" style={{ fontVariationSettings: "'FILL' 1" }}>autorenew</span>
+          <p className="text-on-surface-variant font-medium">Memuat data dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 flex flex-col items-center gap-2">
+          <span className="material-symbols-outlined text-[32px]">error</span>
+          <p className="font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-gutter pb-12">
 
       {/* === KPI Section (6 Cards) === */}
-      <div className="grid grid-cols-6 gap-gutter">
-        <KpiCard iconName="group" iconBg="bg-blue-100" iconColor="text-blue-600" label="Total Pengguna" value="1.248" trend="12.4%" trendLabel="dari bulan lalu" />
-        <KpiCard iconName="delete" iconBg="bg-green-100" iconColor="text-green-600" label="Tempat Sampah Aktif" value="324" trend="8.7%" trendLabel="dari bulan lalu" />
-        <KpiCard iconName="location_on" iconBg="bg-indigo-100" iconColor="text-indigo-600" label="Lokasi Terdaftar" value="56" trend="5.3%" trendLabel="dari bulan lalu" />
-        <KpiCard iconName="shopping_bag" iconBg="bg-amber-100" iconColor="text-amber-600" label="Setoran Hari Ini" value="1.236 kg" trend="15.6%" trendLabel="dari kemarin" />
-        <KpiCard iconName="stars" iconBg="bg-yellow-100" iconColor="text-yellow-600" label="Total Poin" value="124.560" trend="10.2%" trendLabel="dari bulan lalu" />
-        <KpiCard iconName="calendar_month" iconBg="bg-emerald-100" iconColor="text-emerald-600" label="Jadwal Minggu Ini" value="8" trend="Kegiatan terjadwal" trendLabel="" trendUp={false} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-gutter">
+        <KpiCard iconName="group" iconBg="bg-blue-100" iconColor="text-blue-600" label="Total Pengguna" value={stats?.totalPengguna?.value} trend={stats?.totalPengguna?.trend} trendLabel={stats?.totalPengguna?.trendLabel} trendUp={stats?.totalPengguna?.trendUp} />
+        <KpiCard iconName="delete" iconBg="bg-green-100" iconColor="text-green-600" label="Tempat Sampah Aktif" value={stats?.tempatSampahAktif?.value} trend={stats?.tempatSampahAktif?.trend} trendLabel={stats?.tempatSampahAktif?.trendLabel} trendUp={stats?.tempatSampahAktif?.trendUp} />
+        <KpiCard iconName="location_on" iconBg="bg-indigo-100" iconColor="text-indigo-600" label="Lokasi Terdaftar" value={stats?.lokasiTerdaftar?.value} trend={stats?.lokasiTerdaftar?.trend} trendLabel={stats?.lokasiTerdaftar?.trendLabel} trendUp={stats?.lokasiTerdaftar?.trendUp} />
+        <KpiCard iconName="shopping_bag" iconBg="bg-amber-100" iconColor="text-amber-600" label="Setoran Hari Ini" value={stats?.setoranHariIni?.value} trend={stats?.setoranHariIni?.trend} trendLabel={stats?.setoranHariIni?.trendLabel} trendUp={stats?.setoranHariIni?.trendUp} />
+        <KpiCard iconName="stars" iconBg="bg-yellow-100" iconColor="text-yellow-600" label="Total Poin" value={stats?.totalPoin?.value} trend={stats?.totalPoin?.trend} trendLabel={stats?.totalPoin?.trendLabel} trendUp={stats?.totalPoin?.trendUp} />
+        <KpiCard iconName="calendar_month" iconBg="bg-emerald-100" iconColor="text-emerald-600" label="Jadwal Minggu Ini" value={stats?.jadwalMingguIni?.value} trend={stats?.jadwalMingguIni?.trend} trendLabel={stats?.jadwalMingguIni?.trendLabel} trendUp={stats?.jadwalMingguIni?.trendUp} />
       </div>
 
       {/* === Charts Grid === */}
@@ -52,29 +97,29 @@ const Dashboard: React.FC = () => {
             <svg className="w-full h-full" viewBox="0 0 700 200" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#006d37" stopOpacity="0.15"/>
+                  <stop offset="0%" stopColor="#006d37" stopOpacity="0.2"/>
                   <stop offset="100%" stopColor="#006d37" stopOpacity="0"/>
                 </linearGradient>
               </defs>
               {/* Grid Lines */}
               {[0, 50, 100, 150, 200].map(y => (
-                <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="#e0e3e6" strokeWidth="1" />
+                <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="#f0f2f5" strokeWidth="1" />
               ))}
               {/* Area Fill */}
-              <path d="M0,160 C87,140 175,120 262,90 C350,60 437,80 525,50 C612,20 700,40 700,40 L700,200 L0,200 Z" fill="url(#lineGrad)" />
+              <path d="M0,160 L100,140 L200,120 L300,90 L400,110 L500,80 L600,50 L700,30 L700,200 L0,200 Z" fill="url(#lineGrad)" />
               {/* Line */}
-              <path d="M0,160 C87,140 175,120 262,90 C350,60 437,80 525,50 C612,20 700,40 700,40" fill="none" stroke="#006d37" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M0,160 L100,140 L200,120 L300,90 L400,110 L500,80 L600,50 L700,30" fill="none" stroke="#006d37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               {/* Dots */}
               {[
-                [0, 160], [87, 140], [175, 120], [262, 90], [350, 60], [437, 80], [525, 50], [700, 40]
+                [0, 160], [100, 140], [200, 120], [300, 90], [400, 110], [500, 80], [600, 50], [700, 30]
               ].map(([cx, cy], i) => (
-                <circle key={i} cx={cx} cy={cy} r="4" fill="#006d37" stroke="white" strokeWidth="2" />
+                <circle key={i} cx={cx} cy={cy} r="5" fill="#006d37" stroke="white" strokeWidth="2" />
               ))}
             </svg>
             {/* X-axis labels */}
             <div className="absolute bottom-[-4px] left-0 right-0 flex justify-between px-1">
               {['Mng 12','Mng 13','Mng 14','Mng 15','Mng 16','Mng 17','Mng 18','Mng 19'].map((w, i) => (
-                <span key={i} className="text-[10px] text-on-surface-variant">{w}</span>
+                <span key={i} className="text-[10px] text-on-surface-variant font-bold">{w}</span>
               ))}
             </div>
           </div>
@@ -97,43 +142,38 @@ const Dashboard: React.FC = () => {
                   <div className="w-3 h-3 rounded-full bg-primary-container"></div>
                   <span className="text-on-surface">Organik</span>
                 </div>
-                <span className="text-on-surface font-bold">2.894 kg (62%)</span>
+                <span className="text-on-surface font-bold">{stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.organik?.persentase})</span>
               </div>
               <div className="flex justify-between items-center text-[12px]">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-secondary-container"></div>
-                  <span className="text-on-surface">Non Organik</span>
+                  <span className="text-on-surface">Anorganik</span>
                 </div>
-                <span className="text-on-surface font-bold">1.786 kg (38%)</span>
+                <span className="text-on-surface font-bold">{stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.anorganik?.persentase})</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Map Widget */}
-        <div className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl overflow-hidden relative">
-          <div className="absolute top-4 left-4 z-10">
-            <h4 className="font-bold text-[16px] text-on-surface drop-shadow-sm">Peta Kepatuhan Area RT/RW</h4>
+        <div className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl overflow-hidden relative border border-outline-variant/30">
+          <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm p-2 rounded-lg border border-outline-variant/30 shadow-sm">
+            <h4 className="font-bold text-[14px] text-on-surface">Kepatuhan RT/RW</h4>
           </div>
-          <div className="absolute top-4 right-4 z-10 space-y-1">
-            {[{ color: 'bg-primary', label: '<70% (Aman)' }, { color: 'bg-yellow-500', label: '70%–90% (Siaga)' }, { color: 'bg-red-500', label: '>90% (Penuh)' }].map(item => (
-              <div key={item.label} className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded text-[9px]">
-                <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
-                <span>{item.label}</span>
-              </div>
-            ))}
+          <div className="w-full h-full">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15844.757876800742!2d107.60946252981977!3d-6.880479133333333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68e6580f4f9f4d%3A0x6b30fef6a75f850e!2sCoblong%2C%20Bandung%20City%2C%20West%20Java!5e0!3m2!1sen!2sid!4v1720800000000!5m2!1sen!2sid"
+              className="w-full h-full border-0 grayscale opacity-85"
+              allowFullScreen={false}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
-          <div className="w-full h-full bg-center bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDn4DwsQNbvycV73cXNvCnd9hmfECFncMClv0FPcN3VLp0BvjhPEjuJsCLMIz4MxUDpN32TOQc_IunIfNLLUSyBjoReFEE16PrYX8lypXvHY8rTTf6anyN_A83miBTtrveqU59jVCOZCRUi1oUMP_pjCZzAXh3UOHa02yCDVxcpK0xI533bcciJMpiW7qnuqnHGoYDETMaEMcvloKOSOUIkba17naPlprCPNFLKp6tdasJvnvAnwqJ5MNvAcjlMji3QstHFQJrYlRrU')" }}>
-            <div className="absolute top-1/2 left-1/3 w-4 h-4 bg-primary rounded-full border-2 border-white animate-pulse"></div>
-            <div className="absolute top-1/4 left-1/2 w-4 h-4 bg-primary rounded-full border-2 border-white"></div>
-            <div className="absolute bottom-1/3 right-1/4 w-4 h-4 bg-yellow-500 rounded-full border-2 border-white"></div>
-            <div className="absolute top-2/3 left-1/5 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-          </div>
-          <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-outline-variant shadow-sm">
+          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-xl border border-outline-variant shadow-sm z-10">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-[10px] text-on-surface-variant uppercase font-bold">Total Lokasi</p>
-                <p className="text-[12px] font-bold text-on-surface">76 Titik RW Aktif</p>
+                <p className="text-[10px] text-on-surface-variant uppercase font-bold">Total Wilayah</p>
+                <p className="text-[12px] font-bold text-on-surface">76 RW Terdata</p>
               </div>
               <div className="flex -space-x-2">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white">
@@ -369,50 +409,59 @@ const Dashboard: React.FC = () => {
               <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
               <h5 className="font-bold text-[18px]">Top 10 Warga</h5>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[
-                { rank: '1', name: 'Dewi Lestari', sub: 'RW 06 Dago', val: '12.3k', rankCls: 'bg-yellow-400' },
-                { rank: '2', name: 'Budi Hartono', sub: 'RW 02 Cigadung', val: '9.8k', rankCls: 'bg-slate-300' },
-                { rank: '3', name: 'Siti Aminah', sub: 'RW 01 Coblong', val: '8.4k', rankCls: 'bg-amber-600' },
+                { rank: '1', name: 'Dewi Lestari', sub: 'RW 06 Dago', val: '12.3k Poin', rankCls: 'bg-yellow-400 text-white' },
+                { rank: '2', name: 'Budi Hartono', sub: 'RW 02 Cigadung', val: '9.8k Poin', rankCls: 'bg-slate-300 text-on-surface' },
+                { rank: '3', name: 'Siti Aminah', sub: 'RW 01 Coblong', val: '8.4k Poin', rankCls: 'bg-amber-600 text-white' },
+                { rank: '4', name: 'Rizky Maulana', sub: 'RW 03 Lebak Gede', val: '7.5k Poin', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '5', name: 'Hani Fitriani', sub: 'RW 04 Sekeloa', val: '7.1k Poin', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '6', name: 'Ahmad Wijaya', sub: 'RW 02 Coblong', val: '6.8k Poin', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '7', name: 'Rudi Hermawan', sub: 'RW 03 Sekeloa', val: '6.5k Poin', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '8', name: 'Siti Rahmawati', sub: 'RW 05 Dago', val: '6.2k Poin', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '9', name: 'Reza Herdian', sub: 'RW 01 Lebak Siliwangi', val: '5.9k Poin', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '10', name: 'Adi Nugroho', sub: 'RW 04 Cigadung', val: '5.5k Poin', rankCls: 'bg-surface-variant text-on-surface' },
               ].map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 ${i === 0 ? 'bg-white shadow-sm' : 'bg-white/60'} p-3 rounded-xl border border-outline-variant/30`}>
-                  <span className={`w-6 h-6 flex items-center justify-center ${item.rankCls} text-white font-bold rounded-full text-[10px]`}>{item.rank}</span>
+                <div key={i} className={`flex items-center gap-3 ${i === 0 ? 'bg-white shadow-sm' : 'bg-white/60'} p-2 rounded-xl border border-outline-variant/30`}>
+                  <span className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}>{item.rank}</span>
                   <div className="flex-1">
-                    <p className="text-[12px] font-bold">{item.name}</p>
+                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
                     <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
                   </div>
                   <span className="text-primary font-bold text-[12px]">{item.val}</span>
                 </div>
               ))}
-              <div className="text-center text-on-surface-variant py-2">
-                <span className="material-symbols-outlined">more_horiz</span>
-              </div>
             </div>
           </div>
 
           {/* Top RT */}
           <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
             <div className="flex items-center gap-3 mb-6">
-              <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>neighborhood</span>
+              <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
               <h5 className="font-bold text-[18px]">Top 10 RT</h5>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[
-                { rank: '1', name: 'RT 04 / RW 06', sub: 'Kel. Dago', val: '850 kg', rankCls: 'bg-yellow-400', valCls: 'text-secondary' },
-                { rank: '2', name: 'RT 01 / RW 02', sub: 'Kel. Cigadung', val: '720 kg', rankCls: 'bg-slate-300', valCls: 'text-secondary/70' },
+                { rank: '1', name: 'RT 04 / RW 06', sub: 'Kel. Dago', val: '850 kg', rankCls: 'bg-yellow-400 text-white' },
+                { rank: '2', name: 'RT 01 / RW 02', sub: 'Kel. Cigadung', val: '720 kg', rankCls: 'bg-slate-300 text-on-surface' },
+                { rank: '3', name: 'RT 03 / RW 04', sub: 'Kel. Sekeloa', val: '680 kg', rankCls: 'bg-amber-600 text-white' },
+                { rank: '4', name: 'RT 02 / RW 03', sub: 'Kel. Sadang Serang', val: '610 kg', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '5', name: 'RT 05 / RW 01', sub: 'Kel. Dago', val: '590 kg', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '6', name: 'RT 01 / RW 05', sub: 'Kel. Lebak Siliwangi', val: '550 kg', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '7', name: 'RT 03 / RW 02', sub: 'Kel. Sekeloa', val: '520 kg', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '8', name: 'RT 02 / RW 04', sub: 'Kel. Cigadung', val: '490 kg', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '9', name: 'RT 04 / RW 03', sub: 'Kel. Sadang Serang', val: '460 kg', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '10', name: 'RT 01 / RW 06', sub: 'Kel. Lebak Gede', val: '430 kg', rankCls: 'bg-surface-variant text-on-surface' },
               ].map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 ${i === 0 ? 'bg-white shadow-sm' : 'bg-white/60'} p-3 rounded-xl border border-outline-variant/30`}>
-                  <span className={`w-6 h-6 flex items-center justify-center ${item.rankCls} text-white font-bold rounded-full text-[10px]`}>{item.rank}</span>
+                <div key={i} className={`flex items-center gap-3 ${i === 0 ? 'bg-white shadow-sm' : 'bg-white/60'} p-2 rounded-xl border border-outline-variant/30`}>
+                  <span className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}>{item.rank}</span>
                   <div className="flex-1">
-                    <p className="text-[12px] font-bold">{item.name}</p>
+                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
                     <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
                   </div>
-                  <span className={`${item.valCls} font-bold text-[12px]`}>{item.val}</span>
+                  <span className="text-secondary font-bold text-[12px]">{item.val}</span>
                 </div>
               ))}
-              <div className="text-center text-on-surface-variant py-2">
-                <span className="material-symbols-outlined">more_horiz</span>
-              </div>
             </div>
           </div>
 
@@ -422,18 +471,28 @@ const Dashboard: React.FC = () => {
               <span className="material-symbols-outlined text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
               <h5 className="font-bold text-[18px]">Top 10 RW</h5>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-outline-variant/30">
-                <span className="w-6 h-6 flex items-center justify-center bg-yellow-400 text-white font-bold rounded-full text-[10px]">1</span>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold">RW 06 Dago</p>
-                  <p className="text-[9px] text-on-surface-variant">Total 48 KK Aktif</p>
+            <div className="space-y-3">
+              {[
+                { rank: '1', name: 'RW 06 Dago', sub: '48 KK Aktif', val: '2.4 ton', rankCls: 'bg-yellow-400 text-white' },
+                { rank: '2', name: 'RW 02 Cigadung', sub: '42 KK Aktif', val: '2.1 ton', rankCls: 'bg-slate-300 text-on-surface' },
+                { rank: '3', name: 'RW 04 Sekeloa', sub: '38 KK Aktif', val: '1.9 ton', rankCls: 'bg-amber-600 text-white' },
+                { rank: '4', name: 'RW 01 Coblong', sub: '35 KK Aktif', val: '1.7 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '5', name: 'RW 03 Lebak Gede', sub: '31 KK Aktif', val: '1.5 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '6', name: 'RW 05 Sadang Serang', sub: '29 KK Aktif', val: '1.4 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '7', name: 'RW 03 Sekeloa', sub: '27 KK Aktif', val: '1.2 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '8', name: 'RW 01 Lebak Siliwangi', sub: '25 KK Aktif', val: '1.1 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '9', name: 'RW 02 Coblong', sub: '22 KK Aktif', val: '0.9 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '10', name: 'RW 04 Cigadung', sub: '20 KK Aktif', val: '0.8 ton', rankCls: 'bg-surface-variant text-on-surface' },
+              ].map((item, i) => (
+                <div key={i} className={`flex items-center gap-3 ${i === 0 ? 'bg-white shadow-sm' : 'bg-white/60'} p-2 rounded-xl border border-outline-variant/30`}>
+                  <span className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}>{item.rank}</span>
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
+                    <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
+                  </div>
+                  <span className="text-amber-700 font-bold text-[12px]">{item.val}</span>
                 </div>
-                <span className="text-amber-700 font-bold text-[12px]">2.4 ton</span>
-              </div>
-              <div className="text-center text-on-surface-variant py-2">
-                <span className="material-symbols-outlined">more_horiz</span>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -443,18 +502,24 @@ const Dashboard: React.FC = () => {
               <span className="material-symbols-outlined text-indigo-600" style={{ fontVariationSettings: "'FILL' 1" }}>home_work</span>
               <h5 className="font-bold text-[18px]">Top 6 Kelurahan</h5>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-outline-variant/30">
-                <span className="w-6 h-6 flex items-center justify-center bg-yellow-400 text-white font-bold rounded-full text-[10px]">1</span>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold">Kel. Dago</p>
-                  <p className="text-[9px] text-on-surface-variant">Efisiensi 94%</p>
+            <div className="space-y-3">
+              {[
+                { rank: '1', name: 'Kel. Dago', sub: 'Efisiensi 94%', val: '12.5 ton', rankCls: 'bg-yellow-400 text-white' },
+                { rank: '2', name: 'Kel. Cigadung', sub: 'Efisiensi 89%', val: '9.2 ton', rankCls: 'bg-slate-300 text-on-surface' },
+                { rank: '3', name: 'Kel. Sadang Serang', sub: 'Efisiensi 85%', val: '8.4 ton', rankCls: 'bg-amber-600 text-white' },
+                { rank: '4', name: 'Kel. Sekeloa', sub: 'Efisiensi 82%', val: '7.8 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '5', name: 'Kel. Lebak Gede', sub: 'Efisiensi 79%', val: '6.5 ton', rankCls: 'bg-surface-variant text-on-surface' },
+                { rank: '6', name: 'Kel. Lebak Siliwangi', sub: 'Efisiensi 75%', val: '5.2 ton', rankCls: 'bg-surface-variant text-on-surface' },
+              ].map((item, i) => (
+                <div key={i} className={`flex items-center gap-3 ${i === 0 ? 'bg-white shadow-sm' : 'bg-white/60'} p-2 rounded-xl border border-outline-variant/30`}>
+                  <span className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}>{item.rank}</span>
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
+                    <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
+                  </div>
+                  <span className="text-indigo-700 font-bold text-[12px]">{item.val}</span>
                 </div>
-                <span className="text-indigo-700 font-bold text-[12px]">12.5 ton</span>
-              </div>
-              <div className="text-center text-on-surface-variant py-2">
-                <span className="material-symbols-outlined">more_horiz</span>
-              </div>
+              ))}
             </div>
           </div>
         </div>

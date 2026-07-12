@@ -1,11 +1,33 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 const Header: React.FC = () => {
+  const location = useLocation();
+  
+  const getHeaderInfo = (pathname: string) => {
+    switch (pathname) {
+      case '/': return { title: 'Selamat datang kembali, Admin 👋', subtitle: 'Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.' };
+      case '/manajemen-pengguna': return { title: 'Manajemen Pengguna', subtitle: 'Kelola daftar akun, hak akses, dan data warga.' };
+      case '/manajemen-tempat-sampah': return { title: 'Manajemen Tempat Sampah', subtitle: 'Pantau status kapasitas dan lokasi titik kumpul sampah.' };
+      case '/manajemen-lokasi': return { title: 'Manajemen Lokasi', subtitle: 'Daftar wilayah dan RT/RW yang dilayani oleh sistem.' };
+      case '/jadwal-kegiatan': return { title: 'Jadwal Kegiatan', subtitle: 'Agenda sosialisasi, pelatihan, dan pengangkutan sampah.' };
+      case '/kategori-sampah': return { title: 'Kategori Sampah', subtitle: 'Pengaturan jenis dan nilai tukar sampah (poin/rupiah).' };
+      case '/rekap-setoran': return { title: 'Rekap Setoran', subtitle: 'Laporan transaksi harian, bulanan, dan total penimbangan.' };
+      case '/poin-warga': return { title: 'Poin Warga', subtitle: 'Kelola leaderboard poin warga.' };
+      case '/laporan-analitik': return { title: 'Laporan & Analitik', subtitle: 'Visualisasi dan statistik progres pemilahan sampah.' };
+      case '/notifikasi': return { title: 'Notifikasi', subtitle: 'Pusat pemberitahuan sistem dan pembaruan aplikasi.' };
+      case '/pengaturan': return { title: 'Pengaturan', subtitle: 'Konfigurasi akun dan preferensi aplikasi.' };
+      default: return { title: 'Dashboard', subtitle: '' };
+    }
+  };
+
+  const headerInfo = getHeaderInfo(location.pathname);
+
   return (
     <header className="sticky top-0 h-[72px] bg-white border-b border-outline-variant px-container-margin flex items-center justify-between z-40">
       <div>
-        <h2 className="font-headline-lg text-headline-lg text-on-surface">Selamat datang kembali, Admin 👋</h2>
-        <p className="text-body-md text-on-surface-variant font-body-md">Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.</p>
+        <h2 className="font-headline-lg text-[20px] font-bold text-on-surface">{headerInfo.title}</h2>
+        <p className="text-body-md text-[14px] text-on-surface-variant">{headerInfo.subtitle}</p>
       </div>
       <div className="flex items-center gap-gutter">
         {/* Location Picker */}
