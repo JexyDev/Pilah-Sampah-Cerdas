@@ -50,8 +50,8 @@ const Sidebar: React.FC = () => {
       {/* Brand Header */}
       <div className="px-6 py-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-lg bg-primary">
-            <span className="material-symbols-outlined text-white text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>recycling</span>
+          <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-lg">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-[16px] font-bold text-primary leading-tight">Pilah Sampah Cerdas</h1>

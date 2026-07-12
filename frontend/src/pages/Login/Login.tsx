@@ -37,8 +37,8 @@ const Login: React.FC = () => {
         
         {/* Header / Logo */}
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined text-white text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>recycling</span>
+          <div className="w-16 h-16 flex items-center justify-center overflow-hidden rounded-xl">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-[22px] font-extrabold text-on-surface tracking-tight mt-2">Pilah Sampah Cerdas</h2>
           <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed">Masukkan detail kredensial Anda dan pilih peran sistem untuk melanjutkan.</p>
