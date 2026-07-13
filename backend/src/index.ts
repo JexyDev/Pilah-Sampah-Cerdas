@@ -8,6 +8,8 @@ import categoriesRoutes from './routes/categoriesRoutes';
 import transactionsRoutes from './routes/transactionsRoutes';
 import notificationsRoutes from './routes/notificationsRoutes';
 import schedulesRoutes from './routes/schedulesRoutes';
+import aiRoutes from './routes/aiRoutes';
+import authRoutes from './routes/authRoutes';
 
 dotenv.config();
 
@@ -25,6 +27,8 @@ app.use('/api/v1/categories', categoriesRoutes);
 app.use('/api/v1/transactions', transactionsRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/schedules', schedulesRoutes);
+app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

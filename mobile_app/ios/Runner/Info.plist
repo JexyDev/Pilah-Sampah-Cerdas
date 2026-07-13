@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Pilah Sampah Cerdas</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>mobile_app_sampah</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- Kamera: image_picker + mobile_scanner (QR) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Diperlukan untuk mengambil foto sampah dan memindai QR Code tong sampah.</string>
+
+	<!-- Galeri foto: image_picker -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Diperlukan untuk memilih foto bukti pengosongan tong dari galeri.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Diperlukan untuk menyimpan foto ke galeri.</string>
+
+	<!-- Lokasi: geolocator (geofencing FR-02) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Diperlukan untuk memverifikasi jarak Anda dari tong sampah (geofencing ≤ 10 meter).</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Diperlukan untuk verifikasi lokasi saat menyetor sampah.</string>
+
+	<!-- Mikrofon (diperlukan oleh beberapa versi mobile_scanner) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Tidak digunakan. Diminta oleh komponen scanner kamera.</string>
+
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+
+	<!-- Portrait only sesuai spesifikasi mobile app -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

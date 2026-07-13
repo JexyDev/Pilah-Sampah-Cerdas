@@ -170,8 +170,8 @@ const WargaDashboard: React.FC = () => {
           {/* Grid trash options */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {trashOptions.map((item) => (
-              <button 
-                key={item.id} 
+              <button
+                key={item.id}
                 onClick={() => handleSelectTrash(item)}
                 className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all cursor-pointer ${selectedTrash?.id === item.id ? 'border-primary bg-primary/5' : 'border-outline-variant/40 hover:bg-surface-container-low'}`}
               >
@@ -190,7 +190,7 @@ const WargaDashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-[16px] text-primary">photo_camera</span>
                 Simulasi Kamera AI
               </h5>
-              
+
               <div className="relative aspect-video w-full rounded-xl bg-slate-900 overflow-hidden flex flex-col items-center justify-center border-2 border-slate-800 shadow-inner">
                 {selectedTrash ? (
                   <>
@@ -222,7 +222,7 @@ const WargaDashboard: React.FC = () => {
               </div>
 
               {selectedTrash && !scanning && !aiResult && (
-                <button 
+                <button
                   onClick={handleScanAI}
                   className="w-full h-10 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-primary/20"
                 >
@@ -242,7 +242,7 @@ const WargaDashboard: React.FC = () => {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-on-surface-variant uppercase">Pilih Tong Sampah Fisik Terdekat (Simulasi QR Scan)</label>
                 <div className="relative">
-                  <select 
+                  <select
                     disabled={!aiResult}
                     className="w-full pl-3 pr-8 h-10 bg-white border border-outline-variant/60 rounded-lg text-xs font-medium text-on-surface focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
                     value={selectedBin}
@@ -269,7 +269,7 @@ const WargaDashboard: React.FC = () => {
                       {nearbyBins.find(b => b.id === selectedBin)?.type || 'N/A'}
                     </span>
                   </div>
-                  
+
                   {/* Warning Mismatch */}
                   {(nearbyBins.find(b => b.id === selectedBin)?.type !== aiResult.detectedType) && (
                     <div className="flex gap-2 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-[10px] font-semibold mt-1">
@@ -280,7 +280,7 @@ const WargaDashboard: React.FC = () => {
                 </div>
               )}
 
-              <button 
+              <button
                 onClick={handleSetor}
                 disabled={!aiResult || !selectedBin || (nearbyBins.find(b => b.id === selectedBin)?.type !== aiResult.detectedType)}
                 className="w-full h-11 bg-secondary disabled:bg-secondary/40 disabled:cursor-not-allowed hover:bg-secondary/95 text-on-secondary text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-auto"
@@ -305,8 +305,8 @@ const WargaDashboard: React.FC = () => {
                     <span>{bin.capacity}% Terisi</span>
                   </div>
                   <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${bin.capacity >= 90 ? 'bg-error' : bin.capacity >= 70 ? 'bg-amber-500' : bin.type === 'ORGANIK' ? 'bg-primary' : 'bg-blue-600'}`} 
+                    <div
+                      className={`h-full rounded-full ${bin.capacity >= 90 ? 'bg-error' : bin.capacity >= 70 ? 'bg-amber-500' : bin.type === 'ORGANIK' ? 'bg-primary' : 'bg-blue-600'}`}
                       style={{ width: `${bin.capacity}%` }}
                     ></div>
                   </div>
@@ -346,7 +346,7 @@ const WargaDashboard: React.FC = () => {
             </div>
             <h3 className="text-[18px] font-extrabold text-on-surface leading-tight">Pintu Tong Sampah Terbuka!</h3>
             <p className="text-xs text-on-surface-variant leading-relaxed">Pintu tong sampah fisik telah terbuka secara otomatis. Silakan masukkan sampah Anda. Sistem akan menutup pintu kembali dalam 30 detik.</p>
-            
+
             <div className="w-full bg-slate-50 p-4 rounded-xl border border-outline-variant/40 flex flex-col gap-2 mt-2">
               <div className="flex justify-between text-xs font-bold text-on-surface">
                 <span>Hadiah Poin:</span>
@@ -358,13 +358,53 @@ const WargaDashboard: React.FC = () => {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={resetScanner}
               className="w-full h-10 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-lg mt-2 cursor-pointer"
             >
               Selesai & Setor Lagi
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ========== KPI Card Component ==========
+interface KpiCardProps {
+  iconName: string;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  value: string | number;
+  trend?: string | number;
+  trendLabel?: string;
+  trendUp?: boolean;
+}
+
+const KpiCard: React.FC<KpiCardProps> = ({ iconName, iconBg, iconColor, label, value, trend, trendLabel, trendUp }) => {
+  return (
+    <div className="bg-white/95 backdrop-blur-sm shadow-sm rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 ${iconBg} ${iconColor} rounded-lg flex items-center justify-center`}>
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{iconName}</span>
+        </div>
+        <div className="flex-1">
+          <p className="text-[12px] text-on-surface-variant font-bold">{label}</p>
+          <h4 className="text-[20px] font-extrabold text-on-surface leading-tight">{value !== undefined ? value : '-'}</h4>
+        </div>
+      </div>
+      {(trend || trendLabel) && (
+        <div className="flex items-center gap-1.5 mt-1 border-t border-outline-variant/30 pt-2">
+          {trendUp !== undefined && (
+            <span className={`material-symbols-outlined text-[14px] ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
+              {trendUp ? 'trending_up' : 'trending_down'}
+            </span>
+          )}
+          <span className={`text-[11px] font-bold ${trendUp === true ? 'text-green-600' : trendUp === false ? 'text-red-600' : 'text-on-surface-variant'}`}>
+            {trend} {trendLabel}
+          </span>
         </div>
       )}
     </div>
@@ -454,8 +494,8 @@ const Dashboard: React.FC = () => {
             <svg className="w-full h-full" viewBox="0 0 700 200" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#006d37" stopOpacity="0.2"/>
-                  <stop offset="100%" stopColor="#006d37" stopOpacity="0"/>
+                  <stop offset="0%" stopColor="#006d37" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#006d37" stopOpacity="0" />
                 </linearGradient>
               </defs>
               {/* Grid Lines */}
@@ -475,7 +515,7 @@ const Dashboard: React.FC = () => {
             </svg>
             {/* X-axis labels */}
             <div className="absolute bottom-[-4px] left-0 right-0 flex justify-between px-1">
-              {['Mng 12','Mng 13','Mng 14','Mng 15','Mng 16','Mng 17','Mng 18','Mng 19'].map((w, i) => (
+              {['Mng 12', 'Mng 13', 'Mng 14', 'Mng 15', 'Mng 16', 'Mng 17', 'Mng 18', 'Mng 19'].map((w, i) => (
                 <span key={i} className="text-[10px] text-on-surface-variant font-bold">{w}</span>
               ))}
             </div>

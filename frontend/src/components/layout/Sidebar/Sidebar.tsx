@@ -56,6 +56,10 @@ const Sidebar: React.FC = () => {
       <nav className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#bccabc transparent' }}>
         <NavItem to="/" icon="dashboard" label="Dashboard" />
         
+        {hasAccess(['WARGA']) && (
+          <NavItem to="/setor" icon="qr_code_scanner" label="Setor Sampah" />
+        )}
+        
         {hasAccess(['ADMIN']) && (
           <NavItem to="/manajemen-pengguna" icon="group" label="Manajemen Pengguna" />
         )}

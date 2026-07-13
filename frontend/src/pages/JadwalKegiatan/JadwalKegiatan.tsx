@@ -23,9 +23,6 @@ const JadwalKegiatan: React.FC = () => {
     fetchSchedules();
   }, []);
 
-  const handleActionClick = (actionName: string) => {
-    toast.success(`Aksi "${actionName}" disimulasikan!`);
-  };
 
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-6 bg-surface-container">

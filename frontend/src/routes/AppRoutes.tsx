@@ -18,6 +18,7 @@ import PoinWarga from '../pages/PoinWarga/PoinWarga';
 import LaporanAnalitik from '../pages/LaporanAnalitik/LaporanAnalitik';
 import Notifikasi from '../pages/Notifikasi/Notifikasi';
 import Pengaturan from '../pages/Pengaturan/Pengaturan';
+import SetorSampah from '../pages/SetorSampah/SetorSampah';
 import { useAuthStore } from '../store/useAuthStore';
 import type { UserRole } from '../store/useAuthStore';
 
@@ -71,6 +72,7 @@ const AppRoutes: React.FC = () => {
         <Route path="peta" element={<PlaceholderPage title="Peta Wilayah" />} />
         <Route path="evaluasi-ai" element={<PlaceholderPage title="Evaluasi AI" />} />
         <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
+        <Route path="setor" element={<ProtectedRoute allowedRoles={['WARGA']}><SetorSampah /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
