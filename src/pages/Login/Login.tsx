@@ -7,21 +7,10 @@ import type { UserRole } from '../../store/useAuthStore';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  
-  const [username, setUsername] = useState('admin@pilahsampah.id');
-  const [password, setPassword] = useState('password123');
-  const [role, setRole] = useState<UserRole>('ADMIN');
-  const [loading, setLoading] = useState(false);
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newRole = e.target.value as UserRole;
-    setRole(newRole);
-    if (newRole === 'ADMIN') setUsername('admin@pilahsampah.id');
-    else if (newRole === 'PETUGAS_KELURAHAN') setUsername('lurah@pilahsampah.id');
-    else if (newRole === 'PETUGAS_RW') setUsername('rw@pilahsampah.id');
-    else if (newRole === 'PETUGAS_RT') setUsername('rt@pilahsampah.id');
-    else if (newRole === 'WARGA') setUsername('warga@pilahsampah.id');
-  };
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,19 +37,19 @@ const Login: React.FC = () => {
         {/* Header / Logo */}
         <div className="flex flex-col items-center text-center gap-3">
           <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-24 w-auto object-contain" />
-          <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed">Masukkan detail kredensial Anda dan pilih peran sistem untuk melanjutkan.</p>
+          <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed">Masukkan email dan kata sandi Anda untuk masuk ke dalam sistem.</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Username / Email</label>
+            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Email</label>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person</span>
               <input 
                 className="w-full pl-10 pr-4 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none" 
-                placeholder="Contoh: admin@psc.id" 
-                type="text"
+                placeholder="Contoh: user@email.com" 
+                type="email"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -80,25 +69,6 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Pilih Peran Sistem (RBAC)</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">admin_panel_settings</span>
-              <select 
-                className="w-full pl-10 pr-10 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none appearance-none cursor-pointer font-medium text-on-surface"
-                value={role}
-                onChange={handleRoleChange}
-              >
-                <option value="ADMIN">ADMIN (Super Admin)</option>
-                <option value="PETUGAS_KELURAHAN">PETUGAS KELURAHAN</option>
-                <option value="PETUGAS_RW">PETUGAS RW</option>
-                <option value="PETUGAS_RT">PETUGAS RT</option>
-                <option value="WARGA">WARGA</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
             </div>
           </div>
 
