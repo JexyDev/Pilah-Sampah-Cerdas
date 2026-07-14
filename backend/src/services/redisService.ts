@@ -17,7 +17,17 @@ class RedisService {
 
   private async initializeRedis() {
     const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-    this.client = createClient({ url: redisUrl });
+    this.client = createClient({
+      url: redisUrl,
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 3) {
+            return false; // Stop reconnecting after 3 retries
+          }
+          return 2000; // Retry after 2 seconds
+        }
+      }
+    });
 
     this.client.on("error", (err: any) => {
       console.warn("Redis connection error, falling back to in-memory mode:", err.message);
