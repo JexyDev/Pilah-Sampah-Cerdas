@@ -1,14 +1,43 @@
-name: Deploy Frontend to VPS
+name: Frontend CI/CD
 
 on:
   push:
     branches:
       - frontend
+  pull_request:
+    branches:
+      - frontend
 
 jobs:
-  deploy:
+  build-and-lint:
     runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: ./package-lock.json
+
+      - name: Install Dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Run Build
+        run: npm run build --if-present
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-lint
+    if: github.ref == 'refs/heads/frontend' && github.event_name == 'push'
     steps:
       - name: Execute SSH Commands on VPS
         uses: appleboy/ssh-action@v1.0.3
