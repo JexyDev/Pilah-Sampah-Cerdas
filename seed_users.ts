@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -6,54 +6,61 @@ const prisma = new PrismaClient();
 async function main() {
   const passwordHash = await bcrypt.hash('password123', 10);
 
+  const roles = ["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT", "WARGA"];
+
+  console.log('Menyemai data role...');
+  const roleMap: Record<string, number> = {};
+  for (const roleName of roles) {
+    const role = await prisma.role.upsert({
+      where: { name: roleName },
+      update: {},
+      create: { name: roleName }
+    });
+    roleMap[roleName] = role.id;
+  }
+
   const users = [
     {
       email: 'admin@pilahsampah.id',
       name: 'Admin Utama',
-      role: Role.ADMIN,
+      roleId: roleMap["ADMIN"],
     },
     {
       email: 'lurah@pilahsampah.id',
       name: 'Siti Kelurahan',
-      role: Role.PETUGAS_KELURAHAN,
+      roleId: roleMap["PETUGAS_KELURAHAN"],
     },
     {
       email: 'rw@pilahsampah.id',
       name: 'Asep RW',
-      role: Role.PETUGAS_RW,
+      roleId: roleMap["PETUGAS_RW"],
     },
     {
       email: 'rt@pilahsampah.id',
       name: 'Budi RT',
-      role: Role.PETUGAS_RT,
+      roleId: roleMap["PETUGAS_RT"],
     },
     {
       email: 'warga@pilahsampah.id',
       name: 'Dewi Lestari',
-      role: Role.WARGA,
+      roleId: roleMap["WARGA"],
     }
   ];
 
   console.log('Menyemai data pengguna...');
 
   for (const user of users) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: user.email }
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: { password: passwordHash },
+      create: {
+        email: user.email,
+        password: passwordHash,
+        name: user.name,
+        roleId: user.roleId,
+      }
     });
-
-    if (!existingUser) {
-      await prisma.user.create({
-        data: {
-          email: user.email,
-          password: passwordHash,
-          name: user.name,
-          role: user.role,
-        }
-      });
-      console.log(`Berhasil membuat user: ${user.email} (Role: ${user.role})`);
-    } else {
-      console.log(`User ${user.email} sudah ada, dilewati.`);
-    }
+    console.log(`Berhasil memproses user: ${user.email}`);
   }
 
   console.log('Seeding selesai!');
