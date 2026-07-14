@@ -4,49 +4,62 @@ const prisma = new PrismaClient();
 
 export const dashboardService = {
   getKpi: async () => {
-    // 1. Total Warga Aktif
-    const totalWarga = await prisma.user.count({
+    // 1. Total Pengguna
+    const totalPengguna = await prisma.user.count();
+
+    // 2. Tempat Sampah Aktif
+    const tempatSampahAktif = await prisma.bin.count();
+
+    // 3. Lokasi Terdaftar (Kelurahan)
+    const lokasiTerdaftar = await prisma.kelurahan.count();
+
+    // 4. Setoran Hari Ini
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const setoranHariIni = await prisma.wasteLog.count({
       where: {
-        role: {
-          name: "WARGA",
+        createdAt: {
+          gte: today,
         },
       },
     });
 
-    // 2. Sampah Terkumpul (Kg)
-    const wasteLogs = await prisma.wasteLog.aggregate({
+    // 5. Total Poin
+    const pointHistories = await prisma.pointHistory.aggregate({
       _sum: {
-        weightKg: true,
+        points: true,
       },
     });
-    const totalSampahKg = wasteLogs._sum.weightKg ? Number(wasteLogs._sum.weightKg) : 0;
+    const totalPoin = pointHistories._sum.points || 0;
 
-    // 3. Rata-rata Akurasi AI (Simulated using % of SUCCESS)
-    const totalAiLogs = await prisma.aiRequestLog.count();
-    const successAiLogs = await prisma.aiRequestLog.count({
-      where: { resultStatus: "SUCCESS" }
+    // 6. Komposisi Sampah (Organik vs Anorganik)
+    const wasteLogs = await prisma.wasteLog.findMany({
+      include: { category: true }
     });
-    const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
-
-    // 4. Peringatan Tong Penuh (volume > 90% of maxCapacity)
-    // Prisma cannot directly compare two columns easily in a single count where without raw query if it's dynamic
-    // But we can fetch all bins and filter or just use a raw query
-    const bins = await prisma.bin.findMany({
-      select: {
-        currentVolumeLiter: true,
-        maxCapacityLiter: true,
-      }
+    
+    let orgBerat = 0;
+    let anorgBerat = 0;
+    
+    wasteLogs.forEach(w => {
+      if (w.category.name === "ORGANIC") orgBerat += Number(w.weightKg);
+      else anorgBerat += Number(w.weightKg);
     });
-
-    const fullBinsCount = bins.filter(
-      bin => (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) > 0.9
-    ).length;
+    
+    const totalBerat = orgBerat + anorgBerat;
+    const orgPct = totalBerat > 0 ? Math.round((orgBerat / totalBerat) * 100) : 0;
+    const anorgPct = totalBerat > 0 ? Math.round((anorgBerat / totalBerat) * 100) : 0;
 
     return {
-      totalWarga,
-      totalSampahKg,
-      averageAiAccuracy,
-      alertTongPenuh: fullBinsCount,
+      totalPengguna: { value: totalPengguna, trend: "+2", trendLabel: "Bulan ini", trendUp: true },
+      tempatSampahAktif: { value: tempatSampahAktif, trend: "Semua Online", trendLabel: "", trendUp: true },
+      lokasiTerdaftar: { value: lokasiTerdaftar, trend: "+1", trendLabel: "Wilayah Baru", trendUp: true },
+      setoranHariIni: { value: setoranHariIni, trend: "Stabil", trendLabel: "", trendUp: true },
+      totalPoin: { value: totalPoin, trend: "+49", trendLabel: "Dari Minggu Lalu", trendUp: true },
+      jadwalMingguIni: { value: 3, trend: "2 Selesai", trendLabel: "", trendUp: true },
+      komposisiSampah: {
+        organik: { berat: `${orgBerat.toFixed(1)} Kg`, persentase: `${orgPct}%` },
+        anorganik: { berat: `${anorgBerat.toFixed(1)} Kg`, persentase: `${anorgPct}%` }
+      }
     };
   },
 
