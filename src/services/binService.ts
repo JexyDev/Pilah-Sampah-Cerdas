@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
+import { PrismaClient } from "@prisma/client";
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
+
+const prisma = new PrismaClient();
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
@@ -14,9 +17,6 @@ export class BinService {
    */
   async getAllBins() {
     // We need to fetch bins with relationships to match frontend expectations
-    const { PrismaClient } = require("@prisma/client");
-    const prisma = new PrismaClient();
-    
     const bins = await prisma.bin.findMany({
       include: {
         category: true,
