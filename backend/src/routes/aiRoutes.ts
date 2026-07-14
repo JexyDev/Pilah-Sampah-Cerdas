@@ -1,54 +1,28 @@
 import { Router } from "express";
-import { aiController } from "../controllers/aiController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-/**
- * @swagger
- * tags:
- *   name: AI
- *   description: AI Waste Detection
- */
-
-/**
- * @swagger
- * /api/v1/waste/detect-mock:
- *   post:
- *     summary: Simulasi Deteksi Gambar Sampah AI
- *     description: Mengirim gambar sampah untuk dideteksi kategorinya secara otomatis menggunakan antrian Redis FIFO dengan limitasi kuota harian.
- *     tags: [AI]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               imageUrl:
- *                 type: string
- *                 description: URL gambar sampah yang diunggah
- *                 example: "http://mock-storage/waste.jpg"
- *     responses:
- *       200:
- *         description: Deteksi berhasil
- *       400:
- *         description: Bad Request (Missing parameter)
- *       422:
- *         description: Gambar buram atau jenis sampah tidak teridentifikasi
- *       429:
- *         description: Quota Exceeded (Batas harian terlampaui)
- *       408:
- *         description: AI Timeout (Proses deteksi melebihi 2 detik)
- */
-router.post(
-  "/detect-mock",
-  authMiddleware,
-  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_KELURAHAN"]),
-  aiController.detect
-);
+// Mock endpoint for AI Waste Detection
+router.post("/predict", (req, res) => {
+  // In a real app, you would process req.body.image
+  // Mock processing time
+  setTimeout(() => {
+    // Randomly choose organic or non_organic
+    const isOrganic = Math.random() > 0.5;
+    const type = isOrganic ? "ORGANIC" : "NON_ORGANIC";
+    
+    // Estimate volume between 1 to 5 liters
+    const volume = Math.floor(Math.random() * 5) + 1;
+    
+    res.status(200).json({
+      status: "success",
+      data: {
+        jenis_sampah: type,
+        estimasi_volume: volume,
+        confidence: (Math.random() * (0.99 - 0.75) + 0.75).toFixed(2)
+      }
+    });
+  }, 1500); // 1.5 seconds mock delay
+});
 
 export default router;

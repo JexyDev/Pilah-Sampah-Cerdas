@@ -1,51 +1,46 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-
-import authRouter from "./routes/authRoutes.js";
-import householdRouter from "./routes/householdRoutes.js";
-import binRouter from "./routes/binRoutes.js";
-import pointRouter from "./routes/pointRoutes.js";
-import aiRouter from "./routes/aiRoutes.js";
-import { setupSwagger } from "./swagger.js";
+import dashboardRoutes from './routes/dashboardRoutes';
+import usersRoutes from './routes/usersRoutes';
+import binsRoutes from './routes/binsRoutes';
+import categoriesRoutes from './routes/categoriesRoutes';
+import transactionsRoutes from './routes/transactionsRoutes';
+import notificationsRoutes from './routes/notificationsRoutes';
+import schedulesRoutes from './routes/schedulesRoutes';
+import aiRoutes from './routes/aiRoutes';
+import authRoutes from './routes/authRoutes';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-request-id");
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
+app.use(cors());
 app.use(express.json());
-app.use(cookieParser());
 
-// Main APIs
-app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/households", householdRouter);
-app.use("/api/v1/bins", binRouter);
-app.use("/api/v1/points", pointRouter);
-app.use("/api/v1/waste", aiRouter);
-
-// Initialize Swagger Docs
-setupSwagger(app);
+// Routes
+app.use("/api/v1/dashboard", dashboardRoutes);
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/bins', binsRoutes);
+app.use('/api/v1/categories', categoriesRoutes);
+app.use('/api/v1/transactions', transactionsRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/schedules', schedulesRoutes);
+app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // Health check
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`pilahsampah.id Backend running on port ${PORT}`);
-  console.log(`===============================================`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(`pilahsampah.id Backend running on port ${PORT}`);
+    console.log(`===============================================`);
+  });
+}
 
+export default app;
