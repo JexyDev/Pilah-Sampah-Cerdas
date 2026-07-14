@@ -1,43 +1,32 @@
-﻿# Frontend Web Dashboard — Pilah Sampah Cerdas
+# React + TypeScript + Vite
 
-Dasbor pemantauan, peta spasial GIS, dan pengelolaan Master Data berbasis **React.js & Vite**.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## 🛠️ Persyaratan Sistem (Prerequisites)
-Sebelum menjalankan, pastikan Anda telah memasang:
-*   [Node.js (v18 atau lebih baru)](https://nodejs.org/)
+Currently, two official plugins are available:
 
----
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 🚀 Panduan Memulai Cepat (Local Development)
+## React Compiler
 
-### 1. Masuk ke Folder Frontend
-```bash
-cd frontend
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the Oxlint configuration
+
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
 ```
 
-### 2. Install Dependencies
-Jalankan instalasi modul node:
-```bash
-npm install
-```
-
-### 3. Setup Environment Variables
-Buat file `.env` di folder `/frontend` (sesuaikan port backend API yang menyala):
-```env
-VITE_API_BASE_URL="http://localhost:3000/api/v1"
-```
-
-### 4. Jalankan Server Development React
-Jalankan server Vite untuk local development:
-```bash
-npm run dev
-```
-Aplikasi web dashboard akan aktif di `http://localhost:5173`. Buka di browser Anda.
-
----
-
-## 📂 Struktur Menu Web Dashboard
-*   **Dashboard:** Ringkasan KPI statistik volume dan tingkat kesadaran warga.
-*   **Live Monitoring (Dedicated Page):** Peta geospatial (hierarki RT/RW/Kelurahan) dengan auto-refresh 30 detik untuk memantau titik tong sampah.
-*   **Master Data:** Navigasi dropdown untuk CRUD 8 entitas utama (User, Area RT/RW, Rumah Tangga, Tong Sampah, dll).
-*   **Leaderboard:** Peringkat kompetisi pemilahan antar-RT dan warga teraktif.
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
