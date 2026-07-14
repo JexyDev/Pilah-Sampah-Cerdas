@@ -8,12 +8,15 @@
 # Node.js
 node_modules/
 dist/
-!backend/dist/
 build/
 
 # TypeScript build artifacts
 *.js.map
 *.d.ts
+
+# Backend dist is tracked — Railway compiles from source OR runs pre-compiled dist
+# Only ignore dist in non-backend directories
+frontend/dist/
 
 # Prisma generated client
 prisma/client/
