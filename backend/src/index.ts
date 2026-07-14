@@ -35,10 +35,12 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`pilahsampah.id Backend running on port ${PORT}`);
-  console.log(`===============================================`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(`pilahsampah.id Backend running on port ${PORT}`);
+    console.log(`===============================================`);
+  });
+}
 
 export default app;
