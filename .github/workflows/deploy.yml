@@ -1,0 +1,33 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute SSH Commands on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            echo "Starting Frontend Deployment..."
+            cd /var/www/pilah-sampah-cerdas/frontend
+            
+            # Tarik perubahan terbaru dari GitHub
+            git pull
+            
+            # Install dependencies jika ada perubahan package.json
+            npm install
+            
+            # Build React/Vite app untuk produksi
+            npm run build
+            
+            echo "Frontend Deployment Completed Successfully!"
