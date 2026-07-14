@@ -427,7 +427,7 @@ const Dashboard: React.FC = () => {
 
     const fetchStats = async () => {
       try {
-        const response = await api.get('/dashboard/stats');
+        const response = await api.get('/dashboard/kpi');
         setStats(response.data.data);
       } catch (err) {
         setError('Gagal memuat data dashboard dari server.');

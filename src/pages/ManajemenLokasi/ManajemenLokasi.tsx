@@ -10,7 +10,7 @@ const ManajemenLokasi: React.FC = () => {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await api.get('/bins/locations');
+        const response = await api.get('/bins');
         setLocations(response.data.data);
       } catch (err) {
         setError('Gagal memuat data dari server.');
