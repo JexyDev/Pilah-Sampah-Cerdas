@@ -8,6 +8,7 @@ import binRouter from "./routes/binRoutes.js";
 import pointRouter from "./routes/pointRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
 import dashboardRouter from "./routes/dashboardRoutes.js";
+import notificationRouter from "./routes/notificationRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use("/api/v1/bins", binRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/waste", aiRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 // Initialize Swagger Docs
 setupSwagger(app);
