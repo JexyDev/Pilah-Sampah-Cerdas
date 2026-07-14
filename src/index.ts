@@ -50,5 +50,3 @@ app.listen(PORT, () => {
   console.log(`pilahsampah.id Backend running on port ${PORT}`);
   console.log(`===============================================`);
 });
-
-export default app;
