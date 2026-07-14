@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI/CD
 
 on:
   push:
@@ -64,3 +64,35 @@ jobs:
 
       - name: Run Build
         run: npm run build --if-present
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/backend' && github.event_name == 'push'
+    steps:
+      - name: Execute SSH Commands on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            echo "Starting Backend Deployment..."
+            cd /var/www/pilah-sampah-cerdas/backend
+            
+            # Tarik perubahan terbaru dari GitHub
+            git pull
+            
+            # Install dependencies jika ada perubahan package.json
+            npm install
+            
+            # Generate Prisma Client
+            npx prisma generate
+            
+            # Build TypeScript ke JavaScript
+            npm run build
+            
+            # Restart layanan dengan PM2
+            pm2 restart psc-backend
+            
+            echo "Backend Deployment Completed Successfully!"
