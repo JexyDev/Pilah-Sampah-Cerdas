@@ -82,24 +82,30 @@ router.get("/", async (req, res) => {
   try {
     const role = (req.query.role as string || "WARGA").toUpperCase();
 
-    // 1. Fetch notifications from DB where the target user's role matches
-    const dbNotifications = await prisma.notification.findMany({
-      where: {
-        user: {
-          role: {
-            name: role
+    let formattedNotifications: any[] = [];
+
+    // 1. Try to fetch notifications from DB where the target user's role matches
+    try {
+      const dbNotifications = await prisma.notification.findMany({
+        where: {
+          user: {
+            role: {
+              name: role
+            }
           }
+        },
+        orderBy: {
+          createdAt: "desc"
         }
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
+      });
 
-    // 2. Map notifications to frontend structure
-    let formattedNotifications = dbNotifications.map(mapNotification);
+      // 2. Map notifications to frontend structure
+      formattedNotifications = dbNotifications.map(mapNotification);
+    } catch (dbError) {
+      console.warn("Database connection failed for notifications, falling back to mock seeds:", dbError);
+    }
 
-    // 3. Fallback: if database is empty, provide seed notifications
+    // 3. Fallback: if database is empty or unreachable, provide seed notifications
     if (formattedNotifications.length === 0) {
       if (role === "WARGA") {
         formattedNotifications = [
