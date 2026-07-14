@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // e.g., "ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT", "WARGA"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]
+
+  @@map("roles")
+}
+
+model User {
+  id              String            @id @default(uuid())
+  name            String
+  email           String            @unique
+  password        String
+  fcmToken        String?           @map("fcm_token")
+  roleId          Int               @map("role_id")
+  role            Role              @relation(fields: [roleId], references: [id])
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  households      Household[]
+  aiRequestLogs   AiRequestLog[]
+  pointHistory    PointHistory[]
+  notifications   Notification[]
+  refreshTokens   RefreshToken[]
+  requestedResets BinResetRequest[] @relation("RequestedResets")
+  reviewedResets  BinResetRequest[] @relation("ReviewedResets")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}
+
+model Kelurahan {
+  id        String     @id @default(uuid())
+  name      String     @unique // e.g., "Dago", "Sadangserang"
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  rtRwAreas RtRwArea[]
+  bins      Bin[]      // Needed for Bulk Generate
+
+  @@map("kelurahan")
+}
+
+model RtRwArea {
+  id          Int         @id @default(autoincrement())
+  kelurahanId String      @map("kelurahan_id")
+  kelurahan   Kelurahan   @relation(fields: [kelurahanId], references: [id])
+  name        String      // e.g., "RT 01 / RW 05"
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  households  Household[]
+  bins        Bin[]
+
+  @@unique([kelurahanId, name])
+  @@map("rt_rw_areas")
+}
+
+model Household {
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id])
+  address   String
+  rtRwId    Int        @map("rt_rw_id")
+  rtRw      RtRwArea   @relation(fields: [rtRwId], references: [id])
+  latitude  Decimal    @db.Decimal(11, 8)
+  longitude Decimal    @db.Decimal(11, 8)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  wasteLogs WasteLog[]
+
+  @@map("households")
+}
+
+model WasteCategory {
+  id          String     @id @default(uuid())
+  name        String     @unique // e.g., "ORGANIC", "NON_ORGANIC", "B3"
+  pointsPerKg Int        @map("points_per_kg")
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  bins        Bin[]
+  wasteLogs   WasteLog[]
+
+  @@map("waste_categories")
+}
+
+model Bin {
+  id                 String            @id @default(uuid())
+  qrCode             String            @unique @map("qr_code")
+  categoryId         String            @map("category_id")
+  category           WasteCategory     @relation(fields: [categoryId], references: [id])
+  maxCapacityLiter   Decimal           @default(25.0) @map("max_capacity_liter") @db.Decimal(5, 2)
+  currentVolumeLiter Decimal           @default(0.0) @map("current_volume_liter") @db.Decimal(5, 2)
+  rtRwId             Int               @map("rt_rw_id")
+  rtRw               RtRwArea          @relation(fields: [rtRwId], references: [id])
+  kelurahanId        String?           @map("kelurahan_id")
+  kelurahan          Kelurahan?        @relation(fields: [kelurahanId], references: [id])
+  latitude           Decimal?          @db.Decimal(11, 8)
+  longitude          Decimal?          @db.Decimal(11, 8)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  wasteLogs          WasteLog[]
+  binResetRequests   BinResetRequest[]
+
+  @@map("bins")
+}
+
+model WasteLog {
+  id          String        @id @default(uuid())
+  householdId String        @map("household_id")
+  household   Household     @relation(fields: [householdId], references: [id])
+  binId       String        @map("bin_id")
+  bin         Bin           @relation(fields: [binId], references: [id])
+  weightKg    Decimal       @map("weight_kg") @db.Decimal(5, 2)
+  volumeLiter Decimal       @map("volume_liter") @db.Decimal(5, 2)
+  categoryId  String        @map("category_id")
+  category    WasteCategory @relation(fields: [categoryId], references: [id])
+  requestId   String        @map("request_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("waste_logs")
+}
+
+model AiRequestLog {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  requestId    String   @unique @map("request_id") @db.Uuid
+  imageUrl     String   @map("image_url")
+  resultStatus String   @map("result_status") // e.g., "SUCCESS", "TIMEOUT", "IMAGE_UNREADABLE"
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("ai_request_logs")
+}
+
+model PointHistory {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  points      Int
+  description String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("point_history")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model BinResetRequest {
+  id               String   @id @default(uuid())
+  binId            String   @map("bin_id")
+  bin              Bin      @relation(fields: [binId], references: [id])
+  userId           String   @map("user_id")
+  user             User     @relation("RequestedResets", fields: [userId], references: [id])
+  evidencePhotoUrl String   @map("evidence_photo_url")
+  status           String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedById     String?  @map("reviewed_by_id")
+  reviewedBy       User?    @relation("ReviewedResets", fields: [reviewedById], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("bin_reset_requests")
+}

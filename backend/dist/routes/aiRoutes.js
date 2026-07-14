@@ -2,16 +2,13 @@ import { Router } from "express";
 import { aiController } from "../controllers/aiController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-
 const router = Router();
-
 /**
  * @swagger
  * tags:
  *   name: AI
  *   description: AI Waste Detection
  */
-
 /**
  * @swagger
  * /api/v1/waste/detect-mock:
@@ -44,11 +41,5 @@ const router = Router();
  *       408:
  *         description: AI Timeout (Proses deteksi melebihi 2 detik)
  */
-router.post(
-  "/detect-mock",
-  authMiddleware,
-  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_KELURAHAN"]),
-  aiController.detect
-);
-
+router.post("/detect-mock", authMiddleware, roleMiddleware(["WARGA", "ADMIN", "PETUGAS_KELURAHAN"]), aiController.detect);
 export default router;

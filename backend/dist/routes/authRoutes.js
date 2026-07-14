@@ -1,16 +1,13 @@
 import { Router } from "express";
 import { authController } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
-
 const router = Router();
-
 /**
  * @swagger
  * tags:
  *   name: Auth
  *   description: Authentication API (Login, Refresh, Logout)
  */
-
 /**
  * @swagger
  * /api/v1/auth/login:
@@ -58,7 +55,6 @@ const router = Router();
  *         description: Unauthorized (Invalid credentials)
  */
 router.post("/login", authController.login);
-
 /**
  * @swagger
  * /api/v1/auth/refresh:
@@ -83,7 +79,6 @@ router.post("/login", authController.login);
  *         description: Invalid or expired refresh token
  */
 router.post("/refresh", authController.refresh);
-
 /**
  * @swagger
  * /api/v1/auth/logout:
@@ -105,7 +100,6 @@ router.post("/refresh", authController.refresh);
  *         description: Logout successful
  */
 router.post("/logout", authController.logout);
-
 /**
  * @swagger
  * /api/v1/auth/me:
@@ -121,7 +115,6 @@ router.post("/logout", authController.logout);
  *         description: Unauthorized
  */
 router.get("/me", authMiddleware, (req, res) => {
-  res.json({ message: "Authenticated", user: req.user });
+    res.json({ message: "Authenticated", user: req.user });
 });
-
 export default router;

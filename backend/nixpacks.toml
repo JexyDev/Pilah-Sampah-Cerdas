@@ -1,0 +1,14 @@
+# Nixpacks config for Railway — pilahsampah.id backend
+# dist/ is pre-compiled — no TypeScript build step needed
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install --production=false"]
+
+[phases.build]
+cmds = ["npx prisma generate"]
+
+[start]
+cmd = "npx prisma migrate deploy && node dist/index.js"
