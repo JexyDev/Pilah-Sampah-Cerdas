@@ -113,10 +113,13 @@ const ManajemenTempatSampah: React.FC = () => {
                   <td className="px-6 py-4 text-on-surface-variant text-[12px]">{bin.lastUpdate}</td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => handleActionClick('Lokasi ' + bin.kode)} className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center">
+                      <button onClick={() => handleActionClick('Lokasi ' + bin.kode)} className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center" title="Lokasi">
                         <span className="material-symbols-outlined text-[18px]">map</span>
                       </button>
-                      <button onClick={() => handleActionClick('Edit ' + bin.kode)} className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center">
+                      <button onClick={() => openLogModal(bin.kode)} className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center" title="Log Transaksi">
+                        <span className="material-symbols-outlined text-[18px]">history</span>
+                      </button>
+                      <button onClick={() => handleActionClick('Edit ' + bin.kode)} className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center" title="Edit">
                         <span className="material-symbols-outlined text-[18px]">edit</span>
                       </button>
                     </div>

@@ -10,10 +10,8 @@ type Step = 'CAMERA_PERMISSION' | 'TAKE_PHOTO' | 'AI_PROCESSING' | 'AI_RESULT' |
 
 export default function SetorSampah() {
   const [step, setStep] = useState<Step>('TAKE_PHOTO');
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<{ jenis_sampah: string, estimasi_volume: number } | null>(null);
-  const [qrData, setQrData] = useState<string | null>(null);
   const [transactionData, setTransactionData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -40,7 +38,6 @@ export default function SetorSampah() {
       };
       const compressedFile = await imageCompression(file, options);
       
-      setImageFile(compressedFile);
       setPreviewUrl(URL.createObjectURL(compressedFile));
 
       // Call AI Mock
@@ -60,7 +57,6 @@ export default function SetorSampah() {
       if (videoRef.current) {
         const controls = await codeReader.current.decodeFromVideoDevice(undefined, videoRef.current, (result, err, controls) => {
           if (result) {
-            setQrData(result.getText());
             controls.stop();
             submitTransaction(result.getText());
           }
@@ -103,10 +99,8 @@ export default function SetorSampah() {
 
   const resetFlow = () => {
     stopScanner();
-    setImageFile(null);
     setPreviewUrl(null);
     setAiResult(null);
-    setQrData(null);
     setStep('TAKE_PHOTO');
   };
 

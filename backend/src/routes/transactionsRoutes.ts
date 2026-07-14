@@ -66,12 +66,12 @@ router.post("/setor", (req, res) => {
   }
 
   // Dekripsi QR Data
+  let binId = qr_data;
   const qrPayload = decryptQRData(qr_data);
-  if (!qrPayload || !qrPayload.bin_id) {
-    return res.status(400).json({ status: "error", message: "QR Code tidak valid atau rusak" });
+  if (qrPayload && qrPayload.bin_id) {
+    binId = qrPayload.bin_id;
   }
 
-  const binId = qrPayload.bin_id;
   const bin = bins.find(b => b.qrSerial === binId);
   
   if (!bin) {
