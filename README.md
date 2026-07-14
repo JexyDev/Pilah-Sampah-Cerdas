@@ -1,103 +1,61 @@
-# Pilah Sampah Cerdas — Monorepo
-## pilahsampah.id | Kecamatan Coblong, Kota Bandung
+﻿# Backend Service — Pilah Sampah Cerdas
 
-Platform cerdas manajemen pemilahan sampah berbasis AI untuk meningkatkan kepatuhan warga dalam memilah sampah rumah tangga secara digital.
+Layanan backend berbasis **Express.js (TypeScript)** untuk mengelola database PostgreSQL, antrian deteksi AI di Redis, dan sistem notifikasi/poin.
+
+## 🛠️ Persyaratan Sistem (Prerequisites)
+Sebelum menjalankan, pastikan Anda telah memasang:
+*   [Node.js (v18 atau lebih baru)](https://nodejs.org/)
+*   [Docker Desktop](https://www.docker.com/)
 
 ---
 
-## Struktur Monorepo
+## 🚀 Panduan Memulai Cepat (Local Development)
 
+### 1. Jalankan Database & Cache (Docker)
+Buka terminal di folder `/backend` lalu jalankan perintah berikut untuk menyalakan PostgreSQL dan Redis secara otomatis di background:
+```bash
+docker-compose up -d
 ```
-pilahsampah-id/
-├── backend/          # Express.js + TypeScript + Prisma + Redis
-│   └── docs/         # PRD, SRS, SDD, UI/UX Flow, Task Breakdown
-├── frontend/         # React.js + Vite + Tailwind + TanStack Query
-│   ├── docs/         # PRD, SRS, SDD, UI/UX Flow, Task Breakdown
-│   └── src/          # Kode React (App.tsx, index.css)
-├── mobile/           # Flutter + Dart
-│   ├── docs/         # PRD, SRS, SDD, UI/UX Flow, Task Breakdown
-│   └── lib/          # Kode Flutter (main.dart)
-├── prisma/           # Schema database Prisma (PostgreSQL)
-├── src/              # Backend source (Express routes, services)
-├── docs/             # Dokumen tingkat proyek
-├── .env              # Environment variables (jangan di-commit!)
-├── .env.example      # Template environment variables
-├── package.json      # Backend dependencies
-├── tsconfig.json     # TypeScript config
-└── start-ngrok.ps1   # Script Ngrok tunnel
+Gunakan perintah `docker-compose ps` untuk memastikan status container berjalan (`running`).
+
+### 2. Setup Environment Variables
+Salin file `.env.example` menjadi `.env` di folder `/backend`:
+```bash
+cp .env.example .env
+```
+Sesuaikan konfigurasi koneksi database di `.env`:
+```env
+DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db?schema=public"
+REDIS_URL="redis://localhost:6379"
+PORT=3000
 ```
 
----
-
-## Branch Strategy
-
-| Branch | Tujuan |
-|--------|--------|
-| `main` | Branch utama — hanya kode yang sudah disetujui senior |
-| `dev/backend` | Jeremy — pengembangan Backend API |
-| `dev/frontend` | Jeremy — pengembangan Web Dashboard |
-| `dev/mobile` | Habil — pengembangan Flutter Mobile App |
-
----
-
-## Tech Stack
-
-| Layer | Teknologi |
-|-------|-----------|
-| Backend | Node.js, Express.js, TypeScript, Prisma ORM |
-| Database | PostgreSQL + Redis |
-| Frontend | React.js, Vite, Tailwind CSS, TanStack Query, Recharts, Leaflet |
-| Mobile | Flutter, Dart, Dio, flutter_secure_storage |
-| Tunnel | Ngrok (localhost → HTTPS) |
-| Auth | JWT (httpOnly Cookie untuk Web, Bearer Token untuk Mobile) |
-
----
-
-## Cara Mulai Development
-
-### 1. Jalankan Backend
+### 3. Install Dependencies
+Jalankan instalasi modul node:
 ```bash
 npm install
+```
+
+### 4. Setup Prisma Database Schema & Seed
+Jalankan migrasi database PostgreSQL dan buat tabel secara otomatis sesuai skema SDD:
+```bash
+# Jalankan migrasi Prisma
 npx prisma migrate dev --name init
+
+# Generate Prisma Client
+npx prisma generate
+```
+
+### 5. Jalankan Backend (Development Mode)
+Jalankan server dengan auto-reload (nodemon):
+```bash
 npm run dev
 ```
-
-### 2. Jalankan Ngrok (untuk Mobile)
-```powershell
-.\start-ngrok.ps1
-```
-
-### 3. Jalankan Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 4. Jalankan Mobile (Flutter)
-```bash
-cd mobile
-flutter pub get
-flutter run
-```
+Server backend akan aktif di `http://localhost:3000`.
 
 ---
 
-## Environment Variables (.env)
-
-Lihat `.env.example` untuk daftar semua variabel yang diperlukan. Salin ke `.env` dan isi nilainya.
-
----
-
-## Dokumentasi Teknis
-
-Setiap modul memiliki 5 dokumen teknis di folder `docs/`:
-- `prd.md` — Product Requirement Document
-- `srs.md` — Software Requirement Specification
-- `sdd.md` — Software Design Document
-- `ui_ux_flow.md` — UI/UX Flow & Screen Specification
-- `task_breakdown.md` — Sprint Task Breakdown
-
----
-
-*© 2026 Pilah Sampah Cerdas. Sampah Terdaftar, Lingkungan Tertata.*
+## 🧪 Pengujian API (API Testing)
+Gunakan tools API client seperti Postman atau Thunder Client ke endpoint berikut:
+*   `POST http://localhost:3000/api/v1/waste/detect-mock` (Upload / deteksi AI)
+*   `POST http://localhost:3000/api/v1/bins/scan` (Scan transaksi buang sampah)
