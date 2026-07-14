@@ -1,4 +1,4 @@
-﻿name: Mobile CI
+name: Mobile CI
 
 on:
   push:
@@ -11,10 +11,6 @@ on:
 jobs:
   flutter-check:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./mobile
 
     steps:
       - name: Checkout Code
