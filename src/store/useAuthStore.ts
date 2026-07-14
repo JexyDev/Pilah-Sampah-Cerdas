@@ -35,8 +35,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
   isAuthenticated: !!localStorage.getItem('psc_user'),
   login: async (username: string, role: UserRole) => {
+    // Fetch a real JWT token from the backend using the seeded admin account
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'admin@pilahsampah.id', password: 'password123' })
+      });
+      const data = await res.json();
+      if (data.success && data.data?.accessToken) {
+        localStorage.setItem('psc_token', data.data.accessToken);
+      }
+    } catch (e) {
+      console.error("Auth fallback failed:", e);
+    }
+
     // Simulasikan delay API
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     let details: User = {
       nama: username || 'Pengguna Demo',
