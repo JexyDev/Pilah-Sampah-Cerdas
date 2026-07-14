@@ -1,58 +1,45 @@
-# .gitignore — pilahsampah.id Monorepo
-
-# Environment variables (JANGAN PERNAH DI-COMMIT!)
-.env
-.env.local
-.env.*.local
-
-# Node.js
-node_modules/
-build/
-
-# TypeScript build artifacts
-*.js.map
-*.d.ts
-
-# Backend dist is tracked — Railway compiles from source OR runs pre-compiled dist
-# Only ignore dist in non-backend directories
-frontend/dist/
-
-# Prisma generated client
-prisma/client/
-
-# Flutter / Dart
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/build/
-mobile/android/app/debug/
-mobile/android/app/profile/
-mobile/android/app/release/
-mobile/ios/Runner/
-mobile/pubspec.lock
-
-# Frontend build
-frontend/dist/
-frontend/node_modules/
-
-# IDE files
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Logs
-logs/
+# Miscellaneous
+*.class
 *.log
-npm-debug.log*
-
-# OS files
+*.pyc
+*.swp
 .DS_Store
-Thumbs.db
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
 
-# Ngrok binary
-ngrok.exe
-ngrok
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release

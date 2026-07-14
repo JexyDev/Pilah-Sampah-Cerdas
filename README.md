@@ -1,103 +1,87 @@
-# Pilah Sampah Cerdas — Monorepo
-## pilahsampah.id | Kecamatan Coblong, Kota Bandung
+# mobile_app_sampah — Pilah Sampah Cerdas
 
-Platform cerdas manajemen pemilahan sampah berbasis AI untuk meningkatkan kepatuhan warga dalam memilah sampah rumah tangga secara digital.
+Aplikasi mobile warga berbasis Flutter untuk penyetoran sampah terpilah, scan QR tong, poin reward, dan pengajuan pengosongan tong.
+
+## Status: MOCK MODE
+
+Semua data bersifat lokal (tidak ada koneksi ke backend/API). Siap diintegrasikan saat backend tersedia cukup dengan mengganti implementasi di `lib/data/repositories/`.
 
 ---
 
-## Struktur Monorepo
+## Arsitektur: Clean Architecture + Riverpod
 
 ```
-pilahsampah-id/
-├── backend/          # Express.js + TypeScript + Prisma + Redis
-│   └── docs/         # PRD, SRS, SDD, UI/UX Flow, Task Breakdown
-├── frontend/         # React.js + Vite + Tailwind + TanStack Query
-│   ├── docs/         # PRD, SRS, SDD, UI/UX Flow, Task Breakdown
-│   └── src/          # Kode React (App.tsx, index.css)
-├── mobile/           # Flutter + Dart
-│   ├── docs/         # PRD, SRS, SDD, UI/UX Flow, Task Breakdown
-│   └── lib/          # Kode Flutter (main.dart)
-├── prisma/           # Schema database Prisma (PostgreSQL)
-├── src/              # Backend source (Express routes, services)
-├── docs/             # Dokumen tingkat proyek
-├── .env              # Environment variables (jangan di-commit!)
-├── .env.example      # Template environment variables
-├── package.json      # Backend dependencies
-├── tsconfig.json     # TypeScript config
-└── start-ngrok.ps1   # Script Ngrok tunnel
+lib/
+├── config/                   # AppConfig — env constants
+├── core/
+│   ├── constants/            # Colors, TextStyles, Strings, Dimensions
+│   ├── theme/                # AppTheme (Light Mode Only)
+│   └── router/               # AppRouter + AppRoutes
+├── domain/
+│   ├── entities/             # UserEntity, BinEntity, WasteLogEntity, dll
+│   └── repositories/         # Abstract interfaces (AuthRepo, BinRepo, WasteLogRepo)
+├── data/
+│   ├── mock/                 # MockData — semua dummy data terpusat
+│   └── repositories/         # MockAuthRepository, MockBinRepository, MockWasteLogRepository
+└── presentation/
+    ├── providers/            # Riverpod providers & StateNotifiers
+    ├── shared/widgets/       # OfflineBanner, AppLoading, AppError, BinStatusBadge
+    ├── splash/               # SplashScreen
+    ├── auth/                 # LoginScreen
+    ├── main/                 # MainShell (BottomNav)
+    ├── beranda/              # BerandaScreen
+    ├── scan/                 # ScanFlowScreen (4-step)
+    ├── riwayat/              # RiwayatScreen
+    ├── poin/                 # PoinScreen
+    ├── profil/               # ProfilScreen
+    ├── aktivasi/             # AktivasiBinScreen
+    └── reset/                # ResetBinScreen
 ```
 
 ---
 
-## Branch Strategy
+## Cara Menjalankan
 
-| Branch | Tujuan |
-|--------|--------|
-| `main` | Branch utama — hanya kode yang sudah disetujui senior |
-| `dev/backend` | Jeremy — pengembangan Backend API |
-| `dev/frontend` | Jeremy — pengembangan Web Dashboard |
-| `dev/mobile` | Habil — pengembangan Flutter Mobile App |
-
----
-
-## Tech Stack
-
-| Layer | Teknologi |
-|-------|-----------|
-| Backend | Node.js, Express.js, TypeScript, Prisma ORM |
-| Database | PostgreSQL + Redis |
-| Frontend | React.js, Vite, Tailwind CSS, TanStack Query, Recharts, Leaflet |
-| Mobile | Flutter, Dart, Dio, flutter_secure_storage |
-| Tunnel | Ngrok (localhost → HTTPS) |
-| Auth | JWT (httpOnly Cookie untuk Web, Bearer Token untuk Mobile) |
-
----
-
-## Cara Mulai Development
-
-### 1. Jalankan Backend
 ```bash
-npm install
-npx prisma migrate dev --name init
-npm run dev
-```
-
-### 2. Jalankan Ngrok (untuk Mobile)
-```powershell
-.\start-ngrok.ps1
-```
-
-### 3. Jalankan Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 4. Jalankan Mobile (Flutter)
-```bash
-cd mobile
+cd mobile_app_sampah
 flutter pub get
 flutter run
 ```
 
----
-
-## Environment Variables (.env)
-
-Lihat `.env.example` untuk daftar semua variabel yang diperlukan. Salin ke `.env` dan isi nilainya.
+## Mock Credentials (Login)
+- **NIK:** `3273012345678901`
+- **Password:** `password123`
 
 ---
 
-## Dokumentasi Teknis
+## Tech Stack (sesuai sdd.md §12)
 
-Setiap modul memiliki 5 dokumen teknis di folder `docs/`:
-- `prd.md` — Product Requirement Document
-- `srs.md` — Software Requirement Specification
-- `sdd.md` — Software Design Document
-- `ui_ux_flow.md` — UI/UX Flow & Screen Specification
-- `task_breakdown.md` — Sprint Task Breakdown
+| Package | Versi | Kegunaan |
+|---|---|---|
+| flutter_riverpod | ^2.6.1 | State management |
+| dio | ^5.8.0 | HTTP client (disiapkan, belum aktif) |
+| mobile_scanner | ^6.0.10 | QR Scanner |
+| image_picker | ^1.1.2 | Kamera |
+| geolocator | ^13.0.4 | GPS |
+| flutter_secure_storage | ^9.2.4 | Token storage |
+| firebase_messaging | ^15.2.5 | Push notification |
+| connectivity_plus | ^6.1.4 | Monitor koneksi |
+| shared_preferences | ^2.5.3 | Cache lokal |
+| google_fonts | ^6.2.1 | Poppins font |
 
----
+## Fitur Sprint 1 M3 yang Sudah Diimplementasi
 
-*© 2026 Pilah Sampah Cerdas. Sampah Terdaftar, Lingkungan Tertata.*
+- [x] Struktur project Clean Architecture
+- [x] Design system (Light Mode, Poppins, palet warna sesuai ui_ux_flow.md)
+- [x] Login dengan validasi NIK 16 digit
+- [x] Bottom Navigation 5 tab + FAB Setor
+- [x] Online-Only enforcement dengan `connectivity_plus` + banner offline merah
+- [x] Beranda: greeting, total poin, tombol setor organik/anorganik, status tong
+- [x] Scan Flow 4-step: Foto → AI Detect → Scan QR → Sukses (dengan mock Haversine + validasi bisnis)
+- [x] Riwayat pemilahan (grouped by date)
+- [x] Halaman Poin (total + riwayat)
+- [x] Profil Rumah Tangga
+- [x] Aktivasi Tong Baru
+- [x] Pengajuan Reset/Pengosongan Tong (hanya untuk tong kritis >90%)
+- [x] Error handling sesuai error codes sdd.md §10
+- [x] RBAC-aware (hanya role WARGA yang bisa akses fitur setor/scan)
