@@ -13,7 +13,44 @@ export class BinService {
    * Get all bins
    */
   async getAllBins() {
-    return binRepository.findAll();
+    // We need to fetch bins with relationships to match frontend expectations
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    
+    const bins = await prisma.bin.findMany({
+      include: {
+        category: true,
+        rtRw: {
+          include: {
+            kelurahan: true
+          }
+        }
+      }
+    });
+
+    return bins.map((bin: any) => {
+      const max = Number(bin.maxCapacityLiter);
+      const current = Number(bin.currentVolumeLiter);
+      const kapasitas = max > 0 ? Math.round((current / max) * 100) : 0;
+      
+      let status = "Normal";
+      if (kapasitas >= 90) status = "Penuh";
+      else if (kapasitas >= 75) status = "Perawatan";
+
+      return {
+        id: bin.id,
+        kode: bin.qrCode,
+        lokasi: `${bin.rtRw?.name || ""} ${bin.rtRw?.kelurahan?.name || ""}`.trim(),
+        rtRw: bin.latitude && bin.longitude 
+          ? `${Number(bin.latitude).toFixed(4)}, ${Number(bin.longitude).toFixed(4)}`
+          : "Lokasi belum diatur",
+        kapasitas: kapasitas,
+        status: status,
+        lastUpdate: new Date(bin.updatedAt).toLocaleString("id-ID", {
+          day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+        })
+      };
+    });
   }
 
   /**
