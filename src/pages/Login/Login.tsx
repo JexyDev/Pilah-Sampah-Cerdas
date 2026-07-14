@@ -8,21 +8,31 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin@pilahsampah.id');
+  const [password, setPassword] = useState('password123');
   const [role, setRole] = useState<UserRole>('ADMIN');
   const [loading, setLoading] = useState(false);
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRole = e.target.value as UserRole;
+    setRole(newRole);
+    if (newRole === 'ADMIN') setUsername('admin@pilahsampah.id');
+    else if (newRole === 'PETUGAS_KELURAHAN') setUsername('lurah@pilahsampah.id');
+    else if (newRole === 'PETUGAS_RW') setUsername('rw@pilahsampah.id');
+    else if (newRole === 'PETUGAS_RT') setUsername('rt@pilahsampah.id');
+    else if (newRole === 'WARGA') setUsername('warga@pilahsampah.id');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const success = await login(username, role);
+      const success = await login(username, password);
       if (success) {
-        toast.success(`Berhasil login sebagai ${role}!`);
+        toast.success(`Berhasil login!`);
         navigate('/');
       } else {
-        toast.error('Gagal melakukan login.');
+        toast.error('Gagal melakukan login. Periksa kembali email dan password Anda.');
       }
     } catch (err) {
       toast.error('Terjadi kesalahan sistem.');
@@ -80,7 +90,7 @@ const Login: React.FC = () => {
               <select 
                 className="w-full pl-10 pr-10 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none appearance-none cursor-pointer font-medium text-on-surface"
                 value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
+                onChange={handleRoleChange}
               >
                 <option value="ADMIN">ADMIN (Super Admin)</option>
                 <option value="PETUGAS_KELURAHAN">PETUGAS KELURAHAN</option>
