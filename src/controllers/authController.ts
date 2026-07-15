@@ -21,6 +21,9 @@ const refreshSchema = z.object({
 const updateProfileSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   email: z.string().email("Format email tidak valid").optional(),
+  phone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  fotoProfil: z.string().optional().nullable(),
 });
 
 const updatePasswordSchema = z.object({
@@ -144,9 +147,16 @@ export class AuthController {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { name, email } = parsed.data;
+      const { name, email, phone, address, fotoProfil } = parsed.data;
 
-      const updatedUser = await authService.updateProfile(req.user.userId, name, email);
+      const updatedUser = await authService.updateProfile(
+        req.user.userId,
+        name,
+        email,
+        phone ?? undefined,
+        address ?? undefined,
+        fotoProfil ?? undefined
+      );
 
       res.status(200).json({
         message: "Profil berhasil diperbarui",
@@ -155,6 +165,9 @@ export class AuthController {
             id: updatedUser.id,
             name: updatedUser.name,
             email: updatedUser.email,
+            phone: (updatedUser as any).phone,
+            address: (updatedUser as any).address,
+            fotoProfil: (updatedUser as any).fotoProfil,
           }
         }
       });
@@ -196,6 +209,65 @@ export class AuthController {
         res.status(401).json({ error: "UNAUTHORIZED", message: "Password lama salah" });
       } else {
         res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+      }
+    }
+  }
+
+  /**
+   * Get Current Authenticated User Profile
+   */
+  async getCurrentUser(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
+        return;
+      }
+
+      const user = await authService.getCurrentUser(req.user.userId);
+      res.status(200).json({
+        success: true,
+        message: "Authenticated",
+        user
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+      }
+    }
+  }
+
+  /**
+   * Handle Profile Picture Upload
+   */
+  async uploadAvatar(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
+        return;
+      }
+
+      if (!req.file) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "File gambar tidak ditemukan" });
+        return;
+      }
+
+      const filePath = `/uploads/${req.file.filename}`;
+      const updatedUser = await authService.updateProfile(req.user.userId, undefined, undefined, undefined, undefined, filePath);
+
+      res.status(200).json({
+        success: true,
+        message: "Foto profil berhasil diunggah",
+        data: {
+          fotoProfil: filePath
+        }
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengunggah foto profil" });
       }
     }
   }

@@ -1,12 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { authService } from '../../services/authService';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const Pengaturan: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profil' | 'integrasi' | 'database'>('profil');
   const [isLoading, setIsLoading] = useState(true);
   
+  const { user: storeUser, updateUser: updateStoreUser } = useAuthStore();
+
   // Profile State
-  const [profileData, setProfileData] = useState({ name: '', email: '', role: '' });
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    role: '',
+    phone: '',
+    address: '',
+    fotoProfil: ''
+  });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
 
@@ -14,6 +25,11 @@ const Pengaturan: React.FC = () => {
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  // Upload Photo State
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -27,34 +43,85 @@ const Pengaturan: React.FC = () => {
         setProfileData({
           name: response.user.name || '',
           email: response.user.email || '',
-          role: response.user.role || 'Admin',
+          role: response.user.role || 'Warga',
+          phone: response.user.phone || '',
+          address: response.user.address || '',
+          fotoProfil: response.user.fotoProfil || '',
+        });
+        
+        // Ensure local store user state is in sync with latest DB data
+        updateStoreUser({
+          name: response.user.name,
+          email: response.user.email,
+          phone: response.user.phone,
+          address: response.user.address,
+          fotoProfil: response.user.fotoProfil,
         });
       }
     } catch (error) {
       console.error("Failed to fetch user profile", error);
+      toast.error("Gagal memuat profil dari server");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleProfileSubmit = async () => {
+    if (!profileData.name.trim()) {
+      setProfileMessage({ type: 'error', text: 'Nama lengkap wajib diisi' });
+      toast.error('Nama wajib diisi');
+      return;
+    }
+    if (!profileData.email.trim()) {
+      setProfileMessage({ type: 'error', text: 'Alamat email wajib diisi' });
+      toast.error('Email wajib diisi');
+      return;
+    }
+
     try {
       setIsSavingProfile(true);
       setProfileMessage({ type: '', text: '' });
-      await authService.updateProfile({ name: profileData.name, email: profileData.email });
+      await authService.updateProfile({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        address: profileData.address,
+        fotoProfil: profileData.fotoProfil
+      });
+
+      // Update state locally in store immediately
+      updateStoreUser({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        address: profileData.address
+      });
+
       setProfileMessage({ type: 'success', text: 'Profil berhasil diperbarui!' });
+      toast.success('Profil berhasil diperbarui!');
     } catch (error: any) {
-      setProfileMessage({ type: 'error', text: error.response?.data?.message || 'Gagal memperbarui profil' });
+      const errMsg = error.response?.data?.message || 'Gagal memperbarui profil';
+      setProfileMessage({ type: 'error', text: errMsg });
+      toast.error(errMsg);
     } finally {
       setIsSavingProfile(false);
     }
   };
 
   const handlePasswordSubmit = async () => {
+    if (!passwordData.currentPassword) {
+      setPasswordMessage({ type: 'error', text: 'Sandi lama wajib diisi' });
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      setPasswordMessage({ type: 'error', text: 'Sandi baru minimal 6 karakter' });
+      return;
+    }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordMessage({ type: 'error', text: 'Konfirmasi sandi tidak cocok' });
       return;
     }
+
     try {
       setIsSavingPassword(true);
       setPasswordMessage({ type: '', text: '' });
@@ -63,13 +130,81 @@ const Pengaturan: React.FC = () => {
         newPassword: passwordData.newPassword 
       });
       setPasswordMessage({ type: 'success', text: 'Sandi berhasil diperbarui!' });
+      toast.success('Kata sandi berhasil diperbarui!');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
-      setPasswordMessage({ type: 'error', text: error.response?.data?.message || 'Gagal memperbarui sandi' });
+      const errMsg = error.response?.data?.message || 'Gagal memperbarui sandi';
+      setPasswordMessage({ type: 'error', text: errMsg });
+      toast.error(errMsg);
     } finally {
       setIsSavingPassword(false);
     }
   };
+
+  // Profile Picture Helpers
+  const getProfilePhotoUrl = (path?: string) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+    const host = baseUrl.replace('/api/v1', '');
+    return `${host}${path}`;
+  };
+
+  const handleFileChange = async (file: File) => {
+    // Validate File Size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file terlalu besar. Maksimal 2MB.");
+      return;
+    }
+
+    // Validate File Format (JPG, PNG, WEBP)
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const result = await authService.uploadAvatar(file);
+      if (result.success && result.data?.fotoProfil) {
+        const path = result.data.fotoProfil;
+        setProfileData(prev => ({ ...prev, fotoProfil: path }));
+        updateStoreUser({ fotoProfil: path });
+        toast.success("Foto profil berhasil diperbarui!");
+      } else {
+        toast.error("Gagal mengunggah foto profil.");
+      }
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.response?.data?.message || "Gagal mengunggah foto profil.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
+
+  const initials = profileData.name
+    ? profileData.name.substring(0, 2).toUpperCase()
+    : 'U';
+
+  const avatarUrl = getProfilePhotoUrl(profileData.fotoProfil);
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
@@ -86,7 +221,7 @@ const Pengaturan: React.FC = () => {
             className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === 'profil' ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50'}`}
             onClick={() => setActiveTab('profil')}
           >
-            Profil Admin
+            Profil Akun
           </button>
           <button 
             className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === 'integrasi' ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50'}`}
@@ -105,7 +240,7 @@ const Pengaturan: React.FC = () => {
 
       {/* Tab Contents */}
       <div className="flex-1">
-        {/* Section 1: Profil Admin */}
+        {/* Section 1: Profil Akun */}
         {activeTab === 'profil' && (
           <div className="space-y-6 max-w-4xl">
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
@@ -118,17 +253,59 @@ const Pengaturan: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex flex-col md:flex-row gap-8">
-                  {/* Avatar Upload */}
+                  
+                  {/* DRAG AND DROP AVATAR UPLOAD */}
                   <div className="flex flex-col items-center gap-4 shrink-0">
-                    <div className="relative group cursor-pointer">
-                      <div className="w-32 h-32 rounded-full bg-surface-container-low flex items-center justify-center border-2 border-outline-variant/50 group-hover:border-primary transition-colors overflow-hidden">
-                         <span className="material-symbols-outlined text-[48px] text-on-surface-variant">person</span>
-                      </div>
-                      <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="material-symbols-outlined text-white">photo_camera</span>
+                    <div 
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`relative group cursor-pointer w-32 h-32 rounded-full flex items-center justify-center border-2 border-dashed transition-all overflow-hidden bg-surface-container-lowest ${
+                        dragOver ? 'border-primary bg-primary/5 scale-105' : 'border-outline-variant/70 group-hover:border-primary'
+                      }`}
+                    >
+                      {isUploading ? (
+                        <div className="flex flex-col items-center justify-center text-primary gap-1">
+                          <span className="material-symbols-outlined animate-spin text-[32px]">autorenew</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider">Mengunggah</span>
+                        </div>
+                      ) : avatarUrl ? (
+                        <img 
+                          src={avatarUrl} 
+                          alt="Avatar" 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200" 
+                        />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center font-bold text-2xl ${storeUser?.avatarBg || 'bg-blue-100'} ${storeUser?.avatarColor || 'text-blue-700'}`}>
+                          {initials}
+                        </div>
+                      )}
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-center p-2">
+                        <span className="material-symbols-outlined text-white text-[24px] mb-1">photo_camera</span>
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Ubah Foto</span>
                       </div>
                     </div>
-                    <button className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline">Ubah Foto Profil</button>
+                    
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      ref={fileInputRef} 
+                      onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])} 
+                    />
+                    
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline"
+                    >
+                      Ubah Foto Profil
+                    </button>
+                    <p className="text-[10px] text-on-surface-variant font-medium text-center max-w-[150px] leading-relaxed">
+                      JPG, PNG, WEBP. Maks 2MB. Drag & drop file juga bisa dilakukan.
+                    </p>
                   </div>
 
                   {/* Form Fields */}
@@ -138,6 +315,8 @@ const Pengaturan: React.FC = () => {
                         {profileMessage.text}
                       </div>
                     )}
+                    
+                    {/* Row 1: Nama Lengkap & Peran */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
                         <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Nama Lengkap</label>
@@ -151,24 +330,50 @@ const Pengaturan: React.FC = () => {
                       <div>
                         <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Peran Akses</label>
                         <div className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] bg-surface-container-low text-on-surface flex items-center h-[42px] cursor-not-allowed">
-                          <span className="font-bold">{profileData.role}</span>
+                          <span className="font-bold uppercase tracking-wider text-[11px] text-on-surface-variant">{profileData.role.replace('_', ' ')}</span>
                         </div>
                       </div>
                     </div>
+
+                    {/* Row 2: Email & No. HP */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Alamat Email</label>
+                        <input 
+                          className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
+                          type="email" 
+                          value={profileData.email} 
+                          onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Nomor HP</label>
+                        <input 
+                          className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
+                          type="tel" 
+                          placeholder="contoh: 081234567890"
+                          value={profileData.phone} 
+                          onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 3: Alamat Rumah */}
                     <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Alamat Email</label>
-                      <input 
-                        className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
-                        type="email" 
-                        value={profileData.email} 
-                        onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Alamat Tinggal / Wilayah Tugas</label>
+                      <textarea 
+                        className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors min-h-[80px]" 
+                        placeholder="Masukkan alamat lengkap (Nama Jalan, Blok, RT/RW, Kelurahan)..."
+                        value={profileData.address} 
+                        onChange={(e) => setProfileData({...profileData, address: e.target.value})}
                       />
                     </div>
+
                     <div className="pt-2 flex justify-end">
                       <button 
                         onClick={handleProfileSubmit}
                         disabled={isSavingProfile}
-                        className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50">
+                        className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer">
                         {isSavingProfile ? 'Menyimpan...' : 'Simpan Perubahan'}
                       </button>
                     </div>
@@ -219,7 +424,7 @@ const Pengaturan: React.FC = () => {
                   <button 
                     onClick={handlePasswordSubmit}
                     disabled={isSavingPassword}
-                    className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50">
+                    className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer">
                     {isSavingPassword ? 'Menyimpan...' : 'Perbarui Sandi'}
                   </button>
                 </div>

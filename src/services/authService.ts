@@ -42,6 +42,9 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role.name,
+        phone: user.phone,
+        address: user.address,
+        fotoProfil: user.fotoProfil,
       }
     };
   }
@@ -83,7 +86,7 @@ export class AuthService {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, name?: string, email?: string) {
+  async updateProfile(userId: string, name?: string, email?: string, phone?: string, address?: string, fotoProfil?: string) {
     const user = await authRepository.findUserById(userId);
     if (!user) {
       throw new Error("USER_NOT_FOUND");
@@ -96,8 +99,27 @@ export class AuthService {
       }
     }
 
-    const updatedUser = await authRepository.updateUser(userId, { name, email });
+    const updatedUser = await authRepository.updateUser(userId, { name, email, phone, address, fotoProfil });
     return updatedUser;
+  }
+
+  /**
+   * Get user profile by ID
+   */
+  async getCurrentUser(userId: string) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role.name,
+      phone: user.phone,
+      address: user.address,
+      fotoProfil: user.fotoProfil,
+    };
   }
 
   /**

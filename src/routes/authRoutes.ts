@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { authController } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { loginRateLimiter } from "../middlewares/rateLimiter.js";
+import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -57,7 +59,7 @@ const router = Router();
  *       401:
  *         description: Unauthorized (Invalid credentials)
  */
-router.post("/login", authController.login);
+router.post("/login", loginRateLimiter, authController.login);
 
 /**
  * @swagger
@@ -120,9 +122,21 @@ router.post("/logout", authController.logout);
  *       401:
  *         description: Unauthorized
  */
-router.get("/me", authMiddleware, (req, res) => {
-  res.json({ message: "Authenticated", user: req.user });
-});
+router.get("/me", authMiddleware, authController.getCurrentUser);
+
+/**
+ * @swagger
+ * /api/v1/auth/upload-avatar:
+ *   post:
+ *     summary: Upload profile photo
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Upload successful
+ */
+router.post("/upload-avatar", authMiddleware, uploadAvatarMiddleware.single("avatar"), authController.uploadAvatar);
 
 /**
  * @swagger

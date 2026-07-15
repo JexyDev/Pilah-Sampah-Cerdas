@@ -34,6 +34,14 @@ const Sidebar: React.FC = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
+  const getProfilePhotoUrl = (path?: string) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+    const host = baseUrl.replace('/api/v1', '');
+    return `${host}${path}`;
+  };
+
   const handleLogout = () => {
     logout();
     toast.success('Berhasil keluar sistem');
@@ -101,8 +109,12 @@ const Sidebar: React.FC = () => {
           <p className="text-[11px] text-primary font-bold">Bersama memilah sampah, bersama jaga bumi.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full ${user?.avatarBg || 'bg-blue-100'} ${user?.avatarColor || 'text-blue-700'} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0`}>
-            {user?.avatar || 'U'}
+          <div className={`w-10 h-10 rounded-full ${user?.avatarBg || 'bg-blue-100'} ${user?.avatarColor || 'text-blue-700'} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden`}>
+            {user?.fotoProfil ? (
+              <img src={getProfilePhotoUrl(user.fotoProfil) || undefined} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              user?.avatar || 'U'
+            )}
           </div>
           <div className="overflow-hidden flex-1">
             <p className="text-[12px] text-on-surface font-bold truncate">{user?.name || 'Pengguna'}</p>

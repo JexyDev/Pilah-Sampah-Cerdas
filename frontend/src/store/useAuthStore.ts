@@ -12,6 +12,9 @@ export interface User {
   avatar: string;
   avatarBg: string;
   avatarColor: string;
+  fotoProfil?: string;
+  phone?: string;
+  address?: string;
 }
 
 interface AuthState {
@@ -22,6 +25,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateWilayah: (newWilayah: string) => void;
+  updateUser: (updatedFields: Partial<User>) => void;
 }
 
 const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string } => {
@@ -89,6 +93,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         peran: backendUser.role as UserRole,
         wilayah: getWilayahByRole(backendUser.role),
         avatar: backendUser.name.substring(0, 2).toUpperCase(),
+        fotoProfil: backendUser.fotoProfil,
+        phone: backendUser.phone,
+        address: backendUser.address,
         ...avatarConfig,
       };
 
@@ -123,6 +130,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, wilayah: newWilayah };
+      localStorage.setItem('psc_user', JSON.stringify(updatedUser));
+      return { user: updatedUser };
+    });
+  },
+
+  updateUser: (updatedFields: Partial<User>) => {
+    set((state) => {
+      if (!state.user) return state;
+      const updatedUser = { ...state.user, ...updatedFields };
       localStorage.setItem('psc_user', JSON.stringify(updatedUser));
       return { user: updatedUser };
     });

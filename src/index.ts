@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import fs from "fs";
 
 import authRouter from "./routes/authRoutes.js";
 import householdRouter from "./routes/householdRoutes.js";
@@ -33,6 +34,11 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Create uploads folder if not exists
+fs.mkdirSync("uploads", { recursive: true });
+// Statically serve uploads folder
+app.use("/uploads", express.static("uploads"));
 
 // Main APIs
 app.use("/api/v1/auth", authRouter);

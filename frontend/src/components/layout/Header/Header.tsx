@@ -9,6 +9,14 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, updateWilayah } = useAuthStore();
   
+  const getProfilePhotoUrl = (path?: string) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+    const host = baseUrl.replace('/api/v1', '');
+    return `${host}${path}`;
+  };
+  
   // Dropdown visibility states
   const [showLocation, setShowLocation] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -249,8 +257,12 @@ const Header: React.FC = () => {
               <p className="text-label-md font-bold text-on-surface leading-tight">{user?.name || 'Pengguna'}</p>
               <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">{user?.peran?.replace('_', ' ') || 'WARGA'}</p>
             </div>
-            <div className={`w-10 h-10 rounded-full ${user?.avatarBg || 'bg-blue-100'} ${user?.avatarColor || 'text-blue-700'} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0`}>
-              {user?.avatar || 'U'}
+            <div className={`w-10 h-10 rounded-full ${user?.avatarBg || 'bg-blue-100'} ${user?.avatarColor || 'text-blue-700'} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden`}>
+              {user?.fotoProfil ? (
+                <img src={getProfilePhotoUrl(user.fotoProfil) || undefined} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                user?.avatar || 'U'
+              )}
             </div>
           </div>
 
