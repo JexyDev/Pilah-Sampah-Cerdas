@@ -13,14 +13,65 @@ const Login: React.FC = () => {
   
   // UX State
   const [isLocalLoading, setIsLocalLoading] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
+  // Validation States
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay;
+
+  // Custom Toast implementation following design guidelines
+  const showToast = (message: string, type: 'error' | 'warning' = 'error') => {
+    toast.custom((t) => (
+      <div
+        className={`${
+          t.visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95'
+        } transform transition-all duration-300 max-w-sm w-full bg-white shadow-md rounded-xl pointer-events-auto flex border border-outline-variant/30 p-4 gap-3 items-center`}
+      >
+        <div className={`flex-shrink-0 flex items-center ${type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+          <span className="material-symbols-outlined text-[24px]">
+            {type === 'error' ? 'error' : 'warning'}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-800 leading-normal">{message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => toast.dismiss(t.id)}
+          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </div>
+    ), {
+      position: 'top-right',
+      duration: 4000
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isBtnDisabled) return;
+
+    let hasError = false;
+    setEmailError('');
+    setPasswordError('');
+
+    if (!email.trim()) {
+      setEmailError('Email wajib diisi');
+      showToast('Email wajib diisi', 'warning');
+      hasError = true;
+    }
+    
+    if (!password.trim()) {
+      setPasswordError('Password wajib diisi');
+      showToast('Password wajib diisi', 'warning');
+      hasError = true;
+    }
+
+    if (hasError) return;
 
     setIsLocalLoading(true);
     const startTime = Date.now();
@@ -41,12 +92,14 @@ const Login: React.FC = () => {
             navigate('/');
           }, 1500);
         } else {
-          setShowErrorModal(true);
+          showToast('Email atau password salah. Coba lagi.', 'error');
+          setPassword(''); // Clear password
         }
       }, remainingTime);
     } catch (err) {
       setIsLocalLoading(false);
-      setShowErrorModal(true);
+      showToast('Email atau password salah. Coba lagi.', 'error');
+      setPassword(''); // Clear password
     }
   };
 
@@ -74,27 +127,6 @@ const Login: React.FC = () => {
         </div>
       )}
 
-      {/* ERROR MODAL POPUP */}
-      {showErrorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col p-6 items-center text-center animate-in zoom-in-95 duration-200 border border-outline-variant/30">
-            <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500 mb-4 shadow-sm">
-              <span className="material-symbols-outlined text-[36px]">error</span>
-            </div>
-            <h3 className="font-bold text-gray-800 text-lg mb-2">Akses Ditolak</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Email atau kata sandi salah. Silakan periksa kembali kredensial Anda dan coba lagi.
-            </p>
-            <button
-              onClick={() => setShowErrorModal(false)}
-              className="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors active:scale-95 transform shadow-md shadow-red-500/10 cursor-pointer"
-            >
-              Coba Lagi
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* MAIN LOGIN CARD */}
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 z-10 transition-all duration-300">
         
@@ -102,7 +134,7 @@ const Login: React.FC = () => {
         <div className="flex flex-col items-center text-center gap-3">
           <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-28 w-auto object-contain" />
           <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium">
-            Masukkan email dan kata sandi Anda untuk masuk ke sistem.
+            Masukkan email dan kata sandi Anda untuk masuk to sistem.
           </p>
         </div>
 
@@ -135,13 +167,21 @@ const Login: React.FC = () => {
                 className="w-full pl-10 pr-4 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none"
                 placeholder="Email atau 16 digit NIK..."
                 type="text"
-                required
                 autoComplete="username"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (e.target.value.trim()) setEmailError('');
+                }}
                 disabled={isBtnDisabled}
               />
             </div>
+            {emailError && (
+              <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1">
+                <span className="material-symbols-outlined text-[12px]">warning</span>
+                {emailError}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -156,10 +196,12 @@ const Login: React.FC = () => {
                 className="w-full pl-10 pr-10 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none"
                 placeholder="Masukkan kata sandi..."
                 type={showPassword ? 'text' : 'password'}
-                required
                 autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (e.target.value.trim()) setPasswordError('');
+                }}
                 disabled={isBtnDisabled}
               />
               <button
@@ -173,6 +215,12 @@ const Login: React.FC = () => {
                 </span>
               </button>
             </div>
+            {passwordError && (
+              <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1">
+                <span className="material-symbols-outlined text-[12px]">warning</span>
+                {passwordError}
+              </p>
+            )}
           </div>
 
           <button
