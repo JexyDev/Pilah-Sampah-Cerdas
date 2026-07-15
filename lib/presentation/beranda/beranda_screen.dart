@@ -17,7 +17,12 @@ import '../shared/widgets/app_error.dart';
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
 class BerandaScreen extends ConsumerWidget {
-  const BerandaScreen({super.key});
+  const BerandaScreen({
+    super.key,
+    this.onNavigateToHistory,
+  });
+
+  final VoidCallback? onNavigateToHistory;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -86,7 +91,7 @@ class BerandaScreen extends ConsumerWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: onNavigateToHistory,
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
@@ -251,30 +256,36 @@ class BerandaScreen extends ConsumerWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          const _StatItem(
-            icon: Icons.star_border_rounded,
-            iconColor: AppColors.primaryBlue,
-            value: '25',
-            label: 'Daily Points',
-          ),
-          _VerticalDivider(),
-          _StatItem(
-            icon: Icons.account_balance_wallet_outlined,
-            iconColor: AppColors.primaryGreen,
-            value: NumberFormat('#,###').format(totalPoints),
-            label: 'Total Points',
-            valueColor: AppColors.primaryGreen,
-          ),
-          _VerticalDivider(),
-          const _StatItem(
-            icon: Icons.emoji_events_outlined,
-            iconColor: AppColors.warningYellow,
-            value: '#3',
-            label: 'Peringkat',
-          ),
-        ],
+      child: Consumer(
+        builder: (context, ref, _) {
+          final dailyAsync = ref.watch(dailyPointsProvider);
+          final daily = dailyAsync.maybeWhen(data: (v) => v, orElse: () => 0);
+          return Row(
+            children: [
+              _StatItem(
+                icon: Icons.star_border_rounded,
+                iconColor: AppColors.primaryBlue,
+                value: daily.toString(),
+                label: 'Hari Ini',
+              ),
+              _VerticalDivider(),
+              _StatItem(
+                icon: Icons.account_balance_wallet_outlined,
+                iconColor: AppColors.primaryGreen,
+                value: NumberFormat('#,###').format(totalPoints),
+                label: 'Total Points',
+                valueColor: AppColors.primaryGreen,
+              ),
+              _VerticalDivider(),
+              const _StatItem(
+                icon: Icons.emoji_events_outlined,
+                iconColor: AppColors.warningYellow,
+                value: '-',
+                label: 'Peringkat',
+              ),
+            ],
+          );
+        },
       ),
     );
   }

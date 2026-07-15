@@ -10,14 +10,14 @@ class AppStrings {
 
   // --- Auth ---
   static const String loginTitle = 'Masuk';
-  static const String loginSubtitle = 'Masuk dengan NIK dan kata sandi Anda';
-  static const String nikLabel = 'NIK';
-  static const String nikHint = 'Masukkan 16 digit NIK Anda';
+  static const String loginSubtitle = 'Masuk dengan email dan kata sandi Anda';
+  static const String emailLabel = 'Email';
+  static const String emailHint = 'Masukkan email Anda';
   static const String passwordLabel = 'Kata Sandi';
   static const String passwordHint = 'Masukkan kata sandi';
   static const String loginButton = 'Masuk';
   static const String logoutButton = 'Keluar';
-  static const String invalidCredentials = 'NIK atau kata sandi salah';
+  static const String invalidCredentials = 'Email atau kata sandi salah';
 
   // --- Navigation ---
   static const String navBeranda = 'Beranda';

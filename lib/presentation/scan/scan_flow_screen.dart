@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/bin_provider.dart';
 import '../providers/connectivity_provider.dart';
@@ -22,12 +25,24 @@ class ScanFlowScreen extends ConsumerStatefulWidget {
 }
 
 class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
-  static const double _mockUserLat = -6.9034;
-  static const double _mockUserLng = 107.6198;
+  // GPS — diisi dari geolocator saat scan QR, fallback null (skip geofencing)
+  double? _userLat;
+  double? _userLng;
+  bool _gpsLoading = false;
 
-  // State foto — sesuai prd.md §2.1: foto dulu, baru AI
+  // State foto
   bool _photoTaken = false;
   double _compressedKB = 0;
+  String _capturedImagePath = ''; // path foto yang diambil kamera
+
+  // Counter untuk mereset QR Scanner jika terjadi error
+  int _qrScanAttempt = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGps();
+  }
 
   @override
   void dispose() {
@@ -38,15 +53,78 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
     super.dispose();
   }
 
+  /// Minta izin lokasi dan ambil koordinat GPS sekarang.
+  /// Di desktop/web: lewati (geofencing di-skip, backend tetap proses).
+  Future<void> _fetchGps() async {
+    if (!PlatformUtils.isMobile) return;
+    if (!mounted) return;
+
+    setState(() => _gpsLoading = true);
+
+    try {
+      // Cek permission
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+
+      if (perm == LocationPermission.deniedForever ||
+          perm == LocationPermission.denied) {
+        // Izin ditolak — tetap lanjut tanpa GPS (backend skip geofencing)
+        if (mounted) setState(() => _gpsLoading = false);
+        return;
+      }
+
+      // Ambil posisi dengan akurasi medium (lebih cepat dari high)
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _userLat = pos.latitude;
+          _userLng = pos.longitude;
+          _gpsLoading = false;
+        });
+      }
+    } catch (_) {
+      // GPS timeout atau error — lanjut tanpa koordinat
+      if (mounted) setState(() => _gpsLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(scanFlowProvider);
     final bool isOnline = ref.watch(isOnlineProvider);
 
-    ref.listen(scanFlowProvider, (prev, next) {
+    ref.listen<ScanFlowState>(scanFlowProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
         _showErrorDialog(context, next.errorCode!, next.errorMessage);
         ref.read(scanFlowProvider.notifier).clearError();
+        if (mounted) {
+          setState(() {
+            _qrScanAttempt++;
+          });
+        }
+      }
+      // Saat AI berhasil (step 1→2), tampilkan bottom sheet konfirmasi AI dulu.
+      // QR Scanner baru aktif setelah user tap "Lanjut" di sheet.
+      if ((prev?.currentStep ?? 0) <= 1 &&
+          next.currentStep == 2 &&
+          next.aiResult != null &&
+          !next.isLoading) {
+        // Set step ke 1.5 (pakai nilai khusus) — kita pakai state lokal
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // Kembali ke step 1 (loading selesai, sheet akan muncul)
+            // Sheet yang akan set step ke 2 saat user tap Lanjut
+            showAiSuccessSheet(context, ref);
+          }
+        });
       }
     });
 
@@ -89,7 +167,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
       case 0:
         return _buildStep0(context, isOnline);
       case 1:
-        return _buildStep0(context, isOnline); // masih step 1 = loading AI
+        return _buildStep1Loading(); // AI sedang memproses
       case 2:
         return _buildStep2QrScan(context, state);
       case 3:
@@ -97,6 +175,94 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
       default:
         return _buildStep0(context, isOnline);
     }
+  }
+
+  /// Step 1: Loading screen saat AI sedang mendeteksi jenis sampah.
+  Widget _buildStep1Loading() {
+    return Column(
+      children: [
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                ),
+                const Expanded(
+                  child: Text(
+                    'Analisis AI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(width: 48),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animasi pulsing icon AI
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.85, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeInOut,
+                  builder: (_, scale, child) =>
+                      Transform.scale(scale: scale, child: child),
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.psychology_rounded,
+                      color: AppColors.primaryBlue,
+                      size: 52,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                const Text(
+                  'Menganalisis Sampah...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'AI sedang mendeteksi jenis dan berat\nsampah dari foto Anda.',
+                  style: TextStyle(color: Colors.white60, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                const SizedBox(
+                  width: 180,
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.white24,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   /// Step 0: Kamera inline di dalam app + bottom sheet
@@ -132,6 +298,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
           child: InlineCameraWidget(
             onImageCaptured: (path, sizeKB) {
               setState(() {
+                _capturedImagePath = path;
                 _compressedKB = sizeKB;
                 _photoTaken = true;
               });
@@ -160,7 +327,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                _photoTaken ? 'Foto Siap � Kirim ke AI' : 'Ambil Foto Sampah',
+                _photoTaken ? 'Foto Siap - Kirim ke AI' : 'Ambil Foto Sampah',
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -197,8 +364,9 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: () =>
-                        ref.read(scanFlowProvider.notifier).detectWaste(),
+                    onPressed: () => ref
+                        .read(scanFlowProvider.notifier)
+                        .detectWaste(imagePath: _capturedImagePath),
                     icon: const Icon(Icons.psychology_rounded, size: 20),
                     label: const Text(
                       'Deteksi Sampah',
@@ -209,6 +377,49 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(
+                            source: ImageSource.gallery, imageQuality: 85);
+                        if (file != null) {
+                          final size = (await file.length()) / 1024;
+                          setState(() {
+                            _capturedImagePath = file.path;
+                            _compressedKB = size;
+                            _photoTaken = true;
+                          });
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal membuka galeri: $e')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.photo_library_rounded, size: 20),
+                    label: const Text(
+                      'Pilih dari Galeri',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryBlue,
+                      side: const BorderSide(color: AppColors.primaryBlue),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -260,7 +471,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
           ),
         ),
 
-        // Banner kuning info jenis sampah terdeteksi
+        // Banner kuning info jenis sampah terdeteksi + status GPS
         Container(
           color: AppColors.warningYellow,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -284,6 +495,24 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                   ),
                 ),
               ),
+              // Indikator GPS
+              if (_gpsLoading)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              else
+                Icon(
+                  _userLat != null
+                      ? Icons.gps_fixed_rounded
+                      : Icons.gps_off_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
             ],
           ),
         ),
@@ -294,15 +523,19 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: QrScannerWidget(
-                hint: isOrganic ? 'PSC-DAGO-ORG-XXXX' : 'PSC-DAGO-NON-XXXX',
+                key: ValueKey(_qrScanAttempt),
+                hint: isOrganic ? 'PSC-DEWI-ORG-001' : 'PSC-DEWI-NON-001',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) {
+                  // Guard: skip jika sudah loading atau sudah sukses
+                  final s = ref.read(scanFlowProvider);
+                  if (s.isLoading || s.scanResult != null) return;
                   ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _mockUserLat,
-                        userLng: _mockUserLng,
+                        userLat: _userLat ?? 0.0,
+                        userLng: _userLng ?? 0.0,
                       );
                 },
               ),
@@ -676,13 +909,18 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
 
   /// Dialog BIN_TYPE_MISMATCH — "Tidak Sesuai!" dengan info sampah vs tong
   void _showMismatchDialog(BuildContext context) {
+    final aiResult = ref.read(scanFlowProvider).aiResult;
+    final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
+    // Tong yang salah = kebalikan dari yang terdeteksi
+    final String tongName = aiResult?.detectedType == WasteType.organic
+        ? 'Non-Organik'
+        : 'Organik';
+
     showDialog(
       context: context,
       builder: (_) => _MismatchDialog(
-        sampahType:
-            ref.read(scanFlowProvider).aiResult?.detectedType.displayName ??
-            'Organik',
-        tongType: 'Non-Organik',
+        sampahType: detectedName,
+        tongType: tongName,
         onScanUlang: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
@@ -733,8 +971,10 @@ class _AiSuccessSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isOrganic = result.detectedType.apiValue == 'ORGANIC';
-    return Container(
+    final bool isOrganic = result.detectedType == WasteType.organic;
+    return SafeArea(
+      top: false,
+      child: Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -855,36 +1095,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${(result.volumeEstimate * (isOrganic ? 0.4 : 0.2)).toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundCanvas,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'VOLUME',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        '${result.volumeEstimate.toStringAsFixed(1)} Liter',
+                        '${result.displayWeightKg.toStringAsFixed(1)} kg',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -915,6 +1126,7 @@ class _AiSuccessSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

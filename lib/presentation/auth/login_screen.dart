@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/router/app_router.dart';
 import '../providers/auth_provider.dart';
 import '../shared/widgets/app_loading.dart';
 
-/// Layar login — sesuai desain:
-/// Header biru besar dengan logo bulat di tengah, card putih rounded bawah.
+/// Layar login — email + password sesuai backend auth contract.
+/// Backend: POST /api/v1/auth/login { email, password }
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -49,14 +48,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     ref.listen(authProvider, (_, next) {
       if (next.errorCode != null && !next.isLoading) {
+        final msg = switch (next.errorCode) {
+          'INVALID_CREDENTIALS' => 'NIK atau password salah.',
+          'VALIDATION_ERROR' => 'Format NIK tidak valid.',
+          'NETWORK_ERROR' =>
+            'Tidak dapat terhubung ke server. Periksa koneksi.',
+          _ => 'Terjadi kesalahan. Silakan coba lagi.',
+        };
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              next.errorCode == 'INVALID_CREDENTIALS'
-                  ? AppStrings.invalidCredentials
-                  : AppStrings.errorGeneric,
-            ),
+            content: Text(msg),
             backgroundColor: AppColors.dangerRed,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -67,10 +70,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.backgroundCanvas,
       body: Stack(
         children: [
-          // Background biru atas (sekitar 45% layar)
+          // Background biru atas ~45% layar
           FractionallySizedBox(
             heightFactor: 0.45,
             widthFactor: 1,
@@ -80,12 +84,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Header biru — logo + "Pilah Sampah"
+                // ─── Header biru: logo + judul ─────────────────────────
                 Padding(
                   padding: const EdgeInsets.only(top: 40, bottom: 20),
                   child: Column(
                     children: [
-                      // Logo bulat
                       Container(
                         width: 90,
                         height: 90,
@@ -117,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
 
-                // Card putih rounded
+                // ─── Card putih rounded ────────────────────────────────
                 Expanded(
                   child: Container(
                     width: double.infinity,
@@ -153,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             const SizedBox(height: 28),
 
-                            // NIK
+                            // ─── NIK ─────────────────────────────────
                             const Text(
                               'NIK',
                               style: TextStyle(
@@ -166,28 +169,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             TextFormField(
                               controller: _nikController,
                               keyboardType: TextInputType.number,
-                              maxLength: 16,
+                              autocorrect: false,
+                              textInputAction: TextInputAction.next,
                               decoration: const InputDecoration(
-                                hintText: 'Masukkan email atau nomor',
+                                hintText: 'Masukkan NIK Anda',
                                 prefixIcon: Icon(
-                                  Icons.mail_outline_rounded,
+                                  Icons.badge_outlined,
                                   color: AppColors.textSecondary,
                                 ),
-                                counterText: '',
                               ),
                               validator: (v) {
-                                if (v == null || v.isEmpty) {
+                                if (v == null || v.trim().isEmpty) {
                                   return 'NIK tidak boleh kosong.';
                                 }
-                                if (v.length != 16) {
-                                  return 'NIK harus 16 digit.';
+                                if (v.length < 16) {
+                                  return 'NIK minimal 16 digit.';
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 16),
 
-                            // Kata Sandi
+                            // ─── Password ──────────────────────────────
                             const Text(
                               'Kata Sandi',
                               style: TextStyle(
@@ -200,6 +203,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _onLogin(),
                               decoration: InputDecoration(
                                 hintText: 'Masukkan kata sandi',
                                 prefixIcon: const Icon(
@@ -228,9 +233,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 8),
 
-                            // Tombol MASUK
+
+
+                            // ─── Tombol Masuk ──────────────────────────
                             ElevatedButton(
                               onPressed: _onLogin,
                               child: const Text('MASUK'),
@@ -277,7 +284,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  '© 2024 Pilah Sampah Cerdas. All rights reserved.',
+                  '© 2026 Pilah Sampah Cerdas. All rights reserved.',
                   style: TextStyle(fontSize: 10, color: AppColors.textHint),
                 ),
               ],

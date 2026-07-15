@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/entities/bin_entity.dart';
@@ -9,11 +8,24 @@ import '../providers/bin_provider.dart';
 
 /// Halaman profil — sesuai desain:
 /// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tong Saya, Keluar.
-class ProfilScreen extends ConsumerWidget {
+class ProfilScreen extends ConsumerStatefulWidget {
   const ProfilScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfilScreen> createState() => _ProfilScreenState();
+}
+
+class _ProfilScreenState extends ConsumerState<ProfilScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(authProvider.notifier).fetchProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final binsAsync = ref.watch(binsProvider);
 
@@ -123,23 +135,22 @@ class ProfilScreen extends ConsumerWidget {
                         _divider(),
                         _InfoTile(
                           Icons.location_on_outlined,
-                          'Alamat',
-                          'Jl. Melati No. 12, Kelurahan ${user?.kelurahan ?? 'Dago'}',
-                        ),
-                        _divider(),
-                        const _InfoTile(
-                          Icons.phone_outlined,
-                          'Telepon',
-                          '+62 812-3456-7890',
+                          'Wilayah',
+                          user?.rtRw != null && user!.rtRw.isNotEmpty
+                              ? '${user.rtRw}, Kel. ${user.kelurahan}'
+                              : 'Belum diatur',
                         ),
                         _divider(),
                         _InfoTile(
-                          Icons.calendar_today_outlined,
-                          'Terdaftar Sejak',
-                          DateFormat(
-                            'd MMMM yyyy',
-                            'id_ID',
-                          ).format(DateTime(2024, 1, 14)),
+                          Icons.credit_card_outlined,
+                          'NIK',
+                          user?.nik ?? '-',
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.badge_outlined,
+                          'ID Akun',
+                          user?.id.substring(0, 8).toUpperCase() ?? '-',
                         ),
                       ],
                     ),

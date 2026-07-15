@@ -98,6 +98,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
 
+    await ref.read(authProvider.notifier).initialized;
     final authState = ref.read(authProvider);
     Navigator.of(context).pushReplacementNamed(
       authState.isAuthenticated ? AppRoutes.main : AppRoutes.login,
@@ -166,28 +167,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
             ),
 
-            // Dot indicator bawah — fade in
+            // Loading indicator bawah — fade in
             FadeTransition(
               opacity: _dotsFade,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 52),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(3, (i) {
-                    final bool active = i == 1;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: active ? 22 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: active
-                            ? AppColors.primaryBlue
-                            : const Color(0xFFCDD5E0),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    );
-                  }),
+              child: const Padding(
+                padding: EdgeInsets.only(bottom: 52),
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                  ),
                 ),
               ),
             ),

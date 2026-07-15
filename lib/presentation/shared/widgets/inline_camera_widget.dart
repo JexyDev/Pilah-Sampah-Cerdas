@@ -185,6 +185,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   @override
   Widget build(BuildContext context) {
     if (_capturedPath != null) return _buildPreview();
+    if (kIsWeb) return _buildWebFallback();
     if (_errorMessage != null) return _buildError();
     if (!_isInitialized) return _buildLoading();
     return _buildLiveCamera();
@@ -195,14 +196,28 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   Widget _buildLiveCamera() {
     return Column(
       children: [
-        // Preview kamera mengisi semua ruang yang tersedia
+        // Preview kamera mengisi semua ruang yang tersedia tanpa gepeng
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return SizedBox(
-                width: constraints.maxWidth,
-                height: constraints.maxHeight,
-                child: CameraPreview(_controller!),
+              final size = constraints.biggest;
+              final deviceRatio = size.width / size.height;
+              // Umumnya aspect ratio kamera adalah landscape, sehingga saat portrait
+              // ratio aslinya adalah 1 / aspectRatio.
+              final previewRatio = 1 / _controller!.value.aspectRatio;
+              
+              var scale = deviceRatio / previewRatio;
+              if (scale < 1.0) {
+                scale = 1.0 / scale;
+              }
+              
+              return ClipRect(
+                child: Transform.scale(
+                  scale: scale,
+                  child: Center(
+                    child: CameraPreview(_controller!),
+                  ),
+                ),
               );
             },
           ),
@@ -276,7 +291,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              kIsWeb 
+              kIsWeb
                   ? Image.network(_capturedPath!, fit: BoxFit.cover)
                   : Image.file(File(_capturedPath!), fit: BoxFit.cover),
               Positioned(

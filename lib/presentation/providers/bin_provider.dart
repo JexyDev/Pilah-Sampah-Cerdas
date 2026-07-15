@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../config/app_config.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../../domain/entities/ai_detection_entity.dart';
 import '../../domain/entities/bin_reset_entity.dart';
@@ -9,16 +8,19 @@ import 'auth_provider.dart';
 
 // ─── Bins Provider ────────────────────────────────────────────────────────────
 
-/// Provider daftar tong sampah milik user.
+/// Provider daftar tong sampah pribadi warga yang login.
+/// Memanggil GET /api/v1/bins/my — backend filter by ownerUserId dari JWT.
+/// householdId parameter tidak digunakan lagi (dikirim kosong).
 final binsProvider = FutureProvider<List<BinEntity>>((ref) async {
   final repo = ref.watch(binRepositoryProvider);
-  // householdId dari AppConfig.mockHouseholdId — diganti dari auth saat BE ada
-  return repo.getBinsByHousehold(AppConfig.mockHouseholdId);
+  // Pastikan user sudah login sebelum fetch
+  final user = ref.watch(authProvider).user;
+  if (user == null) return [];
+  return repo.getBinsByHousehold('');
 });
 
 // ─── Scan Flow State ──────────────────────────────────────────────────────────
 
-/// Step scan flow: 0=foto, 1=AI detect, 2=scan QR, 3=selesai
 class ScanFlowState {
   const ScanFlowState({
     this.currentStep = 0,
@@ -58,17 +60,22 @@ class ScanFlowState {
 }
 
 class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
-  ScanFlowNotifier(this._binRepository, this._userId)
+  ScanFlowNotifier(this._binRepository, this._userId, this._householdId)
     : super(const ScanFlowState());
 
   final BinRepository _binRepository;
   final String _userId;
+  final String _householdId;
 
-  /// Step 0 → 1 → 2: Foto + Deteksi AI (FR-01).
-  Future<void> detectWaste() async {
+  /// Step 0 → 1 → 2: Upload foto + Deteksi AI (FR-01).
+  /// POST /api/v1/waste/detect (multipart)
+  Future<void> detectWaste({required String imagePath}) async {
     state = state.copyWith(isLoading: true, clearError: true, currentStep: 1);
     try {
-      final result = await _binRepository.detectWaste(_userId);
+      final result = await _binRepository.detectWaste(
+        _userId,
+        imagePath: imagePath,
+      );
 
       if (result.isBlurry) {
         state = state.copyWith(
@@ -83,7 +90,8 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
       state = state.copyWith(
         isLoading: false,
         aiResult: result,
-        currentStep: 2,
+        currentStep:
+            2, // Sheet akan muncul, QR scanner aktif setelah sheet dismiss
       );
     } on BinException catch (e) {
       state = state.copyWith(
@@ -96,12 +104,15 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   }
 
   /// Step 2 → 3: Scan QR + commit transaksi (FR-02 + Haversine geofencing).
+  /// POST /api/v1/bins/scan
   Future<void> scanAndCommit({
     required String qrCode,
     required double userLat,
     required double userLng,
   }) async {
     if (state.aiResult == null) return;
+    // Guard: jangan kirim lagi kalau sudah loading atau sudah sukses
+    if (state.isLoading || state.scanResult != null) return;
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -110,7 +121,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         userId: _userId,
         detectedType: state.aiResult!.detectedType,
         estimatedVolume: state.aiResult!.volumeEstimate,
-        householdId: AppConfig.mockHouseholdId,
+        householdId: _householdId,
         userLat: userLat,
         userLng: userLng,
       );
@@ -130,16 +141,20 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   }
 
   void reset() => state = const ScanFlowState();
-
   void clearError() => state = state.copyWith(clearError: true);
-
   void goToStep(int step) => state = state.copyWith(currentStep: step);
 }
 
 final scanFlowProvider = StateNotifierProvider<ScanFlowNotifier, ScanFlowState>(
   (ref) {
-    final userId = ref.watch(authProvider).user?.id ?? AppConfig.mockUserId;
-    return ScanFlowNotifier(ref.watch(binRepositoryProvider), userId);
+    final user = ref.watch(authProvider).user;
+    final userId = user?.id ?? '';
+    final householdId = user?.householdId ?? '';
+    return ScanFlowNotifier(
+      ref.watch(binRepositoryProvider),
+      userId,
+      householdId,
+    );
   },
 );
 
@@ -169,13 +184,14 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
   Future<void> aktivasi({
     required String qrSerial,
     required String userId,
+    required String householdId,
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
       final result = await _binRepository.activateBin(
         qrSerial: qrSerial,
         userId: userId,
-        householdId: AppConfig.mockHouseholdId,
+        householdId: householdId,
       );
       state = AktivasiBinState(result: result);
     } on BinException catch (e) {

@@ -46,29 +46,14 @@ class PoinScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   // ─── Riwayat Poin ───────────────────────────────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Riwayat Poin',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Lihat Semua',
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Riwayat Poin',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
                   historyAsync.when(
                     data: (history) => history.isEmpty
