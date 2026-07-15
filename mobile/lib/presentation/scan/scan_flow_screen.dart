@@ -426,6 +426,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 24),
+              _buildProgressBar(0),
             ],
           ),
         ),
@@ -590,7 +592,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
-              _buildProgressBar(),
+              _buildProgressBar(1),
             ],
           ),
         ),
@@ -598,9 +600,9 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
     );
   }
 
-  Widget _buildProgressBar() {
+  Widget _buildProgressBar(int active) {
     const steps = ['Identifikasi', 'Verifikasi Tong', 'Selesai'];
-    const active = 1;
+
     return Row(
       children: List.generate(steps.length * 2 - 1, (i) {
         if (i.isOdd) {
@@ -872,6 +874,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 20),
+                _buildProgressBar(2),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {

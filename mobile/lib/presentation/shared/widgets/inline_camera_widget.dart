@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/constants/app_colors.dart';
 
 /// Kamera inline di dalam app — foto tanpa keluar ke kamera sistem.
@@ -25,6 +26,8 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   bool _isInitialized = false;
   bool _isCapturing = false;
   bool _isFrontCamera = false;
+  bool _permDenied = false;
+  bool _permPermanentlyDenied = false;
   String? _errorMessage;
   String? _capturedPath;
   double _capturedSizeKB = 0;
@@ -53,6 +56,33 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
     await _controller?.dispose();
     _controller = null;
     if (mounted) setState(() => _isInitialized = false);
+
+    // ── Cek izin kamera (hanya di mobile) ─────────────────────────────────
+    if (!kIsWeb) {
+      final status = await Permission.camera.request();
+      if (!mounted) return;
+
+      if (status.isPermanentlyDenied) {
+        setState(() {
+          _permPermanentlyDenied = true;
+          _permDenied = false;
+          _errorMessage = null;
+        });
+        return;
+      }
+      if (!status.isGranted) {
+        setState(() {
+          _permDenied = true;
+          _permPermanentlyDenied = false;
+          _errorMessage = null;
+        });
+        return;
+      }
+
+      // Izin diberikan → reset flag
+      _permDenied = false;
+      _permPermanentlyDenied = false;
+    }
 
     try {
       _cameras = await availableCameras();
@@ -186,6 +216,8 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   Widget build(BuildContext context) {
     if (_capturedPath != null) return _buildPreview();
     if (kIsWeb) return _buildWebFallback();
+    if (_permPermanentlyDenied) return _buildPermDenied(permanent: true);
+    if (_permDenied) return _buildPermDenied(permanent: false);
     if (_errorMessage != null) return _buildError();
     if (!_isInitialized) return _buildLoading();
     return _buildLiveCamera();
@@ -200,21 +232,15 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final size = constraints.biggest;
-              final deviceRatio = size.width / size.height;
-              // Umumnya aspect ratio kamera adalah landscape, sehingga saat portrait
-              // ratio aslinya adalah 1 / aspectRatio.
-              final previewRatio = 1 / _controller!.value.aspectRatio;
-              
-              var scale = deviceRatio / previewRatio;
-              if (scale < 1.0) {
-                scale = 1.0 / scale;
-              }
-              
-              return ClipRect(
-                child: Transform.scale(
-                  scale: scale,
-                  child: Center(
+              return SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  clipBehavior: Clip.hardEdge,
+                  child: SizedBox(
+                    width: _controller!.value.previewSize?.height ?? 1,
+                    height: _controller!.value.previewSize?.width ?? 1,
                     child: CameraPreview(_controller!),
                   ),
                 ),
@@ -402,6 +428,86 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
                 style: TextStyle(color: AppColors.primaryGreen),
               ),
             ),
+            TextButton.icon(
+              onPressed: _pickGallery,
+              icon: const Icon(
+                Icons.photo_library_outlined,
+                color: Colors.white54,
+                size: 18,
+              ),
+              label: const Text(
+                'Pilih dari Galeri',
+                style: TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Permission Denied ────────────────────────────────────────────────────
+
+  Widget _buildPermDenied({required bool permanent}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.warningYellow.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                permanent ? Icons.lock_outline_rounded : Icons.camera_alt_outlined,
+                color: permanent ? AppColors.warningYellow : Colors.white38,
+                size: 44,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              permanent
+                  ? 'Izin kamera ditolak secara permanen.\nBuka Pengaturan perangkat untuk mengaktifkan.'
+                  : 'Izin kamera diperlukan\nuntuk mengambil foto sampah.',
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            permanent
+                ? ElevatedButton.icon(
+                    onPressed: openAppSettings,
+                    icon: const Icon(Icons.settings_rounded, size: 18),
+                    label: const Text('Buka Pengaturan'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  )
+                : TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _permDenied = false;
+                        _isInitialized = false;
+                      });
+                      _initCamera();
+                    },
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.primaryGreen,
+                    ),
+                    label: const Text(
+                      'Coba Lagi',
+                      style: TextStyle(color: AppColors.primaryGreen),
+                    ),
+                  ),
+            const SizedBox(height: 12),
             TextButton.icon(
               onPressed: _pickGallery,
               icon: const Icon(

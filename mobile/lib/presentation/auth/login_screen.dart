@@ -46,27 +46,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    ref.listen(authProvider, (_, next) {
-      if (next.errorCode != null && !next.isLoading) {
-        final msg = switch (next.errorCode) {
-          'INVALID_CREDENTIALS' => 'NIK atau password salah.',
-          'VALIDATION_ERROR' => 'Format NIK tidak valid.',
-          'NETWORK_ERROR' =>
-            'Tidak dapat terhubung ke server. Periksa koneksi.',
-          _ => 'Terjadi kesalahan. Silakan coba lagi.',
-        };
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: AppColors.dangerRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    });
-
-    if (authState.isLoading) {
-      return const Scaffold(body: AppLoading(message: 'Memverifikasi...'));
+    String? errorMsg;
+    if (authState.errorCode != null) {
+      errorMsg = switch (authState.errorCode) {
+        'INVALID_CREDENTIALS' => 'NIK atau password salah.',
+        'VALIDATION_ERROR' => 'Format NIK tidak valid.',
+        'NETWORK_ERROR' => 'Tidak dapat terhubung ke server. Periksa koneksi.',
+        _ => 'Terjadi kesalahan. Silakan coba lagi.',
+      };
     }
 
     return Scaffold(
@@ -138,23 +125,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Masuk ke Akun',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                            const Center(
+                              child: Text(
+                                'Masuk ke Akun',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Pilah sampah cerdas dimulai dari sini',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
+                            const SizedBox(height: 8),
+                            const Center(
+                              child: Text(
+                                'Pilah sampah cerdas dimulai dari sini',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 32),
 
                             // ─── NIK ─────────────────────────────────
                             const Text(
@@ -233,14 +224,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 8),
-
-
+                            // ─── Inline Error ──────────────────────────
+                            if (errorMsg != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Text(
+                                  errorMsg,
+                                  style: const TextStyle(
+                                    color: AppColors.dangerRed,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            
+                            const SizedBox(height: 24),
 
                             // ─── Tombol Masuk ──────────────────────────
                             ElevatedButton(
-                              onPressed: _onLogin,
-                              child: const Text('MASUK'),
+                              onPressed: authState.isLoading ? null : _onLogin,
+                              child: authState.isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text('MASUK'),
                             ),
                           ],
                         ),

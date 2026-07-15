@@ -8,7 +8,7 @@ import '../network/api_client.dart';
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
 /// Endpoint yang digunakan:
-///   GET  /api/v1/bins/my        — bins pribadi warga yg login
+///   GET  /api/v1/bins/my-bins     — bins pribadi warga yg login
 ///   POST /api/v1/waste/detect   — upload foto + deteksi AI (FR-01)
 ///   POST /api/v1/bins/scan      — transaksi scan QR + geofencing (FR-02)
 class ApiBinRepository implements BinRepository {
@@ -26,7 +26,7 @@ class ApiBinRepository implements BinRepository {
   @override
   Future<List<BinEntity>> getBinsByHousehold(String householdId) async {
     try {
-      final response = await apiClient.dio.get('/bins/my');
+      final response = await apiClient.dio.get('/bins/my-bins');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -52,7 +52,7 @@ class ApiBinRepository implements BinRepository {
   @override
   Future<BinEntity?> getBinByQrSerial(String qrSerial) async {
     try {
-      final response = await apiClient.dio.get('/bins/my');
+      final response = await apiClient.dio.get('/bins/my-bins');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
         final match = data

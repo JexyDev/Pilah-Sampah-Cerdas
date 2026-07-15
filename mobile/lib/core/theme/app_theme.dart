@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_dimensions.dart';
 
-/// Theme aplikasi — Light Mode Only, Primary Blue.
-/// Sesuai desain stitch_ui — dominan biru #0056A4.
+/// Theme aplikasi — Light Mode Only, Primary Green.
+/// Sesuai perombakan desain — dominan hijau #2E7D32.
 class AppTheme {
   AppTheme._();
 
@@ -14,8 +14,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.primaryBlue,
-        secondary: AppColors.primaryGreen,
+        primary: AppColors.primaryGreen,
+        secondary: AppColors.primaryBlue,
         error: AppColors.dangerRed,
         surface: AppColors.cardBackground,
         onPrimary: AppColors.textOnPrimary,
@@ -67,9 +67,9 @@ class AppTheme {
             ),
           ),
 
-      // --- AppBar: BIRU ---
+      // --- AppBar: HIJAU ---
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primaryGreen,
         elevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -84,14 +84,14 @@ class AppTheme {
         ),
       ),
 
-      // --- ElevatedButton: BIRU ---
+      // --- ElevatedButton: HIJAU ---
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryBlue,
+          backgroundColor: AppColors.primaryGreen,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, AppDimensions.buttonHeight),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
           textStyle: GoogleFonts.poppins(
             fontSize: 15,
@@ -105,12 +105,12 @@ class AppTheme {
       // --- OutlinedButton ---
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryBlue,
+          foregroundColor: AppColors.primaryGreen,
           minimumSize: const Size(double.infinity, AppDimensions.buttonHeight),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
-          side: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+          side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
           textStyle: GoogleFonts.poppins(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -121,7 +121,7 @@ class AppTheme {
       // --- TextButton ---
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primaryBlue,
+          foregroundColor: AppColors.primaryGreen,
           textStyle: GoogleFonts.poppins(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -147,7 +147,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),

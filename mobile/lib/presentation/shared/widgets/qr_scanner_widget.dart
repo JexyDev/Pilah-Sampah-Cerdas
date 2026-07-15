@@ -122,9 +122,8 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            width: double.infinity,
-            height: 300,
+          child: AspectRatio(
+            aspectRatio: 1.0,
             child: Stack(
               children: [
                 if (_scanned)

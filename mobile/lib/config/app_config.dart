@@ -16,7 +16,7 @@ class AppConfig {
   // iOS Simulator    : 127.0.0.1 → otomatis (tidak perlu diubah)
   // HP fisik Android : isi _devServerIp dengan IP laptop
   // HP fisik iOS     : isi _devServerIp dengan IP laptop
-  static const String _devServerIp = '192.168.110.221'; // IP laptop lokal
+  static const String _devServerIp = '192.168.110.217'; // IP laptop lokal/backend utama
 
   static const int _port = 3000;
 

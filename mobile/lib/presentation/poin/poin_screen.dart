@@ -5,8 +5,9 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/entities/point_history_entity.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/waste_log_provider.dart';
-import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/app_error.dart';
+import '../shared/widgets/skeleton_loading.dart';
+import '../shared/widgets/empty_state.dart';
 
 /// Halaman poin — sesuai desain:
 /// Header biru besar, total poin + ranking, stats 3 kolom, riwayat poin, info poin.
@@ -57,16 +58,9 @@ class PoinScreen extends ConsumerWidget {
 
                   historyAsync.when(
                     data: (history) => history.isEmpty
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Text(
-                                'Belum ada riwayat poin.',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
+                        ? const EmptyState(
+                            message: 'Belum ada riwayat poin.',
+                            icon: Icons.monetization_on_outlined,
                           )
                         : Column(
                             children: history
@@ -79,10 +73,24 @@ class PoinScreen extends ConsumerWidget {
                                 )
                                 .toList(),
                           ),
-                    loading: () => const AppLoading(),
-                    error: (_, __) => AppError(
+                    loading: () => Column(
+                      children: List.generate(
+                        3,
+                        (index) => const Padding(
+                          padding: EdgeInsets.only(bottom: 8.0),
+                          child: SkeletonLoading(
+                            height: 60,
+                            width: double.infinity,
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    error: (_, __) => EmptyState(
                       message: 'Gagal memuat riwayat poin.',
-                      onRetry: () => ref.invalidate(pointHistoryProvider),
+                      icon: Icons.refresh_rounded,
+                      buttonText: 'Coba Lagi',
+                      onButtonPressed: () => ref.invalidate(pointHistoryProvider),
                     ),
                   ),
 
@@ -234,10 +242,10 @@ class PoinScreen extends ConsumerWidget {
   }
 
   Widget _buildHeaderSkeleton(BuildContext context) {
-    return Container(
+    return const SkeletonLoading(
       height: 180,
-      color: AppColors.primaryBlue,
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+      width: double.infinity,
+      borderRadius: BorderRadius.zero,
     );
   }
 

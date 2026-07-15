@@ -60,4 +60,24 @@ router.post(
   aiController.uploadWastePhoto
 );
 
+/**
+ * @swagger
+ * /api/v1/waste/detect:
+ *   post:
+ *     summary: Upload dan Deteksi Sampah AI (Untuk Mobile App)
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Deteksi berhasil
+ */
+router.post(
+  "/detect",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  uploadAvatarMiddleware.single("image"),
+  aiController.detectCombined
+);
+
 export default router;

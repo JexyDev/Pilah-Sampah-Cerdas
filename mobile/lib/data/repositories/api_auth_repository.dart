@@ -32,7 +32,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       final response = await apiClient.dio.post(
         '/auth/login',
-        data: {'nik': nik, 'password': password},
+        data: {'email': nik, 'password': password}, // Backend menerima field 'email' yang berisi email/NIK
       );
 
       if (response.statusCode == 200) {

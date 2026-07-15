@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Palet warna resmi aplikasi — sesuai desain stitch_ui.
-/// Primary color adalah BIRU (#0056A4), bukan hijau.
-/// Hijau digunakan untuk organik dan aksen sukses.
+/// Palet warna resmi aplikasi — sesuai perombakan desain (Clean Design).
+/// Primary color adalah HIJAU ORGANIK (#2E7D32).
+/// Biru digunakan untuk sekunder/non-organik.
 class AppColors {
   AppColors._();
 

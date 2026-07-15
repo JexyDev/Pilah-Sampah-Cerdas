@@ -178,7 +178,7 @@ const WargaDashboard: React.FC = () => {
     .reduce((sum, p) => sum + p.points, 0);
 
   const startOfToday = new Date();
-  startOfToday.setHours(0,0,0,0);
+  startOfToday.setHours(0, 0, 0, 0);
   const pointsEarnedToday = pointHistory
     .filter(p => p.points > 0 && new Date(p.createdAt) >= startOfToday)
     .reduce((sum, p) => sum + p.points, 0);
@@ -203,7 +203,7 @@ const WargaDashboard: React.FC = () => {
         ) : (
           <>
             {/* Card Poin */}
-            <div 
+            <div
               onClick={() => setShowPoinModal(true)}
               className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
             >
@@ -221,7 +221,7 @@ const WargaDashboard: React.FC = () => {
             </div>
 
             {/* Card Saldo */}
-            <div 
+            <div
               onClick={() => setShowSaldoModal(true)}
               className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
             >
@@ -239,7 +239,7 @@ const WargaDashboard: React.FC = () => {
             </div>
 
             {/* Card Organik */}
-            <div 
+            <div
               onClick={() => setShowSetoranModal(true)}
               className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
             >
@@ -254,7 +254,7 @@ const WargaDashboard: React.FC = () => {
             </div>
 
             {/* Card Anorganik */}
-            <div 
+            <div
               onClick={() => setShowSetoranModal(true)}
               className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
             >
@@ -287,7 +287,7 @@ const WargaDashboard: React.FC = () => {
                 Kuota AI Hari Ini: {quotaRemaining} / 50 Request
               </div>
             </div>
-            <button 
+            <button
               onClick={() => navigate('/setor')}
               className="bg-white hover:bg-slate-50 text-emerald-800 font-extrabold px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer z-10"
             >
@@ -319,7 +319,7 @@ const WargaDashboard: React.FC = () => {
                 Wilayah Tugas: <strong className="text-primary">{user?.wilayah || '-'}</strong>
               </p>
             </div>
-            <button 
+            <button
               onClick={() => navigate('/pengaturan')}
               className="px-4 py-2 border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors text-[11px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
@@ -335,7 +335,7 @@ const WargaDashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-primary">notifications</span>
                 Notifikasi Terbaru
               </h5>
-              <button 
+              <button
                 onClick={fetchNotifications}
                 className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-0.5"
               >
@@ -430,7 +430,7 @@ const WargaDashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-primary">history</span>
                 Setoran Terakhir
               </h5>
-              <button 
+              <button
                 onClick={() => setShowSetoranModal(true)}
                 className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider"
               >
@@ -453,7 +453,7 @@ const WargaDashboard: React.FC = () => {
                 {wasteLogs.slice(0, 4).map((item) => (
                   <div key={item.id} className="flex justify-between items-center p-3 rounded-lg border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-all">
                     <div>
-                      <p className="text-[9px] text-slate-400 font-bold">{new Date(item.waktu).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</p>
+                      <p className="text-[9px] text-slate-400 font-bold">{new Date(item.waktu).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                       <p className="text-[12px] font-bold text-on-surface mt-0.5">{item.jenis === 'ORGANIC' ? '🌱 Organik' : '♻️ Anorganik'} ({item.berat} Kg)</p>
                       <p className="text-[10px] text-on-surface-variant mt-0.5">{item.lokasi} • {item.volume}</p>
                     </div>
@@ -549,7 +549,7 @@ const WargaDashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
-            
+
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
               {/* Balance Summary */}
               <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
@@ -561,11 +561,11 @@ const WargaDashboard: React.FC = () => {
               {/* Conversion Form */}
               <form onSubmit={handleTukarPoin} className="space-y-4">
                 <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Form Penukaran Saldo</h4>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-on-surface-variant uppercase">Poin Ditukar</label>
-                    <select 
+                    <select
                       className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
                       value={tukarPoinAmount}
                       onChange={(e) => setTukarPoinAmount(e.target.value)}
@@ -577,7 +577,7 @@ const WargaDashboard: React.FC = () => {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-on-surface-variant uppercase">Metode E-Wallet</label>
-                    <select 
+                    <select
                       className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
                       value={ewalletType}
                       onChange={(e) => setEwalletType(e.target.value)}
@@ -592,7 +592,7 @@ const WargaDashboard: React.FC = () => {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase">Nomor HP Terdaftar</label>
-                  <input 
+                  <input
                     type="tel"
                     placeholder="contoh: 08123456789"
                     className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
@@ -601,7 +601,7 @@ const WargaDashboard: React.FC = () => {
                   />
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   disabled={isConverting || poin < parseInt(tukarPoinAmount)}
                   className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-green-600/10"
@@ -631,7 +631,7 @@ const WargaDashboard: React.FC = () => {
                       <div key={historyItem.id} className="py-2.5 flex justify-between items-center text-xs">
                         <div>
                           <p className="font-bold text-on-surface">{historyItem.description.replace("Konversi ", "")}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{new Date(historyItem.createdAt).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{new Date(historyItem.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         </div>
                         <span className="font-bold text-red-500">
                           -Rp {Math.abs(historyItem.points * 100).toLocaleString('id-ID')}
@@ -663,19 +663,18 @@ const WargaDashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
-            
+
             <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
               {/* Category Filter */}
               <div className="flex gap-2">
                 {['ALL', 'ORGANIC', 'NON_ORGANIC'].map((type) => (
-                  <button 
+                  <button
                     key={type}
                     onClick={() => setFilterWasteType(type)}
-                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer border ${
-                      filterWasteType === type 
-                        ? 'bg-primary text-white border-primary' 
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer border ${filterWasteType === type
+                        ? 'bg-primary text-white border-primary'
                         : 'bg-white border-outline-variant hover:bg-slate-50 text-on-surface-variant'
-                    }`}
+                      }`}
                   >
                     {type === 'ALL' ? 'Semua' : type === 'ORGANIC' ? 'Organik' : 'Anorganik'}
                   </button>
@@ -705,12 +704,11 @@ const WargaDashboard: React.FC = () => {
                         {filteredLogs.map((log) => (
                           <tr key={log.id} className="hover:bg-slate-50">
                             <td className="p-3 font-medium">
-                              {new Date(log.waktu).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
+                              {new Date(log.waktu).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                             </td>
                             <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
-                                log.jenis === 'ORGANIC' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${log.jenis === 'ORGANIC' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                }`}>
                                 {log.jenis === 'ORGANIC' ? 'Organik' : 'Anorganik'}
                               </span>
                             </td>
@@ -1072,16 +1070,16 @@ const Dashboard: React.FC = () => {
             <div className="w-32 h-32 relative flex items-center justify-center">
               <svg className="w-32 h-32 transform -rotate-90">
                 <circle cx="64" cy="64" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
-                <circle 
-                  cx="64" 
-                  cy="64" 
-                  r="50" 
-                  fill="transparent" 
-                  stroke="#10b981" 
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="50"
+                  fill="transparent"
+                  stroke="#10b981"
                   strokeWidth="12"
                   strokeDasharray={`${2 * Math.PI * 50}`}
                   strokeDashoffset={`${2 * Math.PI * 50 * (1 - (stats?.komposisiSampah?.pctOrganik ?? 0) / 100)}`}
-                  strokeLinecap="round" 
+                  strokeLinecap="round"
                 />
               </svg>
               <div className="absolute text-center">
@@ -1109,7 +1107,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Map Widget */}
-        <div 
+        <div
           onClick={() => setShowComplianceModal(true)}
           className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl overflow-hidden relative border border-outline-variant/30 cursor-pointer hover:shadow-md transition-shadow group"
         >
@@ -1172,12 +1170,12 @@ const Dashboard: React.FC = () => {
               </thead>
               <tbody className="text-[12px]">
                 {recentBins.map((bin, i) => {
-                  const cap = Math.round(bin.kapasitas || (Number(bin.currentVolumeLiter)/Number(bin.maxCapacityLiter) * 100));
+                  const cap = Math.round(bin.kapasitas || (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter) * 100));
                   return (
                     <tr key={bin.id || bin.kode || i} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
                       <td className="py-3">
                         <div className="flex flex-col">
-                          <span className="font-bold">{bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0,8) : 'BIN')}</span>
+                          <span className="font-bold">{bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : 'BIN')}</span>
                           <span className={`text-[10px] ${(bin.category?.name || bin.categoryId) === 'ORGANIK' ? 'text-primary' : 'text-secondary'} flex items-center gap-1`}>
                             <span className="material-symbols-outlined text-[14px]">{(bin.category?.name || bin.categoryId) === 'ORGANIK' ? 'recycling' : 'delete'}</span> {bin.category?.name || bin.categoryId || 'UMUM'}
                           </span>
@@ -1197,19 +1195,19 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <button 
+                          <button
                             onClick={() => setSelectedBinForDetail(bin)}
                             className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
                           >
                             <span className="material-symbols-outlined text-[16px]">visibility</span>
                           </button>
-                          <button 
+                          <button
                             onClick={() => navigate('/manajemen-tempat-sampah', { state: { editBinId: bin.id || bin.kode } })}
                             className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
                           >
                             <span className="material-symbols-outlined text-[16px]">edit</span>
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleBinDelete(bin.qrCode || bin.kode)}
                             className="p-1 hover:text-red-600 text-gray-400 rounded hover:bg-surface-container-high transition-colors"
                           >
@@ -1252,14 +1250,14 @@ const Dashboard: React.FC = () => {
                     {u.status || 'Aktif'}
                   </span>
                   <div className="flex gap-1">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); navigate('/manajemen-pengguna', { state: { editUserId: u.id } }); }} 
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate('/manajemen-pengguna', { state: { editUserId: u.id } }); }}
                       className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
                     >
                       <span className="material-symbols-outlined text-[16px]">edit</span>
                     </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleUserDelete(u.id); }} 
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleUserDelete(u.id); }}
                       className="p-1 hover:text-red-600 text-gray-400 rounded hover:bg-surface-container-high transition-colors"
                     >
                       <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -1291,7 +1289,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <h5 className="font-bold text-[14px] text-on-surface leading-tight">{item.title || item.nama_kegiatan}</h5>
-                    <p className="text-[11px] text-on-surface-variant">{item.location || item.lokasi} • {item.time || date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
+                    <p className="text-[11px] text-on-surface-variant">{item.location || item.lokasi} • {item.time || date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
                     <span className={`inline-block mt-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase`}>{item.category || item.status || 'Jadwal'}</span>
                   </div>
                 </div>
@@ -1351,7 +1349,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <div className="pt-2">
-                <button 
+                <button
                   onClick={() => setSelectedBinForDetail(activeBin)}
                   className="w-full py-2 bg-primary text-white rounded-lg text-[12px] font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                 >
@@ -1568,7 +1566,7 @@ const Dashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-primary">analytics</span>
                 Kepatuhan Partisipasi RT/RW
               </h3>
-              <button 
+              <button
                 onClick={() => setShowComplianceModal(false)}
                 className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
               >
@@ -1587,18 +1585,16 @@ const Dashboard: React.FC = () => {
                         <h4 className="font-bold text-sm text-on-surface">{loc.rw} ({loc.kelurahan})</h4>
                         <p className="text-[10px] text-on-surface-variant">{loc.rtCount} RT • {loc.titikCount} Titik Tong Sampah</p>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        loc.patuh >= 85 ? 'bg-green-100 text-green-700' : (loc.patuh >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${loc.patuh >= 85 ? 'bg-green-100 text-green-700' : (loc.patuh >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                        }`}>
                         {loc.patuh}% Patuh
                       </span>
                     </div>
                     {/* Progress Bar */}
                     <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          loc.patuh >= 85 ? 'bg-primary' : (loc.patuh >= 60 ? 'bg-yellow-500' : 'bg-red-500')
-                        }`}
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${loc.patuh >= 85 ? 'bg-primary' : (loc.patuh >= 60 ? 'bg-yellow-500' : 'bg-red-500')
+                          }`}
                         style={{ width: `${loc.patuh}%` }}
                       ></div>
                     </div>
@@ -1616,7 +1612,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
               <h3 className="font-bold text-[18px] text-on-surface">Detail Tempat Sampah Cerdas</h3>
-              <button 
+              <button
                 onClick={() => setSelectedBinForDetail(null)}
                 className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
               >
@@ -1626,10 +1622,10 @@ const Dashboard: React.FC = () => {
             <div className="p-6 space-y-6">
               <div className="flex justify-center">
                 <div className="p-4 bg-white rounded-2xl border-2 border-outline-variant/60 shadow-inner flex flex-col items-center gap-2">
-                  <img 
-                    className="w-40 h-40" 
-                    alt="QR Code" 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedBinForDetail.qrCode || selectedBinForDetail.kode)}`} 
+                  <img
+                    className="w-40 h-40"
+                    alt="QR Code"
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedBinForDetail.qrCode || selectedBinForDetail.kode)}`}
                   />
                   <span className="text-[14px] font-mono font-bold text-primary tracking-widest">{selectedBinForDetail.qrCode || selectedBinForDetail.kode}</span>
                 </div>
@@ -1638,9 +1634,8 @@ const Dashboard: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
                   <span className="text-on-surface-variant">Kategori Sampah</span>
-                  <span className={`font-bold uppercase ${
-                    (selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || '').toUpperCase().includes('ORGANIK') ? 'text-primary' : 'text-secondary'
-                  }`}>
+                  <span className={`font-bold uppercase ${(selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || '').toUpperCase().includes('ORGANIK') ? 'text-primary' : 'text-secondary'
+                    }`}>
                     {selectedBinForDetail.category?.name || selectedBinForDetail.categoryId}
                   </span>
                 </div>
@@ -1652,13 +1647,12 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
                   <span className="text-on-surface-variant">Status Kapasitas</span>
-                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                    (selectedBinForDetail.kapasitas || (Number(selectedBinForDetail.currentVolumeLiter)/Number(selectedBinForDetail.maxCapacityLiter) * 100)) > 90 
-                      ? 'bg-red-100 text-red-700' 
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${(selectedBinForDetail.kapasitas || (Number(selectedBinForDetail.currentVolumeLiter) / Number(selectedBinForDetail.maxCapacityLiter) * 100)) > 90
+                      ? 'bg-red-100 text-red-700'
                       : 'bg-green-100 text-green-700'
-                  }`}>
+                    }`}>
                     {selectedBinForDetail.currentVolumeLiter}L / {selectedBinForDetail.maxCapacityLiter}L ({
-                      Math.round(selectedBinForDetail.kapasitas || (Number(selectedBinForDetail.currentVolumeLiter)/Number(selectedBinForDetail.maxCapacityLiter) * 100))
+                      Math.round(selectedBinForDetail.kapasitas || (Number(selectedBinForDetail.currentVolumeLiter) / Number(selectedBinForDetail.maxCapacityLiter) * 100))
                     }%)
                   </span>
                 </div>
@@ -1670,7 +1664,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={() => setSelectedBinForDetail(null)}
                 className="w-full py-3 bg-surface-container hover:bg-surface-container-high rounded-xl text-xs font-bold text-on-surface transition-colors"
               >
