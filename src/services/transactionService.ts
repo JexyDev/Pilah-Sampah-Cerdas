@@ -41,6 +41,29 @@ export class TransactionService {
       }
     });
   }
+
+  async getMyDeposits(userId: string) {
+    const household = await prisma.household.findFirst({
+      where: { userId }
+    });
+
+    if (!household) {
+      return [];
+    }
+
+    return prisma.wasteLog.findMany({
+      where: { householdId: household.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: true,
+        bin: {
+          include: {
+            rtRw: true
+          }
+        }
+      }
+    });
+  }
 }
 
 export const transactionService = new TransactionService();

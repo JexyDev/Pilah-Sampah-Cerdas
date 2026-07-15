@@ -68,6 +68,7 @@ router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.d
  *         description: List of RW locations with RT count and bin count
  */
 router.get("/locations", binController.getLocations);
+router.get("/my-bins", authMiddleware, roleMiddleware(["WARGA"]), binController.getMyBins);
 router.get("/areas", binController.getAreas);
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
 router.post("/areas", authMiddleware, roleMiddleware(["ADMIN"]), binController.createArea);

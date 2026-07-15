@@ -256,6 +256,61 @@ export class BinController {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tong sampah" });
     }
   }
+
+  /**
+   * Get bins for current Warga based on their RT/RW
+   */
+  async getMyBins(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { rtRwId: true }
+      });
+
+      let rtRwId = user?.rtRwId;
+
+      if (!rtRwId) {
+        const household = await prisma.household.findFirst({
+          where: { userId },
+          select: { rtRwId: true }
+        });
+        rtRwId = household?.rtRwId || null;
+      }
+
+      if (!rtRwId) {
+        res.status(200).json({ success: true, data: [] });
+        return;
+      }
+
+      const bins = await prisma.bin.findMany({
+        where: { rtRwId },
+        include: { category: true, rtRw: true }
+      });
+
+      const mapped = bins.map((bin: any) => {
+        const currentVol = Number(bin.currentVolumeLiter);
+        const maxVol = Number(bin.maxCapacityLiter);
+        const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
+        return {
+          id: bin.id,
+          qrCode: bin.qrCode,
+          category: bin.category.name,
+          currentVolumeLiter: currentVol,
+          maxCapacityLiter: maxVol,
+          kapasitas,
+          rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
+          status: kapasitas > 80 ? 'Penuh' : (kapasitas > 50 ? 'Sedang' : 'Normal')
+        };
+      });
+
+      res.status(200).json({ success: true, data: mapped });
+    } catch (error) {
+      console.error("[BinController] getMyBins error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data status tong sampah Anda" });
+    }
+  }
 }
 
 export const binController = new BinController();

@@ -24,5 +24,28 @@ export const transactionController = {
       console.error("[TransactionController] getDeposits error:", error);
       res.status(500).json({ success: false, message: "Gagal mengambil data setoran" });
     }
+  },
+
+  getMyDeposits: async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const deposits = await transactionService.getMyDeposits(userId);
+      
+      const mappedDeposits = deposits.map((d: any) => ({
+        id: d.id,
+        jenis: d.category?.name || d.categoryId,
+        berat: Number(d.weightKg),
+        volume: `${Number(d.volumeLiter).toFixed(1)}L`,
+        poin: Math.floor(Number(d.weightKg) * (d.category?.pointsPerKg || 10)),
+        waktu: d.createdAt,
+        status: "Selesai",
+        lokasi: `Tong: ${d.bin?.qrCode}`
+      }));
+
+      res.status(200).json({ success: true, data: mappedDeposits });
+    } catch (error) {
+      console.error("[TransactionController] getMyDeposits error:", error);
+      res.status(500).json({ success: false, message: "Gagal mengambil riwayat setoran Anda" });
+    }
   }
 };

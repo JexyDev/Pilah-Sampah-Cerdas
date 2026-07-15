@@ -30,6 +30,12 @@ router.get(
   pointController.getMyLedger
 );
 
+router.post(
+  "/convert",
+  authMiddleware,
+  pointController.convertPoints
+);
+
 /**
  * @swagger
  * /api/v1/points/history/{userId}:

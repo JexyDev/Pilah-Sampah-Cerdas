@@ -66,6 +66,27 @@ class RedisService {
     return true;
   }
 
+  // Get remaining quota for the user today
+  async getRemainingQuota(userId: string): Promise<number> {
+    const today = new Date().toISOString().split("T")[0];
+    const key = `quota:${userId}:${today}`;
+    const limit = 50;
+
+    if (this.isConnected) {
+      try {
+        const countStr = await this.client.get(key);
+        const count = countStr ? parseInt(countStr, 10) : 0;
+        return Math.max(0, limit - count);
+      } catch (err) {
+        console.error("Redis error getting quota, using memory fallback", err);
+      }
+    }
+
+    const memKey = `${userId}:${today}`;
+    const count = this.memoryQuota[memKey] || 0;
+    return Math.max(0, limit - count);
+  }
+
   // Refund quota (e.g. if request times out or is invalid)
   async refundQuota(userId: string) {
     const today = new Date().toISOString().split("T")[0];

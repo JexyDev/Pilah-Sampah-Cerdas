@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { redisService } from "./redisService.js";
 
 const prisma = new PrismaClient();
 
@@ -275,11 +276,14 @@ export const dashboardService = {
       });
     }
 
+    const quotaRemaining = await redisService.getRemainingQuota(userId);
+
     return {
       poin,
       saldo,
       organik: parseFloat(organikKg.toFixed(1)),
-      anorganik: parseFloat(anorganikKg.toFixed(1))
+      anorganik: parseFloat(anorganikKg.toFixed(1)),
+      quotaRemaining
     };
   },
   getAnalytics: async () => {

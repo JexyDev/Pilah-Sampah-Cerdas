@@ -5,422 +5,735 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
 
 // ========== Warga Dashboard Component ==========
-// ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+
+  // Summary State
   const [poin, setPoin] = useState(0);
   const [saldo, setSaldo] = useState(0);
   const [organik, setOrganik] = useState(0);
   const [anorganik, setAnorganik] = useState(0);
+  const [quotaRemaining, setQuotaRemaining] = useState(50);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
 
-  // Fetch Summary Data
+  // Detail Lists
+  const [myBins, setMyBins] = useState<any[]>([]);
+  const [isLoadingBins, setIsLoadingBins] = useState(true);
+
+  const [pointHistory, setPointHistory] = useState<any[]>([]);
+  const [isLoadingPoints, setIsLoadingPoints] = useState(false);
+
+  const [wasteLogs, setWasteLogs] = useState<any[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+
+  // Modals visibility
+  const [showPoinModal, setShowPoinModal] = useState(false);
+  const [showSaldoModal, setShowSaldoModal] = useState(false);
+  const [showSetoranModal, setShowSetoranModal] = useState(false);
+
+  // Conversion Form State
+  const [tukarPoinAmount, setTukarPoinAmount] = useState('500');
+  const [ewalletType, setEwalletType] = useState('DANA');
+  const [ewalletPhone, setEwalletPhone] = useState('');
+  const [isConverting, setIsConverting] = useState(false);
+
+  // Waste logs filter state
+  const [filterWasteType, setFilterWasteType] = useState('ALL');
+
   useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const response = await api.get('/dashboard/summary');
-        const data = response.data.data;
-        if (data) {
-          setPoin(data.poin || 0);
-          setSaldo(data.saldo || 0);
-          setOrganik(data.organik || 0);
-          setAnorganik(data.anorganik || 0);
-        }
-      } catch (error) {
-        console.error('Failed to fetch summary:', error);
-      }
-    };
     fetchSummary();
+    fetchMyBins();
+    fetchNotifications();
+    fetchWasteLogs();
+    fetchPoints();
   }, []);
 
-  // AI & QR Scanner Simulation States
-  const [selectedTrash, setSelectedTrash] = useState<any>(null);
-  const [scanning, setScanning] = useState(false);
-  const [aiResult, setAiResult] = useState<any>(null);
-  const [selectedBin, setSelectedBin] = useState('');
-  const [successModal, setSuccessModal] = useState(false);
-
-  const [nearbyBins, setNearbyBins] = useState<any[]>([]);
-
-  // Dynamic Bins from API
-  useEffect(() => {
-    const fetchBins = async () => {
-      try {
-        const res = await api.get('/bins/locations');
-        // Get all bins. Filter by user's RT/RW or just use all for now if user has no rt/rw.
-        // Assuming response.data.data is an array of Kelurahan which contain RtRwArea which contain Bins.
-        // For simplicity let's flatten all bins:
-        let allBins: any[] = [];
-        const data = res.data.data;
-        if (Array.isArray(data)) {
-          data.forEach((kel: any) => {
-             kel.rtRwAreas?.forEach((rtRw: any) => {
-               rtRw.bins?.forEach((bin: any) => {
-                 allBins.push({
-                   id: bin.id,
-                   label: `Tong ${bin.category?.name || 'Sistem'} - ${rtRw.name}`,
-                   capacity: (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100,
-                   type: bin.category?.name || 'UMUM'
-                 });
-               });
-             });
-          });
-        }
-        setNearbyBins(allBins);
-      } catch (err) {
-        console.error('Failed to fetch bins for dashboard', err);
-      }
-    };
-    fetchBins();
-  }, []);
-
-  // Reset selected bin when location changes
-  useEffect(() => {
-    setSelectedBin('');
-  }, [user?.wilayah]);
-
-  const trashOptions = [
-    { id: 1, name: 'Botol Plastik Bekas', type: 'ANORGANIK', icon: 'local_drink', img: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=200&auto=format&fit=crop&q=60' },
-    { id: 2, name: 'Kulit Pisang Segar', type: 'ORGANIK', icon: 'eco', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200&auto=format&fit=crop&q=60' },
-    { id: 3, name: 'Kardus Box Cokelat', type: 'ANORGANIK', icon: 'inventory_2', img: 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=200&auto=format&fit=crop&q=60' },
-    { id: 4, name: 'Sisa Sayur & Nasi', type: 'ORGANIK', icon: 'restaurant', img: 'https://images.unsplash.com/photo-1540340061722-9293d5163008?w=200&auto=format&fit=crop&q=60' },
-  ];
-
-  const handleSelectTrash = (item: any) => {
-    setSelectedTrash(item);
-    setAiResult(null);
-    setSelectedBin('');
-  };
-
-  const handleScanAI = async () => {
-    if (!selectedTrash) return;
-    setScanning(true);
+  const fetchSummary = async () => {
     try {
-      const response = await api.post('/waste/detect-mock', { imageUrl: selectedTrash.img });
-      setAiResult({
-        detectedType: response.data.data.jenis_sampah,
-        confidence: response.data.data.confidence || '95%',
-        label: response.data.data.jenis_sampah // or use selectedTrash.name
-      });
-      toast.success('Deteksi AI Berhasil!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal deteksi AI');
+      setIsLoadingSummary(true);
+      const res = await api.get('/dashboard/summary');
+      if (res.data?.success && res.data.data) {
+        const d = res.data.data;
+        setPoin(d.poin || 0);
+        setSaldo(d.saldo || 0);
+        setOrganik(d.organik || 0);
+        setAnorganik(d.anorganik || 0);
+        setQuotaRemaining(d.quotaRemaining !== undefined ? d.quotaRemaining : 50);
+      }
+    } catch (err) {
+      console.error('Gagal memuat summary dashboard', err);
     } finally {
-      setScanning(false);
+      setIsLoadingSummary(false);
     }
   };
 
-  const handleSetor = async () => {
-    if (!aiResult || !selectedBin) return;
+  const fetchMyBins = async () => {
+    try {
+      setIsLoadingBins(true);
+      const res = await api.get('/bins/my-bins');
+      if (res.data?.success) {
+        setMyBins(res.data.data);
+      }
+    } catch (err) {
+      console.error('Gagal memuat kapasitas tong sampah', err);
+    } finally {
+      setIsLoadingBins(false);
+    }
+  };
 
-    // Check mismatch dynamically
-    const selectedBinDetails = nearbyBins.find(b => b.id === selectedBin);
-    const isBinOrganik = selectedBinDetails?.type === 'ORGANIK';
-    const isTrashOrganik = aiResult.detectedType === 'ORGANIK';
+  const fetchPoints = async () => {
+    try {
+      setIsLoadingPoints(true);
+      const res = await api.get('/points/me');
+      if (res.data?.success) {
+        setPointHistory(res.data.data.history || []);
+      }
+    } catch (err) {
+      console.error('Gagal memuat riwayat poin', err);
+    } finally {
+      setIsLoadingPoints(false);
+    }
+  };
 
-    if (isBinOrganik !== isTrashOrganik) {
-      toast.error('Gagal: Tipe sampah tidak cocok dengan jenis Tong Sampah (Mismatch)!', { duration: 4000 });
+  const fetchWasteLogs = async () => {
+    try {
+      setIsLoadingLogs(true);
+      const res = await api.get('/transactions/my-deposits');
+      if (res.data?.success) {
+        setWasteLogs(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Gagal memuat riwayat setoran', err);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setIsLoadingNotifications(true);
+      const res = await api.get('/notifications');
+      if (res.data?.status === 'success') {
+        setNotifications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Gagal memuat notifikasi', err);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  const handleTukarPoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const pointsToRedeem = parseInt(tukarPoinAmount);
+    if (!ewalletPhone.trim()) {
+      toast.error('Masukkan nomor HP E-Wallet!');
+      return;
+    }
+    if (poin < pointsToRedeem) {
+      toast.error('Poin Anda tidak mencukupi!');
       return;
     }
 
     try {
-      // Get household ID
-      const householdsReq = await api.get('/households/me');
-      const households = householdsReq.data.data;
-      if (!households || households.length === 0) {
-        throw new Error('Anda belum terdaftar dalam KK manapun.');
-      }
-      const householdId = households[0].id;
-      
-      const payload = {
-        householdId,
-        qrCode: selectedBin,
-        detectedType: aiResult.detectedType,
-        estimatedVolume: 1.5
-      };
-      
-      await api.post('/bins/scan', payload);
-      
-      // Success transaction
-      setPoin((prev) => prev + 50);
-      setSaldo((prev) => prev + 5000);
-      if (isTrashOrganik) {
-        setOrganik((prev) => parseFloat((prev + 1.5).toFixed(1)));
-      } else {
-        setAnorganik((prev) => parseFloat((prev + 1.2).toFixed(1)));
-      }
+      setIsConverting(true);
+      const res = await api.post('/points/convert', {
+        points: pointsToRedeem,
+        ewalletType,
+        phone: ewalletPhone
+      });
 
-      setSuccessModal(true);
-      toast.success('Pintu Tong Sampah Terbuka secara otomatis!');
+      if (res.data?.success) {
+        toast.success(`Berhasil mencairkan Rp ${(pointsToRedeem * 100).toLocaleString('id-ID')} ke ${ewalletType}!`);
+        setEwalletPhone('');
+        setShowSaldoModal(false);
+        // Refresh summary, points, and notifications
+        fetchSummary();
+        fetchPoints();
+        fetchNotifications();
+      }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Gagal setor sampah');
+      toast.error(err.response?.data?.message || 'Gagal melakukan penukaran poin');
+    } finally {
+      setIsConverting(false);
     }
   };
 
-  const resetScanner = () => {
-    setSelectedTrash(null);
-    setAiResult(null);
-    setSelectedBin('');
-    setSuccessModal(false);
+  // Helper for profile picture path
+  const getProfilePhotoUrl = (path?: string) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+    const host = baseUrl.replace('/api/v1', '');
+    return `${host}${path}`;
   };
+
+  // Point calculations
+  const totalPointsEarned = pointHistory
+    .filter(p => p.points > 0)
+    .reduce((sum, p) => sum + p.points, 0);
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0,0,0,0);
+  const pointsEarnedToday = pointHistory
+    .filter(p => p.points > 0 && new Date(p.createdAt) >= startOfToday)
+    .reduce((sum, p) => sum + p.points, 0);
+
+  const filteredLogs = wasteLogs.filter(log => {
+    if (filterWasteType === 'ALL') return true;
+    return log.jenis === filterWasteType;
+  });
 
   return (
     <div className="space-y-gutter pb-12">
       {/* KPI Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
-          <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
+        {isLoadingSummary ? (
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="bg-white/90 p-6 rounded-xl border border-outline-variant/30 flex flex-col gap-3 shadow-sm animate-pulse">
+              <div className="w-10 h-10 bg-slate-200 rounded-lg"></div>
+              <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+            </div>
+          ))
+        ) : (
+          <>
+            {/* Card Poin */}
+            <div 
+              onClick={() => setShowPoinModal(true)}
+              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+            >
+              <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
+              </div>
+              <div>
+                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">Poin Saya</p>
+                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{poin.toLocaleString('id-ID')} Poin</h3>
+                <p className="text-[10px] text-primary font-bold mt-2 flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[12px]">trending_up</span>
+                  +{pointsEarnedToday} Poin hari ini
+                </p>
+              </div>
+            </div>
+
+            {/* Card Saldo */}
+            <div 
+              onClick={() => setShowSaldoModal(true)}
+              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+            >
+              <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+              </div>
+              <div>
+                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">Saldo Rupiah</p>
+                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">Rp {saldo.toLocaleString('id-ID')}</h3>
+                <p className="text-[10px] text-on-surface-variant font-medium mt-2 flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[12px]">account_balance_wallet</span>
+                  Cairkan Poin ke E-Wallet Anda
+                </p>
+              </div>
+            </div>
+
+            {/* Card Organik */}
+            <div 
+              onClick={() => setShowSetoranModal(true)}
+              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+            >
+              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
+              </div>
+              <div>
+                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">Total Setoran Organik</p>
+                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{organik} Kg</h3>
+                <p className="text-[10px] text-emerald-700 font-bold mt-2">Komposisi pemilahan aktif</p>
+              </div>
+            </div>
+
+            {/* Card Anorganik */}
+            <div 
+              onClick={() => setShowSetoranModal(true)}
+              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+            >
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_drink</span>
+              </div>
+              <div>
+                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">Total Setoran Anorganik</p>
+                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{anorganik} Kg</h3>
+                <p className="text-[10px] text-blue-700 font-bold mt-2">Penyumbang daur ulang aktif</p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Main Grid Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+        {/* Left Column (CTA, Profile, Notifications) */}
+        <div className="xl:col-span-8 space-y-gutter">
+          {/* CTA Banner */}
+          <div className="bg-gradient-to-r from-green-600 to-emerald-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 text-center sm:text-left z-10">
+              <h4 className="text-[22px] font-bold tracking-tight">Setorkan Sampah, Jaga Lingkungan!</h4>
+              <p className="text-xs text-green-100 max-w-md leading-relaxed">
+                Gunakan kamera ponsel Anda untuk memindai sampah menggunakan kecerdasan buatan (AI) dan setorkan ke smart bin terdekat untuk hadiah instan.
+              </p>
+              <div className="inline-flex items-center gap-1.5 bg-white/20 border border-white/30 rounded-full px-3 py-1 mt-2 text-[10px] font-bold uppercase tracking-wider">
+                <span className="material-symbols-outlined text-[14px]">bolt</span>
+                Kuota AI Hari Ini: {quotaRemaining} / 50 Request
+              </div>
+            </div>
+            <button 
+              onClick={() => navigate('/setor')}
+              className="bg-white hover:bg-slate-50 text-emerald-800 font-extrabold px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer z-10"
+            >
+              Mulai Setor Sekarang
+            </button>
+            <div className="absolute right-[-20px] bottom-[-40px] opacity-10 text-[180px] pointer-events-none select-none">eco</div>
           </div>
-          <div>
-            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Poin Saya</p>
-            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{poin.toLocaleString()} Poin</h3>
-            <p className="text-[10px] text-primary font-bold mt-2">+50 Poin hari ini</p>
+
+          {/* Profile Card */}
+          <div className="bg-white/95 backdrop-blur-sm border border-outline-variant/40 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-xl overflow-hidden border border-outline-variant/30 flex-shrink-0 bg-primary/10 text-primary">
+              {user?.fotoProfil ? (
+                <img src={getProfilePhotoUrl(user.fotoProfil) || undefined} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                user?.name.substring(0, 2).toUpperCase() || 'U'
+              )}
+            </div>
+            <div className="flex-1 text-center sm:text-left space-y-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <h4 className="font-extrabold text-[18px] text-on-surface">{user?.name}</h4>
+                <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase tracking-wider w-fit mx-auto sm:mx-0">WARGA PSC</span>
+              </div>
+              <p className="text-xs text-on-surface-variant flex items-center justify-center sm:justify-start gap-1 font-medium">
+                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">home</span>
+                {user?.address || 'Alamat Belum Dikonfigurasi'}
+              </p>
+              <p className="text-xs text-on-surface-variant flex items-center justify-center sm:justify-start gap-1 font-medium">
+                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">location_on</span>
+                Wilayah Tugas: <strong className="text-primary">{user?.wilayah || '-'}</strong>
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate('/pengaturan')}
+              className="px-4 py-2 border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors text-[11px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">edit</span>
+              Edit Profil
+            </button>
+          </div>
+
+          {/* Notifications Card */}
+          <div className="bg-white/95 backdrop-blur-sm border border-outline-variant/40 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
+              <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary">notifications</span>
+                Notifikasi Terbaru
+              </h5>
+              <button 
+                onClick={fetchNotifications}
+                className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[14px]">sync</span>
+                Refresh
+              </button>
+            </div>
+
+            {isLoadingNotifications ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-10 bg-slate-100 rounded"></div>
+                <div className="h-10 bg-slate-100 rounded"></div>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="text-center py-6 text-on-surface-variant/75 text-xs">
+                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">campaign</span>
+                Belum ada notifikasi baru untuk Anda.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {notifications.slice(0, 4).map((notif) => (
+                  <div key={notif.id} className="flex gap-3 p-3 rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container transition-colors">
+                    <div className={`w-8 h-8 rounded-full ${notif.iconBg} ${notif.iconColor} flex items-center justify-center flex-shrink-0`}>
+                      <span className="material-symbols-outlined text-[18px]">{notif.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold text-on-surface truncate">{notif.title}</p>
+                      <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">{notif.desc}</p>
+                      <span className="text-[9px] text-slate-400 font-bold block mt-1">{notif.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
-          <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-          </div>
-          <div>
-            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Saldo Rupiah</p>
-            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">Rp {saldo.toLocaleString()}</h3>
-            <p className="text-[10px] text-on-surface-variant font-medium mt-2">Dapat dicairkan ke E-Wallet</p>
-          </div>
-        </div>
+        {/* Right Column (Bins Capacity, Recent Activity) */}
+        <div className="xl:col-span-4 space-y-gutter">
+          {/* Bin Capacity */}
+          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
+              <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary">delete_sweep</span>
+                Tong Sampah RT/RW Saya
+              </h5>
+              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{user?.wilayah || 'Umum'}</span>
+            </div>
 
-        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
-          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
+            {isLoadingBins ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-slate-100 rounded"></div>
+                <div className="h-6 bg-slate-100 rounded"></div>
+              </div>
+            ) : myBins.length === 0 ? (
+              <div className="text-center py-6 text-on-surface-variant/75 text-xs">
+                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">warning</span>
+                Tidak ada tong sampah terdaftar di RT/RW Anda.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myBins.map((bin) => (
+                  <div key={bin.id} className="space-y-1.5 p-3 rounded-lg border border-outline-variant/20 bg-surface-container-lowest">
+                    <div className="flex justify-between text-[11px] font-bold text-on-surface">
+                      <span className="flex items-center gap-1">
+                        <span className={`material-symbols-outlined text-[16px] ${bin.category === 'ORGANIC' ? 'text-primary' : 'text-blue-500'}`}>
+                          {bin.category === 'ORGANIC' ? 'eco' : 'recycling'}
+                        </span>
+                        Tong {bin.category === 'ORGANIC' ? 'Organik' : 'Anorganik'} ({bin.qrCode})
+                      </span>
+                      <span className={bin.kapasitas > 80 ? 'text-red-600' : 'text-on-surface-variant'}>{bin.kapasitas}% Terisi</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${bin.kapasitas >= 80 ? 'bg-red-500' : bin.kapasitas >= 50 ? 'bg-amber-500' : 'bg-primary'}`}
+                        style={{ width: `${bin.kapasitas}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-[9px] text-on-surface-variant/80 text-right font-semibold">
+                      {bin.currentVolumeLiter} L / {bin.maxCapacityLiter} L Kapasitas
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Total Setoran Organik</p>
-            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{organik} Kg</h3>
-            <p className="text-[10px] text-emerald-700 font-bold mt-2">Penyumbang kompos aktif</p>
-          </div>
-        </div>
 
-        <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm">
-          <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_drink</span>
-          </div>
-          <div>
-            <p className="text-label-sm text-on-surface-variant font-medium tracking-wide">Total Setoran Anorganik</p>
-            <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">{anorganik} Kg</h3>
-            <p className="text-[10px] text-blue-700 font-bold mt-2">Penyumbang daur ulang aktif</p>
+          {/* Recent Activity */}
+          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
+              <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary">history</span>
+                Setoran Terakhir
+              </h5>
+              <button 
+                onClick={() => setShowSetoranModal(true)}
+                className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider"
+              >
+                Lihat Semua
+              </button>
+            </div>
+
+            {isLoadingLogs ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-10 bg-slate-100 rounded"></div>
+                <div className="h-10 bg-slate-100 rounded"></div>
+              </div>
+            ) : wasteLogs.length === 0 ? (
+              <div className="text-center py-6 text-on-surface-variant/75 text-xs">
+                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">archive</span>
+                Belum ada riwayat setoran sampah.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {wasteLogs.slice(0, 4).map((item) => (
+                  <div key={item.id} className="flex justify-between items-center p-3 rounded-lg border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-all">
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-bold">{new Date(item.waktu).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</p>
+                      <p className="text-[12px] font-bold text-on-surface mt-0.5">{item.jenis === 'ORGANIC' ? '🌱 Organik' : '♻️ Anorganik'} ({item.berat} Kg)</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">{item.lokasi} • {item.volume}</p>
+                    </div>
+                    <span className="text-[12px] font-extrabold text-primary">+{item.poin} Pts</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main interactive area */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
-        {/* Left column: Trash selector & AI Scanner */}
-        <div className="xl:col-span-8 bg-white/95 backdrop-blur-sm shadow-sm rounded-xl p-6 border border-outline-variant/30 flex flex-col gap-6">
-          <div>
-            <h4 className="font-extrabold text-[18px] text-on-surface">Pilah & Setor Sampah Cerdas (AI & QR Scan)</h4>
-            <p className="text-[12px] text-on-surface-variant mt-1">Pilih salah satu sampah di bawah untuk memotret sampah, deteksi menggunakan AI, lalu scan QR tong sampah terdekat.</p>
-          </div>
+      {/* ================= MODALS ================= */}
 
-          {/* Grid trash options */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {trashOptions.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleSelectTrash(item)}
-                className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all cursor-pointer ${selectedTrash?.id === item.id ? 'border-primary bg-primary/5' : 'border-outline-variant/40 hover:bg-surface-container-low'}`}
-              >
-                <img src={item.img} alt={item.name} className="w-16 h-16 rounded-lg object-cover mb-2 border border-outline-variant/20" />
-                <span className="text-[11px] font-bold text-on-surface text-center truncate w-full">{item.name}</span>
-                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold mt-1 ${item.type === 'ORGANIK' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.type}</span>
+      {/* 1. POIN MODAL */}
+      {showPoinModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-yellow-500">stars</span>
+                Riwayat & Detail Poin
+              </h3>
+              <button onClick={() => setShowPoinModal(false)} className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors">
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
-            ))}
-          </div>
+            </div>
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-low text-center">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Total Poin Diperoleh</p>
+                  <p className="text-xl font-bold text-primary mt-1">+{totalPointsEarned} Pts</p>
+                </div>
+                <div className="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-low text-center">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Target Rank Selanjutnya</p>
+                  <p className="text-xl font-bold text-amber-700 mt-1">Silver Rank</p>
+                </div>
+              </div>
 
-          {/* Scanner view */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40">
-            {/* Box 1: Simulated Camera & AI detector */}
-            <div className="flex flex-col gap-3">
-              <h5 className="text-[13px] font-bold text-on-surface uppercase tracking-wider flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px] text-primary">photo_camera</span>
-                Simulasi Kamera AI
-              </h5>
+              {/* Progress Bar target */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold text-on-surface">
+                  <span>Progres Tingkat</span>
+                  <span>{poin} / 1000 Poin</span>
+                </div>
+                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                  <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (poin / 1000) * 100)}%` }}></div>
+                </div>
+              </div>
 
-              <div className="relative aspect-video w-full rounded-xl bg-slate-900 overflow-hidden flex flex-col items-center justify-center border-2 border-slate-800 shadow-inner">
-                {selectedTrash ? (
-                  <>
-                    <img src={selectedTrash.img} alt="Trash" className="w-full h-full object-cover opacity-80" />
-                    {scanning && (
-                      <div className="absolute inset-0 bg-primary/10 flex flex-col items-center justify-center">
-                        <div className="w-full h-1 bg-primary shadow-lg animate-bounce absolute top-1/2"></div>
-                        <span className="material-symbols-outlined text-white text-[36px] animate-spin">sync</span>
-                        <span className="text-white text-xs font-bold mt-2 drop-shadow">Menganalisis Tipe Sampah...</span>
-                      </div>
-                    )}
-                    {aiResult && (
-                      <div className="absolute bottom-3 left-3 right-3 bg-slate-950/85 text-white p-3 rounded-lg border border-slate-700 backdrop-blur-sm">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deteksi Visi Komputer</p>
-                        <p className="text-[13px] font-bold text-white mt-0.5">{aiResult.label}</p>
-                        <div className="flex justify-between items-center mt-2 border-t border-slate-800 pt-1.5">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${aiResult.detectedType === 'ORGANIK' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}>{aiResult.detectedType}</span>
-                          <span className="text-[11px] font-bold text-primary">{aiResult.confidence} Akurasi</span>
-                        </div>
-                      </div>
-                    )}
-                  </>
+              {/* Point Log List */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Breakdown Aktivitas Poin</h4>
+                {isLoadingPoints ? (
+                  <p className="text-xs text-center py-4 text-on-surface-variant">Memuat data...</p>
+                ) : pointHistory.length === 0 ? (
+                  <p className="text-xs text-center py-4 text-on-surface-variant/80">Belum ada transaksi poin.</p>
                 ) : (
-                  <div className="text-center text-slate-400 flex flex-col items-center p-6 gap-2">
-                    <span className="material-symbols-outlined text-[40px]">center_focus_weak</span>
-                    <p className="text-xs">Silakan pilih item sampah di atas untuk mengaktifkan kamera AI</p>
+                  <div className="divide-y divide-outline-variant/20 max-h-[250px] overflow-y-auto">
+                    {pointHistory.map((historyItem) => (
+                      <div key={historyItem.id} className="py-3 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-on-surface">{historyItem.description}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{new Date(historyItem.createdAt).toLocaleString('id-ID')}</p>
+                        </div>
+                        <span className={`font-extrabold text-sm ${historyItem.points > 0 ? 'text-primary' : 'text-red-500'}`}>
+                          {historyItem.points > 0 ? `+${historyItem.points}` : historyItem.points}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {selectedTrash && !scanning && !aiResult && (
-                <button
-                  onClick={handleScanAI}
-                  className="w-full h-10 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-primary/20"
-                >
-                  <span className="material-symbols-outlined text-[18px]">photo_filter</span>
-                  Pindai dengan AI
-                </button>
-              )}
             </div>
-
-            {/* Box 2: QR Scanner / Bin Selector */}
-            <div className="flex flex-col gap-4">
-              <h5 className="text-[13px] font-bold text-on-surface uppercase tracking-wider flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px] text-secondary">qr_code_scanner</span>
-                Pindai QR Tong Sampah
-              </h5>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-on-surface-variant uppercase">Pilih Tong Sampah Fisik Terdekat (Simulasi QR Scan)</label>
-                <div className="relative">
-                  <select
-                    disabled={!aiResult}
-                    className="w-full pl-3 pr-8 h-10 bg-white border border-outline-variant/60 rounded-lg text-xs font-medium text-on-surface focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-                    value={selectedBin}
-                    onChange={(e) => setSelectedBin(e.target.value)}
-                  >
-                    <option value="">-- Pilihlah Tong Sampah Terdekat --</option>
-                    {nearbyBins.map((bin) => (
-                      <option key={bin.id} value={bin.id}>{bin.label} (Kapasitas: {bin.capacity}%)</option>
-                    ))}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
-                </div>
-              </div>
-
-              {aiResult && selectedBin && (
-                <div className="p-3 bg-surface-container rounded-lg border border-outline-variant/40 flex flex-col gap-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-on-surface-variant">Tipe Sampah:</span>
-                    <span className="font-bold text-on-surface">{aiResult.detectedType}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-on-surface-variant">Pilihan Tong:</span>
-                    <span className="font-bold text-on-surface">
-                      {nearbyBins.find(b => b.id === selectedBin)?.type || 'N/A'}
-                    </span>
-                  </div>
-
-                  {/* Warning Mismatch */}
-                  {(nearbyBins.find(b => b.id === selectedBin)?.type !== aiResult.detectedType) && (
-                    <div className="flex gap-2 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-[10px] font-semibold mt-1">
-                      <span className="material-symbols-outlined text-[14px]">warning</span>
-                      <span>Jenis sampah dan tong tidak cocok! Pintu tong tidak akan terbuka.</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <button
-                onClick={handleSetor}
-                disabled={!aiResult || !selectedBin || (nearbyBins.find(b => b.id === selectedBin)?.type !== aiResult.detectedType)}
-                className="w-full h-11 bg-secondary disabled:bg-secondary/40 disabled:cursor-not-allowed hover:bg-secondary/95 text-on-secondary text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-auto"
-              >
-                <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                Buka Tong & Setorkan
-              </button>
+            <div className="p-6 bg-slate-50 border-t border-outline-variant flex justify-end">
+              <button onClick={() => setShowPoinModal(false)} className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer">Tutup</button>
             </div>
-          </div>
-        </div>
-
-        {/* Right column: Bins capacity & History */}
-        <div className="xl:col-span-4 flex flex-col gap-gutter">
-          {/* Nearby bins list */}
-          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
-            <h5 className="font-bold text-[15px] text-on-surface">Kapasitas Tong Sampah Terdekat ({user?.wilayah || 'Kecamatan Coblong'})</h5>
-            <div className="space-y-4">
-              {nearbyBins.map((bin) => (
-                <div key={bin.id}>
-                  <div className="flex justify-between text-[11px] font-bold text-on-surface mb-1">
-                    <span>{bin.label}</span>
-                    <span>{bin.capacity}% Terisi</span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${bin.capacity >= 90 ? 'bg-error' : bin.capacity >= 70 ? 'bg-amber-500' : bin.type === 'ORGANIK' ? 'bg-primary' : 'bg-blue-600'}`}
-                      style={{ width: `${bin.capacity}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* History */}
-          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4 flex-1">
-            <h5 className="font-bold text-[15px] text-on-surface">Riwayat Setoran Saya</h5>
-            <div className="space-y-3">
-              {[
-                { date: '12 Juli 2026', desc: 'Anorganik (Botol PET)', pts: '+46 Poin' },
-                { date: '10 Juli 2026', desc: 'Organik (Kulit Buah)', pts: '+15 Poin' },
-                { date: '08 Juli 2026', desc: 'Organik (Sisa Makanan)', pts: '+30 Poin' },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center p-3 rounded-lg border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-all">
-                  <div>
-                    <p className="text-[11px] text-on-surface-variant">{item.date}</p>
-                    <p className="text-[12px] font-bold text-on-surface mt-0.5">{item.desc}</p>
-                  </div>
-                  <span className="text-[12px] font-extrabold text-primary">{item.pts}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Success Modal */}
-      {successModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl border border-outline-variant shadow-2xl p-8 max-w-sm w-full text-center flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-2">
-              <span className="material-symbols-outlined text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>lock_open</span>
-            </div>
-            <h3 className="text-[18px] font-extrabold text-on-surface leading-tight">Pintu Tong Sampah Terbuka!</h3>
-            <p className="text-xs text-on-surface-variant leading-relaxed">Pintu tong sampah fisik telah terbuka secara otomatis. Silakan masukkan sampah Anda. Sistem akan menutup pintu kembali dalam 30 detik.</p>
-
-            <div className="w-full bg-slate-50 p-4 rounded-xl border border-outline-variant/40 flex flex-col gap-2 mt-2">
-              <div className="flex justify-between text-xs font-bold text-on-surface">
-                <span>Hadiah Poin:</span>
-                <span className="text-primary">+50 Poin</span>
-              </div>
-              <div className="flex justify-between text-xs font-bold text-on-surface">
-                <span>Hadiah Uang:</span>
-                <span className="text-primary">+Rp 5.000</span>
-              </div>
-            </div>
-
-            <button
-              onClick={resetScanner}
-              className="w-full h-10 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-lg mt-2 cursor-pointer"
-            >
-              Selesai & Setor Lagi
-            </button>
           </div>
         </div>
       )}
+
+      {/* 2. SALDO MODAL */}
+      {showSaldoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-green-600">payments</span>
+                Cairkan Saldo E-Wallet
+              </h3>
+              <button onClick={() => setShowSaldoModal(false)} className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors">
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Balance Summary */}
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
+                <p className="text-[11px] text-green-700 font-extrabold uppercase tracking-wider">Sisa Saldo Dapat Dicairkan</p>
+                <p className="text-3xl font-extrabold text-green-800 mt-1">Rp {saldo.toLocaleString('id-ID')}</p>
+                <p className="text-[10px] text-green-600/90 mt-1">Dihitung otomatis: Poin ({poin}) x Rp 100</p>
+              </div>
+
+              {/* Conversion Form */}
+              <form onSubmit={handleTukarPoin} className="space-y-4">
+                <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Form Penukaran Saldo</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Poin Ditukar</label>
+                    <select 
+                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                      value={tukarPoinAmount}
+                      onChange={(e) => setTukarPoinAmount(e.target.value)}
+                    >
+                      <option value="500">500 Poin (Rp 50.000)</option>
+                      <option value="1000">1000 Poin (Rp 100.000)</option>
+                      <option value="2000">2000 Poin (Rp 200.000)</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Metode E-Wallet</label>
+                    <select 
+                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                      value={ewalletType}
+                      onChange={(e) => setEwalletType(e.target.value)}
+                    >
+                      <option value="DANA">DANA</option>
+                      <option value="OVO">OVO</option>
+                      <option value="GOPAY">GoPay</option>
+                      <option value="SHOPEEPAY">ShopeePay</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">Nomor HP Terdaftar</label>
+                  <input 
+                    type="tel"
+                    placeholder="contoh: 08123456789"
+                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    value={ewalletPhone}
+                    onChange={(e) => setEwalletPhone(e.target.value)}
+                  />
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isConverting || poin < parseInt(tukarPoinAmount)}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-green-600/10"
+                >
+                  {isConverting ? (
+                    <>
+                      <span className="material-symbols-outlined text-sm animate-spin">autorenew</span>
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[16px]">account_balance</span>
+                      <span>Konversi Sekarang</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Conversion History */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Riwayat Pencairan Terakhir</h4>
+                <div className="divide-y divide-outline-variant/20 max-h-[180px] overflow-y-auto">
+                  {pointHistory.filter(p => p.points < 0).length === 0 ? (
+                    <p className="text-xs text-slate-400 py-3 text-center">Belum ada riwayat pencairan saldo.</p>
+                  ) : (
+                    pointHistory.filter(p => p.points < 0).map((historyItem) => (
+                      <div key={historyItem.id} className="py-2.5 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-on-surface">{historyItem.description.replace("Konversi ", "")}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{new Date(historyItem.createdAt).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                        </div>
+                        <span className="font-bold text-red-500">
+                          -Rp {Math.abs(historyItem.points * 100).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-outline-variant flex justify-end">
+              <button onClick={() => setShowSaldoModal(false)} className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer">Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. SETORAN MODAL */}
+      {showSetoranModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">recycling</span>
+                Semua Riwayat Setoran Sampah
+              </h3>
+              <button onClick={() => setShowSetoranModal(false)} className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors">
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+              {/* Category Filter */}
+              <div className="flex gap-2">
+                {['ALL', 'ORGANIC', 'NON_ORGANIC'].map((type) => (
+                  <button 
+                    key={type}
+                    onClick={() => setFilterWasteType(type)}
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer border ${
+                      filterWasteType === type 
+                        ? 'bg-primary text-white border-primary' 
+                        : 'bg-white border-outline-variant hover:bg-slate-50 text-on-surface-variant'
+                    }`}
+                  >
+                    {type === 'ALL' ? 'Semua' : type === 'ORGANIC' ? 'Organik' : 'Anorganik'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Transactions table/list */}
+              {isLoadingLogs ? (
+                <p className="text-xs text-center py-6">Memuat...</p>
+              ) : filteredLogs.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">Tidak ada data setoran.</p>
+              ) : (
+                <div className="border border-outline-variant/30 rounded-xl overflow-hidden shadow-inner bg-slate-50">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 text-on-surface-variant border-b border-outline-variant/40">
+                          <th className="p-3 font-bold">Tanggal</th>
+                          <th className="p-3 font-bold">Kategori</th>
+                          <th className="p-3 font-bold">Berat</th>
+                          <th className="p-3 font-bold">Estimasi Vol</th>
+                          <th className="p-3 font-bold">Poin</th>
+                          <th className="p-3 font-bold">Titik Tong</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/20 bg-white">
+                        {filteredLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-50">
+                            <td className="p-3 font-medium">
+                              {new Date(log.waktu).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
+                            </td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                                log.jenis === 'ORGANIC' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                              }`}>
+                                {log.jenis === 'ORGANIC' ? 'Organik' : 'Anorganik'}
+                              </span>
+                            </td>
+                            <td className="p-3 font-bold">{log.berat} Kg</td>
+                            <td className="p-3 font-medium text-slate-500">{log.volume}</td>
+                            <td className="p-3 font-extrabold text-primary">+{log.poin} Pts</td>
+                            <td className="p-3 font-mono font-bold text-slate-600">{log.lokasi.replace("Tong: ", "")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-outline-variant flex justify-end">
+              <button onClick={() => setShowSetoranModal(false)} className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer">Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
