@@ -765,8 +765,8 @@
     "description": "Ini adalah deskripsi task dummy yang digunakan untuk memverifikasi alur otomatisasi refs Git ke Trello board.",
     "module": "Testing",
     "source_file": "none",
-    "status": "todo",
+    "status": "done",
     "trello_card_id": null,
-    "last_commit": null
+    "last_commit": "a975fd5bbd8e2272fb8420a8508e72eed62dd7c2"
   }
 ]
