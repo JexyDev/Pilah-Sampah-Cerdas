@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../../store/useAuthStore';
+import api from '../../../services/api';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -20,12 +21,29 @@ const Header: React.FC = () => {
   const [ewalletType, setEwalletType] = useState('DANA');
   const [ewalletPhone, setEwalletPhone] = useState('');
   const [showBrosur, setShowBrosur] = useState(false);
+  const [regions, setRegions] = useState<string[]>([]);
 
   // Refs for closing on outside click
   const locRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const appsRef = useRef<HTMLDivElement>(null);
   const profRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.get('/dashboard/regions');
+        if (response.data?.success) {
+          setRegions(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch regions:', error);
+      }
+    };
+    if (user) {
+      fetchRegions();
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -41,7 +59,7 @@ const Header: React.FC = () => {
   const getHeaderInfo = (pathname: string) => {
     switch (pathname) {
       case '/': return { 
-        title: `Selamat datang kembali, ${user?.nama || 'Pengguna'} 👋`, 
+        title: `Selamat datang kembali, ${user?.name || 'Pengguna'} 👋`, 
         subtitle: user?.peran === 'WARGA' 
           ? 'Pantau poin Anda, temukan tong terdekat, dan mulai memilah sampah secara pintar.'
           : 'Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.' 
@@ -96,6 +114,13 @@ const Header: React.FC = () => {
     { id: 3, title: 'Agenda Esok Hari', desc: 'Sosialisasi pemilahan sampah mandiri Dago pukul 09.00 WIB.', time: '1 hari yang lalu', unread: false }
   ];
 
+  const displayRegions = regions.length > 0 ? regions : [
+    'RT 04 / RW 06',
+    'RT 02 / RW 06',
+    'RT 01 / RW 05',
+    'Kecamatan Coblong'
+  ];
+
   return (
     <header className="sticky top-0 h-[72px] bg-white border-b border-outline-variant px-container-margin flex items-center justify-between z-40">
       <div>
@@ -118,12 +143,7 @@ const Header: React.FC = () => {
           {showLocation && (
             <div className="absolute top-11 left-0 w-60 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-2 flex flex-col gap-1 z-50">
               <p className="text-[10px] font-bold text-on-surface-variant uppercase px-3 py-1.5 border-b border-outline-variant/20 tracking-wider">Pilih RT/RW Wilayah Warga</p>
-              {[
-                'RT 04 / RW 06',
-                'RT 02 / RW 06',
-                'RT 01 / RW 05',
-                'Kecamatan Coblong'
-              ].map((loc) => (
+              {displayRegions.map((loc) => (
                 <button
                   key={loc}
                   onClick={() => handleSelectLocation(loc)}
@@ -226,7 +246,7 @@ const Header: React.FC = () => {
             className="flex items-center gap-3 ml-2 border-l border-outline-variant pl-4 cursor-pointer hover:opacity-90 select-none"
           >
             <div className="text-right hidden sm:block">
-              <p className="text-label-md font-bold text-on-surface leading-tight">{user?.nama || 'Pengguna'}</p>
+              <p className="text-label-md font-bold text-on-surface leading-tight">{user?.name || 'Pengguna'}</p>
               <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">{user?.peran?.replace('_', ' ') || 'WARGA'}</p>
             </div>
             <div className={`w-10 h-10 rounded-full ${user?.avatarBg || 'bg-blue-100'} ${user?.avatarColor || 'text-blue-700'} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0`}>

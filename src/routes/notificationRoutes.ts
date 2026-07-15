@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -78,21 +79,18 @@ const mapNotification = (n: any) => {
 };
 
 // GET /api/v1/notifications
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const role = (req.query.role as string || "WARGA").toUpperCase();
+    const role = (req.query.role as string || req.user?.role || "WARGA").toUpperCase();
+    const userId = req.user?.userId;
 
     let formattedNotifications: any[] = [];
 
-    // 1. Try to fetch notifications from DB where the target user's role matches
+    // 1. Try to fetch notifications from DB where the target user's role matches OR userId matches
     try {
       const dbNotifications = await prisma.notification.findMany({
         where: {
-          user: {
-            role: {
-              name: role
-            }
-          }
+          userId: userId // Use userId instead of role to be more precise for the current user
         },
         orderBy: {
           createdAt: "desc"
@@ -170,6 +168,35 @@ router.get("/", async (req, res) => {
       status: "error",
       message: "Gagal memuat notifikasi dari server"
     });
+  }
+});
+
+// PUT /api/v1/notifications/read-all
+router.put("/read-all", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    await prisma.notification.updateMany({
+      where: { userId },
+      data: { isRead: true }
+    });
+    res.status(200).json({ status: "success", message: "Semua notifikasi ditandai dibaca" });
+  } catch (error) {
+    console.error("Update Notifications Error:", error);
+    res.status(500).json({ status: "error", message: "Gagal mengupdate notifikasi" });
+  }
+});
+
+// DELETE /api/v1/notifications/all
+router.delete("/all", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    await prisma.notification.deleteMany({
+      where: { userId }
+    });
+    res.status(200).json({ status: "success", message: "Semua notifikasi dihapus" });
+  } catch (error) {
+    console.error("Delete Notifications Error:", error);
+    res.status(500).json({ status: "error", message: "Gagal menghapus notifikasi" });
   }
 });
 

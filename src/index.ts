@@ -9,6 +9,10 @@ import pointRouter from "./routes/pointRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
 import dashboardRouter from "./routes/dashboardRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
+import userRouter from "./routes/userRoutes.js";
+import categoryRouter from "./routes/categoryRoutes.js";
+import transactionRouter from "./routes/transactionRoutes.js";
+import scheduleRouter from "./routes/scheduleRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -32,12 +36,16 @@ app.use(cookieParser());
 
 // Main APIs
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/users", userRouter);
 app.use("/api/v1/households", householdRouter);
 app.use("/api/v1/bins", binRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/waste", aiRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/categories", categoryRouter);
+app.use("/api/v1/transactions", transactionRouter);
+app.use("/api/v1/schedules", scheduleRouter);
 
 // Initialize Swagger Docs
 setupSwagger(app);

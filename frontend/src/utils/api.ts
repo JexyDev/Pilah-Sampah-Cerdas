@@ -1,38 +1,37 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
-  timeout: 10000,
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token if needed
+// Request interceptor — tambahkan token jika ada di localStorage
 api.interceptors.request.use(
   (config) => {
-    // TODO: Ambil token dari localStorage / Auth Store saat autentikasi sudah siap.
-    // Untuk saat ini, kita bypass atau hardcode mock token karena belum diintegrasikan utuh
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
-    
-    // MOCK TOKEN SEMENTARA AGAR MIDDLEWARE BACKEND LEWAT
-    // Di real-world ini harusnya token JWT asli milik role STAFF
-    config.headers.Authorization = `Bearer MOCK_TOKEN_ADMIN`; 
+    const token = localStorage.getItem('psc_access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Response interceptor — normalisasi error
 api.interceptors.response.use(
-  (response) => response.data, // langsung me-return body data
+  (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    const status = error.response?.status;
+    // Jika 401 dan bukan request login, clear token & redirect login
+    if (status === 401 && !error.config?.url?.includes('/auth/login')) {
+      localStorage.removeItem('psc_access_token');
+      localStorage.removeItem('psc_user');
+      window.location.href = '/login';
+    }
+    console.error('[API Error]', error.response?.data || error.message);
     return Promise.reject(error);
   }
 );

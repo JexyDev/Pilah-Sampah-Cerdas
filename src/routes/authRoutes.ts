@@ -124,4 +124,71 @@ router.get("/me", authMiddleware, (req, res) => {
   res.json({ message: "Authenticated", user: req.user });
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/profile:
+ *   put:
+ *     summary: Update current authenticated user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: Email already in use
+ */
+router.put("/profile", authMiddleware, authController.updateProfile);
+
+/**
+ * @swagger
+ * /api/v1/auth/password:
+ *   put:
+ *     summary: Update current authenticated user password
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password updated
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized / Invalid current password
+ *       404:
+ *         description: User not found
+ */
+router.put("/password", authMiddleware, authController.updatePassword);
+
 export default router;

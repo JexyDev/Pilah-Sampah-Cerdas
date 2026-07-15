@@ -37,6 +37,22 @@ export class PointController {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat poin user" });
     }
   }
+
+  /**
+   * Get leaderboard
+   */
+  async getLeaderboard(req: Request, res: Response): Promise<void> {
+    try {
+      const leaderboard = await pointService.getLeaderboard();
+      res.status(200).json({
+        success: true,
+        data: leaderboard
+      });
+    } catch (error) {
+      console.error("Point Leaderboard Error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil leaderboard" });
+    }
+  }
 }
 
 export const pointController = new PointController();

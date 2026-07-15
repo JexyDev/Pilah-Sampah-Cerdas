@@ -28,6 +28,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       return;
     }
 
+    // DEV BYPASS
+    if (process.env.NODE_ENV === 'development' && token === 'MOCK_TOKEN_ADMIN') {
+      req.user = { userId: "mock-admin-id", role: "ADMIN" };
+      return next();
+    }
+
     // Verify token
     const decoded = verifyAccessToken(token);
     req.user = decoded; // Attach user payload to request

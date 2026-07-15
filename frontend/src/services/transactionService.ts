@@ -1,18 +1,15 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+import api from './api';
 
 export interface SetorPayload {
-  user_id: string;
-  qr_data: string;
-  image_url?: string;
-  jenis_sampah: string;
-  volume: number;
+  qrCode: string;
+  detectedType: string;
+  estimatedVolume: number;
+  householdId: string;
 }
 
-export const setorSampah = async (payload: SetorPayload) => {
+export const setorSampah = async (payload: any) => {
   try {
-    const response = await axios.post(`${API_URL}/transactions/setor`, payload);
+    const response = await api.post(`/bins/scan`, payload);
     return response.data;
   } catch (error: any) {
     console.error('Error setor sampah:', error);

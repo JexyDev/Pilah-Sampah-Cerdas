@@ -26,6 +26,54 @@ router.get("/", binController.getAllBins);
 
 /**
  * @swagger
+ * /api/v1/bins:
+ *   post:
+ *     summary: Create a bin
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), binController.createBin);
+
+/**
+ * @swagger
+ * /api/v1/bins/{id}:
+ *   put:
+ *     summary: Update a bin
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.updateBin);
+
+/**
+ * @swagger
+ * /api/v1/bins/{id}:
+ *   delete:
+ *     summary: Delete a bin
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.deleteBin);
+
+/**
+ * @swagger
+ * /api/v1/bins/locations:
+ *   get:
+ *     summary: Get location summary grouped by RW (for ManajemenLokasi page)
+ *     tags: [Bins]
+ *     responses:
+ *       200:
+ *         description: List of RW locations with RT count and bin count
+ */
+router.get("/locations", binController.getLocations);
+router.get("/areas", binController.getAreas);
+router.get("/kelurahans", authMiddleware, binController.getKelurahans);
+router.post("/areas", authMiddleware, roleMiddleware(["ADMIN"]), binController.createArea);
+
+/**
+ * @swagger
  * /api/v1/bins/scan:
  *   post:
  *     summary: Scan a QR code on a Bin to deposit waste

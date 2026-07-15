@@ -6,8 +6,11 @@ export class AuthService {
   /**
    * Authenticate user with email and password, returning tokens if successful.
    */
-  async login(email: string, password: string) {
-    const user = await authRepository.findUserByEmail(email);
+  async login(emailOrNik: string, password: string) {
+    const isNik = /^\d{16}$/.test(emailOrNik);
+    const user = isNik 
+      ? await authRepository.findUserByNik(emailOrNik)
+      : await authRepository.findUserByEmail(emailOrNik);
     
     if (!user) {
       throw new Error("INVALID_CREDENTIALS");
@@ -76,6 +79,49 @@ export class AuthService {
    */
   async logout(token: string) {
     await authRepository.deleteRefreshToken(token);
+  }
+  /**
+   * Update user profile
+   */
+  async updateProfile(userId: string, name?: string, email?: string) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    if (email && email !== user.email) {
+      const existingUser = await authRepository.findUserByEmail(email);
+      if (existingUser) {
+        throw new Error("EMAIL_ALREADY_IN_USE");
+      }
+    }
+
+    const updatedUser = await authRepository.updateUser(userId, { name, email });
+    return updatedUser;
+  }
+
+  /**
+   * Update user password
+   */
+  async updatePassword(userId: string, currentPassword?: string, newPassword?: string) {
+    if (!currentPassword || !newPassword) {
+      throw new Error("INVALID_INPUT");
+    }
+    
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    const isPasswordValid = await comparePassword(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new Error("INVALID_CREDENTIALS");
+    }
+
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(newPassword);
+
+    await authRepository.updatePassword(userId, hashedPassword);
   }
 }
 

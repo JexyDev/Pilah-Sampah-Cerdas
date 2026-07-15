@@ -67,6 +67,21 @@ export class HouseholdController {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
     }
   }
+
+  /**
+   * Get all households in the system.
+   */
+  async getAllHouseholds(req: Request, res: Response): Promise<void> {
+    try {
+      const households = await householdService.getAllHouseholds();
+      res.status(200).json({
+        success: true,
+        data: households
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
+    }
+  }
 }
 
 export const householdController = new HouseholdController();

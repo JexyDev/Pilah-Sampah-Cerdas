@@ -80,4 +80,11 @@ router.get(
   householdController.getMyHouseholds
 );
 
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  householdController.getAllHouseholds
+);
+
 export default router;

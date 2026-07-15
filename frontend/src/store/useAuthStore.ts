@@ -1,9 +1,12 @@
 import { create } from 'zustand';
+import api from '../utils/api';
 
 export type UserRole = 'ADMIN' | 'PETUGAS_KELURAHAN' | 'PETUGAS_RW' | 'PETUGAS_RT' | 'WARGA';
 
 export interface User {
-  nama: string;
+  id: string;
+  name: string;
+  email: string;
   peran: UserRole;
   wilayah: string;
   avatar: string;
@@ -14,100 +17,108 @@ export interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, role: UserRole) => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   updateWilayah: (newWilayah: string) => void;
 }
 
-const getInitialUser = (): User | null => {
-  const stored = localStorage.getItem('psc_user');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return null;
-    }
+const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string } => {
+  switch (role) {
+    case 'ADMIN': return { avatarBg: 'bg-blue-100', avatarColor: 'text-blue-700' };
+    case 'PETUGAS_KELURAHAN': return { avatarBg: 'bg-pink-100', avatarColor: 'text-pink-700' };
+    case 'PETUGAS_RW': return { avatarBg: 'bg-teal-100', avatarColor: 'text-teal-700' };
+    case 'PETUGAS_RT': return { avatarBg: 'bg-orange-100', avatarColor: 'text-orange-700' };
+    case 'WARGA': return { avatarBg: 'bg-green-100', avatarColor: 'text-green-700' };
+    default: return { avatarBg: 'bg-gray-100', avatarColor: 'text-gray-700' };
   }
-  return null;
+};
+
+const getWilayahByRole = (role: string): string => {
+  switch (role) {
+    case 'ADMIN': return 'Sistem Pusat';
+    case 'PETUGAS_KELURAHAN': return 'Kelurahan Dago';
+    case 'PETUGAS_RW': return 'RW 06 Dago';
+    case 'PETUGAS_RT': return 'RT 02 / RW 06';
+    case 'WARGA': return 'RT 04 / RW 06';
+    default: return 'Kecamatan Coblong';
+  }
+};
+
+const getInitialUser = (): User | null => {
+  try {
+    const stored = localStorage.getItem('psc_user');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
-  isAuthenticated: !!localStorage.getItem('psc_user'),
-  login: async (username: string, role: UserRole) => {
-    // Simulasikan delay API
-    await new Promise((resolve) => setTimeout(resolve, 800));
+  isAuthenticated: !!localStorage.getItem('psc_access_token'),
+  isLoading: false,
+  error: null,
 
-    let details: User = {
-      nama: username || 'Pengguna Demo',
-      peran: role,
-      wilayah: 'Kecamatan Coblong',
-      avatar: 'U',
-      avatarBg: 'bg-primary-container',
-      avatarColor: 'text-primary'
-    };
+  login: async (email: string, password: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Axios returns { data, status, ... }; backend body is { message, data: { user, accessToken, refreshToken } }
+      const response = await api.post('/auth/login', { email, password });
+      const payload = response.data?.data ?? response.data;
 
-    switch (role) {
-      case 'ADMIN':
-        details = {
-          nama: username || 'Admin Utama',
-          peran: 'ADMIN',
-          wilayah: 'Sistem Pusat',
-          avatar: 'AU',
-          avatarBg: 'bg-blue-100',
-          avatarColor: 'text-blue-700'
-        };
-        break;
-      case 'PETUGAS_KELURAHAN':
-        details = {
-          nama: username || 'Siti Kelurahan',
-          peran: 'PETUGAS_KELURAHAN',
-          wilayah: 'Kelurahan Dago',
-          avatar: 'SK',
-          avatarBg: 'bg-pink-100',
-          avatarColor: 'text-pink-700'
-        };
-        break;
-      case 'PETUGAS_RW':
-        details = {
-          nama: username || 'Asep RW',
-          peran: 'PETUGAS_RW',
-          wilayah: 'RW 06 Dago',
-          avatar: 'AR',
-          avatarBg: 'bg-teal-100',
-          avatarColor: 'text-teal-700'
-        };
-        break;
-      case 'PETUGAS_RT':
-        details = {
-          nama: username || 'Budi RT',
-          peran: 'PETUGAS_RT',
-          wilayah: 'RT 02 / RW 06',
-          avatar: 'BR',
-          avatarBg: 'bg-orange-100',
-          avatarColor: 'text-orange-700'
-        };
-        break;
-      case 'WARGA':
-        details = {
-          nama: username || 'Dewi Lestari',
-          peran: 'WARGA',
-          wilayah: 'RT 04 / RW 06',
-          avatar: 'DL',
-          avatarBg: 'bg-green-100',
-          avatarColor: 'text-green-700'
-        };
-        break;
+      if (!payload?.user || !payload?.accessToken) {
+        throw new Error('Response tidak valid dari server');
+      }
+
+      const { user: backendUser, accessToken, refreshToken } = payload;
+
+      // Simpan token
+      localStorage.setItem('psc_access_token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('psc_refresh_token', refreshToken);
+      }
+
+      // Buat user object untuk store
+      const avatarConfig = getAvatarConfig(backendUser.role);
+      const user: User = {
+        id: backendUser.id,
+        name: backendUser.name,
+        email: backendUser.email,
+        peran: backendUser.role as UserRole,
+        wilayah: getWilayahByRole(backendUser.role),
+        avatar: backendUser.name.substring(0, 2).toUpperCase(),
+        ...avatarConfig,
+      };
+
+      localStorage.setItem('psc_user', JSON.stringify(user));
+      set({ user, isAuthenticated: true, isLoading: false, error: null });
+      return true;
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Login gagal, periksa email dan password';
+      set({ isLoading: false, error: message, isAuthenticated: false });
+      return false;
     }
+  },
 
-    localStorage.setItem('psc_user', JSON.stringify(details));
-    set({ user: details, isAuthenticated: true });
-    return true;
+  logout: async () => {
+    try {
+      const refreshToken = localStorage.getItem('psc_refresh_token');
+      if (refreshToken) {
+        await api.post('/auth/logout', { refreshToken }).catch(() => {});
+      }
+    } finally {
+      localStorage.removeItem('psc_access_token');
+      localStorage.removeItem('psc_refresh_token');
+      localStorage.removeItem('psc_user');
+      set({ user: null, isAuthenticated: false, error: null });
+    }
   },
-  logout: () => {
-    localStorage.removeItem('psc_user');
-    set({ user: null, isAuthenticated: false });
-  },
+
   updateWilayah: (newWilayah: string) => {
     set((state) => {
       if (!state.user) return state;
@@ -115,5 +126,5 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('psc_user', JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
-  }
+  },
 }));

@@ -49,7 +49,7 @@ const Sidebar: React.FC = () => {
     <aside className="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50">
       {/* Brand Header */}
       <div className="px-6 py-5 flex items-center justify-center border-b border-outline-variant/35 bg-white">
-        <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-16 w-auto object-contain" />
+        <img src="/logo.png" alt="Pilah Sampah Cerdas - Sampah Terdata, Lingkungan Tertata" className="h-20 w-auto object-contain" />
       </div>
 
       {/* Navigation Menu */}
@@ -105,7 +105,7 @@ const Sidebar: React.FC = () => {
             {user?.avatar || 'U'}
           </div>
           <div className="overflow-hidden flex-1">
-            <p className="text-[12px] text-on-surface font-bold truncate">{user?.nama || 'Pengguna'}</p>
+            <p className="text-[12px] text-on-surface font-bold truncate">{user?.name || 'Pengguna'}</p>
             <p className="text-[10px] text-on-surface-variant truncate font-semibold">{user?.peran?.replace('_', ' ')}</p>
           </div>
           <button onClick={handleLogout} className="ml-auto text-on-surface-variant hover:text-error transition-colors flex-shrink-0" title="Keluar Sistem">

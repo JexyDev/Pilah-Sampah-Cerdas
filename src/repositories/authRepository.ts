@@ -14,6 +14,16 @@ export class AuthRepository {
   }
 
   /**
+   * Find a user by NIK, including their role details.
+   */
+  async findUserByNik(nik: string): Promise<(User & { role: Role }) | null> {
+    return prisma.user.findUnique({
+      where: { nik },
+      include: { role: true },
+    });
+  }
+
+  /**
    * Store a refresh token in the database.
    */
   async createRefreshToken(userId: string, token: string, expiresAt: Date): Promise<RefreshToken> {
@@ -48,6 +58,35 @@ export class AuthRepository {
       where: { token },
     }).catch(() => {
       // Ignore if token doesn't exist
+    });
+  }
+  /**
+   * Find a user by ID, including their role details.
+   */
+  async findUserById(id: string): Promise<(User & { role: Role }) | null> {
+    return prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+  }
+
+  /**
+   * Update a user's profile information.
+   */
+  async updateUser(id: string, data: { name?: string; email?: string }): Promise<User> {
+    return prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
+
+  /**
+   * Update a user's password.
+   */
+  async updatePassword(id: string, passwordHash: string): Promise<User> {
+    return prisma.user.update({
+      where: { id },
+      data: { password: passwordHash },
     });
   }
 }

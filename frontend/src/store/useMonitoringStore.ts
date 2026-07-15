@@ -29,7 +29,7 @@ export const useMonitoringStore = create<MonitoringState>((set) => ({
     try {
       const res = await api.get('/bins');
       set({
-        bins: (res as any).data,
+        bins: res.data.data || [],
         isLoading: false,
       });
     } catch (err: any) {

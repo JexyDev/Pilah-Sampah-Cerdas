@@ -15,6 +15,13 @@ export class PointService {
       history
     };
   }
+
+  /**
+   * Get leaderboard
+   */
+  async getLeaderboard() {
+    return pointRepository.getLeaderboard();
+  }
 }
 
 export const pointService = new PointService();

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -8,10 +8,29 @@ import { useAuthStore } from '../../store/useAuthStore';
 // ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
   const { user } = useAuthStore();
-  const [poin, setPoin] = useState(1250);
-  const [saldo, setSaldo] = useState(125000);
-  const [organik, setOrganik] = useState(24.5);
-  const [anorganik, setAnorganik] = useState(20.5);
+  const [poin, setPoin] = useState(0);
+  const [saldo, setSaldo] = useState(0);
+  const [organik, setOrganik] = useState(0);
+  const [anorganik, setAnorganik] = useState(0);
+
+  // Fetch Summary Data
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const response = await api.get('/dashboard/summary');
+        const data = response.data.data;
+        if (data) {
+          setPoin(data.poin || 0);
+          setSaldo(data.saldo || 0);
+          setOrganik(data.organik || 0);
+          setAnorganik(data.anorganik || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch summary:', error);
+      }
+    };
+    fetchSummary();
+  }, []);
 
   // AI & QR Scanner Simulation States
   const [selectedTrash, setSelectedTrash] = useState<any>(null);
@@ -20,29 +39,39 @@ const WargaDashboard: React.FC = () => {
   const [selectedBin, setSelectedBin] = useState('');
   const [successModal, setSuccessModal] = useState(false);
 
-  // Dynamic Bins based on user's active wilayah
-  const getBinsForLocation = (wilayah: string) => {
-    switch (wilayah) {
-      case 'RT 02 / RW 06':
-        return [
-          { id: 'TONG_ORGANIK_1', label: 'Tong ORGANIK #1 - RT 02', capacity: 45, type: 'ORGANIK' },
-          { id: 'TONG_ANORGANIK_2', label: 'Tong ANORGANIK #2 - RT 02', capacity: 55, type: 'ANORGANIK' }
-        ];
-      case 'RT 01 / RW 05':
-        return [
-          { id: 'TONG_ORGANIK_5', label: 'Tong ORGANIK #5 - RT 01', capacity: 35, type: 'ORGANIK' },
-          { id: 'TONG_ANORGANIK_6', label: 'Tong ANORGANIK #6 - RT 01', capacity: 92, type: 'ANORGANIK' }
-        ];
-      case 'RT 04 / RW 06':
-      default:
-        return [
-          { id: 'TONG_ORGANIK_3', label: 'Tong ORGANIK #3 - RT 04', capacity: 20, type: 'ORGANIK' },
-          { id: 'TONG_ANORGANIK_4', label: 'Tong ANORGANIK #4 - RT 04', capacity: 78, type: 'ANORGANIK' }
-        ];
-    }
-  };
+  const [nearbyBins, setNearbyBins] = useState<any[]>([]);
 
-  const nearbyBins = getBinsForLocation(user?.wilayah || 'RT 04 / RW 06');
+  // Dynamic Bins from API
+  useEffect(() => {
+    const fetchBins = async () => {
+      try {
+        const res = await api.get('/bins/locations');
+        // Get all bins. Filter by user's RT/RW or just use all for now if user has no rt/rw.
+        // Assuming response.data.data is an array of Kelurahan which contain RtRwArea which contain Bins.
+        // For simplicity let's flatten all bins:
+        let allBins: any[] = [];
+        const data = res.data.data;
+        if (Array.isArray(data)) {
+          data.forEach((kel: any) => {
+             kel.rtRwAreas?.forEach((rtRw: any) => {
+               rtRw.bins?.forEach((bin: any) => {
+                 allBins.push({
+                   id: bin.id,
+                   label: `Tong ${bin.category?.name || 'Sistem'} - ${rtRw.name}`,
+                   capacity: (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100,
+                   type: bin.category?.name || 'UMUM'
+                 });
+               });
+             });
+          });
+        }
+        setNearbyBins(allBins);
+      } catch (err) {
+        console.error('Failed to fetch bins for dashboard', err);
+      }
+    };
+    fetchBins();
+  }, []);
 
   // Reset selected bin when location changes
   useEffect(() => {
@@ -62,21 +91,25 @@ const WargaDashboard: React.FC = () => {
     setSelectedBin('');
   };
 
-  const handleScanAI = () => {
+  const handleScanAI = async () => {
     if (!selectedTrash) return;
     setScanning(true);
-    setTimeout(() => {
-      setScanning(false);
+    try {
+      const response = await api.post('/waste/detect-mock', { imageUrl: selectedTrash.img });
       setAiResult({
-        detectedType: selectedTrash.type,
-        confidence: '98.6%',
-        label: selectedTrash.name
+        detectedType: response.data.data.jenis_sampah,
+        confidence: response.data.data.confidence || '95%',
+        label: response.data.data.jenis_sampah // or use selectedTrash.name
       });
       toast.success('Deteksi AI Berhasil!');
-    }, 1500);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal deteksi AI');
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const handleSetor = () => {
+  const handleSetor = async () => {
     if (!aiResult || !selectedBin) return;
 
     // Check mismatch dynamically
@@ -89,17 +122,38 @@ const WargaDashboard: React.FC = () => {
       return;
     }
 
-    // Success transaction
-    setPoin((prev) => prev + 50);
-    setSaldo((prev) => prev + 5000);
-    if (isTrashOrganik) {
-      setOrganik((prev) => parseFloat((prev + 1.5).toFixed(1)));
-    } else {
-      setAnorganik((prev) => parseFloat((prev + 1.2).toFixed(1)));
-    }
+    try {
+      // Get household ID
+      const householdsReq = await api.get('/households/me');
+      const households = householdsReq.data.data;
+      if (!households || households.length === 0) {
+        throw new Error('Anda belum terdaftar dalam KK manapun.');
+      }
+      const householdId = households[0].id;
+      
+      const payload = {
+        householdId,
+        qrCode: selectedBin,
+        detectedType: aiResult.detectedType,
+        estimatedVolume: 1.5
+      };
+      
+      await api.post('/bins/scan', payload);
+      
+      // Success transaction
+      setPoin((prev) => prev + 50);
+      setSaldo((prev) => prev + 5000);
+      if (isTrashOrganik) {
+        setOrganik((prev) => parseFloat((prev + 1.5).toFixed(1)));
+      } else {
+        setAnorganik((prev) => parseFloat((prev + 1.2).toFixed(1)));
+      }
 
-    setSuccessModal(true);
-    toast.success('Pintu Tong Sampah Terbuka secara otomatis!');
+      setSuccessModal(true);
+      toast.success('Pintu Tong Sampah Terbuka secara otomatis!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Gagal setor sampah');
+    }
   };
 
   const resetScanner = () => {
@@ -381,11 +435,12 @@ interface KpiCardProps {
   trend?: string | number;
   trendLabel?: string;
   trendUp?: boolean;
+  linkTo?: string;
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ iconName, iconBg, iconColor, label, value, trend, trendLabel, trendUp }) => {
-  return (
-    <div className="bg-white/95 backdrop-blur-sm shadow-sm rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3">
+const KpiCard: React.FC<KpiCardProps> = ({ iconName, iconBg, iconColor, label, value, trend, trendLabel, trendUp, linkTo }) => {
+  const content = (
+    <div className={`bg-white/95 backdrop-blur-sm shadow-sm rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3 h-full ${linkTo ? 'cursor-pointer hover:bg-surface-container-low transition-all duration-150' : ''}`}>
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 ${iconBg} ${iconColor} rounded-lg flex items-center justify-center`}>
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{iconName}</span>
@@ -409,14 +464,54 @@ const KpiCard: React.FC<KpiCardProps> = ({ iconName, iconBg, iconColor, label, v
       )}
     </div>
   );
+
+  if (linkTo) {
+    return <Link to={linkTo} className="block h-full">{content}</Link>;
+  }
+  return content;
 };
 
 // ========== Main Dashboard ==========
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
+  const [recentBins, setRecentBins] = useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [recentSchedules, setRecentSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Dynamic features states
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [weeks, setWeeks] = useState(8);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [showComplianceModal, setShowComplianceModal] = useState(false);
+  const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
+
+  const handleUserDelete = async (id: string) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
+      try {
+        await api.delete(`/users/${id}`);
+        toast.success("Pengguna berhasil dihapus");
+        window.location.reload();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Gagal menghapus pengguna");
+      }
+    }
+  };
+
+  const handleBinDelete = async (qrCode: string) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus tempat sampah ini?")) {
+      try {
+        await api.delete(`/bins/${qrCode}`);
+        toast.success("Tempat sampah berhasil dihapus");
+        window.location.reload();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Gagal menghapus tempat sampah");
+      }
+    }
+  };
 
   useEffect(() => {
     // Skip API load for WARGA
@@ -427,16 +522,116 @@ const Dashboard: React.FC = () => {
 
     const fetchStats = async () => {
       try {
-        const response = await api.get('/dashboard/stats');
-        setStats(response.data.data);
+        setError('');
+        const response = await api.get('/dashboard/kpi', {
+          params: { wilayah: user?.wilayah }
+        });
+        const kpi = response.data?.data ?? response.data;
+        if (!kpi) {
+          throw new Error('KPI kosong');
+        }
+
+        // Menghitung persentase
+        const organikKg = Number(kpi.komposisiSampah?.organikKg ?? 0);
+        const anorganikKg = Number(kpi.komposisiSampah?.anorganikKg ?? 0);
+        const totalBerat = organikKg + anorganikKg;
+        const pctOrganik = totalBerat > 0 ? Math.round((organikKg / totalBerat) * 100) : 0;
+        const pctAnorganik = totalBerat > 0 ? 100 - pctOrganik : 0;
+
+        // Memetakan data riil dari backend ke UI
+        setStats({
+          totalPengguna: { value: kpi.totalWarga ?? 0, trend: '+0', trendLabel: 'Bulan ini', trendUp: true },
+          tempatSampahAktif: {
+            value: kpi.tempatSampahAktif ?? 0,
+            trend: (kpi.alertTongPenuh ?? 0) > 0 ? `${kpi.alertTongPenuh} Penuh` : 'Aman',
+            trendLabel: '',
+            trendUp: (kpi.alertTongPenuh ?? 0) === 0,
+          },
+          lokasiTerdaftar: { value: kpi.lokasiTerdaftar ?? 0, trend: '+0', trendLabel: 'Bulan ini', trendUp: true },
+          setoranHariIni: {
+            value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(1)} Kg`,
+            trend: 'Hari ini',
+            trendLabel: '',
+            trendUp: true,
+          },
+          totalPoin: {
+            value:
+              (kpi.totalPoin ?? 0) > 1000
+                ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(1)}K`
+                : Number(kpi.totalPoin ?? 0).toLocaleString(),
+            trend: '+0',
+            trendLabel: 'Bulan ini',
+            trendUp: true,
+          },
+          jadwalMingguIni: { value: 8, trend: '2', trendLabel: 'Selesai', trendUp: true },
+          komposisiSampah: {
+            organik: { berat: `${organikKg.toFixed(1)} Kg`, persentase: `${pctOrganik}%` },
+            anorganik: { berat: `${anorganikKg.toFixed(1)} Kg`, persentase: `${pctAnorganik}%` },
+            pctOrganik,
+            pctAnorganik
+          },
+        });
+
+        // Secondary data: jangan gagalkan seluruh dashboard jika salah satu endpoint error
+        const [binsSettled, usersSettled, schedSettled, trendSettled, locSettled] = await Promise.allSettled([
+          api.get('/bins'),
+          api.get('/users'),
+          api.get('/schedules'),
+          api.get('/dashboard/trend', { params: { weeks, wilayah: user?.wilayah } }),
+          api.get('/bins/locations'),
+        ]);
+
+        const hasWilayah = user?.wilayah && user?.wilayah !== 'Kecamatan Coblong' && user?.wilayah !== 'Sistem Pusat';
+
+        if (binsSettled.status === 'fulfilled') {
+          let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];
+          if (hasWilayah) {
+            binsData = binsData.filter((b: any) => {
+              const binRtRwName = typeof b.rtRw === 'string' ? b.rtRw : (b.rtRw?.name || '');
+              return binRtRwName === user?.wilayah;
+            });
+          }
+          setRecentBins(Array.isArray(binsData) ? binsData.slice(0, 3) : []);
+        } else {
+          setRecentBins([]);
+        }
+
+        if (usersSettled.status === 'fulfilled') {
+          let usersData = usersSettled.value.data?.data ?? usersSettled.value.data ?? [];
+          if (hasWilayah) {
+            usersData = usersData.filter((u: any) => u.wilayah === user?.wilayah);
+          }
+          setRecentUsers(Array.isArray(usersData) ? usersData.slice(0, 3) : []);
+        } else {
+          setRecentUsers([]);
+        }
+
+        if (schedSettled.status === 'fulfilled') {
+          let schedData = schedSettled.value.data?.data ?? schedSettled.value.data ?? [];
+          if (hasWilayah) {
+            schedData = schedData.filter((s: any) => s.location?.includes(user?.wilayah) || s.lokasi?.includes(user?.wilayah));
+          }
+          setRecentSchedules(Array.isArray(schedData) ? schedData.slice(0, 3) : []);
+        } else {
+          setRecentSchedules([]);
+        }
+
+        if (trendSettled.status === 'fulfilled' && trendSettled.value.data?.success) {
+          setTrendData(trendSettled.value.data.data);
+        }
+
+        if (locSettled.status === 'fulfilled' && locSettled.value.data?.success) {
+          setLocations(locSettled.value.data.data);
+        }
       } catch (err) {
+        console.error('Dashboard KPI error', err);
         setError('Gagal memuat data dashboard dari server.');
       } finally {
         setLoading(false);
       }
     };
     fetchStats();
-  }, [user]);
+  }, [user, weeks]);
 
   if (loading) {
     return (
@@ -465,17 +660,41 @@ const Dashboard: React.FC = () => {
     return <WargaDashboard />;
   }
 
+  // Scaling factors for Trend SVG
+  const maxWeightTrend = Math.max(...trendData.map(d => d.weight || 0), 10);
+  const trendPoints = trendData.map((d, i) => {
+    const x = trendData.length > 1 ? (i / (trendData.length - 1)) * 700 : 350;
+    const y = 170 - ((d.weight || 0) / maxWeightTrend) * 140;
+    return { x, y, label: d.label, weight: d.weight };
+  });
+
+  const trendLinePath = trendPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const trendAreaPath = trendPoints.length > 0
+    ? `${trendLinePath} L${trendPoints[trendPoints.length - 1].x},200 L${trendPoints[0].x},200 Z`
+    : '';
+
+  // Get active bin for QR Code card
+  const activeBin = recentBins[0] || {
+    qrCode: 'TS-COB-001',
+    maxCapacityLiter: 25,
+    currentVolumeLiter: 5,
+    status: 'Normal',
+  };
+  const activeVol = Number(activeBin.currentVolumeLiter || 0);
+  const activeMax = Number(activeBin.maxCapacityLiter || 25);
+  const activeCapPct = activeMax > 0 ? Math.round((activeVol / activeMax) * 100) : 0;
+
   return (
     <div className="space-y-gutter pb-12">
 
       {/* === KPI Section (6 Cards) === */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-gutter">
-        <KpiCard iconName="group" iconBg="bg-blue-100" iconColor="text-blue-600" label="Total Pengguna" value={stats?.totalPengguna?.value} trend={stats?.totalPengguna?.trend} trendLabel={stats?.totalPengguna?.trendLabel} trendUp={stats?.totalPengguna?.trendUp} />
-        <KpiCard iconName="delete" iconBg="bg-green-100" iconColor="text-green-600" label="Tempat Sampah Aktif" value={stats?.tempatSampahAktif?.value} trend={stats?.tempatSampahAktif?.trend} trendLabel={stats?.tempatSampahAktif?.trendLabel} trendUp={stats?.tempatSampahAktif?.trendUp} />
-        <KpiCard iconName="location_on" iconBg="bg-indigo-100" iconColor="text-indigo-600" label="Lokasi Terdaftar" value={stats?.lokasiTerdaftar?.value} trend={stats?.lokasiTerdaftar?.trend} trendLabel={stats?.lokasiTerdaftar?.trendLabel} trendUp={stats?.lokasiTerdaftar?.trendUp} />
+        <KpiCard iconName="group" iconBg="bg-blue-100" iconColor="text-blue-600" label="Total Pengguna" value={stats?.totalPengguna?.value} trend={stats?.totalPengguna?.trend} trendLabel={stats?.totalPengguna?.trendLabel} trendUp={stats?.totalPengguna?.trendUp} linkTo="/manajemen-pengguna" />
+        <KpiCard iconName="delete" iconBg="bg-green-100" iconColor="text-green-600" label="Tempat Sampah Aktif" value={stats?.tempatSampahAktif?.value} trend={stats?.tempatSampahAktif?.trend} trendLabel={stats?.tempatSampahAktif?.trendLabel} trendUp={stats?.tempatSampahAktif?.trendUp} linkTo="/manajemen-tempat-sampah" />
+        <KpiCard iconName="location_on" iconBg="bg-indigo-100" iconColor="text-indigo-600" label="Lokasi Terdaftar" value={stats?.lokasiTerdaftar?.value} trend={stats?.lokasiTerdaftar?.trend} trendLabel={stats?.lokasiTerdaftar?.trendLabel} trendUp={stats?.lokasiTerdaftar?.trendUp} linkTo="/manajemen-lokasi" />
         <KpiCard iconName="shopping_bag" iconBg="bg-amber-100" iconColor="text-amber-600" label="Setoran Hari Ini" value={stats?.setoranHariIni?.value} trend={stats?.setoranHariIni?.trend} trendLabel={stats?.setoranHariIni?.trendLabel} trendUp={stats?.setoranHariIni?.trendUp} />
-        <KpiCard iconName="stars" iconBg="bg-yellow-100" iconColor="text-yellow-600" label="Total Poin" value={stats?.totalPoin?.value} trend={stats?.totalPoin?.trend} trendLabel={stats?.totalPoin?.trendLabel} trendUp={stats?.totalPoin?.trendUp} />
-        <KpiCard iconName="calendar_month" iconBg="bg-emerald-100" iconColor="text-emerald-600" label="Jadwal Minggu Ini" value={stats?.jadwalMingguIni?.value} trend={stats?.jadwalMingguIni?.trend} trendLabel={stats?.jadwalMingguIni?.trendLabel} trendUp={stats?.jadwalMingguIni?.trendUp} />
+        <KpiCard iconName="stars" iconBg="bg-yellow-100" iconColor="text-yellow-600" label="Total Poin" value={stats?.totalPoin?.value} trend={stats?.totalPoin?.trend} trendLabel={stats?.totalPoin?.trendLabel} trendUp={stats?.totalPoin?.trendUp} linkTo="/poin-warga" />
+        <KpiCard iconName="calendar_month" iconBg="bg-emerald-100" iconColor="text-emerald-600" label="Jadwal Minggu Ini" value={stats?.jadwalMingguIni?.value} trend={stats?.jadwalMingguIni?.trend} trendLabel={stats?.jadwalMingguIni?.trendLabel} trendUp={stats?.jadwalMingguIni?.trendUp} linkTo="/jadwal-kegiatan" />
       </div>
 
       {/* === Charts Grid === */}
@@ -484,66 +703,90 @@ const Dashboard: React.FC = () => {
         <div className="w-1/2 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 relative overflow-hidden">
           <div className="flex justify-between items-center mb-4">
             <h4 className="font-bold text-[18px] text-on-surface">Trend Setoran Sampah per Minggu <span className="text-[12px] text-on-surface-variant font-normal">(kg)</span></h4>
-            <div className="bg-surface-container px-3 py-1.5 rounded-lg text-[12px] flex items-center gap-2 cursor-pointer">
-              <span>8 Minggu Terakhir</span>
-              <span className="material-symbols-outlined text-[16px]">expand_more</span>
-            </div>
+            <select
+              value={weeks}
+              onChange={(e) => setWeeks(parseInt(e.target.value))}
+              className="bg-surface-container px-3 py-1.5 rounded-lg text-[12px] border border-outline-variant/30 text-on-surface focus:outline-none cursor-pointer font-bold"
+            >
+              <option value={4}>4 Minggu Terakhir</option>
+              <option value={8}>8 Minggu Terakhir</option>
+              <option value={12}>12 Minggu Terakhir</option>
+            </select>
           </div>
           {/* SVG Line Chart */}
           <div className="h-[220px] w-full relative">
-            <svg className="w-full h-full" viewBox="0 0 700 200" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#006d37" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#006d37" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Grid Lines */}
-              {[0, 50, 100, 150, 200].map(y => (
-                <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="#f0f2f5" strokeWidth="1" />
-              ))}
-              {/* Area Fill */}
-              <path d="M0,160 L100,140 L200,120 L300,90 L400,110 L500,80 L600,50 L700,30 L700,200 L0,200 Z" fill="url(#lineGrad)" />
-              {/* Line */}
-              <path d="M0,160 L100,140 L200,120 L300,90 L400,110 L500,80 L600,50 L700,30" fill="none" stroke="#006d37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              {/* Dots */}
-              {[
-                [0, 160], [100, 140], [200, 120], [300, 90], [400, 110], [500, 80], [600, 50], [700, 30]
-              ].map(([cx, cy], i) => (
-                <circle key={i} cx={cx} cy={cy} r="5" fill="#006d37" stroke="white" strokeWidth="2" />
-              ))}
-            </svg>
-            {/* X-axis labels */}
-            <div className="absolute bottom-[-4px] left-0 right-0 flex justify-between px-1">
-              {['Mng 12', 'Mng 13', 'Mng 14', 'Mng 15', 'Mng 16', 'Mng 17', 'Mng 18', 'Mng 19'].map((w, i) => (
-                <span key={i} className="text-[10px] text-on-surface-variant font-bold">{w}</span>
-              ))}
-            </div>
+            {trendPoints.length > 0 ? (
+              <>
+                <svg className="w-full h-full" viewBox="0 0 700 200" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#006d37" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#006d37" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {/* Grid Lines */}
+                  {[0, 50, 100, 150, 200].map(y => (
+                    <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="#f0f2f5" strokeWidth="1" />
+                  ))}
+                  {/* Area Fill */}
+                  <path d={trendAreaPath} fill="url(#lineGrad)" />
+                  {/* Line */}
+                  <path d={trendLinePath} fill="none" stroke="#006d37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  {/* Dots */}
+                  {trendPoints.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="5" fill="#006d37" stroke="white" strokeWidth="2" />
+                  ))}
+                </svg>
+                {/* X-axis labels */}
+                <div className="absolute bottom-[-4px] left-0 right-0 flex justify-between px-1">
+                  {trendPoints.map((p, i) => (
+                    <span key={i} className="text-[10px] text-on-surface-variant font-bold">{p.label}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-xs text-on-surface-variant">
+                Tidak ada data setoran untuk periode ini
+              </div>
+            )}
           </div>
         </div>
 
         {/* Donut Chart — Komposisi Sampah */}
         <div className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 flex flex-col">
           <h4 className="font-bold text-[18px] text-on-surface mb-4">Komposisi Sampah</h4>
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="w-32 h-32 rounded-full border-[12px] border-primary-container relative flex items-center justify-center">
-              <div className="absolute inset-[-12px] border-[12px] border-secondary-container rounded-full border-t-transparent border-l-transparent" style={{ transform: 'rotate(-30deg)' }}></div>
-              <div className="text-center z-10">
-                <span className="block text-[22px] font-bold text-on-surface leading-none">62%</span>
+          <div className="flex-1 flex flex-col items-center justify-center relative">
+            <div className="w-32 h-32 relative flex items-center justify-center">
+              <svg className="w-32 h-32 transform -rotate-90">
+                <circle cx="64" cy="64" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                <circle 
+                  cx="64" 
+                  cy="64" 
+                  r="50" 
+                  fill="transparent" 
+                  stroke="#10b981" 
+                  strokeWidth="12"
+                  strokeDasharray={`${2 * Math.PI * 50}`}
+                  strokeDashoffset={`${2 * Math.PI * 50 * (1 - (stats?.komposisiSampah?.pctOrganik ?? 0) / 100)}`}
+                  strokeLinecap="round" 
+                />
+              </svg>
+              <div className="absolute text-center">
+                <span className="block text-[22px] font-bold text-on-surface leading-none">{stats?.komposisiSampah?.pctOrganik ?? 0}%</span>
                 <span className="text-[10px] text-on-surface-variant uppercase font-bold">Organik</span>
               </div>
             </div>
             <div className="mt-4 w-full space-y-2">
               <div className="flex justify-between items-center text-[12px]">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary-container"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
                   <span className="text-on-surface">Organik</span>
                 </div>
                 <span className="text-on-surface font-bold">{stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.organik?.persentase})</span>
               </div>
               <div className="flex justify-between items-center text-[12px]">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-secondary-container"></div>
+                  <div className="w-3 h-3 rounded-full bg-slate-300"></div>
                   <span className="text-on-surface">Anorganik</span>
                 </div>
                 <span className="text-on-surface font-bold">{stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.anorganik?.persentase})</span>
@@ -553,14 +796,20 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Map Widget */}
-        <div className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl overflow-hidden relative border border-outline-variant/30">
+        <div 
+          onClick={() => setShowComplianceModal(true)}
+          className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl overflow-hidden relative border border-outline-variant/30 cursor-pointer hover:shadow-md transition-shadow group"
+        >
           <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm p-2 rounded-lg border border-outline-variant/30 shadow-sm">
-            <h4 className="font-bold text-[14px] text-on-surface">Kepatuhan RT/RW</h4>
+            <h4 className="font-bold text-[14px] text-on-surface group-hover:text-primary transition-colors flex items-center gap-1">
+              Kepatuhan RT/RW
+              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            </h4>
           </div>
           <div className="w-full h-full">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15844.757876800742!2d107.60946252981977!3d-6.880479133333333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68e6580f4f9f4d%3A0x6b30fef6a75f850e!2sCoblong%2C%20Bandung%20City%2C%20West%20Java!5e0!3m2!1sen!2sid!4v1720800000000!5m2!1sen!2sid"
-              className="w-full h-full border-0 grayscale opacity-85"
+              className="w-full h-full border-0 grayscale opacity-85 pointer-events-none"
               allowFullScreen={false}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -569,14 +818,20 @@ const Dashboard: React.FC = () => {
           <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-xl border border-outline-variant shadow-sm z-10">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-[10px] text-on-surface-variant uppercase font-bold">Total Wilayah</p>
-                <p className="text-[12px] font-bold text-on-surface">76 RW Terdata</p>
+                <p className="text-[10px] text-on-surface-variant uppercase font-bold">Rata-rata Kepatuhan</p>
+                <p className="text-[12px] font-bold text-primary">
+                  {locations.length > 0
+                    ? `${Math.round(locations.reduce((sum, loc) => sum + (loc.patuh || 0), 0) / locations.length)}% Patuh`
+                    : '75% Patuh'}
+                </p>
               </div>
               <div className="flex -space-x-2">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white">
                   <span className="material-symbols-outlined text-[16px]">check</span>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white border-2 border-white font-bold text-[10px]">3</div>
+                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white border-2 border-white font-bold text-[10px]">
+                  {locations.length}
+                </div>
               </div>
             </div>
           </div>
@@ -589,43 +844,69 @@ const Dashboard: React.FC = () => {
         <div className="col-span-5 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
           <div className="flex justify-between items-center mb-6">
             <h4 className="font-bold text-[18px] text-on-surface">Data Tempat Sampah Terbaru</h4>
-            <Link to="/master-data" className="text-primary text-[12px] font-bold hover:underline">Lihat Semua</Link>
+            <Link to="/manajemen-tempat-sampah" className="text-primary text-[12px] font-bold hover:underline">Lihat Semua</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="text-[12px] text-on-surface-variant border-b border-outline-variant">
                   <th className="pb-3 font-bold">ID & Jenis</th>
-                  <th className="pb-3 font-bold">Pemilik / Lokasi</th>
-                  <th className="pb-3 font-bold">Status</th>
+                  <th className="pb-3 font-bold">Lokasi</th>
+                  <th className="pb-3 font-bold">Kapasitas</th>
+                  <th className="pb-3 font-bold">Poin/Kg</th>
+                  <th className="pb-3 font-bold text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="text-[12px]">
-                {[
-                  { id: 'TS-COB-000324', type: 'Organik', typeColor: 'text-primary', typeIcon: 'recycling', owner: 'RW 06 Dago', addr: 'Jl. Dago Giri No. 10', status: 'Aktif', statusCls: 'bg-green-100 text-green-700' },
-                  { id: 'TS-COB-000323', type: 'Non Organik', typeColor: 'text-secondary', typeIcon: 'delete', owner: 'Kel. Lebakgede', addr: 'Jl. Lebak Gede No. 21', status: 'Aktif', statusCls: 'bg-green-100 text-green-700' },
-                  { id: 'TS-COB-000322', type: 'Organik', typeColor: 'text-primary', typeIcon: 'recycling', owner: 'RW 02 Cigadung', addr: 'Jl. Cigadung Raya', status: 'Perawatan', statusCls: 'bg-yellow-100 text-yellow-700' },
-                ].map(row => (
-                  <tr key={row.id} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
-                    <td className="py-3">
-                      <div className="flex flex-col">
-                        <span className="font-bold">{row.id}</span>
-                        <span className={`text-[10px] ${row.typeColor} flex items-center gap-1`}>
-                          <span className="material-symbols-outlined text-[14px]">{row.typeIcon}</span> {row.type}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex flex-col">
-                        <span>{row.owner}</span>
-                        <span className="text-[10px] text-on-surface-variant">{row.addr}</span>
-                      </div>
-                    </td>
-                    <td className="py-3">
-                      <span className={`${row.statusCls} px-2 py-0.5 rounded text-[10px] font-bold`}>{row.status}</span>
-                    </td>
-                  </tr>
-                ))}
+                {recentBins.map((bin, i) => {
+                  const cap = Math.round(bin.kapasitas || (Number(bin.currentVolumeLiter)/Number(bin.maxCapacityLiter) * 100));
+                  return (
+                    <tr key={bin.id || bin.kode || i} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+                      <td className="py-3">
+                        <div className="flex flex-col">
+                          <span className="font-bold">{bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0,8) : 'BIN')}</span>
+                          <span className={`text-[10px] ${(bin.category?.name || bin.categoryId) === 'ORGANIK' ? 'text-primary' : 'text-secondary'} flex items-center gap-1`}>
+                            <span className="material-symbols-outlined text-[14px]">{(bin.category?.name || bin.categoryId) === 'ORGANIK' ? 'recycling' : 'delete'}</span> {bin.category?.name || bin.categoryId || 'UMUM'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <div className="flex flex-col">
+                          <span>{bin.rtRw?.kelurahan?.name || 'Kelurahan'}</span>
+                          <span className="text-[10px] text-on-surface-variant">{typeof bin.rtRw === 'string' ? bin.rtRw : (bin.rtRw?.name || '-')}</span>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <span className={`${cap > 90 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'} px-2 py-0.5 rounded text-[10px] font-bold`}>{cap}% {cap > 90 ? 'Penuh' : 'Normal'}</span>
+                      </td>
+                      <td className="py-3 font-bold text-yellow-600">
+                        {bin.category?.pointsPerKg || 100}
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button 
+                            onClick={() => setSelectedBinForDetail(bin)}
+                            className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          </button>
+                          <button 
+                            onClick={() => navigate('/manajemen-tempat-sampah', { state: { editBinId: bin.id || bin.kode } })}
+                            className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                          </button>
+                          <button 
+                            onClick={() => handleBinDelete(bin.qrCode || bin.kode)}
+                            className="p-1 hover:text-red-600 text-gray-400 rounded hover:bg-surface-container-high transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -635,21 +916,43 @@ const Dashboard: React.FC = () => {
         <div className="col-span-4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
           <div className="flex justify-between items-center mb-6">
             <h4 className="font-bold text-[18px] text-on-surface">Manajemen Pengguna</h4>
-            <Link to="/master-data" className="text-primary text-[12px] font-bold hover:underline">Lihat Semua</Link>
+            <Link to="/manajemen-pengguna" className="text-primary text-[12px] font-bold hover:underline">Lihat Semua</Link>
           </div>
           <div className="space-y-4">
-            {[
-              { name: 'Rudi Santoso', role: 'Admin • Kec. Coblong', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBROnzK6rmUZGgZvhgSMmeki_TDGPMh-NFD2_5bHY-C8fj1gm6A5faBvMVS6DOcXkGHUOkg3aPTQYpVhNaB0XvmWe_tvN7Si_vz8pqHEjgSJm0tNs21QUixHrEULn1nRnjszxpyMQq8aDwD01WG2fb22MD5WvUJdhsAhRipbZshOjwwTnhymoc2qB9n-ze7Wc5lhvtJ7PkJn_3iwh22pkIchyZPWIxhrox7GlQ3V5KAd2VbAePH9YAyJXIFarBrDlDdLT-OTmSJHnPG' },
-              { name: 'Siti Nurhaliza', role: 'Petugas • Kel. Lebakgede', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8MPjMx7P2Gy0fJtHjElRZoTJglWiaHPw_X9TKuGx9UocQI-QB7tMKAGXtevQnI0LyW0p7p4Omta9GiSL4E3lfLDTlZ9SUddAI-qTzYIG6_974a6oTL-4znxBH6g25_0UCpokT94sS_2XqNUE1kVnyf4zZaPBr7pAMDO860wb9V6HLendeYkfwi9UF_cnT-8Cv0926epimAP-5f9oa9fZYLFUEYEFjGjBLHkQbvfgrxTIurLxy3xufH3DB46eRxmJqUeG4d_tY5g1U' },
-              { name: 'Asep Maulana', role: 'Warga • RW 06 Dago', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAGHADswoikiZDKchds4Oq1dbKUkpYgwECA0UJvoJtDiJtylqGkg8H_jhu7Aw56s9IQqNle4Bi4a_OayuQSa55qjfCVuU_xuzKONyxrYlCoFp-icigzUlPBp1cM07y5h5mzgAMhg2YSDqU_VWuugagzt_vOVHmqBLitvN_MNrM0IsTxwcg9wtCfJopqq1E4vPytW9kzHs16Iba5aPvgKJgfVq9ddAyUuyX6UJEChsvX6AxbdPc9VU0_TL59xqnWRHToN4Dq5TALkoAW' },
-            ].map(user => (
-              <div key={user.name} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer">
-                <img className="w-10 h-10 rounded-full border border-outline-variant object-cover" alt={user.name} src={user.img} />
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-on-surface leading-none">{user.name}</p>
-                  <p className="text-[10px] text-on-surface-variant">{user.role}</p>
+            {recentUsers.map(u => (
+              <div key={u.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer relative group">
+                <div className="w-10 h-10 rounded-full border border-outline-variant bg-surface-container-high flex items-center justify-center text-primary font-bold">
+                  {u.name.charAt(0)}
                 </div>
-                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Aktif</span>
+                <div className="flex-1">
+                  <p className="text-[12px] font-bold text-on-surface leading-none">{u.name}</p>
+                  <p className="text-[10px] text-on-surface-variant mt-1">{u.role} • {u.email}</p>
+                  <div className="flex gap-2 mt-1">
+                    <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.2 rounded font-semibold">{u.wilayah}</span>
+                    {u.role === 'WARGA' && (
+                      <span className="text-[9px] bg-yellow-500/10 text-yellow-600 px-1.5 py-0.2 rounded font-semibold">{u.totalPoin ?? 0} Poin</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${u.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {u.status || 'Aktif'}
+                  </span>
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); navigate('/manajemen-pengguna', { state: { editUserId: u.id } }); }} 
+                      className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleUserDelete(u.id); }} 
+                      className="p-1 hover:text-red-600 text-gray-400 rounded hover:bg-surface-container-high transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -659,28 +962,30 @@ const Dashboard: React.FC = () => {
         <div className="col-span-3 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
           <div className="flex justify-between items-center mb-6">
             <h4 className="font-bold text-[18px] text-on-surface">Jadwal Kegiatan</h4>
-            <button className="w-8 h-8 flex items-center justify-center bg-surface-container rounded-lg text-primary hover:bg-primary hover:text-white transition-all">
+            <Link to="/jadwal-kegiatan" className="w-8 h-8 flex items-center justify-center bg-surface-container rounded-lg text-primary hover:bg-primary hover:text-white transition-all">
               <span className="material-symbols-outlined text-[20px]">calendar_add_on</span>
-            </button>
+            </Link>
           </div>
           <div className="space-y-4">
-            {[
-              { dayName: 'JUM', dayNum: '23', title: 'Sosialisasi Pilah Sampah', sub: 'RW 06 Dago • 08:00', badge: 'Sosialisasi', badgeCls: 'bg-blue-100 text-blue-700', numCls: 'text-primary', bgCls: 'bg-primary-container/10' },
-              { dayName: 'SAB', dayNum: '24', title: 'Pengangkutan Organik', sub: 'Kec. Coblong • 07:00', badge: 'Pengangkutan', badgeCls: 'bg-green-100 text-green-700', numCls: 'text-secondary', bgCls: 'bg-secondary-container/10' },
-              { dayName: 'MIN', dayNum: '25', title: 'Validasi Data Setoran', sub: 'Sistem Pusat • 09:00', badge: 'Validasi Data', badgeCls: 'bg-amber-100 text-amber-800', numCls: 'text-amber-700', bgCls: 'bg-amber-100' },
-            ].map(item => (
-              <div key={item.dayNum} className="flex gap-4">
-                <div className={`flex flex-col items-center ${item.bgCls} rounded-lg px-2 py-1 min-w-[50px] h-fit`}>
-                  <span className={`text-[10px] font-bold ${item.numCls} uppercase`}>{item.dayName}</span>
-                  <span className={`text-[18px] font-bold ${item.numCls}`}>{item.dayNum}</span>
+            {recentSchedules.length > 0 ? recentSchedules.map((item: any) => {
+              const date = new Date(item.date || item.waktu || Date.now());
+              const dayNames = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'];
+              return (
+                <div key={item.id} className="flex gap-4">
+                  <div className={`flex flex-col items-center bg-primary-container/10 rounded-lg px-2 py-1 min-w-[50px] h-fit`}>
+                    <span className={`text-[10px] font-bold text-primary uppercase`}>{dayNames[date.getDay()]}</span>
+                    <span className="text-[18px] font-bold text-primary leading-none mt-0.5">{date.getDate()}</span>
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="font-bold text-[14px] text-on-surface leading-tight">{item.title || item.nama_kegiatan}</h5>
+                    <p className="text-[11px] text-on-surface-variant">{item.location || item.lokasi} • {item.time || date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
+                    <span className={`inline-block mt-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase`}>{item.category || item.status || 'Jadwal'}</span>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-on-surface leading-tight">{item.title}</p>
-                  <p className="text-[10px] text-on-surface-variant">{item.sub}</p>
-                  <span className={`inline-block mt-1 ${item.badgeCls} px-1.5 py-0.5 rounded text-[9px] font-bold uppercase`}>{item.badge}</span>
-                </div>
-              </div>
-            ))}
+              );
+            }) : (
+              <p className="text-sm text-gray-500 text-center py-4">Belum ada jadwal</p>
+            )}
           </div>
         </div>
       </div>
@@ -702,7 +1007,7 @@ const Dashboard: React.FC = () => {
             ].map(item => (
               <div key={item.name} className={`space-y-1 ${!item.bold ? 'opacity-60' : ''}`}>
                 <div className="flex justify-between text-[12px]">
-                  <span className={`${item.bold ? 'font-bold' : ''} text-on-surface`}>{item.name}</span>
+                  <span className={`${item.bold ? 'font-bold' : ''} text-on-surface`}><Link to="/poin-warga" className="hover:underline">{item.name}</Link></span>
                   <span className="text-primary font-bold">{item.points}</span>
                 </div>
                 <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
@@ -718,73 +1023,82 @@ const Dashboard: React.FC = () => {
           <h4 className="font-bold text-[18px] text-on-surface mb-6">Tempat Sampah (QR)</h4>
           <div className="flex gap-4">
             <div className="w-1/2 p-3 bg-white rounded-xl border-2 border-outline-variant flex items-center justify-center">
-              <img className="w-full aspect-square opacity-80" alt="QR Code Bin" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcTcLLQqg-8ECQUcvOzqLqFWjpoY1T2zzimqpsp9wJEbz69saVyk7GgW0_SC7Oc_OhK3tiLvpOmL_UmNlJgoZiqPvlsuCoavsy-ZBOLR8ETv8cXWW2ldWaeEZZdwLo-C-XVSsDeAvFG0cyKsO-Bj7qkVq-0rcfWeddnyjx8rgKu-dG6qO18ql-G3mGOuxG42th8L9LNWGYSxh1djykahQdW_MZa3hN45_rHTdZ_83AzyfqW8LwOuoVmg4OT-a7ojO0w8F5eNt1yBBZ" />
+              <img className="w-full aspect-square opacity-80" alt="QR Code Bin" src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(activeBin.qrCode)}`} />
             </div>
             <div className="flex-1 space-y-2">
               <div>
                 <p className="text-[10px] text-on-surface-variant font-bold uppercase">ID BIN</p>
-                <p className="text-[12px] font-bold text-primary">TS-COB-000324</p>
+                <p className="text-[12px] font-bold text-primary">{activeBin.qrCode}</p>
               </div>
               <div>
                 <p className="text-[10px] text-on-surface-variant font-bold uppercase">Kapasitas</p>
                 <div className="flex items-center gap-1">
-                  <span className="text-[11px] font-bold text-on-surface">85% Full</span>
-                  <span className="material-symbols-outlined text-error text-[14px]">sensors_off</span>
+                  <span className="text-[11px] font-bold text-on-surface">{activeCapPct}% Full</span>
+                  <span className={`material-symbols-outlined ${activeCapPct > 90 ? 'text-error animate-pulse' : 'text-primary'} text-[14px]`}>sensors</span>
                 </div>
               </div>
               <div className="pt-2">
-                <button className="w-full py-2 bg-primary text-white rounded-lg text-[12px] font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Detail Bin</button>
+                <button 
+                  onClick={() => setSelectedBinForDetail(activeBin)}
+                  className="w-full py-2 bg-primary text-white rounded-lg text-[12px] font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  Detail Bin
+                </button>
               </div>
             </div>
           </div>
         </div>
 
         {/* Aktivitas Terbaru */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Terbaru</h4>
-            <span className="material-symbols-outlined text-primary">history</span>
-          </div>
-          <div className="space-y-4">
-            {[
-              { iconBg: 'bg-green-100', iconColor: 'text-green-700', icon: 'add', title: 'Setoran 18 kg Organik', sub: 'Dewi Lestari • 09:30' },
-              { iconBg: 'bg-blue-100', iconColor: 'text-blue-700', icon: 'local_shipping', title: 'Pengangkutan Selesai', sub: 'Dago Giri • 08:15' },
-              { iconBg: 'bg-amber-100', iconColor: 'text-amber-700', icon: 'warning', title: 'Bin Hampir Penuh', sub: 'RW 01 Dago • 07:45' },
-            ].map((item, i) => (
-              <div key={i} className="flex gap-3">
-                <div className={`w-6 h-6 rounded-full ${item.iconBg} flex items-center justify-center z-10 border-2 border-white flex-shrink-0`}>
-                  <span className={`material-symbols-outlined text-[14px] ${item.iconColor}`}>{item.icon}</span>
+        <Link to="/rekap-setoran" className="block">
+          <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 h-full hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Terbaru</h4>
+              <span className="material-symbols-outlined text-primary">history</span>
+            </div>
+            <div className="space-y-4">
+              {[
+                { iconBg: 'bg-green-100', iconColor: 'text-green-700', icon: 'add', title: 'Setoran 18 kg Organik', sub: 'Dewi Lestari • 09:30' },
+                { iconBg: 'bg-blue-100', iconColor: 'text-blue-700', icon: 'local_shipping', title: 'Pengangkutan Selesai', sub: 'Dago Giri • 08:15' },
+                { iconBg: 'bg-amber-100', iconColor: 'text-amber-700', icon: 'warning', title: 'Bin Hampir Penuh', sub: 'RW 01 Dago • 07:45' },
+              ].map((item, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className={`w-6 h-6 rounded-full ${item.iconBg} flex items-center justify-center z-10 border-2 border-white flex-shrink-0`}>
+                    <span className={`material-symbols-outlined text-[14px] ${item.iconColor}`}>{item.icon}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-on-surface">{item.title}</p>
+                    <p className="text-[10px] text-on-surface-variant">{item.sub}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-on-surface">{item.title}</p>
-                  <p className="text-[10px] text-on-surface-variant">{item.sub}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </Link>
 
         {/* Notifikasi Sistem */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Notifikasi Sistem</h4>
-            <span className="material-symbols-outlined text-error">campaign</span>
-          </div>
-          <div className="space-y-4">
-            {[
-              { icon: 'error_outline', iconColor: 'text-error', title: 'Sensor Offline (TS-00321)', sub: 'Baterai lemah terdeteksi' },
-              { icon: 'verified_user', iconColor: 'text-primary', title: 'Target Harian Tercapai', sub: 'Capaian 105% hari ini' },
-            ].map((notif, i) => (
-              <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer">
-                <span className={`material-symbols-outlined ${notif.iconColor} text-[20px] mt-0.5`}>{notif.icon}</span>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-on-surface">{notif.title}</p>
-                  <p className="text-[9px] text-on-surface-variant">{notif.sub}</p>
+        <Link to="/notifikasi" className="block">
+          <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 h-full hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="font-bold text-[18px] text-on-surface">Notifikasi Sistem</h4>
+              <span className="material-symbols-outlined text-error">campaign</span>
+            </div>
+            <div className="space-y-4">
+              {[
+                { icon: 'error_outline', iconColor: 'text-error', title: 'Sensor Offline (TS-00321)', sub: 'Baterai lemah terdeteksi' },
+                { icon: 'verified_user', iconColor: 'text-primary', title: 'Target Harian Tercapai', sub: 'Capaian 105% hari ini' },
+              ].map((notif, i) => (
+                <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer">
+                  <span className={`material-symbols-outlined ${notif.iconColor} text-[20px] mt-0.5`}>{notif.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-on-surface">{notif.title}</p>
+                    <p className="text-[9px] text-on-surface-variant">{notif.sub}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* === Peringkat Komunitas Lestari === */}
@@ -792,7 +1106,7 @@ const Dashboard: React.FC = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h4 className="text-[22px] font-bold text-on-surface">Peringkat Komunitas Lestari</h4>
-            <p className="text-[14px] text-on-surface-variant">Statistik keaktifan pemilahan sampah di 6 Kelurahan, 76 RW, dan 469 RT wilayah Kecamatan Coblong.</p>
+            <p className="text-[14px] text-on-surface-variant">Statistik keaktifan pemilahan sampah di Kelurahan, RW, dan RT wilayah Kecamatan Coblong.</p>
           </div>
           <button className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all">
             <span className="material-symbols-outlined">download</span>
@@ -932,8 +1246,132 @@ const Dashboard: React.FC = () => {
         </div>
       </footer>
 
+      {/* Compliance Modal */}
+      {showComplianceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+              <h3 className="font-bold text-[20px] text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">analytics</span>
+                Kepatuhan Partisipasi RT/RW
+              </h3>
+              <button 
+                onClick={() => setShowComplianceModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto">
+              <p className="text-xs text-on-surface-variant">
+                Persentase rumah tangga yang aktif menyetorkan sampah dibanding total rumah tangga terdaftar pada masing-masing RW di wilayah Kecamatan Coblong.
+              </p>
+              <div className="space-y-3">
+                {locations.map((loc) => (
+                  <div key={loc.id} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-bold text-sm text-on-surface">{loc.rw} ({loc.kelurahan})</h4>
+                        <p className="text-[10px] text-on-surface-variant">{loc.rtCount} RT • {loc.titikCount} Titik Tong Sampah</p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        loc.patuh >= 85 ? 'bg-green-100 text-green-700' : (loc.patuh >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                      }`}>
+                        {loc.patuh}% Patuh
+                      </span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          loc.patuh >= 85 ? 'bg-primary' : (loc.patuh >= 60 ? 'bg-yellow-500' : 'bg-red-500')
+                        }`}
+                        style={{ width: `${loc.patuh}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Bin Modal */}
+      {selectedBinForDetail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+              <h3 className="font-bold text-[18px] text-on-surface">Detail Tempat Sampah Cerdas</h3>
+              <button 
+                onClick={() => setSelectedBinForDetail(null)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex justify-center">
+                <div className="p-4 bg-white rounded-2xl border-2 border-outline-variant/60 shadow-inner flex flex-col items-center gap-2">
+                  <img 
+                    className="w-40 h-40" 
+                    alt="QR Code" 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedBinForDetail.qrCode || selectedBinForDetail.kode)}`} 
+                  />
+                  <span className="text-[14px] font-mono font-bold text-primary tracking-widest">{selectedBinForDetail.qrCode || selectedBinForDetail.kode}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
+                  <span className="text-on-surface-variant">Kategori Sampah</span>
+                  <span className={`font-bold uppercase ${
+                    (selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || '').toUpperCase().includes('ORGANIK') ? 'text-primary' : 'text-secondary'
+                  }`}>
+                    {selectedBinForDetail.category?.name || selectedBinForDetail.categoryId}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
+                  <span className="text-on-surface-variant">Wilayah (RT/RW)</span>
+                  <span className="font-semibold text-on-surface">
+                    {typeof selectedBinForDetail.rtRw === 'string' ? selectedBinForDetail.rtRw : (selectedBinForDetail.rtRw?.name || '-')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
+                  <span className="text-on-surface-variant">Status Kapasitas</span>
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                    (selectedBinForDetail.kapasitas || (Number(selectedBinForDetail.currentVolumeLiter)/Number(selectedBinForDetail.maxCapacityLiter) * 100)) > 90 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {selectedBinForDetail.currentVolumeLiter}L / {selectedBinForDetail.maxCapacityLiter}L ({
+                      Math.round(selectedBinForDetail.kapasitas || (Number(selectedBinForDetail.currentVolumeLiter)/Number(selectedBinForDetail.maxCapacityLiter) * 100))
+                    }%)
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 text-sm">
+                  <span className="text-on-surface-variant">Poin Setoran</span>
+                  <span className="font-bold text-yellow-600">
+                    {selectedBinForDetail.category?.pointsPerKg || 100} Poin / Kg
+                  </span>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setSelectedBinForDetail(null)}
+                className="w-full py-3 bg-surface-container hover:bg-surface-container-high rounded-xl text-xs font-bold text-on-surface transition-colors"
+              >
+                Tutup Detail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
 export default Dashboard;
+
+```

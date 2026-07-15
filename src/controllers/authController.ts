@@ -4,12 +4,28 @@ import { authService } from "../services/authService.js";
 
 // Validation Schemas
 const loginSchema = z.object({
-  email: z.string().email("Format email tidak valid"),
+  email: z.string().refine(val => {
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    const isNik = /^\d{16}$/.test(val);
+    return isEmail || isNik;
+  }, {
+    message: "Format email atau NIK tidak valid"
+  }),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
 const refreshSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token diperlukan"),
+});
+
+const updateProfileSchema = z.object({
+  name: z.string().min(1, "Nama diperlukan").optional(),
+  email: z.string().email("Format email tidak valid").optional(),
+});
+
+const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(6, "Password lama diperlukan"),
+  newPassword: z.string().min(6, "Password baru minimal 6 karakter"),
 });
 
 export class AuthController {
@@ -25,10 +41,10 @@ export class AuthController {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { email, password } = parsed.data;
+      const { email: emailOrNik, password } = parsed.data;
 
       // 2. Call Service
-      const result = await authService.login(email, password);
+      const result = await authService.login(emailOrNik, password);
 
       // 3. Set HttpOnly Cookie for Web (Access Token)
       res.cookie("accessToken", result.accessToken, {
@@ -111,6 +127,76 @@ export class AuthController {
       res.status(200).json({ message: "Logout berhasil" });
     } catch (error) {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan saat logout" });
+    }
+  }
+  /**
+   * Handle Update Profile
+   */
+  async updateProfile(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
+        return;
+      }
+      
+      const parsed = updateProfileSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
+        return;
+      }
+      const { name, email } = parsed.data;
+
+      const updatedUser = await authService.updateProfile(req.user.userId, name, email);
+
+      res.status(200).json({
+        message: "Profil berhasil diperbarui",
+        data: {
+          user: {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+          }
+        }
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
+      } else if (error.message === "EMAIL_ALREADY_IN_USE") {
+        res.status(409).json({ error: "CONFLICT", message: "Email sudah digunakan oleh akun lain" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+      }
+    }
+  }
+
+  /**
+   * Handle Update Password
+   */
+  async updatePassword(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
+        return;
+      }
+
+      const parsed = updatePasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
+        return;
+      }
+      const { currentPassword, newPassword } = parsed.data;
+
+      await authService.updatePassword(req.user.userId, currentPassword, newPassword);
+
+      res.status(200).json({ message: "Password berhasil diperbarui" });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
+      } else if (error.message === "INVALID_CREDENTIALS") {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Password lama salah" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+      }
     }
   }
 }

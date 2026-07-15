@@ -4,7 +4,14 @@ import { Camera, X, CheckCircle, Upload, AlertTriangle, Star } from 'lucide-reac
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 
-const NotificationModal = ({ notif, onClose, onSubmitEmpty }: { notif: any, onClose: () => void, onSubmitEmpty: () => void }) => {
+const NotificationModal = ({ notif, role, onClose, onSubmitEmpty, onApprove, onReject }: { 
+  notif: any; 
+  role: string;
+  onClose: () => void; 
+  onSubmitEmpty: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
+}) => {
   const [photo, setPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -17,8 +24,55 @@ const NotificationModal = ({ notif, onClose, onSubmitEmpty }: { notif: any, onCl
     }
   };
 
+  const isAdminOrPetugas = ['ADMIN', 'PETUGAS_KELURAHAN', 'PETUGAS_RW', 'PETUGAS_RT'].includes(role.toUpperCase());
+
   const renderContent = () => {
-    if (notif.type === 'TONG_PENUH') {
+    // ✅ NOTIF-01/02: Admin melihat tampilan REVIEW, bukan form upload
+    if ((notif.type === 'TONG_PENUH' || notif.type === 'PENGAJUAN_PENGOSONGAN') && isAdminOrPetugas) {
+      return (
+        <div className="mt-4 flex flex-col gap-4">
+          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex gap-3">
+            <span className="material-symbols-outlined text-orange-500 shrink-0 mt-0.5">admin_panel_settings</span>
+            <div className="text-sm text-orange-800">
+              <p className="font-semibold mb-1">Tindakan Review Diperlukan</p>
+              <p>Warga telah mengajukan pengosongan tong sampah. Tinjau pengajuan ini dan tentukan tindakan Anda.</p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-white">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Detail Pengajuan</p>
+              <p className="text-sm text-gray-800 font-medium">{notif.desc}</p>
+            </div>
+            <div className="p-4 bg-gray-50 flex flex-col gap-2">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Foto Bukti dari Warga</p>
+              <div className="w-full h-36 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
+                <span className="material-symbols-outlined text-4xl">image_not_supported</span>
+              </div>
+              <p className="text-xs text-gray-400 text-center">Foto bukti belum diunggah oleh warga</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onReject}
+              className="flex-1 py-3 rounded-xl text-sm font-bold border border-red-200 text-red-600 hover:bg-red-50 transition-all"
+            >
+              ✕ Tolak Pengajuan
+            </button>
+            <button
+              onClick={onApprove}
+              className="flex-1 py-3 rounded-xl text-sm font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm"
+            >
+              ✓ Setujui & Reset Tong
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ✅ NOTIF-01: Warga melihat form upload foto (hanya untuk role Warga)
+    if (notif.type === 'TONG_PENUH' && !isAdminOrPetugas) {
       return (
         <div className="mt-4 flex flex-col gap-4">
           <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex gap-3">
@@ -96,7 +150,7 @@ const NotificationModal = ({ notif, onClose, onSubmitEmpty }: { notif: any, onCl
             <Star size={32} className="text-yellow-600" />
           </div>
           <h4 className="font-bold text-yellow-800 mb-1">Poin Bertambah!</h4>
-          <p className="text-sm text-yellow-700">Selamat! Anda mendapatkan tambahan +150 poin dari transaksi terakhir Anda. Kumpulkan terus poin untuk mendapatkan *reward* menarik dari Kelurahan.</p>
+          <p className="text-sm text-yellow-700">Selamat! Anda mendapatkan tambahan poin dari transaksi terakhir Anda. Kumpulkan terus poin untuk mendapatkan reward menarik dari Kelurahan.</p>
         </div>
       );
     }
@@ -112,7 +166,13 @@ const NotificationModal = ({ notif, onClose, onSubmitEmpty }: { notif: any, onCl
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center p-5 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800 text-lg">Detail Notifikasi</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 text-lg">Detail Notifikasi</h3>
+            {/* NOTIF-03: Badge role agar user tahu konteks */}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${isAdminOrPetugas ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+              {isAdminOrPetugas ? 'Tampilan Petugas' : 'Tampilan Warga'}
+            </span>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors">
             <X size={20} />
           </button>
@@ -138,6 +198,7 @@ const NotificationModal = ({ notif, onClose, onSubmitEmpty }: { notif: any, onCl
   );
 };
 
+
 const Notifikasi: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +206,8 @@ const Notifikasi: React.FC = () => {
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
   
   const { user } = useAuthStore();
-  const role = user?.peran || 'WARGA';
+  const rawRole = user?.peran || (user as any)?.role || 'WARGA';
+  const role = typeof rawRole === 'string' ? rawRole : ((rawRole as any)?.name || 'WARGA');
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -159,8 +221,31 @@ const Notifikasi: React.FC = () => {
         setLoading(false);
       }
     };
+
     fetchNotifications();
   }, [role]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.put('/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      toast.success('Semua notifikasi ditandai dibaca');
+    } catch (error) {
+      toast.error('Gagal menandai notifikasi');
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (window.confirm('Yakin ingin menghapus semua notifikasi?')) {
+      try {
+        await api.delete('/notifications/all');
+        setNotifications([]);
+        toast.success('Semua notifikasi dihapus');
+      } catch (error) {
+        toast.error('Gagal menghapus notifikasi');
+      }
+    }
+  };
 
   const handleActionClick = (actionName: string) => {
     toast.success(`Aksi "${actionName}" disimulasikan!`);
@@ -174,6 +259,16 @@ const Notifikasi: React.FC = () => {
 
   const handleSubmitEmpty = () => {
     toast.success('Pengajuan pengosongan berhasil dikirim ke petugas RT/RW!');
+    setSelectedNotif(null);
+  };
+
+  const handleApprove = () => {
+    toast.success('Pengajuan disetujui! Kapasitas tong berhasil direset.');
+    setSelectedNotif(null);
+  };
+
+  const handleReject = () => {
+    toast.error('Pengajuan ditolak.');
     setSelectedNotif(null);
   };
 
@@ -199,12 +294,13 @@ const Notifikasi: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => {
-            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-            toast.success('Semua notifikasi ditandai dibaca');
-          }} className="px-4 py-2 text-[12px] font-bold text-primary hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2">
+          <button onClick={handleMarkAllRead} className="px-4 py-2 text-[12px] font-bold text-primary hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px]">done_all</span>
             Tandai Semua Dibaca
+          </button>
+          <button onClick={handleClearAll} className="px-4 py-2 text-[12px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+            Hapus Semua
           </button>
           <button onClick={() => handleActionClick('Pengaturan Notifikasi')} className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors flex items-center justify-center">
             <span className="material-symbols-outlined text-[20px]">settings</span>
@@ -260,9 +356,12 @@ const Notifikasi: React.FC = () => {
 
       {selectedNotif && (
         <NotificationModal 
-          notif={selectedNotif} 
+          notif={selectedNotif}
+          role={role}
           onClose={() => setSelectedNotif(null)} 
           onSubmitEmpty={handleSubmitEmpty}
+          onApprove={handleApprove}
+          onReject={handleReject}
         />
       )}
     </div>

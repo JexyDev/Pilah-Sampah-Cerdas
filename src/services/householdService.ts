@@ -40,6 +40,13 @@ export class HouseholdService {
     }
     return household;
   }
+
+  /**
+   * Get all households in the system.
+   */
+  async getAllHouseholds() {
+    return householdRepository.findAll();
+  }
 }
 
 export const householdService = new HouseholdService();

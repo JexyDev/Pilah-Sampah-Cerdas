@@ -1,7 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { authService } from '../../services/authService';
 
 const Pengaturan: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profil' | 'integrasi' | 'database'>('profil');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Profile State
+  const [profileData, setProfileData] = useState({ name: '', email: '', role: '' });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
+
+  // Password State
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      const response: any = await authService.getCurrentUser();
+      if (response && response.user) {
+        setProfileData({
+          name: response.user.name || '',
+          email: response.user.email || '',
+          role: response.user.role || 'Admin',
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProfileSubmit = async () => {
+    try {
+      setIsSavingProfile(true);
+      setProfileMessage({ type: '', text: '' });
+      await authService.updateProfile({ name: profileData.name, email: profileData.email });
+      setProfileMessage({ type: 'success', text: 'Profil berhasil diperbarui!' });
+    } catch (error: any) {
+      setProfileMessage({ type: 'error', text: error.response?.data?.message || 'Gagal memperbarui profil' });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'Konfirmasi sandi tidak cocok' });
+      return;
+    }
+    try {
+      setIsSavingPassword(true);
+      setPasswordMessage({ type: '', text: '' });
+      await authService.updatePassword({ 
+        currentPassword: passwordData.currentPassword, 
+        newPassword: passwordData.newPassword 
+      });
+      setPasswordMessage({ type: 'success', text: 'Sandi berhasil diperbarui!' });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error: any) {
+      setPasswordMessage({ type: 'error', text: error.response?.data?.message || 'Gagal memperbarui sandi' });
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
@@ -42,68 +110,99 @@ const Pengaturan: React.FC = () => {
           <div className="space-y-6 max-w-4xl">
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
               <h3 className="text-[20px] font-bold text-on-surface mb-6">Informasi Pribadi</h3>
-              <div className="flex flex-col md:flex-row gap-8">
-                {/* Avatar Upload */}
-                <div className="flex flex-col items-center gap-4 shrink-0">
-                  <div className="relative group cursor-pointer">
-                    <div className="w-32 h-32 rounded-full bg-surface-container-low flex items-center justify-center border-2 border-outline-variant/50 group-hover:border-primary transition-colors overflow-hidden">
-                       <span className="material-symbols-outlined text-[48px] text-on-surface-variant">person</span>
-                    </div>
-                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="material-symbols-outlined text-white">photo_camera</span>
-                    </div>
-                  </div>
-                  <button className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline">Ubah Foto Profil</button>
+              {isLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-20 bg-surface-container-high rounded w-20 mb-4"></div>
+                  <div className="h-10 bg-surface-container-high rounded"></div>
+                  <div className="h-10 bg-surface-container-high rounded"></div>
                 </div>
-
-                {/* Form Fields */}
-                <div className="flex-1 space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Nama Lengkap</label>
-                      <input 
-                        className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
-                        readOnly 
-                        type="text" 
-                        value="Admin Utama" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Peran Akses</label>
-                      <div className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] bg-surface-container-low text-on-surface flex items-center h-[42px] cursor-not-allowed">
-                        <span className="font-bold">Super Admin</span>
+              ) : (
+                <div className="flex flex-col md:flex-row gap-8">
+                  {/* Avatar Upload */}
+                  <div className="flex flex-col items-center gap-4 shrink-0">
+                    <div className="relative group cursor-pointer">
+                      <div className="w-32 h-32 rounded-full bg-surface-container-low flex items-center justify-center border-2 border-outline-variant/50 group-hover:border-primary transition-colors overflow-hidden">
+                         <span className="material-symbols-outlined text-[48px] text-on-surface-variant">person</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="material-symbols-outlined text-white">photo_camera</span>
                       </div>
                     </div>
+                    <button className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline">Ubah Foto Profil</button>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Alamat Email</label>
-                    <input 
-                      className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
-                      type="email" 
-                      defaultValue="admin@pilahsampah.id" 
-                    />
+
+                  {/* Form Fields */}
+                  <div className="flex-1 space-y-5">
+                    {profileMessage.text && (
+                      <div className={`p-3 rounded-lg text-sm ${profileMessage.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                        {profileMessage.text}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Nama Lengkap</label>
+                        <input 
+                          className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
+                          type="text" 
+                          value={profileData.name} 
+                          onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Peran Akses</label>
+                        <div className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] bg-surface-container-low text-on-surface flex items-center h-[42px] cursor-not-allowed">
+                          <span className="font-bold">{profileData.role}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Alamat Email</label>
+                      <input 
+                        className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
+                        type="email" 
+                        value={profileData.email} 
+                        onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                      />
+                    </div>
+                    <div className="pt-2 flex justify-end">
+                      <button 
+                        onClick={handleProfileSubmit}
+                        disabled={isSavingProfile}
+                        className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50">
+                        {isSavingProfile ? 'Menyimpan...' : 'Simpan Perubahan'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
               <h3 className="text-[20px] font-bold text-on-surface mb-6">Keamanan Akun</h3>
               <div className="space-y-5 max-w-lg">
+                {passwordMessage.text && (
+                  <div className={`p-3 rounded-lg text-sm ${passwordMessage.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                    {passwordMessage.text}
+                  </div>
+                )}
                 <div>
                   <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Kata Sandi Saat Ini</label>
                   <input 
                     className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
                     placeholder="••••••••" 
-                    type="password" 
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} 
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Kata Sandi Baru</label>
                   <input 
                     className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
-                    placeholder="Minimal 8 karakter" 
-                    type="password" 
+                    placeholder="Minimal 6 karakter" 
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} 
                   />
                 </div>
                 <div>
@@ -112,11 +211,16 @@ const Pengaturan: React.FC = () => {
                     className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
                     placeholder="Ulangi kata sandi baru" 
                     type="password" 
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
                   />
                 </div>
                 <div className="pt-4 flex justify-end">
-                  <button className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm">
-                    Simpan Perubahan
+                  <button 
+                    onClick={handlePasswordSubmit}
+                    disabled={isSavingPassword}
+                    className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50">
+                    {isSavingPassword ? 'Menyimpan...' : 'Perbarui Sandi'}
                   </button>
                 </div>
               </div>

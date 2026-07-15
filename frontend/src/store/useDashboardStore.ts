@@ -6,6 +6,14 @@ export interface KPI {
   totalSampahKg: number;
   averageAiAccuracy: number;
   alertTongPenuh: number;
+  tempatSampahAktif: number;
+  lokasiTerdaftar: number;
+  setoranHariIniKg: number;
+  totalPoin: number;
+  komposisiSampah: {
+    organikKg: number;
+    anorganikKg: number;
+  };
 }
 
 export interface Transaction {
@@ -38,14 +46,15 @@ export const useDashboardStore = create<DashboardState>((set) => ({
         api.get('/dashboard/transactions'),
       ]);
 
+      // Backend returns { success: true, data: { ... } }
       set({
-        kpi: (kpiRes as any).data,
-        transactions: (txRes as any).data,
+        kpi: kpiRes.data.data,
+        transactions: txRes.data.data || [],
         isLoading: false,
       });
     } catch (err: any) {
       set({
-        error: err?.response?.data?.message || err.message || 'Failed to fetch dashboard data',
+        error: err?.response?.data?.message || err.message || 'Gagal memuat data dashboard',
         isLoading: false,
       });
     }

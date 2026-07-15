@@ -57,4 +57,19 @@ router.get(
   pointController.getUserLedger
 );
 
+/**
+ * @swagger
+ * /api/v1/points/leaderboard:
+ *   get:
+ *     summary: Get leaderboard of users based on points
+ *     tags: [Points]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get(
+  "/leaderboard",
+  pointController.getLeaderboard
+);
+
 export default router;

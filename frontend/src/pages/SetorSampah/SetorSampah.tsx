@@ -3,6 +3,7 @@ import { Camera, Upload, QrCode, CheckCircle, XCircle, Loader2 } from 'lucide-re
 import { BrowserQRCodeReader } from '@zxing/browser';
 import imageCompression from 'browser-image-compression';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 import { predictWaste } from '../../services/aiService';
 import { setorSampah } from '../../services/transactionService';
 
@@ -81,12 +82,20 @@ export default function SetorSampah() {
   const submitTransaction = async (scannedQr: string) => {
     setStep('SUBMITTING');
     try {
-      // Dummy user id
+      // Get user's household
+      const householdsReq = await api.get('/households/me');
+      const households = householdsReq.data.data;
+      if (!households || households.length === 0) {
+        throw new Error('Anda belum terdaftar dalam KK manapun. Silakan daftar KK terlebih dahulu.');
+      }
+      
+      const householdId = households[0].id;
+
       const payload = {
-        user_id: 'USR-12345',
-        qr_data: scannedQr,
-        jenis_sampah: aiResult?.jenis_sampah || 'ORGANIC',
-        volume: aiResult?.estimasi_volume || 1
+        householdId: householdId,
+        qrCode: scannedQr,
+        detectedType: aiResult?.jenis_sampah || 'ORGANIC',
+        estimatedVolume: aiResult?.estimasi_volume || 1
       };
       const response = await setorSampah(payload);
       setTransactionData(response.data);

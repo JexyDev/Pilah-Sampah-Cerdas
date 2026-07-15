@@ -25,9 +25,13 @@ model User {
   name            String
   email           String            @unique
   password        String
+  nik             String?           @unique
+  status          String            @default("Aktif")
   fcmToken        String?           @map("fcm_token")
   roleId          Int               @map("role_id")
   role            Role              @relation(fields: [roleId], references: [id])
+  rtRwId          Int?              @map("rt_rw_id")
+  rtRw            RtRwArea?         @relation(fields: [rtRwId], references: [id])
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
   households      Household[]
@@ -72,6 +76,7 @@ model RtRwArea {
   updatedAt   DateTime    @updatedAt @map("updated_at")
   households  Household[]
   bins        Bin[]
+  users       User[]
 
   @@unique([kelurahanId, name])
   @@map("rt_rw_areas")
@@ -193,4 +198,17 @@ model BinResetRequest {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("bin_reset_requests")
+}
+
+model Schedule {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime
+  time      String?
+  category  String
+  location  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("schedules")
 }
