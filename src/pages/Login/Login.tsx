@@ -5,78 +5,230 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
+  const { login, isLoading: isStoreLoading } = useAuthStore();
 
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // UX State
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+
+  // Validation States
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay;
+
+  // Custom Toast implementation following design guidelines
+  const showToast = (message: string, type: 'error' | 'warning' = 'error') => {
+    toast.custom((t) => (
+      <div
+        className={`${
+          t.visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95'
+        } transform transition-all duration-300 max-w-sm w-full bg-white shadow-md rounded-xl pointer-events-auto flex border border-outline-variant/30 p-4 gap-3 items-center`}
+      >
+        <div className={`flex-shrink-0 flex items-center ${type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+          <span className="material-symbols-outlined text-[24px]">
+            {type === 'error' ? 'error' : 'warning'}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-800 leading-normal">{message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => toast.dismiss(t.id)}
+          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </div>
+    ), {
+      position: 'top-right',
+      duration: 4000
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (isBtnDisabled) return;
+
+    let hasError = false;
+    setEmailError('');
+    setPasswordError('');
+
+    if (!email.trim()) {
+      setEmailError('Email wajib diisi');
+      showToast('Email wajib diisi', 'warning');
+      hasError = true;
+    }
+    
+    if (!password.trim()) {
+      setPasswordError('Password wajib diisi');
+      showToast('Password wajib diisi', 'warning');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    setIsLocalLoading(true);
+    const startTime = Date.now();
+
     try {
-      const success = await login(username, password);
-      if (success) {
-        toast.success(`Berhasil login!`);
-        navigate('/');
-      } else {
-        toast.error('Gagal melakukan login. Periksa kembali email dan password Anda.');
-      }
+      const success = await login(email, password);
+      
+      const elapsedTime = Date.now() - startTime;
+      const minDelay = 1500; // 1.5 seconds minimum visual feedback
+      const remainingTime = Math.max(0, minDelay - elapsedTime);
+
+      setTimeout(() => {
+        setIsLocalLoading(false);
+        if (success) {
+          setShowSuccessOverlay(true);
+          // Wait another 1.5s for success transition screen before routing
+          setTimeout(() => {
+            navigate('/');
+          }, 1500);
+        } else {
+          showToast('Email atau password salah. Coba lagi.', 'error');
+          setPassword(''); // Clear password
+        }
+      }, remainingTime);
     } catch (err) {
-      toast.error('Terjadi kesalahan sistem.');
-    } finally {
-      setLoading(false);
+      setIsLocalLoading(false);
+      showToast('Email atau password salah. Coba lagi.', 'error');
+      setPassword(''); // Clear password
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-6">
-      <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 transform transition-all duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-6 relative overflow-hidden">
+      
+      {/* SUCCESS TRANSITION OVERLAY */}
+      {showSuccessOverlay && (
+        <div className="fixed inset-0 bg-gradient-to-br from-green-600 to-emerald-800 flex flex-col items-center justify-center z-50 transition-all duration-500 animate-in fade-in">
+          <div className="flex flex-col items-center gap-6 text-center text-white px-6">
+            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-bounce shadow-lg border border-white/30">
+              <span className="material-symbols-outlined text-[64px] text-white">check_circle</span>
+            </div>
+            <div>
+              <h2 className="text-[28px] font-bold tracking-tight mb-2">Login Berhasil!</h2>
+              <p className="text-sm text-green-100 max-w-sm mx-auto leading-relaxed">
+                Menghubungkan sesi Anda dengan aman. Mempersiapkan dashboard analisis sampah...
+              </p>
+            </div>
+            <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-green-200">
+              <span className="material-symbols-outlined animate-spin text-lg">autorenew</span>
+              <span>Memuat Halaman...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN LOGIN CARD */}
+      <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 z-10 transition-all duration-300">
         
         {/* Header / Logo */}
         <div className="flex flex-col items-center text-center gap-3">
-          <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-24 w-auto object-contain" />
-          <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed">Masukkan email dan kata sandi Anda untuk masuk ke dalam sistem.</p>
+          <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-28 w-auto object-contain" />
+          <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium">
+            Masukkan email dan kata sandi Anda untuk masuk to sistem.
+          </p>
+        </div>
+
+        {/* Demo credentials hint */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-[11px] text-blue-700 leading-relaxed shadow-sm">
+          <p className="font-bold mb-1.5 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">info</span>
+            Akun Demo (password: <code>password123</code>):
+          </p>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-blue-600/90 font-medium pl-4 list-disc">
+            <p>• admin@psc.id (Admin)</p>
+            <p>• kelurahan@psc.id (Kel.)</p>
+            <p>• rw@psc.id (Petugas RW)</p>
+            <p>• rt@psc.id (Petugas RT)</p>
+            <p className="col-span-2">• warga@psc.id (Warga)</p>
+          </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Email</label>
+            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+              Email atau NIK
+            </label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person</span>
-              <input 
-                className="w-full pl-10 pr-4 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none" 
-                placeholder="Contoh: user@email.com" 
-                type="email"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
+                person
+              </span>
+              <input
+                className="w-full pl-10 pr-4 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none"
+                placeholder="Email atau 16 digit NIK..."
+                type="text"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (e.target.value.trim()) setEmailError('');
+                }}
+                disabled={isBtnDisabled}
               />
             </div>
+            {emailError && (
+              <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1">
+                <span className="material-symbols-outlined text-[12px]">warning</span>
+                {emailError}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Kata Sandi</label>
+            <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+              Kata Sandi
+            </label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">lock</span>
-              <input 
-                className="w-full pl-10 pr-4 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none" 
-                placeholder="Masukkan kata sandi..." 
-                type="password"
-                required
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
+                lock
+              </span>
+              <input
+                className="w-full pl-10 pr-10 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none"
+                placeholder="Masukkan kata sandi..."
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (e.target.value.trim()) setPasswordError('');
+                }}
+                disabled={isBtnDisabled}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                disabled={isBtnDisabled}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
             </div>
+            {passwordError && (
+              <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1">
+                <span className="material-symbols-outlined text-[12px]">warning</span>
+                {passwordError}
+              </p>
+            )}
           </div>
 
-          <button 
+          <button
             type="submit"
-            disabled={loading}
-            className="w-full h-11 bg-primary text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer mt-2"
+            disabled={isBtnDisabled}
+            className="w-full h-11 bg-primary text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {isBtnDisabled ? (
               <>
                 <span className="material-symbols-outlined animate-spin text-sm">autorenew</span>
                 <span>Memproses...</span>
