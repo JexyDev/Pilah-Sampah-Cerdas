@@ -1,0 +1,48 @@
+name: Trello Task Sync
+
+on:
+  push:
+    branches:
+      - main
+      - local-dev
+    paths-ignore:
+      - 'tasks.json'
+      - 'README-automation.md'
+      - 'automation-tracker.md'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-trello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history so git log parsing works
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run Trello Sync
+        run: node scripts/trello-sync.js
+        env:
+          TRELLO_API_KEY: ${{ secrets.TRELLO_API_KEY }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_BOARD_ID: ${{ secrets.TRELLO_BOARD_ID }}
+
+      - name: Commit and Push tasks.json Updates
+        run: |
+          if ! git diff --quiet tasks.json; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add tasks.json
+            git commit -m "chore: sync task tracker [skip ci]"
+            git push
+          else
+            echo "No changes in tasks.json to commit."
+          fi
+        shell: bash
