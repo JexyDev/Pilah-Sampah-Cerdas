@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../config/app_config.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_dimensions.dart';
@@ -12,8 +12,17 @@ import '../shared/widgets/app_loading.dart';
 
 /// Halaman pengajuan pengosongan tong.
 /// Sesuai prd.md §3.1 dan ui_ux_flow.md §3: failed_scan_step_1.png
-class ResetBinScreen extends ConsumerWidget {
+class ResetBinScreen extends ConsumerStatefulWidget {
   const ResetBinScreen({super.key});
+
+  @override
+  ConsumerState<ResetBinScreen> createState() => _ResetBinScreenState();
+}
+
+class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
+  String? _selectedBinId;
+  String? _evidencePhotoPath;
+  double _compressedKB = 0;
 
   String _mapError(String code, String? message) {
     switch (code) {
@@ -26,14 +35,35 @@ class ResetBinScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+          source: ImageSource.gallery, imageQuality: 85);
+      if (file != null) {
+        final size = (await file.length()) / 1024;
+        setState(() {
+          _evidencePhotoPath = file.path;
+          _compressedKB = size;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memilih foto: $e')),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final resetState = ref.watch(resetBinProvider);
     final binsAsync = ref.watch(binsProvider);
     final user = ref.watch(authProvider).user;
-    final String userId = user?.id ?? AppConfig.mockUserId;
+    final String userId = user?.id ?? '';
 
-    // Error listener — tampilkan SnackBar saat ada error dari provider
+    // Error listener
     ref.listen(resetBinProvider, (_, next) {
       if (next.errorCode != null && !next.isLoading) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -49,16 +79,16 @@ class ResetBinScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(title: const Text(AppStrings.resetTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(AppDimensions.md),
-        child: _buildBody(context, ref, resetState, binsAsync, userId),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.md),
+          child: _buildBody(resetState, binsAsync, userId),
+        ),
       ),
     );
   }
 
   Widget _buildBody(
-    BuildContext context,
-    WidgetRef ref,
     ResetBinState resetState,
     AsyncValue<List<BinEntity>> binsAsync,
     String userId,
@@ -73,10 +103,8 @@ class ResetBinScreen extends ConsumerWidget {
 
     return binsAsync.when(
       data: (bins) {
-        final List<BinEntity> criticalBins = bins
-            .where((b) => b.isCritical)
-            .toList();
-        return _buildForm(context, ref, criticalBins, userId);
+        // Tampilkan semua tong milik user (maks 25kg)
+        return _buildForm(bins, userId);
       },
       loading: () => const AppLoading(),
       error: (_, __) => const Center(child: Text(AppStrings.errorGeneric)),
@@ -84,31 +112,23 @@ class ResetBinScreen extends ConsumerWidget {
   }
 
   Widget _buildForm(
-    BuildContext context,
-    WidgetRef ref,
-    List<BinEntity> criticalBins,
+    List<BinEntity> bins,
     String userId,
   ) {
-    if (criticalBins.isEmpty) {
+    if (bins.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.check_circle_outline_rounded,
+              Icons.info_outline_rounded,
               size: AppDimensions.iconXxl,
-              color: AppColors.primaryGreen,
+              color: AppColors.textSecondary,
             ),
             const SizedBox(height: AppDimensions.md),
             Text(
-              'Semua tong masih dalam kondisi aman.',
+              'Anda belum memiliki tong terdaftar.',
               style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.xs),
-            Text(
-              AppStrings.binNotCritical,
-              style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
           ],
@@ -119,55 +139,137 @@ class ResetBinScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(AppDimensions.md),
-          decoration: BoxDecoration(
-            color: AppColors.dangerRed.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            border: Border.all(
-              color: AppColors.dangerRed.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.warning_rounded,
-                color: AppColors.dangerRed,
-                size: 20,
-              ),
-              const SizedBox(width: AppDimensions.sm),
-              Expanded(
-                child: Text(
-                  'Tong berikut sudah kritis (>90%). Ajukan pengosongan.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.dangerRed),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppDimensions.lg),
-        Text('Pilih Tong', style: Theme.of(context).textTheme.headlineSmall),
+        Text('Tong Sampah Anda', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: AppDimensions.sm),
         Expanded(
           child: ListView.separated(
-            itemCount: criticalBins.length,
+            itemCount: bins.length,
             separatorBuilder: (_, __) =>
                 const SizedBox(height: AppDimensions.sm),
             itemBuilder: (context, index) {
-              final BinEntity bin = criticalBins[index];
-              return _CriticalBinTile(
-                bin: bin,
-                onReset: () => ref
-                    .read(resetBinProvider.notifier)
-                    .submitReset(
-                      binId: bin.id,
-                      userId: userId,
-                      evidencePhotoPath: 'mock_evidence_photo.jpg',
-                    ),
+              final BinEntity bin = bins[index];
+              return Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: AppColors.border, width: 1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            bin.binType == WasteType.organic
+                                ? Icons.compost_rounded
+                                : Icons.delete_outline_rounded,
+                            color: bin.isCritical ? AppColors.dangerRed : AppColors.primaryBlue,
+                            size: AppDimensions.iconMd,
+                          ),
+                          const SizedBox(width: AppDimensions.sm),
+                          Expanded(
+                            child: Text(
+                              'Tong ${bin.binType.displayName}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppDimensions.sm),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                        child: LinearProgressIndicator(
+                          value: bin.capacityPercent.clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: AppColors.border,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            bin.isCritical ? AppColors.dangerRed : AppColors.primaryBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '
+                        '${bin.currentVolumeL.toStringAsFixed(1)} kg / '
+                        '${bin.maxCapacityL.toStringAsFixed(0)} kg',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
+          ),
+        ),
+        
+        const SizedBox(height: AppDimensions.md),
+        
+        // Upload Bukti
+        if (_evidencePhotoPath != null)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.image_rounded, color: AppColors.primaryGreen),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Foto terpilih (${_compressedKB.toStringAsFixed(0)} KB)',
+                    style: const TextStyle(color: AppColors.primaryGreen, fontSize: 13),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded, size: 20, color: AppColors.primaryGreen),
+                  onPressed: _pickImage,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          )
+        else
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('Upload Foto Bukti (< 1MB)'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          
+        const SizedBox(height: AppDimensions.lg),
+        
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: (_evidencePhotoPath != null)
+                ? () {
+                    ref.read(resetBinProvider.notifier).submitReset(
+                          binId: bins.isNotEmpty ? bins.first.id : 'all',
+                          userId: userId,
+                          evidencePhotoPath: _evidencePhotoPath!,
+                        );
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: AppColors.primaryBlue,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Ajukan Pengosongan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           ),
         ),
       ],
@@ -243,74 +345,3 @@ class ResetBinScreen extends ConsumerWidget {
   }
 }
 
-class _CriticalBinTile extends StatelessWidget {
-  const _CriticalBinTile({required this.bin, required this.onReset});
-
-  final BinEntity bin;
-  final VoidCallback onReset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  bin.binType == WasteType.organic
-                      ? Icons.compost_rounded
-                      : Icons.delete_outline_rounded,
-                  color: AppColors.dangerRed,
-                  size: AppDimensions.iconMd,
-                ),
-                const SizedBox(width: AppDimensions.sm),
-                Expanded(
-                  child: Text(
-                    '${bin.binType.displayName} — ${bin.qrSerial}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-              child: LinearProgressIndicator(
-                value: bin.capacityPercent.clamp(0.0, 1.0),
-                minHeight: 8,
-                backgroundColor: AppColors.border,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.dangerRed,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '
-              '${bin.currentVolumeL.toStringAsFixed(1)}L / '
-              '${bin.maxCapacityL.toStringAsFixed(0)}L',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: AppDimensions.md),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onReset,
-                icon: const Icon(Icons.restore_rounded),
-                label: const Text(AppStrings.resetButton),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.dangerRed,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

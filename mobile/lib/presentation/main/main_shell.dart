@@ -24,12 +24,12 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _screens = [
-    BerandaScreen(),
-    RiwayatScreen(),
-    SizedBox.shrink(),
-    ProfilScreen(),
-    PoinScreen(),
+  List<Widget> get _screens => [
+    BerandaScreen(onNavigateToHistory: () => _onTabTap(1)),
+    const RiwayatScreen(),
+    const SizedBox.shrink(),
+    const ProfilScreen(),
+    const PoinScreen(),
   ];
 
   void _onTabTap(int index) {

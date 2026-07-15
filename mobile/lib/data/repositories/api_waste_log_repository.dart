@@ -1,65 +1,163 @@
+import 'package:dio/dio.dart';
 import '../../../domain/entities/waste_log_entity.dart';
 import '../../../domain/entities/point_history_entity.dart';
+import '../../../domain/entities/bin_entity.dart';
 import '../../../domain/repositories/waste_log_repository.dart';
 import '../network/api_client.dart';
-import '../../../domain/entities/bin_entity.dart';
 
+/// Implementasi WasteLogRepository yang terhubung ke backend Express.js.
+///
+/// Endpoint yang digunakan:
+///   GET /api/v1/points/me              — total poin + riwayat poin user saat ini
+///   GET /api/v1/transactions/deposits  — riwayat setoran sampah (20 terbaru)
 class ApiWasteLogRepository implements WasteLogRepository {
+  const ApiWasteLogRepository({required this.apiClient});
+
   final ApiClient apiClient;
 
-  ApiWasteLogRepository({required this.apiClient});
+  // ─── Waste Logs (Riwayat Setoran per User) ───────────────────────────────
+  // GET /api/v1/transactions/my-deposits
+  // Response: { success: true, data: [{ id, tanggal, warga, kategori, berat, poin, createdAt }] }
 
   @override
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId) async {
     try {
-      final response = await apiClient.dio.get('/transactions/history/$userId');
+      final response = await apiClient.dio.get('/transactions/my-deposits');
+
       if (response.statusCode == 200) {
-        final List data = response.data['data'];
-        return data.map((json) => WasteLogEntity(
-          id: json['txId'].toString(),
-          userId: json['userId'].toString(),
-          binId: json['binId'].toString(),
-          wasteType: json['wasteType'].toString().toUpperCase() == 'ORGANIC' || json['wasteType'].toString().toUpperCase() == 'ORGANIK' ? WasteType.organic : WasteType.nonOrganic,
-          weightKg: (json['weightKg'] as num).toDouble(),
-          volumeLiter: (json['volume'] as num).toDouble(),
-          pointsAwarded: json['pointReward'] as int,
-          createdAt: DateTime.parse(json['date']),
-        )).toList();
+        final List<dynamic> data = response.data['data'] as List<dynamic>;
+        return data
+            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
+            .toList();
       }
       return [];
+    } on DioException catch (e) {
+      throw Exception('Gagal memuat riwayat: ${e.message}');
     } catch (e) {
-      return [];
+      throw Exception('Kesalahan sistem: $e');
     }
   }
+
+  // ─── Point History ────────────────────────────────────────────────────────
+  // GET /api/v1/points/me
+  // Response: { success: true, data: { totalPoints: int, history: [{ id, userId, points, description, createdAt }] } }
 
   @override
   Future<List<PointHistoryEntity>> getPointHistoryByUser(String userId) async {
     try {
-      final response = await apiClient.dio.get('/transactions/history/$userId');
+      final response = await apiClient.dio.get('/points/me');
+
       if (response.statusCode == 200) {
-        final List data = response.data['data'];
-        return data.map((json) => PointHistoryEntity(
-          id: json['txId'].toString(),
-          userId: json['userId'].toString(),
-          points: json['pointReward'] as int,
-          wasteType: json['wasteType'].toString().toUpperCase() == 'ORGANIC' || json['wasteType'].toString().toUpperCase() == 'ORGANIK' ? WasteType.organic : WasteType.nonOrganic,
-          description: 'Setor Sampah ${json['wasteType']}',
-          createdAt: DateTime.parse(json['date']),
-        )).toList();
+        final data = response.data['data'] as Map<String, dynamic>;
+        final List<dynamic> history = data['history'] as List<dynamic>? ?? [];
+
+        return history
+            .map((json) => _mapPointHistory(json as Map<String, dynamic>))
+            .toList();
       }
-      return [];
+      throw Exception('Gagal memuat riwayat poin');
+    } on DioException catch (e) {
+      throw Exception('Gagal memuat riwayat poin: ${e.message}');
     } catch (e) {
-      return [];
+      throw Exception('Kesalahan sistem: $e');
     }
   }
+
+  // ─── Total Points ─────────────────────────────────────────────────────────
 
   @override
   Future<int> getTotalPointsByUser(String userId) async {
     try {
-      final history = await getPointHistoryByUser(userId);
-      return history.fold<int>(0, (sum, item) => sum + item.points);
+      final response = await apiClient.dio.get('/points/me');
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return (data['totalPoints'] as num?)?.toInt() ?? 0;
+      }
+      throw Exception('Gagal memuat total poin');
+    } on DioException catch (e) {
+      throw Exception('Gagal memuat total poin: ${e.message}');
     } catch (e) {
-      return 0;
+      throw Exception('Kesalahan sistem: $e');
     }
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {
+    final String kategori = json['kategori']?.toString().toUpperCase() ?? '';
+    final wasteType = kategori == 'ORGANIC' || kategori == 'ORGANIK'
+        ? WasteType.organic
+        : WasteType.nonOrganic;
+
+    // berat dari backend adalah string "1.2" (toFixed(1))
+    final double weightKg =
+        double.tryParse(json['berat']?.toString() ?? '0') ?? 0.0;
+    final int poin = (json['poin'] as num?)?.toInt() ?? 0;
+
+    // tanggal: coba ISO 8601 dulu (dari my-deposits), fallback "12 Jan 2025"
+    DateTime createdAt;
+    try {
+      final raw =
+          json['createdAt']?.toString() ?? json['tanggal']?.toString() ?? '';
+      createdAt = raw.contains('T') ? DateTime.parse(raw) : _parseIdDate(raw);
+    } catch (_) {
+      createdAt = DateTime.now();
+    }
+
+    return WasteLogEntity(
+      id: json['id']?.toString() ?? '',
+      userId: userId,
+      binId: '',
+      wasteType: wasteType,
+      weightKg: weightKg,
+      volumeLiter: weightKg / (wasteType == WasteType.organic ? 0.4 : 0.2),
+      pointsAwarded: poin,
+      createdAt: createdAt,
+      kelurahan: '',
+    );
+  }
+
+  PointHistoryEntity _mapPointHistory(Map<String, dynamic> json) {
+    final String desc = json['description']?.toString() ?? '';
+    // Deteksi jenis sampah dari description
+    final wasteType =
+        desc.toUpperCase().contains('NON_ORGANIC') ||
+            desc.toUpperCase().contains('ANORGANIK')
+        ? WasteType.nonOrganic
+        : WasteType.organic;
+
+    DateTime createdAt;
+    try {
+      createdAt = DateTime.parse(json['createdAt']?.toString() ?? '');
+    } catch (_) {
+      createdAt = DateTime.now();
+    }
+
+    return PointHistoryEntity(
+      id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
+      points: (json['points'] as num?)?.toInt() ?? 0,
+      wasteType: wasteType,
+      description: desc,
+      createdAt: createdAt,
+    );
+  }
+
+  /// Parse tanggal format "12 Jan 2025" (id-ID locale dari backend).
+  DateTime _parseIdDate(String raw) {
+    const months = {
+      'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4,
+      'Mei': 5, 'Jun': 6, 'Jul': 7, 'Agu': 8,
+      'Sep': 9, 'Okt': 10, 'Nov': 11, 'Des': 12,
+      // fallback English
+      'May': 5, 'Aug': 8, 'Oct': 10, 'Dec': 12,
+    };
+    final parts = raw.trim().split(' ');
+    if (parts.length < 3) return DateTime.now();
+    final day = int.tryParse(parts[0]) ?? 1;
+    final month = months[parts[1]] ?? 1;
+    final year = int.tryParse(parts[2]) ?? DateTime.now().year;
+    return DateTime(year, month, day);
   }
 }

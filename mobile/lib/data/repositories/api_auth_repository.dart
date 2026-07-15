@@ -1,111 +1,263 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../config/app_config.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../../domain/repositories/auth_repository.dart';
 import '../network/api_client.dart';
 
-/// Implementasi AuthRepository menggunakan API backend pilahsampah.id
-/// Contract: POST /auth/login → { message, data: { user: { id, name, email, role }, accessToken, refreshToken } }
+/// Implementasi AuthRepository yang terhubung ke backend Express.js.
+///
+/// Endpoint yang digunakan:
+///   POST /api/v1/auth/login        — email + password → accessToken + refreshToken
+///   GET  /api/v1/households/me     — householdId warga (dipanggil setelah login)
+///   POST /api/v1/auth/refresh      — refreshToken → accessToken baru
+///   POST /api/v1/auth/logout       — invalidate refreshToken
 class ApiAuthRepository implements AuthRepository {
+  const ApiAuthRepository({
+    required this.apiClient,
+    required this.secureStorage,
+  });
+
   final ApiClient apiClient;
   final FlutterSecureStorage secureStorage;
 
-  ApiAuthRepository({required this.apiClient, required this.secureStorage});
+  // ─── Login ────────────────────────────────────────────────────────────────
 
   @override
-  Future<UserEntity> login({required String nik, required String password}) async {
+  Future<UserEntity> login({
+    required String nik,
+    required String password,
+  }) async {
     try {
-      // Backend menerima 'email' bukan 'nik'
-      final response = await apiClient.dio.post('/auth/login', data: {
-        'email': nik, // nik field di UI dipakai sebagai email
-        'password': password,
-      });
+      final response = await apiClient.dio.post(
+        '/auth/login',
+        data: {'nik': nik, 'password': password},
+      );
 
-      // Backend returns: { message: "...", data: { user: {...}, accessToken: "...", refreshToken: "..." } }
-      final responseData = response.data;
-      if (response.statusCode == 200 && responseData['data'] != null) {
-        final data = responseData['data'];
-        final userMap = data['user'];
-        final accessToken = data['accessToken'];
-        final refreshToken = data['refreshToken'];
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final userMap = data['user'] as Map<String, dynamic>;
+        final accessToken = data['accessToken'] as String;
+        final refreshToken = data['refreshToken'] as String;
 
         // Simpan token ke secure storage
-        await secureStorage.write(key: 'jwt_token', value: accessToken);
-        if (refreshToken != null) {
-          await secureStorage.write(key: 'refresh_token', value: refreshToken);
-        }
+        await Future.wait([
+          secureStorage.write(
+            key: AppConfig.accessTokenKey,
+            value: accessToken,
+          ),
+          secureStorage.write(
+            key: AppConfig.refreshTokenKey,
+            value: refreshToken,
+          ),
+          secureStorage.write(
+            key: AppConfig.userDataKey,
+            value: jsonEncode(userMap),
+          ),
+        ]);
 
-        // Simpan data user
-        await secureStorage.write(key: 'user_data', value: jsonEncode(userMap));
+        var user = _mapUser(userMap);
 
-        return _mapUserEntity(userMap);
-      } else {
-        throw const AuthException('LOGIN_FAILED', 'Login gagal, periksa Email/Password');
+        // Langsung fetch householdId setelah login berhasil
+        user = await _fetchAndAttachHousehold(user);
+
+        return user;
       }
+
+      throw const AuthException('LOGIN_FAILED', 'Login gagal');
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw const AuthException('INVALID_CREDENTIALS', 'Email atau Password salah');
+      final status = e.response?.statusCode;
+      if (status == 400) {
+        throw const AuthException(
+          'VALIDATION_ERROR',
+          'Format email atau password tidak valid',
+        );
       }
-      if (e.response?.statusCode == 400) {
-        throw const AuthException('VALIDATION_ERROR', 'Format email tidak valid');
+      if (status == 401) {
+        throw const AuthException(
+          'INVALID_CREDENTIALS',
+          'Email atau password salah',
+        );
       }
-      throw const AuthException('NETWORK_ERROR', 'Terjadi kesalahan jaringan, periksa koneksi Anda');
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
     }
   }
 
+  // ─── Logout ───────────────────────────────────────────────────────────────
+
   @override
   Future<void> logout() async {
     try {
-      final refreshToken = await secureStorage.read(key: 'refresh_token');
+      final refreshToken = await secureStorage.read(
+        key: AppConfig.refreshTokenKey,
+      );
       if (refreshToken != null) {
-        await apiClient.dio.post('/auth/logout', data: {'refreshToken': refreshToken});
+        await apiClient.dio.post(
+          '/auth/logout',
+          data: {'refreshToken': refreshToken},
+        );
       }
     } catch (_) {
-      // Abaikan error saat logout — hapus token lokal tetap wajib
+      // Tetap lanjut logout lokal meskipun network gagal
     } finally {
-      await secureStorage.delete(key: 'jwt_token');
-      await secureStorage.delete(key: 'refresh_token');
-      await secureStorage.delete(key: 'user_data');
+      await Future.wait([
+        secureStorage.delete(key: AppConfig.accessTokenKey),
+        secureStorage.delete(key: AppConfig.refreshTokenKey),
+        secureStorage.delete(key: AppConfig.userDataKey),
+        secureStorage.delete(key: AppConfig.householdIdKey),
+      ]);
     }
   }
 
+  // ─── isLoggedIn ───────────────────────────────────────────────────────────
+
   @override
   Future<bool> isLoggedIn() async {
-    final token = await secureStorage.read(key: 'jwt_token');
-    return token != null;
+    final token = await secureStorage.read(key: AppConfig.accessTokenKey);
+    return token != null && token.isNotEmpty;
   }
+
+  // ─── getCurrentUser ───────────────────────────────────────────────────────
 
   @override
   Future<UserEntity?> getCurrentUser() async {
-    final token = await secureStorage.read(key: 'jwt_token');
-    if (token == null) return null;
+    final token = await secureStorage.read(key: AppConfig.accessTokenKey);
+    if (token == null || token.isEmpty) return null;
 
-    final userDataStr = await secureStorage.read(key: 'user_data');
+    final userDataStr = await secureStorage.read(key: AppConfig.userDataKey);
     if (userDataStr == null) return null;
 
     try {
       final userMap = jsonDecode(userDataStr) as Map<String, dynamic>;
-      return _mapUserEntity(userMap);
+      var user = _mapUser(userMap);
+
+      // Attach householdId dari cache
+      final cachedHouseholdId = await secureStorage.read(
+        key: AppConfig.householdIdKey,
+      );
+      if (cachedHouseholdId != null && cachedHouseholdId.isNotEmpty) {
+        user = user.copyWith(householdId: cachedHouseholdId);
+      }
+
+      return user;
     } catch (_) {
       return null;
     }
   }
 
-  /// Map backend user object ke domain entity
-  /// Backend returns: { id, name, email, role }
-  UserEntity _mapUserEntity(Map<String, dynamic> userMap) {
-    final role = userMap['role'] as String? ?? 'WARGA';
+  // ─── refreshAccessToken ───────────────────────────────────────────────────
+
+  @override
+  Future<String> refreshAccessToken() async {
+    final refreshToken = await secureStorage.read(
+      key: AppConfig.refreshTokenKey,
+    );
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw const AuthException('NO_REFRESH_TOKEN', 'Refresh token tidak ada');
+    }
+
+    try {
+      final response = await apiClient.dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+      );
+
+      if (response.statusCode == 200) {
+        final newAccessToken = response.data['data']['accessToken'] as String;
+        await secureStorage.write(
+          key: AppConfig.accessTokenKey,
+          value: newAccessToken,
+        );
+        return newAccessToken;
+      }
+      throw const AuthException('REFRESH_FAILED', 'Gagal memperbarui token');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await logout();
+        throw const AuthException(
+          'TOKEN_EXPIRED',
+          'Sesi habis, silakan login kembali',
+        );
+      }
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
+    }
+  }
+
+  // ─── Private: fetch household setelah login ───────────────────────────────
+
+  /// GET /api/v1/households/me → ambil householdId + rtRw + kelurahan
+  /// dari household pertama milik user.
+  Future<UserEntity> _fetchAndAttachHousehold(UserEntity user) async {
+    try {
+      final response = await apiClient.dio.get('/households/me');
+      if (response.statusCode == 200) {
+        final List<dynamic> data =
+            response.data['data'] as List<dynamic>? ?? [];
+        if (data.isNotEmpty) {
+          final hh = data.first as Map<String, dynamic>;
+          final householdId = hh['id']?.toString() ?? '';
+          final rtRw = hh['rtRw']?.toString() ?? '';
+          final kelurahan = hh['kelurahan']?.toString() ?? '';
+
+          if (householdId.isNotEmpty) {
+            await secureStorage.write(
+              key: AppConfig.householdIdKey,
+              value: householdId,
+            );
+            return user.copyWith(
+              householdId: householdId,
+              rtRw: rtRw,
+              kelurahan: kelurahan,
+            );
+          }
+        }
+      }
+    } catch (_) {
+      // Tidak fatal — warga baru mungkin belum punya household
+    }
+    return user;
+  }
+
+  // ─── Fetch Profile ────────────────────────────────────────────────────────
+  @override
+  Future<UserEntity> fetchProfile() {
+    return _fetchAndAttachHousehold(UserEntity(
+      id: '',
+      name: '',
+      email: '',
+      role: UserRole.warga,
+    )).then((user) async {
+      // Tunggu, kalau backend ada endpoint `/api/v1/auth/me`, kita panggil itu.
+      try {
+        final response = await apiClient.dio.get('/auth/me');
+        if (response.statusCode == 200) {
+          final data = response.data['data']['user'] as Map<String, dynamic>;
+          var mappedUser = _mapUser(data);
+          // Tetap perlu memanggil /households/me jika auth/me tidak return householdId
+          return _fetchAndAttachHousehold(mappedUser);
+        }
+      } on DioException catch (e) {
+        throw AuthException('FETCH_FAILED', e.message);
+      } catch (e) {
+        throw AuthException('FETCH_FAILED', e.toString());
+      }
+      throw const AuthException('UNKNOWN', 'Gagal memuat profil');
+    });
+  }
+
+  // ─── Helper ───────────────────────────────────────────────────────────────
+
+  UserEntity _mapUser(Map<String, dynamic> userMap) {
     return UserEntity(
-      id: userMap['id'] as String? ?? '',
-      nik: userMap['email'] as String? ?? '',  // gunakan email sebagai identifier
-      name: userMap['name'] as String? ?? '',
-      role: role == 'ADMIN' ? UserRole.admin : UserRole.warga,
-      kelurahan: 'Coblong',
-      rtRw: role == 'WARGA' ? 'RT 01/RW 01' : '-',
+      id: userMap['id']?.toString() ?? '',
+      name: userMap['name']?.toString() ?? '',
+      email: userMap['email']?.toString() ?? '',
+      nik: userMap['nik']?.toString(),
+      role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
     );
   }
 }

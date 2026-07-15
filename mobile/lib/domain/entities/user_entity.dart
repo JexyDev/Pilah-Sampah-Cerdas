@@ -1,30 +1,59 @@
 import 'package:equatable/equatable.dart';
 
-/// Entitas pengguna — sesuai sdd.md §2 tabel `users` & §11 RBAC matrix.
+/// Entitas pengguna — sesuai schema backend tabel `users`.
+/// Backend menggunakan email sebagai identifier login (bukan NIK).
 class UserEntity extends Equatable {
   const UserEntity({
     required this.id,
     required this.name,
-    required this.nik,
+    required this.email,
+    this.nik,
     required this.role,
-    required this.kelurahan,
-    required this.rtRw,
+    this.kelurahan = '',
+    this.rtRw = '',
+    this.householdId,
     this.fcmToken,
   });
 
   final String id;
   final String name;
-  final String nik;
+  final String email;
+  final String? nik;
   final UserRole role;
   final String kelurahan;
   final String rtRw;
+  final String? householdId; // diisi setelah GET /households/me
   final String? fcmToken;
 
+  UserEntity copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? nik,
+    UserRole? role,
+    String? kelurahan,
+    String? rtRw,
+    String? householdId,
+    String? fcmToken,
+  }) {
+    return UserEntity(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      nik: nik ?? this.nik,
+      role: role ?? this.role,
+      kelurahan: kelurahan ?? this.kelurahan,
+      rtRw: rtRw ?? this.rtRw,
+      householdId: householdId ?? this.householdId,
+      fcmToken: fcmToken ?? this.fcmToken,
+    );
+  }
+
   @override
-  List<Object?> get props => [id, nik, role];
+  List<Object?> get props => [id, email, nik, role];
 }
 
-/// 5 role RBAC sesuai sdd.md §11 dan task_breakdown.md §1.2.
+/// 5 role RBAC sesuai backend tabel `roles`.
 enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga }
 
 extension UserRoleExtension on UserRole {
@@ -55,6 +84,22 @@ extension UserRoleExtension on UserRole {
         return 'PETUGAS_RT';
       case UserRole.warga:
         return 'WARGA';
+    }
+  }
+
+  /// Parse role string dari backend response.
+  static UserRole fromApi(String value) {
+    switch (value.toUpperCase()) {
+      case 'ADMIN':
+        return UserRole.admin;
+      case 'PETUGAS_KELURAHAN':
+        return UserRole.petugasKelurahan;
+      case 'PETUGAS_RW':
+        return UserRole.petugasRw;
+      case 'PETUGAS_RT':
+        return UserRole.petugasRt;
+      default:
+        return UserRole.warga;
     }
   }
 }

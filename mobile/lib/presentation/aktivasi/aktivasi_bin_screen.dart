@@ -33,7 +33,11 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
     final user = ref.read(authProvider).user;
     await ref
         .read(aktivasiBinProvider.notifier)
-        .aktivasi(qrSerial: _detectedQr, userId: user?.id ?? '');
+        .aktivasi(
+          qrSerial: _detectedQr,
+          userId: user?.id ?? '',
+          householdId: user?.householdId ?? '',
+        );
     if (ref.read(aktivasiBinProvider).isSuccess) {
       ref.invalidate(binsProvider);
     }
@@ -165,23 +169,26 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
           ),
 
           // ── Bottom Sheet Putih ────────────────────────────────────
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 16,
-                  offset: Offset(0, -4),
+          SafeArea(
+            top: false,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 16,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              child: _binDetected ? _buildDetectedContent() : _buildScanPrompt(),
             ),
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-            child: _binDetected ? _buildDetectedContent() : _buildScanPrompt(),
           ),
         ],
       ),

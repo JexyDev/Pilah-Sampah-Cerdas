@@ -11,9 +11,12 @@ abstract class BinRepository {
   /// Ambil tong berdasarkan QR serial.
   Future<BinEntity?> getBinByQrSerial(String qrSerial);
 
-  /// Deteksi AI — mock endpoint FR-01.
-  /// Sesuai sdd.md §3.1.
-  Future<AiDetectionEntity> detectWaste(String userId);
+  /// Deteksi AI — kirim foto sampah ke backend, return jenis + estimasi berat.
+  /// [imagePath] path file foto yang diambil kamera. Wajib diisi.
+  Future<AiDetectionEntity> detectWaste(
+    String userId, {
+    required String imagePath,
+  });
 
   /// Kirim transaksi scan QR — FR-02.
   /// Sesuai sdd.md §3.2 + §9 (Geofencing).

@@ -1,7 +1,6 @@
 import '../entities/user_entity.dart';
 
 /// Interface repository autentikasi.
-/// Implementasi: MockAuthRepository (data layer).
 abstract class AuthRepository {
   /// Login dengan NIK dan password.
   /// Returns [UserEntity] jika berhasil.
@@ -11,11 +10,18 @@ abstract class AuthRepository {
   /// Logout — hapus token dari secure storage.
   Future<void> logout();
 
-  /// Cek apakah user sudah login (token masih valid).
+  /// Cek apakah user sudah login (access token tersimpan).
   Future<bool> isLoggedIn();
 
   /// Ambil data user yang sedang login dari local cache.
   Future<UserEntity?> getCurrentUser();
+
+  /// Refresh access token menggunakan refresh token.
+  /// Throws [AuthException] jika refresh token expired/invalid.
+  Future<String> refreshAccessToken();
+
+  /// Mengambil data profil terbaru dari server (GET /api/v1/auth/me)
+  Future<UserEntity> fetchProfile();
 }
 
 /// Exception khusus untuk auth errors.
