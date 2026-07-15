@@ -1,9 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
-
-const prisma = new PrismaClient();
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
@@ -16,41 +15,14 @@ export class BinService {
    * Get all bins
    */
   async getAllBins() {
-    // We need to fetch bins with relationships to match frontend expectations
-    const bins = await prisma.bin.findMany({
-      include: {
-        category: true,
-        rtRw: {
-          include: {
-            kelurahan: true
-          }
-        }
-      }
-    });
+    return binRepository.findAll();
+  }
 
-    return bins.map((bin: any) => {
-      const max = Number(bin.maxCapacityLiter);
-      const current = Number(bin.currentVolumeLiter);
-      const kapasitas = max > 0 ? Math.round((current / max) * 100) : 0;
-      
-      let status = "Normal";
-      if (kapasitas >= 90) status = "Penuh";
-      else if (kapasitas >= 75) status = "Perawatan";
-
-      return {
-        id: bin.id,
-        kode: bin.qrCode,
-        lokasi: `${bin.rtRw?.name || ""} ${bin.rtRw?.kelurahan?.name || ""}`.trim(),
-        rtRw: bin.latitude && bin.longitude 
-          ? `${Number(bin.latitude).toFixed(4)}, ${Number(bin.longitude).toFixed(4)}`
-          : "Lokasi belum diatur",
-        kapasitas: kapasitas,
-        status: status,
-        lastUpdate: new Date(bin.updatedAt).toLocaleString("id-ID", {
-          day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-        })
-      };
-    });
+  /**
+   * Get locations summary grouped by RW
+   */
+  async getLocations() {
+    return binRepository.getLocations();
   }
 
   /**
@@ -163,6 +135,69 @@ export class BinService {
       throw new Error("BIN_NOT_FOUND");
     }
     await binRepository.updateVolume(bin.id, 0);
+  }
+
+  /**
+   * Create a new bin
+   */
+  async createBin(data: any) {
+    const qrCode = data.qrCode || `TS-${Date.now()}`;
+    let kelurahanId = null;
+    if (data.rtRwId) {
+      const area = await prisma.rtRwArea.findUnique({
+        where: { id: parseInt(data.rtRwId) }
+      });
+      if (area) {
+        kelurahanId = area.kelurahanId;
+      }
+    }
+
+    return prisma.bin.create({
+      data: {
+        qrCode,
+        categoryId: data.categoryId,
+        rtRwId: parseInt(data.rtRwId),
+        kelurahanId,
+        latitude: data.latitude ? parseFloat(data.latitude) : null,
+        longitude: data.longitude ? parseFloat(data.longitude) : null,
+        maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0
+      }
+    });
+  }
+
+  /**
+   * Update a bin
+   */
+  async updateBin(id: string, data: any) {
+    const updateData: any = {};
+    if (data.qrCode) updateData.qrCode = data.qrCode;
+    if (data.categoryId) updateData.categoryId = data.categoryId;
+    if (data.rtRwId) {
+      updateData.rtRwId = parseInt(data.rtRwId);
+      const area = await prisma.rtRwArea.findUnique({
+        where: { id: parseInt(data.rtRwId) }
+      });
+      if (area) {
+        updateData.kelurahanId = area.kelurahanId;
+      }
+    }
+    if (data.maxCapacityLiter) updateData.maxCapacityLiter = parseFloat(data.maxCapacityLiter);
+    if (data.latitude !== undefined) updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
+    if (data.longitude !== undefined) updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
+
+    return prisma.bin.update({
+      where: { qrCode: id },
+      data: updateData
+    });
+  }
+
+  /**
+   * Delete a bin
+   */
+  async deleteBin(id: string) {
+    return prisma.bin.delete({
+      where: { qrCode: id }
+    });
   }
 }
 

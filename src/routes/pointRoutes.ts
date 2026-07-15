@@ -30,6 +30,12 @@ router.get(
   pointController.getMyLedger
 );
 
+router.post(
+  "/convert",
+  authMiddleware,
+  pointController.convertPoints
+);
+
 /**
  * @swagger
  * /api/v1/points/history/{userId}:
@@ -55,6 +61,21 @@ router.get(
   authMiddleware,
   roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN"]),
   pointController.getUserLedger
+);
+
+/**
+ * @swagger
+ * /api/v1/points/leaderboard:
+ *   get:
+ *     summary: Get leaderboard of users based on points
+ *     tags: [Points]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get(
+  "/leaderboard",
+  pointController.getLeaderboard
 );
 
 export default router;

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { aiController } from "../controllers/aiController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -47,8 +48,16 @@ const router = Router();
 router.post(
   "/detect-mock",
   authMiddleware,
-  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["WARGA"]), // REKAP-01 FIX: Only WARGA can submit waste for detection
   aiController.detect
+);
+
+router.post(
+  "/upload",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  uploadAvatarMiddleware.single("image"),
+  aiController.uploadWastePhoto
 );
 
 export default router;

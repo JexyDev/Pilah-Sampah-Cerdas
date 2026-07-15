@@ -40,4 +40,34 @@ router.get("/kpi", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN",
  */
 router.get("/transactions", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]), dashboardController.getTransactions);
 
+/**
+ * @swagger
+ * /api/v1/dashboard/summary:
+ *   get:
+ *     summary: Get user-specific dashboard summary
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get("/summary", authMiddleware, dashboardController.getSummary);
+
+/**
+ * @swagger
+ * /api/v1/dashboard/analytics:
+ *   get:
+ *     summary: Get technical analytics data
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get("/analytics", authMiddleware, roleMiddleware(["ADMIN"]), dashboardController.getAnalytics);
+router.get("/regions", authMiddleware, dashboardController.getRegions);
+router.get("/trend", authMiddleware, dashboardController.getTrend);
+
 export default router;

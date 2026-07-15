@@ -4,13 +4,7 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
-/**
- * @swagger
- * tags:
- *   name: Schedules
- *   description: Schedules API (Mock)
- */
-
-router.get("/", authMiddleware, scheduleController.getSchedules);
+router.get("/", authMiddleware, scheduleController.getAllSchedules);
+router.post("/", authMiddleware, scheduleController.createSchedule);
 
 export default router;

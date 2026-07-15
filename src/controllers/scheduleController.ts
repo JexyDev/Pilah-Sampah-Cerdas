@@ -1,44 +1,48 @@
 import { Request, Response } from "express";
+import { scheduleService } from "../services/scheduleService.js";
 
-export class ScheduleController {
-  async getSchedules(req: Request, res: Response): Promise<void> {
+export const scheduleController = {
+  getAllSchedules: async (req: Request, res: Response) => {
     try {
-      // Mock data for schedules since there is no table in the DB yet
-      const schedules = [
-        {
-          id: "1",
-          jenis: "Pengangkutan",
-          nama: "Pengangkutan RW 04",
-          waktu: "08:00 - 10:00",
-          tanggal: "5 Oktober 2026",
-          lokasi: "Kawasan RW 04",
-          color: "bg-green-100 text-green-700"
-        },
-        {
-          id: "2",
-          jenis: "Sosialisasi",
-          nama: "Sosialisasi Warga",
-          waktu: "13:00 - 15:00",
-          tanggal: "5 Oktober 2026",
-          lokasi: "Balai Desa",
-          color: "bg-orange-100 text-orange-700"
-        },
-        {
-          id: "3",
-          jenis: "Workshop",
-          nama: "Workshop Kompos",
-          waktu: "09:00 - 12:00",
-          tanggal: "3 Oktober 2026",
-          lokasi: "Taman Kota",
-          color: "bg-blue-100 text-blue-700"
-        }
-      ];
-      res.status(200).json({ success: true, data: schedules });
+      const schedules = await scheduleService.getAllSchedules();
+      res.status(200).json({
+        success: true,
+        data: schedules
+      });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Failed to get schedules" });
+      console.error("[ScheduleController] getAllSchedules error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  createSchedule: async (req: Request, res: Response) => {
+    try {
+      const { title, date, time, category, location } = req.body;
+      if (!title || !date || !category) {
+        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Judul, tanggal, dan kategori kegiatan wajib diisi" });
+        return;
+      }
+
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)" });
+        return;
+      }
+
+      const schedule = await scheduleService.createSchedule({
+        title,
+        date: parsedDate,
+        time,
+        category,
+        location
+      });
+      res.status(201).json({
+        success: true,
+        data: schedule
+      });
+    } catch (error) {
+      console.error("[ScheduleController] createSchedule error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
-}
-
-export const scheduleController = new ScheduleController();
+};

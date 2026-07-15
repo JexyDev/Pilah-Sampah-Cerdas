@@ -37,6 +37,56 @@ export class PointController {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat poin user" });
     }
   }
+
+  /**
+   * Get leaderboard
+   */
+  async getLeaderboard(req: Request, res: Response): Promise<void> {
+    try {
+      const leaderboard = await pointService.getLeaderboard();
+      res.status(200).json({
+        success: true,
+        data: leaderboard
+      });
+    } catch (error) {
+      console.error("Point Leaderboard Error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil leaderboard" });
+    }
+  }
+
+  /**
+   * Convert user points to cash (Saldo E-Wallet)
+   */
+  async convertPoints(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const { points, ewalletType, phone } = req.body;
+
+      if (!points || points <= 0 || !ewalletType || !phone) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "Parameter tidak lengkap atau tidak valid." });
+        return;
+      }
+
+      // Check current points
+      const totalPoints = await pointService.getTotalPoints(userId);
+      if (totalPoints < points) {
+        res.status(400).json({ error: "INSUFFICIENT_POINTS", message: "Poin Anda tidak mencukupi untuk melakukan penukaran." });
+        return;
+      }
+
+      // Perform conversion
+      const result = await pointService.convertPoints(userId, Number(points), ewalletType, phone);
+
+      res.status(200).json({
+        success: true,
+        message: "Penukaran poin berhasil diproses.",
+        data: result
+      });
+    } catch (error) {
+      console.error("Point Conversion Error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses penukaran poin" });
+    }
+  }
 }
 
 export const pointController = new PointController();

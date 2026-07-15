@@ -4,7 +4,8 @@ import { dashboardService } from "../services/dashboardService.js";
 export const dashboardController = {
   getKpi: async (req: Request, res: Response) => {
     try {
-      const kpi = await dashboardService.getKpi();
+      const { wilayah } = req.query;
+      const kpi = await dashboardService.getKpi(wilayah as string);
       res.status(200).json({
         success: true,
         data: kpi
@@ -17,13 +18,72 @@ export const dashboardController = {
 
   getTransactions: async (req: Request, res: Response) => {
     try {
-      const transactions = await dashboardService.getRecentTransactions();
+      const { wilayah } = req.query;
+      const transactions = await dashboardService.getRecentTransactions(wilayah as string);
       res.status(200).json({
         success: true,
         data: transactions
       });
     } catch (error) {
       console.error("[DashboardController] getTransactions error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  getTrend: async (req: Request, res: Response) => {
+    try {
+      const { weeks, wilayah } = req.query;
+      const parsedWeeks = weeks ? parseInt(weeks as string) : 8;
+      const trend = await dashboardService.getTrend(parsedWeeks, wilayah as string);
+      res.status(200).json({
+        success: true,
+        data: trend
+      });
+    } catch (error) {
+      console.error("[DashboardController] getTrend error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  getSummary: async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const role = req.user!.role;
+      
+      if (role === 'WARGA') {
+        const summary = await dashboardService.getWargaSummary(userId);
+        res.status(200).json({ success: true, data: summary });
+      } else {
+        const kpi = await dashboardService.getKpi();
+        res.status(200).json({ success: true, data: kpi });
+      }
+    } catch (error) {
+      console.error("[DashboardController] getSummary error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  getAnalytics: async (req: Request, res: Response) => {
+    try {
+      const analytics = await dashboardService.getAnalytics();
+      res.status(200).json({
+        success: true,
+        data: analytics
+      });
+    } catch (error) {
+      console.error("[DashboardController] getAnalytics error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+  getRegions: async (req: Request, res: Response) => {
+    try {
+      const regions = await dashboardService.getRegions();
+      res.status(200).json({
+        success: true,
+        data: regions
+      });
+    } catch (error) {
+      console.error("[DashboardController] getRegions error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   }

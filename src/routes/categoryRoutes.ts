@@ -1,28 +1,13 @@
 import { Router } from "express";
 import { categoryController } from "../controllers/categoryController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-/**
- * @swagger
- * tags:
- *   name: Categories
- *   description: Waste Categories API
- */
-
-/**
- * @swagger
- * /api/v1/categories:
- *   get:
- *     summary: Get all waste categories
- *     tags: [Categories]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Success
- */
-router.get("/", authMiddleware, categoryController.getAllCategories);
+router.get("/", authMiddleware, categoryController.getAll);
+router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), categoryController.create);
+router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), categoryController.update);
+router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), categoryController.delete);
 
 export default router;

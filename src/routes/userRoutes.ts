@@ -9,23 +9,66 @@ const router = Router();
  * @swagger
  * tags:
  *   name: Users
- *   description: User Management API (Admin Only)
+ *   description: User management (Admin only)
  */
 
 /**
  * @swagger
  * /api/v1/users:
  *   get:
- *     summary: Get all users (Admin only)
+ *     summary: Get all users
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Success
- *       403:
- *         description: Forbidden
+ *         description: List of all users
  */
-router.get("/", authMiddleware, roleMiddleware(["ADMIN"]), userController.getAllUsers);
+router.get("/", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN"]), userController.getAll);
+
+/**
+ * @swagger
+ * /api/v1/users:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), userController.createUser);
+
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), userController.deleteUser);
+
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *   put:
+ *     summary: Update a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), userController.updateUser);
 
 export default router;

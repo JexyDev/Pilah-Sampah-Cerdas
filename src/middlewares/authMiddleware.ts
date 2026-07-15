@@ -24,11 +24,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     }
 
     if (!token) {
-      // MOCK FALLBACK FOR DEMO ENVIRONMENT TO PREVENT 401
-      req.user = {
-        userId: "00000000-0000-0000-0000-000000000000",
-        role: "ADMIN"
-      };
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Token otentikasi tidak ditemukan" });
+      return;
+    }
+
+    // DEV BYPASS
+    if (process.env.NODE_ENV === 'development' && token === 'MOCK_TOKEN_ADMIN') {
+      req.user = { userId: "mock-admin-id", role: "ADMIN" };
       return next();
     }
 

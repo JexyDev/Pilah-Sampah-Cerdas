@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { authController } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { loginRateLimiter } from "../middlewares/rateLimiter.js";
+import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -57,7 +59,7 @@ const router = Router();
  *       401:
  *         description: Unauthorized (Invalid credentials)
  */
-router.post("/login", authController.login);
+router.post("/login", loginRateLimiter, authController.login);
 
 /**
  * @swagger
@@ -120,8 +122,87 @@ router.post("/logout", authController.logout);
  *       401:
  *         description: Unauthorized
  */
-router.get("/me", authMiddleware, (req, res) => {
-  res.json({ message: "Authenticated", user: req.user });
-});
+router.get("/me", authMiddleware, authController.getCurrentUser);
+
+/**
+ * @swagger
+ * /api/v1/auth/upload-avatar:
+ *   post:
+ *     summary: Upload profile photo
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Upload successful
+ */
+router.post("/upload-avatar", authMiddleware, uploadAvatarMiddleware.single("avatar"), authController.uploadAvatar);
+
+/**
+ * @swagger
+ * /api/v1/auth/profile:
+ *   put:
+ *     summary: Update current authenticated user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: Email already in use
+ */
+router.put("/profile", authMiddleware, authController.updateProfile);
+
+/**
+ * @swagger
+ * /api/v1/auth/password:
+ *   put:
+ *     summary: Update current authenticated user password
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password updated
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized / Invalid current password
+ *       404:
+ *         description: User not found
+ */
+router.put("/password", authMiddleware, authController.updatePassword);
 
 export default router;

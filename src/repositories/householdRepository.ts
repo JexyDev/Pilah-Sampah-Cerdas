@@ -54,6 +54,22 @@ export class HouseholdRepository {
       }
     });
   }
+
+  /**
+   * Find all households in the system.
+   */
+  async findAll(): Promise<any[]> {
+    return prisma.household.findMany({
+      include: {
+        rtRw: {
+          include: { kelurahan: true }
+        },
+        user: {
+          select: { name: true }
+        }
+      }
+    });
+  }
 }
 
 export const householdRepository = new HouseholdRepository();
