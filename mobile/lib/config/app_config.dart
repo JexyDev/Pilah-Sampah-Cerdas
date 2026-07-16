@@ -23,8 +23,13 @@ class AppConfig {
   static String get apiBaseUrl {
     if (kIsWeb) return 'http://127.0.0.1:$_port/api/v1';
 
-    // Jika _devServerIp diisi, pakai itu (HP fisik)
-    if (_devServerIp.isNotEmpty) return 'http://$_devServerIp:$_port/api/v1';
+    // Jika _devServerIp diisi, pakai itu (HP fisik / Ngrok)
+    if (_devServerIp.isNotEmpty) {
+      if (_devServerIp.startsWith('http://') || _devServerIp.startsWith('https://')) {
+        return '$_devServerIp/api/v1';
+      }
+      return 'http://$_devServerIp:$_port/api/v1';
+    }
 
     try {
       // Emulator Android → 10.0.2.2 adalah alias localhost host machine
