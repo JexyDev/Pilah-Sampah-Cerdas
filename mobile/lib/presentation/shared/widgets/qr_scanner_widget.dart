@@ -391,7 +391,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
                   if (v.isNotEmpty) widget.onQrDetected(v);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
+                  backgroundColor: AppColors.primaryGreen,
                   minimumSize: const Size(52, 48),
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(

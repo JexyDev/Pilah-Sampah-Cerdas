@@ -40,7 +40,7 @@ class BerandaScreen extends ConsumerWidget {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(wasteLogsProvider);
         },
-        color: AppColors.primaryBlue,
+        color: AppColors.primaryGreen,
         child: CustomScrollView(
           slivers: [
             // ─── Header Biru ─────────────────────────────────────────────
@@ -103,7 +103,7 @@ class BerandaScreen extends ConsumerWidget {
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryGreen,
                             fontSize: 13,
                           ),
                         ),
@@ -165,7 +165,7 @@ class BerandaScreen extends ConsumerWidget {
     bool isOnline,
   ) {
     return Container(
-      color: AppColors.primaryBlue,
+      color: AppColors.primaryGreen,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 16,
@@ -191,7 +191,7 @@ class BerandaScreen extends ConsumerWidget {
                   AppAssets.logo,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.person, color: AppColors.primaryBlue),
+                      const Icon(Icons.person, color: AppColors.primaryGreen),
                 ),
               ),
               const SizedBox(width: 12),

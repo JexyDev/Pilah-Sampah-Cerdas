@@ -75,9 +75,9 @@ class PilahSampahApp extends StatelessWidget {
       // bahkan yang tidak pakai Theme.of(context).textTheme
       builder: (context, child) {
         return DefaultTextStyle(
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            color: const Color(0xFF1A1A2E),
+            color: const Color(0xFF191C1E),
           ),
           child: child!,
         );

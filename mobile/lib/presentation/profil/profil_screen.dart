@@ -54,7 +54,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
             // ─── Header avatar ─────────────────────────────────────────
             Container(
               width: double.infinity,
-              color: AppColors.primaryBlue,
+              color: AppColors.primaryGreen,
               padding: const EdgeInsets.only(bottom: 28),
               child: Column(
                 children: [
@@ -195,7 +195,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                         child: const Text(
                           'Kelola',
                           style: TextStyle(
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryGreen,
                             fontSize: 13,
                           ),
                         ),

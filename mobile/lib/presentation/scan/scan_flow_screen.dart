@@ -222,12 +222,12 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     width: 96,
                     height: 96,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.psychology_rounded,
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryGreen,
                       size: 52,
                     ),
                   ),
@@ -253,7 +253,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                   child: LinearProgressIndicator(
                     backgroundColor: Colors.white24,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryBlue,
+                      AppColors.primaryGreen,
                     ),
                   ),
                 ),
@@ -376,7 +376,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
+                      backgroundColor: AppColors.primaryGreen,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -418,8 +418,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryBlue,
-                      side: const BorderSide(color: AppColors.primaryBlue),
+                      foregroundColor: AppColors.primaryGreen,
+                      side: const BorderSide(color: AppColors.primaryGreen),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -571,7 +571,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 children: [
                   Icon(
                     Icons.qr_code_scanner_rounded,
-                    color: AppColors.primaryBlue,
+                    color: AppColors.primaryGreen,
                     size: 20,
                   ),
                   SizedBox(width: 8),
@@ -580,7 +580,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryGreen,
                     ),
                   ),
                 ],
@@ -619,8 +619,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 decoration: BoxDecoration(
                   color: done || current
                       ? (current
-                            ? AppColors.primaryBlue
-                            : AppColors.primaryGreen)
+                            ? AppColors.primaryGreen
+                            : AppColors.primaryGreenLight)
                       : Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
@@ -631,7 +631,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: current ? FontWeight.w600 : FontWeight.w400,
-                  color: current ? AppColors.primaryBlue : AppColors.textHint,
+                  color: current ? AppColors.primaryGreen : AppColors.textHint,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -721,7 +721,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.primaryBlue,
+                                color: AppColors.primaryGreen,
                               ),
                             ),
                           ],
@@ -785,7 +785,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryGreen,
                             ),
                           ),
                         ],
@@ -1103,7 +1103,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primaryBlue,
+                          color: AppColors.primaryGreen,
                         ),
                       ),
                     ],
@@ -1126,7 +1126,7 @@ class _AiSuccessSheet extends StatelessWidget {
             onPressed: () {},
             child: const Text(
               'Lihat Panduan Pemilahan',
-              style: TextStyle(color: AppColors.primaryBlue),
+              style: TextStyle(color: AppColors.primaryGreen),
             ),
           ),
         ],

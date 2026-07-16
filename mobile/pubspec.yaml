@@ -65,7 +65,7 @@ flutter:
 
   assets:
     # Logo aplikasi
-    - assets/logosampahpilih.jpg
+    - assets/logo.png
 
     # Stitch UI — screen reference assets
     - assets/stitch_ui/aktivasi_bin.png/screen.png

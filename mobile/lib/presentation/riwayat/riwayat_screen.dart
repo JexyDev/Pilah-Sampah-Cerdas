@@ -5,7 +5,6 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/entities/waste_log_entity.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/waste_log_provider.dart';
-import '../shared/widgets/app_error.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
 
@@ -110,7 +109,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primaryBlue : Colors.transparent,
+          color: active ? AppColors.primaryGreen : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: active ? null : Border.all(color: AppColors.border),
         ),

@@ -282,7 +282,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primaryBlue,
+                              AppColors.primaryGreen,
                             ),
                           ),
                         )
@@ -290,7 +290,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
                           margin: const EdgeInsets.all(7),
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryGreen,
                           ),
                         ),
                 ),
@@ -558,7 +558,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
             icon: const Icon(Icons.photo_library_outlined, size: 18),
             label: const Text('Pilih Foto'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.primaryGreen,
             ),
           ),
         ],

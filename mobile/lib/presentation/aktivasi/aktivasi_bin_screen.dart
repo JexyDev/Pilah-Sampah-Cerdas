@@ -86,7 +86,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primaryGreen,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
@@ -109,7 +109,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             child: _binDetected
                 // Setelah tong terdeteksi — tampil konfirmasi
                 ? Container(
-                    color: const Color(0xFF3D5A6E),
+                    color: const Color(0xFF3D4A3F),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -161,7 +161,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
                         hint: 'PSC-DAGO-ORG-0042',
-                        overlayColor: AppColors.primaryBlue,
+                        overlayColor: AppColors.primaryGreen,
                         onQrDetected: _onQrDetected,
                       ),
                     ),
@@ -210,7 +210,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         const SizedBox(height: 16),
         const Icon(
           Icons.qr_code_scanner_rounded,
-          color: AppColors.primaryBlue,
+          color: AppColors.primaryGreen,
           size: 32,
         ),
         const SizedBox(height: 10),
@@ -397,7 +397,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.primaryGreen,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -429,7 +429,7 @@ class _SuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primaryGreen,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: onBack,
@@ -481,7 +481,7 @@ class _SuccessScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onBack,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
+                    backgroundColor: AppColors.primaryGreen,
                   ),
                   child: const Text('Kembali ke Beranda'),
                 ),
