@@ -107,8 +107,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFF1F8F5), // Green-50 equivalent
-              Color(0xFFE8F5E9), // Emerald-100 equivalent
+              Colors.white,
+              Color(0xFFF0F9FF), // Sky-50 equivalent
             ],
           ),
         ),

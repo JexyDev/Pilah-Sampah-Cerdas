@@ -136,7 +136,7 @@ class PoinScreen extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, int total) {
     return Container(
-      color: AppColors.primaryGreen,
+      color: Colors.white,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 20,
@@ -152,9 +152,9 @@ class PoinScreen extends ConsumerWidget {
               Text(
                 'Poin Saya',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -163,9 +163,10 @@ class PoinScreen extends ConsumerWidget {
           const Text(
             'TOTAL POIN TERKUMPUL',
             style: TextStyle(
-              color: Colors.white70,
+              color: AppColors.textSecondary,
               fontSize: 11,
               letterSpacing: 0.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
@@ -175,7 +176,7 @@ class PoinScreen extends ConsumerWidget {
               Text(
                 NumberFormat('#,###').format(total),
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
                 ),
@@ -185,7 +186,7 @@ class PoinScreen extends ConsumerWidget {
                 child: Text(
                   'PTS',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppColors.textSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -198,7 +199,7 @@ class PoinScreen extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Row(
@@ -212,7 +213,7 @@ class PoinScreen extends ConsumerWidget {
                     Text(
                       '#3 di RT 03',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primaryGreen,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -222,14 +223,14 @@ class PoinScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (total / 5000).clamp(0.0, 1.0),
               minHeight: 6,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundColor: AppColors.backgroundCanvas,
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.primaryGreen,
               ),

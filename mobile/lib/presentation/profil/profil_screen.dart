@@ -54,7 +54,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
             // ─── Header avatar ─────────────────────────────────────────
             Container(
               width: double.infinity,
-              color: AppColors.primaryGreen,
+              color: Colors.white,
               padding: const EdgeInsets.only(bottom: 28),
               child: Column(
                 children: [
@@ -71,8 +71,8 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                           height: 90,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            color: Colors.white,
+                            border: Border.all(color: AppColors.border, width: 3),
+                            color: AppColors.backgroundCanvas,
                             image: _profileImage != null
                                 ? DecorationImage(
                                     image: FileImage(_profileImage!),
@@ -108,7 +108,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   Text(
                     user != null ? 'Keluarga ${user.name}' : 'Keluarga Warga',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -120,15 +120,15 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       user?.rtRw ?? 'RT 04 / RW 02',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primaryGreen,
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

@@ -165,7 +165,7 @@ class BerandaScreen extends ConsumerWidget {
     bool isOnline,
   ) {
     return Container(
-      color: AppColors.primaryGreen,
+      color: Colors.white,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 16,
@@ -183,8 +183,9 @@ class BerandaScreen extends ConsumerWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.backgroundCanvas,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.asset(
@@ -202,14 +203,14 @@ class BerandaScreen extends ConsumerWidget {
                     Text(
                       _getGreeting(),
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
                     Text(
                       name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -226,7 +227,7 @@ class BerandaScreen extends ConsumerWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -234,16 +235,16 @@ class BerandaScreen extends ConsumerWidget {
                   children: [
                     const Icon(
                       Icons.location_on_outlined,
-                      color: Colors.white,
+                      color: AppColors.primaryGreen,
                       size: 13,
                     ),
                     const SizedBox(width: 3),
                     Text(
                       rtRw,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primaryGreen,
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

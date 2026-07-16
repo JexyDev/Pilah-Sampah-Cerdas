@@ -65,20 +65,20 @@ class AppTheme {
             ),
           ),
 
-      // --- AppBar: HIJAU ---
+      // --- AppBar: PUTIH / CLEAN ---
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.primaryGreen,
+        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 17,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.dark,
         ),
       ),
 

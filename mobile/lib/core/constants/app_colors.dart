@@ -6,56 +6,56 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // --- Primary Blue (non-organik) ---
-  static const Color primaryBlue = Color(0xFF006397);
-  static const Color primaryBlueDark = Color(0xFF00476E);
-  static const Color primaryBlueLight = Color(0xFF5CB8FD);
+  // --- Primary Blue (non-organik / sky blue accents) ---
+  static const Color primaryBlue = Color(0xFF0284C7); // Clean Sky Blue
+  static const Color primaryBlueDark = Color(0xFF0369A1); // Deep Sky Blue
+  static const Color primaryBlueLight = Color(0xFFE0F2FE); // Very Light Sky Blue
 
-  // --- Primary Green (organik, sukses, FAB) ---
-  static const Color primaryGreen = Color(0xFF006D37);
-  static const Color primaryGreenLight = Color(0xFF27AE60);
-  static const Color organicColor = Color(0xFF006D37);
+  // --- Primary Green (Now clean light blue for main brand) ---
+  static const Color primaryGreen = Color(0xFF0EA5E9); // Bright Sky Blue
+  static const Color primaryGreenLight = Color(0xFFF0F9FF); // Soft white-blue
+  static const Color organicColor = Color(0xFF0284C7); // Sky Blue for organic stats
 
-  // --- Non-Organic (orange/amber) ---
-  static const Color nonOrganicColor = Color(0xFF006397);
-  static const Color nonOrganicBg = Color(0xFFECEEF1);
+  // --- Non-Organic (orange/amber/blue) ---
+  static const Color nonOrganicColor = Color(0xFF0369A1);
+  static const Color nonOrganicBg = Color(0xFFF0F9FF);
 
   // --- Semantic ---
-  static const Color dangerRed = Color(0xFFBA1A1A);
+  static const Color dangerRed = Color(0xFFEF4444); // Modern tailwind red
   static const Color warningYellow = Color(0xFFF59E0B);
-  static const Color warningOrange = Color(0xFFFF6B35);
-  static const Color success = Color(0xFF27AE60);
-  static const Color successDark = Color(0xFF006D37);
+  static const Color warningOrange = Color(0xFFF97316);
+  static const Color success = Color(0xFF10B981);
+  static const Color successDark = Color(0xFF047857);
 
   // --- Background ---
-  static const Color backgroundCanvas = Color(0xFFF7F9FC);
+  static const Color backgroundCanvas = Color(0xFFF8FAFC); // Slate 50
   static const Color cardBackground = Color(0xFFFFFFFF);
 
   // --- Text ---
-  static const Color textPrimary = Color(0xFF191C1E);
-  static const Color textSecondary = Color(0xFF3D4A3F);
-  static const Color textHint = Color(0xFF9CA3AF);
+  static const Color textPrimary = Color(0xFF0F172A); // Slate 900
+  static const Color textSecondary = Color(0xFF475569); // Slate 600
+  static const Color textHint = Color(0xFF94A3B8); // Slate 400
   static const Color textOnPrimary = Color(0xFFFFFFFF);
-  static const Color textBlue = Color(0xFF006397);
+  static const Color textBlue = Color(0xFF0284C7);
 
   // --- Border & Divider ---
-  static const Color border = Color(0xFFBCCABC);
-  static const Color divider = Color(0xFFECEEF1);
+  static const Color border = Color(0xFFE2E8F0); // Slate 200
+  static const Color divider = Color(0xFFF1F5F9); // Slate 100
 
   // --- Bin Status ---
-  static const Color binSafe = Color(0xFF27AE60);
+  static const Color binSafe = Color(0xFF10B981);
   static const Color binWarning = Color(0xFFF59E0B);
-  static const Color binCritical = Color(0xFFBA1A1A);
+  static const Color binCritical = Color(0xFFEF4444);
 
   // --- Offline Banner ---
-  static const Color offlineBanner = Color(0xFFBA1A1A);
+  static const Color offlineBanner = Color(0xFFEF4444);
   static const Color offlineBannerText = Color(0xFFFFFFFF);
 
   // --- Status Badge ---
-  static const Color statusSelesai = Color(0xFF27AE60);
-  static const Color statusSelesaiBg = Color(0xFFECEEF1);
-  static const Color statusProses = Color(0xFF006397);
-  static const Color statusProsesBg = Color(0xFFECEEF1);
-  static const Color statusTervalidasi = Color(0xFF27AE60);
-  static const Color statusTervalidasiBg = Color(0xFFECEEF1);
+  static const Color statusSelesai = Color(0xFF10B981);
+  static const Color statusSelesaiBg = Color(0xFFD1FAE5);
+  static const Color statusProses = Color(0xFF0EA5E9);
+  static const Color statusProsesBg = Color(0xFFE0F2FE);
+  static const Color statusTervalidasi = Color(0xFF10B981);
+  static const Color statusTervalidasiBg = Color(0xFFD1FAE5);
 }
