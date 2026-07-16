@@ -21,7 +21,7 @@ class AppConfig {
   static const int _port = 3000;
 
   static String get apiBaseUrl {
-    if (kIsWeb) return 'http://127.0.0.1:$_port/api/v1';
+    if (kIsWeb) return 'http://localhost:$_port/api/v1';
 
     // Jika _devServerIp diisi, pakai itu (HP fisik / Ngrok)
     if (_devServerIp.isNotEmpty) {
