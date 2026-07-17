@@ -1,11 +1,12 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://passerby-caucasian-viewpoint.ngrok-free.dev/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://tender-pets-work.loca.lt/api/v1',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true',
+    'Bypass-Tunnel-Reminder': 'true',
   },
 });
 
