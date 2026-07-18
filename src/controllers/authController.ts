@@ -43,7 +43,12 @@ export class AuthController {
       // 1. Validate Input
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Format email atau password tidak valid",
+          fields: parsed.error.format(),
+        });
         return;
       }
       const { email: emailOrNik, password } = parsed.data;
@@ -69,12 +74,33 @@ export class AuthController {
         },
       });
     } catch (error: any) {
-      if (error.message === "INVALID_CREDENTIALS") {
-        res.status(401).json({ error: "UNAUTHORIZED", message: "Email atau password salah" });
+      const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
+      const emailLog = req.body?.email || "unknown";
+      console.warn(
+        `[Login Failed] IP: ${ip} | Email/NIK: ${emailLog} | Reason: ${error.message || error.name}`
+      );
+
+      if (
+        error.name === "DatabaseUnavailableError" ||
+        error.message?.includes("DatabaseUnavailable")
+      ) {
+        res.status(503).json({
+          success: false,
+          code: "SERVICE_UNAVAILABLE",
+          message: "Server sedang bermasalah, coba lagi nanti",
+        });
+      } else if (error.message === "INVALID_CREDENTIALS") {
+        res.status(401).json({
+          success: false,
+          code: "INVALID_CREDENTIALS",
+          message: "Email atau password salah",
+        });
       } else {
-        res
-          .status(500)
-          .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+        res.status(500).json({
+          success: false,
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Terjadi kesalahan pada server",
+        });
       }
     }
   }

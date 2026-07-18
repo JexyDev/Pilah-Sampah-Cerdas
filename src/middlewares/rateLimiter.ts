@@ -33,7 +33,8 @@ export const loginRateLimiter = (req: Request, res: Response, next: NextFunction
   if (record.count >= maxAttempts) {
     res.status(429).json({
       success: false,
-      error: "TOO_MANY_REQUESTS",
+      code: "TOO_MANY_ATTEMPTS",
+      error: "TOO_MANY_ATTEMPTS",
       message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 1 menit.",
     });
     return;

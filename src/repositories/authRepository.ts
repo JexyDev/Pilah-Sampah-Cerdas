@@ -1,26 +1,59 @@
 import { PrismaClient, User, RefreshToken, Role } from "@prisma/client";
+import { DatabaseUnavailableError } from "../utils/errors.js";
 
 const prisma = new PrismaClient();
+
+function isDatabaseConnectionError(error: any): boolean {
+  const code = error?.code;
+  const message = error?.message || "";
+  if (code && typeof code === "string" && code.startsWith("P10")) {
+    return true;
+  }
+  if (
+    message.includes("Can't reach database") ||
+    message.includes("connection limit") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ETIMEDOUT") ||
+    message.includes("socket hang up")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 export class AuthRepository {
   /**
    * Find a user by email, including their role details.
    */
   async findUserByEmail(email: string): Promise<(User & { role: Role }) | null> {
-    return prisma.user.findUnique({
-      where: { email },
-      include: { role: true },
-    });
+    try {
+      return await prisma.user.findUnique({
+        where: { email },
+        include: { role: true },
+      });
+    } catch (error: any) {
+      if (isDatabaseConnectionError(error)) {
+        throw new DatabaseUnavailableError();
+      }
+      throw error;
+    }
   }
 
   /**
    * Find a user by NIK, including their role details.
    */
   async findUserByNik(nik: string): Promise<(User & { role: Role }) | null> {
-    return prisma.user.findUnique({
-      where: { nik },
-      include: { role: true },
-    });
+    try {
+      return await prisma.user.findUnique({
+        where: { nik },
+        include: { role: true },
+      });
+    } catch (error: any) {
+      if (isDatabaseConnectionError(error)) {
+        throw new DatabaseUnavailableError();
+      }
+      throw error;
+    }
   }
 
   /**
