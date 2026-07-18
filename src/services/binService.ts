@@ -1,6 +1,4 @@
 import { v4 as uuidv4 } from "uuid";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
 
@@ -149,24 +147,20 @@ export class BinService {
     const qrCode = data.qrCode || `TS-${Date.now()}`;
     let kelurahanId = null;
     if (data.rtRwId) {
-      const area = await prisma.rtRwArea.findUnique({
-        where: { id: parseInt(data.rtRwId) },
-      });
+      const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
       if (area) {
         kelurahanId = area.kelurahanId;
       }
     }
 
-    return prisma.bin.create({
-      data: {
-        qrCode,
-        categoryId: data.categoryId,
-        rtRwId: parseInt(data.rtRwId),
-        kelurahanId,
-        latitude: data.latitude ? parseFloat(data.latitude) : null,
-        longitude: data.longitude ? parseFloat(data.longitude) : null,
-        maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
-      },
+    return binRepository.createBin({
+      qrCode,
+      categoryId: data.categoryId,
+      rtRwId: parseInt(data.rtRwId),
+      kelurahanId,
+      latitude: data.latitude ? parseFloat(data.latitude) : null,
+      longitude: data.longitude ? parseFloat(data.longitude) : null,
+      maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
     });
   }
 
@@ -179,9 +173,7 @@ export class BinService {
     if (data.categoryId) updateData.categoryId = data.categoryId;
     if (data.rtRwId) {
       updateData.rtRwId = parseInt(data.rtRwId);
-      const area = await prisma.rtRwArea.findUnique({
-        where: { id: parseInt(data.rtRwId) },
-      });
+      const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
       if (area) {
         updateData.kelurahanId = area.kelurahanId;
       }
@@ -192,18 +184,57 @@ export class BinService {
     if (data.longitude !== undefined)
       updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
 
-    return prisma.bin.update({
-      where: { qrCode: id },
-      data: updateData,
-    });
+    return binRepository.updateBin(id, updateData);
   }
 
   /**
    * Delete a bin
    */
   async deleteBin(id: string) {
-    return prisma.bin.delete({
-      where: { qrCode: id },
+    return binRepository.deleteBin(id);
+  }
+
+  async getAreas() {
+    return binRepository.findAreas();
+  }
+
+  async getKelurahans() {
+    return binRepository.findKelurahans();
+  }
+
+  async createArea(name: string, kelurahanId: number) {
+    return binRepository.createArea(name, kelurahanId);
+  }
+
+  async getMyBins(userId: string) {
+    const user = await binRepository.getUserRtRwId(userId);
+    let rtRwId = user?.rtRwId;
+
+    if (!rtRwId) {
+      const household = await binRepository.getUserHouseholdRtRwId(userId);
+      rtRwId = household?.rtRwId || null;
+    }
+
+    if (!rtRwId) {
+      return [];
+    }
+
+    const bins = await binRepository.findBinsByRtRwId(rtRwId);
+
+    return bins.map((bin: any) => {
+      const currentVol = Number(bin.currentVolumeLiter);
+      const maxVol = Number(bin.maxCapacityLiter);
+      const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
+      return {
+        id: bin.id,
+        qrCode: bin.qrCode,
+        category: bin.category.name,
+        currentVolumeLiter: currentVol,
+        maxCapacityLiter: maxVol,
+        kapasitas,
+        rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
+        status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+      };
     });
   }
 }

@@ -190,6 +190,75 @@ export class BinRepository {
       },
     });
   }
+
+  async findAreas() {
+    return prisma.rtRwArea.findMany({
+      include: { kelurahan: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  async findKelurahans() {
+    return prisma.kelurahan.findMany({
+      orderBy: { name: "asc" },
+    });
+  }
+
+  async createArea(name: string, kelurahanId: number) {
+    return prisma.rtRwArea.create({
+      data: {
+        name,
+        kelurahanId,
+      },
+      include: { kelurahan: true },
+    });
+  }
+
+  async findRtRwById(id: number) {
+    return prisma.rtRwArea.findUnique({
+      where: { id },
+    });
+  }
+
+  async getUserRtRwId(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: { rtRwId: true },
+    });
+  }
+
+  async getUserHouseholdRtRwId(userId: string) {
+    return prisma.household.findFirst({
+      where: { userId },
+      select: { rtRwId: true },
+    });
+  }
+
+  async findBinsByRtRwId(rtRwId: number) {
+    return prisma.bin.findMany({
+      where: { rtRwId },
+      include: { category: true, rtRw: true },
+    });
+  }
+
+  async createBin(data: any) {
+    return prisma.bin.create({
+      data,
+    });
+  }
+
+  async updateBin(id: string, data: any) {
+    return prisma.bin.update({
+      where: { qrCode: id },
+      data,
+    });
+  }
+
+  async deleteBin(id: string) {
+    return prisma.bin.delete({
+      where: { qrCode: id },
+    });
+  }
 }
 
 export const binRepository = new BinRepository();
