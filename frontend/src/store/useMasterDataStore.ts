@@ -79,8 +79,7 @@ export const useMasterDataStore = create<MasterDataState>((set) => ({
   },
 
   deleteBin: async (id: string) => {
-    // Backend belum punya endpoint delete bin — remove from local state only
-    // TODO: tambah DELETE /bins/:id di backend
+    await api.delete(`/bins/${id}`);
     set((state) => ({ bins: state.bins.filter((b) => b.id !== id) }));
   },
 }));
