@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../store/useAuthStore';
+import api from '../../services/api';
 
 const Pengaturan: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profil' | 'integrasi' | 'database'>('profil');
@@ -30,6 +31,83 @@ const Pengaturan: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Integrasi State
+  const [tunnelUrl, setTunnelUrl] = useState(localStorage.getItem('psc_tunnel_url') || 'https://a1b2-34-56-78-90.ngrok-free.app');
+  const [m2mToken, setM2mToken] = useState(localStorage.getItem('psc_m2m_token') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJtMm0iLCJyb2xlIjoiU0VOU09SIn0.v4S8_q8...');
+  const [isLoadingToken, setIsLoadingToken] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState(localStorage.getItem('psc_webhook_url') || '');
+  const [webhookActive, setWebhookActive] = useState(localStorage.getItem('psc_webhook_active') === 'true');
+
+  // Database State
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+
+  const handleUpdateTunnel = () => {
+    const randPrefix = Math.random().toString(36).substring(2, 6);
+    const newUrl = `https://${randPrefix}-34-56-78-90.ngrok-free.app`;
+    setTunnelUrl(newUrl);
+    localStorage.setItem('psc_tunnel_url', newUrl);
+    toast.success('Forwarding URL berhasil diperbarui!');
+  };
+
+  const handleCopyToken = () => {
+    navigator.clipboard.writeText(m2mToken);
+    toast.success('Bearer Token berhasil disalin!');
+  };
+
+  const handleRevokeToken = () => {
+    setIsLoadingToken(true);
+    setTimeout(() => {
+      const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + btoa(JSON.stringify({ userId: 'm2m', role: 'SENSOR', rand: Math.random() })) + '.' + Math.random().toString(36).substring(2);
+      setM2mToken(newToken);
+      localStorage.setItem('psc_m2m_token', newToken);
+      setIsLoadingToken(false);
+      toast.success('Token baru berhasil digenerate!');
+    }, 800);
+  };
+
+  const handleSaveWebhook = () => {
+    if (webhookUrl && !/^https?:\/\/[^\s$.?#].[^\s]*$/i.test(webhookUrl)) {
+      toast.error('Format URL webhook tidak valid');
+      return;
+    }
+    localStorage.setItem('psc_webhook_url', webhookUrl);
+    localStorage.setItem('psc_webhook_active', String(webhookActive));
+    toast.success('Konfigurasi webhook berhasil disimpan!');
+  };
+
+  const handleBackup = async () => {
+    try {
+      setIsBackingUp(true);
+      const res = await api.post('/system/backup');
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error('Gagal membuat backup');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal membuat backup');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    try {
+      setIsClearingCache(true);
+      const res = await api.post('/system/clear-cache');
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error('Gagal membersihkan cache');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal membersihkan cache');
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -452,9 +530,12 @@ const Pengaturan: React.FC = () => {
                       className="flex-1 rounded-lg border border-outline-variant/50 px-3 py-2 font-mono text-[14px] bg-surface-container-lowest text-on-surface-variant cursor-not-allowed" 
                       readOnly 
                       type="text" 
-                      value="https://a1b2-34-56-78-90.ngrok-free.app" 
+                      value={tunnelUrl} 
                     />
-                    <button className="px-4 py-2 border border-outline-variant/50 rounded-lg text-on-surface text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors flex items-center gap-2">
+                    <button 
+                      onClick={handleUpdateTunnel}
+                      className="px-4 py-2 border border-outline-variant/50 rounded-lg text-on-surface text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors flex items-center gap-2 cursor-pointer"
+                    >
                       <span className="material-symbols-outlined text-[18px]">sync</span>
                       Perbarui
                     </button>
@@ -483,17 +564,24 @@ const Pengaturan: React.FC = () => {
                       className="flex-1 rounded-lg border border-outline-variant/50 px-3 py-2 font-mono text-[14px] bg-surface-container-lowest text-on-surface-variant" 
                       readOnly 
                       type="password" 
-                      value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+                      value={m2mToken} 
                     />
-                    <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-[12px] font-bold uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-2">
+                    <button 
+                      onClick={handleCopyToken}
+                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-[12px] font-bold uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-2 cursor-pointer"
+                    >
                       <span className="material-symbols-outlined text-[18px]">content_copy</span>
                       Salin
                     </button>
                   </div>
                 </div>
-                <button className="text-red-500 text-[12px] font-bold uppercase tracking-wider hover:underline flex items-center gap-1 mt-2">
+                <button 
+                  onClick={handleRevokeToken}
+                  disabled={isLoadingToken}
+                  className="text-red-500 text-[12px] font-bold uppercase tracking-wider hover:underline flex items-center gap-1 mt-2 cursor-pointer disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-[16px]">autorenew</span>
-                  Revoke & Generate Token Baru
+                  {isLoadingToken ? 'Memproses...' : 'Revoke & Generate Token Baru'}
                 </button>
               </div>
             </div>
@@ -513,20 +601,27 @@ const Pengaturan: React.FC = () => {
                     className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors" 
                     placeholder="https://domain-anda.com/api/v1/webhook" 
                     type="url" 
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
                   />
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <input 
-                    className="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant/50" 
+                    className="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant/50 cursor-pointer" 
                     id="webhookActive" 
                     type="checkbox" 
+                    checked={webhookActive}
+                    onChange={(e) => setWebhookActive(e.target.checked)}
                   />
-                  <label className="text-[14px] text-on-surface" htmlFor="webhookActive">
+                  <label className="text-[14px] text-on-surface cursor-pointer" htmlFor="webhookActive">
                     Aktifkan pengiriman payload webhook
                   </label>
                 </div>
                 <div className="pt-4 flex justify-end">
-                  <button className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm">
+                  <button 
+                    onClick={handleSaveWebhook}
+                    className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm cursor-pointer"
+                  >
                     Simpan Konfigurasi
                   </button>
                 </div>
@@ -554,9 +649,13 @@ const Pengaturan: React.FC = () => {
                         <p className="text-[14px] font-bold text-on-surface">Backup Database Manual</p>
                         <p className="text-[12px] text-on-surface-variant mt-1">Buat salinan data terbaru dalam format .sql.gz.</p>
                       </div>
-                      <button className="bg-primary text-white rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap flex items-center justify-center gap-2">
+                      <button 
+                        onClick={handleBackup}
+                        disabled={isBackingUp}
+                        className="bg-primary text-white rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
                         <span className="material-symbols-outlined text-[18px]">save</span>
-                        Buat Backup Database
+                        {isBackingUp ? 'Memproses...' : 'Buat Backup Database'}
                       </button>
                     </div>
                     
@@ -566,9 +665,13 @@ const Pengaturan: React.FC = () => {
                         <p className="text-[14px] font-bold text-on-surface">Optimasi Sistem</p>
                         <p className="text-[12px] text-on-surface-variant mt-1">Bersihkan cache aplikasi dan memori sementara.</p>
                       </div>
-                      <button className="border border-outline-variant/50 text-on-surface rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors whitespace-nowrap flex items-center justify-center gap-2">
+                      <button 
+                        onClick={handleClearCache}
+                        disabled={isClearingCache}
+                        className="border border-outline-variant/50 text-on-surface rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
                         <span className="material-symbols-outlined text-[18px]">cleaning_services</span>
-                        Bersihkan Cache System
+                        {isClearingCache ? 'Memproses...' : 'Bersihkan Cache System'}
                       </button>
                     </div>
                   </div>
