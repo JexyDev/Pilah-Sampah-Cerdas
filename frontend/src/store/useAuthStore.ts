@@ -103,11 +103,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       return true;
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Login gagal, periksa email dan password';
-      set({ isLoading: false, error: message, isAuthenticated: false });
+      const code =
+        err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
+      set({ isLoading: false, error: code, isAuthenticated: false });
       return false;
     }
   },

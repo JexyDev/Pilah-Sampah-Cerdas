@@ -1,73 +1,141 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { useAuthStore } from '../../store/useAuthStore';
+import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading: isStoreLoading } = useAuthStore();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // UX State
   const [isLocalLoading, setIsLocalLoading] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   // Validation States
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay;
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // Custom Toast implementation following design guidelines
-  const showToast = (message: string, type: 'error' | 'warning' = 'error') => {
-    toast.custom((t) => (
-      <div
-        className={`${
-          t.visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95'
-        } transform transition-all duration-300 max-w-sm w-full bg-white shadow-md rounded-xl pointer-events-auto flex border border-outline-variant/30 p-4 gap-3 items-center`}
-      >
-        <div className={`flex-shrink-0 flex items-center ${type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
-          <span className="material-symbols-outlined text-[24px]">
-            {type === 'error' ? 'error' : 'warning'}
-          </span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-800 leading-normal">{message}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => toast.dismiss(t.id)}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[16px]">close</span>
-        </button>
-      </div>
-    ), {
-      position: 'top-right',
-      duration: 4000
-    });
+  // Helper validation regex
+  const isEmailValid = (val: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || /^\d{16}$/.test(val);
+
+  // Real-time Validation handlers
+  const handleEmailBlur = () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setEmailError("Email atau NIK wajib diisi");
+    } else if (!isEmailValid(trimmed)) {
+      setEmailError("Format email atau 16 digit NIK tidak valid");
+    } else {
+      setEmailError("");
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isBtnDisabled) return;
+  const handlePasswordBlur = () => {
+    const trimmed = password.trim();
+    if (!trimmed) {
+      setPasswordError("Password wajib diisi");
+    } else if (trimmed.length < 6) {
+      setPasswordError("Password minimal 6 karakter");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const isFormInvalid =
+    !email.trim() || !password.trim() || !!emailError || !!passwordError;
+  const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay || isFormInvalid;
+
+  // Custom Toast implementation following design guidelines
+  const showToast = (
+    message: string,
+    type: "error" | "warning" | "server" | "network" = "error",
+    retryAction?: () => void
+  ) => {
+    toast.custom(
+      (t) => (
+        <div
+          className={`${
+            t.visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"
+          } transform transition-all duration-300 max-w-sm w-full bg-white shadow-xl rounded-xl pointer-events-auto flex border border-outline-variant/30 p-4 gap-3 items-center`}
+        >
+          <div className="flex-shrink-0 flex items-center">
+            {type === "error" && (
+              <span className="material-symbols-outlined text-[24px] text-red-500">error</span>
+            )}
+            {type === "warning" && (
+              <span className="material-symbols-outlined text-[24px] text-amber-500">warning</span>
+            )}
+            {type === "server" && (
+              <span className="material-symbols-outlined text-[24px] text-red-500 animate-pulse">
+                dns
+              </span>
+            )}
+            {type === "network" && (
+              <span className="material-symbols-outlined text-[24px] text-red-500 animate-pulse">
+                wifi_off
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-gray-800 leading-normal">{message}</p>
+            {retryAction && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  retryAction();
+                }}
+                className="mt-2 text-[10px] text-primary hover:text-primary-dark font-bold underline cursor-pointer"
+              >
+                Coba Lagi
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">close</span>
+          </button>
+        </div>
+      ),
+      {
+        position: "top-right",
+        duration: type === "server" || type === "network" ? 7000 : 4000,
+      }
+    );
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isStoreLoading || isLocalLoading || showSuccessOverlay) return;
+
+    // Final check validation
+    const emailVal = email.trim();
+    const passVal = password.trim();
 
     let hasError = false;
-    setEmailError('');
-    setPasswordError('');
-
-    if (!email.trim()) {
-      setEmailError('Email wajib diisi');
-      showToast('Email wajib diisi', 'warning');
+    if (!emailVal) {
+      setEmailError("Email atau NIK wajib diisi");
+      hasError = true;
+    } else if (!isEmailValid(emailVal)) {
+      setEmailError("Format email atau 16 digit NIK tidak valid");
       hasError = true;
     }
-    
-    if (!password.trim()) {
-      setPasswordError('Password wajib diisi');
-      showToast('Password wajib diisi', 'warning');
+
+    if (!passVal) {
+      setPasswordError("Password wajib diisi");
+      hasError = true;
+    } else if (passVal.length < 6) {
+      setPasswordError("Password minimal 6 karakter");
       hasError = true;
     }
 
@@ -76,36 +144,50 @@ const Login: React.FC = () => {
     setIsLocalLoading(true);
     const startTime = Date.now();
 
-    try {
-      const success = await login(email, password);
-      
-      const elapsedTime = Date.now() - startTime;
-      const minDelay = 1500; // 1.5 seconds minimum visual feedback
-      const remainingTime = Math.max(0, minDelay - elapsedTime);
+    const success = await login(emailVal, passVal);
 
-      setTimeout(() => {
-        setIsLocalLoading(false);
-        if (success) {
-          setShowSuccessOverlay(true);
-          // Wait another 1.5s for success transition screen before routing
-          setTimeout(() => {
-            navigate('/');
-          }, 1500);
-        } else {
-          showToast('Email atau password salah. Coba lagi.', 'error');
-          setPassword(''); // Clear password
-        }
-      }, remainingTime);
-    } catch (err) {
+    const elapsedTime = Date.now() - startTime;
+    const minDelay = 1000; // minimum visual feedback
+    const remainingTime = Math.max(0, minDelay - elapsedTime);
+
+    setTimeout(() => {
       setIsLocalLoading(false);
-      showToast('Email atau password salah. Coba lagi.', 'error');
-      setPassword(''); // Clear password
-    }
+      if (success) {
+        setShowSuccessOverlay(true);
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      } else {
+        const storeErr = useAuthStore.getState().error;
+        if (storeErr === "INVALID_CREDENTIALS") {
+          setPasswordError("Email atau password salah");
+          setPassword(""); // Clear password
+          setTimeout(() => {
+            passwordInputRef.current?.focus();
+          }, 50);
+        } else if (storeErr === "SERVICE_UNAVAILABLE") {
+          showToast(
+            "Server sedang bermasalah, silakan coba lagi dalam beberapa saat",
+            "server",
+            () => handleSubmit()
+          );
+        } else if (storeErr === "TOO_MANY_ATTEMPTS") {
+          showToast("Terlalu banyak percobaan, silakan coba lagi dalam 1 menit", "warning");
+        } else if (storeErr === "NETWORK_ERROR") {
+          showToast(
+            "Tidak dapat terhubung ke server, periksa koneksi internet Anda",
+            "network",
+            () => handleSubmit()
+          );
+        } else {
+          showToast("Gagal masuk ke sistem. Silakan coba lagi.", "error");
+        }
+      }
+    }, remainingTime);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-6 relative overflow-hidden">
-      
       {/* SUCCESS TRANSITION OVERLAY */}
       {showSuccessOverlay && (
         <div className="fixed inset-0 bg-gradient-to-br from-green-600 to-emerald-800 flex flex-col items-center justify-center z-50 transition-all duration-500 animate-in fade-in">
@@ -129,12 +211,11 @@ const Login: React.FC = () => {
 
       {/* MAIN LOGIN CARD */}
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 z-10 transition-all duration-300">
-        
         {/* Header / Logo */}
         <div className="flex flex-col items-center text-center gap-3">
           <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-28 w-auto object-contain" />
           <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium">
-            Masukkan email dan kata sandi Anda untuk masuk to sistem.
+            Masukkan email dan kata sandi Anda untuk masuk ke sistem.
           </p>
         </div>
 
@@ -164,20 +245,27 @@ const Login: React.FC = () => {
                 person
               </span>
               <input
-                className="w-full pl-10 pr-4 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none"
+                className={`w-full pl-10 pr-4 h-11 bg-surface-container-low border ${
+                  emailError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary focus:ring-primary"
+                } rounded-lg text-sm focus:ring-1 focus:outline-none transition-all outline-none`}
                 placeholder="Email atau 16 digit NIK..."
                 type="text"
                 autoComplete="username"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (e.target.value.trim()) setEmailError('');
+                  if (e.target.value.trim()) setEmailError("");
                 }}
-                disabled={isBtnDisabled}
+                onBlur={handleEmailBlur}
+                disabled={isStoreLoading || isLocalLoading || showSuccessOverlay}
+                aria-describedby={emailError ? "email-error" : undefined}
               />
             </div>
             {emailError && (
-              <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1">
+              <p
+                id="email-error"
+                className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1"
+              >
                 <span className="material-symbols-outlined text-[12px]">warning</span>
                 {emailError}
               </p>
@@ -193,30 +281,38 @@ const Login: React.FC = () => {
                 lock
               </span>
               <input
-                className="w-full pl-10 pr-10 h-11 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all outline-none"
+                ref={passwordInputRef}
+                className={`w-full pl-10 pr-10 h-11 bg-surface-container-low border ${
+                  passwordError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary focus:ring-primary"
+                } rounded-lg text-sm focus:ring-1 focus:outline-none transition-all outline-none`}
                 placeholder="Masukkan kata sandi..."
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  if (e.target.value.trim()) setPasswordError('');
+                  if (e.target.value.trim()) setPasswordError("");
                 }}
-                disabled={isBtnDisabled}
+                onBlur={handlePasswordBlur}
+                disabled={isStoreLoading || isLocalLoading || showSuccessOverlay}
+                aria-describedby={passwordError ? "password-error" : undefined}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
-                disabled={isBtnDisabled}
+                disabled={isStoreLoading || isLocalLoading || showSuccessOverlay}
               >
                 <span className="material-symbols-outlined text-[20px]">
-                  {showPassword ? 'visibility_off' : 'visibility'}
+                  {showPassword ? "visibility_off" : "visibility"}
                 </span>
               </button>
             </div>
             {passwordError && (
-              <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1">
+              <p
+                id="password-error"
+                className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1"
+              >
                 <span className="material-symbols-outlined text-[12px]">warning</span>
                 {passwordError}
               </p>
@@ -226,9 +322,9 @@ const Login: React.FC = () => {
           <button
             type="submit"
             disabled={isBtnDisabled}
-            className="w-full h-11 bg-primary text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-11 bg-primary text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
           >
-            {isBtnDisabled ? (
+            {isLocalLoading || isStoreLoading ? (
               <>
                 <span className="material-symbols-outlined animate-spin text-sm">autorenew</span>
                 <span>Memproses...</span>
