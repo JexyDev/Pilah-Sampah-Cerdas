@@ -89,11 +89,17 @@ export class AuthController {
           code: "SERVICE_UNAVAILABLE",
           message: "Server sedang bermasalah, coba lagi nanti",
         });
-      } else if (error.message === "INVALID_CREDENTIALS") {
+      } else if (error.message === "USER_NOT_FOUND") {
         res.status(401).json({
           success: false,
-          code: "INVALID_CREDENTIALS",
-          message: "Email atau password salah",
+          code: "USER_NOT_FOUND",
+          message: "User tidak ditemukan",
+        });
+      } else if (error.message === "WRONG_PASSWORD") {
+        res.status(401).json({
+          success: false,
+          code: "WRONG_PASSWORD",
+          message: "Password salah",
         });
       } else {
         res.status(500).json({

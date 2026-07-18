@@ -13,12 +13,12 @@ export class AuthService {
       : await authRepository.findUserByEmail(emailOrNik);
 
     if (!user) {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new Error("USER_NOT_FOUND");
     }
 
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new Error("WRONG_PASSWORD");
     }
 
     // Prepare payload

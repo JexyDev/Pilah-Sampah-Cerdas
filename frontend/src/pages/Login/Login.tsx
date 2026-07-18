@@ -159,8 +159,10 @@ const Login: React.FC = () => {
         }, 1500);
       } else {
         const storeErr = useAuthStore.getState().error;
-        if (storeErr === "INVALID_CREDENTIALS") {
-          setPasswordError("Email atau password salah");
+        if (storeErr === "USER_NOT_FOUND") {
+          setEmailError("User tidak ditemukan");
+        } else if (storeErr === "WRONG_PASSWORD") {
+          setPasswordError("Password salah");
           setPassword(""); // Clear password
           setTimeout(() => {
             passwordInputRef.current?.focus();
