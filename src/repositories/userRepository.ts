@@ -1,0 +1,78 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export class UserRepository {
+  async findMany(whereClause: any) {
+    return prisma.user.findMany({
+      where: whereClause,
+      include: {
+        role: true,
+        rtRw: {
+          include: { kelurahan: true },
+        },
+        households: {
+          include: {
+            rtRw: {
+              include: { kelurahan: true },
+            },
+            wasteLogs: {
+              select: { weightKg: true },
+            },
+          },
+        },
+        pointHistory: {
+          select: { points: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async findById(id: string) {
+    return prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
+  async findByEmail(email: string) {
+    return prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  async findByNik(nik: string) {
+    return prisma.user.findUnique({
+      where: { nik },
+    });
+  }
+
+  async findRoleByName(name: string) {
+    return prisma.role.findUnique({
+      where: { name },
+    });
+  }
+
+  async create(data: any) {
+    return prisma.user.create({
+      data,
+      include: { role: { select: { name: true } } },
+    });
+  }
+
+  async update(id: string, data: any) {
+    return prisma.user.update({
+      where: { id },
+      data,
+      include: { role: { select: { name: true } } },
+    });
+  }
+
+  async delete(id: string) {
+    return prisma.user.delete({
+      where: { id },
+    });
+  }
+}
+
+export const userRepository = new UserRepository();
