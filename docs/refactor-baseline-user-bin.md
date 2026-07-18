@@ -13,9 +13,9 @@ Jumlah Skenario: 22
 | userController | `/api/v1/users` | Sukses - Create User | POST | 201 |
 | userController | `/api/v1/users` | Error - Validation Missing Fields | POST | 400 |
 | userController | `/api/v1/users` | Error - Conflict Email | POST | 409 |
-| userController | `/api/v1/users/379acf44-655d-4ccc-aa04-4538f0fd8271` | Sukses - Update User | PUT | 200 |
+| userController | `/api/v1/users/1af8993f-00b3-4312-b743-88be646c7382` | Sukses - Update User | PUT | 200 |
 | userController | `/api/v1/users/00000000-0000-0000-0000-000000000000` | Error - User Not Found | PUT | 404 |
-| userController | `/api/v1/users/379acf44-655d-4ccc-aa04-4538f0fd8271` | Sukses - Delete User | DELETE | 200 |
+| userController | `/api/v1/users/1af8993f-00b3-4312-b743-88be646c7382` | Sukses - Delete User | DELETE | 200 |
 | userController | `/api/v1/users/47961fde-05fa-48e8-a0b0-9e85e3572bdd` | Error - Delete Self | DELETE | 400 |
 | binController | `/api/v1/bins` | Sukses - Get Bins | GET | 200 |
 | binController | `/api/v1/bins/locations` | Sukses - Get Locations | GET | 200 |
@@ -156,7 +156,7 @@ Jumlah Skenario: 22
   "data": {
     "id": "MASKED_UUID",
     "name": "Test User Refactor",
-    "email": "test_99092@psc.id",
+    "email": "test_31034@psc.id",
     "role": "WARGA"
   }
 }
@@ -184,7 +184,7 @@ Jumlah Skenario: 22
 }
 ```
 
-### userController - PUT /api/v1/users/379acf44-655d-4ccc-aa04-4538f0fd8271 (Sukses - Update User)
+### userController - PUT /api/v1/users/1af8993f-00b3-4312-b743-88be646c7382 (Sukses - Update User)
 **HTTP Status:** 200
 
 ```json
@@ -193,7 +193,7 @@ Jumlah Skenario: 22
   "data": {
     "id": "MASKED_UUID",
     "name": "Test User Refactor Updated",
-    "email": "test_99092@psc.id",
+    "email": "test_31034@psc.id",
     "role": "WARGA"
   }
 }
@@ -210,7 +210,7 @@ Jumlah Skenario: 22
 }
 ```
 
-### userController - DELETE /api/v1/users/379acf44-655d-4ccc-aa04-4538f0fd8271 (Sukses - Delete User)
+### userController - DELETE /api/v1/users/1af8993f-00b3-4312-b743-88be646c7382 (Sukses - Delete User)
 **HTTP Status:** 200
 
 ```json
@@ -325,6 +325,50 @@ Jumlah Skenario: 22
         "createdAt": "MASKED_DATE",
         "updatedAt": "MASKED_DATE"
       }
+    },
+    {
+      "kode": "QR-TEST-8913",
+      "lokasi": "Kategori: NON_ORGANIC",
+      "rtRw": "RT 01 / RW 05",
+      "kapasitas": 0,
+      "status": "Normal",
+      "lastUpdate": "5:54:51 PM",
+      "categoryId": "ba9c4d7b-2e1a-4f3b-994c-b44dd8ee0063",
+      "rtRwId": 3,
+      "maxCapacityLiter": 25,
+      "latitude": "-6.8912345",
+      "longitude": "107.6123456",
+      "currentVolumeLiter": 0,
+      "category": {
+        "id": "MASKED_UUID",
+        "name": "NON_ORGANIC",
+        "pointsPerKg": 50,
+        "description": "Sampah Anorganik",
+        "createdAt": "MASKED_DATE",
+        "updatedAt": "MASKED_DATE"
+      }
+    },
+    {
+      "kode": "QR-TEST-6435",
+      "lokasi": "Kategori: NON_ORGANIC",
+      "rtRw": "RT 01 / RW 05",
+      "kapasitas": 0,
+      "status": "Normal",
+      "lastUpdate": "5:57:54 PM",
+      "categoryId": "ba9c4d7b-2e1a-4f3b-994c-b44dd8ee0063",
+      "rtRwId": 3,
+      "maxCapacityLiter": 25,
+      "latitude": "-6.8912345",
+      "longitude": "107.6123456",
+      "currentVolumeLiter": 0,
+      "category": {
+        "id": "MASKED_UUID",
+        "name": "NON_ORGANIC",
+        "pointsPerKg": 50,
+        "description": "Sampah Anorganik",
+        "createdAt": "MASKED_DATE",
+        "updatedAt": "MASKED_DATE"
+      }
     }
   ]
 }
@@ -342,7 +386,7 @@ Jumlah Skenario: 22
       "rw": "RW 05",
       "kelurahan": "Dago",
       "rtCount": 1,
-      "titikCount": 1,
+      "titikCount": 3,
       "patuh": 75
     },
     {
@@ -469,7 +513,7 @@ Jumlah Skenario: 22
   "success": true,
   "data": {
     "id": "MASKED_UUID",
-    "qrCode": "QR-TEST-8913",
+    "qrCode": "QR-TEST-4151",
     "categoryId": "ba9c4d7b-2e1a-4f3b-994c-b44dd8ee0063",
     "maxCapacityLiter": "25",
     "currentVolumeLiter": "0",
