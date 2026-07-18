@@ -200,8 +200,18 @@ class ApiAuthRepository implements AuthRepository {
         if (data.isNotEmpty) {
           final hh = data.first as Map<String, dynamic>;
           final householdId = hh['id']?.toString() ?? '';
-          final rtRw = hh['rtRw']?.toString() ?? '';
-          final kelurahan = hh['kelurahan']?.toString() ?? '';
+          
+          String rtRw = '';
+          String kelurahan = '';
+          
+          if (hh['rtRw'] is Map) {
+            final rtRwMap = hh['rtRw'] as Map<String, dynamic>;
+            rtRw = rtRwMap['name']?.toString() ?? '';
+            if (rtRwMap['kelurahan'] is Map) {
+              final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
+              kelurahan = kelMap['name']?.toString() ?? '';
+            }
+          }
 
           if (householdId.isNotEmpty) {
             await secureStorage.write(
