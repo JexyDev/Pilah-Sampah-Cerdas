@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/utils/safe_storage.dart';
 import '../../../config/app_config.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../../domain/repositories/auth_repository.dart';
@@ -20,7 +20,7 @@ class ApiAuthRepository implements AuthRepository {
   });
 
   final ApiClient apiClient;
-  final FlutterSecureStorage secureStorage;
+  final SafeStorage secureStorage;
 
   // ─── Login ────────────────────────────────────────────────────────────────
 

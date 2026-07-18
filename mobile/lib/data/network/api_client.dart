@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/utils/safe_storage.dart';
 import '../../config/app_config.dart';
 import '../../core/router/app_router.dart';
 import '../../main.dart' show navigatorKey;
@@ -17,7 +17,7 @@ import '../../main.dart' show navigatorKey;
 ///    race condition saat banyak request 401 bersamaan.
 class ApiClient {
   final Dio dio;
-  final FlutterSecureStorage secureStorage;
+  final SafeStorage secureStorage;
 
   // ── Mutex untuk refresh token ──────────────────────────────────────────────
   bool _isRefreshing = false;
