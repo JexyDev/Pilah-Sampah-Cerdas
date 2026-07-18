@@ -278,6 +278,80 @@ export class BinController {
       });
     }
   }
+
+  /**
+   * Create a new bin reset request (Warga)
+   */
+  async createResetRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const { binId, evidencePhotoUrl } = req.body;
+      if (!binId || !evidencePhotoUrl) {
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "binId dan evidencePhotoUrl wajib diisi" });
+        return;
+      }
+
+      const result = await binService.createResetRequest(binId, userId, evidencePhotoUrl);
+      res.status(201).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] createResetRequest error:", error);
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+    }
+  }
+
+  /**
+   * Get detail of a bin reset request
+   */
+  async getResetRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const result = await binService.getResetRequest(id);
+      if (!result) {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Pengajuan tidak ditemukan" });
+        return;
+      }
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error("[BinController] getResetRequest error:", error);
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data pengajuan" });
+    }
+  }
+
+  /**
+   * Review bin reset request (Petugas/Admin)
+   */
+  async reviewResetRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const reviewedById = req.user!.userId;
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (status !== "APPROVED" && status !== "REJECTED") {
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "status harus APPROVED atau REJECTED" });
+        return;
+      }
+
+      const result = await binService.reviewResetRequest(id, status, reviewedById);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] reviewResetRequest error:", error);
+      if (error.message === "REQUEST_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Pengajuan tidak ditemukan" });
+      } else {
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses pengajuan" });
+      }
+    }
+  }
 }
 
 export const binController = new BinController();

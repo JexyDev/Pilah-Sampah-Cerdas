@@ -163,4 +163,18 @@ router.post(
   binController.emptyBin
 );
 
+router.post(
+  "/reset-request",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.createResetRequest
+);
+router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
+router.put(
+  "/reset-request/:id/review",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  binController.reviewResetRequest
+);
+
 export default router;

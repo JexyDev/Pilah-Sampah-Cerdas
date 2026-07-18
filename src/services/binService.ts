@@ -237,6 +237,71 @@ export class BinService {
       };
     });
   }
+
+  /**
+   * Create bin reset request and notify area petugas
+   */
+  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+    const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
+
+    // Notify all Petugas/Admin
+    const petugasList = await binRepository.findPetugasForArea(request.bin.rtRwId);
+    for (const petugas of petugasList) {
+      await binRepository
+        .createNotification(
+          petugas.id,
+          "Pengajuan Pengosongan Baru",
+          `[REQ-${request.id}] Warga (${request.user.name}) mengajukan pengosongan tong ${request.bin.qrCode} di ${request.bin.rtRw.name}.`
+        )
+        .catch(() => {});
+    }
+
+    return request;
+  }
+
+  /**
+   * Get reset request by ID
+   */
+  async getResetRequest(id: string) {
+    return binRepository.findResetRequestById(id);
+  }
+
+  /**
+   * Review (approve/reject) reset request
+   */
+  async reviewResetRequest(id: string, status: "APPROVED" | "REJECTED", reviewedById: string) {
+    const request = await binRepository.findResetRequestById(id);
+    if (!request) {
+      throw new Error("REQUEST_NOT_FOUND");
+    }
+
+    const updated = await binRepository.updateResetRequestStatus(id, status, reviewedById);
+
+    if (status === "APPROVED") {
+      // Reset Bin volume
+      await binRepository.updateVolume(request.binId, 0.0);
+
+      // Notify Warga
+      await binRepository
+        .createNotification(
+          request.userId,
+          "Pengajuan Disetujui",
+          `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong ${request.bin.qrCode} menjadi 0%.`
+        )
+        .catch(() => {});
+    } else {
+      // Notify Warga
+      await binRepository
+        .createNotification(
+          request.userId,
+          "Pengajuan Ditolak",
+          `Pengajuan pengosongan tong ${request.bin.qrCode} ditolak oleh petugas.`
+        )
+        .catch(() => {});
+    }
+
+    return updated;
+  }
 }
 
 export const binService = new BinService();

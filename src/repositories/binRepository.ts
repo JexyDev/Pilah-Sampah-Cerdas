@@ -259,6 +259,72 @@ export class BinRepository {
       where: { qrCode: id },
     });
   }
+
+  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+    return prisma.binResetRequest.create({
+      data: {
+        binId,
+        userId,
+        evidencePhotoUrl,
+        status: "PENDING",
+      },
+      include: {
+        bin: { include: { rtRw: true } },
+        user: true,
+      },
+    });
+  }
+
+  async findResetRequestById(id: string) {
+    return prisma.binResetRequest.findUnique({
+      where: { id },
+      include: {
+        bin: true,
+        user: true,
+      },
+    });
+  }
+
+  async updateResetRequestStatus(
+    id: string,
+    status: "APPROVED" | "REJECTED",
+    reviewedById: string
+  ) {
+    return prisma.binResetRequest.update({
+      where: { id },
+      data: {
+        status,
+        reviewedById,
+      },
+      include: {
+        bin: true,
+        user: true,
+      },
+    });
+  }
+
+  async findPetugasForArea(rtRwId: number) {
+    return prisma.user.findMany({
+      where: {
+        rtRwId,
+        role: {
+          name: {
+            in: ["PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN", "ADMIN"],
+          },
+        },
+      },
+    });
+  }
+
+  async createNotification(userId: string, title: string, message: string) {
+    return prisma.notification.create({
+      data: {
+        userId,
+        title,
+        message,
+      },
+    });
+  }
 }
 
 export const binRepository = new BinRepository();
