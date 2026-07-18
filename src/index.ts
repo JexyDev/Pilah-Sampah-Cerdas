@@ -12,6 +12,7 @@ import dashboardRouter from "./routes/dashboardRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
+import transactionRouter from "./routes/transactionRoutes.js";
 import scheduleRouter from "./routes/scheduleRoutes.js";
 import systemRouter from "./routes/systemRoutes.js";
 import { setupSwagger } from "./swagger.js";
