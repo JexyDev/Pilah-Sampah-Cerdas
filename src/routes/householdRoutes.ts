@@ -56,9 +56,9 @@ const router = Router();
  */
 // Only WARGA (or ADMIN/Staff) can register household
 router.post(
-  "/register", 
-  authMiddleware, 
-  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]), 
+  "/register",
+  authMiddleware,
+  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
   householdController.register
 );
 
@@ -74,11 +74,7 @@ router.post(
  *       200:
  *         description: Success
  */
-router.get(
-  "/me",
-  authMiddleware,
-  householdController.getMyHouseholds
-);
+router.get("/me", authMiddleware, householdController.getMyHouseholds);
 
 router.get(
   "/",

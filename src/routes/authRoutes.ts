@@ -136,7 +136,12 @@ router.get("/me", authMiddleware, authController.getCurrentUser);
  *       200:
  *         description: Upload successful
  */
-router.post("/upload-avatar", authMiddleware, uploadAvatarMiddleware.single("avatar"), authController.uploadAvatar);
+router.post(
+  "/upload-avatar",
+  authMiddleware,
+  uploadAvatarMiddleware.single("avatar"),
+  authController.uploadAvatar
+);
 
 /**
  * @swagger

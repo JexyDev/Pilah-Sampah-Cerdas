@@ -25,7 +25,7 @@ export class AiService {
           const duration = isTimeout ? 2500 : 1200;
 
           // 20% chance of image unreadable failure
-          const isUnreadable = Math.random() < 0.20;
+          const isUnreadable = Math.random() < 0.2;
 
           const timeoutId = setTimeout(() => {
             if (isTimeout) {
@@ -41,7 +41,7 @@ export class AiService {
                 requestId,
                 detectedType,
                 volumeEstimate,
-                isBlurry: false
+                isBlurry: false,
               });
             }
           }, duration);
@@ -60,14 +60,15 @@ export class AiService {
       });
 
       return result;
-
     } catch (error: any) {
       // Handle Failure
       const isTimeout = error.message === "AI_TIMEOUT";
       const failureStatus = isTimeout ? "TIMEOUT" : "IMAGE_UNREADABLE";
-      
+
       // Write Failed Log
-      await aiRepository.logRequest(userId, requestId, finalImageUrl, failureStatus).catch(() => {});
+      await aiRepository
+        .logRequest(userId, requestId, finalImageUrl, failureStatus)
+        .catch(() => {});
 
       // Refund Quota
       await redisService.refundQuota(userId);

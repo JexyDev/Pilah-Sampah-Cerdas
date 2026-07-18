@@ -18,7 +18,9 @@ export const categoryController = {
       res.status(201).json({ success: true, data: category });
     } catch (error: any) {
       console.error("[CategoryController] create error:", error);
-      res.status(400).json({ success: false, message: "Gagal membuat kategori, nama mungkin sudah ada" });
+      res
+        .status(400)
+        .json({ success: false, message: "Gagal membuat kategori, nama mungkin sudah ada" });
     }
   },
 
@@ -40,5 +42,5 @@ export const categoryController = {
       console.error("[CategoryController] delete error:", error);
       res.status(400).json({ success: false, message: "Gagal hapus kategori" });
     }
-  }
+  },
 };

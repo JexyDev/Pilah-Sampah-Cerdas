@@ -8,7 +8,7 @@ export const dashboardController = {
       const kpi = await dashboardService.getKpi(wilayah as string);
       res.status(200).json({
         success: true,
-        data: kpi
+        data: kpi,
       });
     } catch (error) {
       console.error("[DashboardController] getKpi error:", error);
@@ -22,7 +22,7 @@ export const dashboardController = {
       const transactions = await dashboardService.getRecentTransactions(wilayah as string);
       res.status(200).json({
         success: true,
-        data: transactions
+        data: transactions,
       });
     } catch (error) {
       console.error("[DashboardController] getTransactions error:", error);
@@ -37,7 +37,7 @@ export const dashboardController = {
       const trend = await dashboardService.getTrend(parsedWeeks, wilayah as string);
       res.status(200).json({
         success: true,
-        data: trend
+        data: trend,
       });
     } catch (error) {
       console.error("[DashboardController] getTrend error:", error);
@@ -49,8 +49,8 @@ export const dashboardController = {
     try {
       const userId = req.user!.userId;
       const role = req.user!.role;
-      
-      if (role === 'WARGA') {
+
+      if (role === "WARGA") {
         const summary = await dashboardService.getWargaSummary(userId);
         res.status(200).json({ success: true, data: summary });
       } else {
@@ -68,7 +68,7 @@ export const dashboardController = {
       const analytics = await dashboardService.getAnalytics();
       res.status(200).json({
         success: true,
-        data: analytics
+        data: analytics,
       });
     } catch (error) {
       console.error("[DashboardController] getAnalytics error:", error);
@@ -80,11 +80,11 @@ export const dashboardController = {
       const regions = await dashboardService.getRegions();
       res.status(200).json({
         success: true,
-        data: regions
+        data: regions,
       });
     } catch (error) {
       console.error("[DashboardController] getRegions error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
-  }
+  },
 };

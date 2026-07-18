@@ -39,7 +39,9 @@ export class AuthRepository {
   /**
    * Find a valid refresh token.
    */
-  async findRefreshToken(token: string): Promise<(RefreshToken & { user: User & { role: Role } }) | null> {
+  async findRefreshToken(
+    token: string
+  ): Promise<(RefreshToken & { user: User & { role: Role } }) | null> {
     return prisma.refreshToken.findUnique({
       where: { token },
       include: {
@@ -54,11 +56,13 @@ export class AuthRepository {
    * Delete a specific refresh token (used during logout or rotation).
    */
   async deleteRefreshToken(token: string): Promise<void> {
-    await prisma.refreshToken.delete({
-      where: { token },
-    }).catch(() => {
-      // Ignore if token doesn't exist
-    });
+    await prisma.refreshToken
+      .delete({
+        where: { token },
+      })
+      .catch(() => {
+        // Ignore if token doesn't exist
+      });
   }
   /**
    * Find a user by ID, including their role details.
@@ -73,7 +77,10 @@ export class AuthRepository {
   /**
    * Update a user's profile information.
    */
-  async updateUser(id: string, data: { name?: string; email?: string; phone?: string; address?: string; fotoProfil?: string }): Promise<User> {
+  async updateUser(
+    id: string,
+    data: { name?: string; email?: string; phone?: string; address?: string; fotoProfil?: string }
+  ): Promise<User> {
     return prisma.user.update({
       where: { id },
       data,

@@ -6,8 +6,8 @@ import { getDistanceMeters } from "../utils/haversineUtils.js";
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
-  ORGANIC: 0.4,      // Organic waste is denser
-  NON_ORGANIC: 0.2   // Non-organic is lighter
+  ORGANIC: 0.4, // Organic waste is denser
+  NON_ORGANIC: 0.2, // Non-organic is lighter
 };
 
 export class BinService {
@@ -44,7 +44,12 @@ export class BinService {
     }
 
     // 2. Validate Geofencing (< 10m) if coordinates are provided
-    if (userLat !== undefined && userLng !== undefined && bin.latitude !== null && bin.longitude !== null) {
+    if (
+      userLat !== undefined &&
+      userLng !== undefined &&
+      bin.latitude !== null &&
+      bin.longitude !== null
+    ) {
       const distance = getDistanceMeters(
         userLat,
         userLng,
@@ -110,7 +115,7 @@ export class BinService {
       weightKg,
       volumeLiter: estimatedVolume,
       pointsAwarded: calculatedPoints,
-      newBinVolume: newVolume
+      newBinVolume: newVolume,
     };
   }
 
@@ -145,7 +150,7 @@ export class BinService {
     let kelurahanId = null;
     if (data.rtRwId) {
       const area = await prisma.rtRwArea.findUnique({
-        where: { id: parseInt(data.rtRwId) }
+        where: { id: parseInt(data.rtRwId) },
       });
       if (area) {
         kelurahanId = area.kelurahanId;
@@ -160,8 +165,8 @@ export class BinService {
         kelurahanId,
         latitude: data.latitude ? parseFloat(data.latitude) : null,
         longitude: data.longitude ? parseFloat(data.longitude) : null,
-        maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0
-      }
+        maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
+      },
     });
   }
 
@@ -175,19 +180,21 @@ export class BinService {
     if (data.rtRwId) {
       updateData.rtRwId = parseInt(data.rtRwId);
       const area = await prisma.rtRwArea.findUnique({
-        where: { id: parseInt(data.rtRwId) }
+        where: { id: parseInt(data.rtRwId) },
       });
       if (area) {
         updateData.kelurahanId = area.kelurahanId;
       }
     }
     if (data.maxCapacityLiter) updateData.maxCapacityLiter = parseFloat(data.maxCapacityLiter);
-    if (data.latitude !== undefined) updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
-    if (data.longitude !== undefined) updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
+    if (data.latitude !== undefined)
+      updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
+    if (data.longitude !== undefined)
+      updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
 
     return prisma.bin.update({
       where: { qrCode: id },
-      data: updateData
+      data: updateData,
     });
   }
 
@@ -196,7 +203,7 @@ export class BinService {
    */
   async deleteBin(id: string) {
     return prisma.bin.delete({
-      where: { qrCode: id }
+      where: { qrCode: id },
     });
   }
 }

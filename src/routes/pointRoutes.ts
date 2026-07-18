@@ -24,17 +24,9 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get(
-  "/me",
-  authMiddleware,
-  pointController.getMyLedger
-);
+router.get("/me", authMiddleware, pointController.getMyLedger);
 
-router.post(
-  "/convert",
-  authMiddleware,
-  pointController.convertPoints
-);
+router.post("/convert", authMiddleware, pointController.convertPoints);
 
 /**
  * @swagger
@@ -73,9 +65,6 @@ router.get(
  *       200:
  *         description: Success
  */
-router.get(
-  "/leaderboard",
-  pointController.getLeaderboard
-);
+router.get("/leaderboard", pointController.getLeaderboard);
 
 export default router;

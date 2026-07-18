@@ -39,7 +39,7 @@ export const userController = {
         }
         whereClause.OR = [
           { rtRw: { AND: conditions } },
-          { households: { some: { rtRw: { AND: conditions } } } }
+          { households: { some: { rtRw: { AND: conditions } } } },
         ];
       }
 
@@ -48,21 +48,21 @@ export const userController = {
         include: {
           role: true,
           rtRw: {
-            include: { kelurahan: true }
+            include: { kelurahan: true },
           },
           households: {
             include: {
               rtRw: {
-                include: { kelurahan: true }
+                include: { kelurahan: true },
               },
               wasteLogs: {
-                select: { weightKg: true }
-              }
-            }
+                select: { weightKg: true },
+              },
+            },
           },
           pointHistory: {
-            select: { points: true }
-          }
+            select: { points: true },
+          },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -76,8 +76,8 @@ export const userController = {
         }
 
         let totalSetoranKg = 0;
-        u.households.forEach(h => {
-          h.wasteLogs.forEach(w => {
+        u.households.forEach((h) => {
+          h.wasteLogs.forEach((w) => {
             totalSetoranKg += Number(w.weightKg);
           });
         });
@@ -101,7 +101,11 @@ export const userController = {
       res.status(200).json({ success: true, data: mapped });
     } catch (error) {
       console.error("[UserController] getAll error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal memuat data pengguna" });
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal memuat data pengguna",
+      });
     }
   },
 
@@ -114,12 +118,18 @@ export const userController = {
 
       const user = await prisma.user.findUnique({ where: { id } });
       if (!user) {
-        res.status(404).json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
+        res
+          .status(404)
+          .json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
         return;
       }
 
       if (req.user?.userId === id) {
-        res.status(400).json({ success: false, error: "BAD_REQUEST", message: "Tidak bisa menghapus akun sendiri" });
+        res.status(400).json({
+          success: false,
+          error: "BAD_REQUEST",
+          message: "Tidak bisa menghapus akun sendiri",
+        });
         return;
       }
 
@@ -127,7 +137,11 @@ export const userController = {
       res.status(200).json({ success: true, message: "Pengguna berhasil dihapus" });
     } catch (error) {
       console.error("[UserController] deleteUser error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus pengguna" });
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal menghapus pengguna",
+      });
     }
   },
 
@@ -138,26 +152,38 @@ export const userController = {
     try {
       const { name, email, password, roleName, nik, status, rtRwId } = req.body;
       if (!name || !email || !password || !roleName) {
-        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "name, email, password, dan roleName wajib diisi" });
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "name, email, password, dan roleName wajib diisi",
+        });
         return;
       }
 
       const role = await prisma.role.findUnique({ where: { name: roleName } });
       if (!role) {
-        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: `Role '${roleName}' tidak ditemukan` });
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: `Role '${roleName}' tidak ditemukan`,
+        });
         return;
       }
 
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) {
-        res.status(409).json({ success: false, error: "CONFLICT", message: "Email sudah digunakan" });
+        res
+          .status(409)
+          .json({ success: false, error: "CONFLICT", message: "Email sudah digunakan" });
         return;
       }
 
       if (nik) {
         const existingNik = await prisma.user.findUnique({ where: { nik } });
         if (existingNik) {
-          res.status(409).json({ success: false, error: "CONFLICT", message: "NIK sudah digunakan" });
+          res
+            .status(409)
+            .json({ success: false, error: "CONFLICT", message: "NIK sudah digunakan" });
           return;
         }
       }
@@ -166,14 +192,14 @@ export const userController = {
       const passwordHash = await hashPassword(password);
 
       const newUser = await prisma.user.create({
-        data: { 
-          name, 
-          email, 
-          password: passwordHash, 
+        data: {
+          name,
+          email,
+          password: passwordHash,
           roleId: role.id,
           nik: nik || null,
           status: status || "Aktif",
-          rtRwId: rtRwId ? parseInt(rtRwId) : null
+          rtRwId: rtRwId ? parseInt(rtRwId) : null,
         },
         include: { role: { select: { name: true } } },
       });
@@ -189,7 +215,11 @@ export const userController = {
       });
     } catch (error) {
       console.error("[UserController] createUser error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengguna" });
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal membuat pengguna",
+      });
     }
   },
 
@@ -203,7 +233,9 @@ export const userController = {
 
       const user = await prisma.user.findUnique({ where: { id } });
       if (!user) {
-        res.status(404).json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
+        res
+          .status(404)
+          .json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
         return;
       }
 
@@ -211,7 +243,11 @@ export const userController = {
       if (roleName) {
         const role = await prisma.role.findUnique({ where: { name: roleName } });
         if (!role) {
-          res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: `Role '${roleName}' tidak ditemukan` });
+          res.status(400).json({
+            success: false,
+            error: "VALIDATION_ERROR",
+            message: `Role '${roleName}' tidak ditemukan`,
+          });
           return;
         }
         roleId = role.id;
@@ -249,7 +285,11 @@ export const userController = {
       });
     } catch (error) {
       console.error("[UserController] updateUser error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal memperbarui pengguna" });
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal memperbarui pengguna",
+      });
     }
   },
 };

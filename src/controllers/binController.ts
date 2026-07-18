@@ -25,27 +25,27 @@ export class BinController {
         const currentVol = Number(bin.currentVolumeLiter);
         const maxVol = Number(bin.maxCapacityLiter);
         const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
-        
+
         return {
           kode: bin.qrCode,
           lokasi: `Kategori: ${bin.category?.name || bin.categoryId}`,
           rtRw: bin.rtRw?.name || `ID RT/RW: ${bin.rtRwId}`,
           kapasitas,
-          status: kapasitas > 80 ? 'Penuh' : (kapasitas > 50 ? 'Sedang' : 'Normal'),
-          lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : '-',
+          status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+          lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
           categoryId: bin.categoryId,
           rtRwId: bin.rtRwId,
           maxCapacityLiter: maxVol,
           latitude: bin.latitude,
           longitude: bin.longitude,
           currentVolumeLiter: currentVol,
-          category: bin.category
+          category: bin.category,
         };
       });
 
       res.status(200).json({
         success: true,
-        data: mappedBins
+        data: mappedBins,
       });
     } catch (error) {
       console.error("[BinController] getAllBins error:", error);
@@ -61,7 +61,7 @@ export class BinController {
       const locations = await binService.getLocations();
       res.status(200).json({
         success: true,
-        data: locations
+        data: locations,
       });
     } catch (error) {
       console.error("[BinController] getLocations error:", error);
@@ -73,11 +73,11 @@ export class BinController {
     try {
       const areas = await prisma.rtRwArea.findMany({
         include: { kelurahan: true },
-        orderBy: { name: "asc" }
+        orderBy: { name: "asc" },
       });
       res.status(200).json({
         success: true,
-        data: areas
+        data: areas,
       });
     } catch (error) {
       console.error("[BinController] getAreas error:", error);
@@ -88,11 +88,11 @@ export class BinController {
   async getKelurahans(req: Request, res: Response): Promise<void> {
     try {
       const kelurahans = await prisma.kelurahan.findMany({
-        orderBy: { name: "asc" }
+        orderBy: { name: "asc" },
       });
       res.status(200).json({
         success: true,
-        data: kelurahans
+        data: kelurahans,
       });
     } catch (error) {
       console.error("[BinController] getKelurahans error:", error);
@@ -106,13 +106,13 @@ export class BinController {
       const newArea = await prisma.rtRwArea.create({
         data: {
           name,
-          kelurahanId
+          kelurahanId,
         },
-        include: { kelurahan: true }
+        include: { kelurahan: true },
       });
       res.status(201).json({
         success: true,
-        data: newArea
+        data: newArea,
       });
     } catch (error) {
       console.error("[BinController] createArea error:", error);
@@ -126,13 +126,13 @@ export class BinController {
   async scan(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      
+
       const parsed = scanSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(422).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      
+
       const { qrCode, detectedType, estimatedVolume, householdId, userLat, userLng } = parsed.data;
 
       const result = await binService.processScan(
@@ -147,31 +147,36 @@ export class BinController {
 
       res.status(200).json({
         success: true,
-        data: result
+        data: result,
       });
-      
     } catch (error: any) {
       if (error.message === "BIN_NOT_FOUND") {
-        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "QR Code Tong Sampah tidak ditemukan" });
+        res
+          .status(404)
+          .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code Tong Sampah tidak ditemukan" });
       } else if (error.message === "LOCATION_OUT_OF_RANGE") {
-        res.status(400).json({ 
-          error: "LOCATION_OUT_OF_RANGE", 
+        res.status(400).json({
+          error: "LOCATION_OUT_OF_RANGE",
           message: "Lokasi Anda terlalu jauh dari tong sampah fisik (> 10m).",
-          distanceMeters: error.distanceMeters 
+          distanceMeters: error.distanceMeters,
         });
       } else if (error.message === "BIN_TYPE_MISMATCH") {
-        res.status(400).json({ 
-          error: "BIN_TYPE_MISMATCH", 
-          message: `Tong tidak sesuai! Anda memasukkan sampah ke tong khusus ${error.binType}.` 
+        res.status(400).json({
+          error: "BIN_TYPE_MISMATCH",
+          message: `Tong tidak sesuai! Anda memasukkan sampah ke tong khusus ${error.binType}.`,
         });
       } else if (error.message === "BIN_OVERFLOW") {
-        res.status(400).json({ 
-          error: "BIN_OVERFLOW", 
-          message: "Tong penuh! Penyimpanan ditolak karena sisa kapasitas tong tidak mencukupi (Kapasitas Maks: 25 Liter)." 
+        res.status(400).json({
+          error: "BIN_OVERFLOW",
+          message:
+            "Tong penuh! Penyimpanan ditolak karena sisa kapasitas tong tidak mencukupi (Kapasitas Maks: 25 Liter).",
         });
       } else {
         console.error("Bin Scan Error:", error);
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses pemindaian tong sampah" });
+        res.status(500).json({
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal memproses pemindaian tong sampah",
+        });
       }
     }
   }
@@ -185,13 +190,17 @@ export class BinController {
       const bin = await binService.getBinStatus(id as string);
       res.status(200).json({
         success: true,
-        data: bin
+        data: bin,
       });
     } catch (error: any) {
       if (error.message === "BIN_NOT_FOUND") {
-        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
+        res
+          .status(404)
+          .json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status tong sampah" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status tong sampah" });
       }
     }
   }
@@ -205,13 +214,17 @@ export class BinController {
       await binService.emptyBin(id as string);
       res.status(200).json({
         success: true,
-        message: "Kapasitas tong sampah berhasil dikosongkan ke 0 Liter."
+        message: "Kapasitas tong sampah berhasil dikosongkan ke 0 Liter.",
       });
     } catch (error: any) {
       if (error.message === "BIN_NOT_FOUND") {
-        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
+        res
+          .status(404)
+          .json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengosongkan tong sampah" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengosongkan tong sampah" });
       }
     }
   }
@@ -225,7 +238,9 @@ export class BinController {
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       console.error("[BinController] createBin error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat tong sampah" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat tong sampah" });
     }
   }
 
@@ -239,7 +254,9 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       console.error("[BinController] updateBin error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memperbarui tong sampah" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memperbarui tong sampah" });
     }
   }
 
@@ -253,7 +270,9 @@ export class BinController {
       res.status(200).json({ success: true, message: "Tong sampah berhasil dihapus" });
     } catch (error) {
       console.error("[BinController] deleteBin error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tong sampah" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tong sampah" });
     }
   }
 
@@ -263,10 +282,10 @@ export class BinController {
   async getMyBins(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      
+
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { rtRwId: true }
+        select: { rtRwId: true },
       });
 
       let rtRwId = user?.rtRwId;
@@ -274,7 +293,7 @@ export class BinController {
       if (!rtRwId) {
         const household = await prisma.household.findFirst({
           where: { userId },
-          select: { rtRwId: true }
+          select: { rtRwId: true },
         });
         rtRwId = household?.rtRwId || null;
       }
@@ -286,7 +305,7 @@ export class BinController {
 
       const bins = await prisma.bin.findMany({
         where: { rtRwId },
-        include: { category: true, rtRw: true }
+        include: { category: true, rtRw: true },
       });
 
       const mapped = bins.map((bin: any) => {
@@ -301,14 +320,17 @@ export class BinController {
           maxCapacityLiter: maxVol,
           kapasitas,
           rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
-          status: kapasitas > 80 ? 'Penuh' : (kapasitas > 50 ? 'Sedang' : 'Normal')
+          status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
         };
       });
 
       res.status(200).json({ success: true, data: mapped });
     } catch (error) {
       console.error("[BinController] getMyBins error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data status tong sampah Anda" });
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mengambil data status tong sampah Anda",
+      });
     }
   }
 }

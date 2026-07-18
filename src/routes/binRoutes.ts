@@ -118,12 +118,7 @@ router.post("/areas", authMiddleware, roleMiddleware(["ADMIN"]), binController.c
  *       404:
  *         description: Bin not found
  */
-router.post(
-  "/scan",
-  authMiddleware,
-  roleMiddleware(["WARGA"]),
-  binController.scan
-);
+router.post("/scan", authMiddleware, roleMiddleware(["WARGA"]), binController.scan);
 
 /**
  * @swagger
@@ -141,10 +136,7 @@ router.post(
  *       200:
  *         description: Success
  */
-router.get(
-  "/:id/status",
-  binController.getStatus
-);
+router.get("/:id/status", binController.getStatus);
 
 /**
  * @swagger

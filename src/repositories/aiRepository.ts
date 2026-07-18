@@ -17,8 +17,8 @@ export class AiRepository {
         userId,
         requestId,
         imageUrl,
-        resultStatus: status
-      }
+        resultStatus: status,
+      },
     });
   }
 }

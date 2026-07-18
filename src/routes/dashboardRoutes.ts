@@ -24,7 +24,12 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/kpi", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]), dashboardController.getKpi);
+router.get(
+  "/kpi",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  dashboardController.getKpi
+);
 
 /**
  * @swagger
@@ -38,7 +43,12 @@ router.get("/kpi", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN",
  *       200:
  *         description: Success
  */
-router.get("/transactions", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]), dashboardController.getTransactions);
+router.get(
+  "/transactions",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  dashboardController.getTransactions
+);
 
 /**
  * @swagger
@@ -66,7 +76,12 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
  *       200:
  *         description: Success
  */
-router.get("/analytics", authMiddleware, roleMiddleware(["ADMIN"]), dashboardController.getAnalytics);
+router.get(
+  "/analytics",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  dashboardController.getAnalytics
+);
 router.get("/regions", authMiddleware, dashboardController.getRegions);
 router.get("/trend", authMiddleware, dashboardController.getTrend);
 

@@ -6,45 +6,47 @@ export class TransactionService {
     // REKAP-01 FIX: Only return waste logs from WARGA users (role.name = 'WARGA')
     // This prevents admin/petugas-created records from appearing in rekap setoran
     return prisma.wasteLog.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         household: {
           include: {
             user: {
-              select: { 
+              select: {
                 name: true,
                 role: {
-                  select: { name: true }
-                }
-              }
-            }
-          }
+                  select: { name: true },
+                },
+              },
+            },
+          },
         },
         category: true,
         bin: {
           include: {
-            rtRw: true
-          }
-        }
+            rtRw: true,
+          },
+        },
       },
       where: {
         household: {
           user: {
             role: {
-              name: 'WARGA' // RBAC: Only include WasteLog from WARGA users
-            }
-          }
+              name: "WARGA", // RBAC: Only include WasteLog from WARGA users
+            },
+          },
         },
-        bin: binCode ? {
-          qrCode: binCode
-        } : undefined
-      }
+        bin: binCode
+          ? {
+              qrCode: binCode,
+            }
+          : undefined,
+      },
     });
   }
 
   async getMyDeposits(userId: string) {
     const household = await prisma.household.findFirst({
-      where: { userId }
+      where: { userId },
     });
 
     if (!household) {
@@ -53,15 +55,15 @@ export class TransactionService {
 
     return prisma.wasteLog.findMany({
       where: { householdId: household.id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         category: true,
         bin: {
           include: {
-            rtRw: true
-          }
-        }
-      }
+            rtRw: true,
+          },
+        },
+      },
     });
   }
 }
