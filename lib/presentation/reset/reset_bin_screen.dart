@@ -20,7 +20,6 @@ class ResetBinScreen extends ConsumerStatefulWidget {
 }
 
 class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
-  String? _selectedBinId;
   String? _evidencePhotoPath;
   double _compressedKB = 0;
 
@@ -165,7 +164,7 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
                             bin.binType == WasteType.organic
                                 ? Icons.compost_rounded
                                 : Icons.delete_outline_rounded,
-                            color: bin.isCritical ? AppColors.dangerRed : AppColors.primaryBlue,
+                            color: bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
                             size: AppDimensions.iconMd,
                           ),
                           const SizedBox(width: AppDimensions.sm),
@@ -187,7 +186,7 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
                           minHeight: 8,
                           backgroundColor: AppColors.border,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            bin.isCritical ? AppColors.dangerRed : AppColors.primaryBlue,
+                            bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
                           ),
                         ),
                       ),
@@ -266,7 +265,7 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
                 : null,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.primaryGreen,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Ajukan Pengosongan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),

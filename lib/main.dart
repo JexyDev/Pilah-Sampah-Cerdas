@@ -8,6 +8,10 @@ import 'core/router/app_router.dart';
 import 'core/constants/app_strings.dart';
 import 'core/utils/platform_utils.dart';
 
+/// Global navigator key — digunakan oleh Dio Interceptor untuk
+/// force-navigate ke Login saat sesi habis (refresh token expired).
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 /// Entry point aplikasi Pilah Sampah Cerdas — Mobile (Warga).
 ///
 /// Arsitektur: Clean Architecture + Riverpod
@@ -59,6 +63,7 @@ class PilahSampahApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
 
@@ -70,9 +75,9 @@ class PilahSampahApp extends StatelessWidget {
       // bahkan yang tidak pakai Theme.of(context).textTheme
       builder: (context, child) {
         return DefaultTextStyle(
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            color: const Color(0xFF1A1A2E),
+            color: const Color(0xFF191C1E),
           ),
           child: child!,
         );

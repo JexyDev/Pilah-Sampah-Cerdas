@@ -144,7 +144,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           children: [
             Icon(
               sel ? active : inactive,
-              color: sel ? AppColors.primaryBlue : AppColors.textHint,
+              color: sel ? AppColors.primaryGreen : AppColors.textHint,
               size: 22,
             ),
             const SizedBox(height: 2),
@@ -153,7 +153,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                color: sel ? AppColors.primaryBlue : AppColors.textHint,
+                color: sel ? AppColors.primaryGreen : AppColors.textHint,
               ),
             ),
           ],
@@ -193,9 +193,9 @@ class _MainShellState extends ConsumerState<MainShell> {
       onDestinationSelected: (i) =>
           setState(() => _selectedIndex = i >= 2 ? i + 1 : i),
       labelType: NavigationRailLabelType.all,
-      selectedIconTheme: const IconThemeData(color: AppColors.primaryBlue),
+      selectedIconTheme: const IconThemeData(color: AppColors.primaryGreen),
       selectedLabelTextStyle: const TextStyle(
-        color: AppColors.primaryBlue,
+        color: AppColors.primaryGreen,
         fontWeight: FontWeight.w600,
         fontSize: 12,
       ),
@@ -218,7 +218,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   decoration: const BoxDecoration(
-                    color: AppColors.primaryBlue,
+                    color: AppColors.primaryGreen,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

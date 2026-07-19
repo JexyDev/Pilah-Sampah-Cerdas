@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/utils/safe_storage.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/bin_repository.dart';
@@ -11,8 +11,8 @@ import '../../data/repositories/api_auth_repository.dart';
 import '../../data/repositories/api_bin_repository.dart';
 import '../../data/repositories/api_waste_log_repository.dart';
 
-final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
-  return const FlutterSecureStorage();
+final secureStorageProvider = Provider<SafeStorage>((ref) {
+  return const SafeStorage();
 });
 
 final dioProvider = Provider<Dio>((ref) {

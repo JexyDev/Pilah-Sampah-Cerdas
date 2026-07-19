@@ -1,87 +1,61 @@
-# mobile_app_sampah — Pilah Sampah Cerdas
+﻿# Backend Service — Pilah Sampah Cerdas
 
-Aplikasi mobile warga berbasis Flutter untuk penyetoran sampah terpilah, scan QR tong, poin reward, dan pengajuan pengosongan tong.
+Layanan backend berbasis **Express.js (TypeScript)** untuk mengelola database PostgreSQL, antrian deteksi AI di Redis, dan sistem notifikasi/poin.
 
-## Status: MOCK MODE
-
-Semua data bersifat lokal (tidak ada koneksi ke backend/API). Siap diintegrasikan saat backend tersedia cukup dengan mengganti implementasi di `lib/data/repositories/`.
-
----
-
-## Arsitektur: Clean Architecture + Riverpod
-
-```
-lib/
-├── config/                   # AppConfig — env constants
-├── core/
-│   ├── constants/            # Colors, TextStyles, Strings, Dimensions
-│   ├── theme/                # AppTheme (Light Mode Only)
-│   └── router/               # AppRouter + AppRoutes
-├── domain/
-│   ├── entities/             # UserEntity, BinEntity, WasteLogEntity, dll
-│   └── repositories/         # Abstract interfaces (AuthRepo, BinRepo, WasteLogRepo)
-├── data/
-│   ├── mock/                 # MockData — semua dummy data terpusat
-│   └── repositories/         # MockAuthRepository, MockBinRepository, MockWasteLogRepository
-└── presentation/
-    ├── providers/            # Riverpod providers & StateNotifiers
-    ├── shared/widgets/       # OfflineBanner, AppLoading, AppError, BinStatusBadge
-    ├── splash/               # SplashScreen
-    ├── auth/                 # LoginScreen
-    ├── main/                 # MainShell (BottomNav)
-    ├── beranda/              # BerandaScreen
-    ├── scan/                 # ScanFlowScreen (4-step)
-    ├── riwayat/              # RiwayatScreen
-    ├── poin/                 # PoinScreen
-    ├── profil/               # ProfilScreen
-    ├── aktivasi/             # AktivasiBinScreen
-    └── reset/                # ResetBinScreen
-```
+## 🛠️ Persyaratan Sistem (Prerequisites)
+Sebelum menjalankan, pastikan Anda telah memasang:
+*   [Node.js (v18 atau lebih baru)](https://nodejs.org/)
+*   [Docker Desktop](https://www.docker.com/)
 
 ---
 
-## Cara Menjalankan
+## 🚀 Panduan Memulai Cepat (Local Development)
 
+### 1. Jalankan Database & Cache (Docker)
+Buka terminal di folder `/backend` lalu jalankan perintah berikut untuk menyalakan PostgreSQL dan Redis secara otomatis di background:
 ```bash
-cd mobile_app_sampah
-flutter pub get
-flutter run
+docker-compose up -d
+```
+Gunakan perintah `docker-compose ps` untuk memastikan status container berjalan (`running`).
+
+### 2. Setup Environment Variables
+Salin file `.env.example` menjadi `.env` di folder `/backend`:
+```bash
+cp .env.example .env
+```
+Sesuaikan konfigurasi koneksi database di `.env`:
+```env
+DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db?schema=public"
+REDIS_URL="redis://localhost:6379"
+PORT=3000
 ```
 
-## Mock Credentials (Login)
-- **NIK:** `3273012345678901`
-- **Password:** `password123`
+### 3. Install Dependencies
+Jalankan instalasi modul node:
+```bash
+npm install
+```
+
+### 4. Setup Prisma Database Schema & Seed
+Jalankan migrasi database PostgreSQL dan buat tabel secara otomatis sesuai skema SDD:
+```bash
+# Jalankan migrasi Prisma
+npx prisma migrate dev --name init
+
+# Generate Prisma Client
+npx prisma generate
+```
+
+### 5. Jalankan Backend (Development Mode)
+Jalankan server dengan auto-reload (nodemon):
+```bash
+npm run dev
+```
+Server backend akan aktif di `http://localhost:3000`.
 
 ---
 
-## Tech Stack (sesuai sdd.md §12)
-
-| Package | Versi | Kegunaan |
-|---|---|---|
-| flutter_riverpod | ^2.6.1 | State management |
-| dio | ^5.8.0 | HTTP client (disiapkan, belum aktif) |
-| mobile_scanner | ^6.0.10 | QR Scanner |
-| image_picker | ^1.1.2 | Kamera |
-| geolocator | ^13.0.4 | GPS |
-| flutter_secure_storage | ^9.2.4 | Token storage |
-| firebase_messaging | ^15.2.5 | Push notification |
-| connectivity_plus | ^6.1.4 | Monitor koneksi |
-| shared_preferences | ^2.5.3 | Cache lokal |
-| google_fonts | ^6.2.1 | Poppins font |
-
-## Fitur Sprint 1 M3 yang Sudah Diimplementasi
-
-- [x] Struktur project Clean Architecture
-- [x] Design system (Light Mode, Poppins, palet warna sesuai ui_ux_flow.md)
-- [x] Login dengan validasi NIK 16 digit
-- [x] Bottom Navigation 5 tab + FAB Setor
-- [x] Online-Only enforcement dengan `connectivity_plus` + banner offline merah
-- [x] Beranda: greeting, total poin, tombol setor organik/anorganik, status tong
-- [x] Scan Flow 4-step: Foto → AI Detect → Scan QR → Sukses (dengan mock Haversine + validasi bisnis)
-- [x] Riwayat pemilahan (grouped by date)
-- [x] Halaman Poin (total + riwayat)
-- [x] Profil Rumah Tangga
-- [x] Aktivasi Tong Baru
-- [x] Pengajuan Reset/Pengosongan Tong (hanya untuk tong kritis >90%)
-- [x] Error handling sesuai error codes sdd.md §10
-- [x] RBAC-aware (hanya role WARGA yang bisa akses fitur setor/scan)
+## 🧪 Pengujian API (API Testing)
+Gunakan tools API client seperti Postman atau Thunder Client ke endpoint berikut:
+*   `POST http://localhost:3000/api/v1/waste/detect-mock` (Upload / deteksi AI)
+*   `POST http://localhost:3000/api/v1/bins/scan` (Scan transaksi buang sampah)

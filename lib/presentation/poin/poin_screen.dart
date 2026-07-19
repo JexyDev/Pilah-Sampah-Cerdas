@@ -5,8 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/entities/point_history_entity.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/waste_log_provider.dart';
-import '../shared/widgets/app_loading.dart';
-import '../shared/widgets/app_error.dart';
+import '../shared/widgets/skeleton_loading.dart';
+import '../shared/widgets/empty_state.dart';
 
 /// Halaman poin — sesuai desain:
 /// Header biru besar, total poin + ranking, stats 3 kolom, riwayat poin, info poin.
@@ -25,7 +25,7 @@ class PoinScreen extends ConsumerWidget {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(pointHistoryProvider);
         },
-        color: AppColors.primaryBlue,
+        color: AppColors.primaryGreen,
         child: CustomScrollView(
           slivers: [
             // ─── Header biru besar ─────────────────────────────────────
@@ -57,16 +57,9 @@ class PoinScreen extends ConsumerWidget {
 
                   historyAsync.when(
                     data: (history) => history.isEmpty
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Text(
-                                'Belum ada riwayat poin.',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
+                        ? const EmptyState(
+                            message: 'Belum ada riwayat poin.',
+                            icon: Icons.monetization_on_outlined,
                           )
                         : Column(
                             children: history
@@ -79,10 +72,24 @@ class PoinScreen extends ConsumerWidget {
                                 )
                                 .toList(),
                           ),
-                    loading: () => const AppLoading(),
-                    error: (_, __) => AppError(
+                    loading: () => Column(
+                      children: List.generate(
+                        3,
+                        (index) => const Padding(
+                          padding: EdgeInsets.only(bottom: 8.0),
+                          child: SkeletonLoading(
+                            height: 60,
+                            width: double.infinity,
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    error: (_, __) => EmptyState(
                       message: 'Gagal memuat riwayat poin.',
-                      onRetry: () => ref.invalidate(pointHistoryProvider),
+                      icon: Icons.refresh_rounded,
+                      buttonText: 'Coba Lagi',
+                      onButtonPressed: () => ref.invalidate(pointHistoryProvider),
                     ),
                   ),
 
@@ -91,17 +98,17 @@ class PoinScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.06),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
                       ),
                     ),
                     child: const Row(
                       children: [
                         Icon(
                           Icons.info_outline_rounded,
-                          color: AppColors.primaryBlue,
+                          color: AppColors.primaryGreen,
                           size: 18,
                         ),
                         SizedBox(width: 10),
@@ -110,7 +117,7 @@ class PoinScreen extends ConsumerWidget {
                             'Poin akan anda dapatkan setelah Setor Sampah menggunakan Bin yang sesuai.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryGreen,
                             ),
                           ),
                         ),
@@ -129,7 +136,7 @@ class PoinScreen extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, int total) {
     return Container(
-      color: AppColors.primaryBlue,
+      color: Colors.white,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 20,
@@ -145,9 +152,9 @@ class PoinScreen extends ConsumerWidget {
               Text(
                 'Poin Saya',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -156,9 +163,10 @@ class PoinScreen extends ConsumerWidget {
           const Text(
             'TOTAL POIN TERKUMPUL',
             style: TextStyle(
-              color: Colors.white70,
+              color: AppColors.textSecondary,
               fontSize: 11,
               letterSpacing: 0.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
@@ -168,7 +176,7 @@ class PoinScreen extends ConsumerWidget {
               Text(
                 NumberFormat('#,###').format(total),
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
                 ),
@@ -178,7 +186,7 @@ class PoinScreen extends ConsumerWidget {
                 child: Text(
                   'PTS',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppColors.textSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -191,7 +199,7 @@ class PoinScreen extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Row(
@@ -205,7 +213,7 @@ class PoinScreen extends ConsumerWidget {
                     Text(
                       '#3 di RT 03',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primaryGreen,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -215,14 +223,14 @@ class PoinScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (total / 5000).clamp(0.0, 1.0),
               minHeight: 6,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundColor: AppColors.backgroundCanvas,
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.primaryGreen,
               ),
@@ -234,10 +242,10 @@ class PoinScreen extends ConsumerWidget {
   }
 
   Widget _buildHeaderSkeleton(BuildContext context) {
-    return Container(
+    return const SkeletonLoading(
       height: 180,
-      color: AppColors.primaryBlue,
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+      width: double.infinity,
+      borderRadius: BorderRadius.zero,
     );
   }
 
@@ -282,7 +290,7 @@ class _StatsCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: underline
               ? const Border(
-                  bottom: BorderSide(color: AppColors.primaryBlue, width: 2.5),
+                  bottom: BorderSide(color: AppColors.primaryGreen, width: 2.5),
                 )
               : null,
         ),

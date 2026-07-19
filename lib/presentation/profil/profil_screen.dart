@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/entities/bin_entity.dart';
@@ -16,12 +18,23 @@ class ProfilScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfilScreenState extends ConsumerState<ProfilScreen> {
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       ref.read(authProvider.notifier).fetchProfile();
     });
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() => _profileImage = File(picked.path));
+      // TODO-SYNC: panggil repository untuk upload foto profil ke backend
+    }
   }
 
   @override
@@ -41,49 +54,61 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
             // ─── Header avatar ─────────────────────────────────────────
             Container(
               width: double.infinity,
-              color: AppColors.primaryBlue,
+              color: Colors.white,
               padding: const EdgeInsets.only(bottom: 28),
               child: Column(
                 children: [
                   const SizedBox(height: 12),
                   // Avatar rumah dalam lingkaran double
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          color: Colors.white,
+                  // Avatar dengan GestureDetector untuk upload foto
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.border, width: 3),
+                            color: AppColors.backgroundCanvas,
+                            image: _profileImage != null
+                                ? DecorationImage(
+                                    image: FileImage(_profileImage!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: _profileImage == null
+                              ? const Icon(
+                                  Icons.person_rounded,
+                                  color: AppColors.primaryGreen,
+                                  size: 48,
+                                )
+                              : null,
                         ),
-                        child: const Icon(
-                          Icons.home_rounded,
-                          color: AppColors.primaryBlue,
-                          size: 48,
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primaryGreen,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                         ),
-                      ),
-                      Container(
-                        width: 26,
-                        height: 26,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryGreen,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     user != null ? 'Keluarga ${user.name}' : 'Keluarga Warga',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -95,15 +120,15 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       user?.rtRw ?? 'RT 04 / RW 02',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primaryGreen,
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -170,7 +195,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                         child: const Text(
                           'Kelola',
                           style: TextStyle(
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryGreen,
                             fontSize: 13,
                           ),
                         ),

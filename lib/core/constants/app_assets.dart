@@ -4,7 +4,7 @@ class AppAssets {
   AppAssets._();
 
   // ─── Logo ─────────────────────────────────────────────────────────────────
-  static const String logo = 'assets/logosampahpilih.jpg';
+  static const String logo = 'assets/logo.png';
 
   // ─── Stitch UI — Screen References ───────────────────────────────────────
   static const String splash =

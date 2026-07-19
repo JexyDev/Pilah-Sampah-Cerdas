@@ -3,6 +3,7 @@ import '../../../domain/entities/waste_log_entity.dart';
 import '../../../domain/entities/point_history_entity.dart';
 import '../../../domain/entities/bin_entity.dart';
 import '../../../domain/repositories/waste_log_repository.dart';
+import '../../../core/utils/app_exceptions.dart';
 import '../network/api_client.dart';
 
 /// Implementasi WasteLogRepository yang terhubung ke backend Express.js.
@@ -32,9 +33,10 @@ class ApiWasteLogRepository implements WasteLogRepository {
       }
       return [];
     } on DioException catch (e) {
-      throw Exception('Gagal memuat riwayat: ${e.message}');
+      throw AppNetworkException(mapDioExceptionToMessage(e));
     } catch (e) {
-      throw Exception('Kesalahan sistem: $e');
+      if (e is AppNetworkException) rethrow;
+      throw AppNetworkException('Kesalahan sistem: $e');
     }
   }
 
@@ -57,9 +59,10 @@ class ApiWasteLogRepository implements WasteLogRepository {
       }
       throw Exception('Gagal memuat riwayat poin');
     } on DioException catch (e) {
-      throw Exception('Gagal memuat riwayat poin: ${e.message}');
+      throw AppNetworkException(mapDioExceptionToMessage(e));
     } catch (e) {
-      throw Exception('Kesalahan sistem: $e');
+      if (e is AppNetworkException) rethrow;
+      throw AppNetworkException('Kesalahan sistem: $e');
     }
   }
 
@@ -76,9 +79,10 @@ class ApiWasteLogRepository implements WasteLogRepository {
       }
       throw Exception('Gagal memuat total poin');
     } on DioException catch (e) {
-      throw Exception('Gagal memuat total poin: ${e.message}');
+      throw AppNetworkException(mapDioExceptionToMessage(e));
     } catch (e) {
-      throw Exception('Kesalahan sistem: $e');
+      if (e is AppNetworkException) rethrow;
+      throw AppNetworkException('Kesalahan sistem: $e');
     }
   }
 

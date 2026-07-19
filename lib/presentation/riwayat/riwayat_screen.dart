@@ -5,8 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/entities/waste_log_entity.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/waste_log_provider.dart';
-import '../shared/widgets/app_loading.dart';
-import '../shared/widgets/app_error.dart';
+import '../shared/widgets/skeleton_loading.dart';
+import '../shared/widgets/empty_state.dart';
 
 /// Halaman riwayat pemilahan — sesuai desain:
 /// Filter tabs, summary kg organik+anorganik, list TERVALIDASI.
@@ -52,10 +52,23 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
                     ? _buildEmpty()
                     : _buildContent(filtered);
               },
-              loading: () => const AppLoading(message: 'Memuat riwayat...'),
-              error: (_, __) => AppError(
+              loading: () => ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: 4,
+                itemBuilder: (_, __) => const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: SkeletonLoading(
+                    height: 80,
+                    width: double.infinity,
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                ),
+              ),
+              error: (_, __) => EmptyState(
                 message: 'Gagal memuat riwayat.',
-                onRetry: () => ref.invalidate(wasteLogsProvider),
+                icon: Icons.error_outline_rounded,
+                buttonText: 'Coba Lagi',
+                onButtonPressed: () => ref.invalidate(wasteLogsProvider),
               ),
             ),
           ),
@@ -96,7 +109,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primaryBlue : Colors.transparent,
+          color: active ? AppColors.primaryGreen : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: active ? null : Border.all(color: AppColors.border),
         ),
@@ -210,11 +223,9 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
   }
 
   Widget _buildEmpty() {
-    return const Center(
-      child: Text(
-        'Belum ada riwayat pemilahan.',
-        style: TextStyle(color: AppColors.textSecondary),
-      ),
+    return const EmptyState(
+      message: 'Belum ada riwayat pemilahan.',
+      icon: Icons.history_rounded,
     );
   }
 }

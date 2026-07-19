@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/utils/safe_storage.dart';
 import '../../../config/app_config.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../../domain/repositories/auth_repository.dart';
@@ -20,7 +20,7 @@ class ApiAuthRepository implements AuthRepository {
   });
 
   final ApiClient apiClient;
-  final FlutterSecureStorage secureStorage;
+  final SafeStorage secureStorage;
 
   // ─── Login ────────────────────────────────────────────────────────────────
 
@@ -32,7 +32,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       final response = await apiClient.dio.post(
         '/auth/login',
-        data: {'nik': nik, 'password': password},
+        data: {'email': nik, 'password': password}, // Backend menerima field 'email' yang berisi email/NIK
       );
 
       if (response.statusCode == 200) {
@@ -200,8 +200,18 @@ class ApiAuthRepository implements AuthRepository {
         if (data.isNotEmpty) {
           final hh = data.first as Map<String, dynamic>;
           final householdId = hh['id']?.toString() ?? '';
-          final rtRw = hh['rtRw']?.toString() ?? '';
-          final kelurahan = hh['kelurahan']?.toString() ?? '';
+          
+          String rtRw = '';
+          String kelurahan = '';
+          
+          if (hh['rtRw'] is Map) {
+            final rtRwMap = hh['rtRw'] as Map<String, dynamic>;
+            rtRw = rtRwMap['name']?.toString() ?? '';
+            if (rtRwMap['kelurahan'] is Map) {
+              final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
+              kelurahan = kelMap['name']?.toString() ?? '';
+            }
+          }
 
           if (householdId.isNotEmpty) {
             await secureStorage.write(

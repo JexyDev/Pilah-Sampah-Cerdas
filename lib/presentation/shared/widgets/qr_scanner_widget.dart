@@ -122,9 +122,8 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            width: double.infinity,
-            height: 300,
+          child: AspectRatio(
+            aspectRatio: 1.0,
             child: Stack(
               children: [
                 if (_scanned)
@@ -392,7 +391,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
                   if (v.isNotEmpty) widget.onQrDetected(v);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
+                  backgroundColor: AppColors.primaryGreen,
                   minimumSize: const Size(52, 48),
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(

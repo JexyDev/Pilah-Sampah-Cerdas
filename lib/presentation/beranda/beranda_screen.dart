@@ -11,8 +11,9 @@ import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
 import '../providers/waste_log_provider.dart';
 import '../providers/connectivity_provider.dart';
-import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/app_error.dart';
+import '../shared/widgets/skeleton_loading.dart';
+import '../shared/widgets/empty_state.dart';
 
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
@@ -39,7 +40,7 @@ class BerandaScreen extends ConsumerWidget {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(wasteLogsProvider);
         },
-        color: AppColors.primaryBlue,
+        color: AppColors.primaryGreen,
         child: CustomScrollView(
           slivers: [
             // ─── Header Biru ─────────────────────────────────────────────
@@ -59,8 +60,15 @@ class BerandaScreen extends ConsumerWidget {
                   // ─── Stats Card ──────────────────────────────────────
                   totalPointsAsync.when(
                     data: (total) => _buildStatsCard(context, total),
-                    loading: () => const AppLoading(),
-                    error: (_, __) => const SizedBox.shrink(),
+                    loading: () => const SkeletonLoading(
+                      height: 100,
+                      width: double.infinity,
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                    ),
+                    error: (e, __) => AppError(
+                      message: e.toString(),
+                      onRetry: () => ref.invalidate(totalPointsProvider),
+                    ),
                   ),
                   const SizedBox(height: AppDimensions.md),
 
@@ -95,7 +103,7 @@ class BerandaScreen extends ConsumerWidget {
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryGreen,
                             fontSize: 13,
                           ),
                         ),
@@ -120,10 +128,24 @@ class BerandaScreen extends ConsumerWidget {
                                 )
                                 .toList(),
                           ),
-                    loading: () => const AppLoading(),
-                    error: (_, __) => AppError(
+                    loading: () => Column(
+                      children: List.generate(
+                        3,
+                        (index) => const Padding(
+                          padding: EdgeInsets.only(bottom: 8.0),
+                          child: SkeletonLoading(
+                            height: 70,
+                            width: double.infinity,
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    error: (_, __) => EmptyState(
                       message: 'Gagal memuat riwayat.',
-                      onRetry: () => ref.invalidate(wasteLogsProvider),
+                      icon: Icons.refresh_rounded,
+                      buttonText: 'Coba Lagi',
+                      onButtonPressed: () => ref.invalidate(wasteLogsProvider),
                     ),
                   ),
                   const SizedBox(height: 80),
@@ -143,7 +165,7 @@ class BerandaScreen extends ConsumerWidget {
     bool isOnline,
   ) {
     return Container(
-      color: AppColors.primaryBlue,
+      color: Colors.white,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 16,
@@ -161,15 +183,16 @@ class BerandaScreen extends ConsumerWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.backgroundCanvas,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.asset(
                   AppAssets.logo,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.person, color: AppColors.primaryBlue),
+                      const Icon(Icons.person, color: AppColors.primaryGreen),
                 ),
               ),
               const SizedBox(width: 12),
@@ -180,14 +203,14 @@ class BerandaScreen extends ConsumerWidget {
                     Text(
                       _getGreeting(),
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
                     Text(
                       name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -204,7 +227,7 @@ class BerandaScreen extends ConsumerWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -212,16 +235,16 @@ class BerandaScreen extends ConsumerWidget {
                   children: [
                     const Icon(
                       Icons.location_on_outlined,
-                      color: Colors.white,
+                      color: AppColors.primaryGreen,
                       size: 13,
                     ),
                     const SizedBox(width: 3),
                     Text(
                       rtRw,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primaryGreen,
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -377,14 +400,9 @@ class BerandaScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyLogs(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Belum ada riwayat.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-      ),
+    return const EmptyState(
+      message: 'Belum ada riwayat terakhir.',
+      icon: Icons.history_rounded,
     );
   }
 }
@@ -409,27 +427,39 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor, size: 26),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: valueColor ?? AppColors.textPrimary,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // Bisa diarahkan ke screen detail jika dibutuhkan
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Column(
+              children: [
+                Icon(icon, color: iconColor, size: 26),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: valueColor ?? AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
