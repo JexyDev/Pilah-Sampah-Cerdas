@@ -24,7 +24,12 @@ const router = Router();
  *       200:
  *         description: List of all users
  */
-router.get("/", authMiddleware, roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN"]), userController.getAll);
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN"]),
+  userController.getAll
+);
 
 /**
  * @swagger

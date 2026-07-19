@@ -115,8 +115,12 @@ Butler adalah fitur otomasi bawaan Trello yang tidak bisa dikonfigurasi via API,
 | Langkah | Status | Catatan |
 |---------|--------|---------|
 | Langkah 0 — Board Trello | 🔄 Partial | Butler rule perlu setup manual di UI Trello |
-| Langkah 1 — Script sync | ✅ Done | `scripts/trello-sync.js` (commit-driven) |
-| Langkah 2 — GitHub Actions | ✅ Done | `.github/workflows/trello-sync.yml` |
-| Langkah 3 — Detail card | ✅ Done | Deskripsi + checklist otomatis |
-| Langkah 4 — Dokumentasi | ✅ Done | `README-automation.md` diperbarui |
-| Langkah 5 — E2E Test | ⏳ Pending | Menunggu Trello credentials dikonfigurasi |
+| Langkah 1 — Script sync | ✅ Done | `scripts/trello-sync.js` (commit-driven, dry-run verified) |
+| Langkah 2 — GitHub Actions | ✅ Done | `.github/workflows/trello-sync.yml` (terpisah dari CI/CD) |
+| Langkah 3 — Detail card | ✅ Done | Deskripsi + checklist otomatis (Implementasi/Testing/Review) |
+| Langkah 4 — Dokumentasi | ✅ Done | `README-automation.md` diperbarui lengkap |
+| Langkah 5 — E2E Test | 🔄 In Progress | Workflow dipush ke `local-dev`, menunggu konfirmasi run |
+
+> **Catatan Arsitektur**: Project ini adalah **monorepo tunggal** (`JexyDev/Pilah-Sampah-Cerdas`).
+> Mobile app berada di subfolder `mobile/` — bukan repo terpisah. Satu workflow yang
+> sama mendeteksi label Backend/Frontend/Mobile secara otomatis dari path file yang berubah.

@@ -1,13 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
-  ORGANIC: 0.4,      // Organic waste is denser
-  NON_ORGANIC: 0.2   // Non-organic is lighter
+  ORGANIC: 0.4, // Organic waste is denser
+  NON_ORGANIC: 0.2, // Non-organic is lighter
 };
 
 export class BinService {
@@ -44,7 +42,12 @@ export class BinService {
     }
 
     // 2. Validate Geofencing (< 10m) if coordinates are provided
-    if (userLat !== undefined && userLng !== undefined && bin.latitude !== null && bin.longitude !== null) {
+    if (
+      userLat !== undefined &&
+      userLng !== undefined &&
+      bin.latitude !== null &&
+      bin.longitude !== null
+    ) {
       const distance = getDistanceMeters(
         userLat,
         userLng,
@@ -110,7 +113,7 @@ export class BinService {
       weightKg,
       volumeLiter: estimatedVolume,
       pointsAwarded: calculatedPoints,
-      newBinVolume: newVolume
+      newBinVolume: newVolume,
     };
   }
 
@@ -144,24 +147,20 @@ export class BinService {
     const qrCode = data.qrCode || `TS-${Date.now()}`;
     let kelurahanId = null;
     if (data.rtRwId) {
-      const area = await prisma.rtRwArea.findUnique({
-        where: { id: parseInt(data.rtRwId) }
-      });
+      const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
       if (area) {
         kelurahanId = area.kelurahanId;
       }
     }
 
-    return prisma.bin.create({
-      data: {
-        qrCode,
-        categoryId: data.categoryId,
-        rtRwId: parseInt(data.rtRwId),
-        kelurahanId,
-        latitude: data.latitude ? parseFloat(data.latitude) : null,
-        longitude: data.longitude ? parseFloat(data.longitude) : null,
-        maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0
-      }
+    return binRepository.createBin({
+      qrCode,
+      categoryId: data.categoryId,
+      rtRwId: parseInt(data.rtRwId),
+      kelurahanId,
+      latitude: data.latitude ? parseFloat(data.latitude) : null,
+      longitude: data.longitude ? parseFloat(data.longitude) : null,
+      maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
     });
   }
 
@@ -174,30 +173,134 @@ export class BinService {
     if (data.categoryId) updateData.categoryId = data.categoryId;
     if (data.rtRwId) {
       updateData.rtRwId = parseInt(data.rtRwId);
-      const area = await prisma.rtRwArea.findUnique({
-        where: { id: parseInt(data.rtRwId) }
-      });
+      const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
       if (area) {
         updateData.kelurahanId = area.kelurahanId;
       }
     }
     if (data.maxCapacityLiter) updateData.maxCapacityLiter = parseFloat(data.maxCapacityLiter);
-    if (data.latitude !== undefined) updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
-    if (data.longitude !== undefined) updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
+    if (data.latitude !== undefined)
+      updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
+    if (data.longitude !== undefined)
+      updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
 
-    return prisma.bin.update({
-      where: { qrCode: id },
-      data: updateData
-    });
+    return binRepository.updateBin(id, updateData);
   }
 
   /**
    * Delete a bin
    */
   async deleteBin(id: string) {
-    return prisma.bin.delete({
-      where: { qrCode: id }
+    return binRepository.deleteBin(id);
+  }
+
+  async getAreas() {
+    return binRepository.findAreas();
+  }
+
+  async getKelurahans() {
+    return binRepository.findKelurahans();
+  }
+
+  async createArea(name: string, kelurahanId: number) {
+    return binRepository.createArea(name, kelurahanId);
+  }
+
+  async getMyBins(userId: string) {
+    const user = await binRepository.getUserRtRwId(userId);
+    let rtRwId = user?.rtRwId;
+
+    if (!rtRwId) {
+      const household = await binRepository.getUserHouseholdRtRwId(userId);
+      rtRwId = household?.rtRwId || null;
+    }
+
+    if (!rtRwId) {
+      return [];
+    }
+
+    const bins = await binRepository.findBinsByRtRwId(rtRwId);
+
+    return bins.map((bin: any) => {
+      const currentVol = Number(bin.currentVolumeLiter);
+      const maxVol = Number(bin.maxCapacityLiter);
+      const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
+      return {
+        id: bin.id,
+        qrCode: bin.qrCode,
+        category: bin.category.name,
+        currentVolumeLiter: currentVol,
+        maxCapacityLiter: maxVol,
+        kapasitas,
+        rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
+        status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+      };
     });
+  }
+
+  /**
+   * Create bin reset request and notify area petugas
+   */
+  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+    const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
+
+    // Notify all Petugas/Admin
+    const petugasList = await binRepository.findPetugasForArea(request.bin.rtRwId);
+    for (const petugas of petugasList) {
+      await binRepository
+        .createNotification(
+          petugas.id,
+          "Pengajuan Pengosongan Baru",
+          `[REQ-${request.id}] Warga (${request.user.name}) mengajukan pengosongan tong ${request.bin.qrCode} di ${request.bin.rtRw.name}.`
+        )
+        .catch(() => {});
+    }
+
+    return request;
+  }
+
+  /**
+   * Get reset request by ID
+   */
+  async getResetRequest(id: string) {
+    return binRepository.findResetRequestById(id);
+  }
+
+  /**
+   * Review (approve/reject) reset request
+   */
+  async reviewResetRequest(id: string, status: "APPROVED" | "REJECTED", reviewedById: string) {
+    const request = await binRepository.findResetRequestById(id);
+    if (!request) {
+      throw new Error("REQUEST_NOT_FOUND");
+    }
+
+    const updated = await binRepository.updateResetRequestStatus(id, status, reviewedById);
+
+    if (status === "APPROVED") {
+      // Reset Bin volume
+      await binRepository.updateVolume(request.binId, 0.0);
+
+      // Notify Warga
+      await binRepository
+        .createNotification(
+          request.userId,
+          "Pengajuan Disetujui",
+          `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong ${request.bin.qrCode} menjadi 0%.`
+        )
+        .catch(() => {});
+    } else {
+      // Notify Warga
+      await binRepository
+        .createNotification(
+          request.userId,
+          "Pengajuan Ditolak",
+          `Pengajuan pengosongan tong ${request.bin.qrCode} ditolak oleh petugas.`
+        )
+        .catch(() => {});
+    }
+
+    return updated;
   }
 }
 

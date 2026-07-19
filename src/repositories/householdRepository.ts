@@ -23,7 +23,7 @@ export class HouseholdRepository {
       where: { id },
       include: {
         rtRw: {
-          include: { kelurahan: true }
+          include: { kelurahan: true },
         },
       },
     });
@@ -37,7 +37,7 @@ export class HouseholdRepository {
       where: { userId },
       include: {
         rtRw: {
-          include: { kelurahan: true }
+          include: { kelurahan: true },
         },
       },
     });
@@ -51,7 +51,7 @@ export class HouseholdRepository {
       where: {
         userId,
         rtRwId,
-      }
+      },
     });
   }
 
@@ -62,12 +62,12 @@ export class HouseholdRepository {
     return prisma.household.findMany({
       include: {
         rtRw: {
-          include: { kelurahan: true }
+          include: { kelurahan: true },
         },
         user: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
   }
 }

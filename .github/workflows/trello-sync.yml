@@ -1,16 +1,13 @@
 name: Trello Sync (Commit-Driven)
 
-# Berjalan setiap push ke semua branch utama project.
+# Berjalan setiap push ke branch utama.
 # Job trello-sync TERPISAH dari build/deploy agar Trello API failure
 # tidak memblokir proses deployment ke VPS.
 on:
   push:
     branches:
       - main
-      - backend
       - local-dev
-      - mobile
-      - frontend
     paths-ignore:
       - '.trello-sync-state.json'
       - 'github-trello-automation-tracker.md'

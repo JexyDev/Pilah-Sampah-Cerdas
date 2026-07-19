@@ -7,7 +7,7 @@ class RedisService {
   private queue: Array<{ id: string; resolve: Function; reject: Function }> = [];
   private processing = 0;
   private MAX_CONCURRENT = 5; // Process up to 5 concurrent AI detections
-  
+
   // Fallback in-memory storage if Redis is offline
   private memoryQuota: Record<string, number> = {};
 
@@ -48,7 +48,7 @@ class RedisService {
           return false;
         }
         await this.client.set(key, (count + 1).toString(), {
-          EX: 86400 // Expire in 1 day
+          EX: 86400, // Expire in 1 day
         });
         return true;
       } catch (err) {
@@ -99,7 +99,7 @@ class RedisService {
           const count = parseInt(countStr, 10);
           if (count > 0) {
             await this.client.set(key, (count - 1).toString(), {
-              EX: 86400
+              EX: 86400,
             });
           }
         }
@@ -126,7 +126,7 @@ class RedisService {
       const id = uuidv4();
       this.queue.push({ id, resolve, reject });
       console.log(`Task ${id} added to FIFO queue. Queue length: ${this.queue.length}`);
-      
+
       this.processQueue(taskFn);
     });
   }

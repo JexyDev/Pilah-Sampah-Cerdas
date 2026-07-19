@@ -1,26 +1,59 @@
 import { PrismaClient, User, RefreshToken, Role } from "@prisma/client";
+import { DatabaseUnavailableError } from "../utils/errors.js";
 
 const prisma = new PrismaClient();
+
+function isDatabaseConnectionError(error: any): boolean {
+  const code = error?.code;
+  const message = error?.message || "";
+  if (code && typeof code === "string" && code.startsWith("P10")) {
+    return true;
+  }
+  if (
+    message.includes("Can't reach database") ||
+    message.includes("connection limit") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ETIMEDOUT") ||
+    message.includes("socket hang up")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 export class AuthRepository {
   /**
    * Find a user by email, including their role details.
    */
   async findUserByEmail(email: string): Promise<(User & { role: Role }) | null> {
-    return prisma.user.findUnique({
-      where: { email },
-      include: { role: true },
-    });
+    try {
+      return await prisma.user.findUnique({
+        where: { email },
+        include: { role: true },
+      });
+    } catch (error: any) {
+      if (isDatabaseConnectionError(error)) {
+        throw new DatabaseUnavailableError();
+      }
+      throw error;
+    }
   }
 
   /**
    * Find a user by NIK, including their role details.
    */
   async findUserByNik(nik: string): Promise<(User & { role: Role }) | null> {
-    return prisma.user.findUnique({
-      where: { nik },
-      include: { role: true },
-    });
+    try {
+      return await prisma.user.findUnique({
+        where: { nik },
+        include: { role: true },
+      });
+    } catch (error: any) {
+      if (isDatabaseConnectionError(error)) {
+        throw new DatabaseUnavailableError();
+      }
+      throw error;
+    }
   }
 
   /**
@@ -39,7 +72,9 @@ export class AuthRepository {
   /**
    * Find a valid refresh token.
    */
-  async findRefreshToken(token: string): Promise<(RefreshToken & { user: User & { role: Role } }) | null> {
+  async findRefreshToken(
+    token: string
+  ): Promise<(RefreshToken & { user: User & { role: Role } }) | null> {
     return prisma.refreshToken.findUnique({
       where: { token },
       include: {
@@ -54,11 +89,13 @@ export class AuthRepository {
    * Delete a specific refresh token (used during logout or rotation).
    */
   async deleteRefreshToken(token: string): Promise<void> {
-    await prisma.refreshToken.delete({
-      where: { token },
-    }).catch(() => {
-      // Ignore if token doesn't exist
-    });
+    await prisma.refreshToken
+      .delete({
+        where: { token },
+      })
+      .catch(() => {
+        // Ignore if token doesn't exist
+      });
   }
   /**
    * Find a user by ID, including their role details.
@@ -73,7 +110,10 @@ export class AuthRepository {
   /**
    * Update a user's profile information.
    */
-  async updateUser(id: string, data: { name?: string; email?: string; phone?: string; address?: string; fotoProfil?: string }): Promise<User> {
+  async updateUser(
+    id: string,
+    data: { name?: string; email?: string; phone?: string; address?: string; fotoProfil?: string }
+  ): Promise<User> {
     return prisma.user.update({
       where: { id },
       data,

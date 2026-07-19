@@ -4,13 +4,16 @@ import { authService } from "../services/authService.js";
 
 // Validation Schemas
 const loginSchema = z.object({
-  email: z.string().refine(val => {
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-    const isNik = /^\d{16}$/.test(val);
-    return isEmail || isNik;
-  }, {
-    message: "Format email atau NIK tidak valid"
-  }),
+  email: z.string().refine(
+    (val) => {
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      const isNik = /^\d{16}$/.test(val);
+      return isEmail || isNik;
+    },
+    {
+      message: "Format email atau NIK tidak valid",
+    }
+  ),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
@@ -32,7 +35,6 @@ const updatePasswordSchema = z.object({
 });
 
 export class AuthController {
-  
   /**
    * Handle User Login
    */
@@ -41,7 +43,12 @@ export class AuthController {
       // 1. Validate Input
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Format email atau password tidak valid",
+          fields: parsed.error.format(),
+        });
         return;
       }
       const { email: emailOrNik, password } = parsed.data;
@@ -64,13 +71,42 @@ export class AuthController {
           user: result.user,
           accessToken: result.accessToken, // For Mobile client
           refreshToken: result.refreshToken, // Mobile & Web client use this to refresh
-        }
+        },
       });
     } catch (error: any) {
-      if (error.message === "INVALID_CREDENTIALS") {
-        res.status(401).json({ error: "UNAUTHORIZED", message: "Email atau password salah" });
+      const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
+      const emailLog = req.body?.email || "unknown";
+      console.warn(
+        `[Login Failed] IP: ${ip} | Email/NIK: ${emailLog} | Reason: ${error.message || error.name}`
+      );
+
+      if (
+        error.name === "DatabaseUnavailableError" ||
+        error.message?.includes("DatabaseUnavailable")
+      ) {
+        res.status(503).json({
+          success: false,
+          code: "SERVICE_UNAVAILABLE",
+          message: "Server sedang bermasalah, coba lagi nanti",
+        });
+      } else if (error.message === "USER_NOT_FOUND") {
+        res.status(401).json({
+          success: false,
+          code: "USER_NOT_FOUND",
+          message: "User tidak ditemukan",
+        });
+      } else if (error.message === "WRONG_PASSWORD") {
+        res.status(401).json({
+          success: false,
+          code: "WRONG_PASSWORD",
+          message: "Password salah",
+        });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+        res.status(500).json({
+          success: false,
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Terjadi kesalahan pada server",
+        });
       }
     }
   }
@@ -101,14 +137,18 @@ export class AuthController {
       res.status(200).json({
         message: "Token berhasil diperbarui",
         data: {
-          accessToken: result.accessToken
-        }
+          accessToken: result.accessToken,
+        },
       });
     } catch (error: any) {
       if (error.message === "INVALID_TOKEN" || error.message === "TOKEN_EXPIRED") {
-        res.status(401).json({ error: "UNAUTHORIZED", message: "Refresh token tidak valid atau kadaluarsa" });
+        res
+          .status(401)
+          .json({ error: "UNAUTHORIZED", message: "Refresh token tidak valid atau kadaluarsa" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -119,7 +159,7 @@ export class AuthController {
   async logout(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
-      
+
       if (refreshToken) {
         await authService.logout(refreshToken);
       }
@@ -129,7 +169,9 @@ export class AuthController {
 
       res.status(200).json({ message: "Logout berhasil" });
     } catch (error) {
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan saat logout" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan saat logout" });
     }
   }
   /**
@@ -141,7 +183,7 @@ export class AuthController {
         res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
         return;
       }
-      
+
       const parsed = updateProfileSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
@@ -168,16 +210,20 @@ export class AuthController {
             phone: (updatedUser as any).phone,
             address: (updatedUser as any).address,
             fotoProfil: (updatedUser as any).fotoProfil,
-          }
-        }
+          },
+        },
       });
     } catch (error: any) {
       if (error.message === "USER_NOT_FOUND") {
         res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
       } else if (error.message === "EMAIL_ALREADY_IN_USE") {
-        res.status(409).json({ error: "CONFLICT", message: "Email sudah digunakan oleh akun lain" });
+        res
+          .status(409)
+          .json({ error: "CONFLICT", message: "Email sudah digunakan oleh akun lain" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -208,7 +254,9 @@ export class AuthController {
       } else if (error.message === "INVALID_CREDENTIALS") {
         res.status(401).json({ error: "UNAUTHORIZED", message: "Password lama salah" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -227,13 +275,15 @@ export class AuthController {
       res.status(200).json({
         success: true,
         message: "Authenticated",
-        user
+        user,
       });
     } catch (error: any) {
       if (error.message === "USER_NOT_FOUND") {
         res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -254,20 +304,29 @@ export class AuthController {
       }
 
       const filePath = `/uploads/${req.file.filename}`;
-      const updatedUser = await authService.updateProfile(req.user.userId, undefined, undefined, undefined, undefined, filePath);
+      const updatedUser = await authService.updateProfile(
+        req.user.userId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        filePath
+      );
 
       res.status(200).json({
         success: true,
         message: "Foto profil berhasil diunggah",
         data: {
-          fotoProfil: filePath
-        }
+          fotoProfil: filePath,
+        },
       });
     } catch (error: any) {
       if (error.message === "USER_NOT_FOUND") {
         res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengunggah foto profil" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengunggah foto profil" });
       }
     }
   }

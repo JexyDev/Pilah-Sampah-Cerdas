@@ -12,11 +12,13 @@ export class PointController {
 
       res.status(200).json({
         success: true,
-        data: ledger
+        data: ledger,
       });
     } catch (error) {
       console.error("Point Ledger Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat poin" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat poin" });
     }
   }
 
@@ -30,11 +32,13 @@ export class PointController {
 
       res.status(200).json({
         success: true,
-        data: ledger
+        data: ledger,
       });
     } catch (error) {
       console.error("Point Ledger Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat poin user" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat poin user" });
     }
   }
 
@@ -46,11 +50,13 @@ export class PointController {
       const leaderboard = await pointService.getLeaderboard();
       res.status(200).json({
         success: true,
-        data: leaderboard
+        data: leaderboard,
       });
     } catch (error) {
       console.error("Point Leaderboard Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil leaderboard" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil leaderboard" });
     }
   }
 
@@ -63,14 +69,19 @@ export class PointController {
       const { points, ewalletType, phone } = req.body;
 
       if (!points || points <= 0 || !ewalletType || !phone) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Parameter tidak lengkap atau tidak valid." });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "Parameter tidak lengkap atau tidak valid." });
         return;
       }
 
       // Check current points
       const totalPoints = await pointService.getTotalPoints(userId);
       if (totalPoints < points) {
-        res.status(400).json({ error: "INSUFFICIENT_POINTS", message: "Poin Anda tidak mencukupi untuk melakukan penukaran." });
+        res.status(400).json({
+          error: "INSUFFICIENT_POINTS",
+          message: "Poin Anda tidak mencukupi untuk melakukan penukaran.",
+        });
         return;
       }
 
@@ -80,11 +91,13 @@ export class PointController {
       res.status(200).json({
         success: true,
         message: "Penukaran poin berhasil diproses.",
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error("Point Conversion Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses penukaran poin" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses penukaran poin" });
     }
   }
 }

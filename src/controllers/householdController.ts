@@ -11,7 +11,6 @@ const registerSchema = z.object({
 });
 
 export class HouseholdController {
-  
   /**
    * Register a Household
    */
@@ -40,13 +39,17 @@ export class HouseholdController {
       // 3. Return response
       res.status(201).json({
         message: "Registrasi rumah tangga berhasil",
-        data: household
+        data: household,
       });
     } catch (error: any) {
       if (error.message === "HOUSEHOLD_ALREADY_EXISTS") {
-        res.status(409).json({ error: "CONFLICT", message: "Anda sudah mendaftarkan rumah di area ini." });
+        res
+          .status(409)
+          .json({ error: "CONFLICT", message: "Anda sudah mendaftarkan rumah di area ini." });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mendaftarkan rumah tangga" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mendaftarkan rumah tangga" });
       }
     }
   }
@@ -61,10 +64,12 @@ export class HouseholdController {
 
       res.status(200).json({
         message: "Berhasil mengambil data",
-        data: households
+        data: households,
       });
     } catch (error) {
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
     }
   }
 
@@ -76,10 +81,14 @@ export class HouseholdController {
       const households = await householdService.getAllHouseholds();
       res.status(200).json({
         success: true,
-        data: households
+        data: households,
       });
     } catch (error) {
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mengambil data rumah tangga",
+      });
     }
   }
 }

@@ -6,7 +6,7 @@ export const transactionController = {
     try {
       const { binCode } = req.query;
       const deposits = await transactionService.getDeposits(binCode as string);
-      
+
       const mappedDeposits = deposits.map((d: any) => ({
         id: d.id,
         warga: d.household?.user?.name || "Unknown",
@@ -16,7 +16,7 @@ export const transactionController = {
         poin: Math.floor(Number(d.weightKg) * (d.category?.pointsPerKg || 10)),
         waktu: d.createdAt,
         status: "Selesai",
-        lokasi: `Tong: ${d.bin?.qrCode}`
+        lokasi: `Tong: ${d.bin?.qrCode}`,
       }));
 
       res.status(200).json({ success: true, data: mappedDeposits });
@@ -30,7 +30,7 @@ export const transactionController = {
     try {
       const userId = req.user!.userId;
       const deposits = await transactionService.getMyDeposits(userId);
-      
+
       const mappedDeposits = deposits.map((d: any) => ({
         id: d.id,
         jenis: d.category?.name || d.categoryId,
@@ -39,7 +39,7 @@ export const transactionController = {
         poin: Math.floor(Number(d.weightKg) * (d.category?.pointsPerKg || 10)),
         waktu: d.createdAt,
         status: "Selesai",
-        lokasi: `Tong: ${d.bin?.qrCode}`
+        lokasi: `Tong: ${d.bin?.qrCode}`,
       }));
 
       res.status(200).json({ success: true, data: mappedDeposits });
@@ -47,5 +47,5 @@ export const transactionController = {
       console.error("[TransactionController] getMyDeposits error:", error);
       res.status(500).json({ success: false, message: "Gagal mengambil riwayat setoran Anda" });
     }
-  }
+  },
 };

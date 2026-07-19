@@ -10,12 +10,12 @@ export class PointService {
   async getLedger(userId: string) {
     const [history, totalPoints] = await Promise.all([
       pointRepository.getHistoryByUserId(userId),
-      pointRepository.getTotalPoints(userId)
+      pointRepository.getTotalPoints(userId),
     ]);
 
     return {
       totalPoints,
-      history
+      history,
     };
   }
 
@@ -31,22 +31,22 @@ export class PointService {
    */
   async convertPoints(userId: string, points: number, ewalletType: string, phone: string) {
     const amountRupiah = points * 100;
-    
+
     return prisma.$transaction(async (tx) => {
       const history = await tx.pointHistory.create({
         data: {
           userId,
           points: -points,
-          description: `Konversi ${points} Poin ke Saldo ${ewalletType} (${phone})`
-        }
+          description: `Konversi ${points} Poin ke Saldo ${ewalletType} (${phone})`,
+        },
       });
 
       await tx.notification.create({
         data: {
           userId,
           title: "Penukaran Poin Berhasil",
-          message: `Penukaran ${points} Poin menjadi Rp ${amountRupiah.toLocaleString("id-ID")} ke ${ewalletType} (${phone}) sukses.`
-        }
+          message: `Penukaran ${points} Poin menjadi Rp ${amountRupiah.toLocaleString("id-ID")} ke ${ewalletType} (${phone}) sukses.`,
+        },
       });
 
       return history;

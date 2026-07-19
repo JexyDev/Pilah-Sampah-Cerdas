@@ -17,7 +17,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     // 1. Try to get token from HttpOnly Cookie (Web Client)
     if (req.cookies && req.cookies.accessToken) {
       token = req.cookies.accessToken;
-    } 
+    }
     // 2. Try to get token from Authorization header (Mobile App)
     else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
@@ -29,7 +29,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     }
 
     // DEV BYPASS
-    if (process.env.NODE_ENV === 'development' && token === 'MOCK_TOKEN_ADMIN') {
+    if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
       req.user = { userId: "mock-admin-id", role: "ADMIN" };
       return next();
     }
@@ -39,6 +39,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     req.user = decoded; // Attach user payload to request
     next();
   } catch (error) {
-    res.status(401).json({ error: "UNAUTHORIZED", message: "Token tidak valid atau sudah kadaluarsa" });
+    res
+      .status(401)
+      .json({ error: "UNAUTHORIZED", message: "Token tidak valid atau sudah kadaluarsa" });
   }
 };

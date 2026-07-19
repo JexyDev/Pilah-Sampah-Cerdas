@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname);
     const uniqueName = `${Date.now()}-${uuidv4()}${ext}`;
     cb(null, uniqueName);
-  }
+  },
 });
 
 // File Filter (JPEG, PNG, WEBP only)
@@ -21,7 +21,10 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Format file tidak valid. Hanya JPG, PNG, dan WEBP yang diperbolehkan.") as any, false);
+    cb(
+      new Error("Format file tidak valid. Hanya JPG, PNG, dan WEBP yang diperbolehkan.") as any,
+      false
+    );
   }
 };
 
@@ -29,6 +32,6 @@ export const uploadAvatarMiddleware = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024 // 2MB limit
-  }
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+  },
 });

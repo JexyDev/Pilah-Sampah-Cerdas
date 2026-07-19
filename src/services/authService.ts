@@ -8,17 +8,17 @@ export class AuthService {
    */
   async login(emailOrNik: string, password: string) {
     const isNik = /^\d{16}$/.test(emailOrNik);
-    const user = isNik 
+    const user = isNik
       ? await authRepository.findUserByNik(emailOrNik)
       : await authRepository.findUserByEmail(emailOrNik);
-    
+
     if (!user) {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new Error("USER_NOT_FOUND");
     }
 
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new Error("WRONG_PASSWORD");
     }
 
     // Prepare payload
@@ -45,7 +45,7 @@ export class AuthService {
         phone: user.phone,
         address: user.address,
         fotoProfil: user.fotoProfil,
-      }
+      },
     };
   }
 
@@ -54,7 +54,7 @@ export class AuthService {
    */
   async refresh(token: string) {
     const tokenRecord = await authRepository.findRefreshToken(token);
-    
+
     if (!tokenRecord) {
       throw new Error("INVALID_TOKEN");
     }
@@ -86,7 +86,14 @@ export class AuthService {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, name?: string, email?: string, phone?: string, address?: string, fotoProfil?: string) {
+  async updateProfile(
+    userId: string,
+    name?: string,
+    email?: string,
+    phone?: string,
+    address?: string,
+    fotoProfil?: string
+  ) {
     const user = await authRepository.findUserById(userId);
     if (!user) {
       throw new Error("USER_NOT_FOUND");
@@ -99,7 +106,13 @@ export class AuthService {
       }
     }
 
-    const updatedUser = await authRepository.updateUser(userId, { name, email, phone, address, fotoProfil });
+    const updatedUser = await authRepository.updateUser(userId, {
+      name,
+      email,
+      phone,
+      address,
+      fotoProfil,
+    });
     return updatedUser;
   }
 
@@ -129,7 +142,7 @@ export class AuthService {
     if (!currentPassword || !newPassword) {
       throw new Error("INVALID_INPUT");
     }
-    
+
     const user = await authRepository.findUserById(userId);
     if (!user) {
       throw new Error("USER_NOT_FOUND");

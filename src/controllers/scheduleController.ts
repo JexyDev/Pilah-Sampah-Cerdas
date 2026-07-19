@@ -7,7 +7,7 @@ export const scheduleController = {
       const schedules = await scheduleService.getAllSchedules();
       res.status(200).json({
         success: true,
-        data: schedules
+        data: schedules,
       });
     } catch (error) {
       console.error("[ScheduleController] getAllSchedules error:", error);
@@ -19,13 +19,21 @@ export const scheduleController = {
     try {
       const { title, date, time, category, location } = req.body;
       if (!title || !date || !category) {
-        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Judul, tanggal, dan kategori kegiatan wajib diisi" });
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Judul, tanggal, dan kategori kegiatan wajib diisi",
+        });
         return;
       }
 
       const parsedDate = new Date(date);
       if (isNaN(parsedDate.getTime())) {
-        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)" });
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)",
+        });
         return;
       }
 
@@ -34,15 +42,15 @@ export const scheduleController = {
         date: parsedDate,
         time,
         category,
-        location
+        location,
       });
       res.status(201).json({
         success: true,
-        data: schedule
+        data: schedule,
       });
     } catch (error) {
       console.error("[ScheduleController] createSchedule error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
-  }
+  },
 };

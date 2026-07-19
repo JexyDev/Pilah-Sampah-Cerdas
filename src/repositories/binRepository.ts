@@ -2,17 +2,18 @@ import { PrismaClient, Bin, WasteLog, PointHistory, Notification } from "@prisma
 
 const prisma = new PrismaClient();
 
-
 export class BinRepository {
   /**
    * Find bin by QR code
    */
-  async findByQrCode(qrCode: string): Promise<(Bin & { category: { name: string, pointsPerKg: number } }) | null> {
+  async findByQrCode(
+    qrCode: string
+  ): Promise<(Bin & { category: { name: string; pointsPerKg: number } }) | null> {
     return prisma.bin.findUnique({
       where: { qrCode },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
   }
 
@@ -24,7 +25,7 @@ export class BinRepository {
       include: {
         category: true,
         rtRw: true,
-      }
+      },
     });
   }
 
@@ -43,14 +44,17 @@ export class BinRepository {
     });
 
     // Group by RW number extracted from name (e.g. "RT 01 / RW 05" → RW 05)
-    const rwMap = new Map<string, { 
-      rw: string; 
-      kelurahan: string; 
-      rtNames: Set<string>; 
-      titikCount: number;
-      totalHouseholds: number;
-      activeHouseholds: number;
-    }>();
+    const rwMap = new Map<
+      string,
+      {
+        rw: string;
+        kelurahan: string;
+        rtNames: Set<string>;
+        titikCount: number;
+        totalHouseholds: number;
+        activeHouseholds: number;
+      }
+    >();
 
     for (const area of rtRwAreas) {
       const rwMatch = area.name.match(/RW\s*(\d+)/i);
@@ -60,7 +64,7 @@ export class BinRepository {
       let activeHouseholds = 0;
       for (const hh of area.households) {
         const count = await prisma.wasteLog.count({
-          where: { householdId: hh.id }
+          where: { householdId: hh.id },
         });
         if (count > 0) {
           activeHouseholds++;
@@ -88,9 +92,10 @@ export class BinRepository {
     }
 
     return Array.from(rwMap.values()).map((entry, idx) => {
-      const patuh = entry.totalHouseholds > 0
-        ? Math.round((entry.activeHouseholds / entry.totalHouseholds) * 100)
-        : 75; // realistic fallback for newly created RWs
+      const patuh =
+        entry.totalHouseholds > 0
+          ? Math.round((entry.activeHouseholds / entry.totalHouseholds) * 100)
+          : 75; // realistic fallback for newly created RWs
       return {
         id: idx + 1,
         rw: entry.rw,
@@ -109,18 +114,18 @@ export class BinRepository {
     return prisma.bin.findUnique({
       where: { id },
       include: {
-        rtRw: true
-      }
+        rtRw: true,
+      },
     });
   }
-  
+
   /**
    * Update Bin volume
    */
   async updateVolume(binId: string, newVolume: number): Promise<Bin> {
     return prisma.bin.update({
       where: { id: binId },
-      data: { currentVolumeLiter: newVolume }
+      data: { currentVolumeLiter: newVolume },
     });
   }
 
@@ -137,7 +142,7 @@ export class BinRepository {
     userId: string,
     pointsAwarded: number,
     categoryName: string
-  ): Promise<{ wasteLog: WasteLog, points: PointHistory, notification: Notification }> {
+  ): Promise<{ wasteLog: WasteLog; points: PointHistory; notification: Notification }> {
     return prisma.$transaction(async (tx) => {
       // 1. Create Waste Log
       const wasteLog = await tx.wasteLog.create({
@@ -147,8 +152,8 @@ export class BinRepository {
           weightKg,
           volumeLiter,
           categoryId,
-          requestId
-        }
+          requestId,
+        },
       });
 
       // 2. Create Point History
@@ -156,8 +161,8 @@ export class BinRepository {
         data: {
           userId,
           points: pointsAwarded,
-          description: `Disetor sampah ${categoryName} seberat ${weightKg} kg.`
-        }
+          description: `Disetor sampah ${categoryName} seberat ${weightKg} kg.`,
+        },
       });
 
       // 3. Create Notification
@@ -165,8 +170,8 @@ export class BinRepository {
         data: {
           userId,
           title: "Pencatatan Berhasil",
-          message: `Sampah seberat ${weightKg} kg berhasil dicatat. Anda mendapatkan ${pointsAwarded} poin!`
-        }
+          message: `Sampah seberat ${weightKg} kg berhasil dicatat. Anda mendapatkan ${pointsAwarded} poin!`,
+        },
       });
 
       return { wasteLog, points, notification };
@@ -181,8 +186,143 @@ export class BinRepository {
       data: {
         userId,
         title: "Tong Sampah Penuh!",
-        message: `Tong sampah ${qrCode} hampir meluap. Kapasitas maksimum terlampaui.`
-      }
+        message: `Tong sampah ${qrCode} hampir meluap. Kapasitas maksimum terlampaui.`,
+      },
+    });
+  }
+
+  async findAreas() {
+    return prisma.rtRwArea.findMany({
+      include: { kelurahan: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  async findKelurahans() {
+    return prisma.kelurahan.findMany({
+      orderBy: { name: "asc" },
+    });
+  }
+
+  async createArea(name: string, kelurahanId: number) {
+    return prisma.rtRwArea.create({
+      data: {
+        name,
+        kelurahanId,
+      },
+      include: { kelurahan: true },
+    });
+  }
+
+  async findRtRwById(id: number) {
+    return prisma.rtRwArea.findUnique({
+      where: { id },
+    });
+  }
+
+  async getUserRtRwId(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: { rtRwId: true },
+    });
+  }
+
+  async getUserHouseholdRtRwId(userId: string) {
+    return prisma.household.findFirst({
+      where: { userId },
+      select: { rtRwId: true },
+    });
+  }
+
+  async findBinsByRtRwId(rtRwId: number) {
+    return prisma.bin.findMany({
+      where: { rtRwId },
+      include: { category: true, rtRw: true },
+    });
+  }
+
+  async createBin(data: any) {
+    return prisma.bin.create({
+      data,
+    });
+  }
+
+  async updateBin(id: string, data: any) {
+    return prisma.bin.update({
+      where: { qrCode: id },
+      data,
+    });
+  }
+
+  async deleteBin(id: string) {
+    return prisma.bin.delete({
+      where: { qrCode: id },
+    });
+  }
+
+  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+    return prisma.binResetRequest.create({
+      data: {
+        binId,
+        userId,
+        evidencePhotoUrl,
+        status: "PENDING",
+      },
+      include: {
+        bin: { include: { rtRw: true } },
+        user: true,
+      },
+    });
+  }
+
+  async findResetRequestById(id: string) {
+    return prisma.binResetRequest.findUnique({
+      where: { id },
+      include: {
+        bin: true,
+        user: true,
+      },
+    });
+  }
+
+  async updateResetRequestStatus(
+    id: string,
+    status: "APPROVED" | "REJECTED",
+    reviewedById: string
+  ) {
+    return prisma.binResetRequest.update({
+      where: { id },
+      data: {
+        status,
+        reviewedById,
+      },
+      include: {
+        bin: true,
+        user: true,
+      },
+    });
+  }
+
+  async findPetugasForArea(rtRwId: number) {
+    return prisma.user.findMany({
+      where: {
+        rtRwId,
+        role: {
+          name: {
+            in: ["PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN", "ADMIN"],
+          },
+        },
+      },
+    });
+  }
+
+  async createNotification(userId: string, title: string, message: string) {
+    return prisma.notification.create({
+      data: {
+        userId,
+        title,
+        message,
+      },
     });
   }
 }

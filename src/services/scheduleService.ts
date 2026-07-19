@@ -5,13 +5,19 @@ const prisma = new PrismaClient();
 export const scheduleService = {
   getAllSchedules: async () => {
     return prisma.schedule.findMany({
-      orderBy: { date: 'asc' }
+      orderBy: { date: "asc" },
     });
   },
 
-  createSchedule: async (data: { title: string; date: Date; time?: string; category: string; location?: string }) => {
+  createSchedule: async (data: {
+    title: string;
+    date: Date;
+    time?: string;
+    category: string;
+    location?: string;
+  }) => {
     return prisma.schedule.create({
-      data
+      data,
     });
-  }
+  },
 };

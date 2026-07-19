@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 export class CategoryService {
   async getAllCategories() {
     return prisma.wasteCategory.findMany({
-      orderBy: { name: 'asc' }
+      orderBy: { name: "asc" },
     });
   }
 
@@ -13,21 +13,24 @@ export class CategoryService {
       data: {
         name: data.name,
         pointsPerKg: data.pointsPerKg,
-        description: data.description
-      }
+        description: data.description,
+      },
     });
   }
 
-  async updateCategory(id: string, data: { name?: string; pointsPerKg?: number; description?: string }) {
+  async updateCategory(
+    id: string,
+    data: { name?: string; pointsPerKg?: number; description?: string }
+  ) {
     return prisma.wasteCategory.update({
       where: { id },
-      data
+      data,
     });
   }
 
   async deleteCategory(id: string) {
     return prisma.wasteCategory.delete({
-      where: { id }
+      where: { id },
     });
   }
 }

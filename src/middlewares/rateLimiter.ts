@@ -11,7 +11,7 @@ const attempts = new Map<string, AttemptRecord>();
 export const loginRateLimiter = (req: Request, res: Response, next: NextFunction): void => {
   const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
   const email = (req.body?.email || "unknown").toString().toLowerCase().trim();
-  
+
   // Rate limit key combines IP and email to prevent distributed attacks on single accounts
   // and brute force from single IPs
   const key = `${ip}:${email}`;
@@ -25,7 +25,7 @@ export const loginRateLimiter = (req: Request, res: Response, next: NextFunction
     // New window or expired record
     attempts.set(key, {
       count: 1,
-      resetTime: now + windowMs
+      resetTime: now + windowMs,
     });
     return next();
   }
@@ -33,8 +33,9 @@ export const loginRateLimiter = (req: Request, res: Response, next: NextFunction
   if (record.count >= maxAttempts) {
     res.status(429).json({
       success: false,
-      error: "TOO_MANY_REQUESTS",
-      message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 1 menit."
+      code: "TOO_MANY_ATTEMPTS",
+      error: "TOO_MANY_ATTEMPTS",
+      message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 1 menit.",
     });
     return;
   }
