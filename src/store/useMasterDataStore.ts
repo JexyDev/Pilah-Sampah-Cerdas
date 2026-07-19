@@ -1,18 +1,22 @@
 import { create } from 'zustand';
-// import api from '../utils/api'; // Discomment when real API is ready
+import api from '../utils/api';
 
 export interface UserItem {
   id: string;
   name: string;
+  email: string;
   role: string;
-  points: number;
+  totalPoin: number;
+  createdAt: string;
 }
 
 export interface BinItem {
   id: string;
-  name: string;
+  qrCode: string;
+  category: { name: string };
   maxCapacityLiter: number;
   currentVolumeLiter: number;
+  rtRw?: { name: string };
   status: 'aman' | 'waspada' | 'penuh';
 }
 
@@ -26,38 +30,41 @@ interface MasterDataState {
   deleteBin: (id: string) => Promise<void>;
 }
 
-// Mock API delays
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const getBinStatus = (current: number, max: number): 'aman' | 'waspada' | 'penuh' => {
+  const pct = current / max;
+  if (pct >= 0.9) return 'penuh';
+  if (pct >= 0.7) return 'waspada';
+  return 'aman';
+};
 
 export const useMasterDataStore = create<MasterDataState>((set) => ({
   users: [],
   bins: [],
   isLoading: false,
   error: null,
+
   fetchMasterData: async () => {
     set({ isLoading: true, error: null });
     try {
-      // TODO: Replace with real API calls when ready
-      // const res = await api.get('/users');
-      await delay(800); // simulate network
-      
-      const mockUsers: UserItem[] = [
-        { id: 'usr-1', name: 'Bapak Asep', role: 'WARGA', points: 1500 },
-        { id: 'usr-2', name: 'Ibu Siti', role: 'WARGA', points: 420 },
-        { id: 'usr-3', name: 'Admin Pusat', role: 'STAFF', points: 0 },
-      ];
-      
-      const mockBins: BinItem[] = [
-        { id: 'bin-1', name: 'Tong Organik 01', maxCapacityLiter: 100, currentVolumeLiter: 10, status: 'aman' },
-        { id: 'bin-2', name: 'Tong Anorganik 01', maxCapacityLiter: 100, currentVolumeLiter: 95, status: 'penuh' },
-        { id: 'bin-3', name: 'Tong Organik 02', maxCapacityLiter: 100, currentVolumeLiter: 75, status: 'waspada' },
-      ];
+      const [usersRes, binsRes] = await Promise.all([
+        api.get('/users'),
+        api.get('/bins'),
+      ]);
 
-      set({
-        users: mockUsers,
-        bins: mockBins,
-        isLoading: false,
-      });
+      const users: UserItem[] = usersRes.data.data || [];
+      const rawBins = binsRes.data.data || [];
+
+      const bins: BinItem[] = rawBins.map((b: any) => ({
+        id: b.id,
+        qrCode: b.qrCode,
+        category: b.category,
+        maxCapacityLiter: Number(b.maxCapacityLiter),
+        currentVolumeLiter: Number(b.currentVolumeLiter),
+        rtRw: b.rtRw,
+        status: getBinStatus(Number(b.currentVolumeLiter), Number(b.maxCapacityLiter)),
+      }));
+
+      set({ users, bins, isLoading: false });
     } catch (err: any) {
       set({
         error: err?.response?.data?.message || err.message || 'Gagal memuat master data',
@@ -65,18 +72,14 @@ export const useMasterDataStore = create<MasterDataState>((set) => ({
       });
     }
   },
+
   deleteUser: async (id: string) => {
-    // TODO: Replace with real API delete
-    await delay(500);
-    set((state) => ({
-      users: state.users.filter(u => u.id !== id)
-    }));
+    await api.delete(`/users/${id}`);
+    set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
   },
+
   deleteBin: async (id: string) => {
-    // TODO: Replace with real API delete
-    await delay(500);
-    set((state) => ({
-      bins: state.bins.filter(b => b.id !== id)
-    }));
-  }
+    await api.delete(`/bins/${id}`);
+    set((state) => ({ bins: state.bins.filter((b) => b.id !== id) }));
+  },
 }));

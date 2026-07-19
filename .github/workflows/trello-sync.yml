@@ -1,0 +1,114 @@
+name: Trello Sync (Commit-Driven)
+
+# Berjalan setiap push ke branch utama.
+# Job trello-sync TERPISAH dari build/deploy agar Trello API failure
+# tidak memblokir proses deployment ke VPS.
+on:
+  push:
+    branches:
+      - main
+      - local-dev
+    paths-ignore:
+      - '.trello-sync-state.json'
+      - 'github-trello-automation-tracker.md'
+      - 'README-automation.md'
+
+permissions:
+  contents: write  # Diperlukan untuk commit .trello-sync-state.json
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1: Trello Sync — berjalan mandiri, tidak memblokir deployment
+  # ─────────────────────────────────────────────────────────────────────────────
+  trello-sync:
+    name: Sync Commits → Trello
+    runs-on: ubuntu-latest
+    # continue-on-error: true pastikan workflow secara keseluruhan tidak gagal
+    # meskipun job ini error (Trello API down, dll.)
+    continue-on-error: true
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ambil full history agar git log parsing bekerja
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # ── Deteksi modul dari file yang berubah di commit ini ──────────────────
+      - name: Detect Changed Module Labels
+        id: detect-labels
+        run: |
+          # Ambil daftar file yang berubah di push ini
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          echo "Changed files: $CHANGED"
+
+          HAS_MOBILE=false
+          HAS_FRONTEND=false
+          HAS_BACKEND=false
+
+          while IFS= read -r file; do
+            if [[ "$file" == mobile/* ]]; then
+              HAS_MOBILE=true
+            elif [[ "$file" == frontend/* || "$file" == fe/* ]]; then
+              HAS_FRONTEND=true
+            elif [[ -n "$file" ]]; then
+              HAS_BACKEND=true
+            fi
+          done <<< "$CHANGED"
+
+          LABELS=""
+          if [ "$HAS_BACKEND" = "true" ]; then
+            LABELS="${LABELS}Backend,"
+          fi
+          if [ "$HAS_FRONTEND" = "true" ]; then
+            LABELS="${LABELS}Frontend,"
+          fi
+          if [ "$HAS_MOBILE" = "true" ]; then
+            LABELS="${LABELS}Mobile,"
+          fi
+
+          # Hapus trailing comma
+          LABELS="${LABELS%,}"
+
+          # Fallback jika tidak ada yang terdeteksi
+          if [ -z "$LABELS" ]; then
+            LABELS="Backend"
+          fi
+
+          echo "Detected labels: $LABELS"
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Run Trello Sync
+        id: trello-sync
+        run: node scripts/trello-sync.js
+        env:
+          TRELLO_API_KEY:      ${{ secrets.TRELLO_API_KEY }}
+          TRELLO_TOKEN:        ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_BOARD_ID:     ${{ secrets.TRELLO_BOARD_ID }}
+          TRELLO_MODULE_LABELS: ${{ steps.detect-labels.outputs.labels }}
+          GITHUB_REPOSITORY:   ${{ github.repository }}
+          GITHUB_SERVER_URL:   ${{ github.server_url }}
+
+      # ── Commit .trello-sync-state.json setelah sync berhasil ───────────────
+      # Commit ini menggunakan [skip ci] agar tidak trigger workflow baru (no loop)
+      - name: Commit Sync State
+        if: success()
+        run: |
+          if [ -f .trello-sync-state.json ]; then
+            if ! git diff --quiet .trello-sync-state.json; then
+              git config --global user.name "github-actions[bot]"
+              git config --global user.email "github-actions[bot]@users.noreply.github.com"
+              git add .trello-sync-state.json
+              git commit -m "chore: update trello sync state [skip ci]"
+              git push
+              echo "✅ State file committed."
+            else
+              echo "ℹ️  Tidak ada perubahan di .trello-sync-state.json."
+            fi
+          fi
+        shell: bash

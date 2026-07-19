@@ -88,7 +88,7 @@ const MasterData: React.FC = () => {
                   <td>{u.id}</td>
                   <td>{u.name}</td>
                   <td>{u.role}</td>
-                  <td>{u.points}</td>
+                  <td>{u.totalPoin}</td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.iconBtn} title="Edit" onClick={() => toast('Fitur Edit belum tersedia')}><Edit size={16} /></button>
@@ -117,7 +117,7 @@ const MasterData: React.FC = () => {
               {bins.map(b => (
                 <tr key={b.id}>
                   <td>{b.id}</td>
-                  <td>{b.name}</td>
+                  <td>{b.qrCode}</td>
                   <td>{b.maxCapacityLiter}</td>
                   <td>{b.currentVolumeLiter}</td>
                   <td>
@@ -126,7 +126,7 @@ const MasterData: React.FC = () => {
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.iconBtn} title="Edit" onClick={() => toast('Fitur Edit belum tersedia')}><Edit size={16} /></button>
-                      <button className={`${styles.iconBtn} ${styles.danger}`} title="Hapus" onClick={() => handleDeleteBin(b.id, b.name)}><Trash2 size={16} /></button>
+                      <button className={`${styles.iconBtn} ${styles.danger}`} title="Hapus" onClick={() => handleDeleteBin(b.id, b.qrCode)}><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>

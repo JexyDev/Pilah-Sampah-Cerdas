@@ -6,34 +6,94 @@ const KategoriSampah: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'add' | 'edit'>('add');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', pointsPerKg: 10, description: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/categories');
+      setCategories(response.data.data);
+    } catch (err) {
+      setError('Gagal memuat data dari server.');
+      toast.error('Gagal memuat kategori');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await api.get('/categories');
-        setCategories(response.data.data);
-      } catch (err) {
-        setError('Gagal memuat data dari server.');
-        toast.error('Gagal memuat kategori');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchCategories();
   }, []);
 
-  const handleActionClick = (actionName: string) => {
-    toast.success(`Aksi "${actionName}" disimulasikan!`);
+  const openAddModal = () => {
+    setModalType('add');
+    setFormData({ name: '', pointsPerKg: 10, description: '' });
+    setSelectedId(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (cat: any) => {
+    setModalType('edit');
+    setFormData({ name: cat.name, pointsPerKg: cat.pointsPerKg, description: cat.description || '' });
+    setSelectedId(cat.id);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if(window.confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
+      try {
+        await api.delete(`/categories/${id}`);
+        toast.success('Kategori berhasil dihapus!');
+        fetchCategories();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Gagal menghapus kategori');
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (modalType === 'add') {
+        await api.post('/categories', formData);
+        toast.success('Kategori berhasil ditambahkan!');
+      } else {
+        await api.put(`/categories/${selectedId}`, formData);
+        toast.success('Kategori berhasil diperbarui!');
+      }
+      setIsModalOpen(false);
+      fetchCategories();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header Section */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-on-surface mb-2">Konfigurasi Kategori Sampah</h2>
-        <p className="text-[14px] text-on-surface-variant max-w-4xl">
-          Atur faktor konversi dan nilai poin untuk setiap jenis sampah. Faktor densitas digunakan untuk mengubah volume (Liter) yang tercatat di fasilitas fisik menjadi berat ekuivalen (Kilogram) untuk keperluan kalkulasi poin warga secara otomatis.
-        </p>
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-on-surface mb-2">Konfigurasi Kategori Sampah</h2>
+          <p className="text-[14px] text-on-surface-variant max-w-3xl">
+            Atur poin untuk setiap jenis sampah. Faktor poin digunakan untuk kalkulasi poin warga secara otomatis berdasarkan berat (Kg).
+          </p>
+        </div>
+        <button 
+          onClick={openAddModal}
+          className="bg-primary text-white px-5 h-10 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Tambah Kategori
+        </button>
       </div>
 
       {/* Table Container */}
@@ -42,9 +102,8 @@ const KategoriSampah: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant/30">
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Kategori Sampah</th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Jenis</th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Poin & Harga</th>
+                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Nama Kategori</th>
+                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Poin per Kg</th>
                 <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Deskripsi</th>
                 <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider text-right">Aksi</th>
               </tr>
@@ -52,7 +111,7 @@ const KategoriSampah: React.FC = () => {
             <tbody className="text-[14px] text-on-surface">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
+                  <td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <span className="material-symbols-outlined animate-spin text-primary text-[32px]">autorenew</span>
                       <p>Memuat data...</p>
@@ -61,35 +120,33 @@ const KategoriSampah: React.FC = () => {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-error font-medium">{error}</td>
+                  <td colSpan={4} className="px-6 py-8 text-center text-error font-medium">{error}</td>
+                </tr>
+              ) : categories.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-on-surface-variant">Belum ada data kategori.</td>
                 </tr>
               ) : (
                 categories.map(cat => (
                   <tr key={cat.id} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150 group">
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.iconBg} ${cat.iconColor}`}>
-                          <span className="material-symbols-outlined text-[20px]">{cat.jenis === 'Organik' ? 'eco' : 'recycling'}</span>
-                        </div>
-                        <span className="font-bold text-on-surface">{cat.nama}</span>
-                      </div>
+                      <span className="font-bold text-on-surface uppercase">{cat.name}</span>
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide uppercase ${cat.jenis === 'Organik' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {cat.jenis}
-                      </span>
+                      <span className="font-bold text-primary">{cat.pointsPerKg} Poin</span>
                     </td>
-                    <td className="py-4 px-6">
-                      <p className="font-bold text-primary mb-1">{cat.poin}</p>
-                      <p className="text-[12px] text-on-surface-variant">{cat.harga}</p>
-                    </td>
-                    <td className="py-4 px-6 text-[12px] text-on-surface-variant max-w-xs truncate" title={cat.desc}>
-                      {cat.desc}
+                    <td className="py-4 px-6 text-[12px] text-on-surface-variant max-w-xs">
+                      {cat.description || '-'}
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <button onClick={() => handleActionClick('Edit ' + cat.nama)} className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors inline-flex items-center justify-center opacity-70 group-hover:opacity-100" title="Edit Kategori">
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => openEditModal(cat)} className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center justify-center" title="Edit">
+                          <span className="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                        <button onClick={() => handleDelete(cat.id)} className="p-2 rounded-full text-red-600 hover:bg-red-50 transition-colors inline-flex items-center justify-center" title="Hapus">
+                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -97,15 +154,85 @@ const KategoriSampah: React.FC = () => {
             </tbody>
           </table>
         </div>
-        
-        {/* Table Footer/Hint */}
-        <div className="bg-surface-container-lowest px-6 py-4 border-t border-outline-variant/30 flex items-center gap-2">
-          <span className="material-symbols-outlined text-on-surface-variant text-[18px]">info</span>
-          <p className="text-[11px] font-bold text-on-surface-variant leading-none">
-            Perubahan pada faktor densitas dan poin akan berlaku pada transaksi yang dicatat setelah perubahan disimpan. Data historis tidak akan terpengaruh.
-          </p>
-        </div>
       </div>
+
+      {/* Add/Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest">
+              <h3 className="text-xl font-bold text-on-surface">
+                {modalType === 'add' ? 'Tambah Kategori Baru' : 'Edit Kategori'}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-on-surface-variant hover:text-on-surface rounded-full p-1 hover:bg-surface-container-highest transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-[13px] font-bold text-on-surface mb-1.5">Nama Kategori (Contoh: ORGANIK, KERTAS)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value.toUpperCase()})}
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-[14px]"
+                    placeholder="Masukkan nama kategori"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[13px] font-bold text-on-surface mb-1.5">Poin per Kg</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="1"
+                    value={formData.pointsPerKg}
+                    onChange={(e) => setFormData({...formData, pointsPerKg: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-[14px]"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[13px] font-bold text-on-surface mb-1.5">Deskripsi (Opsional)</label>
+                  <textarea 
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-[14px] min-h-[80px]"
+                    placeholder="Keterangan singkat"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-8">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 rounded-lg font-bold text-[14px] text-on-surface-variant hover:bg-surface-container-highest transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-lg font-bold text-[14px] bg-primary text-white hover:bg-primary/90 disabled:opacity-70 transition-colors flex items-center justify-center min-w-[120px]"
+                >
+                  {isSubmitting ? (
+                    <span className="material-symbols-outlined animate-spin text-[20px]">autorenew</span>
+                  ) : (
+                    'Simpan'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
