@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -123,6 +130,9 @@ const Sidebar: React.FC = () => {
           <button onClick={handleLogout} className="ml-auto text-on-surface-variant hover:text-error transition-colors flex-shrink-0" title="Keluar Sistem">
             <span className="material-symbols-outlined text-[20px]">logout</span>
           </button>
+        </div>
+        <div className="mt-3 text-[9px] text-on-surface-variant/65 text-center">
+          © 2026 Jeremy Darrell & Muhammad Habil Putrawan. Developed by Jeremy Darrell & Muhammad Habil Putrawan.
         </div>
       </div>
     </aside>

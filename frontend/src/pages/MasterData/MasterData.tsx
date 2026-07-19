@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { Loader2, Trash2, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';

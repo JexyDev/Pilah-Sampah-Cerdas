@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { PrismaClient, Bin, WasteLog, PointHistory, Notification } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -204,7 +211,7 @@ export class BinRepository {
     });
   }
 
-  async createArea(name: string, kelurahanId: number) {
+  async createArea(name: string, kelurahanId: string) {
     return prisma.rtRwArea.create({
       data: {
         name,

@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { v4 as uuidv4 } from "uuid";
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
@@ -202,7 +209,7 @@ export class BinService {
     return binRepository.findKelurahans();
   }
 
-  async createArea(name: string, kelurahanId: number) {
+  async createArea(name: string, kelurahanId: string) {
     return binRepository.createArea(name, kelurahanId);
   }
 

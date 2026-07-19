@@ -2,6 +2,8 @@
   "name": "pilahsampah-id",
   "version": "1.0.0",
   "description": "Backend service for pilahsampah.id - Intelligent Waste Management System",
+  "author": "Jeremy Darrell & Muhammad Habil Putrawan",
+  "license": "UNLICENSED",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
