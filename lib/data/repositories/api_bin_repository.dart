@@ -90,8 +90,8 @@ class ApiBinRepository implements BinRepository {
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          // AI bisa butuh sampai 5 detik saat queue penuh
-          receiveTimeout: const Duration(seconds: 10),
+          // AI bisa butuh waktu agak lama saat terhalang queue atau latency jaringan (hingga 30s)
+          receiveTimeout: const Duration(seconds: 30),
         ),
       );
 
@@ -225,7 +225,7 @@ class ApiBinRepository implements BinRepository {
   }
 
   // ─── Activate Bin ─────────────────────────────────────────────────────────
-  // Cari bin dari /bins/my berdasarkan qrSerial.
+  // Mengaktivasi tong sampah kosong menjadi milik warga melalui HTTP POST.
 
   @override
   Future<BinEntity> activateBin({
@@ -234,18 +234,47 @@ class ApiBinRepository implements BinRepository {
     required String householdId,
   }) async {
     try {
-      final bin = await getBinByQrSerial(qrSerial);
-      if (bin == null) {
+      final response = await apiClient.dio.post(
+        '/bins/activate',
+        data: {'qrCode': qrSerial},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return _mapMyBin(data);
+      }
+      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tong sampah');
+    } on DioException catch (e) {
+      final errorCode = e.response?.data?['error']?.toString();
+      final message = e.response?.data?['message']?.toString();
+
+      if (errorCode == 'NOT_FOUND') {
         throw const BinException(
           'BIN_NOT_FOUND',
-          'QR Code tong tidak ditemukan.',
+          'QR Code tong tidak terdaftar di sistem.',
         );
       }
-      return bin;
-    } on BinException {
-      rethrow;
+      if (errorCode == 'ALREADY_ACTIVATED') {
+        throw const BinException(
+          'ALREADY_ACTIVATED',
+          'Tong ini sudah diaktivasi oleh warga lain.',
+        );
+      }
+      if (errorCode == 'BAD_REQUEST') {
+        throw BinException(
+          'BAD_REQUEST',
+          message ?? 'Permintaan tidak valid.',
+        );
+      }
+      throw BinException(
+        'NETWORK_ERROR',
+        'Gagal terhubung ke server: ${e.message}',
+      );
     } catch (e) {
-      throw BinException('UNKNOWN_ERROR', e.toString());
+      throw BinException(
+        'UNKNOWN_ERROR',
+        'Terjadi kesalahan sistem: $e',
+      );
     }
   }
 
@@ -295,7 +324,7 @@ class ApiBinRepository implements BinRepository {
       maxCapacityL: maxL,
       lat: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       lng: (json['longitude'] as num?)?.toDouble() ?? 0.0,
-      householdName: json['kelurahan']?.toString() ?? '',
+      householdName: json['householdName']?.toString() ?? '',
       rt: json['rtRw']?.toString() ?? '',
       rw: '',
       kelurahan: json['kelurahan']?.toString() ?? '',

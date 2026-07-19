@@ -42,7 +42,7 @@ class PoinScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ─── Stats 3 kolom ──────────────────────────────────
-                  _buildStatsRow(),
+                  _buildStatsRow(historyAsync.value ?? []),
                   const SizedBox(height: 20),
 
                   // ─── Riwayat Poin ───────────────────────────────────
@@ -249,19 +249,40 @@ class PoinScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow() {
-    return const Row(
+  Widget _buildStatsRow(List<PointHistoryEntity> history) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    int todayPts = 0;
+    int weekPts = 0;
+    int monthPts = 0;
+
+    for (final h in history) {
+      if (!h.createdAt.isBefore(todayStart)) {
+        todayPts += h.points;
+      }
+      if (!h.createdAt.isBefore(weekStart)) {
+        weekPts += h.points;
+      }
+      if (!h.createdAt.isBefore(monthStart)) {
+        monthPts += h.points;
+      }
+    }
+
+    return Row(
       children: [
-        _StatsCard(label: 'Hari Ini', value: '25', sub: '+5%'),
-        SizedBox(width: 8),
+        _StatsCard(label: 'Hari Ini', value: '$todayPts', sub: 'Poin'),
+        const SizedBox(width: 8),
         _StatsCard(
           label: 'Minggu Ini',
-          value: '150',
-          sub: '+12%',
+          value: '$weekPts',
+          sub: 'Poin',
           underline: true,
         ),
-        SizedBox(width: 8),
-        _StatsCard(label: 'Bulan Ini', value: '620', sub: '+8%'),
+        const SizedBox(width: 8),
+        _StatsCard(label: 'Bulan Ini', value: '$monthPts', sub: 'Poin'),
       ],
     );
   }
@@ -370,7 +391,7 @@ class _PoinHistoryItem extends StatelessWidget {
                   DateFormat(
                     'd MMM yyyy • HH:mm',
                     'id_ID',
-                  ).format(item.createdAt),
+                  ).format(item.createdAt.toLocal()),
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textHint,

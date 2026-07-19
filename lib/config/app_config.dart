@@ -16,37 +16,36 @@ class AppConfig {
   // iOS Simulator    : 127.0.0.1 → otomatis (tidak perlu diubah)
   // HP fisik Android : isi _devServerIp dengan IP laptop
   // HP fisik iOS     : isi _devServerIp dengan IP laptop
-  static const String _devServerIp = '192.168.110.216'; // IP laptop lokal/backend utama
+  static const String _devServerIp = '192.168.100.243'; // IP laptop lokal/backend utama
 
   static const int _port = 3000;
 
-  static String get apiBaseUrl {
+  static String get baseUrl {
     if (kIsWeb) {
       final baseUri = Uri.base;
       if (baseUri.host.contains('ngrok') || baseUri.host.contains('tunnel')) {
-        return '${baseUri.scheme}://${baseUri.host}/api/v1';
+        return '${baseUri.scheme}://${baseUri.host}';
       }
       final host = baseUri.host.isEmpty ? 'localhost' : baseUri.host;
-      return 'http://$host:$_port/api/v1';
+      return 'http://$host:$_port';
     }
 
-    // Jika _devServerIp diisi, pakai itu (HP fisik / Ngrok)
     if (_devServerIp.isNotEmpty) {
       if (_devServerIp.startsWith('http://') || _devServerIp.startsWith('https://')) {
-        return '$_devServerIp/api/v1';
+        return _devServerIp;
       }
-      return 'http://$_devServerIp:$_port/api/v1';
+      return 'http://$_devServerIp:$_port';
     }
 
     try {
-      // Emulator Android → 10.0.2.2 adalah alias localhost host machine
-      if (Platform.isAndroid) return 'http://10.0.2.2:$_port/api/v1';
-      // iOS Simulator
-      if (Platform.isIOS) return 'http://127.0.0.1:$_port/api/v1';
+      if (Platform.isAndroid) return 'http://10.0.2.2:$_port';
+      if (Platform.isIOS) return 'http://127.0.0.1:$_port';
     } catch (_) {}
 
-    return 'http://127.0.0.1:$_port/api/v1';
+    return 'http://127.0.0.1:$_port';
   }
+
+  static String get apiBaseUrl => '$baseUrl/api/v1';
 
   static const String appName = 'Pilah Sampah Cerdas';
 

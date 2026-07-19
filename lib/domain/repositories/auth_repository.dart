@@ -22,6 +22,9 @@ abstract class AuthRepository {
 
   /// Mengambil data profil terbaru dari server (GET /api/v1/auth/me)
   Future<UserEntity> fetchProfile();
+
+  /// Mengunggah foto profil baru.
+  Future<void> uploadAvatar(String imagePath);
 }
 
 /// Exception khusus untuk auth errors.

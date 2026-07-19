@@ -100,6 +100,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Upload foto profil
+  Future<bool> uploadAvatar(String imagePath) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authRepository.uploadAvatar(imagePath);
+      // Fetch ulang profil untuk mendapatkan URL foto terbaru jika backend mengirimkannya (atau sekadar refresh info)
+      await fetchProfile();
+      state = state.copyWith(isLoading: false);
+      return true;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorCode: e.code);
+      return false;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'UPLOAD_FAILED');
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }

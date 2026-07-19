@@ -24,7 +24,8 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
   void _onQrDetected(String qr) {
     setState(() {
       _detectedQr = qr.trim();
-      _isOrganic = !_detectedQr.toUpperCase().contains('NON');
+      final upperQr = _detectedQr.toUpperCase();
+      _isOrganic = !upperQr.contains('NON') && !upperQr.contains('ANORG');
       _binDetected = true;
     });
   }

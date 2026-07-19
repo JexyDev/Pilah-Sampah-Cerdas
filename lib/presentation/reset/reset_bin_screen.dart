@@ -150,7 +150,7 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
               return Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  side: BorderSide(color: AppColors.border, width: 1),
+                  side: const BorderSide(color: AppColors.border, width: 1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
