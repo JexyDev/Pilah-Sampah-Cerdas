@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Camera, Upload, QrCode, CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
 import { BrowserQRCodeReader } from '@zxing/browser';
 import imageCompression from 'browser-image-compression';
@@ -28,6 +29,7 @@ type Step =
 type PermissionState = 'PENDING' | 'GRANTED' | 'DENIED' | 'NOT_SUPPORTED';
 
 export default function SetorSampah() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>('INTRO');
   const [permissionState, setPermissionState] = useState<PermissionState>('PENDING');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -267,7 +269,13 @@ export default function SetorSampah() {
       {/* Header bar */}
       <div className="w-full flex items-center justify-between mb-6">
         <button 
-          onClick={resetFlow}
+          onClick={() => {
+            if (step === 'INTRO') {
+              navigate('/');
+            } else {
+              resetFlow();
+            }
+          }}
           className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors shadow-sm"
         >
           <ArrowLeft size={18} />
