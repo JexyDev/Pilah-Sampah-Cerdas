@@ -308,18 +308,22 @@ const Pengaturan: React.FC = () => {
           >
             Profil Akun
           </button>
-          <button 
-            className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === 'integrasi' ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50'}`}
-            onClick={() => setActiveTab('integrasi')}
-          >
-            Integrasi API
-          </button>
-          <button 
-            className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === 'database' ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50'}`}
-            onClick={() => setActiveTab('database')}
-          >
-            Database Management
-          </button>
+          {storeUser?.peran !== 'WARGA' && (
+            <button 
+              className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === 'integrasi' ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50'}`}
+              onClick={() => setActiveTab('integrasi')}
+            >
+              Integrasi API
+            </button>
+          )}
+          {storeUser?.peran !== 'WARGA' && (
+            <button 
+              className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === 'database' ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50'}`}
+              onClick={() => setActiveTab('database')}
+            >
+              Database Management
+            </button>
+          )}
         </nav>
       </div>
 
@@ -519,7 +523,7 @@ const Pengaturan: React.FC = () => {
         )}
 
         {/* Section 2: Integrasi API */}
-        {activeTab === 'integrasi' && (
+        {activeTab === 'integrasi' && storeUser?.peran !== 'WARGA' && (
           <div className="space-y-6 max-w-4xl">
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
               <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
@@ -638,7 +642,7 @@ const Pengaturan: React.FC = () => {
         )}
 
         {/* Section 3: Database Management */}
-        {activeTab === 'database' && (
+        {activeTab === 'database' && storeUser?.peran !== 'WARGA' && (
           <div className="space-y-6 max-w-4xl">
             <div className="bg-red-50/50 rounded-xl shadow-sm border border-red-500/20 p-6">
               <div className="flex items-start gap-4">
