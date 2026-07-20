@@ -8,6 +8,7 @@ import '../../domain/entities/bin_entity.dart';
 import '../../domain/entities/bin_reset_entity.dart';
 import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
+import '../providers/notification_provider.dart';
 import '../shared/widgets/app_loading.dart';
 
 /// Halaman pengajuan pengosongan tong.
@@ -78,6 +79,15 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
           ),
         );
         ref.read(resetBinProvider.notifier).reset();
+      }
+      // AUTO-REFRESH: setelah pengajuan berhasil, refresh data tong & notifikasi
+      if (next.isSuccess && !next.isLoading) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.invalidate(binsProvider);
+            ref.invalidate(notificationsProvider);
+          }
+        });
       }
     });
 
@@ -347,6 +357,9 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
           const SizedBox(height: AppDimensions.xl),
           ElevatedButton(
             onPressed: () {
+              // Invalidate data terkait sebelum kembali ke halaman profil
+              ref.invalidate(binsProvider);
+              ref.invalidate(notificationsProvider);
               ref.read(resetBinProvider.notifier).reset();
               Navigator.of(context).pop();
             },

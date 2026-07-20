@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
+import '../providers/notification_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
 
@@ -40,7 +41,11 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
           householdId: user?.householdId ?? '',
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
+      // Refresh semua data yang terpengaruh setelah tong baru diaktivasi
       ref.invalidate(binsProvider);
+      ref.invalidate(notificationsProvider);
+      // Refresh profil agar data tong di halaman Profil ikut segar
+      await ref.read(authProvider.notifier).fetchProfile();
     }
   }
 

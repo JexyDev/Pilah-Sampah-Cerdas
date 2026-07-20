@@ -7,6 +7,8 @@ import '../../core/utils/platform_utils.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/bin_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/notification_provider.dart';
+import '../providers/waste_log_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/inline_camera_widget.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
@@ -117,12 +119,26 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
           next.currentStep == 2 &&
           next.aiResult != null &&
           !next.isLoading) {
-        // Set step ke 1.5 (pakai nilai khusus) — kita pakai state lokal
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            // Kembali ke step 1 (loading selesai, sheet akan muncul)
-            // Sheet yang akan set step ke 2 saat user tap Lanjut
             showAiSuccessSheet(context, ref);
+          }
+        });
+      }
+      // ─── AUTO-REFRESH setelah transaksi berhasil (step 2→3) ─────────────
+      // Invalidate semua provider terkait agar data langsung segar di semua
+      // layar (Beranda, Riwayat, Poin) tanpa user harus pull-to-refresh manual.
+      if ((prev?.currentStep ?? 0) < 3 &&
+          next.currentStep == 3 &&
+          next.scanResult != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.invalidate(wasteLogsProvider);
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
+            ref.invalidate(notificationsProvider);
+            ref.invalidate(binsProvider);
           }
         });
       }
@@ -881,6 +897,14 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
+                    // Invalidate ulang sebagai safety fallback sebelum kembali
+                    // (mencegah edge case jika addPostFrameCallback terlewat)
+                    ref.invalidate(wasteLogsProvider);
+                    ref.invalidate(totalPointsProvider);
+                    ref.invalidate(pointHistoryProvider);
+                    ref.invalidate(dailyPointsProvider);
+                    ref.invalidate(notificationsProvider);
+                    ref.invalidate(binsProvider);
                     ref.read(scanFlowProvider.notifier).reset();
                     Navigator.of(context).pop();
                   },

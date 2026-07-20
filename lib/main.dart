@@ -8,7 +8,9 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/constants/app_strings.dart';
 import 'core/utils/platform_utils.dart';
+import 'presentation/providers/bin_provider.dart';
 import 'presentation/providers/notification_provider.dart';
+import 'presentation/providers/waste_log_provider.dart';
 
 /// Global navigator key — digunakan oleh Dio Interceptor untuk
 /// force-navigate ke Login saat sesi habis (refresh token expired).
@@ -98,8 +100,21 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     try {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('[FCM Foreground] Menerima notifikasi: ${message.notification?.title}');
-        // Refresh daftar notifikasi secara realtime
+        // Selalu refresh daftar notifikasi saat ada push masuk
         ref.invalidate(notificationsProvider);
+
+        // Jika FCM membawa data payload event, invalidate provider terkait
+        // agar data di Beranda, Riwayat, dan Poin langsung segar.
+        final event = message.data['event'] as String?;
+        if (event == 'TRANSACTION_SUCCESS') {
+          ref.invalidate(wasteLogsProvider);
+          ref.invalidate(totalPointsProvider);
+          ref.invalidate(pointHistoryProvider);
+          ref.invalidate(dailyPointsProvider);
+          ref.invalidate(binsProvider);
+        } else if (event == 'BIN_EMPTIED' || event == 'RESET_APPROVED') {
+          ref.invalidate(binsProvider);
+        }
       });
     } catch (e) {
       debugPrint('[FCM Foreground Setup] Error: $e');
