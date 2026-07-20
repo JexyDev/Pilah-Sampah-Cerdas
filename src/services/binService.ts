@@ -196,8 +196,7 @@ export class BinService {
       updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
     if (data.longitude !== undefined)
       updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
-    if (data.userId !== undefined)
-      updateData.userId = data.userId || null;
+    if (data.userId !== undefined) updateData.userId = data.userId || null;
 
     return binRepository.updateBin(id, updateData);
   }
