@@ -42,6 +42,7 @@ class BerandaScreen extends ConsumerWidget {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(notificationsProvider);
+          ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -333,6 +334,10 @@ class BerandaScreen extends ConsumerWidget {
         builder: (context, ref, _) {
           final dailyAsync = ref.watch(dailyPointsProvider);
           final daily = dailyAsync.maybeWhen(data: (v) => v, orElse: () => 0);
+          
+          final rankAsync = ref.watch(userLeaderboardRankProvider);
+          final rankValue = rankAsync.maybeWhen(data: (r) => r, orElse: () => '-');
+
           return Row(
             children: [
               _StatItem(
@@ -350,10 +355,10 @@ class BerandaScreen extends ConsumerWidget {
                 valueColor: AppColors.primaryGreen,
               ),
               _VerticalDivider(),
-              const _StatItem(
+              _StatItem(
                 icon: Icons.emoji_events_outlined,
                 iconColor: AppColors.warningYellow,
-                value: '-',
+                value: rankValue,
                 label: 'Peringkat',
               ),
             ],
