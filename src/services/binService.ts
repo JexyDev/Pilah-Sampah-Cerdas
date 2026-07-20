@@ -48,6 +48,11 @@ export class BinService {
       throw new Error("BIN_NOT_FOUND");
     }
 
+    // 2. Validate ownership (if bin is private to a user)
+    if (bin.userId !== null && bin.userId !== userId) {
+      throw new Error("BIN_NOT_OWNED");
+    }
+
     // 2. Validate Geofencing (< 10m) if coordinates are provided
     if (
       userLat !== undefined &&
@@ -168,6 +173,7 @@ export class BinService {
       latitude: data.latitude ? parseFloat(data.latitude) : null,
       longitude: data.longitude ? parseFloat(data.longitude) : null,
       maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
+      userId: data.userId || null,
     });
   }
 
@@ -190,6 +196,8 @@ export class BinService {
       updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
     if (data.longitude !== undefined)
       updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
+    if (data.userId !== undefined)
+      updateData.userId = data.userId || null;
 
     return binRepository.updateBin(id, updateData);
   }
@@ -214,19 +222,7 @@ export class BinService {
   }
 
   async getMyBins(userId: string) {
-    const user = await binRepository.getUserRtRwId(userId);
-    let rtRwId = user?.rtRwId;
-
-    if (!rtRwId) {
-      const household = await binRepository.getUserHouseholdRtRwId(userId);
-      rtRwId = household?.rtRwId || null;
-    }
-
-    if (!rtRwId) {
-      return [];
-    }
-
-    const bins = await binRepository.findBinsByRtRwId(rtRwId);
+    const bins = await binRepository.findBinsByUserId(userId);
 
     return bins.map((bin: any) => {
       const currentVol = Number(bin.currentVolumeLiter);
@@ -241,6 +237,7 @@ export class BinService {
         kapasitas,
         rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
         status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+        householdName: bin.user?.name || "Tempat Sampah Umum",
       };
     });
   }

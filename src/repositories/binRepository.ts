@@ -15,11 +15,12 @@ export class BinRepository {
    */
   async findByQrCode(
     qrCode: string
-  ): Promise<(Bin & { category: { name: string; pointsPerKg: number } }) | null> {
+  ): Promise<(Bin & { category: { name: string; pointsPerKg: number }; user: any }) | null> {
     return prisma.bin.findUnique({
       where: { qrCode },
       include: {
         category: true,
+        user: true,
       },
     });
   }
@@ -32,6 +33,7 @@ export class BinRepository {
       include: {
         category: true,
         rtRw: true,
+        user: true,
       },
     });
   }
@@ -117,11 +119,12 @@ export class BinRepository {
   /**
    * Find bin by ID
    */
-  async findById(id: string): Promise<(Bin & { rtRw?: any }) | null> {
+  async findById(id: string): Promise<(Bin & { rtRw?: any; user?: any }) | null> {
     return prisma.bin.findUnique({
       where: { id },
       include: {
         rtRw: true,
+        user: true,
       },
     });
   }
@@ -244,7 +247,14 @@ export class BinRepository {
   async findBinsByRtRwId(rtRwId: number) {
     return prisma.bin.findMany({
       where: { rtRwId },
-      include: { category: true, rtRw: true },
+      include: { category: true, rtRw: true, user: true },
+    });
+  }
+
+  async findBinsByUserId(userId: string) {
+    return prisma.bin.findMany({
+      where: { userId },
+      include: { category: true, rtRw: true, user: true },
     });
   }
 

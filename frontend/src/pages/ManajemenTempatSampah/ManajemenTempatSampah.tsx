@@ -60,13 +60,15 @@ const ManajemenTempatSampah: React.FC = () => {
     rtRwId: 1, 
     latitude: '', 
     longitude: '', 
-    maxCapacityLiter: 25 
+    maxCapacityLiter: 25,
+    userId: '' 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Dropdown options
   const [categories, setCategories] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
+  const [wargas, setWargas] = useState<any[]>([]);
 
   // Logs state
   const [logTransactions, setLogTransactions] = useState<any[]>([]);
@@ -102,6 +104,10 @@ const ManajemenTempatSampah: React.FC = () => {
       ]);
       setCategories(catRes.data?.data || []);
       setAreas(areaRes.data?.data || []);
+
+      api.get('/users', { params: { roleName: 'WARGA' } })
+        .then(res => setWargas(res.data?.data || []))
+        .catch(err => console.log('Non-admin or error fetching wargas:', err));
     } catch (err) {
       console.error('Failed to load form options:', err);
     }
@@ -115,7 +121,7 @@ const ManajemenTempatSampah: React.FC = () => {
 
   const handleOpenAddModal = () => {
     setModalType('add');
-    setFormData({ qrCode: '', categoryId: '', rtRwId: areas[0]?.id || 1, latitude: '', longitude: '', maxCapacityLiter: 25 });
+    setFormData({ qrCode: '', categoryId: '', rtRwId: areas[0]?.id || 1, latitude: '', longitude: '', maxCapacityLiter: 25, userId: '' });
     setIsFormModalOpen(true);
   };
 
@@ -128,7 +134,8 @@ const ManajemenTempatSampah: React.FC = () => {
       rtRwId: bin.rtRwId || 1, 
       latitude: bin.latitude ? bin.latitude.toString() : '', 
       longitude: bin.longitude ? bin.longitude.toString() : '', 
-      maxCapacityLiter: bin.maxCapacityLiter || 25 
+      maxCapacityLiter: bin.maxCapacityLiter || 25,
+      userId: bin.userId || ''
     });
     setIsFormModalOpen(true);
   };
@@ -184,9 +191,9 @@ const ManajemenTempatSampah: React.FC = () => {
       return;
     }
     
-    const headers = ['Kode', 'Lokasi', 'Kapasitas', 'Kategori', 'Status', 'Terakhir Update'];
+    const headers = ['Kode', 'Lokasi', 'Pemilik', 'Kapasitas', 'Kategori', 'Status', 'Terakhir Update'];
     const csvData = bins.map((b: any) => [
-      b.kode, b.lokasi, `${b.kapasitas} Liter`, b.categoryId, b.status, b.lastUpdate
+      b.kode, b.lokasi, b.wargaName || '-', `${b.kapasitas} Liter`, b.categoryId, b.status, b.lastUpdate
     ]);
     
     const csvContent = [
@@ -260,6 +267,7 @@ const ManajemenTempatSampah: React.FC = () => {
               <th className="px-6 py-4">QR Code</th>
               <th className="px-6 py-4">Kode</th>
               <th className="px-6 py-4">Lokasi</th>
+              <th className="px-6 py-4">Pemilik</th>
               <th className="px-6 py-4">Kapasitas</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Update Terakhir</th>
@@ -269,7 +277,7 @@ const ManajemenTempatSampah: React.FC = () => {
           <tbody className="text-sm">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant">
+                <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <span className="material-symbols-outlined animate-spin text-primary text-[32px]">autorenew</span>
                     <p>Memuat data...</p>
@@ -278,7 +286,7 @@ const ManajemenTempatSampah: React.FC = () => {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-error font-medium">{error}</td>
+                <td colSpan={8} className="px-6 py-8 text-center text-error font-medium">{error}</td>
               </tr>
             ) : bins.length > 0 ? (
               bins.map(bin => (
@@ -298,6 +306,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     <p className="font-bold text-on-surface">{bin.lokasi}</p>
                     <p className="text-[11px] text-on-surface-variant mt-1">{bin.rtRw}</p>
                   </td>
+                  <td className="px-6 py-4 font-medium text-on-surface">{bin.wargaName || "-"}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-2 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
@@ -330,7 +339,7 @@ const ManajemenTempatSampah: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-on-surface-variant">Tidak ada data tempat sampah</td>
+                <td colSpan={8} className="px-6 py-8 text-center text-on-surface-variant">Tidak ada data tempat sampah</td>
               </tr>
             )}
           </tbody>
@@ -360,6 +369,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 <Popup>
                   <div className="text-[12px] space-y-1">
                     <strong>Tong: {b.kode}</strong><br/>
+                    Pemilik: {b.wargaName || 'Publik/Umum'}<br/>
                     Kategori: {b.category?.name || b.categoryId}<br/>
                     Kapasitas: {b.kapasitas}% terisi ({b.currentVolumeLiter || 0}L / {b.maxCapacityLiter || 25}L)<br/>
                     RT/RW: {b.rtRw}<br/>
@@ -500,6 +510,19 @@ const ManajemenTempatSampah: React.FC = () => {
                   <option value="">Pilih Wilayah</option>
                   {areas.map(a => (
                     <option key={a.id} value={a.id}>{a.name} (Kel. {a.kelurahan?.name})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-on-surface mb-1">Pemilik Tong (Warga - Opsional)</label>
+                <select 
+                  value={formData.userId}
+                  onChange={(e) => setFormData({...formData, userId: e.target.value})}
+                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs font-bold"
+                >
+                  <option value="">Publik / Tempat Sampah Umum</option>
+                  {wargas.map(w => (
+                    <option key={w.id} value={w.id}>{w.name} ({w.email})</option>
                   ))}
                 </select>
               </div>

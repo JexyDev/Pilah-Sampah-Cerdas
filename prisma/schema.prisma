@@ -44,6 +44,7 @@ model User {
   refreshTokens   RefreshToken[]
   requestedResets BinResetRequest[] @relation("RequestedResets")
   reviewedResets  BinResetRequest[] @relation("ReviewedResets")
+  bins            Bin[]
 
   @@map("users")
 }
@@ -129,6 +130,8 @@ model Bin {
   longitude          Decimal?          @db.Decimal(11, 8)
   createdAt          DateTime          @default(now()) @map("created_at")
   updatedAt          DateTime          @updatedAt @map("updated_at")
+  userId             String?           @map("user_id")
+  user               User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   wasteLogs          WasteLog[]
   binResetRequests   BinResetRequest[]
 

@@ -44,6 +44,8 @@ export class BinController {
           longitude: bin.longitude,
           currentVolumeLiter: currentVol,
           category: bin.category,
+          wargaName: bin.user?.name || "-",
+          userId: bin.userId || null,
         };
       });
 
@@ -147,6 +149,11 @@ export class BinController {
         res
           .status(404)
           .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code Tong Sampah tidak ditemukan" });
+      } else if (error.message === "BIN_NOT_OWNED") {
+        res.status(403).json({
+          error: "BIN_NOT_OWNED",
+          message: "Tong sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
+        });
       } else if (error.message === "LOCATION_OUT_OF_RANGE") {
         res.status(400).json({
           error: "LOCATION_OUT_OF_RANGE",

@@ -130,7 +130,7 @@ async function main() {
   // 7. Create Bins
   const bin1 = await prisma.bin.upsert({
     where: { qrCode: 'TS-COB-001' },
-    update: {},
+    update: { userId: wargaUser.id },
     create: {
       qrCode: 'TS-COB-001',
       categoryId: catOrganic.id,
@@ -139,13 +139,14 @@ async function main() {
       rtRwId: rt04rw06.id,
       kelurahanId: dago.id,
       latitude: -6.8895,
-      longitude: 107.6108
+      longitude: 107.6108,
+      userId: wargaUser.id
     }
   });
 
   const bin2 = await prisma.bin.upsert({
     where: { qrCode: 'TS-COB-002' },
-    update: {},
+    update: { userId: wargaUser.id },
     create: {
       qrCode: 'TS-COB-002',
       categoryId: catNonOrganic.id,
@@ -154,7 +155,8 @@ async function main() {
       rtRwId: rt04rw06.id,
       kelurahanId: dago.id,
       latitude: -6.8890,
-      longitude: 107.6102
+      longitude: 107.6102,
+      userId: wargaUser.id
     }
   });
 
