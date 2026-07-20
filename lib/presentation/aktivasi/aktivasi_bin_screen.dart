@@ -46,10 +46,10 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
 
   String _mapError(String code, String? msg) {
     switch (code) {
-      case 'BIN_ALREADY_ACTIVE':
+      case 'ALREADY_ACTIVATED':
         return 'Tong ini sudah aktif dan terdaftar.';
-      case 'RESOURCE_NOT_FOUND':
-        return 'QR Serial tidak ditemukan.';
+      case 'BIN_NOT_FOUND':
+        return 'QR Serial tidak terdaftar di sistem.';
       default:
         return msg ?? 'Terjadi kesalahan. Silakan coba lagi.';
     }
@@ -161,7 +161,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
-                        hint: 'PSC-DAGO-ORG-0042',
+                        hint: 'BIN-ORG-EF2072F0',
                         overlayColor: AppColors.primaryGreen,
                         onQrDetected: _onQrDetected,
                       ),

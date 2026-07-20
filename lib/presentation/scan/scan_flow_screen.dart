@@ -128,18 +128,27 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Background kamera simulasi
-          _buildCameraBackground(state.currentStep),
-          // Content sesuai step
-          if (state.isLoading)
-            const Center(child: AppLoading())
-          else
-            _buildStepContent(context, state, isOnline),
-        ],
+    return PopScope(
+      canPop: state.currentStep == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          // You could show a toast here if you want to tell them they can't leave,
+          // but 'mode absolute' means just ignoring the back press.
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // Background kamera simulasi
+            _buildCameraBackground(state.currentStep),
+            // Content sesuai step
+            if (state.isLoading)
+              const Center(child: AppLoading())
+            else
+              _buildStepContent(context, state, isOnline),
+          ],
+        ),
       ),
     );
   }
@@ -443,20 +452,13 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
 
     return Column(
       children: [
-        SafeArea(
+        const SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                IconButton(
-                  onPressed: () =>
-                      ref.read(scanFlowProvider.notifier).goToStep(0),
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const Expanded(
+                SizedBox(width: 48),
+                Expanded(
                   child: Text(
                     'Scan QR Tong Sampah',
                     style: TextStyle(
@@ -467,7 +469,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const Icon(Icons.info_outline_rounded, color: Colors.white),
+                Icon(Icons.info_outline_rounded, color: Colors.white),
               ],
             ),
           ),
@@ -526,7 +528,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
               padding: const EdgeInsets.all(16),
               child: QrScannerWidget(
                 key: ValueKey(_qrScanAttempt),
-                hint: isOrganic ? 'PSC-DEWI-ORG-001' : 'PSC-DEWI-NON-001',
+                hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) {
                   // Guard: skip jika sudah loading atau sudah sukses
@@ -963,8 +965,13 @@ void showAiSuccessSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
     backgroundColor: Colors.transparent,
-    builder: (_) => _AiSuccessSheet(result: result, ref: ref),
+    builder: (_) => PopScope(
+      canPop: false,
+      child: _AiSuccessSheet(result: result, ref: ref),
+    ),
   );
 }
 

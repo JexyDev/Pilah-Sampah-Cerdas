@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/notification_repository.dart';
 import 'repository_providers.dart';
 
 /// State autentikasi.
@@ -31,11 +33,13 @@ class AuthState {
 /// Notifier autentikasi.
 /// Login menggunakan email + password sesuai backend contract.
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._authRepository) : super(const AuthState()) {
+  AuthNotifier(this._authRepository, this._notificationRepository)
+      : super(const AuthState()) {
     _initFuture = _init();
   }
 
   final AuthRepository _authRepository;
+  final NotificationRepository _notificationRepository;
   late final Future<void> _initFuture;
 
   Future<void> get initialized => _initFuture;
@@ -46,6 +50,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (user != null) {
       // getCurrentUser sudah attach householdId dari secure storage cache
       state = state.copyWith(user: user);
+      // Daftarkan FCM token jika sesi sudah ada (app restart)
+      _registerFcmToken();
+    }
+  }
+
+  /// Minta izin notifikasi dan daftarkan FCM token ke backend.
+  /// Fire-and-forget: tidak throw exception ke caller.
+  Future<void> _registerFcmToken() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        final token = await messaging.getToken();
+        if (token != null) {
+          await _notificationRepository.registerDeviceToken(token);
+        }
+
+        // Dengarkan perubahan token (rotasi FCM)
+        FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+          _notificationRepository.registerDeviceToken(newToken);
+        });
+      }
+    } catch (e) {
+      // Non-critical — Firebase mungkin belum dikonfigurasi
+      // App tetap berjalan normal tanpa FCM
     }
   }
 
@@ -58,6 +93,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
       );
       state = state.copyWith(user: user, isLoading: false);
+      // Daftarkan FCM token setelah login berhasil
+      _registerFcmToken();
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(
@@ -124,5 +161,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.watch(authRepositoryProvider));
+  return AuthNotifier(
+    ref.watch(authRepositoryProvider),
+    ref.watch(notificationRepositoryProvider),
+  );
 });

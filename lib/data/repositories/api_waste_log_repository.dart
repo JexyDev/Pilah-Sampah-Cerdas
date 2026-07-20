@@ -86,6 +86,35 @@ class ApiWasteLogRepository implements WasteLogRepository {
     }
   }
 
+  // ─── Peringkat User ───────────────────────────────────────────────────────
+
+  @override
+  Future<String> getUserLeaderboardRank(String userId) async {
+    try {
+      final response = await apiClient.dio.get('/points/leaderboard');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] as List<dynamic>;
+        
+        final userEntry = data.firstWhere(
+          (entry) => entry['id'] == userId,
+          orElse: () => null,
+        );
+
+        if (userEntry != null) {
+          final rank = userEntry['rank'];
+          return '#$rank';
+        }
+        return 'Belum ada rank';
+      }
+      return 'Belum ada rank';
+    } on DioException catch (_) {
+      return 'Belum ada rank';
+    } catch (_) {
+      return 'Belum ada rank';
+    }
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {

@@ -84,7 +84,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
         final start = now.subtract(Duration(days: now.weekday - 1));
         return logs
             .where(
-              (l) => l.createdAt.isAfter(
+              (l) => l.createdAt.toLocal().isAfter(
                 DateTime(start.year, start.month, start.day),
               ),
             )
@@ -92,9 +92,11 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
       case 2: // Bulan ini
         return logs
             .where(
-              (l) =>
-                  l.createdAt.month == now.month &&
-                  l.createdAt.year == now.year,
+              (l) {
+                final localDate = l.createdAt.toLocal();
+                return localDate.month == now.month &&
+                    localDate.year == now.year;
+              },
             )
             .toList();
       default:
@@ -141,7 +143,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
     final Map<String, List<WasteLogEntity>> grouped = {};
     final now = DateTime.now();
     for (final log in logs) {
-      final String key = _groupLabel(log.createdAt, now);
+      final String key = _groupLabel(log.createdAt.toLocal(), now);
       grouped.putIfAbsent(key, () => []).add(log);
     }
 
@@ -349,7 +351,7 @@ class _RiwayatItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt),
+                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt.toLocal()),
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textHint,

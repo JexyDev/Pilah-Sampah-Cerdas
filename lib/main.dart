@@ -3,14 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/constants/app_strings.dart';
 import 'core/utils/platform_utils.dart';
+import 'presentation/providers/notification_provider.dart';
 
 /// Global navigator key — digunakan oleh Dio Interceptor untuk
 /// force-navigate ke Login saat sesi habis (refresh token expired).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Background message handler — harus top-level function (bukan method class).
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Tidak perlu inisialisasi ulang Firebase di sini jika sudah dilakukan di main()
+  // Notifikasi background ditampilkan otomatis oleh sistem operasi
+  debugPrint('[FCM Background] ${message.notification?.title}: ${message.notification?.body}');
+}
 
 /// Entry point aplikasi Pilah Sampah Cerdas — Mobile (Warga).
 ///
@@ -18,9 +28,6 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// - Presentation Layer: lib/presentation/
 /// - Domain Layer:       lib/domain/
 /// - Data Layer:         lib/data/
-///
-/// Mode saat ini: MOCK/DEVELOPMENT — semua data bersifat lokal.
-/// Tidak ada koneksi ke API atau backend.
 ///
 /// Platform support: Android, iOS, Web, Windows, macOS, Linux.
 void main() async {
@@ -51,14 +58,53 @@ void main() async {
     );
   }
 
+  // ── Firebase Cloud Messaging Setup ─────────────────────────────────────────
+  // CATATAN: Memerlukan konfigurasi Firebase project terlebih dahulu:
+  // 1. Jalankan: flutterfire configure
+  // 2. Pastikan google-services.json (Android) dan GoogleService-Info.plist (iOS) sudah ada
+  // 3. Tambahkan firebase_core ke pubspec.yaml dan import firebase_options.dart
+  //
+  // Saat ini, inisialisasi dibungkus try-catch agar app tidak crash
+  // jika Firebase belum dikonfigurasi.
+  try {
+    // Daftarkan background handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    debugPrint('[FCM] Firebase Messaging ready');
+  } catch (e) {
+    debugPrint('[FCM] Firebase not configured yet: $e');
+  }
+
   runApp(
     // ProviderScope adalah root Riverpod — wajib membungkus seluruh app
     const ProviderScope(child: PilahSampahApp()),
   );
 }
 
-class PilahSampahApp extends StatelessWidget {
+class PilahSampahApp extends ConsumerStatefulWidget {
   const PilahSampahApp({super.key});
+
+  @override
+  ConsumerState<PilahSampahApp> createState() => _PilahSampahAppState();
+}
+
+class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
+  @override
+  void initState() {
+    super.initState();
+    _setupFCMForeground();
+  }
+
+  void _setupFCMForeground() {
+    try {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('[FCM Foreground] Menerima notifikasi: ${message.notification?.title}');
+        // Refresh daftar notifikasi secara realtime
+        ref.invalidate(notificationsProvider);
+      });
+    } catch (e) {
+      debugPrint('[FCM Foreground Setup] Error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

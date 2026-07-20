@@ -70,7 +70,6 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
   void _startScanner() {
     _controller?.dispose();
     _controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       autoStart: true,
     );

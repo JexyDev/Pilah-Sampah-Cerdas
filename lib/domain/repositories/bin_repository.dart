@@ -3,7 +3,7 @@ import '../entities/ai_detection_entity.dart';
 import '../entities/bin_reset_entity.dart';
 
 /// Interface repository tong sampah.
-/// Implementasi: MockBinRepository (data layer).
+/// Implementasi: ApiBinRepository (data layer).
 abstract class BinRepository {
   /// Ambil tong sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);

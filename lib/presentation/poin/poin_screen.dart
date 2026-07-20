@@ -24,6 +24,7 @@ class PoinScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(pointHistoryProvider);
+          ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -31,7 +32,7 @@ class PoinScreen extends ConsumerWidget {
             // ─── Header biru besar ─────────────────────────────────────
             SliverToBoxAdapter(
               child: totalAsync.when(
-                data: (total) => _buildHeader(context, total),
+                data: (total) => _buildHeader(context, ref, total),
                 loading: () => _buildHeaderSkeleton(context),
                 error: (_, __) => _buildHeaderSkeleton(context),
               ),
@@ -134,7 +135,9 @@ class PoinScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, int total) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, int total) {
+    final rankAsync = ref.watch(userLeaderboardRankProvider);
+    
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -202,20 +205,38 @@ class PoinScreen extends ConsumerWidget {
                   color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.emoji_events_rounded,
                       color: AppColors.warningYellow,
                       size: 16,
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      '#3 di RT 03',
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 4),
+                    rankAsync.when(
+                      data: (rank) => Text(
+                        rank,
+                        style: const TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      loading: () => const SizedBox(
+                        width: 40,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                      error: (_, __) => const Text(
+                        '-',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

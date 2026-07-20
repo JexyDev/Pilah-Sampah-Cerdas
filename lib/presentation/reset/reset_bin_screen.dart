@@ -29,6 +29,12 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
         return AppStrings.binNotCritical;
       case 'RESOURCE_NOT_FOUND':
         return 'Tong tidak ditemukan.';
+      case 'DUPLICATE_REQUEST':
+        return 'Sudah ada pengajuan pengosongan aktif untuk tong ini. Tunggu sampai diproses petugas.';
+      case 'BIN_NOT_OWNED':
+        return 'Tong ini bukan milik Anda.';
+      case 'VALIDATION_ERROR':
+        return message ?? 'Foto bukti wajib diunggah.';
       default:
         return message ?? AppStrings.errorGeneric;
     }
@@ -135,10 +141,12 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
       );
     }
 
+    // _selectedBinId setup is no longer needed because all bins are submitted.
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tong Sampah Anda', style: Theme.of(context).textTheme.headlineSmall),
+        Text('Status Tong Sampah', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: AppDimensions.sm),
         Expanded(
           child: ListView.separated(
@@ -147,59 +155,64 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
                 const SizedBox(height: AppDimensions.sm),
             itemBuilder: (context, index) {
               final BinEntity bin = bins[index];
+
               return Card(
                 elevation: 0,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(color: AppColors.border, width: 1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppDimensions.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            bin.binType == WasteType.organic
-                                ? Icons.compost_rounded
-                                : Icons.delete_outline_rounded,
-                            color: bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
-                            size: AppDimensions.iconMd,
-                          ),
-                          const SizedBox(width: AppDimensions.sm),
-                          Expanded(
-                            child: Text(
-                              'Tong ${bin.binType.displayName}',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
+                  side: const BorderSide(
+                    color: AppColors.border,
+                    width: 1,
+                  ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppDimensions.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              bin.binType == WasteType.organic
+                                  ? Icons.compost_rounded
+                                  : Icons.delete_outline_rounded,
+                              color: bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
+                              size: AppDimensions.iconMd,
+                            ),
+                            const SizedBox(width: AppDimensions.sm),
+                            Expanded(
+                              child: Text(
+                                'Tong ${bin.binType.displayName}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppDimensions.sm),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                        child: LinearProgressIndicator(
-                          value: bin.capacityPercent.clamp(0.0, 1.0),
-                          minHeight: 8,
-                          backgroundColor: AppColors.border,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
+                          ],
+                        ),
+                        const SizedBox(height: AppDimensions.sm),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                          child: LinearProgressIndicator(
+                            value: bin.capacityPercent.clamp(0.0, 1.0),
+                            minHeight: 8,
+                            backgroundColor: AppColors.border,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '
-                        '${bin.currentVolumeL.toStringAsFixed(1)} kg / '
-                        '${bin.maxCapacityL.toStringAsFixed(0)} kg',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '
+                          '${bin.currentVolumeL.toStringAsFixed(1)} kg / '
+                          '${bin.maxCapacityL.toStringAsFixed(0)} kg',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               );
             },
           ),
@@ -241,7 +254,7 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
             child: OutlinedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Upload Foto Bukti (< 1MB)'),
+              label: const Text('Upload Foto Bukti (< 5MB)'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -256,8 +269,9 @@ class _ResetBinScreenState extends ConsumerState<ResetBinScreen> {
           child: ElevatedButton(
             onPressed: (_evidencePhotoPath != null)
                 ? () {
+                    final binIds = bins.map((b) => b.id).toList();
                     ref.read(resetBinProvider.notifier).submitReset(
-                          binId: bins.isNotEmpty ? bins.first.id : 'all',
+                          binIds: binIds,
                           userId: userId,
                           evidencePhotoPath: _evidencePhotoPath!,
                         );

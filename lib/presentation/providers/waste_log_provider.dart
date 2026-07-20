@@ -40,3 +40,10 @@ final totalPointsProvider = FutureProvider<int>((ref) async {
   final userId = ref.watch(authProvider).user?.id ?? '';
   return repo.getTotalPointsByUser(userId);
 });
+
+/// Provider peringkat user (misal: "#3 di RT 03")
+final userLeaderboardRankProvider = FutureProvider<String>((ref) async {
+  final repo = ref.watch(wasteLogRepositoryProvider);
+  final userId = ref.watch(authProvider).user?.id ?? '';
+  return repo.getUserLeaderboardRank(userId);
+});

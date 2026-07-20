@@ -231,18 +231,21 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   final BinRepository _binRepository;
 
   Future<void> submitReset({
-    required String binId,
+    required List<String> binIds,
     required String userId,
     required String evidencePhotoPath,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
-      final result = await _binRepository.submitResetRequest(
-        binId: binId,
-        userId: userId,
-        evidencePhotoPath: evidencePhotoPath,
-      );
-      state = ResetBinState(result: result);
+      BinResetEntity? lastResult;
+      for (final binId in binIds) {
+        lastResult = await _binRepository.submitResetRequest(
+          binId: binId,
+          userId: userId,
+          evidencePhotoPath: evidencePhotoPath,
+        );
+      }
+      state = ResetBinState(result: lastResult);
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
     }

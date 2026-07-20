@@ -5,6 +5,7 @@ import '../../presentation/main/main_shell.dart';
 import '../../presentation/scan/scan_flow_screen.dart';
 import '../../presentation/aktivasi/aktivasi_bin_screen.dart';
 import '../../presentation/reset/reset_bin_screen.dart';
+import '../../presentation/notifikasi/notifikasi_screen.dart';
 
 /// Nama-nama route terpusat agar tidak ada magic string di widget.
 class AppRoutes {
@@ -16,6 +17,7 @@ class AppRoutes {
   static const String scan = '/scan';
   static const String aktivasiBin = '/aktivasi-bin';
   static const String resetBin = '/reset-bin';
+  static const String notifikasi = '/notifikasi';
 }
 
 /// Route generator terpusat.
@@ -36,6 +38,8 @@ class AppRouter {
         return _buildRoute(const AktivasiBinScreen(), settings);
       case AppRoutes.resetBin:
         return _buildRoute(const ResetBinScreen(), settings);
+      case AppRoutes.notifikasi:
+        return _buildRoute(const NotifikasiScreen(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

@@ -2,7 +2,7 @@ import '../entities/waste_log_entity.dart';
 import '../entities/point_history_entity.dart';
 
 /// Interface repository riwayat & poin.
-/// Implementasi: MockWasteLogRepository (data layer).
+/// Implementasi: ApiWasteLogRepository (data layer).
 abstract class WasteLogRepository {
   /// Ambil riwayat setoran sampah milik user.
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId);
@@ -12,4 +12,7 @@ abstract class WasteLogRepository {
 
   /// Ambil total poin user.
   Future<int> getTotalPointsByUser(String userId);
+
+  /// Ambil peringkat (rank) user.
+  Future<String> getUserLeaderboardRank(String userId);
 }
