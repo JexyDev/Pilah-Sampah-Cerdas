@@ -8,10 +8,16 @@
 import { Router } from "express";
 import { scheduleController } from "../controllers/scheduleController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
 router.get("/", authMiddleware, scheduleController.getAllSchedules);
-router.post("/", authMiddleware, scheduleController.createSchedule);
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  scheduleController.createSchedule
+);
 
 export default router;
