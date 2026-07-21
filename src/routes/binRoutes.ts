@@ -207,4 +207,18 @@ router.put(
   binController.assignQrBatch
 );
 
+router.post(
+  "/dispatch/:id/claim",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  binController.claimDispatch
+);
+
+router.get(
+  "/dispatch/optimized-route",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  binController.getOptimizedRoute
+);
+
 export default router;

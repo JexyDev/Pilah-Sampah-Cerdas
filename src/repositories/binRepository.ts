@@ -173,6 +173,7 @@ export class BinRepository {
           userId,
           points: pointsAwarded,
           description: `Disetor sampah ${categoryName} seberat ${weightKg} kg.`,
+          kategori: "REDUKSI_TONASE",
         },
       });
 
@@ -184,6 +185,76 @@ export class BinRepository {
           message: `Sampah seberat ${weightKg} kg berhasil dicatat. Anda mendapatkan ${pointsAwarded} poin!`,
         },
       });
+
+      // 4. Check for 5-day streak bonus (only for Warga Tambahan)
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { role: true },
+      });
+
+      if (user && user.role.name === "WARGA" && user.wargaSubtype === "TAMBAHAN") {
+        const streakDaysConfig = await tx.systemConfig.findUnique({ where: { key: "streak_bonus_days" } });
+        const streakDays = streakDaysConfig ? Number(streakDaysConfig.value) : 5;
+
+        const streakPointsConfig = await tx.systemConfig.findUnique({ where: { key: "streak_bonus_points" } });
+        const streakPoints = streakPointsConfig ? Number(streakPointsConfig.value) : 10;
+
+        let consecutiveCount = 1;
+        for (let i = 1; i < streakDays; i++) {
+          const checkDateStart = new Date();
+          checkDateStart.setDate(checkDateStart.getDate() - i);
+          checkDateStart.setHours(0, 0, 0, 0);
+
+          const checkDateEnd = new Date();
+          checkDateEnd.setDate(checkDateEnd.getDate() - i);
+          checkDateEnd.setHours(23, 59, 59, 999);
+
+          const logOnDay = await tx.wasteLog.findFirst({
+            where: {
+              household: { userId },
+              createdAt: {
+                gte: checkDateStart,
+                lte: checkDateEnd,
+              },
+            },
+          });
+
+          if (logOnDay) {
+            consecutiveCount++;
+          } else {
+            break; // Streak broken
+          }
+        }
+
+        if (consecutiveCount >= streakDays) {
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const endOfToday = new Date();
+          endOfToday.setHours(23, 59, 59, 999);
+
+          const alreadyAwarded = await tx.pointHistory.findFirst({
+            where: {
+              userId,
+              kategori: "PARTISIPASI_STREAK",
+              createdAt: {
+                gte: startOfToday,
+                lte: endOfToday,
+              },
+            },
+          });
+
+          if (!alreadyAwarded) {
+            await tx.pointHistory.create({
+              data: {
+                userId,
+                points: streakPoints,
+                description: `Bonus streak setoran ${streakDays} hari berturut-turut`,
+                kategori: "PARTISIPASI_STREAK",
+              },
+            });
+          }
+        }
+      }
 
       return { wasteLog, points, notification };
     });

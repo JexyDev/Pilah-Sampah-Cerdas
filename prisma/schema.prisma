@@ -53,6 +53,8 @@ model User {
   bankSampahLedger BankSampahLedger?
   ideDaurUlang    IdeDaurUlang[]
   auditLogs       AuditTrail[]
+  claimedTasks    DispatchTask[]    @relation("ClaimedTasks")
+  verifiedLogs    WasteLog[]        @relation("VerifiedLogs")
 
   @@map("users")
 }
@@ -170,6 +172,7 @@ model Bin {
   user                        User?             @relation("UserBins", fields: [userId], references: [id], onDelete: SetNull)
   wasteLogs                   WasteLog[]
   binResetRequests            BinResetRequest[]
+  dispatchTasks               DispatchTask[]
 
   @@map("bins")
 }
@@ -190,6 +193,10 @@ model WasteLog {
   actualWeightPetugas  Decimal?      @map("actual_weight_petugas") @db.Decimal(5, 2)
   discrepancyStatus    String        @default("NONE") @map("discrepancy_status") // NONE, PENDING_REVIEW, RESOLVED
   geolocation          String?       @map("geolocation")
+  verifiedByPetugasId  String?       @map("verified_by_petugas_id")
+  verifiedByPetugas    User?         @relation("VerifiedLogs", fields: [verifiedByPetugasId], references: [id], onDelete: SetNull)
+  verifiedAt           DateTime?     @map("verified_at")
+  petugasClassification String?      @map("petugas_classification")
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
@@ -223,6 +230,8 @@ model PetugasResidu {
   noWa         String   @map("no_wa")
   kpiScore     Decimal  @default(100.0) @map("kpi_score") @db.Decimal(5, 2)
   assignedZone String?  @map("assigned_zone")
+  latitude     Decimal? @db.Decimal(11, 8) @map("latitude")
+  longitude    Decimal? @db.Decimal(11, 8) @map("longitude")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -357,6 +366,7 @@ model PointHistory {
   user         User     @relation(fields: [userId], references: [id])
   points      Int
   description String
+  kategori    String   @default("REDUKSI_TONASE") @map("kategori") // REDUKSI_TONASE, PARTISIPASI_STREAK, IDE_DAUR_ULANG
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("point_history")
@@ -420,4 +430,48 @@ model BinOwnership {
 
   @@unique([binId, userId])
   @@map("bin_ownerships")
+}
+
+enum DispatchStatus {
+  PENDING
+  CLAIMED
+  COMPLETED
+}
+
+model DispatchTask {
+  id              String         @id @default(uuid())
+  binId           String         @map("bin_id")
+  bin             Bin            @relation(fields: [binId], references: [id], onDelete: Cascade)
+  status          DispatchStatus @default(PENDING)
+  claimedByUserId String?        @map("claimed_by_user_id")
+  claimedByUser   User?          @relation("ClaimedTasks", fields: [claimedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@map("dispatch_tasks")
+}
+
+model Peternakan {
+  id             String                   @id @default(uuid())
+  nama           String
+  pemilik        String
+  noWa           String                   @map("no_wa")
+  populasi       Int                      @default(0)
+  hasilPanenKg   Decimal                  @default(0.0) @map("hasil_panen_kg") @db.Decimal(10, 2)
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+  distributions  MaggotDistributionLog[]
+
+  @@map("peternakan")
+}
+
+model MaggotDistributionLog {
+  id            String      @id @default(uuid())
+  peternakanId  String      @map("peternakan_id")
+  peternakan    Peternakan  @relation(fields: [peternakanId], references: [id], onDelete: Cascade)
+  quantityKg    Decimal     @map("quantity_kg") @db.Decimal(10, 2)
+  tanggal       DateTime    @default(now()) @map("tanggal")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("maggot_distribution_logs")
 }

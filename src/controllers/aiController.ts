@@ -126,6 +126,85 @@ export class AiController {
       }
     }
   }
+
+  /**
+   * Submit Petugas Residu actual report for a WasteLog
+   */
+  async submitReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { actualWeight, manualClassification, geolocation } = req.body;
+      if (actualWeight === undefined || !manualClassification || !geolocation) {
+        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "actualWeight, manualClassification, dan geolocation wajib diisi" });
+        return;
+      }
+      const petugasUserId = req.user!.userId;
+      const log = await aiService.submitPetugasReport(id, petugasUserId, Number(actualWeight), manualClassification, geolocation);
+      res.status(200).json({ success: true, message: "Laporan aktual petugas berhasil disimpan", data: log });
+    } catch (error: any) {
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Resolve discrepancy by Admin DLH
+   */
+  async resolveDiscrepancy(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { finalClassification } = req.body;
+      if (!finalClassification) {
+        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "finalClassification wajib diisi" });
+        return;
+      }
+      const adminUserId = req.user!.userId;
+      const log = await aiService.resolveDiscrepancy(id, finalClassification, adminUserId);
+      res.status(200).json({ success: true, message: "Discrepancy laporan berhasil diselesaikan", data: log });
+    } catch (error: any) {
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Get Warga compliance score
+   */
+  async getComplianceScore(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const score = await aiService.calculateComplianceScore(userId);
+      res.status(200).json({ success: true, complianceScore: score });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Get dynamic avoided greenhouse gas statistics
+   */
+  async getCo2eStats(req: Request, res: Response): Promise<void> {
+    try {
+      const prismaClient = new (await import("@prisma/client")).PrismaClient();
+      const organicLogs = await prismaClient.wasteLog.findMany({
+        where: {
+          category: { name: "ORGANIC" },
+        },
+        select: {
+          weightKg: true,
+        },
+      });
+
+      const totalWeight = organicLogs.reduce((acc, l) => acc + Number(l.weightKg), 0);
+      const co2eAvoided = await aiService.calculateCo2eAvoided(totalWeight);
+
+      res.status(200).json({
+        success: true,
+        totalOrganicWeightKg: totalWeight,
+        co2eAvoidedKg: co2eAvoided,
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
 }
 
 export const aiController = new AiController();

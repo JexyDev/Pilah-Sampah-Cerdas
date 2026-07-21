@@ -87,4 +87,31 @@ router.post(
   aiController.detectCombined
 );
 
+router.post(
+  "/logs/:id/report",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  aiController.submitReport
+);
+
+router.put(
+  "/logs/:id/resolve",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  aiController.resolveDiscrepancy
+);
+
+router.get(
+  "/compliance/:userId",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  aiController.getComplianceScore
+);
+
+router.get(
+  "/emissions",
+  authMiddleware,
+  aiController.getCo2eStats
+);
+
 export default router;

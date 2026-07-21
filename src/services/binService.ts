@@ -8,6 +8,11 @@
 import { v4 as uuidv4 } from "uuid";
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
+import { PrismaClient } from "@prisma/client";
+import { configService } from "./configService.js";
+import { websocketService } from "./websocketService.js";
+
+const prisma = new PrismaClient();
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
@@ -102,6 +107,39 @@ export class BinService {
     // 5. Update Bin current volume
     const newVolume = current + estimatedVolume;
     await binRepository.updateVolume(bin.id, newVolume);
+
+    // Trigger on-demand dispatch if fullness exceeds trigger (default 80%)
+    const triggerVal = await configService.getConfig("bin_fullness_trigger_wa");
+    const triggerPct = triggerVal ? Number(triggerVal) : 80;
+    const fullness = max > 0 ? (newVolume / max) * 100 : 0;
+    if (fullness >= triggerPct) {
+      // Check if a dispatch task is already active
+      const existingTask = await prisma.dispatchTask.findFirst({
+        where: {
+          binId: bin.id,
+          status: { in: ["PENDING", "CLAIMED"] },
+        },
+      });
+
+      if (!existingTask) {
+        await prisma.dispatchTask.create({
+          data: {
+            binId: bin.id,
+            status: "PENDING",
+          },
+        });
+
+        // Broadcast alert via WebSocket if bin has coordinates
+        if (bin.latitude !== null && bin.longitude !== null) {
+          await websocketService.broadcastDispatch(
+            bin.id,
+            bin.qrCode,
+            Number(bin.latitude),
+            Number(bin.longitude)
+          ).catch(() => {});
+        }
+      }
+    }
 
     // 6. Convert liters to weight based on density
     // Use fixed multiplier for Organic vs Non-Organic for now (simplified)
@@ -344,6 +382,77 @@ export class BinService {
    */
   async markBinAsBroken(qrCode: string, adminUserId: string) {
     return binRepository.markBinAsBroken(qrCode, adminUserId);
+  }
+
+  /**
+   * Claim a dispatch task concurrency-safely using FOR UPDATE row lock
+   */
+  async claimDispatchTask(taskId: string, petugasUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      // Row level lock to prevent double claim
+      const tasks = await tx.$queryRaw<any[]>`
+        SELECT * FROM dispatch_tasks WHERE id = ${taskId} FOR UPDATE
+      `;
+      if (!tasks || tasks.length === 0) throw new Error("DISPATCH_TASK_NOT_FOUND");
+      const task = tasks[0];
+
+      if (task.status !== "PENDING") {
+        throw new Error("DISPATCH_TASK_ALREADY_CLAIMED");
+      }
+
+      const updated = await tx.dispatchTask.update({
+        where: { id: taskId },
+        data: {
+          status: "CLAIMED",
+          claimedByUserId: petugasUserId,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Route optimization: sort claimed tasks for petugas by Haversine distance
+   */
+  async getOptimizedRoute(petugasUserId: string, lat: number, lng: number) {
+    const tasks = await prisma.dispatchTask.findMany({
+      where: {
+        claimedByUserId: petugasUserId,
+        status: "CLAIMED",
+      },
+      include: {
+        bin: {
+          include: {
+            rtRw: true,
+          },
+        },
+      },
+    });
+
+    // Calculate distance and sort
+    const route = tasks.map((t: any) => {
+      let distanceMeters = 9999999; // Default if coords are missing
+      if (t.bin.latitude !== null && t.bin.longitude !== null) {
+        distanceMeters = getDistanceMeters(
+          lat,
+          lng,
+          Number(t.bin.latitude),
+          Number(t.bin.longitude)
+        );
+      }
+      return {
+        taskId: t.id,
+        binId: t.bin.id,
+        qrCode: t.bin.qrCode,
+        latitude: t.bin.latitude,
+        longitude: t.bin.longitude,
+        distanceMeters,
+        rtRw: t.bin.rtRw?.name || `RT/RW ${t.bin.rtRwId}`,
+      };
+    });
+
+    return route.sort((a, b) => a.distanceMeters - b.distanceMeters);
   }
 }
 

@@ -428,6 +428,38 @@ export class BinController {
       res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  /**
+   * Claim dispatch task
+   */
+  async claimDispatch(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const petugasUserId = req.user!.userId;
+      const task = await binService.claimDispatchTask(id, petugasUserId);
+      res.status(200).json({ success: true, message: "Tugas penjemputan berhasil diklaim", data: task });
+    } catch (error: any) {
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Get optimized route of claimed tasks
+   */
+  async getOptimizedRoute(req: Request, res: Response): Promise<void> {
+    try {
+      const petugasUserId = req.user!.userId;
+      const { lat, lng } = req.query;
+      if (!lat || !lng) {
+        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "Parameter lat dan lng wajib diisi" });
+        return;
+      }
+      const route = await binService.getOptimizedRoute(petugasUserId, Number(lat), Number(lng));
+      res.status(200).json({ success: true, data: route });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
 }
 
 export const binController = new BinController();

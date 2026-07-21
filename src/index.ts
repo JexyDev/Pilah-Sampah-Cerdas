@@ -23,6 +23,10 @@ import transactionRouter from "./routes/transactionRoutes.js";
 import scheduleRouter from "./routes/scheduleRoutes.js";
 import systemRouter from "./routes/systemRoutes.js";
 import configRouter from "./routes/configRoutes.js";
+import gamificationRouter from "./routes/gamificationRoutes.js";
+import facilityRouter from "./routes/facilityRoutes.js";
+import bankSampahRouter from "./routes/bankSampahRoutes.js";
+import notificationIntegrationRouter from "./routes/notificationIntegrationRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -66,6 +70,10 @@ app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/system", systemRouter);
 app.use("/api/v1/configs", configRouter);
+app.use("/api/v1/gamification", gamificationRouter);
+app.use("/api/v1/facilities", facilityRouter);
+app.use("/api/v1/bank-sampah", bankSampahRouter);
+app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 
 // Initialize Swagger Docs
 setupSwagger(app);
@@ -75,8 +83,16 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`===============================================`);
   console.log(`pilahsampah.id Backend running on port ${PORT}`);
   console.log(`===============================================`);
 });
+
+// Initialize WebSocket Server
+import { websocketService } from "./services/websocketService.js";
+websocketService.init(server);
+
+// Initialize Cron Scheduler Service
+import { cronService } from "./services/cronService.js";
+cronService.start();

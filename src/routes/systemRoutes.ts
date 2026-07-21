@@ -8,13 +8,14 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { systemController } from "../controllers/systemController.js";
 
 const router = Router();
 
 /**
  * Trigger manual database backup (Admin only)
  */
-router.post("/backup", authMiddleware, roleMiddleware(["ADMIN"]), async (req, res) => {
+router.post("/backup", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), async (req, res) => {
   try {
     const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     res.status(200).json({
@@ -32,7 +33,7 @@ router.post("/backup", authMiddleware, roleMiddleware(["ADMIN"]), async (req, re
 /**
  * Optimize system cache (Admin only)
  */
-router.post("/clear-cache", authMiddleware, roleMiddleware(["ADMIN"]), async (req, res) => {
+router.post("/clear-cache", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), async (req, res) => {
   try {
     res.status(200).json({
       success: true,
@@ -45,5 +46,30 @@ router.post("/clear-cache", authMiddleware, roleMiddleware(["ADMIN"]), async (re
     });
   }
 });
+
+/**
+ * Get all audit trails (Super Admin only view)
+ */
+router.get(
+  "/audit-trail",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN"]),
+  systemController.getAuditTrails
+);
+
+/**
+ * Social Feed management
+ */
+router.post(
+  "/social-feed",
+  authMiddleware,
+  systemController.createSocialFeed
+);
+
+router.get(
+  "/social-feed",
+  authMiddleware,
+  systemController.getSocialFeed
+);
 
 export default router;
