@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { binService } from "./binService.js";
 import { binRepository } from "../repositories/binRepository.js";
@@ -90,6 +97,7 @@ describe("BinService", () => {
         latitude: -6.123,
         longitude: 106.123,
         maxCapacityLiter: 30.0,
+        userId: null,
       });
       expect(result).toEqual(mockCreatedBin);
     });

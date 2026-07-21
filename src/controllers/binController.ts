@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Request, Response } from "express";
 import { z } from "zod";
 import { binService } from "../services/binService.js";
@@ -17,7 +24,7 @@ export class BinController {
    */
   async getAllBins(req: Request, res: Response): Promise<void> {
     try {
-      const bins = await binService.getAllBins();
+      const bins = await binService.getAllBins(req.user);
       const mappedBins = bins.map((bin: any) => {
         const currentVol = Number(bin.currentVolumeLiter);
         const maxVol = Number(bin.maxCapacityLiter);
@@ -37,6 +44,8 @@ export class BinController {
           longitude: bin.longitude,
           currentVolumeLiter: currentVol,
           category: bin.category,
+          wargaName: bin.user?.name || "-",
+          userId: bin.userId || null,
         };
       });
 
@@ -140,6 +149,11 @@ export class BinController {
         res
           .status(404)
           .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code Tong Sampah tidak ditemukan" });
+      } else if (error.message === "BIN_NOT_OWNED") {
+        res.status(403).json({
+          error: "BIN_NOT_OWNED",
+          message: "Tong sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
+        });
       } else if (error.message === "LOCATION_OUT_OF_RANGE") {
         res.status(400).json({
           error: "LOCATION_OUT_OF_RANGE",
@@ -350,6 +364,126 @@ export class BinController {
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses pengajuan" });
       }
+    }
+  }
+
+  /**
+   * Create QR Batch (Super Admin/Admin DLH)
+   */
+  async createQrBatch(req: Request, res: Response): Promise<void> {
+    try {
+      const { quantity } = req.body;
+      if (!quantity || isNaN(parseInt(quantity))) {
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "quantity wajib berupa angka" });
+        return;
+      }
+      const batch = await binService.createQrBatch(parseInt(quantity));
+      res.status(201).json({ success: true, data: batch });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Get all QR Batches
+   */
+  async getAllQrBatches(req: Request, res: Response): Promise<void> {
+    try {
+      const batches = await binService.getAllQrBatches();
+      res.status(200).json({ success: true, data: batches });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Assign QR Batch to PIC (Camat, Lurah, RW, or Admin DLH)
+   */
+  async assignQrBatch(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { picUserId } = req.body;
+      if (!picUserId) {
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "picUserId wajib diisi" });
+        return;
+      }
+      const adminUserId = req.user!.userId;
+      const batch = await binService.assignQrBatch(id, picUserId, adminUserId);
+      res.status(200).json({ success: true, data: batch });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Mark Bin as Broken
+   */
+  async markBinAsBroken(req: Request, res: Response): Promise<void> {
+    try {
+      const { qrCode } = req.params;
+      const adminUserId = req.user!.userId;
+      const bin = await binService.markBinAsBroken(qrCode, adminUserId);
+      res.status(200).json({
+        success: true,
+        message: "Status tempat sampah berhasil diubah menjadi BROKEN",
+        data: bin,
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Claim dispatch task
+   */
+  async claimDispatch(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const petugasUserId = req.user!.userId;
+      const task = await binService.claimDispatchTask(id, petugasUserId);
+      res
+        .status(200)
+        .json({ success: true, message: "Tugas penjemputan berhasil diklaim", data: task });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Get optimized route of claimed tasks
+   */
+  async getOptimizedRoute(req: Request, res: Response): Promise<void> {
+    try {
+      const petugasUserId = req.user!.userId;
+      const { lat, lng } = req.query;
+      if (!lat || !lng) {
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "Parameter lat dan lng wajib diisi",
+        });
+        return;
+      }
+      const route = await binService.getOptimizedRoute(petugasUserId, Number(lat), Number(lng));
+      res.status(200).json({ success: true, data: route });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

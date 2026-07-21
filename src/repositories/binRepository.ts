@@ -1,4 +1,11 @@
-import { PrismaClient, Bin, WasteLog, PointHistory, Notification } from "@prisma/client";
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
+import { PrismaClient, Bin, WasteLog, PointHistory, Notification, BinStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -6,13 +13,12 @@ export class BinRepository {
   /**
    * Find bin by QR code
    */
-  async findByQrCode(
-    qrCode: string
-  ): Promise<(Bin & { category: { name: string; pointsPerKg: number } }) | null> {
+  async findByQrCode(qrCode: string): Promise<any> {
     return prisma.bin.findUnique({
       where: { qrCode },
       include: {
         category: true,
+        binOwnerships: true,
       },
     });
   }
@@ -20,11 +26,13 @@ export class BinRepository {
   /**
    * Find all bins
    */
-  async findAll(): Promise<Bin[]> {
+  async findAll(where: any = {}): Promise<Bin[]> {
     return prisma.bin.findMany({
+      where,
       include: {
         category: true,
         rtRw: true,
+        user: true,
       },
     });
   }
@@ -110,11 +118,12 @@ export class BinRepository {
   /**
    * Find bin by ID
    */
-  async findById(id: string): Promise<(Bin & { rtRw?: any }) | null> {
+  async findById(id: string): Promise<(Bin & { rtRw?: any; user?: any }) | null> {
     return prisma.bin.findUnique({
       where: { id },
       include: {
         rtRw: true,
+        user: true,
       },
     });
   }
@@ -162,6 +171,7 @@ export class BinRepository {
           userId,
           points: pointsAwarded,
           description: `Disetor sampah ${categoryName} seberat ${weightKg} kg.`,
+          kategori: "REDUKSI_TONASE",
         },
       });
 
@@ -173,6 +183,80 @@ export class BinRepository {
           message: `Sampah seberat ${weightKg} kg berhasil dicatat. Anda mendapatkan ${pointsAwarded} poin!`,
         },
       });
+
+      // 4. Check for 5-day streak bonus (only for Warga Tambahan)
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { role: true },
+      });
+
+      if (user && user.role.name === "WARGA" && user.wargaSubtype === "TAMBAHAN") {
+        const streakDaysConfig = await tx.systemConfig.findUnique({
+          where: { key: "streak_bonus_days" },
+        });
+        const streakDays = streakDaysConfig ? Number(streakDaysConfig.value) : 5;
+
+        const streakPointsConfig = await tx.systemConfig.findUnique({
+          where: { key: "streak_bonus_points" },
+        });
+        const streakPoints = streakPointsConfig ? Number(streakPointsConfig.value) : 10;
+
+        let consecutiveCount = 1;
+        for (let i = 1; i < streakDays; i++) {
+          const checkDateStart = new Date();
+          checkDateStart.setDate(checkDateStart.getDate() - i);
+          checkDateStart.setHours(0, 0, 0, 0);
+
+          const checkDateEnd = new Date();
+          checkDateEnd.setDate(checkDateEnd.getDate() - i);
+          checkDateEnd.setHours(23, 59, 59, 999);
+
+          const logOnDay = await tx.wasteLog.findFirst({
+            where: {
+              household: { userId },
+              createdAt: {
+                gte: checkDateStart,
+                lte: checkDateEnd,
+              },
+            },
+          });
+
+          if (logOnDay) {
+            consecutiveCount++;
+          } else {
+            break; // Streak broken
+          }
+        }
+
+        if (consecutiveCount >= streakDays) {
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const endOfToday = new Date();
+          endOfToday.setHours(23, 59, 59, 999);
+
+          const alreadyAwarded = await tx.pointHistory.findFirst({
+            where: {
+              userId,
+              kategori: "PARTISIPASI_STREAK",
+              createdAt: {
+                gte: startOfToday,
+                lte: endOfToday,
+              },
+            },
+          });
+
+          if (!alreadyAwarded) {
+            await tx.pointHistory.create({
+              data: {
+                userId,
+                points: streakPoints,
+                description: `Bonus streak setoran ${streakDays} hari berturut-turut`,
+                kategori: "PARTISIPASI_STREAK",
+              },
+            });
+          }
+        }
+      }
 
       return { wasteLog, points, notification };
     });
@@ -204,7 +288,7 @@ export class BinRepository {
     });
   }
 
-  async createArea(name: string, kelurahanId: number) {
+  async createArea(name: string, kelurahanId: string) {
     return prisma.rtRwArea.create({
       data: {
         name,
@@ -237,7 +321,26 @@ export class BinRepository {
   async findBinsByRtRwId(rtRwId: number) {
     return prisma.bin.findMany({
       where: { rtRwId },
-      include: { category: true, rtRw: true },
+      include: { category: true, rtRw: true, user: true },
+    });
+  }
+
+  async findBinsByUserId(userId: string) {
+    return prisma.bin.findMany({
+      where: {
+        binOwnerships: {
+          some: { userId },
+        },
+      },
+      include: {
+        category: true,
+        rtRw: true,
+        binOwnerships: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
   }
 
@@ -251,6 +354,31 @@ export class BinRepository {
     return prisma.bin.update({
       where: { qrCode: id },
       data,
+    });
+  }
+
+  async markBinAsBroken(qrCode: string, adminUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const oldBin = await tx.bin.findUnique({
+        where: { qrCode },
+      });
+      if (!oldBin) throw new Error("BIN_NOT_FOUND");
+
+      const updatedBin = await tx.bin.update({
+        where: { qrCode },
+        data: { status: "BROKEN" },
+      });
+
+      await tx.auditTrail.create({
+        data: {
+          action: "MARK_BIN_BROKEN",
+          userId: adminUserId,
+          oldValue: JSON.parse(JSON.stringify(oldBin)),
+          newValue: JSON.parse(JSON.stringify(updatedBin)),
+        },
+      });
+
+      return updatedBin;
     });
   }
 
@@ -309,7 +437,7 @@ export class BinRepository {
         rtRwId,
         role: {
           name: {
-            in: ["PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN", "ADMIN"],
+            in: ["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"],
           },
         },
       },
@@ -323,6 +451,112 @@ export class BinRepository {
         title,
         message,
       },
+    });
+  }
+
+  /**
+   * Create a new QR Batch and pre-generate Bins
+   */
+  async createQrBatch(batchCode: string, quantity: number) {
+    return prisma.$transaction(async (tx) => {
+      const batch = await tx.qrBatch.create({
+        data: {
+          batchCode,
+          totalQr: quantity,
+          status: "PRINTED",
+        },
+      });
+
+      // Find default organic category
+      const organicCategory = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
+      const categoryId = organicCategory?.id;
+      if (!categoryId) throw new Error("DEFAULT_ORGANIC_CATEGORY_NOT_FOUND");
+
+      const defaultRtRw = await tx.rtRwArea.findFirst();
+      if (!defaultRtRw) throw new Error("NO_RTRW_AREA_FOUND_IN_DB");
+
+      const binsData = [];
+      for (let i = 0; i < quantity; i++) {
+        const rand = Math.floor(100000 + Math.random() * 900000);
+        const qrCode = `QR-${batchCode}-${rand}`;
+        binsData.push({
+          qrCode,
+          status: BinStatus.PRINTED,
+          categoryId,
+          maxCapacityLiter: 25.0,
+          currentVolumeLiter: 0.0,
+          qrBatchId: batch.id,
+          rtRwId: defaultRtRw.id,
+        });
+      }
+
+      await tx.bin.createMany({
+        data: binsData,
+      });
+
+      return batch;
+    });
+  }
+
+  /**
+   * Find QR Batch by ID
+   */
+  async findQrBatchById(id: string) {
+    return prisma.qrBatch.findUnique({
+      where: { id },
+      include: {
+        assignedPic: true,
+        bins: true,
+      },
+    });
+  }
+
+  /**
+   * Find all QR Batches
+   */
+  async findAllQrBatches() {
+    return prisma.qrBatch.findMany({
+      include: {
+        assignedPic: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Assign QR Batch to PIC
+   */
+  async assignQrBatch(batchId: string, assignedPicUserId: string, adminUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const oldBatch = await tx.qrBatch.findUnique({
+        where: { id: batchId },
+      });
+
+      const batch = await tx.qrBatch.update({
+        where: { id: batchId },
+        data: {
+          assignedPicUserId,
+          status: "ASSIGNED_TO_PIC",
+        },
+      });
+
+      await tx.bin.updateMany({
+        where: { qrBatchId: batchId },
+        data: {
+          status: BinStatus.ASSIGNED_TO_PIC,
+        },
+      });
+
+      await tx.auditTrail.create({
+        data: {
+          action: "ASSIGN_QR_BATCH",
+          userId: adminUserId,
+          oldValue: oldBatch ? JSON.parse(JSON.stringify(oldBatch)) : null,
+          newValue: JSON.parse(JSON.stringify(batch)),
+        },
+      });
+
+      return batch;
     });
   }
 }

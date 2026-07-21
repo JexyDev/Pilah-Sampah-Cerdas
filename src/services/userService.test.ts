@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { userService } from "./userService.js";
 import { userRepository } from "../repositories/userRepository.js";
@@ -22,6 +29,12 @@ vi.mock("../repositories/userRepository.js", () => {
 vi.mock("../utils/hashUtils.js", () => {
   return {
     hashPassword: vi.fn().mockResolvedValue("hashed_password"),
+  };
+});
+
+vi.mock("../utils/rbacScoping.js", () => {
+  return {
+    getScopingFilters: vi.fn().mockResolvedValue({}),
   };
 });
 
@@ -54,7 +67,10 @@ describe("UserService", () => {
 
       vi.mocked(userRepository.findMany).mockResolvedValue(mockUsers as any);
 
-      const result = await userService.getAllUsers({});
+      const result = await userService.getAllUsers(
+        {},
+        { userId: "mock-user-id", role: "SUPER_ADMIN" }
+      );
 
       expect(userRepository.findMany).toHaveBeenCalledWith({});
       expect(result).toHaveLength(1);

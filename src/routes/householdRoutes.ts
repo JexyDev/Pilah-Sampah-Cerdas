@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Router } from "express";
 import { householdController } from "../controllers/householdController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -58,7 +65,7 @@ const router = Router();
 router.post(
   "/register",
   authMiddleware,
-  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]),
   householdController.register
 );
 
@@ -79,7 +86,7 @@ router.get("/me", authMiddleware, householdController.getMyHouseholds);
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   householdController.getAllHouseholds
 );
 

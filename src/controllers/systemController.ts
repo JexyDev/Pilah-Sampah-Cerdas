@@ -1,0 +1,67 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
+import { Request, Response } from "express";
+import { systemService } from "../services/systemService.js";
+
+export class SystemController {
+  /**
+   * Get all audit trails (Super Admin only)
+   */
+  async getAuditTrails(req: Request, res: Response): Promise<void> {
+    try {
+      const logs = await systemService.getAuditTrails();
+      res.status(200).json({ success: true, data: logs });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Create a new social feed entry
+   */
+  async createSocialFeed(req: Request, res: Response): Promise<void> {
+    try {
+      const { tipe, deskripsi, entityId } = req.body;
+      if (!tipe || !deskripsi) {
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "tipe dan deskripsi wajib diisi" });
+        return;
+      }
+      const userId = req.user!.userId;
+      const entry = await systemService.createSocialFeed(userId, tipe, deskripsi, entityId);
+      res.status(201).json({
+        success: true,
+        message: "Aktivitas berhasil ditambahkan ke feed sosial",
+        data: entry,
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Get public social feed list
+   */
+  async getSocialFeed(req: Request, res: Response): Promise<void> {
+    try {
+      const list = await systemService.getSocialFeed();
+      res.status(200).json({ success: true, data: list });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+}
+
+export const systemController = new SystemController();

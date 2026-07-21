@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
@@ -157,6 +164,139 @@ export class AuthService {
     const hashedPassword = await hashPassword(newPassword);
 
     await authRepository.updatePassword(userId, hashedPassword);
+  }
+
+  /**
+   * Register Warga
+   */
+  async registerWarga(
+    userData: any,
+    householdData: any,
+    qrCode: string,
+    wargaSubtype: string,
+    scannerUser?: any
+  ) {
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(userData.password);
+
+    // If scanner is Mahasiswa KKN, validate PIC matching
+    if (scannerUser && scannerUser.role === "MAHASISWA_KKN") {
+      const { binRepository } = await import("../repositories/binRepository.js");
+      const bin = await binRepository.findByQrCode(qrCode);
+      if (!bin) throw new Error("BIN_NOT_FOUND");
+
+      const batch = bin.qrBatchId ? await binRepository.findQrBatchById(bin.qrBatchId) : null;
+      if (batch && batch.assignedPicUserId !== scannerUser.userId) {
+        throw new Error("PIC_MISMATCH");
+      }
+    }
+
+    // Check duplicate email
+    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+
+    // Check duplicate NIK
+    if (userData.nik) {
+      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
+      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
+    }
+
+    return authRepository.registerWargaTx(
+      {
+        ...userData,
+        password: hashedPassword,
+      },
+      householdData,
+      qrCode,
+      wargaSubtype
+    );
+  }
+
+  /**
+   * Register Mahasiswa KKN
+   */
+  async registerKkn(userData: any, kknData: any) {
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(userData.password);
+
+    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+
+    if (userData.nik) {
+      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
+      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
+    }
+
+    return authRepository.registerKknTx(
+      {
+        ...userData,
+        password: hashedPassword,
+      },
+      kknData
+    );
+  }
+
+  /**
+   * Register Petugas Residu
+   */
+  async registerPetugasResidu(userData: any, petugasData: any) {
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(userData.password);
+
+    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+
+    if (userData.nik) {
+      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
+      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
+    }
+
+    return authRepository.registerPetugasResiduTx(
+      {
+        ...userData,
+        password: hashedPassword,
+      },
+      petugasData
+    );
+  }
+
+  /**
+   * Register general staff (Camat, Lurah, RW, Admin DLH)
+   */
+  async registerStaff(userData: any, roleName: string) {
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(userData.password);
+
+    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+
+    if (userData.nik) {
+      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
+      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
+    }
+
+    const role = await authRepository.findRoleByName(roleName);
+    if (!role) throw new Error("ROLE_NOT_FOUND");
+
+    return authRepository.createUser({
+      ...userData,
+      password: hashedPassword,
+      roleId: role.id,
+    });
+  }
+
+  /**
+   * Get KKN pending list
+   */
+  async getKknPendingList() {
+    return authRepository.getKknPendingList();
+  }
+
+  /**
+   * Whitelist Mahasiswa KKN status
+   */
+  async updateKknWhitelistStatus(userId: string, status: string, adminUserId: string) {
+    return authRepository.updateKknWhitelistStatus(userId, status, adminUserId);
   }
 }
 

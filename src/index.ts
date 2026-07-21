@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -15,6 +22,13 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import transactionRouter from "./routes/transactionRoutes.js";
 import scheduleRouter from "./routes/scheduleRoutes.js";
 import systemRouter from "./routes/systemRoutes.js";
+import configRouter from "./routes/configRoutes.js";
+import gamificationRouter from "./routes/gamificationRoutes.js";
+import facilityRouter from "./routes/facilityRoutes.js";
+import bankSampahRouter from "./routes/bankSampahRoutes.js";
+import notificationIntegrationRouter from "./routes/notificationIntegrationRoutes.js";
+import kknRouter from "./routes/kknRoutes.js";
+import residuRouter from "./routes/residuRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -57,6 +71,23 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/system", systemRouter);
+app.use("/api/v1/configs", configRouter);
+app.use("/api/v1/gamification", gamificationRouter);
+app.use("/api/v1/facilities", facilityRouter);
+app.use("/api/v1/bank-sampah", bankSampahRouter);
+app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
+app.use("/api/v1/kkn", kknRouter);
+app.use("/api/v1/residu", residuRouter);
+
+// Global Error Handler Middleware
+app.use((err: any, req: any, res: any, _next: any) => {
+  console.error("Unhandled Global Error:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    code: err.code || "INTERNAL_SERVER_ERROR",
+    message: "Sistem sedang mengalami gangguan sementara, silakan coba beberapa saat lagi.",
+  });
+});
 
 // Initialize Swagger Docs
 setupSwagger(app);
@@ -66,8 +97,16 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`===============================================`);
   console.log(`pilahsampah.id Backend running on port ${PORT}`);
   console.log(`===============================================`);
 });
+
+// Initialize WebSocket Server
+import { websocketService } from "./services/websocketService.js";
+websocketService.init(server);
+
+// Initialize Cron Scheduler Service
+import { cronService } from "./services/cronService.js";
+cronService.start();

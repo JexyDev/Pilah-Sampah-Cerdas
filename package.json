@@ -2,6 +2,8 @@
   "name": "pilahsampah-id",
   "version": "1.0.0",
   "description": "Backend service for pilahsampah.id - Intelligent Waste Management System",
+  "author": "Jeremy Darrell & Muhammad Habil Putrawan",
+  "license": "UNLICENSED",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -23,6 +25,7 @@
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1",
+    "ws": "^8.21.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -35,6 +38,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^9.0.8",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",

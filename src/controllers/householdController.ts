@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Request, Response } from "express";
 import { z } from "zod";
 import { householdService } from "../services/householdService.js";
@@ -67,6 +74,7 @@ export class HouseholdController {
         data: households,
       });
     } catch (error) {
+      console.error("[HouseholdController] getMyHouseholds error:", error);
       res
         .status(500)
         .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
@@ -84,6 +92,7 @@ export class HouseholdController {
         data: households,
       });
     } catch (error) {
+      console.error("[HouseholdController] getAllHouseholds error:", error);
       res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",

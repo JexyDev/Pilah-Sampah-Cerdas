@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Router } from "express";
 import { binController } from "../controllers/binController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -33,7 +40,12 @@ router.get("/", binController.getAllBins);
  *     security:
  *       - bearerAuth: []
  */
-router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), binController.createBin);
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createBin
+);
 
 /**
  * @swagger
@@ -44,7 +56,12 @@ router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), binController.create
  *     security:
  *       - bearerAuth: []
  */
-router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.updateBin);
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.updateBin
+);
 
 /**
  * @swagger
@@ -55,7 +72,19 @@ router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.upda
  *     security:
  *       - bearerAuth: []
  */
-router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.deleteBin);
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.deleteBin
+);
+
+router.put(
+  "/:qrCode/broken",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  binController.markBinAsBroken
+);
 
 /**
  * @swagger
@@ -71,7 +100,12 @@ router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, roleMiddleware(["WARGA"]), binController.getMyBins);
 router.get("/areas", binController.getAreas);
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
-router.post("/areas", authMiddleware, roleMiddleware(["ADMIN"]), binController.createArea);
+router.post(
+  "/areas",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createArea
+);
 
 /**
  * @swagger
@@ -159,7 +193,7 @@ router.get("/:id/status", binController.getStatus);
 router.post(
   "/:id/empty",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   binController.emptyBin
 );
 
@@ -173,8 +207,43 @@ router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   binController.reviewResetRequest
+);
+
+router.post(
+  "/qr-batch",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createQrBatch
+);
+
+router.get(
+  "/qr-batch",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  binController.getAllQrBatches
+);
+
+router.put(
+  "/qr-batch/:id/assign",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.assignQrBatch
+);
+
+router.post(
+  "/dispatch/:id/claim",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  binController.claimDispatch
+);
+
+router.get(
+  "/dispatch/optimized-route",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  binController.getOptimizedRoute
 );
 
 export default router;

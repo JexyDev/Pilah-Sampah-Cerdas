@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Router } from "express";
 import { pointController } from "../controllers/pointController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -51,7 +58,7 @@ router.post("/convert", authMiddleware, pointController.convertPoints);
 router.get(
   "/history/:userId",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH"]),
   pointController.getUserLedger
 );
 

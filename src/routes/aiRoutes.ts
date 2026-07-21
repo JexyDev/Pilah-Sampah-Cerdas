@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Router } from "express";
 import { aiController } from "../controllers/aiController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -78,6 +85,36 @@ router.post(
   roleMiddleware(["WARGA"]),
   uploadAvatarMiddleware.single("image"),
   aiController.detectCombined
+);
+
+router.post(
+  "/logs/:id/report",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  aiController.submitReport
+);
+
+router.put(
+  "/logs/:id/resolve",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  aiController.resolveDiscrepancy
+);
+
+router.get(
+  "/compliance/:userId",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  aiController.getComplianceScore
+);
+
+router.get("/emissions", authMiddleware, aiController.getCo2eStats);
+
+router.post(
+  "/estimate-volume",
+  authMiddleware,
+  uploadAvatarMiddleware.single("image"),
+  aiController.estimateVolume
 );
 
 export default router;

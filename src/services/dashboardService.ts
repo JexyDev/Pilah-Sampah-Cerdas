@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { PrismaClient } from "@prisma/client";
 import { redisService } from "./redisService.js";
 
@@ -5,7 +12,11 @@ const prisma = new PrismaClient();
 
 export const dashboardService = {
   getKpi: async (wilayah?: string) => {
-    const isFiltered = wilayah && wilayah !== "Kecamatan Coblong" && wilayah !== "Sistem Pusat";
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago";
 
     // 1. Total Warga Aktif
     const totalWarga = await prisma.user.count({
@@ -180,7 +191,11 @@ export const dashboardService = {
   },
 
   getRecentTransactions: async (wilayah?: string) => {
-    const isFiltered = wilayah && wilayah !== "Kecamatan Coblong" && wilayah !== "Sistem Pusat";
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago";
     const transactions = await prisma.wasteLog.findMany({
       where: isFiltered
         ? {
@@ -223,7 +238,11 @@ export const dashboardService = {
   },
 
   getTrend: async (weeks: number = 8, wilayah?: string) => {
-    const isFiltered = wilayah && wilayah !== "Kecamatan Coblong" && wilayah !== "Sistem Pusat";
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago";
     const result = [];
     const now = new Date();
 
@@ -231,7 +250,7 @@ export const dashboardService = {
       const endOfWeek = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
       const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      const aggregate = await prisma.wasteLog.aggregate({
+      const logs = await prisma.wasteLog.findMany({
         where: {
           createdAt: {
             gte: startOfWeek,
@@ -243,14 +262,30 @@ export const dashboardService = {
               }
             : undefined,
         },
-        _sum: {
-          weightKg: true,
+        include: {
+          category: true,
         },
       });
 
-      const totalWeight = aggregate._sum.weightKg ? Number(aggregate._sum.weightKg) : 0;
+      let organicWeight = 0;
+      let inorganicWeight = 0;
 
-      // Let's get a relative label like "Mng 1", "Mng 2", etc.
+      logs.forEach((log) => {
+        const kg = Number(log.weightKg);
+        const name = log.category.name.toUpperCase();
+        if (
+          name.includes("ORGANIK") &&
+          !name.includes("NON_ORGANIC") &&
+          !name.includes("ANORGANIK")
+        ) {
+          organicWeight += kg;
+        } else {
+          inorganicWeight += kg;
+        }
+      });
+
+      const totalWeight = organicWeight + inorganicWeight;
+
       // Calculate week number of year
       const oneJan = new Date(endOfWeek.getFullYear(), 0, 1);
       const numberOfDays = Math.floor(
@@ -261,6 +296,8 @@ export const dashboardService = {
       result.push({
         label: `Mng ${weekNumber}`,
         weight: parseFloat(totalWeight.toFixed(1)),
+        organic: parseFloat(organicWeight.toFixed(1)),
+        inorganic: parseFloat(inorganicWeight.toFixed(1)),
       });
     }
 

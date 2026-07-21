@@ -1,10 +1,22 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { createClient } from "redis";
 import { v4 as uuidv4 } from "uuid";
 
 class RedisService {
   private client: any;
   private isConnected = false;
-  private queue: Array<{ id: string; resolve: Function; reject: Function }> = [];
+  private queue: Array<{
+    id: string;
+    fn: () => Promise<any>;
+    resolve: Function;
+    reject: Function;
+  }> = [];
   private processing = 0;
   private MAX_CONCURRENT = 5; // Process up to 5 concurrent AI detections
 
@@ -28,7 +40,7 @@ class RedisService {
       await this.client.connect();
       console.log("Redis connected successfully.");
       this.isConnected = true;
-    } catch (e) {
+    } catch {
       console.warn("Could not connect to Redis. Running in-memory mode.");
       this.isConnected = false;
     }
@@ -124,14 +136,14 @@ class RedisService {
 
     return new Promise((resolve, reject) => {
       const id = uuidv4();
-      this.queue.push({ id, resolve, reject });
+      this.queue.push({ id, fn: taskFn, resolve, reject });
       console.log(`Task ${id} added to FIFO queue. Queue length: ${this.queue.length}`);
 
-      this.processQueue(taskFn);
+      this.processQueue();
     });
   }
 
-  private async processQueue(taskFn: () => Promise<any>) {
+  private async processQueue() {
     if (this.processing >= this.MAX_CONCURRENT || this.queue.length === 0) {
       return;
     }
@@ -143,15 +155,58 @@ class RedisService {
     console.log(`Processing task ${nextTask.id}. Active processing: ${this.processing}`);
 
     try {
-      const result = await taskFn();
+      const result = await nextTask.fn();
       nextTask.resolve(result);
     } catch (error) {
       nextTask.reject(error);
     } finally {
       this.processing--;
       // Process next in queue
-      this.processQueue(taskFn);
+      this.processQueue();
     }
+  }
+
+  // Get config from cache
+  async getConfigCache(key: string): Promise<string | null> {
+    const redisKey = `config:${key}`;
+    if (this.isConnected) {
+      try {
+        return await this.client.get(redisKey);
+      } catch (err) {
+        console.error(`Redis error getting config cache for ${key}`, err);
+      }
+    }
+    return this.memoryQuota[redisKey] !== undefined ? String(this.memoryQuota[redisKey]) : null;
+  }
+
+  // Set config cache
+  async setConfigCache(key: string, value: string): Promise<void> {
+    const redisKey = `config:${key}`;
+    if (this.isConnected) {
+      try {
+        await this.client.set(redisKey, value, {
+          EX: 3600,
+        });
+        return;
+      } catch (err) {
+        console.error(`Redis error setting config cache for ${key}`, err);
+      }
+    }
+    this.memoryQuota[redisKey] = value as any;
+  }
+
+  // Invalidate config cache
+  async invalidateConfigCache(key: string): Promise<void> {
+    const redisKey = `config:${key}`;
+    if (this.isConnected) {
+      try {
+        await this.client.del(redisKey);
+        return;
+      } catch (err) {
+        console.error(`Redis error deleting config cache for ${key}`, err);
+      }
+    }
+    delete this.memoryQuota[redisKey];
   }
 }
 

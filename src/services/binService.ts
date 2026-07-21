@@ -1,6 +1,18 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { v4 as uuidv4 } from "uuid";
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
+import { PrismaClient } from "@prisma/client";
+import { configService } from "./configService.js";
+import { websocketService } from "./websocketService.js";
+
+const prisma = new PrismaClient();
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
@@ -12,7 +24,12 @@ export class BinService {
   /**
    * Get all bins
    */
-  async getAllBins() {
+  async getAllBins(currentUser?: { userId: string; role: string }) {
+    if (currentUser) {
+      const { getScopingFilters } = await import("../utils/rbacScoping.js");
+      const scoping = await getScopingFilters(currentUser);
+      return binRepository.findAll(scoping.binFilter);
+    }
     return binRepository.findAll();
   }
 
@@ -39,6 +56,14 @@ export class BinService {
     const bin = await binRepository.findByQrCode(qrCode);
     if (!bin) {
       throw new Error("BIN_NOT_FOUND");
+    }
+
+    // 2. Validate ownership (if bin is private to a user)
+    if (bin.binOwnerships && bin.binOwnerships.length > 0) {
+      const isOwner = bin.binOwnerships.some((o: any) => o.userId === userId);
+      if (!isOwner) {
+        throw new Error("BIN_NOT_OWNED");
+      }
     }
 
     // 2. Validate Geofencing (< 10m) if coordinates are provided
@@ -82,6 +107,36 @@ export class BinService {
     // 5. Update Bin current volume
     const newVolume = current + estimatedVolume;
     await binRepository.updateVolume(bin.id, newVolume);
+
+    // Trigger on-demand dispatch if fullness exceeds trigger (default 80%)
+    const triggerVal = await configService.getConfig("bin_fullness_trigger_wa");
+    const triggerPct = triggerVal ? Number(triggerVal) : 80;
+    const fullness = max > 0 ? (newVolume / max) * 100 : 0;
+    if (fullness >= triggerPct) {
+      // Check if a dispatch task is already active
+      const existingTask = await prisma.dispatchTask.findFirst({
+        where: {
+          binId: bin.id,
+          status: { in: ["PENDING", "CLAIMED"] },
+        },
+      });
+
+      if (!existingTask) {
+        await prisma.dispatchTask.create({
+          data: {
+            binId: bin.id,
+            status: "PENDING",
+          },
+        });
+
+        // Broadcast alert via WebSocket if bin has coordinates
+        if (bin.latitude !== null && bin.longitude !== null) {
+          await websocketService
+            .broadcastDispatch(bin.id, bin.qrCode, Number(bin.latitude), Number(bin.longitude))
+            .catch(() => {});
+        }
+      }
+    }
 
     // 6. Convert liters to weight based on density
     // Use fixed multiplier for Organic vs Non-Organic for now (simplified)
@@ -161,6 +216,7 @@ export class BinService {
       latitude: data.latitude ? parseFloat(data.latitude) : null,
       longitude: data.longitude ? parseFloat(data.longitude) : null,
       maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
+      userId: data.userId || null,
     });
   }
 
@@ -183,6 +239,7 @@ export class BinService {
       updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
     if (data.longitude !== undefined)
       updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
+    if (data.userId !== undefined) updateData.userId = data.userId || null;
 
     return binRepository.updateBin(id, updateData);
   }
@@ -202,29 +259,20 @@ export class BinService {
     return binRepository.findKelurahans();
   }
 
-  async createArea(name: string, kelurahanId: number) {
+  async createArea(name: string, kelurahanId: string) {
     return binRepository.createArea(name, kelurahanId);
   }
 
   async getMyBins(userId: string) {
-    const user = await binRepository.getUserRtRwId(userId);
-    let rtRwId = user?.rtRwId;
-
-    if (!rtRwId) {
-      const household = await binRepository.getUserHouseholdRtRwId(userId);
-      rtRwId = household?.rtRwId || null;
-    }
-
-    if (!rtRwId) {
-      return [];
-    }
-
-    const bins = await binRepository.findBinsByRtRwId(rtRwId);
+    const bins = await binRepository.findBinsByUserId(userId);
 
     return bins.map((bin: any) => {
       const currentVol = Number(bin.currentVolumeLiter);
       const maxVol = Number(bin.maxCapacityLiter);
       const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
+      const utamaOwner = bin.binOwnerships?.find((o: any) => o.type === "UTAMA")?.user;
+      const householdName = utamaOwner ? utamaOwner.name : "Tempat Sampah Umum";
+
       return {
         id: bin.id,
         qrCode: bin.qrCode,
@@ -234,6 +282,7 @@ export class BinService {
         kapasitas,
         rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
         status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+        householdName,
       };
     });
   }
@@ -300,7 +349,119 @@ export class BinService {
         .catch(() => {});
     }
 
+    // Log to Audit Trail
+    await prisma.auditTrail
+      .create({
+        data: {
+          action: "REVIEW_RESET_REQUEST",
+          userId: reviewedById,
+          oldValue: { status: "PENDING", request: id },
+          newValue: { status, binId: request.binId },
+        },
+      })
+      .catch(() => {});
+
     return updated;
+  }
+
+  /**
+   * Create QR Batch
+   */
+  async createQrBatch(quantity: number) {
+    const batchNumber = `BATCH-${Date.now()}`;
+    return binRepository.createQrBatch(batchNumber, quantity);
+  }
+
+  /**
+   * Get all QR Batches
+   */
+  async getAllQrBatches() {
+    return binRepository.findAllQrBatches();
+  }
+
+  /**
+   * Assign QR Batch to PIC
+   */
+  async assignQrBatch(batchId: string, picUserId: string, adminUserId: string) {
+    return binRepository.assignQrBatch(batchId, picUserId, adminUserId);
+  }
+
+  /**
+   * Mark Bin as Broken
+   */
+  async markBinAsBroken(qrCode: string, adminUserId: string) {
+    return binRepository.markBinAsBroken(qrCode, adminUserId);
+  }
+
+  /**
+   * Claim a dispatch task concurrency-safely using FOR UPDATE row lock
+   */
+  async claimDispatchTask(taskId: string, petugasUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      // Row level lock to prevent double claim
+      const tasks = await tx.$queryRaw<any[]>`
+        SELECT * FROM dispatch_tasks WHERE id = ${taskId} FOR UPDATE
+      `;
+      if (!tasks || tasks.length === 0) throw new Error("DISPATCH_TASK_NOT_FOUND");
+      const task = tasks[0];
+
+      if (task.status !== "PENDING") {
+        throw new Error("DISPATCH_TASK_ALREADY_CLAIMED");
+      }
+
+      const updated = await tx.dispatchTask.update({
+        where: { id: taskId },
+        data: {
+          status: "CLAIMED",
+          claimedByUserId: petugasUserId,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Route optimization: sort claimed tasks for petugas by Haversine distance
+   */
+  async getOptimizedRoute(petugasUserId: string, lat: number, lng: number) {
+    const tasks = await prisma.dispatchTask.findMany({
+      where: {
+        claimedByUserId: petugasUserId,
+        status: "CLAIMED",
+      },
+      include: {
+        bin: {
+          include: {
+            rtRw: true,
+          },
+        },
+      },
+    });
+
+    // Calculate distance and sort
+    const route = tasks.map((t: any) => {
+      let distanceMeters = 9999999; // Default if coords are missing
+      if (t.bin.latitude !== null && t.bin.longitude !== null) {
+        distanceMeters = getDistanceMeters(
+          lat,
+          lng,
+          Number(t.bin.latitude),
+          Number(t.bin.longitude)
+        );
+      }
+      return {
+        taskId: t.id,
+        binId: t.bin.id,
+        qrCode: t.bin.qrCode,
+        latitude: t.bin.latitude,
+        longitude: t.bin.longitude,
+        distanceMeters,
+        rtRw: t.bin.rtRw?.name || `RT/RW ${t.bin.rtRwId}`,
+      };
+    });
+
+    return route.sort((a, b) => a.distanceMeters - b.distanceMeters);
   }
 }
 

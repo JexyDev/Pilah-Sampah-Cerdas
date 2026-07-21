@@ -1,16 +1,28 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { userRepository } from "../repositories/userRepository.js";
 import { hashPassword } from "../utils/hashUtils.js";
 
 export class UserService {
-  async getAllUsers(filters: {
-    search?: string;
-    roleName?: string;
-    status?: string;
-    rw?: string;
-    rt?: string;
-  }) {
+  async getAllUsers(
+    filters: {
+      search?: string;
+      roleName?: string;
+      status?: string;
+      rw?: string;
+      rt?: string;
+    },
+    currentUser: { userId: string; role: string }
+  ) {
     const { search, roleName, status, rw, rt } = filters;
-    const whereClause: any = {};
+    const { getScopingFilters } = await import("../utils/rbacScoping.js");
+    const scoping = await getScopingFilters(currentUser);
+    const whereClause: any = { ...scoping.userFilter };
 
     if (search) {
       whereClause.OR = [

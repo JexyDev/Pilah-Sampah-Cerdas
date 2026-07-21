@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import { Request, Response } from "express";
 import { userService } from "../services/userService.js";
 
@@ -9,13 +16,16 @@ export const userController = {
     try {
       const { search, roleName, status, rw, rt } = req.query;
 
-      const mapped = await userService.getAllUsers({
-        search: search as string,
-        roleName: roleName as string,
-        status: status as string,
-        rw: rw as string,
-        rt: rt as string,
-      });
+      const mapped = await userService.getAllUsers(
+        {
+          search: search as string,
+          roleName: roleName as string,
+          status: status as string,
+          rw: rw as string,
+          rt: rt as string,
+        },
+        req.user!
+      );
 
       res.status(200).json({ success: true, data: mapped });
     } catch (error) {
