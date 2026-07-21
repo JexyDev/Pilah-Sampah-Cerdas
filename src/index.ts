@@ -75,6 +75,16 @@ app.use("/api/v1/facilities", facilityRouter);
 app.use("/api/v1/bank-sampah", bankSampahRouter);
 app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 
+// Global Error Handler Middleware
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error("Unhandled Global Error:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    code: err.code || "INTERNAL_SERVER_ERROR",
+    message: "Sistem sedang mengalami gangguan sementara, silakan coba beberapa saat lagi."
+  });
+});
+
 // Initialize Swagger Docs
 setupSwagger(app);
 
