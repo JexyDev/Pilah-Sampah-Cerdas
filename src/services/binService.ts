@@ -352,6 +352,16 @@ export class BinService {
         .catch(() => {});
     }
 
+    // Log to Audit Trail
+    await prisma.auditTrail.create({
+      data: {
+        action: "REVIEW_RESET_REQUEST",
+        userId: reviewedById,
+        oldValue: { status: "PENDING", request: id },
+        newValue: { status, binId: request.binId },
+      },
+    }).catch(() => {});
+
     return updated;
   }
 

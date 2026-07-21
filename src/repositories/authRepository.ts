@@ -213,10 +213,19 @@ export class AuthRepository {
       });
 
       if (wargaSubtype === "UTAMA") {
-        await tx.bin.update({
+        const updatedBin = await tx.bin.update({
           where: { id: bin.id },
           data: {
             status: "ACTIVE_BOUND",
+          },
+        });
+
+        await tx.auditTrail.create({
+          data: {
+            action: "ACTIVATE_BIN",
+            userId: user.id,
+            oldValue: JSON.parse(JSON.stringify(bin)),
+            newValue: JSON.parse(JSON.stringify(updatedBin)),
           },
         });
 
