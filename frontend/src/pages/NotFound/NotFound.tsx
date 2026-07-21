@@ -5,10 +5,10 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FileQuestion } from 'lucide-react';
-import styles from './NotFound.module.css';
+import React from "react";
+import { Link } from "react-router-dom";
+import { FileQuestion } from "lucide-react";
+import styles from "./NotFound.module.css";
 
 const NotFound: React.FC = () => {
   return (

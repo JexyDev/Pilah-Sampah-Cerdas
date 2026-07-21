@@ -136,9 +136,9 @@ describe("Batch 2 Core Features", () => {
     it("should throw error if task is already claimed", async () => {
       mockQueryRaw.mockResolvedValue([{ id: "task-1", status: "CLAIMED" }]);
 
-      await expect(
-        binService.claimDispatchTask("task-1", "petugas-2")
-      ).rejects.toThrow("DISPATCH_TASK_ALREADY_CLAIMED");
+      await expect(binService.claimDispatchTask("task-1", "petugas-2")).rejects.toThrow(
+        "DISPATCH_TASK_ALREADY_CLAIMED"
+      );
     });
   });
 

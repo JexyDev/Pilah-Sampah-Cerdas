@@ -131,12 +131,9 @@ export class BinService {
 
         // Broadcast alert via WebSocket if bin has coordinates
         if (bin.latitude !== null && bin.longitude !== null) {
-          await websocketService.broadcastDispatch(
-            bin.id,
-            bin.qrCode,
-            Number(bin.latitude),
-            Number(bin.longitude)
-          ).catch(() => {});
+          await websocketService
+            .broadcastDispatch(bin.id, bin.qrCode, Number(bin.latitude), Number(bin.longitude))
+            .catch(() => {});
         }
       }
     }
@@ -353,14 +350,16 @@ export class BinService {
     }
 
     // Log to Audit Trail
-    await prisma.auditTrail.create({
-      data: {
-        action: "REVIEW_RESET_REQUEST",
-        userId: reviewedById,
-        oldValue: { status: "PENDING", request: id },
-        newValue: { status, binId: request.binId },
-      },
-    }).catch(() => {});
+    await prisma.auditTrail
+      .create({
+        data: {
+          action: "REVIEW_RESET_REQUEST",
+          userId: reviewedById,
+          oldValue: { status: "PENDING", request: id },
+          newValue: { status, binId: request.binId },
+        },
+      })
+      .catch(() => {});
 
     return updated;
   }

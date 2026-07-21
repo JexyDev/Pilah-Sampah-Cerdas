@@ -7,9 +7,23 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { 
-  Users, Trash2, ShieldCheck, MapPin, Award, CheckCircle, 
-  Search, Plus, Calendar, Compass, PhoneCall, RefreshCw, X, FileText, Sparkles, Upload
+import {
+  Users,
+  Trash2,
+  ShieldCheck,
+  MapPin,
+  Award,
+  CheckCircle,
+  Search,
+  Plus,
+  Calendar,
+  Compass,
+  PhoneCall,
+  RefreshCw,
+  X,
+  FileText,
+  Sparkles,
+  Upload,
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -36,9 +50,7 @@ const KknDashboard: React.FC = () => {
 
   // Dynamically calculate compliance for each RT/RW
   const getZoneCompliance = (areaName: string) => {
-    const matches = wargaList.filter(
-      (w) => w.rtRw.toLowerCase().includes(areaName.toLowerCase())
-    );
+    const matches = wargaList.filter((w) => w.rtRw.toLowerCase().includes(areaName.toLowerCase()));
     if (matches.length === 0) {
       if (areaName.includes("06")) return 87;
       if (areaName.includes("02")) return 73;
@@ -56,18 +68,22 @@ const KknDashboard: React.FC = () => {
   };
 
   const handleZoneClick = (areaName: string) => {
-    const area = rtRwAreas.find((a) => (a.rw || a.name).toLowerCase().includes(areaName.toLowerCase()));
+    const area = rtRwAreas.find((a) =>
+      (a.rw || a.name).toLowerCase().includes(areaName.toLowerCase())
+    );
     if (area) {
       const newId = area.id.toString();
       setFilterRtRw(newId);
-      api.get("/kkn/warga", {
-        params: {
-          rtRwId: area.id,
-          search: filterSearch || undefined,
-        },
-      }).then((res) => {
-        setWargaList(res.data?.data || []);
-      });
+      api
+        .get("/kkn/warga", {
+          params: {
+            rtRwId: area.id,
+            search: filterSearch || undefined,
+          },
+        })
+        .then((res) => {
+          setWargaList(res.data?.data || []);
+        });
     } else {
       toast.error(`Wilayah ${areaName} tidak ditemukan di database`);
     }
@@ -173,7 +189,13 @@ const KknDashboard: React.FC = () => {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regForm.name || !regForm.email || !regForm.binQrCode || !regForm.binCategoryId || !regForm.rtRwId) {
+    if (
+      !regForm.name ||
+      !regForm.email ||
+      !regForm.binQrCode ||
+      !regForm.binCategoryId ||
+      !regForm.rtRwId
+    ) {
       toast.error("Mohon lengkapi semua bidang wajib!");
       return;
     }
@@ -271,7 +293,8 @@ const KknDashboard: React.FC = () => {
             Portal Pendampingan KKN
           </h1>
           <p className="text-xs text-on-surface-variant mt-1">
-            NIM: {studentKkn?.nim} • Jurusan: {studentKkn?.jurusan} • Wilayah Tugas: {studentKkn?.assignedArea}
+            NIM: {studentKkn?.nim} • Jurusan: {studentKkn?.jurusan} • Wilayah Tugas:{" "}
+            {studentKkn?.assignedArea}
           </p>
         </div>
         <button
@@ -293,10 +316,15 @@ const KknDashboard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black">{kStats?.totalRegistered} Bins</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">Target: {kStats?.maxLimit} (Sisa Kuota: {kStats?.remainingQuota})</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              Target: {kStats?.maxLimit} (Sisa Kuota: {kStats?.remainingQuota})
+            </p>
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1">
-            <div className="bg-primary h-full transition-all duration-500" style={{ width: `${kStats?.progressPct}%` }}></div>
+            <div
+              className="bg-primary h-full transition-all duration-500"
+              style={{ width: `${kStats?.progressPct}%` }}
+            ></div>
           </div>
         </div>
 
@@ -307,7 +335,9 @@ const KknDashboard: React.FC = () => {
             <ShieldCheck className="text-indigo-600 w-5 h-5" />
           </div>
           <div>
-            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${studentKkn?.whitelistStatus === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+            <span
+              className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${studentKkn?.whitelistStatus === "APPROVED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
+            >
               Whitelist: {studentKkn?.whitelistStatus}
             </span>
             <p className="text-[10px] text-on-surface-variant mt-2 flex items-center gap-1">
@@ -324,8 +354,12 @@ const KknDashboard: React.FC = () => {
             <Award className="text-yellow-600 w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-yellow-600">+{kStats?.contributionPoints} Pts</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">Diperoleh dari aktivitas lapangan</p>
+            <h3 className="text-2xl font-black text-yellow-600">
+              +{kStats?.contributionPoints} Pts
+            </h3>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              Diperoleh dari aktivitas lapangan
+            </p>
           </div>
         </div>
 
@@ -337,7 +371,9 @@ const KknDashboard: React.FC = () => {
           </div>
           <div>
             <h4 className="font-bold text-sm text-on-surface">{studentKkn?.assignedArea}</h4>
-            <p className="text-[10px] text-on-surface-variant mt-1">Status: Aktif Mendampingi Warga</p>
+            <p className="text-[10px] text-on-surface-variant mt-1">
+              Status: Aktif Mendampingi Warga
+            </p>
           </div>
         </div>
       </div>
@@ -363,7 +399,9 @@ const KknDashboard: React.FC = () => {
               >
                 <option value="">Semua RT/RW</option>
                 {rtRwAreas.map((loc) => (
-                  <option key={loc.id} value={loc.id}>{loc.rw || loc.name}</option>
+                  <option key={loc.id} value={loc.id}>
+                    {loc.rw || loc.name}
+                  </option>
                 ))}
               </select>
               <button
@@ -387,33 +425,45 @@ const KknDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {wargaList.length > 0 ? wargaList.map((w) => (
-                  <tr key={w.wargaId} className="border-b border-outline-variant/30 hover:bg-slate-50 transition-colors">
-                    <td className="py-3">
-                      <div className="font-bold text-on-surface">{w.name}</div>
-                      <div className="text-[10px] text-on-surface-variant mt-0.5">{w.rtRw} • {w.address}</div>
-                    </td>
-                    <td className="py-3 font-mono font-bold text-primary">{w.binCode}</td>
-                    <td className="py-3 text-on-surface-variant">
-                      {new Date(w.registeredAt).toLocaleDateString("id-ID")}
-                    </td>
-                    <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${w.complianceScore >= 80 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                        {w.complianceScore} pts
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <button
-                        onClick={() => handleWargaClick(w.wargaId)}
-                        className="bg-slate-100 hover:bg-primary hover:text-white px-2.5 py-1 rounded-md font-bold transition-all text-[11px] cursor-pointer"
-                      >
-                        Detail
-                      </button>
-                    </td>
-                  </tr>
-                )) : (
+                {wargaList.length > 0 ? (
+                  wargaList.map((w) => (
+                    <tr
+                      key={w.wargaId}
+                      className="border-b border-outline-variant/30 hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="py-3">
+                        <div className="font-bold text-on-surface">{w.name}</div>
+                        <div className="text-[10px] text-on-surface-variant mt-0.5">
+                          {w.rtRw} • {w.address}
+                        </div>
+                      </td>
+                      <td className="py-3 font-mono font-bold text-primary">{w.binCode}</td>
+                      <td className="py-3 text-on-surface-variant">
+                        {new Date(w.registeredAt).toLocaleDateString("id-ID")}
+                      </td>
+                      <td className="py-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${w.complianceScore >= 80 ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                        >
+                          {w.complianceScore} pts
+                        </span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <button
+                          onClick={() => handleWargaClick(w.wargaId)}
+                          className="bg-slate-100 hover:bg-primary hover:text-white px-2.5 py-1 rounded-md font-bold transition-all text-[11px] cursor-pointer"
+                        >
+                          Detail
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-on-surface-variant font-medium">
+                    <td
+                      colSpan={5}
+                      className="text-center py-6 text-on-surface-variant font-medium"
+                    >
                       Belum ada warga dampingan terdaftar.
                     </td>
                   </tr>
@@ -545,7 +595,7 @@ const KknDashboard: React.FC = () => {
                             strokeLinecap="round"
                             opacity="0.8"
                           />
-                          
+
                           {/* Inner dashed line to look like a real road */}
                           <path
                             d="M 10,95 Q 200,85 390,100"
@@ -565,8 +615,26 @@ const KknDashboard: React.FC = () => {
                           />
 
                           {/* Road Names */}
-                          <text x="50" y="107" fill="#64748b" fontSize="7" fontWeight="bold" transform="rotate(2, 50, 107)">Jl. Dago Giri</text>
-                          <text x="142" y="200" fill="#64748b" fontSize="7" fontWeight="bold" transform="rotate(-77, 142, 200)">Jl. Coblong Raya</text>
+                          <text
+                            x="50"
+                            y="107"
+                            fill="#64748b"
+                            fontSize="7"
+                            fontWeight="bold"
+                            transform="rotate(2, 50, 107)"
+                          >
+                            Jl. Dago Giri
+                          </text>
+                          <text
+                            x="142"
+                            y="200"
+                            fill="#64748b"
+                            fontSize="7"
+                            fontWeight="bold"
+                            transform="rotate(-77, 142, 200)"
+                          >
+                            Jl. Coblong Raya
+                          </text>
                         </>
                       )}
 
@@ -575,26 +643,86 @@ const KknDashboard: React.FC = () => {
                         <>
                           {/* Area A */}
                           <g transform="translate(80, 70)" className="pointer-events-none">
-                            <text textAnchor="middle" fill={colorA.text} fontSize="9" fontWeight="bold">RW 06 Dago</text>
-                            <text textAnchor="middle" y="11" fill={colorA.text} fontSize="8" fontWeight="bold">{scoreA}%</text>
+                            <text
+                              textAnchor="middle"
+                              fill={colorA.text}
+                              fontSize="9"
+                              fontWeight="bold"
+                            >
+                              RW 06 Dago
+                            </text>
+                            <text
+                              textAnchor="middle"
+                              y="11"
+                              fill={colorA.text}
+                              fontSize="8"
+                              fontWeight="bold"
+                            >
+                              {scoreA}%
+                            </text>
                           </g>
 
                           {/* Area B */}
                           <g transform="translate(200, 70)" className="pointer-events-none">
-                            <text textAnchor="middle" fill={colorB.text} fontSize="9" fontWeight="bold">RW 02 Cigadung</text>
-                            <text textAnchor="middle" y="11" fill={colorB.text} fontSize="8" fontWeight="bold">{scoreB}%</text>
+                            <text
+                              textAnchor="middle"
+                              fill={colorB.text}
+                              fontSize="9"
+                              fontWeight="bold"
+                            >
+                              RW 02 Cigadung
+                            </text>
+                            <text
+                              textAnchor="middle"
+                              y="11"
+                              fill={colorB.text}
+                              fontSize="8"
+                              fontWeight="bold"
+                            >
+                              {scoreB}%
+                            </text>
                           </g>
 
                           {/* Area C */}
                           <g transform="translate(170, 205)" className="pointer-events-none">
-                            <text textAnchor="middle" fill={colorC.text} fontSize="9" fontWeight="bold">RW 01 Coblong</text>
-                            <text textAnchor="middle" y="11" fill={colorC.text} fontSize="8" fontWeight="bold">{scoreC}%</text>
+                            <text
+                              textAnchor="middle"
+                              fill={colorC.text}
+                              fontSize="9"
+                              fontWeight="bold"
+                            >
+                              RW 01 Coblong
+                            </text>
+                            <text
+                              textAnchor="middle"
+                              y="11"
+                              fill={colorC.text}
+                              fontSize="8"
+                              fontWeight="bold"
+                            >
+                              {scoreC}%
+                            </text>
                           </g>
 
                           {/* Area D */}
                           <g transform="translate(60, 205)" className="pointer-events-none">
-                            <text textAnchor="middle" fill={colorD.text} fontSize="9" fontWeight="bold">RW 03 Dago</text>
-                            <text textAnchor="middle" y="11" fill={colorD.text} fontSize="8" fontWeight="bold">{scoreD}%</text>
+                            <text
+                              textAnchor="middle"
+                              fill={colorD.text}
+                              fontSize="9"
+                              fontWeight="bold"
+                            >
+                              RW 03 Dago
+                            </text>
+                            <text
+                              textAnchor="middle"
+                              y="11"
+                              fill={colorD.text}
+                              fontSize="8"
+                              fontWeight="bold"
+                            >
+                              {scoreD}%
+                            </text>
                           </g>
                         </>
                       )}
@@ -606,13 +734,16 @@ const KknDashboard: React.FC = () => {
               {/* Legend Box in Bottom-Right */}
               <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-xs p-2 rounded-lg border border-slate-200/80 text-[8px] flex flex-col gap-1 shadow-xs font-bold text-slate-600">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block border border-emerald-600/30"></span> Tinggi (&ge; 80%)
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block border border-emerald-600/30"></span>{" "}
+                  Tinggi (&ge; 80%)
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block border border-yellow-500/30"></span> Sedang (60-79%)
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block border border-yellow-500/30"></span>{" "}
+                  Sedang (60-79%)
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block border border-rose-600/30"></span> Rendah (&lt; 60%)
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block border border-rose-600/30"></span>{" "}
+                  Rendah (&lt; 60%)
                 </span>
               </div>
             </div>
@@ -624,11 +755,20 @@ const KknDashboard: React.FC = () => {
               <FileText className="text-indigo-600 w-4.5 h-4.5" />
               Checklist Target Lapangan
             </h4>
-            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+            <div
+              className="space-y-2 max-h-[220px] overflow-y-auto pr-1"
+              style={{ scrollbarWidth: "thin" }}
+            >
               {unregisteredHouses.map((h) => (
-                <div key={h.id} className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <div
+                  key={h.id}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                >
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" className="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer" />
+                    <input
+                      type="checkbox"
+                      className="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                    />
                     <span className="text-xs font-semibold text-slate-700">{h.address}</span>
                   </div>
                   <span className="text-[9px] bg-amber-50 text-amber-700 border border-amber-200/80 px-1.5 py-0.5 rounded font-bold">
@@ -645,15 +785,27 @@ const KknDashboard: React.FC = () => {
               <Calendar className="text-primary w-4.5 h-4.5" />
               Riwayat Aktivitas KKN
             </h4>
-            <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+            <div
+              className="space-y-3 max-h-[220px] overflow-y-auto pr-1"
+              style={{ scrollbarWidth: "thin" }}
+            >
               {activityLogs.map((log) => (
-                <div key={log.id} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs space-y-1">
-                  <div className="font-semibold text-slate-700">{log.action === 'ACTIVATE_BIN' ? 'Aktivasi Bins' : log.action}</div>
-                  <div className="text-[10px] text-slate-400">{new Date(log.timestamp).toLocaleString("id-ID")}</div>
+                <div
+                  key={log.id}
+                  className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs space-y-1"
+                >
+                  <div className="font-semibold text-slate-700">
+                    {log.action === "ACTIVATE_BIN" ? "Aktivasi Bins" : log.action}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {new Date(log.timestamp).toLocaleString("id-ID")}
+                  </div>
                 </div>
               ))}
               {activityLogs.length === 0 && (
-                <p className="text-[11px] text-slate-500 text-center py-4">Belum ada riwayat aktivitas.</p>
+                <p className="text-[11px] text-slate-500 text-center py-4">
+                  Belum ada riwayat aktivitas.
+                </p>
               )}
             </div>
           </div>
@@ -676,11 +828,17 @@ const KknDashboard: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <form onSubmit={handleRegisterSubmit} className="p-6 space-y-4 overflow-y-auto flex-1" style={{ scrollbarWidth: 'thin' }}>
+
+            <form
+              onSubmit={handleRegisterSubmit}
+              className="p-6 space-y-4 overflow-y-auto flex-1"
+              style={{ scrollbarWidth: "thin" }}
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Nama Lengkap *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Nama Lengkap *
+                  </label>
                   <input
                     type="text"
                     required
@@ -691,7 +849,9 @@ const KknDashboard: React.FC = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Email Warga *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Email Warga *
+                  </label>
                   <input
                     type="email"
                     required
@@ -705,7 +865,9 @@ const KknDashboard: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">No WhatsApp *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    No WhatsApp *
+                  </label>
                   <input
                     type="text"
                     required
@@ -716,7 +878,9 @@ const KknDashboard: React.FC = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">NIK KTP</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    NIK KTP
+                  </label>
                   <input
                     type="text"
                     value={regForm.nik}
@@ -729,7 +893,9 @@ const KknDashboard: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Wilayah (RT/RW) *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Wilayah (RT/RW) *
+                  </label>
                   <select
                     required
                     value={regForm.rtRwId}
@@ -738,12 +904,16 @@ const KknDashboard: React.FC = () => {
                   >
                     <option value="">Pilih RT/RW...</option>
                     {rtRwAreas.map((loc) => (
-                      <option key={loc.id} value={loc.id}>{loc.rw || loc.name}</option>
+                      <option key={loc.id} value={loc.id}>
+                        {loc.rw || loc.name}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Alamat Fisik *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Alamat Fisik *
+                  </label>
                   <input
                     type="text"
                     required
@@ -757,7 +927,9 @@ const KknDashboard: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">ID QR Tong Sampah *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    ID QR Tong Sampah *
+                  </label>
                   <input
                     type="text"
                     required
@@ -768,7 +940,9 @@ const KknDashboard: React.FC = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Kategori Tong *</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Kategori Tong *
+                  </label>
                   <select
                     required
                     value={regForm.binCategoryId}
@@ -777,7 +951,9 @@ const KknDashboard: React.FC = () => {
                   >
                     <option value="">Pilih Kategori...</option>
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -786,7 +962,9 @@ const KknDashboard: React.FC = () => {
               {/* Foto bukti & AI Volume */}
               <div className="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-700">Foto Fisik Tempat Sampah (Opsional)</span>
+                  <span className="text-xs font-bold text-slate-700">
+                    Foto Fisik Tempat Sampah (Opsional)
+                  </span>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -805,7 +983,11 @@ const KknDashboard: React.FC = () => {
 
                 {regPhotoPreview && (
                   <div className="flex gap-4 items-center animate-in fade-in duration-200">
-                    <img src={regPhotoPreview} alt="Preview" className="w-24 h-24 rounded-lg object-cover border border-slate-200" />
+                    <img
+                      src={regPhotoPreview}
+                      alt="Preview"
+                      className="w-24 h-24 rounded-lg object-cover border border-slate-200"
+                    />
                     {isAiEstimating ? (
                       <div className="flex items-center gap-1.5 text-xs text-slate-500">
                         <RefreshCw className="animate-spin w-4 h-4 text-primary" />
@@ -854,7 +1036,10 @@ const KknDashboard: React.FC = () => {
       {selectedWarga && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex justify-end z-50 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md h-full shadow-2xl p-6 flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right duration-250">
-            <div className="space-y-6 overflow-y-auto flex-1 pr-1" style={{ scrollbarWidth: 'thin' }}>
+            <div
+              className="space-y-6 overflow-y-auto flex-1 pr-1"
+              style={{ scrollbarWidth: "thin" }}
+            >
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                 <h3 className="font-extrabold text-lg text-on-surface flex items-center gap-2">
                   <Users className="text-primary w-5 h-5" /> Detail Warga Dampingan
@@ -870,19 +1055,32 @@ const KknDashboard: React.FC = () => {
               {/* Warga profile detail */}
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Nama Warga</h4>
-                  <p className="font-extrabold text-slate-800 text-sm mt-0.5">{selectedWarga.name}</p>
+                  <h4 className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">
+                    Nama Warga
+                  </h4>
+                  <p className="font-extrabold text-slate-800 text-sm mt-0.5">
+                    {selectedWarga.name}
+                  </p>
                 </div>
                 <div>
-                  <h4 className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Kontak & Alamat</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">{selectedWarga.phone} • {selectedWarga.email}</p>
-                  <p className="text-xs text-slate-700 mt-1">{selectedWarga.rtRw} • {selectedWarga.address}</p>
+                  <h4 className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">
+                    Kontak & Alamat
+                  </h4>
+                  <p className="text-xs text-slate-700 mt-0.5">
+                    {selectedWarga.phone} • {selectedWarga.email}
+                  </p>
+                  <p className="text-xs text-slate-700 mt-1">
+                    {selectedWarga.rtRw} • {selectedWarga.address}
+                  </p>
                 </div>
                 {selectedWarga.bin && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                     <h4 className="text-xs text-slate-800 font-bold flex items-center gap-1.5">
                       <Trash2 className="w-4 h-4 text-primary" />
-                      ID Bin: <span className="font-mono text-primary font-bold">{selectedWarga.bin.qrCode}</span>
+                      ID Bin:{" "}
+                      <span className="font-mono text-primary font-bold">
+                        {selectedWarga.bin.qrCode}
+                      </span>
                     </h4>
                     <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600">
                       <div>
@@ -900,20 +1098,31 @@ const KknDashboard: React.FC = () => {
 
               {/* Deposit History */}
               <div className="space-y-3">
-                <h4 className="font-extrabold text-sm border-b border-slate-100 pb-2">Riwayat Setoran Sampah</h4>
+                <h4 className="font-extrabold text-sm border-b border-slate-100 pb-2">
+                  Riwayat Setoran Sampah
+                </h4>
                 <div className="space-y-2">
-                  {selectedWarga.recentLogs && selectedWarga.recentLogs.length > 0 ? selectedWarga.recentLogs.map((log: any) => (
-                    <div key={log.id} className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs">
-                      <div>
-                        <p className="font-bold text-slate-700">{log.category}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{new Date(log.createdAt).toLocaleString("id-ID")}</p>
+                  {selectedWarga.recentLogs && selectedWarga.recentLogs.length > 0 ? (
+                    selectedWarga.recentLogs.map((log: any) => (
+                      <div
+                        key={log.id}
+                        className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-700">{log.category}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {new Date(log.createdAt).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                        <span className="font-bold text-primary">
+                          {log.weightKg} kg ({log.volumeLiter}L)
+                        </span>
                       </div>
-                      <span className="font-bold text-primary">
-                        {log.weightKg} kg ({log.volumeLiter}L)
-                      </span>
-                    </div>
-                  )) : (
-                    <p className="text-xs text-slate-500 text-center py-4">Belum ada riwayat setoran.</p>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-500 text-center py-4">
+                      Belum ada riwayat setoran.
+                    </p>
                   )}
                 </div>
               </div>

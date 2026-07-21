@@ -374,13 +374,17 @@ export class BinController {
     try {
       const { quantity } = req.body;
       if (!quantity || isNaN(parseInt(quantity))) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "quantity wajib berupa angka" });
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "quantity wajib berupa angka" });
         return;
       }
       const batch = await binService.createQrBatch(parseInt(quantity));
       res.status(201).json({ success: true, data: batch });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -392,7 +396,9 @@ export class BinController {
       const batches = await binService.getAllQrBatches();
       res.status(200).json({ success: true, data: batches });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -404,14 +410,18 @@ export class BinController {
       const { id } = req.params;
       const { picUserId } = req.body;
       if (!picUserId) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "picUserId wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "picUserId wajib diisi" });
         return;
       }
       const adminUserId = req.user!.userId;
       const batch = await binService.assignQrBatch(id, picUserId, adminUserId);
       res.status(200).json({ success: true, data: batch });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -423,9 +433,15 @@ export class BinController {
       const { qrCode } = req.params;
       const adminUserId = req.user!.userId;
       const bin = await binService.markBinAsBroken(qrCode, adminUserId);
-      res.status(200).json({ success: true, message: "Status tempat sampah berhasil diubah menjadi BROKEN", data: bin });
+      res.status(200).json({
+        success: true,
+        message: "Status tempat sampah berhasil diubah menjadi BROKEN",
+        data: bin,
+      });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -437,9 +453,13 @@ export class BinController {
       const { id } = req.params;
       const petugasUserId = req.user!.userId;
       const task = await binService.claimDispatchTask(id, petugasUserId);
-      res.status(200).json({ success: true, message: "Tugas penjemputan berhasil diklaim", data: task });
+      res
+        .status(200)
+        .json({ success: true, message: "Tugas penjemputan berhasil diklaim", data: task });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -451,13 +471,19 @@ export class BinController {
       const petugasUserId = req.user!.userId;
       const { lat, lng } = req.query;
       if (!lat || !lng) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "Parameter lat dan lng wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "Parameter lat dan lng wajib diisi",
+        });
         return;
       }
       const route = await binService.getOptimizedRoute(petugasUserId, Number(lat), Number(lng));
       res.status(200).json({ success: true, data: route });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

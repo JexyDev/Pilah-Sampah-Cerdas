@@ -71,6 +71,7 @@ export class AiController {
         },
       });
     } catch (error) {
+      console.error("[AiController] uploadImage error:", error);
       res
         .status(500)
         .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengunggah gambar sampah" });
@@ -135,14 +136,28 @@ export class AiController {
       const { id } = req.params;
       const { actualWeight, manualClassification, geolocation } = req.body;
       if (actualWeight === undefined || !manualClassification || !geolocation) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "actualWeight, manualClassification, dan geolocation wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "actualWeight, manualClassification, dan geolocation wajib diisi",
+        });
         return;
       }
       const petugasUserId = req.user!.userId;
-      const log = await aiService.submitPetugasReport(id, petugasUserId, Number(actualWeight), manualClassification, geolocation);
-      res.status(200).json({ success: true, message: "Laporan aktual petugas berhasil disimpan", data: log });
+      const log = await aiService.submitPetugasReport(
+        id,
+        petugasUserId,
+        Number(actualWeight),
+        manualClassification,
+        geolocation
+      );
+      res
+        .status(200)
+        .json({ success: true, message: "Laporan aktual petugas berhasil disimpan", data: log });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -154,14 +169,22 @@ export class AiController {
       const { id } = req.params;
       const { finalClassification } = req.body;
       if (!finalClassification) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "finalClassification wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "finalClassification wajib diisi",
+        });
         return;
       }
       const adminUserId = req.user!.userId;
       const log = await aiService.resolveDiscrepancy(id, finalClassification, adminUserId);
-      res.status(200).json({ success: true, message: "Discrepancy laporan berhasil diselesaikan", data: log });
+      res
+        .status(200)
+        .json({ success: true, message: "Discrepancy laporan berhasil diselesaikan", data: log });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -174,7 +197,9 @@ export class AiController {
       const score = await aiService.calculateComplianceScore(userId);
       res.status(200).json({ success: true, complianceScore: score });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -202,7 +227,9 @@ export class AiController {
         co2eAvoidedKg: co2eAvoided,
       });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -218,7 +245,9 @@ export class AiController {
       const data = await aiService.estimateVolume(imageUrl);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

@@ -25,7 +25,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .kpiIcon {
@@ -60,7 +60,7 @@
   border-radius: 12px;
   border: 1px solid var(--border-light);
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .tableHeader {
@@ -87,7 +87,7 @@
 }
 
 .viewAllBtn:hover {
-  background-color: #F3F4F6;
+  background-color: #f3f4f6;
 }
 
 .tableResponsive {
@@ -126,13 +126,13 @@
 }
 
 .badgeOrganic {
-  background-color: #DEF7EC;
-  color: #03543F;
+  background-color: #def7ec;
+  color: #03543f;
 }
 
 .badgeAnorganic {
-  background-color: #E1EFFE;
-  color: #1E429F;
+  background-color: #e1effe;
+  color: #1e429f;
 }
 
 .poinText {
@@ -151,7 +151,7 @@
   .kpiGrid {
     grid-template-columns: 1fr;
   }
-  
+
   .tableContainer {
     padding: 16px;
   }

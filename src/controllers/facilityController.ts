@@ -16,13 +16,28 @@ export class FacilityController {
     try {
       const { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude } = req.body;
       if (!jenis || !nama || !pic) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "jenis, nama, dan pic wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "jenis, nama, dan pic wajib diisi",
+        });
         return;
       }
-      const facility = await facilityService.createFacility(jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude);
+      const facility = await facilityService.createFacility(
+        jenis,
+        nama,
+        pic,
+        foto,
+        kontak,
+        kapasitas,
+        latitude,
+        longitude
+      );
       res.status(201).json({ success: true, message: "Fasilitas berhasil dibuat", data: facility });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -35,7 +50,9 @@ export class FacilityController {
       const list = await facilityService.getFacilities(jenis as string);
       res.status(200).json({ success: true, data: list });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -47,13 +64,25 @@ export class FacilityController {
       const { id } = req.params;
       const { materialMasukKg, outputKg, jenisOutput, periode } = req.body;
       if (materialMasukKg === undefined || outputKg === undefined || !jenisOutput || !periode) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "materialMasukKg, outputKg, jenisOutput, dan periode wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "materialMasukKg, outputKg, jenisOutput, dan periode wajib diisi",
+        });
         return;
       }
-      const log = await facilityService.recordProduction(id, Number(materialMasukKg), Number(outputKg), jenisOutput, periode);
+      const log = await facilityService.recordProduction(
+        id,
+        Number(materialMasukKg),
+        Number(outputKg),
+        jenisOutput,
+        periode
+      );
       res.status(201).json({ success: true, message: "Pencatatan produksi berhasil", data: log });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -64,13 +93,21 @@ export class FacilityController {
     try {
       const { nama, pemilik, noWa, populasi, hasilPanenKg } = req.body;
       if (!nama || !pemilik || !noWa) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "nama, pemilik, dan noWa wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "nama, pemilik, dan noWa wajib diisi",
+        });
         return;
       }
       const farm = await facilityService.createFarm(nama, pemilik, noWa, populasi, hasilPanenKg);
-      res.status(201).json({ success: true, message: "Peternakan terdaftar berhasil dibuat", data: farm });
+      res
+        .status(201)
+        .json({ success: true, message: "Peternakan terdaftar berhasil dibuat", data: farm });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -82,7 +119,9 @@ export class FacilityController {
       const farms = await facilityService.getFarms();
       res.status(200).json({ success: true, data: farms });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -93,13 +132,21 @@ export class FacilityController {
     try {
       const { farmId, quantityKg } = req.body;
       if (!farmId || quantityKg === undefined) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "farmId dan quantityKg wajib diisi" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "farmId dan quantityKg wajib diisi",
+        });
         return;
       }
       const log = await facilityService.distributeMaggot(farmId, Number(quantityKg));
-      res.status(201).json({ success: true, message: "Distribusi produk maggot berhasil dicatat", data: log });
+      res
+        .status(201)
+        .json({ success: true, message: "Distribusi produk maggot berhasil dicatat", data: log });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 }

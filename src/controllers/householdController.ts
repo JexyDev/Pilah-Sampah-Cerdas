@@ -74,6 +74,7 @@ export class HouseholdController {
         data: households,
       });
     } catch (error) {
+      console.error("[HouseholdController] getMyHouseholds error:", error);
       res
         .status(500)
         .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil data rumah tangga" });
@@ -91,6 +92,7 @@ export class HouseholdController {
         data: households,
       });
     } catch (error) {
+      console.error("[HouseholdController] getAllHouseholds error:", error);
       res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",

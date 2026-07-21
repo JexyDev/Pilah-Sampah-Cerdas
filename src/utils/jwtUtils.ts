@@ -16,7 +16,6 @@ export interface TokenPayload {
 
 // In production, these should be loaded from environment variables (.env)
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access_secret_super_secure_key_123";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_super_secure_key_123";
 
 // Expiration times
 const ACCESS_TOKEN_EXPIRES_IN = "1h"; // 1 hour for access token
@@ -32,7 +31,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
 /**
  * Generate Refresh Token
  */
-export const generateRefreshToken = (userId: string): { token: string; expiresAt: Date } => {
+export const generateRefreshToken = (_userId: string): { token: string; expiresAt: Date } => {
   // Using UUID for refresh token or could use JWT. Usually opaque strings like UUID are stored in DB.
   // We'll generate a random opaque token for DB storage and rotation safety.
   const token = uuidv4();

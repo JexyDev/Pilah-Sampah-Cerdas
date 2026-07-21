@@ -5,8 +5,8 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { create } from 'zustand';
-import api from '../utils/api';
+import { create } from "zustand";
+import api from "../utils/api";
 
 export interface KPI {
   totalWarga: number;
@@ -49,8 +49,8 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const [kpiRes, txRes] = await Promise.all([
-        api.get('/dashboard/kpi'),
-        api.get('/dashboard/transactions'),
+        api.get("/dashboard/kpi"),
+        api.get("/dashboard/transactions"),
       ]);
 
       // Backend returns { success: true, data: { ... } }
@@ -61,7 +61,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       });
     } catch (err: any) {
       set({
-        error: err?.response?.data?.message || err.message || 'Gagal memuat data dashboard',
+        error: err?.response?.data?.message || err.message || "Gagal memuat data dashboard",
         isLoading: false,
       });
     }

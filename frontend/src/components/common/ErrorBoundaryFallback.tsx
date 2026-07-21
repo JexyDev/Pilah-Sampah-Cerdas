@@ -5,10 +5,10 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React from 'react';
-import { AlertTriangle, RefreshCcw } from 'lucide-react';
-import type { FallbackProps } from 'react-error-boundary';
-import styles from './ErrorBoundaryFallback.module.css';
+import React from "react";
+import { AlertTriangle, RefreshCcw } from "lucide-react";
+import type { FallbackProps } from "react-error-boundary";
+import styles from "./ErrorBoundaryFallback.module.css";
 
 const ErrorBoundaryFallback: React.FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
   return (

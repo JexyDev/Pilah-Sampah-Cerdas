@@ -5,41 +5,41 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
-import api from '../../services/api';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import api from "../../services/api";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 // Custom HTML DivIcon for Bins
 const createMapBinIcon = (status: string) => {
-  let color = '#10b981'; // default Normal
-  if (status === 'Sedang') color = '#f97316';
-  if (status === 'Penuh') color = '#ef4444';
+  let color = "#10b981"; // default Normal
+  if (status === "Sedang") color = "#f97316";
+  if (status === "Penuh") color = "#ef4444";
 
   return L.divIcon({
-    className: 'custom-div-icon',
+    className: "custom-div-icon",
     html: `<div style="background-color: ${color}; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
     iconSize: [26, 26],
-    iconAnchor: [13, 13]
+    iconAnchor: [13, 13],
   });
 };
 
 const createHouseIcon = () => {
   return L.divIcon({
-    className: 'custom-div-icon',
+    className: "custom-div-icon",
     html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 4px; border: 2.5px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">H</div>`,
     iconSize: [22, 22],
-    iconAnchor: [11, 11]
+    iconAnchor: [11, 11],
   });
 };
 
@@ -49,37 +49,37 @@ const ManajemenLokasi: React.FC = () => {
   const [households, setHouseholds] = useState<any[]>([]);
   const [kelurahans, setKelurahans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Search & Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedKelurahan, setSelectedKelurahan] = useState('Semua Kelurahan');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedKelurahan, setSelectedKelurahan] = useState("Semua Kelurahan");
 
   // Tambah Lokasi Modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newAreaName, setNewAreaName] = useState('');
-  const [newAreaKelurahanId, setNewAreaKelurahanId] = useState('');
+  const [newAreaName, setNewAreaName] = useState("");
+  const [newAreaKelurahanId, setNewAreaKelurahanId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Map view reference
-  const [mapCenter] = useState<[number, number]>([-6.8903, 107.6110]);
+  const [mapCenter] = useState<[number, number]>([-6.8903, 107.611]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [locRes, binRes, hhRes, kelRes] = await Promise.all([
-        api.get('/bins/locations'),
-        api.get('/bins'),
-        api.get('/households'),
-        api.get('/bins/kelurahans')
+        api.get("/bins/locations"),
+        api.get("/bins"),
+        api.get("/households"),
+        api.get("/bins/kelurahans"),
       ]);
       setLocations(locRes.data.data || []);
       setBins(binRes.data.data || []);
       setHouseholds(hhRes.data.data || []);
       setKelurahans(kelRes.data.data || []);
     } catch (err) {
-      setError('Gagal memuat data dari server.');
-      toast.error('Gagal memuat data lokasi & peta');
+      setError("Gagal memuat data dari server.");
+      toast.error("Gagal memuat data lokasi & peta");
     } finally {
       setLoading(false);
     }
@@ -93,27 +93,27 @@ const ManajemenLokasi: React.FC = () => {
     if (kelurahans.length > 0) {
       setNewAreaKelurahanId(kelurahans[0].id);
     }
-    setNewAreaName('');
+    setNewAreaName("");
     setIsAddModalOpen(true);
   };
 
   const handleSubmitArea = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAreaName || !newAreaKelurahanId) {
-      toast.error('Semua field wajib diisi');
+      toast.error("Semua field wajib diisi");
       return;
     }
     setIsSubmitting(true);
     try {
-      await api.post('/bins/areas', {
+      await api.post("/bins/areas", {
         name: newAreaName,
-        kelurahanId: newAreaKelurahanId
+        kelurahanId: newAreaKelurahanId,
       });
-      toast.success('Lokasi RT/RW baru berhasil ditambahkan!');
+      toast.success("Lokasi RT/RW baru berhasil ditambahkan!");
       setIsAddModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menambahkan lokasi');
+      toast.error(err.response?.data?.message || "Gagal menambahkan lokasi");
     } finally {
       setIsSubmitting(false);
     }
@@ -121,7 +121,8 @@ const ManajemenLokasi: React.FC = () => {
 
   const filteredLocations = locations.filter((loc) => {
     const matchesSearch = loc.rw.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesKelurahan = selectedKelurahan === 'Semua Kelurahan' || loc.kelurahan === selectedKelurahan;
+    const matchesKelurahan =
+      selectedKelurahan === "Semua Kelurahan" || loc.kelurahan === selectedKelurahan;
     return matchesSearch && matchesKelurahan;
   });
 
@@ -132,7 +133,9 @@ const ManajemenLokasi: React.FC = () => {
         {/* Map Overlay / Tools */}
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3">
-            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Status Tempat Sampah</p>
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Status Tempat Sampah
+            </p>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
               <span className="text-[12px] font-semibold text-on-surface">Organik Aktif</span>
@@ -143,7 +146,9 @@ const ManajemenLokasi: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-error shadow-[0_0_8px_rgba(186,26,26,0.4)] animate-pulse"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Perlu Perhatian / Penuh</span>
+              <span className="text-[12px] font-semibold text-on-surface">
+                Perlu Perhatian / Penuh
+              </span>
             </div>
             <div className="flex items-center gap-3 border-t border-outline-variant/20 pt-2">
               <div className="w-3 h-3 rounded-md bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.4)]"></div>
@@ -154,43 +159,62 @@ const ManajemenLokasi: React.FC = () => {
 
         {/* Leaflet Map */}
         <div className="w-full h-full relative" style={{ zIndex: 1 }}>
-          <MapContainer 
-            center={mapCenter} 
-            zoom={15} 
+          <MapContainer
+            center={mapCenter}
+            zoom={15}
             scrollWheelZoom={true}
-            style={{ height: '100%', width: '100%' }}
+            style={{ height: "100%", width: "100%" }}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {/* Active Bins */}
-            {bins.filter(b => b.latitude && b.longitude).map(b => (
-              <Marker key={b.kode} position={[Number(b.latitude), Number(b.longitude)]} icon={createMapBinIcon(b.status)}>
-                <Popup>
-                  <div className="text-[12px] space-y-1">
-                    <strong>Tong: {b.kode}</strong><br/>
-                    Kategori: {b.category?.name || b.categoryId}<br/>
-                    Kapasitas: {b.kapasitas}% terisi ({b.currentVolumeLiter || 0}L / {b.maxCapacityLiter || 25}L)<br/>
-                    RT/RW: {b.rtRw}<br/>
-                    Status: {b.status}
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {bins
+              .filter((b) => b.latitude && b.longitude)
+              .map((b) => (
+                <Marker
+                  key={b.kode}
+                  position={[Number(b.latitude), Number(b.longitude)]}
+                  icon={createMapBinIcon(b.status)}
+                >
+                  <Popup>
+                    <div className="text-[12px] space-y-1">
+                      <strong>Tong: {b.kode}</strong>
+                      <br />
+                      Kategori: {b.category?.name || b.categoryId}
+                      <br />
+                      Kapasitas: {b.kapasitas}% terisi ({b.currentVolumeLiter || 0}L /{" "}
+                      {b.maxCapacityLiter || 25}L)
+                      <br />
+                      RT/RW: {b.rtRw}
+                      <br />
+                      Status: {b.status}
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
 
             {/* Households */}
-            {households.filter(h => h.latitude && h.longitude).map(h => (
-              <Marker key={h.id} position={[Number(h.latitude), Number(h.longitude)]} icon={createHouseIcon()}>
-                <Popup>
-                  <div className="text-[12px]">
-                    <strong>Rumah {h.user?.name || 'Warga'}</strong><br/>
-                    Alamat: {h.address}<br/>
-                    RT/RW: {h.rtRw?.name || '-'} (Kel. {h.rtRw?.kelurahan?.name || '-'})
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {households
+              .filter((h) => h.latitude && h.longitude)
+              .map((h) => (
+                <Marker
+                  key={h.id}
+                  position={[Number(h.latitude), Number(h.longitude)]}
+                  icon={createHouseIcon()}
+                >
+                  <Popup>
+                    <div className="text-[12px]">
+                      <strong>Rumah {h.user?.name || "Warga"}</strong>
+                      <br />
+                      Alamat: {h.address}
+                      <br />
+                      RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
           </MapContainer>
         </div>
       </div>
@@ -208,7 +232,7 @@ const ManajemenLokasi: React.FC = () => {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={handleOpenAddModal}
                   className="bg-primary hover:bg-primary/90 text-white font-bold text-[11px] py-2 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm uppercase tracking-wider cursor-pointer"
                 >
@@ -217,60 +241,83 @@ const ManajemenLokasi: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex gap-2 w-full">
               <div className="relative">
-                <select 
+                <select
                   value={selectedKelurahan}
                   onChange={(e) => setSelectedKelurahan(e.target.value)}
                   className="appearance-none pl-3 pr-8 py-2 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-on-surface-variant font-medium cursor-pointer"
                 >
                   <option value="Semua Kelurahan">Semua Kelurahan</option>
-                  {kelurahans.map(k => (
-                    <option key={k.id} value={k.name}>{k.name}</option>
+                  {kelurahans.map((k) => (
+                    <option key={k.id} value={k.name}>
+                      {k.name}
+                    </option>
                   ))}
                 </select>
-                <span className="material-symbols-outlined absolute right-2 top-2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+                <span className="material-symbols-outlined absolute right-2 top-2 text-on-surface-variant pointer-events-none text-[18px]">
+                  expand_more
+                </span>
               </div>
               <div className="flex-1 relative">
-                <span className="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant text-[18px]">search</span>
-                <input 
+                <span className="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant text-[18px]">
+                  search
+                </span>
+                <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" 
-                  placeholder="Cari RW..." 
-                  type="text" 
+                  className="w-full pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                  placeholder="Cari RW..."
+                  type="text"
                 />
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* RW List */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-surface-container-lowest">
           {loading ? (
             <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3">
-              <span className="material-symbols-outlined animate-spin text-primary text-[32px]">autorenew</span>
+              <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
+                autorenew
+              </span>
               <p>Memuat lokasi...</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center text-error font-medium">{error}</div>
           ) : filteredLocations.length > 0 ? (
             filteredLocations.map((loc) => (
-              <div key={loc.id || loc.rw} className="group bg-white border border-outline-variant/50 rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-all duration-200">
+              <div
+                key={loc.id || loc.rw}
+                className="group bg-white border border-outline-variant/50 rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-all duration-200"
+              >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface font-bold text-lg">{loc.rw.replace('RW ', '')}</div>
+                    <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface font-bold text-lg">
+                      {loc.rw.replace("RW ", "")}
+                    </div>
                     <div>
                       <h4 className="text-[16px] font-bold text-on-surface">{loc.rw}</h4>
-                      <p className="text-[11px] font-medium text-on-surface-variant">{loc.rtCount} RT • {loc.titikCount} Titik Sampah</p>
-                      <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-bold">{loc.kelurahan}</span>
+                      <p className="text-[11px] font-medium text-on-surface-variant">
+                        {loc.rtCount} RT • {loc.titikCount} Titik Sampah
+                      </p>
+                      <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-bold">
+                        {loc.kelurahan}
+                      </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                      loc.patuh >= 85 ? 'bg-green-100 text-green-700' : (loc.patuh >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                    }`}>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        loc.patuh >= 85
+                          ? "bg-green-100 text-green-700"
+                          : loc.patuh >= 60
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
                       {loc.patuh}% Patuh
                     </span>
                   </div>
@@ -278,7 +325,9 @@ const ManajemenLokasi: React.FC = () => {
               </div>
             ))
           ) : (
-            <p className="text-center text-on-surface-variant text-sm py-8">Tidak ada lokasi yang cocok</p>
+            <p className="text-center text-on-surface-variant text-sm py-8">
+              Tidak ada lokasi yang cocok
+            </p>
           )}
         </div>
       </div>
@@ -289,8 +338,8 @@ const ManajemenLokasi: React.FC = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
               <h3 className="text-xl font-bold text-on-surface">Tambah Lokasi Wilayah</h3>
-              <button 
-                onClick={() => setIsAddModalOpen(false)} 
+              <button
+                onClick={() => setIsAddModalOpen(false)}
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined">close</span>
@@ -298,10 +347,12 @@ const ManajemenLokasi: React.FC = () => {
             </div>
             <form onSubmit={handleSubmitArea} className="p-6 flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Nama Wilayah (RT/RW)</label>
-                <input 
-                  type="text" 
-                  required 
+                <label className="block text-sm font-medium text-on-surface mb-1">
+                  Nama Wilayah (RT/RW)
+                </label>
+                <input
+                  type="text"
+                  required
                   value={newAreaName}
                   onChange={(e) => setNewAreaName(e.target.value)}
                   placeholder="Contoh: RT 02 RW 06"
@@ -310,32 +361,38 @@ const ManajemenLokasi: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">Kelurahan</label>
-                <select 
-                  required 
+                <select
+                  required
                   value={newAreaKelurahanId}
                   onChange={(e) => setNewAreaKelurahanId(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs font-bold cursor-pointer"
                 >
                   <option value="">Pilih Kelurahan</option>
-                  {kelurahans.map(k => (
-                    <option key={k.id} value={k.id}>{k.name}</option>
+                  {kelurahans.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-outline-variant/30">
-                <button 
-                  type="button" 
-                  onClick={() => setIsAddModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-lg font-medium text-on-surface-variant hover:bg-surface-container-low cursor-pointer"
                 >
                   Batal
                 </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting} 
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
                   className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
-                  {isSubmitting && <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>}
+                  {isSubmitting && (
+                    <span className="material-symbols-outlined animate-spin text-[18px]">
+                      progress_activity
+                    </span>
+                  )}
                   Simpan
                 </button>
               </div>

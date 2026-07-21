@@ -5,15 +5,16 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useEffect, useState } from 'react';
-import { Loader2, Trash2, Edit } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useMasterDataStore } from '../../store/useMasterDataStore';
-import styles from './MasterData.module.css';
+import React, { useEffect, useState } from "react";
+import { Loader2, Trash2, Edit } from "lucide-react";
+import toast from "react-hot-toast";
+import { useMasterDataStore } from "../../store/useMasterDataStore";
+import styles from "./MasterData.module.css";
 
 const MasterData: React.FC = () => {
-  const { users, bins, isLoading, error, fetchMasterData, deleteUser, deleteBin } = useMasterDataStore();
-  const [activeTab, setActiveTab] = useState<'users' | 'bins'>('users');
+  const { users, bins, isLoading, error, fetchMasterData, deleteUser, deleteBin } =
+    useMasterDataStore();
+  const [activeTab, setActiveTab] = useState<"users" | "bins">("users");
 
   useEffect(() => {
     fetchMasterData();
@@ -25,7 +26,7 @@ const MasterData: React.FC = () => {
         await deleteUser(id);
         toast.success(`Berhasil menghapus ${name}`);
       } catch (e: any) {
-        toast.error('Gagal menghapus user');
+        toast.error("Gagal menghapus user");
       }
     }
   };
@@ -36,7 +37,7 @@ const MasterData: React.FC = () => {
         await deleteBin(id);
         toast.success(`Berhasil menghapus ${name}`);
       } catch (e: any) {
-        toast.error('Gagal menghapus tong sampah');
+        toast.error("Gagal menghapus tong sampah");
       }
     }
   };
@@ -53,7 +54,9 @@ const MasterData: React.FC = () => {
     return (
       <div className={styles.errorContainer}>
         <p>Error: {error}</p>
-        <button className={styles.btnPrimary} onClick={fetchMasterData}>Coba Lagi</button>
+        <button className={styles.btnPrimary} onClick={fetchMasterData}>
+          Coba Lagi
+        </button>
       </div>
     );
   }
@@ -61,24 +64,24 @@ const MasterData: React.FC = () => {
   return (
     <div className={styles.container}>
       <h2 className={styles.pageTitle}>Master Data</h2>
-      
+
       <div className={styles.tabs}>
-        <button 
-          className={`${styles.tabBtn} ${activeTab === 'users' ? styles.active : ''}`}
-          onClick={() => setActiveTab('users')}
+        <button
+          className={`${styles.tabBtn} ${activeTab === "users" ? styles.active : ""}`}
+          onClick={() => setActiveTab("users")}
         >
           Data Warga & Staff
         </button>
-        <button 
-          className={`${styles.tabBtn} ${activeTab === 'bins' ? styles.active : ''}`}
-          onClick={() => setActiveTab('bins')}
+        <button
+          className={`${styles.tabBtn} ${activeTab === "bins" ? styles.active : ""}`}
+          onClick={() => setActiveTab("bins")}
         >
           Data Tong Sampah
         </button>
       </div>
 
       <div className={styles.tableContainer}>
-        {activeTab === 'users' && (
+        {activeTab === "users" && (
           <table className={styles.table}>
             <thead>
               <tr>
@@ -90,7 +93,7 @@ const MasterData: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map(u => (
+              {users.map((u) => (
                 <tr key={u.id}>
                   <td>{u.id}</td>
                   <td>{u.name}</td>
@@ -98,8 +101,20 @@ const MasterData: React.FC = () => {
                   <td>{u.totalPoin}</td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.iconBtn} title="Edit" onClick={() => toast('Fitur Edit belum tersedia')}><Edit size={16} /></button>
-                      <button className={`${styles.iconBtn} ${styles.danger}`} title="Hapus" onClick={() => handleDeleteUser(u.id, u.name)}><Trash2 size={16} /></button>
+                      <button
+                        className={styles.iconBtn}
+                        title="Edit"
+                        onClick={() => toast("Fitur Edit belum tersedia")}
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        className={`${styles.iconBtn} ${styles.danger}`}
+                        title="Hapus"
+                        onClick={() => handleDeleteUser(u.id, u.name)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -108,7 +123,7 @@ const MasterData: React.FC = () => {
           </table>
         )}
 
-        {activeTab === 'bins' && (
+        {activeTab === "bins" && (
           <table className={styles.table}>
             <thead>
               <tr>
@@ -121,19 +136,33 @@ const MasterData: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {bins.map(b => (
+              {bins.map((b) => (
                 <tr key={b.id}>
                   <td>{b.id}</td>
                   <td>{b.qrCode}</td>
                   <td>{b.maxCapacityLiter}</td>
                   <td>{b.currentVolumeLiter}</td>
                   <td>
-                    <span className={`${styles.badge} ${styles[b.status]}`}>{b.status.toUpperCase()}</span>
+                    <span className={`${styles.badge} ${styles[b.status]}`}>
+                      {b.status.toUpperCase()}
+                    </span>
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.iconBtn} title="Edit" onClick={() => toast('Fitur Edit belum tersedia')}><Edit size={16} /></button>
-                      <button className={`${styles.iconBtn} ${styles.danger}`} title="Hapus" onClick={() => handleDeleteBin(b.id, b.qrCode)}><Trash2 size={16} /></button>
+                      <button
+                        className={styles.iconBtn}
+                        title="Edit"
+                        onClick={() => toast("Fitur Edit belum tersedia")}
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        className={`${styles.iconBtn} ${styles.danger}`}
+                        title="Hapus"
+                        onClick={() => handleDeleteBin(b.id, b.qrCode)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>

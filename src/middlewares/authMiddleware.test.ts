@@ -60,9 +60,7 @@ describe("authMiddleware security policies", () => {
     await authMiddleware(mockReq, mockRes, mockNext);
 
     expect(mockRes.status).toHaveBeenCalledWith(403);
-    expect(mockRes.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: "FORBIDDEN" })
-    );
+    expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ error: "FORBIDDEN" }));
     expect(mockNext).not.toHaveBeenCalled();
   });
 
@@ -93,7 +91,7 @@ describe("authMiddleware security policies", () => {
     expect(mockRes.json).toHaveBeenCalledWith(
       expect.objectContaining({
         error: "FORBIDDEN",
-        message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only."
+        message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only.",
       })
     );
     expect(mockNext).not.toHaveBeenCalled();

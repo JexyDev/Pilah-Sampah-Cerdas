@@ -17,7 +17,9 @@ export class SystemController {
       const logs = await systemService.getAuditTrails();
       res.status(200).json({ success: true, data: logs });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -28,14 +30,22 @@ export class SystemController {
     try {
       const { tipe, deskripsi, entityId } = req.body;
       if (!tipe || !deskripsi) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "tipe dan deskripsi wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "tipe dan deskripsi wajib diisi" });
         return;
       }
       const userId = req.user!.userId;
       const entry = await systemService.createSocialFeed(userId, tipe, deskripsi, entityId);
-      res.status(201).json({ success: true, message: "Aktivitas berhasil ditambahkan ke feed sosial", data: entry });
+      res.status(201).json({
+        success: true,
+        message: "Aktivitas berhasil ditambahkan ke feed sosial",
+        data: entry,
+      });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -47,7 +57,9 @@ export class SystemController {
       const list = await systemService.getSocialFeed();
       res.status(200).json({ success: true, data: list });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

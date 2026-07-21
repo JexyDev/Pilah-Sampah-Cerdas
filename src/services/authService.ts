@@ -169,7 +169,13 @@ export class AuthService {
   /**
    * Register Warga
    */
-  async registerWarga(userData: any, householdData: any, qrCode: string, wargaSubtype: string, scannerUser?: any) {
+  async registerWarga(
+    userData: any,
+    householdData: any,
+    qrCode: string,
+    wargaSubtype: string,
+    scannerUser?: any
+  ) {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
@@ -178,7 +184,7 @@ export class AuthService {
       const { binRepository } = await import("../repositories/binRepository.js");
       const bin = await binRepository.findByQrCode(qrCode);
       if (!bin) throw new Error("BIN_NOT_FOUND");
-      
+
       const batch = bin.qrBatchId ? await binRepository.findQrBatchById(bin.qrBatchId) : null;
       if (batch && batch.assignedPicUserId !== scannerUser.userId) {
         throw new Error("PIC_MISMATCH");

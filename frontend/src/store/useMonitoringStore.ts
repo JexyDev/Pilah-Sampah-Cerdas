@@ -5,8 +5,8 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { create } from 'zustand';
-import api from '../utils/api';
+import { create } from "zustand";
+import api from "../utils/api";
 
 export interface Bin {
   id: string;
@@ -34,14 +34,14 @@ export const useMonitoringStore = create<MonitoringState>((set) => ({
   fetchBins: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await api.get('/bins');
+      const res = await api.get("/bins");
       set({
         bins: res.data.data || [],
         isLoading: false,
       });
     } catch (err: any) {
       set({
-        error: err?.response?.data?.message || err.message || 'Failed to fetch bins',
+        error: err?.response?.data?.message || err.message || "Failed to fetch bins",
         isLoading: false,
       });
     }

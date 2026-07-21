@@ -35,7 +35,8 @@ export class KknService {
     const maxLimitStr = await configService.getConfig("kkn_max_assignment_per_student");
     const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : 100;
     const remainingQuota = Math.max(0, maxLimit - totalRegistered);
-    const progressPct = maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(1)) : 0;
+    const progressPct =
+      maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(1)) : 0;
 
     // KKN Points Contribution
     const pointsSum = await prisma.pointHistory.aggregate({
@@ -259,7 +260,9 @@ export class KknService {
     }
     if (filters.search) {
       const s = filters.search.toLowerCase();
-      result = result.filter((item) => item.name.toLowerCase().includes(s) || item.binCode.toLowerCase().includes(s));
+      result = result.filter(
+        (item) => item.name.toLowerCase().includes(s) || item.binCode.toLowerCase().includes(s)
+      );
     }
 
     return result;
@@ -308,13 +311,14 @@ export class KknService {
     }
 
     const defaultBin = warga.binOwnerships[0]?.bin;
-    const recentLogs = warga.households[0]?.wasteLogs.map((log) => ({
-      id: log.id,
-      weightKg: Number(log.weightKg),
-      volumeLiter: Number(log.volumeLiter),
-      category: log.category.name,
-      createdAt: log.createdAt,
-    })) || [];
+    const recentLogs =
+      warga.households[0]?.wasteLogs.map((log) => ({
+        id: log.id,
+        weightKg: Number(log.weightKg),
+        volumeLiter: Number(log.volumeLiter),
+        category: log.category.name,
+        createdAt: log.createdAt,
+      })) || [];
 
     return {
       wargaId: warga.id,
@@ -323,11 +327,13 @@ export class KknService {
       phone: warga.phone,
       address: warga.address,
       rtRw: warga.rtRw?.name || "Belum diset",
-      bin: defaultBin ? {
-        qrCode: defaultBin.qrCode,
-        category: defaultBin.category?.name || "UMUM",
-        capacity: `${defaultBin.currentVolumeLiter}L / ${defaultBin.maxCapacityLiter}L`,
-      } : null,
+      bin: defaultBin
+        ? {
+            qrCode: defaultBin.qrCode,
+            category: defaultBin.category?.name || "UMUM",
+            capacity: `${defaultBin.currentVolumeLiter}L / ${defaultBin.maxCapacityLiter}L`,
+          }
+        : null,
       recentLogs,
     };
   }

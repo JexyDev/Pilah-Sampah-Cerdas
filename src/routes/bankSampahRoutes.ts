@@ -19,10 +19,6 @@ router.post(
   bankSampahController.addTransaction
 );
 
-router.get(
-  "/ledger/:userId",
-  authMiddleware,
-  bankSampahController.getLedger
-);
+router.get("/ledger/:userId", authMiddleware, bankSampahController.getLedger);
 
 export default router;

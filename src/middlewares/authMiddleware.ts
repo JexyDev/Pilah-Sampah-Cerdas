@@ -21,7 +21,11 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     let token = "";
 
@@ -51,11 +55,13 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     // Validate User Status in DB
     const dbUser = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { status: true }
+      select: { status: true },
     });
 
     if (!dbUser || dbUser.status !== "Aktif") {
-      res.status(401).json({ error: "UNAUTHORIZED", message: "Akun Anda tidak aktif atau belum disetujui" });
+      res
+        .status(401)
+        .json({ error: "UNAUTHORIZED", message: "Akun Anda tidak aktif atau belum disetujui" });
       return;
     }
 
@@ -63,7 +69,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     if (decoded.role === "MAHASISWA_KKN") {
       const student = await prisma.studentKkn.findUnique({
         where: { userId: decoded.userId },
-        select: { endDate: true }
+        select: { endDate: true },
       });
       if (student) {
         const now = new Date();
@@ -72,7 +78,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
           if (req.method !== "GET") {
             res.status(403).json({
               error: "FORBIDDEN",
-              message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only."
+              message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only.",
             });
             return;
           }
@@ -86,7 +92,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       if (writeMethods.includes(req.method)) {
         res.status(403).json({
           error: "FORBIDDEN",
-          message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`
+          message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
         });
         return;
       }

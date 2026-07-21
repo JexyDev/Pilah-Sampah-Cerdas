@@ -32,6 +32,7 @@ export const roleMiddleware = (allowedRoles: string[]) => {
 
       next();
     } catch (error) {
+      console.error("[roleMiddleware] error:", error);
       res
         .status(500)
         .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memverifikasi role pengguna" });

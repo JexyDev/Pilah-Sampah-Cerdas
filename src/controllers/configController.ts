@@ -17,7 +17,9 @@ export class ConfigController {
       const configs = await configService.getAllConfigs();
       res.status(200).json({ success: true, data: configs });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -28,13 +30,17 @@ export class ConfigController {
     try {
       const { key, value } = req.body;
       if (!key || value === undefined) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "key dan value wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "key dan value wajib diisi" });
         return;
       }
       const updated = await configService.updateConfig(key, String(value));
       res.status(200).json({ success: true, data: updated });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

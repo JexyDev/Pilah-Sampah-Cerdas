@@ -67,7 +67,10 @@ describe("UserService", () => {
 
       vi.mocked(userRepository.findMany).mockResolvedValue(mockUsers as any);
 
-      const result = await userService.getAllUsers({}, { userId: "mock-user-id", role: "SUPER_ADMIN" });
+      const result = await userService.getAllUsers(
+        {},
+        { userId: "mock-user-id", role: "SUPER_ADMIN" }
+      );
 
       expect(userRepository.findMany).toHaveBeenCalledWith({});
       expect(result).toHaveLength(1);

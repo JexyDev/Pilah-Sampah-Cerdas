@@ -16,13 +16,16 @@ export const userController = {
     try {
       const { search, roleName, status, rw, rt } = req.query;
 
-      const mapped = await userService.getAllUsers({
-        search: search as string,
-        roleName: roleName as string,
-        status: status as string,
-        rw: rw as string,
-        rt: rt as string,
-      }, req.user!);
+      const mapped = await userService.getAllUsers(
+        {
+          search: search as string,
+          roleName: roleName as string,
+          status: status as string,
+          rw: rw as string,
+          rt: rt as string,
+        },
+        req.user!
+      );
 
       res.status(200).json({ success: true, data: mapped });
     } catch (error) {

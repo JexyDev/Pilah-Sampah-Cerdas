@@ -19,11 +19,7 @@ router.post(
   facilityController.createFacility
 );
 
-router.get(
-  "/",
-  authMiddleware,
-  facilityController.getFacilities
-);
+router.get("/", authMiddleware, facilityController.getFacilities);
 
 router.post(
   "/:id/production",
@@ -39,11 +35,7 @@ router.post(
   facilityController.createFarm
 );
 
-router.get(
-  "/farms",
-  authMiddleware,
-  facilityController.getFarms
-);
+router.get("/farms", authMiddleware, facilityController.getFarms);
 
 router.post(
   "/maggot/distributions",

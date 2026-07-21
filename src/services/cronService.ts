@@ -32,7 +32,7 @@ export const cronService = {
           await cronService.evaluateShiftPenalty("evening");
         }
       } catch (error) {
-        // Silent catch to prevent crash
+        console.error("[CronService] setInterval error:", error);
       }
     }, 60 * 1000);
 
@@ -107,7 +107,9 @@ export const cronService = {
           },
         });
 
-        console.log(`Petugas ${petugas.nama} penalized -${penaltyAmount} KPI score (No reports in shift ${shift}).`);
+        console.log(
+          `Petugas ${petugas.nama} penalized -${penaltyAmount} KPI score (No reports in shift ${shift}).`
+        );
       }
     }
   },

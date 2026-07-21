@@ -162,18 +162,28 @@ export class AiService {
       if (log.aiClassification !== finalClassification) {
         // Find category multiplier
         const isOrganic = finalClassification === "ORGANIC";
-        const multiplierKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
+        const multiplierKey = isOrganic
+          ? "organic_point_multiplier"
+          : "nonorganic_point_multiplier";
         const multiplierVal = await configService.getConfig(multiplierKey);
-        const multiplier = multiplierVal ? Number(multiplierVal) : (isOrganic ? 2.0 : 1.5);
+        const multiplier = multiplierVal ? Number(multiplierVal) : isOrganic ? 2.0 : 1.5;
 
         const newPoints = Math.round(Number(log.weightKg) * (isOrganic ? 100 : 50) * multiplier);
 
         // Original points awarded (simplified calculation)
         const oldIsOrganic = log.aiClassification === "ORGANIC";
-        const oldMultiplierKey = oldIsOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
+        const oldMultiplierKey = oldIsOrganic
+          ? "organic_point_multiplier"
+          : "nonorganic_point_multiplier";
         const oldMultiplierVal = await configService.getConfig(oldMultiplierKey);
-        const oldMultiplier = oldMultiplierVal ? Number(oldMultiplierVal) : (oldIsOrganic ? 2.0 : 1.5);
-        const oldPoints = Math.round(Number(log.weightKg) * (oldIsOrganic ? 100 : 50) * oldMultiplier);
+        const oldMultiplier = oldMultiplierVal
+          ? Number(oldMultiplierVal)
+          : oldIsOrganic
+            ? 2.0
+            : 1.5;
+        const oldPoints = Math.round(
+          Number(log.weightKg) * (oldIsOrganic ? 100 : 50) * oldMultiplier
+        );
 
         const diff = newPoints - oldPoints;
 
@@ -243,7 +253,7 @@ export class AiService {
    */
   async estimateVolume(imageUrl: string) {
     const lengthCm = Math.round(Math.random() * 20 + 30); // 30-50 cm
-    const widthCm = Math.round(Math.random() * 20 + 30);  // 30-50 cm
+    const widthCm = Math.round(Math.random() * 20 + 30); // 30-50 cm
     const heightCm = Math.round(Math.random() * 30 + 50); // 50-80 cm
     const volumeLiters = parseFloat(((lengthCm * widthCm * heightCm) / 1000).toFixed(2));
 

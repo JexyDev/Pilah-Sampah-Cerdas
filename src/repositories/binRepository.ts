@@ -13,9 +13,7 @@ export class BinRepository {
   /**
    * Find bin by QR code
    */
-  async findByQrCode(
-    qrCode: string
-  ): Promise<any> {
+  async findByQrCode(qrCode: string): Promise<any> {
     return prisma.bin.findUnique({
       where: { qrCode },
       include: {
@@ -193,10 +191,14 @@ export class BinRepository {
       });
 
       if (user && user.role.name === "WARGA" && user.wargaSubtype === "TAMBAHAN") {
-        const streakDaysConfig = await tx.systemConfig.findUnique({ where: { key: "streak_bonus_days" } });
+        const streakDaysConfig = await tx.systemConfig.findUnique({
+          where: { key: "streak_bonus_days" },
+        });
         const streakDays = streakDaysConfig ? Number(streakDaysConfig.value) : 5;
 
-        const streakPointsConfig = await tx.systemConfig.findUnique({ where: { key: "streak_bonus_points" } });
+        const streakPointsConfig = await tx.systemConfig.findUnique({
+          where: { key: "streak_bonus_points" },
+        });
         const streakPoints = streakPointsConfig ? Number(streakPointsConfig.value) : 10;
 
         let consecutiveCount = 1;

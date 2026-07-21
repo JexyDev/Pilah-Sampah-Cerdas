@@ -27,7 +27,7 @@
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid var(--border-light);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .legendItem {
@@ -50,10 +50,10 @@
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border-light);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   /* The z-index is required to prevent leaflet controls from overlapping fixed headers/bottom navs */
   position: relative;
-  z-index: 10; 
+  z-index: 10;
 }
 
 .map {
@@ -72,7 +72,7 @@
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .legend {
     width: 100%;
     flex-wrap: wrap;

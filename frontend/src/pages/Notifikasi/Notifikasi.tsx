@@ -89,12 +89,21 @@ const NotificationModal = ({
     }
   };
 
-  const isAdminOrPetugas = ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(
-    role.toUpperCase()
-  );
+  const isAdminOrPetugas = [
+    "SUPER_ADMIN",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+  ].includes(role.toUpperCase());
 
   const renderContent = () => {
-    if ((notif.type === "TONG_PENUH" || notif.type === "PENGAJUAN_PENGOSONGAN") && isAdminOrPetugas) {
+    if (
+      (notif.type === "TONG_PENUH" || notif.type === "PENGAJUAN_PENGOSONGAN") &&
+      isAdminOrPetugas
+    ) {
       return (
         <div className="mt-4 flex flex-col gap-4">
           <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex gap-3">
@@ -132,7 +141,9 @@ const NotificationModal = ({
                   <div className="w-full h-36 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
                     <span className="material-symbols-outlined text-4xl">image_not_supported</span>
                   </div>
-                  <p className="text-xs text-gray-400 text-center">Foto bukti belum diunggah oleh warga</p>
+                  <p className="text-xs text-gray-400 text-center">
+                    Foto bukti belum diunggah oleh warga
+                  </p>
                 </>
               )}
             </div>
@@ -164,8 +175,8 @@ const NotificationModal = ({
             <div className="text-sm text-red-800">
               <p className="font-semibold mb-1">Aksi Diperlukan</p>
               <p>
-                Tong sampah Anda telah mencapai kapasitas kritis. Silakan ambil foto bukti kondisi tong
-                yang penuh untuk mengajukan pengosongan ke petugas RT/RW.
+                Tong sampah Anda telah mencapai kapasitas kritis. Silakan ambil foto bukti kondisi
+                tong yang penuh untuk mengajukan pengosongan ke petugas RT/RW.
               </p>
             </div>
           </div>
@@ -243,8 +254,8 @@ const NotificationModal = ({
           </div>
           <h4 className="font-bold text-green-800 mb-1">Pengosongan Disetujui</h4>
           <p className="text-sm text-green-700">
-            Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong menjadi 0%. Terima
-            kasih atas partisipasi Anda.
+            Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong menjadi 0%.
+            Terima kasih atas partisipasi Anda.
           </p>
         </div>
       );
@@ -258,14 +269,18 @@ const NotificationModal = ({
           </div>
           <h4 className="font-bold text-yellow-800 mb-1">Poin Bertambah!</h4>
           <p className="text-sm text-yellow-700">
-            Selamat! Anda mendapatkan tambahan poin dari transaksi terakhir Anda. Kumpulkan terus poin
-            untuk mendapatkan reward menarik dari Kelurahan.
+            Selamat! Anda mendapatkan tambahan poin dari transaksi terakhir Anda. Kumpulkan terus
+            poin untuk mendapatkan reward menarik dari Kelurahan.
           </p>
         </div>
       );
     }
 
-    return <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600">{notif.desc}</div>;
+    return (
+      <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600">
+        {notif.desc}
+      </div>
+    );
   };
 
   return (
@@ -298,7 +313,9 @@ const NotificationModal = ({
               <span className="material-symbols-outlined text-[24px]">{notif.icon}</span>
             </div>
             <div>
-              <h4 className="text-[16px] font-bold text-gray-800 leading-tight mb-1">{notif.title}</h4>
+              <h4 className="text-[16px] font-bold text-gray-800 leading-tight mb-1">
+                {notif.title}
+              </h4>
               <p className="text-xs text-gray-500 font-medium">{notif.time}</p>
             </div>
           </div>
@@ -381,7 +398,8 @@ const Notifikasi: React.FC = () => {
         const myBinsRes = await api.get("/bins/my-bins");
         const myBins = myBinsRes.data.data;
         if (myBins && myBins.length > 0) {
-          const isOrganic = title.toLowerCase().includes("organik") || desc.toLowerCase().includes("organik");
+          const isOrganic =
+            title.toLowerCase().includes("organik") || desc.toLowerCase().includes("organik");
           const matched = myBins.find((b: any) =>
             isOrganic ? b.category === "ORGANIC" : b.category === "NON_ORGANIC"
           );
@@ -450,7 +468,9 @@ const Notifikasi: React.FC = () => {
     <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-5 rounded-xl shadow-sm border border-outline-variant/50 gap-4">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
-          <h3 className="text-[18px] font-bold text-on-surface whitespace-nowrap">Log Notifikasi</h3>
+          <h3 className="text-[18px] font-bold text-on-surface whitespace-nowrap">
+            Log Notifikasi
+          </h3>
           <div className="hidden md:block h-6 w-px bg-outline-variant/50"></div>
           <div className="flex flex-wrap gap-2">
             <button className="px-4 py-1.5 rounded-full border border-primary text-primary text-[12px] font-bold uppercase tracking-wider bg-green-50 hover:bg-green-100 transition-colors">
@@ -493,11 +513,15 @@ const Notifikasi: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden flex flex-col p-4 gap-3 min-h-[400px]">
         {loading ? (
           <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3 h-full">
-            <span className="material-symbols-outlined animate-spin text-primary text-[32px]">autorenew</span>
+            <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
+              autorenew
+            </span>
             <p>Memuat notifikasi...</p>
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-error font-medium h-full flex items-center justify-center">{error}</div>
+          <div className="p-8 text-center text-error font-medium h-full flex items-center justify-center">
+            {error}
+          </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-gray-400 font-medium h-full flex flex-col items-center justify-center gap-2">
             <span className="material-symbols-outlined text-4xl">notifications_off</span>
@@ -521,7 +545,9 @@ const Notifikasi: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-1 gap-2">
-                  <h4 className={`text-[15px] truncate ${notif.isRead ? "font-medium" : "font-bold"} text-gray-800`}>
+                  <h4
+                    className={`text-[15px] truncate ${notif.isRead ? "font-medium" : "font-bold"} text-gray-800`}
+                  >
                     {notif.title}
                   </h4>
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap shrink-0">
@@ -537,7 +563,9 @@ const Notifikasi: React.FC = () => {
                   </div>
                 )}
               </div>
-              {!notif.isRead && <div className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0 mt-2 shadow-sm"></div>}
+              {!notif.isRead && (
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0 mt-2 shadow-sm"></div>
+              )}
             </div>
           ))
         )}

@@ -19,11 +19,7 @@ router.post(
   gamificationController.submitIdea
 );
 
-router.get(
-  "/recycle-ideas",
-  authMiddleware,
-  gamificationController.getIdeas
-);
+router.get("/recycle-ideas", authMiddleware, gamificationController.getIdeas);
 
 router.put(
   "/recycle-ideas/:id/approve",
@@ -32,10 +28,6 @@ router.put(
   gamificationController.approveIdea
 );
 
-router.get(
-  "/leaderboard",
-  authMiddleware,
-  gamificationController.getLeaderboard
-);
+router.get("/leaderboard", authMiddleware, gamificationController.getLeaderboard);
 
 export default router;

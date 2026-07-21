@@ -42,7 +42,9 @@ export const websocketService = {
             if (decoded) {
               clientUserId = decoded.userId;
               clients.set(clientUserId, ws);
-              ws.send(JSON.stringify({ type: "AUTH_SUCCESS", message: "Authenticated successfully" }));
+              ws.send(
+                JSON.stringify({ type: "AUTH_SUCCESS", message: "Authenticated successfully" })
+              );
             }
           }
 
@@ -62,7 +64,7 @@ export const websocketService = {
             }
           }
         } catch (error) {
-          // Silent catch to prevent crash
+          console.error("[WebSocketService] message processing error:", error);
         }
       });
 

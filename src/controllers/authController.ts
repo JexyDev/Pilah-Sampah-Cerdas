@@ -63,8 +63,12 @@ const registerKknSchema = registerStaffSchema.extend({
   jurusan: z.string().min(1, "Jurusan diperlukan"),
   fakultas: z.string().min(1, "Fakultas diperlukan"),
   noWa: z.string().min(1, "WhatsApp diperlukan"),
-  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), "Format tanggal mulai tidak valid"),
-  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
+  startDate: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), "Format tanggal mulai tidak valid"),
+  endDate: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
   assignedPolygonId: z.number().int().optional(),
 });
 
@@ -377,13 +381,19 @@ export class AuthController {
     try {
       const parsed = registerStaffSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
       const user = await authService.registerStaff(parsed.data, "ADMIN_DLH");
-      res.status(201).json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -394,13 +404,19 @@ export class AuthController {
     try {
       const parsed = registerStaffSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
       const user = await authService.registerStaff(parsed.data, "CAMAT");
-      res.status(201).json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -411,13 +427,19 @@ export class AuthController {
     try {
       const parsed = registerStaffSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
       const user = await authService.registerStaff(parsed.data, "LURAH");
-      res.status(201).json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -426,24 +448,32 @@ export class AuthController {
    */
   async registerRw(req: Request, res: Response): Promise<void> {
     try {
-      const rwParsed = z.object({
-        name: z.string().min(1),
-        email: z.string().email(),
-        password: z.string().min(6),
-        nik: z.string().length(16),
-        phone: z.string().optional(),
-        address: z.string().optional(),
-        rtRwId: z.number().int(),
-      }).safeParse(req.body);
+      const rwParsed = z
+        .object({
+          name: z.string().min(1),
+          email: z.string().email(),
+          password: z.string().min(6),
+          nik: z.string().length(16),
+          phone: z.string().optional(),
+          address: z.string().optional(),
+          rtRwId: z.number().int(),
+        })
+        .safeParse(req.body);
 
       if (!rwParsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: rwParsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: rwParsed.error.format() });
         return;
       }
       const user = await authService.registerStaff(rwParsed.data, "RW");
-      res.status(201).json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -454,7 +484,9 @@ export class AuthController {
     try {
       const parsed = registerWargaSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
       const { qrCode, wargaSubtype, rtRwId, latitude, longitude, ...userData } = parsed.data;
@@ -480,10 +512,20 @@ export class AuthController {
         } catch {}
       }
 
-      const user = await authService.registerWarga(userData, householdData, qrCode, wargaSubtype, scannerUser);
-      res.status(201).json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      const user = await authService.registerWarga(
+        userData,
+        householdData,
+        qrCode,
+        wargaSubtype,
+        scannerUser
+      );
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -494,10 +536,13 @@ export class AuthController {
     try {
       const parsed = registerKknSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, ...userData } = parsed.data;
+      const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, ...userData } =
+        parsed.data;
       const kknData = {
         nim,
         jurusan,
@@ -509,9 +554,14 @@ export class AuthController {
       };
 
       const result = await authService.registerKkn(userData, kknData);
-      res.status(201).json({ success: true, data: { id: result.user.id, name: result.user.name, status: result.user.status } });
+      res.status(201).json({
+        success: true,
+        data: { id: result.user.id, name: result.user.name, status: result.user.status },
+      });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -522,7 +572,9 @@ export class AuthController {
     try {
       const parsed = registerPetugasSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
       const { noWa, assignedZone, ...userData } = parsed.data;
@@ -535,7 +587,9 @@ export class AuthController {
       const result = await authService.registerPetugasResidu(userData, petugasData);
       res.status(201).json({ success: true, data: { id: result.user.id, name: result.user.name } });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -547,7 +601,9 @@ export class AuthController {
       const list = await authService.getKknPendingList();
       res.status(200).json({ success: true, data: list });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -559,14 +615,24 @@ export class AuthController {
       const { id } = req.params;
       const { status } = req.body; // APPROVED or REJECTED
       if (status !== "APPROVED" && status !== "REJECTED") {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "status harus APPROVED atau REJECTED" });
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "status harus APPROVED atau REJECTED",
+        });
         return;
       }
       const adminUserId = req.user!.userId;
       const user = await authService.updateKknWhitelistStatus(id, status, adminUserId);
-      res.status(200).json({ success: true, message: `Status whitelist mahasiswa KKN berhasil diperbarui ke ${status}`, data: { id: user.id, status: user.status } });
+      res.status(200).json({
+        success: true,
+        message: `Status whitelist mahasiswa KKN berhasil diperbarui ke ${status}`,
+        data: { id: user.id, status: user.status },
+      });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

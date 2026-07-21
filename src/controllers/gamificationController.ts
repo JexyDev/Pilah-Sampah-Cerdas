@@ -17,14 +17,20 @@ export class GamificationController {
     try {
       const { judul, material, foto } = req.body;
       if (!judul || !material) {
-        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "judul dan material wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, code: "BAD_REQUEST", message: "judul dan material wajib diisi" });
         return;
       }
       const userId = req.user!.userId;
       const idea = await gamificationService.submitIdea(userId, judul, material, foto);
-      res.status(201).json({ success: true, message: "Ide daur ulang berhasil diajukan", data: idea });
+      res
+        .status(201)
+        .json({ success: true, message: "Ide daur ulang berhasil diajukan", data: idea });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -38,7 +44,9 @@ export class GamificationController {
       const ideas = await gamificationService.getIdeas(scoping.userFilter);
       res.status(200).json({ success: true, data: ideas });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -50,9 +58,15 @@ export class GamificationController {
       const { id } = req.params;
       const adminUserId = req.user!.userId;
       const idea = await gamificationService.approveIdea(id, adminUserId);
-      res.status(200).json({ success: true, message: "Ide daur ulang disetujui, poin berhasil dikirim", data: idea });
+      res.status(200).json({
+        success: true,
+        message: "Ide daur ulang disetujui, poin berhasil dikirim",
+        data: idea,
+      });
     } catch (error: any) {
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -64,7 +78,9 @@ export class GamificationController {
       const leaderboard = await gamificationService.getLeaderboard();
       res.status(200).json({ success: true, data: leaderboard });
     } catch (error: any) {
-      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

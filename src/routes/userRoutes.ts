@@ -47,7 +47,12 @@ router.get(
  *     security:
  *       - bearerAuth: []
  */
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), userController.createUser);
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  userController.createUser
+);
 
 /**
  * @swagger
@@ -64,7 +69,12 @@ router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), u
  *         schema:
  *           type: string
  */
-router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), userController.deleteUser);
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  userController.deleteUser
+);
 
 /**
  * @swagger
@@ -81,6 +91,11 @@ router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"
  *         schema:
  *           type: string
  */
-router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), userController.updateUser);
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  userController.updateUser
+);
 
 export default router;

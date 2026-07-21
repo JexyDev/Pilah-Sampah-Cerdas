@@ -6,7 +6,6 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { configService } from "./configService.js";
 
 const prisma = new PrismaClient();
 
@@ -69,7 +68,9 @@ export const gamificationService = {
       });
 
       // Award points (+50)
-      const pointsConfig = await tx.systemConfig.findUnique({ where: { key: "idea_approval_points" } });
+      const pointsConfig = await tx.systemConfig.findUnique({
+        where: { key: "idea_approval_points" },
+      });
       const pointsAmount = pointsConfig ? Number(pointsConfig.value) : 50;
 
       await tx.pointHistory.create({

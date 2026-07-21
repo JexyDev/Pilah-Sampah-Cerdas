@@ -76,7 +76,11 @@ describe("Batch 3 Modul Besar Features", () => {
       mockCreate.mockResolvedValue({ id: "f-1", jenis: "rumah_maggot", nama: "Rumah Maggot 1" });
       mockFindMany.mockResolvedValue([{ id: "f-1", jenis: "rumah_maggot" }]);
 
-      const created = await facilityService.createFacility("rumah_maggot", "Rumah Maggot 1", "PIC-1");
+      const created = await facilityService.createFacility(
+        "rumah_maggot",
+        "Rumah Maggot 1",
+        "PIC-1"
+      );
       const list = await facilityService.getFacilities("rumah_maggot");
 
       expect(created.jenis).toBe("rumah_maggot");
@@ -106,7 +110,12 @@ describe("Batch 3 Modul Besar Features", () => {
 
       mockUpdate.mockImplementation(async (args: any) => args.data);
 
-      const res = await bankSampahService.addTransaction("warga-1", "DEPOSIT", 50, "Setoran plastik");
+      const res = await bankSampahService.addTransaction(
+        "warga-1",
+        "DEPOSIT",
+        50,
+        "Setoran plastik"
+      );
 
       expect(Number(res.saldoRupiah)).toBe(150.0);
       expect(mockUpdate).toHaveBeenCalled();
@@ -120,16 +129,20 @@ describe("Batch 3 Modul Besar Features", () => {
         riwayatTransaksi: "[]",
       });
 
-      await expect(
-        bankSampahService.addTransaction("warga-1", "WITHDRAWAL", 50)
-      ).rejects.toThrow("INSUFFICIENT_FUNDS");
+      await expect(bankSampahService.addTransaction("warga-1", "WITHDRAWAL", 50)).rejects.toThrow(
+        "INSUFFICIENT_FUNDS"
+      );
     });
   });
 
   describe("notificationService", () => {
     it("should send mock notifications and create notification log", async () => {
       await notificationIntegrationService.sendWhatsApp("0812345", "OTP code is 1234", "OTP");
-      await notificationIntegrationService.sendEmail("user@example.com", "Test Subject", "Test Body");
+      await notificationIntegrationService.sendEmail(
+        "user@example.com",
+        "Test Subject",
+        "Test Body"
+      );
       await notificationIntegrationService.sendPushNotification("fcm-token-abc", "Title", "Body");
 
       expect(mockCreate).toHaveBeenCalledTimes(3);

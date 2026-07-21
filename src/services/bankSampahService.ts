@@ -61,6 +61,7 @@ export const bankSampahService = {
           history = ledger.riwayatTransaksi as unknown as any[];
         }
       } catch (e) {
+        console.error("[bankSampahService] JSON parse error:", e);
         history = [];
       }
 
@@ -69,7 +70,9 @@ export const bankSampahService = {
         id: uuidv4(),
         type,
         amount: Number(amount),
-        description: description || (type === "DEPOSIT" ? "Setoran sampah anorganik" : "Penarikan saldo tunai"),
+        description:
+          description ||
+          (type === "DEPOSIT" ? "Setoran sampah anorganik" : "Penarikan saldo tunai"),
         timestamp: new Date().toISOString(),
       };
 

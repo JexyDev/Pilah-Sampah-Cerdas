@@ -5,9 +5,9 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React from 'react';
-import { Menu, UserCircle, LogOut } from 'lucide-react';
-import styles from './Topbar.module.css';
+import React from "react";
+import { Menu, UserCircle, LogOut } from "lucide-react";
+import styles from "./Topbar.module.css";
 
 const Topbar: React.FC = () => {
   return (
@@ -19,7 +19,7 @@ const Topbar: React.FC = () => {
         </button>
         <h1 className={styles.pageTitle}>Dashboard</h1>
       </div>
-      
+
       <div className={styles.right}>
         <div className={styles.userInfo}>
           <span className={styles.userName}>Bapak Asep</span>

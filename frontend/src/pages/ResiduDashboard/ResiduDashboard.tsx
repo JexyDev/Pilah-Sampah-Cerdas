@@ -8,7 +8,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import {
-  AlertTriangle, CheckCircle, RefreshCw, Upload, Camera, BarChart2, Map, ShieldAlert, Check, X, FileText
+  AlertTriangle,
+  CheckCircle,
+  RefreshCw,
+  Upload,
+  Camera,
+  BarChart2,
+  Map,
+  ShieldAlert,
+  Check,
+  X,
+  FileText,
 } from "lucide-react";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -134,7 +144,8 @@ const ResiduDashboard: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold">Pelanggaran Dicatat!</h2>
             <p className="text-sm text-red-100">
-              Pelanggaran residu telah tervalidasi. Poin warga dipotong dan peringatan otomatis dikirimkan via WhatsApp.
+              Pelanggaran residu telah tervalidasi. Poin warga dipotong dan peringatan otomatis
+              dikirimkan via WhatsApp.
             </p>
           </div>
         </div>
@@ -170,7 +181,9 @@ const ResiduDashboard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black">{summary?.totalViolationsToday} Laporan</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">Pelanggaran residu tercampur hari ini</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              Pelanggaran residu tercampur hari ini
+            </p>
           </div>
         </div>
 
@@ -182,7 +195,9 @@ const ResiduDashboard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-primary">{summary?.kpiScore} pts</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">Status target kinerja: Sangat Baik</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              Status target kinerja: Sangat Baik
+            </p>
           </div>
         </div>
 
@@ -194,7 +209,9 @@ const ResiduDashboard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-indigo-600">{summary?.assignedZone}</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">Sektor monitoring residu hilir</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              Sektor monitoring residu hilir
+            </p>
           </div>
         </div>
       </div>
@@ -212,9 +229,17 @@ const ResiduDashboard: React.FC = () => {
             <div className="flex items-end gap-3 h-48 pt-4">
               {analytics?.trend.map((t: any) => (
                 <div key={t.date} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full bg-red-100 rounded-t-lg relative" style={{ height: `${(t.weightKg / 200) * 140}px` }}>
-                    <div className="bg-red-500 absolute bottom-0 left-0 right-0 rounded-t-lg transition-all duration-300" style={{ height: "100%" }}></div>
-                    <div className="absolute top-[-20px] left-0 right-0 text-center font-bold text-[9px] text-red-700">{t.weightKg}kg</div>
+                  <div
+                    className="w-full bg-red-100 rounded-t-lg relative"
+                    style={{ height: `${(t.weightKg / 200) * 140}px` }}
+                  >
+                    <div
+                      className="bg-red-500 absolute bottom-0 left-0 right-0 rounded-t-lg transition-all duration-300"
+                      style={{ height: "100%" }}
+                    ></div>
+                    <div className="absolute top-[-20px] left-0 right-0 text-center font-bold text-[9px] text-red-700">
+                      {t.weightKg}kg
+                    </div>
                   </div>
                   <span className="text-[10px] font-bold text-on-surface-variant">{t.date}</span>
                 </div>
@@ -239,14 +264,21 @@ const ResiduDashboard: React.FC = () => {
                 </thead>
                 <tbody>
                   {analytics?.zones.map((z: any) => (
-                    <tr key={z.id} className="border-b border-outline-variant/30 hover:bg-slate-50 transition-colors">
+                    <tr
+                      key={z.id}
+                      className="border-b border-outline-variant/30 hover:bg-slate-50 transition-colors"
+                    >
                       <td className="py-2.5 font-bold text-slate-700">{z.region}</td>
                       <td className="py-2.5">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${z.complianceScore >= 70 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${z.complianceScore >= 70 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                        >
                           {z.complianceScore}% Patuh
                         </span>
                       </td>
-                      <td className="py-2.5 font-semibold text-slate-600">{z.violationsCount} Pelanggaran</td>
+                      <td className="py-2.5 font-semibold text-slate-600">
+                        {z.violationsCount} Pelanggaran
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -258,23 +290,35 @@ const ResiduDashboard: React.FC = () => {
         {/* Petugas own recorded violations log */}
         <div className="col-span-4 bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
           <h3 className="font-extrabold text-lg">Riwayat Catatan Laporan</h3>
-          <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-            {summary?.recentViolations.length > 0 ? summary.recentViolations.map((v: any) => (
-              <div key={v.id} className="p-3 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col gap-2 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-800">{v.wargaName}</span>
-                  <span className={`px-2 py-0.5 rounded-[5px] text-[9px] font-bold ${v.severity === 'SEVERE' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {v.severity}
-                  </span>
+          <div
+            className="space-y-3 max-h-[460px] overflow-y-auto pr-1"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {summary?.recentViolations.length > 0 ? (
+              summary.recentViolations.map((v: any) => (
+                <div
+                  key={v.id}
+                  className="p-3 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col gap-2 text-xs"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-800">{v.wargaName}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-[5px] text-[9px] font-bold ${v.severity === "SEVERE" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}
+                    >
+                      {v.severity}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">Bin ID: {v.binCode}</div>
+                  <div className="text-slate-600 mt-1">{v.type}</div>
+                  <div className="text-[9px] text-slate-400 mt-1 text-right">
+                    {new Date(v.createdAt).toLocaleString("id-ID")}
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono">Bin ID: {v.binCode}</div>
-                <div className="text-slate-600 mt-1">{v.type}</div>
-                <div className="text-[9px] text-slate-400 mt-1 text-right">
-                  {new Date(v.createdAt).toLocaleString("id-ID")}
-                </div>
-              </div>
-            )) : (
-              <p className="text-xs text-slate-500 text-center py-6">Belum ada laporan pelanggaran dicatat.</p>
+              ))
+            ) : (
+              <p className="text-xs text-slate-500 text-center py-6">
+                Belum ada laporan pelanggaran dicatat.
+              </p>
             )}
           </div>
         </div>
@@ -299,19 +343,25 @@ const ResiduDashboard: React.FC = () => {
 
             <form onSubmit={handleViolationSubmit} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">ID / QR Code Tong Sampah *</label>
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  ID / QR Code Tong Sampah *
+                </label>
                 <input
                   type="text"
                   required
                   value={violationForm.binQrCode}
-                  onChange={(e) => setViolationForm({ ...violationForm, binQrCode: e.target.value })}
+                  onChange={(e) =>
+                    setViolationForm({ ...violationForm, binQrCode: e.target.value })
+                  }
                   placeholder="Scan atau ketik kode QR..."
                   className="border border-slate-200 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Jenis Pelanggaran *</label>
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  Jenis Pelanggaran *
+                </label>
                 <select
                   required
                   value={violationForm.type}
@@ -325,7 +375,9 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tingkat Keparahan *</label>
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  Tingkat Keparahan *
+                </label>
                 <select
                   required
                   value={violationForm.severity}
@@ -339,7 +391,9 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Catatan Tambahan</label>
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  Catatan Tambahan
+                </label>
                 <textarea
                   value={violationForm.notes}
                   onChange={(e) => setViolationForm({ ...violationForm, notes: e.target.value })}
@@ -371,7 +425,11 @@ const ResiduDashboard: React.FC = () => {
 
                 {violationPhotoPreview && (
                   <div className="flex gap-4 items-center animate-in fade-in duration-200">
-                    <img src={violationPhotoPreview} alt="Preview Bukti" className="w-24 h-24 rounded-lg object-cover border border-slate-200" />
+                    <img
+                      src={violationPhotoPreview}
+                      alt="Preview Bukti"
+                      className="w-24 h-24 rounded-lg object-cover border border-slate-200"
+                    />
                     <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
                       <Check className="w-4 h-4" /> Foto Terlampir
                     </span>

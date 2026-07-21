@@ -54,7 +54,12 @@ export const notificationIntegrationService = {
   /**
    * Mock Firebase Cloud Messaging (FCM) Push Sender interface
    */
-  sendPushNotification: async (token: string, title: string, body: string, triggerType: string = "PUSH_ALARM") => {
+  sendPushNotification: async (
+    token: string,
+    title: string,
+    body: string,
+    triggerType: string = "PUSH_ALARM"
+  ) => {
     console.log(`[MOCK FCM] Sending to Token ${token} | Title: ${title} | Body: ${body}`);
 
     // Create log in DB

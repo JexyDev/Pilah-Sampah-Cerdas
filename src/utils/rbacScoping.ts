@@ -19,10 +19,13 @@ export interface ScopingFilters {
 /**
  * Determine dynamic query filters based on User role and area-scoping.
  */
-export async function getScopingFilters(user: { userId: string; role: string }): Promise<ScopingFilters> {
+export async function getScopingFilters(user: {
+  userId: string;
+  role: string;
+}): Promise<ScopingFilters> {
   const dbUser = await prisma.user.findUnique({
     where: { id: user.userId },
-    include: { rtRw: { include: { kelurahan: true } } }
+    include: { rtRw: { include: { kelurahan: true } } },
   });
 
   if (!dbUser) return {};
@@ -42,14 +45,14 @@ export async function getScopingFilters(user: { userId: string; role: string }):
         userFilter: { id: "none" },
         binFilter: { id: "none" },
         householdFilter: { id: "none" },
-        wasteLogFilter: { id: "none" }
+        wasteLogFilter: { id: "none" },
       };
     }
     return {
       userFilter: { rtRw: { kelurahanId } },
       binFilter: { kelurahanId },
       householdFilter: { rtRw: { kelurahanId } },
-      wasteLogFilter: { bin: { kelurahanId } }
+      wasteLogFilter: { bin: { kelurahanId } },
     };
   }
 
@@ -61,16 +64,19 @@ export async function getScopingFilters(user: { userId: string; role: string }):
         userFilter: { id: "none" },
         binFilter: { id: "none" },
         householdFilter: { id: "none" },
-        wasteLogFilter: { id: "none" }
+        wasteLogFilter: { id: "none" },
       };
     }
-    const rwPart = areaName.split("/").map(s => s.trim()).find(s => s.startsWith("RW"));
+    const rwPart = areaName
+      .split("/")
+      .map((s) => s.trim())
+      .find((s) => s.startsWith("RW"));
     if (!rwPart) {
       return {
         userFilter: { id: "none" },
         binFilter: { id: "none" },
         householdFilter: { id: "none" },
-        wasteLogFilter: { id: "none" }
+        wasteLogFilter: { id: "none" },
       };
     }
 
@@ -78,21 +84,21 @@ export async function getScopingFilters(user: { userId: string; role: string }):
       userFilter: { rtRw: { name: { contains: rwPart } } },
       binFilter: { rtRw: { name: { contains: rwPart } } },
       householdFilter: { rtRw: { name: { contains: rwPart } } },
-      wasteLogFilter: { bin: { rtRw: { name: { contains: rwPart } } } }
+      wasteLogFilter: { bin: { rtRw: { name: { contains: rwPart } } } },
     };
   }
 
   // 4. MAHASISWA_KKN is scoped by their assigned RT/RW area polygon
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
-      where: { userId: user.userId }
+      where: { userId: user.userId },
     });
     if (student && student.assignedPolygonId) {
       return {
         userFilter: { rtRwId: student.assignedPolygonId },
         binFilter: { rtRwId: student.assignedPolygonId },
         householdFilter: { rtRwId: student.assignedPolygonId },
-        wasteLogFilter: { bin: { rtRwId: student.assignedPolygonId } }
+        wasteLogFilter: { bin: { rtRwId: student.assignedPolygonId } },
       };
     }
   }
@@ -103,7 +109,7 @@ export async function getScopingFilters(user: { userId: string; role: string }):
       userFilter: { id: user.userId },
       binFilter: { binOwnerships: { some: { userId: user.userId } } },
       householdFilter: { userId: user.userId },
-      wasteLogFilter: { household: { userId: user.userId } }
+      wasteLogFilter: { household: { userId: user.userId } },
     };
   }
 
@@ -112,6 +118,6 @@ export async function getScopingFilters(user: { userId: string; role: string }):
     userFilter: { id: "none" },
     binFilter: { id: "none" },
     householdFilter: { id: "none" },
-    wasteLogFilter: { id: "none" }
+    wasteLogFilter: { id: "none" },
   };
 }

@@ -15,37 +15,50 @@ const router = Router();
 /**
  * Trigger manual database backup (Admin only)
  */
-router.post("/backup", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), async (req, res) => {
-  try {
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    res.status(200).json({
-      success: true,
-      message: `Backup database berhasil dibuat: psc_backup_${timestamp}.sql.gz`,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal membuat backup database",
-    });
+router.post(
+  "/backup",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  async (req, res) => {
+    try {
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      res.status(200).json({
+        success: true,
+        message: `Backup database berhasil dibuat: psc_backup_${timestamp}.sql.gz`,
+      });
+    } catch (error) {
+      console.error("[systemRoutes] backup error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal membuat backup database",
+      });
+    }
   }
-});
+);
 
 /**
  * Optimize system cache (Admin only)
  */
-router.post("/clear-cache", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), async (req, res) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: "Cache system berhasil dibersihkan (flushed Redis keys & reset Prisma query cache).",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal membersihkan cache system",
-    });
+router.post(
+  "/clear-cache",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  async (req, res) => {
+    try {
+      res.status(200).json({
+        success: true,
+        message:
+          "Cache system berhasil dibersihkan (flushed Redis keys & reset Prisma query cache).",
+      });
+    } catch (error) {
+      console.error("[systemRoutes] clear-cache error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal membersihkan cache system",
+      });
+    }
   }
-});
+);
 
 /**
  * Get all audit trails (Super Admin only view)
@@ -60,16 +73,8 @@ router.get(
 /**
  * Social Feed management
  */
-router.post(
-  "/social-feed",
-  authMiddleware,
-  systemController.createSocialFeed
-);
+router.post("/social-feed", authMiddleware, systemController.createSocialFeed);
 
-router.get(
-  "/social-feed",
-  authMiddleware,
-  systemController.getSocialFeed
-);
+router.get("/social-feed", authMiddleware, systemController.getSocialFeed);
 
 export default router;

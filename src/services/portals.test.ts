@@ -162,7 +162,9 @@ describe("Portals A & B Service Integration Tests", () => {
       });
       const basePenalty = basePenaltyStr ? Math.abs(parseInt(basePenaltyStr.value, 10)) : 50;
 
-      console.log(`[TEST PORTAL LOG] initialPoints=${initialPoints}, updatedPoints=${updatedPoints}, basePenaltyStr=${basePenaltyStr?.value}, parsedBasePenalty=${basePenalty}`);
+      console.log(
+        `[TEST PORTAL LOG] initialPoints=${initialPoints}, updatedPoints=${updatedPoints}, basePenaltyStr=${basePenaltyStr?.value}, parsedBasePenalty=${basePenalty}`
+      );
 
       expect(updatedPoints).toBe(initialPoints - basePenalty * 2);
 

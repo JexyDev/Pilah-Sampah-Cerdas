@@ -47,10 +47,18 @@ describe("Batch 4 Penyempurnaan Features", () => {
     });
 
     it("should create and fetch social feed activities", async () => {
-      mockCreate.mockResolvedValue({ id: "post-1", tipe: "MAGGOT_HARVEST", deskripsi: "Harvested 5kg maggot" });
+      mockCreate.mockResolvedValue({
+        id: "post-1",
+        tipe: "MAGGOT_HARVEST",
+        deskripsi: "Harvested 5kg maggot",
+      });
       mockFindMany.mockResolvedValue([{ id: "post-1", tipe: "MAGGOT_HARVEST" }]);
 
-      const created = await systemService.createSocialFeed("user-1", "MAGGOT_HARVEST", "Harvested 5kg maggot");
+      const created = await systemService.createSocialFeed(
+        "user-1",
+        "MAGGOT_HARVEST",
+        "Harvested 5kg maggot"
+      );
       const feed = await systemService.getSocialFeed();
 
       expect(created.tipe).toBe("MAGGOT_HARVEST");
@@ -66,7 +74,9 @@ describe("Batch 4 Penyempurnaan Features", () => {
 
       expect(res.imageUrl).toBe("test-image.jpg");
       expect(res.lengthCm).toBeGreaterThanOrEqual(30);
-      expect(res.volumeLiters).toBe(parseFloat(((res.lengthCm * res.widthCm * res.heightCm) / 1000).toFixed(2)));
+      expect(res.volumeLiters).toBe(
+        parseFloat(((res.lengthCm * res.widthCm * res.heightCm) / 1000).toFixed(2))
+      );
     });
   });
 });

@@ -108,11 +108,7 @@ router.get(
   aiController.getComplianceScore
 );
 
-router.get(
-  "/emissions",
-  authMiddleware,
-  aiController.getCo2eStats
-);
+router.get("/emissions", authMiddleware, aiController.getCo2eStats);
 
 router.post(
   "/estimate-volume",

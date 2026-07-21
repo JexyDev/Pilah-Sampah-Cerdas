@@ -6,11 +6,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { PrismaClient } from "@prisma/client";
 import { authService } from "./authService.js";
 import { systemService } from "./systemService.js";
-
-const prisma = new PrismaClient();
 
 describe("E2E & Security Validation for All 8 Roles", () => {
   const roles = [
@@ -28,8 +25,10 @@ describe("E2E & Security Validation for All 8 Roles", () => {
       const loginResult = await authService.login(testUser.email, "password123");
       expect(loginResult).toHaveProperty("accessToken");
       expect(loginResult).toHaveProperty("refreshToken");
-      
-      const payload = JSON.parse(Buffer.from(loginResult.accessToken.split(".")[1], "base64").toString());
+
+      const payload = JSON.parse(
+        Buffer.from(loginResult.accessToken.split(".")[1], "base64").toString()
+      );
       expect(payload.role).toBe(testUser.role);
     }
   });
