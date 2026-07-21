@@ -58,4 +58,15 @@ describe("Batch 4 Penyempurnaan Features", () => {
       expect(mockCreate).toHaveBeenCalled();
     });
   });
+
+  describe("aiService - estimateVolume", () => {
+    it("should return random length, width, height, and calculate volume", async () => {
+      const { aiService } = await import("./aiService.js");
+      const res = await aiService.estimateVolume("test-image.jpg");
+
+      expect(res.imageUrl).toBe("test-image.jpg");
+      expect(res.lengthCm).toBeGreaterThanOrEqual(30);
+      expect(res.volumeLiters).toBe(parseFloat(((res.lengthCm * res.widthCm * res.heightCm) / 1000).toFixed(2)));
+    });
+  });
 });

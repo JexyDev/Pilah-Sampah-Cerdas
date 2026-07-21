@@ -114,4 +114,11 @@ router.get(
   aiController.getCo2eStats
 );
 
+router.post(
+  "/estimate-volume",
+  authMiddleware,
+  uploadAvatarMiddleware.single("image"),
+  aiController.estimateVolume
+);
+
 export default router;

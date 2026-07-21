@@ -237,6 +237,24 @@ export class AiService {
     const factor = factorVal ? Number(factorVal) : 0.05;
     return parseFloat((weightKg * factor).toFixed(3));
   }
+
+  /**
+   * Mock AI Volume estimation from image (length, width, height)
+   */
+  async estimateVolume(imageUrl: string) {
+    const lengthCm = Math.round(Math.random() * 20 + 30); // 30-50 cm
+    const widthCm = Math.round(Math.random() * 20 + 30);  // 30-50 cm
+    const heightCm = Math.round(Math.random() * 30 + 50); // 50-80 cm
+    const volumeLiters = parseFloat(((lengthCm * widthCm * heightCm) / 1000).toFixed(2));
+
+    return {
+      imageUrl,
+      lengthCm,
+      widthCm,
+      heightCm,
+      volumeLiters,
+    };
+  }
 }
 
 export const aiService = new AiService();

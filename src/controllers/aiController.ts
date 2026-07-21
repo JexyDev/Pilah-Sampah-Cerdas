@@ -205,6 +205,22 @@ export class AiController {
       res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  /**
+   * Mock AI volume estimation
+   */
+  async estimateVolume(req: Request, res: Response): Promise<void> {
+    try {
+      let imageUrl = req.body.imageUrl || "";
+      if (req.file) {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+      const data = await aiService.estimateVolume(imageUrl);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
 }
 
 export const aiController = new AiController();
