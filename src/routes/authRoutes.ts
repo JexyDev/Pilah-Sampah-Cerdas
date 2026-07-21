@@ -8,6 +8,7 @@
 import { Router } from "express";
 import { authController } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { loginRateLimiter } from "../middlewares/rateLimiter.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
@@ -216,5 +217,58 @@ router.put("/profile", authMiddleware, authController.updateProfile);
  *         description: User not found
  */
 router.put("/password", authMiddleware, authController.updatePassword);
+
+router.post(
+  "/register/admin-dlh",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN"]),
+  authController.registerAdminDlh
+);
+
+router.post(
+  "/register/camat",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH"]),
+  authController.registerCamat
+);
+
+router.post(
+  "/register/lurah",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH"]),
+  authController.registerLurah
+);
+
+router.post(
+  "/register/rw",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH"]),
+  authController.registerRw
+);
+
+router.post(
+  "/register/petugas-residu",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH", "RW"]),
+  authController.registerPetugasResidu
+);
+
+router.post("/register/warga", authController.registerWarga);
+
+router.post("/register/mahasiswa-kkn", authController.registerKkn);
+
+router.get(
+  "/kkn/pending",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH"]),
+  authController.getKknPending
+);
+
+router.patch(
+  "/kkn/whitelist/:id",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH"]),
+  authController.approveKkn
+);
 
 export default router;

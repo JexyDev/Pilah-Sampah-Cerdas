@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient, Bin, WasteLog, PointHistory, Notification } from "@prisma/client";
+import { PrismaClient, Bin, WasteLog, PointHistory, Notification, BinStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -28,8 +28,9 @@ export class BinRepository {
   /**
    * Find all bins
    */
-  async findAll(): Promise<Bin[]> {
+  async findAll(where: any = {}): Promise<Bin[]> {
     return prisma.bin.findMany({
+      where,
       include: {
         category: true,
         rtRw: true,
@@ -326,7 +327,7 @@ export class BinRepository {
         rtRwId,
         role: {
           name: {
-            in: ["PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN", "ADMIN"],
+            in: ["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"],
           },
         },
       },
@@ -340,6 +341,99 @@ export class BinRepository {
         title,
         message,
       },
+    });
+  }
+
+  /**
+   * Create a new QR Batch and pre-generate Bins
+   */
+  async createQrBatch(batchCode: string, quantity: number) {
+    return prisma.$transaction(async (tx) => {
+      const batch = await tx.qrBatch.create({
+        data: {
+          batchCode,
+          totalQr: quantity,
+          status: "PRINTED",
+        },
+      });
+
+      // Find default organic category
+      const organicCategory = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
+      const categoryId = organicCategory?.id;
+      if (!categoryId) throw new Error("DEFAULT_ORGANIC_CATEGORY_NOT_FOUND");
+
+      const defaultRtRw = await tx.rtRwArea.findFirst();
+      if (!defaultRtRw) throw new Error("NO_RTRW_AREA_FOUND_IN_DB");
+
+      const binsData = [];
+      for (let i = 0; i < quantity; i++) {
+        const rand = Math.floor(100000 + Math.random() * 900000);
+        const qrCode = `QR-${batchCode}-${rand}`;
+        binsData.push({
+          qrCode,
+          status: BinStatus.PRINTED,
+          categoryId,
+          maxCapacityLiter: 25.0,
+          currentVolumeLiter: 0.0,
+          qrBatchId: batch.id,
+          rtRwId: defaultRtRw.id,
+        });
+      }
+
+      await tx.bin.createMany({
+        data: binsData,
+      });
+
+      return batch;
+    });
+  }
+
+  /**
+   * Find QR Batch by ID
+   */
+  async findQrBatchById(id: string) {
+    return prisma.qrBatch.findUnique({
+      where: { id },
+      include: {
+        assignedPic: true,
+        bins: true,
+      },
+    });
+  }
+
+  /**
+   * Find all QR Batches
+   */
+  async findAllQrBatches() {
+    return prisma.qrBatch.findMany({
+      include: {
+        assignedPic: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Assign QR Batch to PIC
+   */
+  async assignQrBatch(batchId: string, assignedPicUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const batch = await tx.qrBatch.update({
+        where: { id: batchId },
+        data: {
+          assignedPicUserId,
+          status: "ASSIGNED_TO_PIC",
+        },
+      });
+
+      await tx.bin.updateMany({
+        where: { qrBatchId: batchId },
+        data: {
+          status: BinStatus.ASSIGNED_TO_PIC,
+        },
+      });
+
+      return batch;
     });
   }
 }

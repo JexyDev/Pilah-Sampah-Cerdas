@@ -58,7 +58,7 @@ router.post("/convert", authMiddleware, pointController.convertPoints);
 router.get(
   "/history/:userId",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH"]),
   pointController.getUserLedger
 );
 

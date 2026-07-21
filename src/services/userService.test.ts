@@ -32,6 +32,12 @@ vi.mock("../utils/hashUtils.js", () => {
   };
 });
 
+vi.mock("../utils/rbacScoping.js", () => {
+  return {
+    getScopingFilters: vi.fn().mockResolvedValue({}),
+  };
+});
+
 describe("UserService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,7 +67,7 @@ describe("UserService", () => {
 
       vi.mocked(userRepository.findMany).mockResolvedValue(mockUsers as any);
 
-      const result = await userService.getAllUsers({});
+      const result = await userService.getAllUsers({}, { userId: "mock-user-id", role: "SUPER_ADMIN" });
 
       expect(userRepository.findMany).toHaveBeenCalledWith({});
       expect(result).toHaveLength(1);

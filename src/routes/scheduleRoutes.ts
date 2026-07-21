@@ -16,7 +16,7 @@ router.get("/", authMiddleware, scheduleController.getAllSchedules);
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   scheduleController.createSchedule
 );
 

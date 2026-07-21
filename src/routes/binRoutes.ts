@@ -40,7 +40,7 @@ router.get("/", binController.getAllBins);
  *     security:
  *       - bearerAuth: []
  */
-router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), binController.createBin);
+router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createBin);
 
 /**
  * @swagger
@@ -51,7 +51,7 @@ router.post("/", authMiddleware, roleMiddleware(["ADMIN"]), binController.create
  *     security:
  *       - bearerAuth: []
  */
-router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.updateBin);
+router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.updateBin);
 
 /**
  * @swagger
@@ -62,7 +62,7 @@ router.put("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.upda
  *     security:
  *       - bearerAuth: []
  */
-router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), binController.deleteBin);
+router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.deleteBin);
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, roleMiddleware(["WARGA"]), binController.getMyBins);
 router.get("/areas", binController.getAreas);
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
-router.post("/areas", authMiddleware, roleMiddleware(["ADMIN"]), binController.createArea);
+router.post("/areas", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createArea);
 
 /**
  * @swagger
@@ -166,7 +166,7 @@ router.get("/:id/status", binController.getStatus);
 router.post(
   "/:id/empty",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   binController.emptyBin
 );
 
@@ -180,8 +180,29 @@ router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   binController.reviewResetRequest
+);
+
+router.post(
+  "/qr-batch",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createQrBatch
+);
+
+router.get(
+  "/qr-batch",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  binController.getAllQrBatches
+);
+
+router.put(
+  "/qr-batch/:id/assign",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.assignQrBatch
 );
 
 export default router;

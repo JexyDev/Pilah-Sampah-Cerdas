@@ -24,7 +24,7 @@ export class BinController {
    */
   async getAllBins(req: Request, res: Response): Promise<void> {
     try {
-      const bins = await binService.getAllBins();
+      const bins = await binService.getAllBins(req.user);
       const mappedBins = bins.map((bin: any) => {
         const currentVol = Number(bin.currentVolumeLiter);
         const maxVol = Number(bin.maxCapacityLiter);
@@ -364,6 +364,53 @@ export class BinController {
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses pengajuan" });
       }
+    }
+  }
+
+  /**
+   * Create QR Batch (Super Admin/Admin DLH)
+   */
+  async createQrBatch(req: Request, res: Response): Promise<void> {
+    try {
+      const { quantity } = req.body;
+      if (!quantity || isNaN(parseInt(quantity))) {
+        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "quantity wajib berupa angka" });
+        return;
+      }
+      const batch = await binService.createQrBatch(parseInt(quantity));
+      res.status(201).json({ success: true, data: batch });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Get all QR Batches
+   */
+  async getAllQrBatches(req: Request, res: Response): Promise<void> {
+    try {
+      const batches = await binService.getAllQrBatches();
+      res.status(200).json({ success: true, data: batches });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Assign QR Batch to PIC (Camat, Lurah, RW, or Admin DLH)
+   */
+  async assignQrBatch(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { picUserId } = req.body;
+      if (!picUserId) {
+        res.status(400).json({ success: false, code: "BAD_REQUEST", message: "picUserId wajib diisi" });
+        return;
+      }
+      const batch = await binService.assignQrBatch(id, picUserId);
+      res.status(200).json({ success: true, data: batch });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

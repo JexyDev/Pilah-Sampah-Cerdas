@@ -8,7 +8,15 @@
 import { create } from 'zustand';
 import api from '../utils/api';
 
-export type UserRole = 'ADMIN' | 'PETUGAS_KELURAHAN' | 'PETUGAS_RW' | 'PETUGAS_RT' | 'WARGA';
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'ADMIN_DLH'
+  | 'CAMAT'
+  | 'LURAH'
+  | 'RW'
+  | 'PETUGAS_RESIDU'
+  | 'WARGA'
+  | 'MAHASISWA_KKN';
 
 export interface User {
   id: string;
@@ -37,22 +45,28 @@ interface AuthState {
 
 const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string } => {
   switch (role) {
-    case 'ADMIN': return { avatarBg: 'bg-blue-100', avatarColor: 'text-blue-700' };
-    case 'PETUGAS_KELURAHAN': return { avatarBg: 'bg-pink-100', avatarColor: 'text-pink-700' };
-    case 'PETUGAS_RW': return { avatarBg: 'bg-teal-100', avatarColor: 'text-teal-700' };
-    case 'PETUGAS_RT': return { avatarBg: 'bg-orange-100', avatarColor: 'text-orange-700' };
+    case 'SUPER_ADMIN': return { avatarBg: 'bg-indigo-100', avatarColor: 'text-indigo-700' };
+    case 'ADMIN_DLH': return { avatarBg: 'bg-blue-100', avatarColor: 'text-blue-700' };
+    case 'CAMAT': return { avatarBg: 'bg-purple-100', avatarColor: 'text-purple-700' };
+    case 'LURAH': return { avatarBg: 'bg-pink-100', avatarColor: 'text-pink-700' };
+    case 'RW': return { avatarBg: 'bg-teal-100', avatarColor: 'text-teal-700' };
+    case 'PETUGAS_RESIDU': return { avatarBg: 'bg-orange-100', avatarColor: 'text-orange-700' };
     case 'WARGA': return { avatarBg: 'bg-green-100', avatarColor: 'text-green-700' };
+    case 'MAHASISWA_KKN': return { avatarBg: 'bg-amber-100', avatarColor: 'text-amber-700' };
     default: return { avatarBg: 'bg-gray-100', avatarColor: 'text-gray-700' };
   }
 };
 
 const getWilayahByRole = (role: string): string => {
   switch (role) {
-    case 'ADMIN': return 'Sistem Pusat';
-    case 'PETUGAS_KELURAHAN': return 'Kelurahan Dago';
-    case 'PETUGAS_RW': return 'RW 06 Dago';
-    case 'PETUGAS_RT': return 'RT 02 / RW 06';
+    case 'SUPER_ADMIN': return 'Sistem Pusat';
+    case 'ADMIN_DLH': return 'Dinas Lingkungan Hidup';
+    case 'CAMAT': return 'Kecamatan Coblong';
+    case 'LURAH': return 'Kelurahan Dago';
+    case 'RW': return 'RW 06 Dago';
+    case 'PETUGAS_RESIDU': return 'RT 02 / RW 06';
     case 'WARGA': return 'RT 04 / RW 06';
+    case 'MAHASISWA_KKN': return 'Area KKN Dago';
     default: return 'Kecamatan Coblong';
   }
 };

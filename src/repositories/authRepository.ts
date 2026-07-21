@@ -136,6 +136,193 @@ export class AuthRepository {
       data: { password: passwordHash },
     });
   }
+
+  /**
+   * Find role by name
+   */
+  async findRoleByName(name: string): Promise<Role | null> {
+    try {
+      return await prisma.role.findUnique({ where: { name } });
+    } catch (error: any) {
+      if (isDatabaseConnectionError(error)) {
+        throw new DatabaseUnavailableError();
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Register Warga Transaction
+   */
+  async registerWargaTx(userData: any, householdData: any, qrCode: string, wargaSubtype: string) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Find Bin
+      const bin = await tx.bin.findUnique({
+        where: { qrCode },
+      });
+      if (!bin) throw new Error("BIN_NOT_FOUND");
+
+      // 2. Validate Bin status
+      if (wargaSubtype === "UTAMA") {
+        if (bin.kepemilikanUtamaUserId) throw new Error("BIN_ALREADY_HAS_PRIMARY_OWNER");
+        // Bin must be PRINTED or ASSIGNED_TO_PIC to be activated
+        if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
+          throw new Error("BIN_NOT_AVAILABLE_FOR_ACTIVATION");
+        }
+      } else {
+        // TAMBAHAN
+        if (bin.status !== "ACTIVE_BOUND") {
+          throw new Error("BIN_NOT_ACTIVE_YET");
+        }
+      }
+
+      // 3. Create User
+      const role = await tx.role.findUnique({ where: { name: "WARGA" } });
+      if (!role) throw new Error("ROLE_NOT_FOUND");
+
+      const user = await tx.user.create({
+        data: {
+          ...userData,
+          roleId: role.id,
+          wargaSubtype,
+        },
+      });
+
+      // 4. Create Household
+      await tx.household.create({
+        data: {
+          ...householdData,
+          userId: user.id,
+        },
+      });
+
+      // 5. Update Bin ownership & status
+      if (wargaSubtype === "UTAMA") {
+        await tx.bin.update({
+          where: { id: bin.id },
+          data: {
+            kepemilikanUtamaUserId: user.id,
+            status: "ACTIVE_BOUND",
+          },
+        });
+
+        // Award +10 points to primary owner
+        await tx.pointHistory.create({
+          data: {
+            userId: user.id,
+            points: 10,
+            description: `Bonus aktivasi tempat sampah ${qrCode}`,
+          },
+        });
+      } else {
+        // Warga Tambahan
+        const currentTambahan = bin.kepemilikanTambahanUserIds || [];
+        await tx.bin.update({
+          where: { id: bin.id },
+          data: {
+            kepemilikanTambahanUserIds: [...currentTambahan, user.id],
+          },
+        });
+      }
+
+      return user;
+    });
+  }
+
+  /**
+   * Register Mahasiswa KKN Transaction
+   */
+  async registerKknTx(userData: any, kknData: any) {
+    return prisma.$transaction(async (tx) => {
+      const role = await tx.role.findUnique({ where: { name: "MAHASISWA_KKN" } });
+      if (!role) throw new Error("ROLE_NOT_FOUND");
+
+      const user = await tx.user.create({
+        data: {
+          ...userData,
+          roleId: role.id,
+          status: "Pending", // KKN is pending whitelist by Admin DLH
+        },
+      });
+
+      const student = await tx.studentKkn.create({
+        data: {
+          ...kknData,
+          userId: user.id,
+        },
+      });
+
+      return { user, student };
+    });
+  }
+
+  /**
+   * Register Petugas Residu Transaction
+   */
+  async registerPetugasResiduTx(userData: any, petugasData: any) {
+    return prisma.$transaction(async (tx) => {
+      const role = await tx.role.findUnique({ where: { name: "PETUGAS_RESIDU" } });
+      if (!role) throw new Error("ROLE_NOT_FOUND");
+
+      const user = await tx.user.create({
+        data: {
+          ...userData,
+          roleId: role.id,
+        },
+      });
+
+      const petugas = await tx.petugasResidu.create({
+        data: {
+          ...petugasData,
+          userId: user.id,
+        },
+      });
+
+      return { user, petugas };
+    });
+  }
+
+  /**
+   * Get Mahasiswa KKN pending list
+   */
+  async getKknPendingList() {
+    return prisma.user.findMany({
+      where: {
+        role: { name: "MAHASISWA_KKN" },
+        status: "Pending",
+      },
+      include: {
+        studentProfile: true,
+      },
+    });
+  }
+
+  /**
+   * Whitelist Mahasiswa KKN status
+   */
+  async updateKknWhitelistStatus(userId: string, status: string) {
+    const userStatus = status === "APPROVED" ? "Aktif" : "Nonaktif";
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { status: userStatus },
+      });
+      await tx.studentKkn.update({
+        where: { userId },
+        data: { whitelistStatus: status },
+      });
+      return user;
+    });
+  }
+
+  /**
+   * Create staff/general user
+   */
+  async createUser(data: any): Promise<User> {
+    return prisma.user.create({
+      data,
+    });
+  }
 }
 
 export const authRepository = new AuthRepository();

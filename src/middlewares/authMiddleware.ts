@@ -17,7 +17,11 @@ declare global {
   }
 }
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     let token = "";
 
@@ -37,15 +41,48 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
     // DEV BYPASS
     if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
-      req.user = { userId: "mock-admin-id", role: "ADMIN" };
+      req.user = { userId: "mock-admin-id", role: "SUPER_ADMIN" };
       return next();
     }
 
     // Verify token
     const decoded = verifyAccessToken(token);
+
+    // Validate User Status in DB
+    const dbUser = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { status: true }
+    });
+
+    if (!dbUser || dbUser.status !== "Aktif") {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Akun Anda tidak aktif atau belum disetujui" });
+      return;
+    }
+
+    // Enforce Time-Bound Mahasiswa KKN read-only status
+    if (decoded.role === "MAHASISWA_KKN") {
+      const student = await prisma.studentKkn.findUnique({
+        where: { userId: decoded.userId },
+        select: { endDate: true }
+      });
+      if (student) {
+        const now = new Date();
+        if (now > student.endDate) {
+          // If expired and not a safe read operation, block
+          if (req.method !== "GET") {
+            res.status(403).json({
+              error: "FORBIDDEN",
+              message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only."
+            });
+            return;
+          }
+        }
+      }
+    }
+
     req.user = decoded; // Attach user payload to request
     next();
-  } catch (error) {
+  } catch {
     res
       .status(401)
       .json({ error: "UNAUTHORIZED", message: "Token tidak valid atau sudah kadaluarsa" });

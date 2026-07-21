@@ -22,7 +22,7 @@ export const userController = {
         status: status as string,
         rw: rw as string,
         rt: rt as string,
-      });
+      }, req.user!);
 
       res.status(200).json({ success: true, data: mapped });
     } catch (error) {

@@ -97,6 +97,7 @@ describe("BinService", () => {
         latitude: -6.123,
         longitude: 106.123,
         maxCapacityLiter: 30.0,
+        userId: null,
       });
       expect(result).toEqual(mockCreatedBin);
     });

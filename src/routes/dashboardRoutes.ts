@@ -34,7 +34,7 @@ const router = Router();
 router.get(
   "/kpi",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"]),
   dashboardController.getKpi
 );
 
@@ -53,7 +53,7 @@ router.get(
 router.get(
   "/transactions",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"]),
   dashboardController.getTransactions
 );
 
@@ -86,7 +86,7 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
 router.get(
   "/analytics",
   authMiddleware,
-  roleMiddleware(["ADMIN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
   dashboardController.getAnalytics
 );
 router.get("/regions", authMiddleware, dashboardController.getRegions);

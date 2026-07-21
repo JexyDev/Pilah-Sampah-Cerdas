@@ -160,6 +160,49 @@ class RedisService {
       this.processQueue(taskFn);
     }
   }
+
+  // Get config from cache
+  async getConfigCache(key: string): Promise<string | null> {
+    const redisKey = `config:${key}`;
+    if (this.isConnected) {
+      try {
+        return await this.client.get(redisKey);
+      } catch (err) {
+        console.error(`Redis error getting config cache for ${key}`, err);
+      }
+    }
+    return this.memoryQuota[redisKey] !== undefined ? String(this.memoryQuota[redisKey]) : null;
+  }
+
+  // Set config cache
+  async setConfigCache(key: string, value: string): Promise<void> {
+    const redisKey = `config:${key}`;
+    if (this.isConnected) {
+      try {
+        await this.client.set(redisKey, value, {
+          EX: 3600,
+        });
+        return;
+      } catch (err) {
+        console.error(`Redis error setting config cache for ${key}`, err);
+      }
+    }
+    this.memoryQuota[redisKey] = value as any;
+  }
+
+  // Invalidate config cache
+  async invalidateConfigCache(key: string): Promise<void> {
+    const redisKey = `config:${key}`;
+    if (this.isConnected) {
+      try {
+        await this.client.del(redisKey);
+        return;
+      } catch (err) {
+        console.error(`Redis error deleting config cache for ${key}`, err);
+      }
+    }
+    delete this.memoryQuota[redisKey];
+  }
 }
 
 export const redisService = new RedisService();

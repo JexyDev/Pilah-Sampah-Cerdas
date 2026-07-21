@@ -6,15 +6,13 @@
  */
 
 import { Router } from "express";
-import { categoryController } from "../controllers/categoryController.js";
+import { configController } from "../controllers/configController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-router.get("/", authMiddleware, categoryController.getAll);
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), categoryController.create);
-router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), categoryController.update);
-router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), categoryController.delete);
+router.get("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), configController.getAll);
+router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), configController.update);
 
 export default router;

@@ -19,7 +19,12 @@ export class BinService {
   /**
    * Get all bins
    */
-  async getAllBins() {
+  async getAllBins(currentUser?: { userId: string; role: string }) {
+    if (currentUser) {
+      const { getScopingFilters } = await import("../utils/rbacScoping.js");
+      const scoping = await getScopingFilters(currentUser);
+      return binRepository.findAll(scoping.binFilter);
+    }
     return binRepository.findAll();
   }
 
@@ -304,6 +309,28 @@ export class BinService {
     }
 
     return updated;
+  }
+
+  /**
+   * Create QR Batch
+   */
+  async createQrBatch(quantity: number) {
+    const batchNumber = `BATCH-${Date.now()}`;
+    return binRepository.createQrBatch(batchNumber, quantity);
+  }
+
+  /**
+   * Get all QR Batches
+   */
+  async getAllQrBatches() {
+    return binRepository.findAllQrBatches();
+  }
+
+  /**
+   * Assign QR Batch to PIC
+   */
+  async assignQrBatch(batchId: string, picUserId: string) {
+    return binRepository.assignQrBatch(batchId, picUserId);
   }
 }
 

@@ -62,20 +62,20 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
-        <Route path="monitoring" element={<ProtectedRoute allowedRoles={['ADMIN']}><Monitoring /></ProtectedRoute>} />
-        <Route path="master-data" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN']}><MasterData /></ProtectedRoute>} />
-        <Route path="warga-tong" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN']}><MasterData /></ProtectedRoute>} />
+        <Route path="monitoring" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH']}><Monitoring /></ProtectedRoute>} />
+        <Route path="master-data" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH']}><MasterData /></ProtectedRoute>} />
+        <Route path="warga-tong" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH']}><MasterData /></ProtectedRoute>} />
         <Route path="leaderboard" element={<Leaderboard />} />
-        <Route path="manajemen-pengguna" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManajemenPengguna /></ProtectedRoute>} />
-        <Route path="manajemen-tempat-sampah" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN', 'PETUGAS_RW', 'PETUGAS_RT']}><ManajemenTempatSampah /></ProtectedRoute>} />
-        <Route path="manajemen-lokasi" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN']}><ManajemenLokasi /></ProtectedRoute>} />
+        <Route path="manajemen-pengguna" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH']}><ManajemenPengguna /></ProtectedRoute>} />
+        <Route path="manajemen-tempat-sampah" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH', 'RW', 'PETUGAS_RESIDU']}><ManajemenTempatSampah /></ProtectedRoute>} />
+        <Route path="manajemen-lokasi" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH']}><ManajemenLokasi /></ProtectedRoute>} />
         <Route path="jadwal-kegiatan" element={<JadwalKegiatan />} />
-        <Route path="kategori-sampah" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN']}><KategoriSampah /></ProtectedRoute>} />
-        <Route path="rekap-setoran" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN', 'PETUGAS_RW', 'PETUGAS_RT']}><RekapSetoran /></ProtectedRoute>} />
+        <Route path="kategori-sampah" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH']}><KategoriSampah /></ProtectedRoute>} />
+        <Route path="rekap-setoran" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH', 'RW', 'PETUGAS_RESIDU']}><RekapSetoran /></ProtectedRoute>} />
         <Route path="poin-warga" element={<PoinWarga />} />
-        <Route path="laporan-analitik" element={<ProtectedRoute allowedRoles={['ADMIN']}><LaporanAnalitik /></ProtectedRoute>} />
+        <Route path="laporan-analitik" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH']}><LaporanAnalitik /></ProtectedRoute>} />
         <Route path="notifikasi" element={<Notifikasi />} />
-        <Route path="pengaturan" element={<ProtectedRoute allowedRoles={['ADMIN', 'PETUGAS_KELURAHAN', 'WARGA']}><Pengaturan /></ProtectedRoute>} />
+        <Route path="pengaturan" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN_DLH', 'LURAH', 'WARGA']}><Pengaturan /></ProtectedRoute>} />
         <Route path="peta" element={<PlaceholderPage title="Peta Wilayah" />} />
         <Route path="evaluasi-ai" element={<PlaceholderPage title="Evaluasi AI" />} />
         <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />

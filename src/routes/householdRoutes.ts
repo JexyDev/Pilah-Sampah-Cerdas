@@ -65,7 +65,7 @@ const router = Router();
 router.post(
   "/register",
   authMiddleware,
-  roleMiddleware(["WARGA", "ADMIN", "PETUGAS_RT", "PETUGAS_RW", "PETUGAS_KELURAHAN"]),
+  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]),
   householdController.register
 );
 
@@ -86,7 +86,7 @@ router.get("/me", authMiddleware, householdController.getMyHouseholds);
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   householdController.getAllHouseholds
 );
 
