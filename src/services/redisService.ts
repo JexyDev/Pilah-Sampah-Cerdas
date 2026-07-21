@@ -11,7 +11,12 @@ import { v4 as uuidv4 } from "uuid";
 class RedisService {
   private client: any;
   private isConnected = false;
-  private queue: Array<{ id: string; fn: () => Promise<any>; resolve: Function; reject: Function }> = [];
+  private queue: Array<{
+    id: string;
+    fn: () => Promise<any>;
+    resolve: Function;
+    reject: Function;
+  }> = [];
   private processing = 0;
   private MAX_CONCURRENT = 5; // Process up to 5 concurrent AI detections
 
@@ -35,7 +40,7 @@ class RedisService {
       await this.client.connect();
       console.log("Redis connected successfully.");
       this.isConnected = true;
-    } catch (e) {
+    } catch {
       console.warn("Could not connect to Redis. Running in-memory mode.");
       this.isConnected = false;
     }
