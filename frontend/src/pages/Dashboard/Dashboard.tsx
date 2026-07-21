@@ -991,16 +991,23 @@ const Dashboard: React.FC = () => {
   }
 
   // Scaling factors for Trend SVG
-  const maxWeightTrend = Math.max(...trendData.map(d => d.weight || 0), 10);
+  const maxWeightTrend = Math.max(...trendData.map(d => Math.max(d.organic || 0, d.inorganic || 0, d.weight || 0)), 10);
   const trendPoints = trendData.map((d, i) => {
-    const x = trendData.length > 1 ? (i / (trendData.length - 1)) * 700 : 350;
-    const y = 170 - ((d.weight || 0) / maxWeightTrend) * 140;
-    return { x, y, label: d.label, weight: d.weight };
+    // Leave 60px padding on the left for Y-axis labels
+    const x = trendData.length > 1 ? 60 + (i / (trendData.length - 1)) * 620 : 350;
+    const yOrganic = 170 - ((d.organic || 0) / maxWeightTrend) * 140;
+    const yInorganic = 170 - ((d.inorganic || 0) / maxWeightTrend) * 140;
+    return { x, yOrganic, yInorganic, label: d.label, organic: d.organic, inorganic: d.inorganic };
   });
 
-  const trendLinePath = trendPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-  const trendAreaPath = trendPoints.length > 0
-    ? `${trendLinePath} L${trendPoints[trendPoints.length - 1].x},200 L${trendPoints[0].x},200 Z`
+  const trendOrganicPath = trendPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.yOrganic}`).join(' ');
+  const trendInorganicPath = trendPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.yInorganic}`).join(' ');
+
+  const trendOrganicAreaPath = trendPoints.length > 0
+    ? `${trendOrganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
+    : '';
+  const trendInorganicAreaPath = trendPoints.length > 0
+    ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
     : '';
 
   // Get active bin for QR Code card
@@ -1032,7 +1039,13 @@ const Dashboard: React.FC = () => {
         {/* Line Chart — Trend Setoran */}
         <div className="w-1/2 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 relative overflow-hidden">
           <div className="flex justify-between items-center mb-4">
-            <h4 className="font-bold text-[18px] text-on-surface">Trend Setoran Sampah per Minggu <span className="text-[12px] text-on-surface-variant font-normal">(kg)</span></h4>
+            <div className="space-y-1">
+              <h4 className="font-bold text-[18px] text-on-surface">Trend Setoran Sampah per Minggu</h4>
+              <div className="flex gap-3 text-[11px] font-bold">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span> Organik</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Anorganik</span>
+              </div>
+            </div>
             <select
               value={weeks}
               onChange={(e) => setWeeks(parseInt(e.target.value))}
@@ -1047,32 +1060,57 @@ const Dashboard: React.FC = () => {
           <div className="h-[220px] w-full relative">
             {trendPoints.length > 0 ? (
               <>
-                <svg className="w-full h-full" viewBox="0 0 700 200" preserveAspectRatio="none">
+                <svg className="w-full h-full" viewBox="0 0 700 200">
                   <defs>
-                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#006d37" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="#006d37" stopOpacity="0" />
+                    <linearGradient id="orgGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                    </linearGradient>
+                    <linearGradient id="inorgGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  {/* Grid Lines */}
-                  {[0, 50, 100, 150, 200].map(y => (
-                    <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="#f0f2f5" strokeWidth="1" />
-                  ))}
-                  {/* Area Fill */}
-                  <path d={trendAreaPath} fill="url(#lineGrad)" />
-                  {/* Line */}
-                  <path d={trendLinePath} fill="none" stroke="#006d37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* Dots */}
+                  
+                  {/* Y-Axis Grid Lines */}
+                  {[0, 25, 50, 75, 100].map((pct) => {
+                    const y = 170 - (pct / 100) * 140;
+                    return (
+                      <g key={pct}>
+                        <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" />
+                        <text x="50" y={y + 3} textAnchor="end" fill="#64748b" fontSize="8" fontWeight="bold">
+                          {Math.round((maxWeightTrend * pct) / 100)} kg
+                        </text>
+                      </g>
+                    );
+                  })}
+                  
+                  {/* Y-Axis Line */}
+                  <line x1="60" y1="30" x2="60" y2="170" stroke="#cbd5e1" strokeWidth="1" />
+
+                  {/* Area Fills */}
+                  <path d={trendOrganicAreaPath} fill="url(#orgGrad)" />
+                  <path d={trendInorganicAreaPath} fill="url(#inorgGrad)" />
+
+                  {/* Lines */}
+                  <path d={trendOrganicPath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d={trendInorganicPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                  {/* Dots & Values */}
                   {trendPoints.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="5" fill="#006d37" stroke="white" strokeWidth="2" />
+                    <g key={i}>
+                      {/* Organic Point */}
+                      <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="white" strokeWidth="1.5" />
+                      {/* Inorganic Point */}
+                      <circle cx={p.x} cy={p.yInorganic} r="4" fill="#3b82f6" stroke="white" strokeWidth="1.5" />
+                      
+                      {/* X-Axis labels centered at p.x */}
+                      <text x={p.x} y="190" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold">
+                        {p.label}
+                      </text>
+                    </g>
                   ))}
                 </svg>
-                {/* X-axis labels */}
-                <div className="absolute bottom-[-4px] left-0 right-0 flex justify-between px-1">
-                  {trendPoints.map((p, i) => (
-                    <span key={i} className="text-[10px] text-on-surface-variant font-bold">{p.label}</span>
-                  ))}
-                </div>
               </>
             ) : (
               <div className="flex items-center justify-center h-full text-xs text-on-surface-variant">
