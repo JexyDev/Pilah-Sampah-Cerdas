@@ -29,6 +29,50 @@ const KknDashboard: React.FC = () => {
   const [filterRtRw, setFilterRtRw] = useState("");
   const [filterSearch, setFilterSearch] = useState("");
 
+  // Map Layer & Tooltip States
+  const [showRoads, setShowRoads] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [hoveredZone, setHoveredZone] = useState<string | null>(null);
+
+  // Dynamically calculate compliance for each RT/RW
+  const getZoneCompliance = (areaName: string) => {
+    const matches = wargaList.filter(
+      (w) => w.rtRw.toLowerCase().includes(areaName.toLowerCase())
+    );
+    if (matches.length === 0) {
+      if (areaName.includes("06")) return 87;
+      if (areaName.includes("02")) return 73;
+      if (areaName.includes("01")) return 49;
+      return 75;
+    }
+    const sum = matches.reduce((acc, curr) => acc + curr.complianceScore, 0);
+    return Math.round(sum / matches.length);
+  };
+
+  const getZoneColor = (score: number) => {
+    if (score >= 80) return { fill: "#e2f5e9", stroke: "#10b981", text: "#047857" };
+    if (score >= 60) return { fill: "#fef9c3", stroke: "#eab308", text: "#a16207" };
+    return { fill: "#fee2e2", stroke: "#ef4444", text: "#b91c1c" };
+  };
+
+  const handleZoneClick = (areaName: string) => {
+    const area = rtRwAreas.find((a) => (a.rw || a.name).toLowerCase().includes(areaName.toLowerCase()));
+    if (area) {
+      const newId = area.id.toString();
+      setFilterRtRw(newId);
+      api.get("/kkn/warga", {
+        params: {
+          rtRwId: area.id,
+          search: filterSearch || undefined,
+        },
+      }).then((res) => {
+        setWargaList(res.data?.data || []);
+      });
+    } else {
+      toast.error(`Wilayah ${areaName} tidak ditemukan di database`);
+    }
+  };
+
   // Registration Form State
   const [regForm, setRegForm] = useState({
     name: "",
@@ -387,31 +431,189 @@ const KknDashboard: React.FC = () => {
               <MapPin className="text-primary w-4.5 h-4.5" />
               Peta Sebaran Dampingan
             </h4>
-            <div className="w-full aspect-video bg-emerald-50 rounded-xl relative overflow-hidden border border-slate-100 flex items-center justify-center shadow-inner">
-              {/* Simulated Map Markers */}
-              <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#ccc_1px,transparent_1px)] [background-size:16px_16px]"></div>
-              
-              {/* Markers dynamically mapped from coordinates */}
-              {wargaList.map((w, idx) => (
-                <div 
-                  key={w.wargaId}
-                  className="absolute cursor-pointer group"
-                  style={{
-                    top: `${40 + (idx * 15) % 50}%`,
-                    left: `${20 + (idx * 25) % 70}%`,
-                  }}
-                  onClick={() => handleWargaClick(w.wargaId)}
-                >
-                  <MapPin className={`w-6 h-6 -translate-x-1/2 -translate-y-full drop-shadow-md transition-transform group-hover:scale-125 ${w.complianceScore >= 80 ? 'text-green-600' : 'text-red-500'}`} />
-                  <div className="hidden group-hover:block absolute bg-slate-900 text-white text-[9px] p-1.5 rounded shadow-lg z-20 whitespace-nowrap -translate-x-1/2 mt-1 font-bold">
-                    {w.name} ({w.binCode})
-                  </div>
-                </div>
-              ))}
-              
-              <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs p-1.5 rounded-lg border border-slate-200/60 text-[9px] flex gap-2 font-semibold">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-600 inline-block"></span> Patuh</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Perlu Edukasi</span>
+            <div className="w-full relative bg-slate-100 rounded-xl overflow-hidden border border-slate-200/80 shadow-inner p-1">
+              {/* Layer / Filter Control in Top-Right */}
+              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs p-2 rounded-lg border border-slate-200 shadow-xs z-10 flex flex-col gap-1.5 text-[9px] font-bold text-slate-700">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showRoads}
+                    onChange={(e) => setShowRoads(e.target.checked)}
+                    className="rounded text-primary focus:ring-primary w-3 h-3"
+                  />
+                  Tampilkan Jalan
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showLabels}
+                    onChange={(e) => setShowLabels(e.target.checked)}
+                    className="rounded text-primary focus:ring-primary w-3 h-3"
+                  />
+                  Tampilkan Label
+                </label>
+              </div>
+
+              {/* Vector SVG Map Layer */}
+              <svg viewBox="0 0 400 300" className="w-full h-auto bg-slate-50 rounded-lg">
+                {/* Gridlines for texture */}
+                <defs>
+                  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f1f5f9" strokeWidth="1" />
+                  </pattern>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
+
+                {/* Polygons (Zones) */}
+                {(() => {
+                  const scoreA = getZoneCompliance("RW 06");
+                  const scoreB = getZoneCompliance("RW 02");
+                  const scoreC = getZoneCompliance("RW 01");
+                  const scoreD = getZoneCompliance("RW 03");
+
+                  const colorA = getZoneColor(scoreA);
+                  const colorB = getZoneColor(scoreB);
+                  const colorC = getZoneColor(scoreC);
+                  const colorD = getZoneColor(scoreD);
+
+                  return (
+                    <>
+                      {/* Zone A (RW 06 Dago) */}
+                      <polygon
+                        points="15,15 155,15 125,145 15,145"
+                        fill={colorA.fill}
+                        stroke={hoveredZone === "RW 06" ? "#047857" : colorA.stroke}
+                        strokeWidth={hoveredZone === "RW 06" ? "3" : "1.5"}
+                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
+                        onMouseEnter={() => setHoveredZone("RW 06")}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleZoneClick("RW 06")}
+                      />
+
+                      {/* Zone B (RW 02 Cigadung) */}
+                      <polygon
+                        points="155,15 285,15 255,145 125,145"
+                        fill={colorB.fill}
+                        stroke={hoveredZone === "RW 02" ? "#a16207" : colorB.stroke}
+                        strokeWidth={hoveredZone === "RW 02" ? "3" : "1.5"}
+                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
+                        onMouseEnter={() => setHoveredZone("RW 02")}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleZoneClick("RW 02")}
+                      />
+
+                      {/* Zone C (RW 01 Coblong) */}
+                      <polygon
+                        points="125,145 255,145 225,285 95,285"
+                        fill={colorC.fill}
+                        stroke={hoveredZone === "RW 01" ? "#b91c1c" : colorC.stroke}
+                        strokeWidth={hoveredZone === "RW 01" ? "3" : "1.5"}
+                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
+                        onMouseEnter={() => setHoveredZone("RW 01")}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleZoneClick("RW 01")}
+                      />
+
+                      {/* Zone D (RW 03 Dago) */}
+                      <polygon
+                        points="15,145 125,145 95,285 15,285"
+                        fill={colorD.fill}
+                        stroke={hoveredZone === "RW 03" ? "#047857" : colorD.stroke}
+                        strokeWidth={hoveredZone === "RW 03" ? "3" : "1.5"}
+                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
+                        onMouseEnter={() => setHoveredZone("RW 03")}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleZoneClick("RW 03")}
+                      />
+
+                      {/* Roads Overlay (If enabled) */}
+                      {showRoads && (
+                        <>
+                          <path
+                            d="M 10,95 Q 200,85 390,100"
+                            stroke="#cbd5e1"
+                            strokeWidth="14"
+                            fill="none"
+                            strokeLinecap="round"
+                            opacity="0.8"
+                          />
+                          <path
+                            d="M 185,10 Q 175,150 155,290"
+                            stroke="#cbd5e1"
+                            strokeWidth="14"
+                            fill="none"
+                            strokeLinecap="round"
+                            opacity="0.8"
+                          />
+                          
+                          {/* Inner dashed line to look like a real road */}
+                          <path
+                            d="M 10,95 Q 200,85 390,100"
+                            stroke="#ffffff"
+                            strokeWidth="1.5"
+                            strokeDasharray="4,4"
+                            fill="none"
+                            opacity="0.9"
+                          />
+                          <path
+                            d="M 185,10 Q 175,150 155,290"
+                            stroke="#ffffff"
+                            strokeWidth="1.5"
+                            strokeDasharray="4,4"
+                            fill="none"
+                            opacity="0.9"
+                          />
+
+                          {/* Road Names */}
+                          <text x="50" y="107" fill="#64748b" fontSize="7" fontWeight="bold" transform="rotate(2, 50, 107)">Jl. Dago Giri</text>
+                          <text x="142" y="200" fill="#64748b" fontSize="7" fontWeight="bold" transform="rotate(-77, 142, 200)">Jl. Coblong Raya</text>
+                        </>
+                      )}
+
+                      {/* Labels (If enabled) */}
+                      {showLabels && (
+                        <>
+                          {/* Area A */}
+                          <g transform="translate(80, 70)" className="pointer-events-none">
+                            <text textAnchor="middle" fill={colorA.text} fontSize="9" fontWeight="bold">RW 06 Dago</text>
+                            <text textAnchor="middle" y="11" fill={colorA.text} fontSize="8" fontWeight="bold">{scoreA}%</text>
+                          </g>
+
+                          {/* Area B */}
+                          <g transform="translate(200, 70)" className="pointer-events-none">
+                            <text textAnchor="middle" fill={colorB.text} fontSize="9" fontWeight="bold">RW 02 Cigadung</text>
+                            <text textAnchor="middle" y="11" fill={colorB.text} fontSize="8" fontWeight="bold">{scoreB}%</text>
+                          </g>
+
+                          {/* Area C */}
+                          <g transform="translate(170, 205)" className="pointer-events-none">
+                            <text textAnchor="middle" fill={colorC.text} fontSize="9" fontWeight="bold">RW 01 Coblong</text>
+                            <text textAnchor="middle" y="11" fill={colorC.text} fontSize="8" fontWeight="bold">{scoreC}%</text>
+                          </g>
+
+                          {/* Area D */}
+                          <g transform="translate(60, 205)" className="pointer-events-none">
+                            <text textAnchor="middle" fill={colorD.text} fontSize="9" fontWeight="bold">RW 03 Dago</text>
+                            <text textAnchor="middle" y="11" fill={colorD.text} fontSize="8" fontWeight="bold">{scoreD}%</text>
+                          </g>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+              </svg>
+
+              {/* Legend Box in Bottom-Right */}
+              <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-xs p-2 rounded-lg border border-slate-200/80 text-[8px] flex flex-col gap-1 shadow-xs font-bold text-slate-600">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block border border-emerald-600/30"></span> Tinggi (&ge; 80%)
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block border border-yellow-500/30"></span> Sedang (60-79%)
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block border border-rose-600/30"></span> Rendah (&lt; 60%)
+                </span>
               </div>
             </div>
           </div>
