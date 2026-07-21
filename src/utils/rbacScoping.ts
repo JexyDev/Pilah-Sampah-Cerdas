@@ -101,7 +101,7 @@ export async function getScopingFilters(user: { userId: string; role: string }):
   if (role === "WARGA") {
     return {
       userFilter: { id: user.userId },
-      binFilter: { OR: [ { userId: user.userId }, { kepemilikanUtamaUserId: user.userId }, { kepemilikanTambahanUserIds: { has: user.userId } } ] },
+      binFilter: { binOwnerships: { some: { userId: user.userId } } },
       householdFilter: { userId: user.userId },
       wasteLogFilter: { household: { userId: user.userId } }
     };

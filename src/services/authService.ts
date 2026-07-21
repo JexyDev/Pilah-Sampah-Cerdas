@@ -169,9 +169,21 @@ export class AuthService {
   /**
    * Register Warga
    */
-  async registerWarga(userData: any, householdData: any, qrCode: string, wargaSubtype: string) {
+  async registerWarga(userData: any, householdData: any, qrCode: string, wargaSubtype: string, scannerUser?: any) {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
+
+    // If scanner is Mahasiswa KKN, validate PIC matching
+    if (scannerUser && scannerUser.role === "MAHASISWA_KKN") {
+      const { binRepository } = await import("../repositories/binRepository.js");
+      const bin = await binRepository.findByQrCode(qrCode);
+      if (!bin) throw new Error("BIN_NOT_FOUND");
+      
+      const batch = bin.qrBatchId ? await binRepository.findQrBatchById(bin.qrBatchId) : null;
+      if (batch && batch.assignedPicUserId !== scannerUser.userId) {
+        throw new Error("PIC_MISMATCH");
+      }
+    }
 
     // Check duplicate email
     const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
@@ -277,8 +289,8 @@ export class AuthService {
   /**
    * Whitelist Mahasiswa KKN status
    */
-  async updateKknWhitelistStatus(userId: string, status: string) {
-    return authRepository.updateKknWhitelistStatus(userId, status);
+  async updateKknWhitelistStatus(userId: string, status: string, adminUserId: string) {
+    return authRepository.updateKknWhitelistStatus(userId, status, adminUserId);
   }
 }
 

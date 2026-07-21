@@ -465,7 +465,22 @@ export class AuthController {
         longitude,
       };
 
-      const user = await authService.registerWarga(userData, householdData, qrCode, wargaSubtype);
+      let token = "";
+      if (req.cookies && req.cookies.accessToken) {
+        token = req.cookies.accessToken;
+      } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+      }
+
+      let scannerUser: any = null;
+      if (token) {
+        try {
+          const { verifyAccessToken } = await import("../utils/jwtUtils.js");
+          scannerUser = verifyAccessToken(token);
+        } catch {}
+      }
+
+      const user = await authService.registerWarga(userData, householdData, qrCode, wargaSubtype, scannerUser);
       res.status(201).json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
     } catch (error: any) {
       res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
@@ -547,7 +562,8 @@ export class AuthController {
         res.status(400).json({ success: false, code: "BAD_REQUEST", message: "status harus APPROVED atau REJECTED" });
         return;
       }
-      const user = await authService.updateKknWhitelistStatus(id, status);
+      const adminUserId = req.user!.userId;
+      const user = await authService.updateKknWhitelistStatus(id, status, adminUserId);
       res.status(200).json({ success: true, message: `Status whitelist mahasiswa KKN berhasil diperbarui ke ${status}`, data: { id: user.id, status: user.status } });
     } catch (error: any) {
       res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });

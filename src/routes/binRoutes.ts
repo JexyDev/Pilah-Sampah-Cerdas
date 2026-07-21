@@ -64,6 +64,8 @@ router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
  */
 router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.deleteBin);
 
+router.put("/:qrCode/broken", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]), binController.markBinAsBroken);
+
 /**
  * @swagger
  * /api/v1/bins/locations:

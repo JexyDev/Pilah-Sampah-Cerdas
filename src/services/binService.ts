@@ -54,8 +54,11 @@ export class BinService {
     }
 
     // 2. Validate ownership (if bin is private to a user)
-    if (bin.userId !== null && bin.userId !== userId) {
-      throw new Error("BIN_NOT_OWNED");
+    if (bin.binOwnerships && bin.binOwnerships.length > 0) {
+      const isOwner = bin.binOwnerships.some((o: any) => o.userId === userId);
+      if (!isOwner) {
+        throw new Error("BIN_NOT_OWNED");
+      }
     }
 
     // 2. Validate Geofencing (< 10m) if coordinates are provided
@@ -232,6 +235,9 @@ export class BinService {
       const currentVol = Number(bin.currentVolumeLiter);
       const maxVol = Number(bin.maxCapacityLiter);
       const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
+      const utamaOwner = bin.binOwnerships?.find((o: any) => o.type === "UTAMA")?.user;
+      const householdName = utamaOwner ? utamaOwner.name : "Tempat Sampah Umum";
+
       return {
         id: bin.id,
         qrCode: bin.qrCode,
@@ -241,7 +247,7 @@ export class BinService {
         kapasitas,
         rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
         status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
-        householdName: bin.user?.name || "Tempat Sampah Umum",
+        householdName,
       };
     });
   }
@@ -329,8 +335,15 @@ export class BinService {
   /**
    * Assign QR Batch to PIC
    */
-  async assignQrBatch(batchId: string, picUserId: string) {
-    return binRepository.assignQrBatch(batchId, picUserId);
+  async assignQrBatch(batchId: string, picUserId: string, adminUserId: string) {
+    return binRepository.assignQrBatch(batchId, picUserId, adminUserId);
+  }
+
+  /**
+   * Mark Bin as Broken
+   */
+  async markBinAsBroken(qrCode: string, adminUserId: string) {
+    return binRepository.markBinAsBroken(qrCode, adminUserId);
   }
 }
 

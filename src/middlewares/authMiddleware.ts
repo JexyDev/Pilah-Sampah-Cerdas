@@ -80,6 +80,18 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       }
     }
 
+    // Enforce CAMAT and LURAH read-only restriction
+    if (decoded.role === "CAMAT" || decoded.role === "LURAH") {
+      const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
+      if (writeMethods.includes(req.method)) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`
+        });
+        return;
+      }
+    }
+
     req.user = decoded; // Attach user payload to request
     next();
   } catch {

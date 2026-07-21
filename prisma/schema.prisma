@@ -46,7 +46,7 @@ model User {
   requestedResets BinResetRequest[] @relation("RequestedResets")
   reviewedResets  BinResetRequest[] @relation("ReviewedResets")
   bins            Bin[]             @relation("UserBins")
-  binsUtama       Bin[]             @relation("KepemilikanUtama")
+  binOwnerships   BinOwnership[]
   picBatches      QrBatch[]         @relation("PicBatches")
   studentProfile  StudentKkn?
   petugasProfile  PetugasResidu?
@@ -161,9 +161,7 @@ model Bin {
   latitude                    Decimal?          @db.Decimal(11, 8)
   longitude                   Decimal?          @db.Decimal(11, 8)
   status                      BinStatus         @default(PRINTED)
-  kepemilikanUtamaUserId      String?           @map("kepemilikan_utama_user_id")
-  kepemilikanUtama            User?             @relation("KepemilikanUtama", fields: [kepemilikanUtamaUserId], references: [id], onDelete: SetNull)
-  kepemilikanTambahanUserIds  String[]          @default([]) @map("kepemilikan_tambahan_user_ids")
+  binOwnerships               BinOwnership[]
   qrBatchId                   String?           @map("qr_batch_id")
   qrBatch                     QrBatch?          @relation(fields: [qrBatchId], references: [id], onDelete: SetNull)
   createdAt                   DateTime          @default(now()) @map("created_at")
@@ -403,4 +401,23 @@ model Schedule {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("schedules")
+}
+
+enum OwnershipType {
+  UTAMA
+  TAMBAHAN
+}
+
+model BinOwnership {
+  id        String        @id @default(uuid())
+  binId     String        @map("bin_id")
+  userId    String        @map("user_id")
+  type      OwnershipType @map("tipe_kepemilikan")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  bin       Bin           @relation(fields: [binId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([binId, userId])
+  @@map("bin_ownerships")
 }

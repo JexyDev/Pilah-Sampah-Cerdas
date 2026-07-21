@@ -58,6 +58,16 @@
 - [x] BE - Implementasikan invalidasi cache Redis otomatis ketika ada konfigurasi yang diupdate (Selesai)
 - [ ] FE - Buat halaman panel admin Rule Engine (Super Admin & Admin DLH) untuk CRUD parameter bisnis secara dinamis
 
+### Batch 1 Gaps (Refinement)
+- [x] BE - Refactor `kepemilikanTambahanUserIds` dan `kepemilikanUtamaUserId` ke tabel junction `bin_ownerships` (Selesai)
+- [x] BE - Terapkan middleware `readOnlyGuard` untuk `CAMAT` & `LURAH` (Selesai)
+- [x] Database - Seed 13 parameter default `system_configs` di migration SQL (Selesai)
+- [x] Dokumentasi - Tambahkan backup runbook `pg_dump` ke `docs/deployment_runbook.md` (Selesai)
+- [x] BE - Hubungkan logging `AuditTrail` untuk approve KKN, status BROKEN, dan batch assignment (Selesai)
+- BE - Konfirmasi/Validasi PIC: bypass PIC check untuk registrasi mandiri Warga, validasi hanya untuk Mahasiswa KKN (Selesai)
+- [x] BE - Cegah race condition aktivasi QR dengan transaction lock `FOR UPDATE` (Selesai)
+- [x] Testing - Tambahkan test case vitest untuk Camat/Lurah block, KKN expired block, dan PIC mismatch (Selesai)
+
 ---
 
 ## BATCH 2: Operasional Inti

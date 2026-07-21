@@ -407,8 +407,23 @@ export class BinController {
         res.status(400).json({ success: false, code: "BAD_REQUEST", message: "picUserId wajib diisi" });
         return;
       }
-      const batch = await binService.assignQrBatch(id, picUserId);
+      const adminUserId = req.user!.userId;
+      const batch = await binService.assignQrBatch(id, picUserId, adminUserId);
       res.status(200).json({ success: true, data: batch });
+    } catch (error: any) {
+      res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Mark Bin as Broken
+   */
+  async markBinAsBroken(req: Request, res: Response): Promise<void> {
+    try {
+      const { qrCode } = req.params;
+      const adminUserId = req.user!.userId;
+      const bin = await binService.markBinAsBroken(qrCode, adminUserId);
+      res.status(200).json({ success: true, message: "Status tempat sampah berhasil diubah menjadi BROKEN", data: bin });
     } catch (error: any) {
       res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }

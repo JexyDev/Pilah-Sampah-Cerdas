@@ -15,12 +15,12 @@ export class BinRepository {
    */
   async findByQrCode(
     qrCode: string
-  ): Promise<(Bin & { category: { name: string; pointsPerKg: number }; user: any }) | null> {
+  ): Promise<any> {
     return prisma.bin.findUnique({
       where: { qrCode },
       include: {
         category: true,
-        user: true,
+        binOwnerships: true,
       },
     });
   }
@@ -254,8 +254,20 @@ export class BinRepository {
 
   async findBinsByUserId(userId: string) {
     return prisma.bin.findMany({
-      where: { userId },
-      include: { category: true, rtRw: true, user: true },
+      where: {
+        binOwnerships: {
+          some: { userId },
+        },
+      },
+      include: {
+        category: true,
+        rtRw: true,
+        binOwnerships: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
   }
 
@@ -269,6 +281,31 @@ export class BinRepository {
     return prisma.bin.update({
       where: { qrCode: id },
       data,
+    });
+  }
+
+  async markBinAsBroken(qrCode: string, adminUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const oldBin = await tx.bin.findUnique({
+        where: { qrCode },
+      });
+      if (!oldBin) throw new Error("BIN_NOT_FOUND");
+
+      const updatedBin = await tx.bin.update({
+        where: { qrCode },
+        data: { status: "BROKEN" },
+      });
+
+      await tx.auditTrail.create({
+        data: {
+          action: "MARK_BIN_BROKEN",
+          userId: adminUserId,
+          oldValue: JSON.parse(JSON.stringify(oldBin)),
+          newValue: JSON.parse(JSON.stringify(updatedBin)),
+        },
+      });
+
+      return updatedBin;
     });
   }
 
@@ -416,8 +453,12 @@ export class BinRepository {
   /**
    * Assign QR Batch to PIC
    */
-  async assignQrBatch(batchId: string, assignedPicUserId: string) {
+  async assignQrBatch(batchId: string, assignedPicUserId: string, adminUserId: string) {
     return prisma.$transaction(async (tx) => {
+      const oldBatch = await tx.qrBatch.findUnique({
+        where: { id: batchId },
+      });
+
       const batch = await tx.qrBatch.update({
         where: { id: batchId },
         data: {
@@ -430,6 +471,15 @@ export class BinRepository {
         where: { qrBatchId: batchId },
         data: {
           status: BinStatus.ASSIGNED_TO_PIC,
+        },
+      });
+
+      await tx.auditTrail.create({
+        data: {
+          action: "ASSIGN_QR_BATCH",
+          userId: adminUserId,
+          oldValue: oldBatch ? JSON.parse(JSON.stringify(oldBatch)) : null,
+          newValue: JSON.parse(JSON.stringify(batch)),
         },
       });
 

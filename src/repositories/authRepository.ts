@@ -156,16 +156,23 @@ export class AuthRepository {
    */
   async registerWargaTx(userData: any, householdData: any, qrCode: string, wargaSubtype: string) {
     return prisma.$transaction(async (tx) => {
-      // 1. Find Bin
-      const bin = await tx.bin.findUnique({
-        where: { qrCode },
-      });
-      if (!bin) throw new Error("BIN_NOT_FOUND");
+      // 1. Find Bin with row-level lock (FOR UPDATE)
+      const bins = await tx.$queryRaw<any[]>`
+        SELECT * FROM bins WHERE qr_code = ${qrCode} FOR UPDATE
+      `;
+      if (!bins || bins.length === 0) throw new Error("BIN_NOT_FOUND");
+      const bin = bins[0];
 
-      // 2. Validate Bin status
+      // 2. Validate Bin status & ownership
+      const existingUtama = await tx.binOwnership.findFirst({
+        where: {
+          binId: bin.id,
+          type: "UTAMA",
+        },
+      });
+
       if (wargaSubtype === "UTAMA") {
-        if (bin.kepemilikanUtamaUserId) throw new Error("BIN_ALREADY_HAS_PRIMARY_OWNER");
-        // Bin must be PRINTED or ASSIGNED_TO_PIC to be activated
+        if (existingUtama) throw new Error("BIN_ALREADY_HAS_PRIMARY_OWNER");
         if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
           throw new Error("BIN_NOT_AVAILABLE_FOR_ACTIVATION");
         }
@@ -196,12 +203,19 @@ export class AuthRepository {
         },
       });
 
-      // 5. Update Bin ownership & status
+      // 5. Create Bin ownership & Update Bin status
+      await tx.binOwnership.create({
+        data: {
+          binId: bin.id,
+          userId: user.id,
+          type: wargaSubtype === "UTAMA" ? "UTAMA" : "TAMBAHAN",
+        },
+      });
+
       if (wargaSubtype === "UTAMA") {
         await tx.bin.update({
           where: { id: bin.id },
           data: {
-            kepemilikanUtamaUserId: user.id,
             status: "ACTIVE_BOUND",
           },
         });
@@ -212,15 +226,6 @@ export class AuthRepository {
             userId: user.id,
             points: 10,
             description: `Bonus aktivasi tempat sampah ${qrCode}`,
-          },
-        });
-      } else {
-        // Warga Tambahan
-        const currentTambahan = bin.kepemilikanTambahanUserIds || [];
-        await tx.bin.update({
-          where: { id: bin.id },
-          data: {
-            kepemilikanTambahanUserIds: [...currentTambahan, user.id],
           },
         });
       }
@@ -300,9 +305,10 @@ export class AuthRepository {
   /**
    * Whitelist Mahasiswa KKN status
    */
-  async updateKknWhitelistStatus(userId: string, status: string) {
+  async updateKknWhitelistStatus(userId: string, status: string, adminUserId: string) {
     const userStatus = status === "APPROVED" ? "Aktif" : "Nonaktif";
     return prisma.$transaction(async (tx) => {
+      const oldUser = await tx.user.findUnique({ where: { id: userId } });
       const user = await tx.user.update({
         where: { id: userId },
         data: { status: userStatus },
@@ -310,6 +316,14 @@ export class AuthRepository {
       await tx.studentKkn.update({
         where: { userId },
         data: { whitelistStatus: status },
+      });
+      await tx.auditTrail.create({
+        data: {
+          action: `APPROVE_KKN_${status}`,
+          userId: adminUserId,
+          oldValue: oldUser ? JSON.parse(JSON.stringify(oldUser)) : null,
+          newValue: JSON.parse(JSON.stringify(user)),
+        },
       });
       return user;
     });
