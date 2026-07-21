@@ -76,11 +76,11 @@ const Sidebar: React.FC = () => {
         )}
         
         {hasAccess(['MAHASISWA_KKN']) && (
-          <NavItem to="/kkn-portal" icon="compass" label="Portal Pendampingan" />
+          <NavItem to="/kkn-portal" icon="explore" label="Portal Pendampingan" />
         )}
         
         {hasAccess(['PETUGAS_RESIDU']) && (
-          <NavItem to="/residu-portal" icon="security" label="Portal Pengawasan" />
+          <NavItem to="/residu-portal" icon="shield" label="Portal Pengawasan" />
         )}
         
         {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH']) && (
