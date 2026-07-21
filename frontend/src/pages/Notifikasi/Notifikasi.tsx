@@ -89,7 +89,7 @@ const NotificationModal = ({
     }
   };
 
-  const isAdminOrPetugas = ["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT"].includes(
+  const isAdminOrPetugas = ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(
     role.toUpperCase()
   );
 

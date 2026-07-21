@@ -75,37 +75,37 @@ const Sidebar: React.FC = () => {
           <NavItem to="/setor" icon="qr_code_scanner" label="Setor Sampah" />
         )}
         
-        {hasAccess(['ADMIN']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH']) && (
           <NavItem to="/manajemen-pengguna" icon="group" label="Manajemen Pengguna" />
         )}
         
-        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN', 'PETUGAS_RW', 'PETUGAS_RT']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH', 'RW', 'PETUGAS_RESIDU', 'MAHASISWA_KKN']) && (
           <NavItem to="/manajemen-tempat-sampah" icon="delete" label="Manajemen Tempat Sampah" />
         )}
         
-        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH', 'RW']) && (
           <NavItem to="/manajemen-lokasi" icon="location_on" label="Manajemen Lokasi" />
         )}
         
         <NavItem to="/jadwal-kegiatan" icon="calendar_today" label="Jadwal Kegiatan" />
         
-        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH']) && (
           <NavItem to="/kategori-sampah" icon="category" label="Kategori Sampah" />
         )}
         
-        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN', 'PETUGAS_RW', 'PETUGAS_RT']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH', 'RW', 'PETUGAS_RESIDU', 'MAHASISWA_KKN']) && (
           <NavItem to="/rekap-setoran" icon="receipt_long" label="Rekap Setoran" />
         )}
         
         <NavItem to="/poin-warga" icon="stars" label="Poin Warga" />
         
-        {hasAccess(['ADMIN']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH', 'RW']) && (
           <NavItem to="/laporan-analitik" icon="analytics" label="Laporan & Analitik" />
         )}
         
         <NavItem to="/notifikasi" icon="notifications" label="Notifikasi" badge={8} />
         
-        {hasAccess(['ADMIN', 'PETUGAS_KELURAHAN', 'WARGA']) && (
+        {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH', 'RW', 'PETUGAS_RESIDU', 'MAHASISWA_KKN', 'WARGA']) && (
           <NavItem to="/pengaturan" icon="settings" label="Pengaturan" />
         )}
       </nav>

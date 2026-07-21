@@ -238,11 +238,14 @@ const ManajemenPengguna: React.FC = () => {
               className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 h-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
             >
               <option value="Semua">Semua</option>
-              <option value="ADMIN">Admin</option>
-              <option value="PETUGAS_KELURAHAN">Petugas Kelurahan</option>
-              <option value="PETUGAS_RW">Petugas RW</option>
-              <option value="PETUGAS_RT">Petugas RT</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
+              <option value="ADMIN_DLH">Admin DLH</option>
+              <option value="CAMAT">Camat</option>
+              <option value="LURAH">Lurah</option>
+              <option value="RW">RW</option>
+              <option value="PETUGAS_RESIDU">Petugas Residu</option>
               <option value="WARGA">Warga</option>
+              <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
             </select>
           </div>
           <div className="w-32">
@@ -328,13 +331,13 @@ const ManajemenPengguna: React.FC = () => {
                     <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">{user.nik}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 w-fit">
-                        {user.role === 'ADMIN' && <span className="material-symbols-outlined text-[15px] text-blue-600">admin_panel_settings</span>}
-                        {user.role?.startsWith('PETUGAS') && <span className="material-symbols-outlined text-[15px] text-orange-600">engineering</span>}
+                        {['SUPER_ADMIN', 'ADMIN_DLH'].includes(user.role) && <span className="material-symbols-outlined text-[15px] text-blue-600">admin_panel_settings</span>}
+                        {['CAMAT', 'LURAH', 'RW', 'PETUGAS_RESIDU', 'MAHASISWA_KKN'].includes(user.role) && <span className="material-symbols-outlined text-[15px] text-orange-600">engineering</span>}
                         {user.role === 'WARGA' && <span className="material-symbols-outlined text-[15px] text-green-600">person</span>}
                         <span className={`inline-block px-2.5 py-1 ${
-                          user.role === 'ADMIN' 
+                          ['SUPER_ADMIN', 'ADMIN_DLH'].includes(user.role)
                             ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                            : user.role?.startsWith('PETUGAS') 
+                            : ['CAMAT', 'LURAH', 'RW', 'PETUGAS_RESIDU', 'MAHASISWA_KKN'].includes(user.role)
                               ? 'bg-orange-50 text-orange-700 border border-orange-200' 
                               : 'bg-green-50 text-green-700 border border-green-200'
                         } rounded-md text-[10px] font-bold tracking-wide uppercase`}>
@@ -445,11 +448,14 @@ const ManajemenPengguna: React.FC = () => {
                   onChange={(e) => setFormData({...formData, roleName: e.target.value})}
                   className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-bold cursor-pointer"
                 >
-                  <option value="ADMIN">Admin</option>
-                  <option value="PETUGAS_KELURAHAN">Petugas Kelurahan</option>
-                  <option value="PETUGAS_RW">Petugas RW</option>
-                  <option value="PETUGAS_RT">Petugas RT</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="ADMIN_DLH">Admin DLH</option>
+                  <option value="CAMAT">Camat</option>
+                  <option value="LURAH">Lurah</option>
+                  <option value="RW">RW</option>
+                  <option value="PETUGAS_RESIDU">Petugas Residu</option>
                   <option value="WARGA">Warga</option>
+                  <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
                 </select>
               </div>
               <div>
