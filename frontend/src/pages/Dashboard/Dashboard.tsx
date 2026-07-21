@@ -834,8 +834,8 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    // Skip API load for WARGA
-    if (user?.peran === 'WARGA') {
+    // Skip API load for roles with custom dashboards
+    if (user?.peran === 'WARGA' || user?.peran === 'MAHASISWA_KKN' || user?.peran === 'PETUGAS_RESIDU') {
       setLoading(false);
       return;
     }
