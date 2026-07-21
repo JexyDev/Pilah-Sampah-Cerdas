@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 class RedisService {
   private client: any;
   private isConnected = false;
-  private queue: Array<{ id: string; resolve: Function; reject: Function }> = [];
+  private queue: Array<{ id: string; fn: () => Promise<any>; resolve: Function; reject: Function }> = [];
   private processing = 0;
   private MAX_CONCURRENT = 5; // Process up to 5 concurrent AI detections
 
@@ -131,14 +131,14 @@ class RedisService {
 
     return new Promise((resolve, reject) => {
       const id = uuidv4();
-      this.queue.push({ id, resolve, reject });
+      this.queue.push({ id, fn: taskFn, resolve, reject });
       console.log(`Task ${id} added to FIFO queue. Queue length: ${this.queue.length}`);
 
-      this.processQueue(taskFn);
+      this.processQueue();
     });
   }
 
-  private async processQueue(taskFn: () => Promise<any>) {
+  private async processQueue() {
     if (this.processing >= this.MAX_CONCURRENT || this.queue.length === 0) {
       return;
     }
@@ -150,14 +150,14 @@ class RedisService {
     console.log(`Processing task ${nextTask.id}. Active processing: ${this.processing}`);
 
     try {
-      const result = await taskFn();
+      const result = await nextTask.fn();
       nextTask.resolve(result);
     } catch (error) {
       nextTask.reject(error);
     } finally {
       this.processing--;
       // Process next in queue
-      this.processQueue(taskFn);
+      this.processQueue();
     }
   }
 
