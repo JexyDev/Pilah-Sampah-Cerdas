@@ -234,12 +234,16 @@ const Login: React.FC = () => {
             <span className="material-symbols-outlined text-[14px]">info</span>
             Akun Demo (password: <code>password123</code>):
           </p>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-blue-600/90 font-medium pl-4 list-disc">
-            <p>• admin@psc.id (Admin)</p>
-            <p>• kelurahan@psc.id (Kel.)</p>
-            <p>• rw@psc.id (Petugas RW)</p>
-            <p>• rt@psc.id (Petugas RT)</p>
-            <p className="col-span-2">• warga@psc.id (Warga)</p>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-blue-600/90 font-medium pl-4">
+            <p>• superadmin@psc.id (Super)</p>
+            <p>• admin@psc.id (DLH)</p>
+            <p>• camat@psc.id (Camat)</p>
+            <p>• lurah@psc.id (Lurah)</p>
+            <p>• rw@psc.id (RW)</p>
+            <p>• petugas@psc.id (Petugas)</p>
+            <p>• warga@psc.id (Warga Utama)</p>
+            <p>• wargatambahan@psc.id (Warga Tamb.)</p>
+            <p className="col-span-2">• kkn@psc.id (Mahasiswa KKN)</p>
           </div>
         </div>
 
