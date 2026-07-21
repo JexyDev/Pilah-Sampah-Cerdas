@@ -899,7 +899,7 @@ const Dashboard: React.FC = () => {
           api.get('/bins/locations'),
         ]);
 
-        const hasWilayah = user?.wilayah && user?.wilayah !== 'Kecamatan Coblong' && user?.wilayah !== 'Sistem Pusat';
+        const hasWilayah = user?.wilayah && user?.wilayah !== 'Kecamatan Coblong' && user?.wilayah !== 'Sistem Pusat' && user?.peran !== 'MAHASISWA_KKN';
 
         if (binsSettled.status === 'fulfilled') {
           let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];

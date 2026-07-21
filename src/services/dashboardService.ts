@@ -12,7 +12,11 @@ const prisma = new PrismaClient();
 
 export const dashboardService = {
   getKpi: async (wilayah?: string) => {
-    const isFiltered = wilayah && wilayah !== "Kecamatan Coblong" && wilayah !== "Sistem Pusat";
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago";
 
     // 1. Total Warga Aktif
     const totalWarga = await prisma.user.count({
@@ -187,7 +191,11 @@ export const dashboardService = {
   },
 
   getRecentTransactions: async (wilayah?: string) => {
-    const isFiltered = wilayah && wilayah !== "Kecamatan Coblong" && wilayah !== "Sistem Pusat";
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago";
     const transactions = await prisma.wasteLog.findMany({
       where: isFiltered
         ? {
@@ -230,7 +238,11 @@ export const dashboardService = {
   },
 
   getTrend: async (weeks: number = 8, wilayah?: string) => {
-    const isFiltered = wilayah && wilayah !== "Kecamatan Coblong" && wilayah !== "Sistem Pusat";
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago";
     const result = [];
     const now = new Date();
 
