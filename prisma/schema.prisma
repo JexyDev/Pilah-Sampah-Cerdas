@@ -55,6 +55,8 @@ model User {
   auditLogs       AuditTrail[]
   claimedTasks    DispatchTask[]    @relation("ClaimedTasks")
   verifiedLogs    WasteLog[]        @relation("VerifiedLogs")
+  wargaViolations   Violation[]       @relation("WargaViolations")
+  recordedViolations Violation[]      @relation("RecordedViolations")
 
   @@map("users")
 }
@@ -173,6 +175,7 @@ model Bin {
   wasteLogs                   WasteLog[]
   binResetRequests            BinResetRequest[]
   dispatchTasks               DispatchTask[]
+  violations                  Violation[]
 
   @@map("bins")
 }
@@ -474,4 +477,22 @@ model MaggotDistributionLog {
   createdAt     DateTime    @default(now()) @map("created_at")
 
   @@map("maggot_distribution_logs")
+}
+
+model Violation {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  user             User     @relation("WargaViolations", fields: [userId], references: [id], onDelete: Cascade)
+  binId            String?  @map("bin_id")
+  bin              Bin?     @relation(fields: [binId], references: [id], onDelete: SetNull)
+  petugasUserId    String   @map("petugas_user_id")
+  petugasUser      User     @relation("RecordedViolations", fields: [petugasUserId], references: [id], onDelete: Cascade)
+  type             String   // e.g. "RESIDU_MIXED_ORGANIC", "RESIDU_MIXED_ANORGANIK"
+  severity         String   // e.g. "LIGHT", "MEDIUM", "SEVERE"
+  evidencePhotoUrl String   @map("evidence_photo_url")
+  notes            String?
+  pointsDeducted   Int      @map("points_deducted")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("violations")
 }

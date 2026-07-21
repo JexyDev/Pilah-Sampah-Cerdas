@@ -10,6 +10,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
+import KknDashboard from '../KknDashboard/KknDashboard';
+import ResiduDashboard from '../ResiduDashboard/ResiduDashboard';
 
 // ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
@@ -976,6 +978,16 @@ const Dashboard: React.FC = () => {
   // Render WARGA Dashboard
   if (user?.peran === 'WARGA') {
     return <WargaDashboard />;
+  }
+
+  // Render KKN Dashboard
+  if (user?.peran === 'MAHASISWA_KKN') {
+    return <KknDashboard />;
+  }
+
+  // Render Petugas Residu Dashboard
+  if (user?.peran === 'PETUGAS_RESIDU') {
+    return <ResiduDashboard />;
   }
 
   // Scaling factors for Trend SVG

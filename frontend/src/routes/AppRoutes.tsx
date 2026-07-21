@@ -26,6 +26,8 @@ import LaporanAnalitik from '../pages/LaporanAnalitik/LaporanAnalitik';
 import Notifikasi from '../pages/Notifikasi/Notifikasi';
 import Pengaturan from '../pages/Pengaturan/Pengaturan';
 import SetorSampah from '../pages/SetorSampah/SetorSampah';
+import KknDashboard from '../pages/KknDashboard/KknDashboard';
+import ResiduDashboard from '../pages/ResiduDashboard/ResiduDashboard';
 import { useAuthStore } from '../store/useAuthStore';
 import type { UserRole } from '../store/useAuthStore';
 
@@ -80,6 +82,8 @@ const AppRoutes: React.FC = () => {
         <Route path="evaluasi-ai" element={<PlaceholderPage title="Evaluasi AI" />} />
         <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
         <Route path="setor" element={<ProtectedRoute allowedRoles={['WARGA']}><SetorSampah /></ProtectedRoute>} />
+        <Route path="kkn-portal" element={<ProtectedRoute allowedRoles={['MAHASISWA_KKN']}><KknDashboard /></ProtectedRoute>} />
+        <Route path="residu-portal" element={<ProtectedRoute allowedRoles={['PETUGAS_RESIDU']}><ResiduDashboard /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

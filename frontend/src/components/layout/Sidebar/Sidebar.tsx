@@ -75,6 +75,14 @@ const Sidebar: React.FC = () => {
           <NavItem to="/setor" icon="qr_code_scanner" label="Setor Sampah" />
         )}
         
+        {hasAccess(['MAHASISWA_KKN']) && (
+          <NavItem to="/kkn-portal" icon="compass" label="Portal Pendampingan" />
+        )}
+        
+        {hasAccess(['PETUGAS_RESIDU']) && (
+          <NavItem to="/residu-portal" icon="security" label="Portal Pengawasan" />
+        )}
+        
         {hasAccess(['SUPER_ADMIN', 'ADMIN_DLH']) && (
           <NavItem to="/manajemen-pengguna" icon="group" label="Manajemen Pengguna" />
         )}
