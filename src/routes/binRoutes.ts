@@ -40,7 +40,12 @@ router.get("/", binController.getAllBins);
  *     security:
  *       - bearerAuth: []
  */
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createBin);
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createBin
+);
 
 /**
  * @swagger
@@ -51,7 +56,12 @@ router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), b
  *     security:
  *       - bearerAuth: []
  */
-router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.updateBin);
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.updateBin
+);
 
 /**
  * @swagger
@@ -62,9 +72,19 @@ router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
  *     security:
  *       - bearerAuth: []
  */
-router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.deleteBin);
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.deleteBin
+);
 
-router.put("/:qrCode/broken", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]), binController.markBinAsBroken);
+router.put(
+  "/:qrCode/broken",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  binController.markBinAsBroken
+);
 
 /**
  * @swagger
@@ -80,7 +100,12 @@ router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, roleMiddleware(["WARGA"]), binController.getMyBins);
 router.get("/areas", binController.getAreas);
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
-router.post("/areas", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createArea);
+router.post(
+  "/areas",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createArea
+);
 
 /**
  * @swagger
