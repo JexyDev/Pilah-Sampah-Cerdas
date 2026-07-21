@@ -155,6 +155,24 @@ async function main() {
       rtRwId: rt04rw06.id,
       wargaSubtype: "UTAMA",
     },
+    {
+      email: "kkn@psc.id",
+      name: "Andi Mahasiswa KKN",
+      roleId: kknRole.id,
+      nik: "3273012345678910",
+      status: "Aktif",
+      rtRwId: rt04rw06.id,
+      wargaSubtype: null,
+    },
+    {
+      email: "wargatambahan@psc.id",
+      name: "Siti Warga Tambahan",
+      roleId: wargaRole.id,
+      nik: "3273012345678911",
+      status: "Aktif",
+      rtRwId: rt04rw06.id,
+      wargaSubtype: "TAMBAHAN",
+    },
   ];
 
   const dbUsers = [];
@@ -181,6 +199,40 @@ async function main() {
     dbUsers.push(createdUser);
   }
   console.log("Users seeded.");
+
+  // Seed Profiles
+  const kknUser = dbUsers.find((u) => u.email === "kkn@psc.id")!;
+  await prisma.studentKkn.upsert({
+    where: { userId: kknUser.id },
+    update: {},
+    create: {
+      userId: kknUser.id,
+      nim: "10121001",
+      jurusan: "Teknik Informatika",
+      fakultas: "Fakultas Teknik dan Ilmu Komputer",
+      noWa: "081234567890",
+      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),   // 30 days later
+      whitelistStatus: "APPROVED",
+      assignedPolygonId: rt04rw06.id,
+    },
+  });
+
+  const petugasUser = dbUsers.find((u) => u.email === "petugas@psc.id")!;
+  await prisma.petugasResidu.upsert({
+    where: { userId: petugasUser.id },
+    update: {},
+    create: {
+      userId: petugasUser.id,
+      nama: "Budi Petugas Residu",
+      noWa: "082345678901",
+      kpiScore: 100.0,
+      assignedZone: "Zone 1",
+      latitude: -6.889,
+      longitude: 107.61,
+    },
+  });
+  console.log("Profiles seeded.");
 
   // Seed System Configs
   const configs = [

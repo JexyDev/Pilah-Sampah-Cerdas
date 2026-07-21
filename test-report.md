@@ -93,3 +93,16 @@ Audit dan pengujian komprehensif (functional, integration, E2E, keamanan data, d
 
 ### Skenario Cadangan (Plan B):
 Jika koneksi internet di lokasi menteri terganggu, disiapkan mock database lokal dengan SQLite/Postgres lokal di laptop demo untuk memastikan transisi state dan alur dashboard tetap tampil mulus.
+
+---
+
+## 5. Kredensial Demo Akun (Password: password123)
+- **Super Admin**: `superadmin@psc.id`
+- **Admin DLH**: `admin@psc.id`
+- **Camat Coblong**: `camat@psc.id`
+- **Lurah Dago**: `lurah@psc.id`
+- **RW**: `rw@psc.id`
+- **Petugas Residu**: `petugas@psc.id`
+- **Warga Utama**: `warga@psc.id`
+- **Warga Tambahan**: `wargatambahan@psc.id`
+- **Mahasiswa KKN**: `kkn@psc.id`
