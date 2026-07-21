@@ -1,7 +1,14 @@
-import React, { useEffect } from 'react';
-import { Loader2, Medal } from 'lucide-react';
-import { useLeaderboardStore } from '../../store/useLeaderboardStore';
-import styles from './Leaderboard.module.css';
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
+import React, { useEffect } from "react";
+import { Loader2, Medal } from "lucide-react";
+import { useLeaderboardStore } from "../../store/useLeaderboardStore";
+import styles from "./Leaderboard.module.css";
 
 const Leaderboard: React.FC = () => {
   const { users, isLoading, error, fetchLeaderboard } = useLeaderboardStore();
@@ -22,7 +29,9 @@ const Leaderboard: React.FC = () => {
     return (
       <div className={styles.errorContainer}>
         <p>Error: {error}</p>
-        <button className={styles.btnPrimary} onClick={fetchLeaderboard}>Coba Lagi</button>
+        <button className={styles.btnPrimary} onClick={fetchLeaderboard}>
+          Coba Lagi
+        </button>
       </div>
     );
   }
@@ -31,7 +40,7 @@ const Leaderboard: React.FC = () => {
     <div className={styles.container}>
       <h2 className={styles.pageTitle}>Leaderboard Warga</h2>
       <p className={styles.subtitle}>Peringkat warga dengan pengumpulan poin terbanyak</p>
-      
+
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
@@ -42,8 +51,8 @@ const Leaderboard: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} className={u.rank <= 3 ? styles.topRank : ''}>
+            {users.map((u) => (
+              <tr key={u.id} className={u.rank <= 3 ? styles.topRank : ""}>
                 <td>
                   <div className={styles.rankWrapper}>
                     {u.rank === 1 && <Medal color="#FDE047" size={20} />}

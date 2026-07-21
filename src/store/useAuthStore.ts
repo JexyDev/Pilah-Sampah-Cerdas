@@ -1,7 +1,22 @@
-import { create } from 'zustand';
-import api from '../utils/api';
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
 
-export type UserRole = 'ADMIN' | 'PETUGAS_KELURAHAN' | 'PETUGAS_RW' | 'PETUGAS_RT' | 'WARGA';
+import { create } from "zustand";
+import api from "../utils/api";
+
+export type UserRole =
+  | "SUPER_ADMIN"
+  | "ADMIN_DLH"
+  | "CAMAT"
+  | "LURAH"
+  | "RW"
+  | "PETUGAS_RESIDU"
+  | "WARGA"
+  | "MAHASISWA_KKN";
 
 export interface User {
   id: string;
@@ -30,29 +45,53 @@ interface AuthState {
 
 const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string } => {
   switch (role) {
-    case 'ADMIN': return { avatarBg: 'bg-blue-100', avatarColor: 'text-blue-700' };
-    case 'PETUGAS_KELURAHAN': return { avatarBg: 'bg-pink-100', avatarColor: 'text-pink-700' };
-    case 'PETUGAS_RW': return { avatarBg: 'bg-teal-100', avatarColor: 'text-teal-700' };
-    case 'PETUGAS_RT': return { avatarBg: 'bg-orange-100', avatarColor: 'text-orange-700' };
-    case 'WARGA': return { avatarBg: 'bg-green-100', avatarColor: 'text-green-700' };
-    default: return { avatarBg: 'bg-gray-100', avatarColor: 'text-gray-700' };
+    case "SUPER_ADMIN":
+      return { avatarBg: "bg-indigo-100", avatarColor: "text-indigo-700" };
+    case "ADMIN_DLH":
+      return { avatarBg: "bg-blue-100", avatarColor: "text-blue-700" };
+    case "CAMAT":
+      return { avatarBg: "bg-purple-100", avatarColor: "text-purple-700" };
+    case "LURAH":
+      return { avatarBg: "bg-pink-100", avatarColor: "text-pink-700" };
+    case "RW":
+      return { avatarBg: "bg-teal-100", avatarColor: "text-teal-700" };
+    case "PETUGAS_RESIDU":
+      return { avatarBg: "bg-orange-100", avatarColor: "text-orange-700" };
+    case "WARGA":
+      return { avatarBg: "bg-green-100", avatarColor: "text-green-700" };
+    case "MAHASISWA_KKN":
+      return { avatarBg: "bg-amber-100", avatarColor: "text-amber-700" };
+    default:
+      return { avatarBg: "bg-gray-100", avatarColor: "text-gray-700" };
   }
 };
 
 const getWilayahByRole = (role: string): string => {
   switch (role) {
-    case 'ADMIN': return 'Sistem Pusat';
-    case 'PETUGAS_KELURAHAN': return 'Kelurahan Dago';
-    case 'PETUGAS_RW': return 'RW 06 Dago';
-    case 'PETUGAS_RT': return 'RT 02 / RW 06';
-    case 'WARGA': return 'RT 04 / RW 06';
-    default: return 'Kecamatan Coblong';
+    case "SUPER_ADMIN":
+      return "Sistem Pusat";
+    case "ADMIN_DLH":
+      return "Dinas Lingkungan Hidup";
+    case "CAMAT":
+      return "Kecamatan Coblong";
+    case "LURAH":
+      return "Kelurahan Dago";
+    case "RW":
+      return "RW 06 Dago";
+    case "PETUGAS_RESIDU":
+      return "RT 02 / RW 06";
+    case "WARGA":
+      return "RT 04 / RW 06";
+    case "MAHASISWA_KKN":
+      return "Area KKN Dago";
+    default:
+      return "Kecamatan Coblong";
   }
 };
 
 const getInitialUser = (): User | null => {
   try {
-    const stored = localStorage.getItem('psc_user');
+    const stored = localStorage.getItem("psc_user");
     return stored ? JSON.parse(stored) : null;
   } catch {
     return null;
@@ -61,7 +100,7 @@ const getInitialUser = (): User | null => {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
-  isAuthenticated: !!localStorage.getItem('psc_access_token'),
+  isAuthenticated: !!localStorage.getItem("psc_access_token"),
   isLoading: false,
   error: null,
 
@@ -69,19 +108,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       // Axios returns { data, status, ... }; backend body is { message, data: { user, accessToken, refreshToken } }
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post("/auth/login", { email, password });
       const payload = response.data?.data ?? response.data;
 
       if (!payload?.user || !payload?.accessToken) {
-        throw new Error('Response tidak valid dari server');
+        throw new Error("Response tidak valid dari server");
       }
 
       const { user: backendUser, accessToken, refreshToken } = payload;
 
       // Simpan token
-      localStorage.setItem('psc_access_token', accessToken);
+      localStorage.setItem("psc_access_token", accessToken);
       if (refreshToken) {
-        localStorage.setItem('psc_refresh_token', refreshToken);
+        localStorage.setItem("psc_refresh_token", refreshToken);
       }
 
       // Buat user object untuk store
@@ -99,12 +138,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         ...avatarConfig,
       };
 
-      localStorage.setItem('psc_user', JSON.stringify(user));
+      localStorage.setItem("psc_user", JSON.stringify(user));
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       return true;
     } catch (err: any) {
-      const code =
-        err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
+      const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
       set({ isLoading: false, error: code, isAuthenticated: false });
       return false;
     }
@@ -112,14 +150,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      const refreshToken = localStorage.getItem('psc_refresh_token');
+      const refreshToken = localStorage.getItem("psc_refresh_token");
       if (refreshToken) {
-        await api.post('/auth/logout', { refreshToken }).catch(() => {});
+        await api.post("/auth/logout", { refreshToken }).catch(() => {});
       }
     } finally {
-      localStorage.removeItem('psc_access_token');
-      localStorage.removeItem('psc_refresh_token');
-      localStorage.removeItem('psc_user');
+      localStorage.removeItem("psc_access_token");
+      localStorage.removeItem("psc_refresh_token");
+      localStorage.removeItem("psc_user");
       set({ user: null, isAuthenticated: false, error: null });
     }
   },
@@ -128,7 +166,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, wilayah: newWilayah };
-      localStorage.setItem('psc_user', JSON.stringify(updatedUser));
+      localStorage.setItem("psc_user", JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
   },
@@ -137,7 +175,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, ...updatedFields };
-      localStorage.setItem('psc_user', JSON.stringify(updatedUser));
+      localStorage.setItem("psc_user", JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
   },

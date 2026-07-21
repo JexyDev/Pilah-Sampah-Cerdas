@@ -49,7 +49,7 @@
 .userRole {
   font-size: 12px;
   color: var(--primary-blue);
-  background-color: #EBF5FF;
+  background-color: #ebf5ff;
   padding: 2px 8px;
   border-radius: 12px;
   margin-top: 4px;
@@ -72,7 +72,7 @@
 }
 
 .logoutBtn:hover {
-  background-color: #FEE2E2;
+  background-color: #fee2e2;
 }
 
 /* Mobile Responsiveness */

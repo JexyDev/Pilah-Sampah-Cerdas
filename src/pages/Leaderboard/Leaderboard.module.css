@@ -17,7 +17,8 @@
   font-size: 14px;
 }
 
-.loadingContainer, .errorContainer {
+.loadingContainer,
+.errorContainer {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -31,7 +32,9 @@
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .errorContainer {

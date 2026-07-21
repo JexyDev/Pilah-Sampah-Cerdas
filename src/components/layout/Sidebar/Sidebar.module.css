@@ -66,7 +66,7 @@
 }
 
 .navItem.active {
-  background-color: #E8F5E9; /* Light green bg */
+  background-color: #e8f5e9; /* Light green bg */
   color: var(--primary-green);
   border-right: 4px solid var(--primary-green);
 }
@@ -76,21 +76,22 @@
   .sidebar {
     width: 80px;
   }
-  
-  .logoText, .label {
+
+  .logoText,
+  .label {
     display: none;
   }
-  
+
   .logoContainer {
     justify-content: center;
     padding: 24px 0;
   }
-  
+
   .navItem {
     justify-content: center;
     padding: 16px 0;
   }
-  
+
   .navItem.active {
     border-right: none;
     border-left: 4px solid var(--primary-green);

@@ -11,7 +11,8 @@
   margin: 0;
 }
 
-.loadingContainer, .errorContainer {
+.loadingContainer,
+.errorContainer {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -73,7 +74,7 @@
 
 .tabBtn.active {
   color: var(--primary-green);
-  background-color: #DEF7EC;
+  background-color: #def7ec;
 }
 
 .tableContainer {
@@ -138,6 +139,15 @@
   font-weight: 500;
 }
 
-.aman { background-color: #DEF7EC; color: #03543F; }
-.waspada { background-color: #FDF6B2; color: #723B13; }
-.penuh { background-color: #FBD5D5; color: #9B1C1C; }
+.aman {
+  background-color: #def7ec;
+  color: #03543f;
+}
+.waspada {
+  background-color: #fdf6b2;
+  color: #723b13;
+}
+.penuh {
+  background-color: #fbd5d5;
+  color: #9b1c1c;
+}

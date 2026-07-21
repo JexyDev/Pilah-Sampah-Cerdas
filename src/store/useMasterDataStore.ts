@@ -1,5 +1,12 @@
-import { create } from 'zustand';
-import api from '../utils/api';
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
+import { create } from "zustand";
+import api from "../utils/api";
 
 export interface UserItem {
   id: string;
@@ -17,7 +24,7 @@ export interface BinItem {
   maxCapacityLiter: number;
   currentVolumeLiter: number;
   rtRw?: { name: string };
-  status: 'aman' | 'waspada' | 'penuh';
+  status: "aman" | "waspada" | "penuh";
 }
 
 interface MasterDataState {
@@ -30,11 +37,11 @@ interface MasterDataState {
   deleteBin: (id: string) => Promise<void>;
 }
 
-const getBinStatus = (current: number, max: number): 'aman' | 'waspada' | 'penuh' => {
+const getBinStatus = (current: number, max: number): "aman" | "waspada" | "penuh" => {
   const pct = current / max;
-  if (pct >= 0.9) return 'penuh';
-  if (pct >= 0.7) return 'waspada';
-  return 'aman';
+  if (pct >= 0.9) return "penuh";
+  if (pct >= 0.7) return "waspada";
+  return "aman";
 };
 
 export const useMasterDataStore = create<MasterDataState>((set) => ({
@@ -46,10 +53,7 @@ export const useMasterDataStore = create<MasterDataState>((set) => ({
   fetchMasterData: async () => {
     set({ isLoading: true, error: null });
     try {
-      const [usersRes, binsRes] = await Promise.all([
-        api.get('/users'),
-        api.get('/bins'),
-      ]);
+      const [usersRes, binsRes] = await Promise.all([api.get("/users"), api.get("/bins")]);
 
       const users: UserItem[] = usersRes.data.data || [];
       const rawBins = binsRes.data.data || [];
@@ -67,7 +71,7 @@ export const useMasterDataStore = create<MasterDataState>((set) => ({
       set({ users, bins, isLoading: false });
     } catch (err: any) {
       set({
-        error: err?.response?.data?.message || err.message || 'Gagal memuat master data',
+        error: err?.response?.data?.message || err.message || "Gagal memuat master data",
         isLoading: false,
       });
     }

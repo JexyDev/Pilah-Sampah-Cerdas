@@ -1,10 +1,17 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { ErrorBoundary } from 'react-error-boundary';
-import Sidebar from '../Sidebar/Sidebar';
-import Header from '../Header/Header';
-import ErrorBoundaryFallback from '../../common/ErrorBoundaryFallback';
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { ErrorBoundary } from "react-error-boundary";
+import Sidebar from "../Sidebar/Sidebar";
+import Header from "../Header/Header";
+import ErrorBoundaryFallback from "../../common/ErrorBoundaryFallback";
 
 const MainLayout: React.FC = () => {
   return (

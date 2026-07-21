@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -48,8 +55,7 @@ const Login: React.FC = () => {
     }
   };
 
-  const isFormInvalid =
-    !email.trim() || !password.trim() || !!emailError || !!passwordError;
+  const isFormInvalid = !email.trim() || !password.trim() || !!emailError || !!passwordError;
   const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay || isFormInvalid;
 
   // Custom Toast implementation following design guidelines
@@ -222,17 +228,88 @@ const Login: React.FC = () => {
         </div>
 
         {/* Demo credentials hint */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-[11px] text-blue-700 leading-relaxed shadow-sm">
-          <p className="font-bold mb-1.5 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">info</span>
-            Akun Demo (password: <code>password123</code>):
-          </p>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-blue-600/90 font-medium pl-4 list-disc">
-            <p>• admin@psc.id (Admin)</p>
-            <p>• kelurahan@psc.id (Kel.)</p>
-            <p>• rw@psc.id (Petugas RW)</p>
-            <p>• rt@psc.id (Petugas RT)</p>
-            <p className="col-span-2">• warga@psc.id (Warga)</p>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-200/60 pb-2">
+            <p className="font-bold flex items-center gap-1.5 text-slate-800">
+              <span className="material-symbols-outlined text-[16px] text-primary">info</span>
+              Pilih Akun Demo (Klik untuk auto-fill)
+            </p>
+            <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
+              pass: password123
+            </span>
+          </div>
+          <div
+            className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto pr-1"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {[
+              {
+                email: "superadmin@psc.id",
+                label: "Super Admin",
+                bg: "bg-red-50 text-red-700 border-red-200",
+              },
+              {
+                email: "admin@psc.id",
+                label: "Admin DLH",
+                bg: "bg-blue-50 text-blue-700 border-blue-200",
+              },
+              {
+                email: "camat@psc.id",
+                label: "Camat",
+                bg: "bg-purple-50 text-purple-700 border-purple-200",
+              },
+              {
+                email: "lurah@psc.id",
+                label: "Lurah",
+                bg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+              },
+              {
+                email: "rw@psc.id",
+                label: "RW",
+                bg: "bg-amber-50 text-amber-700 border-amber-200",
+              },
+              {
+                email: "petugas@psc.id",
+                label: "Petugas Residu",
+                bg: "bg-orange-50 text-orange-700 border-orange-200",
+              },
+              {
+                email: "warga@psc.id",
+                label: "Warga Utama",
+                bg: "bg-green-50 text-green-700 border-green-200",
+              },
+              {
+                email: "wargatambahan@psc.id",
+                label: "Warga Tamb.",
+                bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+              },
+              {
+                email: "kkn@psc.id",
+                label: "Mhs KKN",
+                bg: "bg-teal-50 text-teal-700 border-teal-200",
+              },
+            ].map((acc) => (
+              <button
+                key={acc.email}
+                type="button"
+                onClick={() => {
+                  setEmail(acc.email);
+                  setPassword("password123");
+                  setEmailError("");
+                  setPasswordError("");
+                  toast.success(`Mengisi kredensial ${acc.label}`, {
+                    id: "autofill-toast",
+                    duration: 1500,
+                  });
+                }}
+                className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.99] cursor-pointer shadow-xs text-left"
+              >
+                <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${acc.bg}`}>
+                  {acc.label}
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">{acc.email}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -248,7 +325,9 @@ const Login: React.FC = () => {
               </span>
               <input
                 className={`w-full pl-10 pr-4 h-11 bg-surface-container-low border ${
-                  emailError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary focus:ring-primary"
+                  emailError
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-outline-variant/50 focus:border-primary focus:ring-primary"
                 } rounded-lg text-sm focus:ring-1 focus:outline-none transition-all outline-none`}
                 placeholder="Email atau 16 digit NIK..."
                 type="text"
@@ -285,7 +364,9 @@ const Login: React.FC = () => {
               <input
                 ref={passwordInputRef}
                 className={`w-full pl-10 pr-10 h-11 bg-surface-container-low border ${
-                  passwordError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary focus:ring-primary"
+                  passwordError
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-outline-variant/50 focus:border-primary focus:ring-primary"
                 } rounded-lg text-sm focus:ring-1 focus:outline-none transition-all outline-none`}
                 placeholder="Masukkan kata sandi..."
                 type={showPassword ? "text" : "password"}
