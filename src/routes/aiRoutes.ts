@@ -94,6 +94,13 @@ router.post(
   aiController.submitReport
 );
 
+router.get(
+  "/logs/discrepancies",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  aiController.getPendingDiscrepancies
+);
+
 router.put(
   "/logs/:id/resolve",
   authMiddleware,

@@ -6,19 +6,57 @@
  */
 
 import { Request, Response, NextFunction } from "express";
+import { verifyAccessToken } from "../utils/jwtUtils.js";
 
 export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): void => {
-  const user = req.user;
+  try {
+    let token = "";
 
-  if (user && (user.role === "CAMAT" || user.role === "LURAH" || user.role === "ADMIN_DLH")) {
-    const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
-    if (writeMethods.includes(req.method)) {
-      res.status(403).json({
-        error: "FORBIDDEN",
-        message: `Role ${user.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
-      });
-      return;
+    // 1. Try to get token from HttpOnly Cookie (Web Client)
+    if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
     }
+    // 2. Try to get token from Authorization header (Mobile App)
+    else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    // DEV BYPASS
+    if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
+      // Mock admin is SUPER_ADMIN, which has write access
+      return next();
+    }
+
+    if (token) {
+      try {
+        const decoded = verifyAccessToken(token);
+        const role = decoded.role;
+
+        if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
+          const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
+          if (writeMethods.includes(req.method)) {
+            // Exception: ADMIN_DLH can resolve discrepancy
+            const isResolveDiscrepancy =
+              role === "ADMIN_DLH" &&
+              req.method === "PUT" &&
+              req.originalUrl.includes("/waste/logs/") &&
+              req.originalUrl.endsWith("/resolve");
+
+            if (!isResolveDiscrepancy) {
+              res.status(403).json({
+                error: "FORBIDDEN",
+                message: `Role ${role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
+              });
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        // Ignore token verification error here, authMiddleware will reject it with 401
+      }
+    }
+  } catch (error) {
+    console.error("[readOnlyGuard] error:", error);
   }
 
   next();

@@ -265,6 +265,40 @@ export class AiService {
       volumeLiters,
     };
   }
+
+  async getPendingDiscrepancies() {
+    return prisma.wasteLog.findMany({
+      where: {
+        discrepancyStatus: "PENDING_REVIEW",
+      },
+      include: {
+        household: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+            rtRw: {
+              select: {
+                name: true,
+                kelurahan: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        category: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
 }
 
 export const aiService = new AiService();

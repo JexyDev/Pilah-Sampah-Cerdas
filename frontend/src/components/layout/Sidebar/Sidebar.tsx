@@ -94,6 +94,10 @@ const Sidebar: React.FC = () => {
           <NavItem to="/manajemen-pengguna" icon="group" label="Manajemen Pengguna" />
         )}
 
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
+          <NavItem to="/superadmin/discrepancies" icon="fact_check" label="Review Diskrepansi AI" />
+        )}
+
         {hasAccess([
           "SUPER_ADMIN",
           "ADMIN_DLH",

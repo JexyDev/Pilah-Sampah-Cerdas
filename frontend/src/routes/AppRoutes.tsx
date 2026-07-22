@@ -34,6 +34,7 @@ import { SuperAdminDashboard } from "../pages/SuperAdmin/SuperAdminDashboard";
 import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
 import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
 import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
+import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -88,7 +89,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="monitoring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -258,6 +259,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
               <MasterQrManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/discrepancies"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+              <ReviewDiscrepancy />
             </ProtectedRoute>
           }
         />

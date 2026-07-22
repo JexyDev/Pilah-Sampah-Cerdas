@@ -31,6 +31,7 @@ import kknRouter from "./routes/kknRoutes.js";
 import residuRouter from "./routes/residuRoutes.js";
 import superAdminRouter from "./routes/superAdminRoutes.js";
 import { setupSwagger } from "./swagger.js";
+import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(readOnlyGuard);
 
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
