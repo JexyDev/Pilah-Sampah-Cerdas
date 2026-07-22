@@ -52,6 +52,10 @@ export class BinService {
     userLat?: number,
     userLng?: number
   ) {
+    if (userLat === undefined || userLng === undefined) {
+      throw new Error("GPS_COORDINATES_REQUIRED");
+    }
+
     // 1. Find the Bin
     const bin = await binRepository.findByQrCode(qrCode);
     if (!bin) {
@@ -283,6 +287,7 @@ export class BinService {
         rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
         status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
         householdName,
+        realStatus: bin.status,
       };
     });
   }
@@ -462,6 +467,229 @@ export class BinService {
     });
 
     return route.sort((a, b) => a.distanceMeters - b.distanceMeters);
+  }
+
+  async approveActivation(binIdOrQrCode: string, adminUserId: string) {
+    const bin = await prisma.bin.findFirst({
+      where: {
+        OR: [
+          { id: binIdOrQrCode },
+          { qrCode: binIdOrQrCode }
+        ]
+      },
+      include: {
+        qrBatch: true,
+        user: true,
+      }
+    });
+
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
+    if (bin.status !== "PENDING_APPROVAL") {
+      throw new Error("BIN_NOT_PENDING_APPROVAL");
+    }
+
+    const citizenUserId = bin.userId;
+    if (!citizenUserId) {
+      throw new Error("BIN_HAS_NO_USER");
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const updatedBin = await tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: "ACTIVE_BOUND"
+        }
+      });
+
+      const assignedPicUserId = bin.qrBatch?.assignedPicUserId;
+      if (assignedPicUserId) {
+        await tx.pointHistory.create({
+          data: {
+            userId: citizenUserId,
+            points: 50,
+            description: "Poin awal aktivasi tempat sampah cerdas (KKN)",
+            kategori: "REDUKSI_TONASE"
+          }
+        });
+
+        await tx.pointHistory.create({
+          data: {
+            userId: assignedPicUserId,
+            points: 10,
+            description: `Registrasi pendampingan warga: ${bin.user?.name || 'Warga'}`,
+            kategori: "IDE_DAUR_ULANG"
+          }
+        });
+      } else {
+        await tx.pointHistory.create({
+          data: {
+            userId: citizenUserId,
+            points: 10,
+            description: `Bonus aktivasi tempat sampah ${bin.qrCode}`,
+            kategori: "REDUKSI_TONASE"
+          }
+        });
+      }
+
+      await tx.notification.create({
+        data: {
+          userId: citizenUserId,
+          title: "Aktivasi Tempat Sampah Disetujui",
+          message: `Selamat! Pengajuan aktivasi tempat sampah ${bin.qrCode} Anda telah disetujui. Poin bonus telah ditambahkan ke akun Anda.`
+        }
+      });
+
+      await tx.auditTrail.create({
+        data: {
+          action: "ACTIVATE_BIN_APPROVED",
+          userId: adminUserId,
+          oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
+          newValue: { id: bin.id, qrCode: bin.qrCode, status: "ACTIVE_BOUND" } as any,
+        }
+      });
+
+      return updatedBin;
+    });
+  }
+
+  async rejectActivation(binIdOrQrCode: string, adminUserId: string) {
+    const bin = await prisma.bin.findFirst({
+      where: {
+        OR: [
+          { id: binIdOrQrCode },
+          { qrCode: binIdOrQrCode }
+        ]
+      },
+      include: {
+        qrBatch: true,
+        user: true,
+      }
+    });
+
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
+    if (bin.status !== "PENDING_APPROVAL") {
+      throw new Error("BIN_NOT_PENDING_APPROVAL");
+    }
+
+    const citizenUserId = bin.userId;
+
+    return prisma.$transaction(async (tx) => {
+      const newStatus = bin.qrBatchId ? "ASSIGNED_TO_PIC" : "PRINTED";
+      const updatedBin = await tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: newStatus as any,
+          userId: null
+        }
+      });
+
+      await tx.binOwnership.deleteMany({
+        where: {
+          binId: bin.id
+        }
+      });
+
+      if (citizenUserId) {
+        await tx.household.deleteMany({
+          where: { userId: citizenUserId }
+        });
+
+        await tx.user.delete({
+          where: { id: citizenUserId }
+        });
+      }
+
+      await tx.auditTrail.create({
+        data: {
+          action: "ACTIVATE_BIN_REJECTED",
+          userId: adminUserId,
+          oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
+          newValue: { id: bin.id, qrCode: bin.qrCode, status: newStatus } as any,
+        }
+      });
+
+      return updatedBin;
+    });
+  }
+
+  async reportIssue(binId: string, userId: string, issueType: "EMPTY_REQUEST" | "BROKEN_REPORT", notes: string) {
+    const bin = await prisma.bin.findUnique({
+      where: { id: binId },
+      include: { rtRw: true }
+    });
+
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    const staffList = await prisma.user.findMany({
+      where: {
+        rtRwId: bin.rtRwId,
+        role: {
+          name: { in: ["RW", "PETUGAS_RESIDU"] }
+        }
+      }
+    });
+
+    if (issueType === "EMPTY_REQUEST") {
+      const title = "Permintaan Pengosongan Sampah";
+      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw.name}) meminta petugas segera mengosongkan tong sampah ${bin.qrCode}.`;
+
+      for (const staff of staffList) {
+        await prisma.notification.create({
+          data: {
+            userId: staff.id,
+            title,
+            message
+          }
+        }).catch(() => {});
+      }
+
+      return { success: true, message: "Permintaan pengosongan sampah berhasil dikirim ke petugas" };
+    } else {
+      await prisma.bin.update({
+        where: { id: bin.id },
+        data: { status: "BROKEN" }
+      });
+
+      const title = "Laporan Tempat Sampah Rusak";
+      const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rtRw.name}) rusak atau QR code-nya sobek/rusak.`;
+
+      for (const staff of staffList) {
+        await prisma.notification.create({
+          data: {
+            userId: staff.id,
+            title,
+            message
+          }
+        }).catch(() => {});
+      }
+
+      await prisma.auditTrail.create({
+        data: {
+          action: "REPORT_BIN_BROKEN",
+          userId: userId,
+          oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
+          newValue: { id: bin.id, qrCode: bin.qrCode, status: "BROKEN" } as any,
+        }
+      }).catch(() => {});
+
+      return { success: true, message: "Laporan tempat sampah rusak berhasil dikirim" };
+    }
   }
 }
 

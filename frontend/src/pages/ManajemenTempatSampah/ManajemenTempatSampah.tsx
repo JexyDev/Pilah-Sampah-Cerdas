@@ -178,6 +178,34 @@ const ManajemenTempatSampah: React.FC = () => {
     }
   };
 
+  const handleApproveActivation = async (binKode: string) => {
+    try {
+      const res = await api.put(`/bins/${binKode}/approve-activation`);
+      if (res.data?.success) {
+        toast.success("Aktivasi tempat sampah disetujui!");
+        fetchBins();
+        fetchHouseholds();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Gagal menyetujui aktivasi");
+    }
+  };
+
+  const handleRejectActivation = async (binKode: string) => {
+    if (window.confirm(`Apakah Anda yakin ingin menolak aktivasi untuk tempat sampah ${binKode}? Akun warga terkait akan dihapus.`)) {
+      try {
+        const res = await api.put(`/bins/${binKode}/reject-activation`);
+        if (res.data?.success) {
+          toast.success("Aktivasi tempat sampah ditolak dan akun warga dibersihkan!");
+          fetchBins();
+          fetchHouseholds();
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Gagal menolak aktivasi");
+      }
+    }
+  };
+
   const handleDelete = async (binKode: string) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus tempat sampah dengan kode ${binKode}?`)) {
       try {
@@ -351,20 +379,50 @@ const ManajemenTempatSampah: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${bin.status === "Penuh" ? "bg-red-50 text-red-700" : bin.status === "Normal" ? "bg-green-50 text-green-700" : bin.status === "Perbaikan" ? "bg-yellow-50 text-yellow-700" : "bg-blue-50 text-blue-700"} rounded-full text-[11px] font-bold`}
-                    >
+                    {bin.realStatus === "PENDING_APPROVAL" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-[11px] font-bold animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        Menunggu Persetujuan
+                      </span>
+                    ) : bin.realStatus === "BROKEN" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-[11px] font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                        Rusak / Sobek
+                      </span>
+                    ) : (
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${bin.status === "Penuh" ? "bg-red-500" : bin.status === "Normal" ? "bg-green-500" : bin.status === "Perbaikan" ? "bg-yellow-500" : "bg-blue-500"}`}
-                      ></span>
-                      {bin.status}
-                    </span>
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${bin.status === "Penuh" ? "bg-red-50 text-red-700" : bin.status === "Normal" ? "bg-green-50 text-green-700" : bin.status === "Perbaikan" ? "bg-yellow-50 text-yellow-700" : "bg-blue-50 text-blue-700"} rounded-full text-[11px] font-bold`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${bin.status === "Penuh" ? "bg-red-500" : bin.status === "Normal" ? "bg-green-500" : bin.status === "Perbaikan" ? "bg-yellow-500" : "bg-blue-500"}`}
+                        ></span>
+                        {bin.status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-on-surface-variant text-[12px]">
                     {bin.lastUpdate}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
+                      {bin.realStatus === "PENDING_APPROVAL" && (
+                        <>
+                          <button
+                            onClick={() => handleApproveActivation(bin.kode)}
+                            className="w-8 h-8 rounded-md bg-green-50 text-green-700 hover:bg-green-600 hover:text-white transition-colors flex items-center justify-center"
+                            title="Setujui Aktivasi"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">check</span>
+                          </button>
+                          <button
+                            onClick={() => handleRejectActivation(bin.kode)}
+                            className="w-8 h-8 rounded-md bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
+                            title="Tolak Aktivasi"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">close</span>
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => openLogModal(bin.kode)}
                         className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"

@@ -77,8 +77,14 @@ export class KknService {
       binQrCode: string;
       binCategoryId: string;
       evidencePhotoUrl?: string;
+      latitude?: number;
+      longitude?: number;
     }
   ) {
+    if (data.latitude === undefined || data.longitude === undefined) {
+      throw new Error("GPS_COORDINATES_REQUIRED");
+    }
+
     const student = await prisma.studentKkn.findUnique({
       where: { userId: kknUserId },
     });
@@ -142,14 +148,14 @@ export class KknService {
         },
       });
 
-      // 2. Create Household for coordinate mapping (default Dago area mapping)
+      // 2. Create Household for coordinate mapping
       const newHousehold = await tx.household.create({
         data: {
           userId: newWarga.id,
           address: data.address,
           rtRwId: data.rtRwId,
-          latitude: -6.8804 + (Math.random() - 0.5) * 0.005,
-          longitude: 107.6094 + (Math.random() - 0.5) * 0.005,
+          latitude: data.latitude!,
+          longitude: data.longitude!,
         },
       });
 
@@ -157,7 +163,7 @@ export class KknService {
       await tx.bin.update({
         where: { id: bin.id },
         data: {
-          status: "ACTIVE_BOUND",
+          status: "PENDING_APPROVAL",
           userId: newWarga.id,
           rtRwId: data.rtRwId,
         },
@@ -172,33 +178,13 @@ export class KknService {
         },
       });
 
-      // 5. Add Point rewards: Warga welcome points (+50)
-      await tx.pointHistory.create({
-        data: {
-          userId: newWarga.id,
-          points: 50,
-          description: "Poin awal aktivasi tempat sampah cerdas",
-          kategori: "REDUKSI_TONASE",
-        },
-      });
-
-      // 6. Add Point rewards: Student KKN points (+10 contribution reward)
-      await tx.pointHistory.create({
-        data: {
-          userId: kknUserId,
-          points: 10,
-          description: `Registrasi pendampingan warga: ${data.name}`,
-          kategori: "IDE_DAUR_ULANG",
-        },
-      });
-
-      // 7. Audit log activation
+      // 5. Audit log activation request
       await tx.auditTrail.create({
         data: {
-          action: "ACTIVATE_BIN",
+          action: "REQUEST_ACTIVATE_BIN",
           userId: kknUserId,
           oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
-          newValue: { qrCode: bin.qrCode, status: "ACTIVE_BOUND", ownerUserId: newWarga.id } as any,
+          newValue: { qrCode: bin.qrCode, status: "PENDING_APPROVAL", ownerUserId: newWarga.id } as any,
         },
       });
 

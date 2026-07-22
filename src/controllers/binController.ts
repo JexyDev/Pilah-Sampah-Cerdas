@@ -14,8 +14,8 @@ const scanSchema = z.object({
   detectedType: z.string().min(1, "Jenis sampah terdeteksi diperlukan"),
   estimatedVolume: z.number().positive("Volume harus positif"),
   householdId: z.string().uuid("Household ID tidak valid"),
-  userLat: z.number().min(-90).max(90).optional(),
-  userLng: z.number().min(-180).max(180).optional(),
+  userLat: z.number().min(-90).max(90),
+  userLng: z.number().min(-180).max(180),
 });
 
 export class BinController {
@@ -46,6 +46,7 @@ export class BinController {
           category: bin.category,
           wargaName: bin.user?.name || "-",
           userId: bin.userId || null,
+          realStatus: bin.status,
         };
       });
 
@@ -484,6 +485,47 @@ export class BinController {
       res
         .status(500)
         .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  async approveActivation(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminUserId = req.user!.userId;
+      const result = await binService.approveActivation(id, adminUserId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] approveActivation error:", error);
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  async rejectActivation(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminUserId = req.user!.userId;
+      const result = await binService.rejectActivation(id, adminUserId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] rejectActivation error:", error);
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  async reportIssue(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+      const { issueType, notes } = req.body;
+      if (!issueType || !["EMPTY_REQUEST", "BROKEN_REPORT"].includes(issueType)) {
+        res.status(400).json({ success: false, code: "INVALID_ISSUE_TYPE", message: "Tipe laporan tidak valid" });
+        return;
+      }
+      const result = await binService.reportIssue(id, userId, issueType, notes || "");
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] reportIssue error:", error);
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 }

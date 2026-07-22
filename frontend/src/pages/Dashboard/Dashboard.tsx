@@ -136,6 +136,25 @@ const WargaDashboard: React.FC = () => {
     }
   };
 
+  const handleReportIssue = async (binId: string, issueType: "EMPTY_REQUEST" | "BROKEN_REPORT") => {
+    try {
+      const notes = issueType === "EMPTY_REQUEST" ? "Minta pengosongan tong" : "Tong rusak/QR sobek";
+      const confirmMsg = issueType === "EMPTY_REQUEST" 
+        ? "Apakah Anda yakin ingin memanggil petugas untuk mengosongkan tong sampah ini?" 
+        : "Apakah Anda yakin ingin melaporkan bahwa tong sampah ini rusak?";
+      
+      if (!window.confirm(confirmMsg)) return;
+
+      const res = await api.post(`/bins/${binId}/report-issue`, { issueType, notes });
+      if (res.data?.success) {
+        toast.success(res.data.data?.message || "Laporan berhasil dikirim!");
+        fetchMyBins();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal mengirimkan laporan");
+    }
+  };
+
   const handleTukarPoin = async (e: React.FormEvent) => {
     e.preventDefault();
     const pointsToRedeem = parseInt(tukarPoinAmount);
@@ -499,21 +518,58 @@ const WargaDashboard: React.FC = () => {
                         </span>
                         Tong {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
                       </span>
-                      <span
-                        className={bin.kapasitas > 80 ? "text-red-600" : "text-on-surface-variant"}
-                      >
-                        {bin.kapasitas}% Terisi
-                      </span>
+                      {bin.realStatus === "ACTIVE_BOUND" && (
+                        <span
+                          className={bin.kapasitas > 80 ? "text-red-600" : "text-on-surface-variant"}
+                        >
+                          {bin.kapasitas}% Terisi
+                        </span>
+                      )}
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${bin.kapasitas >= 80 ? "bg-red-500" : bin.kapasitas >= 50 ? "bg-amber-500" : "bg-primary"}`}
-                        style={{ width: `${bin.kapasitas}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-[9px] text-on-surface-variant/80 text-right font-semibold">
-                      {bin.currentVolumeLiter} L / {bin.maxCapacityLiter} L Kapasitas
-                    </p>
+                    {bin.realStatus === "PENDING_APPROVAL" ? (
+                      <div className="mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-yellow-700 uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-ping"></span>
+                          Menunggu Persetujuan
+                        </span>
+                      </div>
+                    ) : bin.realStatus === "BROKEN" ? (
+                      <div className="mt-2 p-2 bg-red-50 rounded-lg border border-red-200 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-red-700 uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                          Tong Rusak / QR Sobek
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${bin.kapasitas >= 80 ? "bg-red-500" : bin.kapasitas >= 50 ? "bg-amber-500" : "bg-primary"}`}
+                            style={{ width: `${bin.kapasitas}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-[9px] text-on-surface-variant/80 text-right font-semibold">
+                          {bin.currentVolumeLiter} L / {bin.maxCapacityLiter} L Kapasitas
+                        </p>
+
+                        <div className="mt-3 flex gap-2 justify-end">
+                          <button
+                            onClick={() => handleReportIssue(bin.id, "EMPTY_REQUEST")}
+                            className="px-2.5 py-1 text-[10px] bg-primary text-white font-bold rounded hover:bg-primary/95 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                          >
+                            <span className="material-symbols-outlined text-[12px]">local_shipping</span>
+                            Panggil Petugas
+                          </button>
+                          <button
+                            onClick={() => handleReportIssue(bin.id, "BROKEN_REPORT")}
+                            className="px-2.5 py-1 text-[10px] border border-red-200 text-red-600 font-bold rounded hover:bg-red-50 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                          >
+                            <span className="material-symbols-outlined text-[12px]">warning</span>
+                            Lapor Rusak
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

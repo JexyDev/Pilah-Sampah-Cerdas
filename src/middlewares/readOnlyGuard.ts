@@ -10,7 +10,7 @@ import { Request, Response, NextFunction } from "express";
 export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): void => {
   const user = req.user;
 
-  if (user && (user.role === "CAMAT" || user.role === "LURAH")) {
+  if (user && (user.role === "CAMAT" || user.role === "LURAH" || user.role === "ADMIN_DLH")) {
     const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
     if (writeMethods.includes(req.method)) {
       res.status(403).json({
