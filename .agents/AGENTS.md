@@ -123,6 +123,7 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
 
 ## 1. Autentikasi & Autorisasi (RBAC)
 - **Login Warga**: Menggunakan **Nomor HP (+62) + OTP via WhatsApp** (WA API disediakan oleh PT Makerindo).
+  - **Keamanan Akun Warga**: Kata sandi warga tetap wajib di-hash menggunakan standar pengamanan backend (bcrypt) demi keamanan data sekunder.
 - **Login Role Lain**: Super Admin, Admin DLH, Camat, Lurah, RW, Mahasiswa KKN, dan Petugas Residu menggunakan **Email + Password standar**.
 - **Akses Read-Only (Monitoring)**:
   - Role **Admin DLH**, **Camat**, dan **Lurah** dibatasi secara ketat menjadi **Read-Only** (hanya monitoring visual/data-scoping).
@@ -142,8 +143,11 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
   c) Input dimensi manual (tinggi, lebar, bentuk, kapasitas liter).
 - **Masa Aktif & Aturan Reset**:
   - Tempat sampah aktif selama **30 hari**. Masa aktif di-reset otomatis setiap kali warga mengunggah foto setoran sampah + memindai QR + disetujui pengambilan.
-  - Jika 30 hari tanpa aktivitas -> status diubah menjadi **TIDAK AKTIF**. Hanya **Super Admin** yang berhak mengaktifkan kembali (RW hanya bisa memonitor tanpa tombol aksi).
+  - Jika 30 hari tanpa aktivitas -> status diubah menjadi **TIDAK AKTIF**. Saat tidak aktif, warga tidak bisa melakukan pemindaian/setoran sampah. Warga wajib mengajukan aktivasi ulang yang harus diverifikasi dan disetujui oleh RW terlebih dahulu sebelum aktif kembali.
   - **Tempat Sampah Rusak**: RW dapat menandai bin sebagai `BROKEN` -> QR menjadi tidak aktif secara permanen.
+
+## 2b. Histori Penugasan & Handover KKN
+- **Histori Handover**: Setiap serah terima wilayah tugas, daftar warga dampingan, dan aset QR batch antar mahasiswa KKN (lama ke baru) wajib dicatat dalam tabel histori penugasan (`kkn_handover_history`) di database agar dapat dipantau oleh Super Admin secara kronologis.
 
 ## 3. Jam Operasional, Penjemputan, & Timbangan
 - **Window Waktu**: Cek & angkut dilakukan pukul **06:00-08:00** dan **16:00-18:00**.
@@ -160,9 +164,7 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
 
 ## 5. Gamifikasi & Poin (Ledger Terpisah)
 - **Skema Gamifikasi**:
-  - Warga: Organik (+2/kg), Non-Organik (+1.5/kg), Residu-campuran jika terdeteksi (-1/kg).
-  - Mahasiswa: Assist registrasi (+10/aktivasi) + keaktifan pendampingan.
-  - Petugas Residu: Berdasarkan pencapaian skor KPI.
+  - Seluruh pencatatan poin (Warga, Mahasiswa, Petugas) wajib menggunakan **ledger/skema terpisah** di database agar perolehan poin per kategori dan peran dapat divalidasi secara independen untuk keperluan audit.
   - Poin saat ini murni gamifikasi (belum dapat ditukar), namun skema data wajib mendukung field placeholder seperti `redeemable: false` untuk masa depan.
 - **Ide Daur Ulang**: Pengajuan ide daur ulang oleh warga -> disetujui RW -> reward +50 poin dan dipublikasikan ke Social Feed.
 
