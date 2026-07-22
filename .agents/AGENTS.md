@@ -114,3 +114,58 @@ You must now pass a token instead of a string.
 
 Closes #234
 ```
+
+---
+
+# ⚙️ Spesifikasi Fitur & Aturan Pengembangan (Pilah Sampah Cerdas)
+
+Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat final dan wajib dipatuhi:
+
+## 1. Autentikasi & Autorisasi (RBAC)
+- **Login Warga**: Menggunakan **Nomor HP (+62) + OTP via WhatsApp** (WA API disediakan oleh PT Makerindo).
+- **Login Role Lain**: Super Admin, Admin DLH, Camat, Lurah, RW, Mahasiswa KKN, dan Petugas Residu menggunakan **Email + Password standar**.
+- **Akses Read-Only (Monitoring)**:
+  - Role **Admin DLH**, **Camat**, dan **Lurah** dibatasi secara ketat menjadi **Read-Only** (hanya monitoring visual/data-scoping).
+  - Terapkan middleware `readOnlyGuard` untuk menolak (403) seluruh operasi tulis (POST, PUT, DELETE) dari ketiga role tersebut, kecuali approval diskrepansi AI khusus Admin DLH.
+  - **Data-Scoping Wilayah**: Admin DLH melihat seluruh kota; Camat melihat satu kecamatan; Lurah melihat satu kelurahan.
+
+## 2. State Machine QR Code & Tempat Sampah (Bin)
+- **Batasan Jumlah**: Maksimal **2 tempat sampah per rumah tangga**: 1 Organik dan 1 Anorganik. Residu **tidak dibuatkan tempat sampah** tersendiri di rumah warga (residu dipisahkan/ditimbang di hilir oleh Petugas Residu).
+- **Alur Aktivasi QR**:
+  1. Status Awal: `PRINTED` / `BELUM_DIGUNAKAN`.
+  2. Mahasiswa KKN scan pertama kali -> status berubah menjadi `ASSIGNED_TO_PIC` / `DIPEGANG_MAHASISWA` dan merekam koordinat GPS mahasiswa.
+  3. Mahasiswa membantu pendaftaran warga -> koordinat GPS gawai perekam wajib dikirim (via sensor GPS mobile) dan direkam permanen -> status bin berubah menjadi `PENDING_APPROVAL`.
+  4. RW menyetujui -> status berubah menjadi `ACTIVE_BOUND`. Poin bonus ditambahkan secara atomik (+10 Warga, +10 Mahasiswa).
+- **Kapasitas Tong**: Ditentukan saat registrasi melalui 3 opsi:
+  a) Nilai default standar pemerintah (dari `system_configs`).
+  b) Estimasi mandiri melalui foto AI.
+  c) Input dimensi manual (tinggi, lebar, bentuk, kapasitas liter).
+- **Masa Aktif & Aturan Reset**:
+  - Tempat sampah aktif selama **30 hari**. Masa aktif di-reset otomatis setiap kali warga mengunggah foto setoran sampah + memindai QR + disetujui pengambilan.
+  - Jika 30 hari tanpa aktivitas -> status diubah menjadi **TIDAK AKTIF**. Hanya **Super Admin** yang berhak mengaktifkan kembali (RW hanya bisa memonitor tanpa tombol aksi).
+  - **Tempat Sampah Rusak**: RW dapat menandai bin sebagai `BROKEN` -> QR menjadi tidak aktif secara permanen.
+
+## 3. Jam Operasional, Penjemputan, & Timbangan
+- **Window Waktu**: Cek & angkut dilakukan pukul **06:00-08:00** dan **16:00-18:00**.
+- **Notifikasi Tong Penuh**: Warga harus mengunggah foto bukti tempat sampah penuh -> memicu notifikasi push ke Petugas & RW dan memberi marker merah di peta.
+- **Eskalasi Otomatis**: Jika petugas tidak mendokumentasikan pengambilan dalam window waktu, notifikasi eskalasi otomatis dikirim secara hierarkis (RW -> Lurah -> Camat -> Admin DLH).
+- **Timbangan Aktual**: Hasil timbangan diinput **secara manual** oleh Petugas Residu dari hasil timbangan industri fisik (bukan IoT/sensor otomatis).
+
+## 4. Analitik & Formula Kepatuhan
+- **Skor Kepatuhan Warga**: `Compliance_Score = (0.5 * OnTimeSubmissionRate) + (0.5 * AI_Confidence_Rate rata-rata)`.
+- **Skor Keandalan (Reliability)**: Metrik terpisah untuk mengukur konsistensi & rutinitas pembuangan warga.
+- **Agregasi Wilayah**: Menggunakan nilai **MEDIAN**, bukan rata-rata biasa, untuk menahan distorsi outlier.
+- **Rule of Discrepancy**: AI confidence >90% menjadi acuan. Jika input manual petugas berbeda dari klasifikasi AI (>90% confidence), tandai status setoran sebagai `PENDING_REVIEW` untuk dievaluasi oleh Admin DLH.
+- **KPI Petugas**: `KPI_Petugas = (0.6 * Ketepatan_Waktu_Lapor) + (0.4 * Akurasi_vs_AI)`.
+
+## 5. Gamifikasi & Poin (Ledger Terpisah)
+- **Skema Gamifikasi**:
+  - Warga: Organik (+2/kg), Non-Organik (+1.5/kg), Residu-campuran jika terdeteksi (-1/kg).
+  - Mahasiswa: Assist registrasi (+10/aktivasi) + keaktifan pendampingan.
+  - Petugas Residu: Berdasarkan pencapaian skor KPI.
+  - Poin saat ini murni gamifikasi (belum dapat ditukar), namun skema data wajib mendukung field placeholder seperti `redeemable: false` untuk masa depan.
+- **Ide Daur Ulang**: Pengajuan ide daur ulang oleh warga -> disetujui RW -> reward +50 poin dan dipublikasikan ke Social Feed.
+
+## 6. Fasilitas GIS & Peta
+- **Fasilitas**: Meliputi Bata Terawang (rongga sirkulasi udara), Loseda (pipa kompos dapur), Rumah Maggot, Bank Sampah, dan budidaya ternak (lele/ayam/unggas). RW/Mahasiswa bisa bantu input data berkala secara manual (laporan material masuk & panen mingguan).
+- **Peta Legenda**: Hijau (Organik/Kompos), Biru (Daur Ulang), Merah (Residu/TPA), Emas (Flash Drop Challenge).
