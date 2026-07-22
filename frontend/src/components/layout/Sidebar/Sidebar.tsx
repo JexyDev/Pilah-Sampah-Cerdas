@@ -144,6 +144,18 @@ const Sidebar: React.FC = () => {
           "MAHASISWA_KKN",
           "WARGA",
         ]) && <NavItem to="/pengaturan" icon="settings" label="Pengaturan" />}
+
+        {hasAccess(["SUPER_ADMIN"]) && (
+          <>
+            <div className="px-4 py-2 text-[10px] uppercase font-bold text-primary tracking-wider mt-2 border-t border-outline-variant/35">
+              Super Admin Panel
+            </div>
+            <NavItem to="/superadmin/dashboard" icon="query_stats" label="Dashboard Kota" />
+            <NavItem to="/superadmin/configs" icon="tune" label="Rule Engine" />
+            <NavItem to="/superadmin/qr-master" icon="qr_code_2" label="Master QR & Inaktif" />
+            <NavItem to="/superadmin/audit" icon="assignment" label="Audit Trail" />
+          </>
+        )}
       </nav>
 
       {/* Sidebar Footer */}

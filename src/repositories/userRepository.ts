@@ -31,6 +31,10 @@ export class UserRepository {
         pointHistory: {
           select: { points: true },
         },
+        studentProfile: {
+          include: { assignedPolygon: true }
+        },
+        petugasProfile: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -39,6 +43,7 @@ export class UserRepository {
   async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
+      include: { role: true, studentProfile: true, petugasProfile: true }
     });
   }
 

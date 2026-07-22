@@ -29,6 +29,7 @@ import bankSampahRouter from "./routes/bankSampahRoutes.js";
 import notificationIntegrationRouter from "./routes/notificationIntegrationRoutes.js";
 import kknRouter from "./routes/kknRoutes.js";
 import residuRouter from "./routes/residuRoutes.js";
+import superAdminRouter from "./routes/superAdminRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -78,6 +79,7 @@ app.use("/api/v1/bank-sampah", bankSampahRouter);
 app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
+app.use("/api/v1/super-admin", superAdminRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {

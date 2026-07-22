@@ -57,6 +57,8 @@ model User {
   verifiedLogs    WasteLog[]        @relation("VerifiedLogs")
   wargaViolations   Violation[]       @relation("WargaViolations")
   recordedViolations Violation[]      @relation("RecordedViolations")
+  fromHandovers KknHandoverHistory[] @relation("FromStudentHandovers")
+  toHandovers   KknHandoverHistory[] @relation("ToStudentHandovers")
 
   @@map("users")
 }
@@ -94,6 +96,7 @@ model RtRwArea {
   bins        Bin[]
   users       User[]
   studentsKkn StudentKkn[]
+  handovers   KknHandoverHistory[]
 
   @@unique([kelurahanId, name])
   @@map("rt_rw_areas")
@@ -498,3 +501,18 @@ model Violation {
 
   @@map("violations")
 }
+
+model KknHandoverHistory {
+  id            String   @id @default(uuid())
+  fromUserId    String   @map("from_user_id")
+  fromUser      User     @relation("FromStudentHandovers", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId      String   @map("to_user_id")
+  toUser        User     @relation("ToStudentHandovers", fields: [toUserId], references: [id], onDelete: Cascade)
+  rtRwId        Int      @map("rt_rw_id")
+  rtRw          RtRwArea @relation(fields: [rtRwId], references: [id], onDelete: Cascade)
+  notes         String?
+  handoverDate  DateTime @default(now()) @map("handover_date")
+
+  @@map("kkn_handover_history")
+}
+

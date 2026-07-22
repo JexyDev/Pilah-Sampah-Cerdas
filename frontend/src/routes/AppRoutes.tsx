@@ -30,6 +30,10 @@ import KknDashboard from "../pages/KknDashboard/KknDashboard";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import { useAuthStore } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
+import { SuperAdminDashboard } from "../pages/SuperAdmin/SuperAdminDashboard";
+import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
+import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
+import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -222,6 +226,38 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["PETUGAS_RESIDU"]}>
               <ResiduDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/configs"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <ManageConfigs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/audit"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <AuditTrailList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/qr-master"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <MasterQrManager />
             </ProtectedRoute>
           }
         />

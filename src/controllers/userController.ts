@@ -72,12 +72,9 @@ export const userController = {
     }
   },
 
-  /**
-   * Create a new user (Admin only)
-   */
   createUser: async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, email, password, roleName, nik, status, rtRwId } = req.body;
+      const { name, email, password, roleName } = req.body;
       if (!name || !email || !password || !roleName) {
         res.status(400).json({
           success: false,
@@ -87,15 +84,7 @@ export const userController = {
         return;
       }
 
-      const newUser = await userService.createUser({
-        name,
-        email,
-        password,
-        roleName,
-        nik,
-        status,
-        rtRwId,
-      });
+      const newUser = await userService.createUser(req.body, req.user!);
 
       res.status(201).json({
         success: true,
@@ -104,7 +93,13 @@ export const userController = {
     } catch (error: any) {
       console.error("[UserController] createUser error:", error);
 
-      if (error.message === "ROLE_NOT_FOUND") {
+      if (error.message === "FORBIDDEN_ROLE_CREATION") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Hanya Super Admin yang dapat membuat akun Admin DLH, Camat, atau Lurah",
+        });
+      } else if (error.message === "ROLE_NOT_FOUND") {
         res.status(400).json({
           success: false,
           error: "VALIDATION_ERROR",
@@ -132,17 +127,8 @@ export const userController = {
   updateUser: async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { name, email, password, roleName, nik, status, rtRwId } = req.body;
 
-      const updatedUser = await userService.updateUser(id, {
-        name,
-        email,
-        password,
-        roleName,
-        nik,
-        status,
-        rtRwId,
-      });
+      const updatedUser = await userService.updateUser(id, req.body, req.user!);
 
       res.status(200).json({
         success: true,
@@ -151,7 +137,13 @@ export const userController = {
     } catch (error: any) {
       console.error("[UserController] updateUser error:", error);
 
-      if (error.message === "USER_NOT_FOUND") {
+      if (error.message === "FORBIDDEN_ROLE_UPDATE") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Hanya Super Admin yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
+        });
+      } else if (error.message === "USER_NOT_FOUND") {
         res
           .status(404)
           .json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
