@@ -131,10 +131,12 @@ model WasteCategory {
 enum BinStatus {
   PRINTED
   ASSIGNED_TO_PIC
+  PENDING_APPROVAL
   ACTIVE_BOUND
   BROKEN
   INACTIVE
 }
+
 
 model QrBatch {
   id                String    @id @default(uuid())

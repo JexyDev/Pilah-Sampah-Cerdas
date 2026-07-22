@@ -246,4 +246,25 @@ router.get(
   binController.getOptimizedRoute
 );
 
+router.put(
+  "/:id/approve-activation",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "RW"]),
+  binController.approveActivation
+);
+
+router.put(
+  "/:id/reject-activation",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "RW"]),
+  binController.rejectActivation
+);
+
+router.post(
+  "/:id/report-issue",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.reportIssue
+);
+
 export default router;

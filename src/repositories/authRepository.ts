@@ -216,25 +216,16 @@ export class AuthRepository {
         const updatedBin = await tx.bin.update({
           where: { id: bin.id },
           data: {
-            status: "ACTIVE_BOUND",
+            status: "PENDING_APPROVAL",
           },
         });
 
         await tx.auditTrail.create({
           data: {
-            action: "ACTIVATE_BIN",
+            action: "REQUEST_ACTIVATE_BIN",
             userId: user.id,
             oldValue: JSON.parse(JSON.stringify(bin)),
             newValue: JSON.parse(JSON.stringify(updatedBin)),
-          },
-        });
-
-        // Award +10 points to primary owner
-        await tx.pointHistory.create({
-          data: {
-            userId: user.id,
-            points: 10,
-            description: `Bonus aktivasi tempat sampah ${qrCode}`,
           },
         });
       }
