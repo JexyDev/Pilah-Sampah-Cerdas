@@ -86,6 +86,10 @@ jobs:
             # Install dependencies jika ada perubahan package.json
             npm install
             
+            # Terapkan migrasi database & Seed data awal (WAJIB untuk VPS baru/update schema)
+            npx prisma migrate deploy
+            npx prisma db seed
+            
             # Generate Prisma Client
             npx prisma generate
             
