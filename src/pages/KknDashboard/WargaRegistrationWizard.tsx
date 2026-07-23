@@ -12,6 +12,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [gpsError, setGpsError] = useState("");
 
   const [formData, setFormData] = useState({
     qrCodeOrganic: '',
@@ -35,16 +36,23 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
   useEffect(() => {
     // In a real app, this would fetch from an API
     // but realistically it should be a dropdown.
-    
-    // Simulate fetching GPS
+    // Fetch GPS
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setFormData(prev => ({
-          ...prev,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude
-        }));
-      });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setFormData(prev => ({
+            ...prev,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          }));
+          setGpsError("");
+        },
+        (err) => {
+          setGpsError("GPS tidak aktif atau akses ditolak. Harap izinkan akses lokasi.");
+        }
+      );
+    } else {
+      setGpsError("Peramban Anda tidak mendukung GPS.");
     }
   }, []);
 
@@ -71,7 +79,19 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
       } finally {
         setLoading(false);
       }
+    } else if (step === 3) {
+      if (formData.latitude === 0 && formData.longitude === 0) {
+        setError("Lokasi GPS wajib diaktifkan sebelum melanjutkan.");
+        return;
+      }
+      if (!formData.photoUrl) {
+        setError("Foto bukti fisik wajib diambil.");
+        return;
+      }
+      setError("");
+      setStep(s => s + 1);
     } else {
+      setError("");
       setStep(s => s + 1);
     }
   };
@@ -234,6 +254,27 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                     <MapPin className="w-5 h-5" />
                     Koordinat GPS Tersimpan
                   </div>
+                  {gpsError ? (
+                    <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-200 mb-3">
+                      {gpsError}
+                      <button type="button" onClick={() => {
+                        if (navigator.geolocation) {
+                          setGpsError("Sedang mencari lokasi...");
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude
+                              }));
+                              setGpsError("");
+                            },
+                            (err) => setGpsError("Akses ditolak atau gagal mendapatkan lokasi.")
+                          );
+                        }
+                      }} className="block mt-2 font-bold underline">Coba Lagi</button>
+                    </div>
+                  ) : null}
                   <div className="aspect-video bg-slate-200 rounded-lg overflow-hidden relative group">
                     {/* Fake Minimap */}
                     <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=600&h=400&fit=crop" alt="Map" className="w-full h-full object-cover opacity-60" />
