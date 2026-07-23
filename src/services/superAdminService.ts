@@ -247,22 +247,34 @@ export class SuperAdminService {
    * Generate a batch of QR Codes
    */
   async generateQrBatch(
-    data: { batchCode: string; totalQr: number; categoryId: string; rtRwId: number },
+    data: { batchCode?: string; totalQr: number; categoryId: string; rtRwId: number },
     adminUserId: string
   ) {
-    const { batchCode, totalQr, categoryId, rtRwId } = data;
+    const { totalQr, categoryId, rtRwId } = data;
 
-    const existing = await prisma.qrBatch.findUnique({
-      where: { batchCode },
+    // Find the latest QR batch in the database
+    const latestBatch = await prisma.qrBatch.findFirst({
+      where: {
+        batchCode: {
+          startsWith: "BATCH-",
+        },
+      },
+      orderBy: { batchCode: "desc" },
     });
-    if (existing) {
-      throw new Error("BATCH_CODE_EXISTS");
+
+    let nextBatchNum = 1;
+    if (latestBatch) {
+      const match = latestBatch.batchCode.match(/^BATCH-(\d+)$/);
+      if (match) {
+        nextBatchNum = parseInt(match[1], 10) + 1;
+      }
     }
+    const computedBatchCode = `BATCH-${nextBatchNum.toString().padStart(3, "0")}`;
 
     return prisma.$transaction(async (tx) => {
       const batch = await tx.qrBatch.create({
         data: {
-          batchCode,
+          batchCode: computedBatchCode,
           totalQr,
           status: "PRINTED",
         },
@@ -315,7 +327,7 @@ export class SuperAdminService {
         data: {
           action: "GENERATE_QR_BATCH",
           userId: adminUserId,
-          newValue: { batchCode, totalQr, categoryId, rtRwId },
+          newValue: { batchCode: computedBatchCode, totalQr, categoryId, rtRwId } as any,
         },
       });
 
