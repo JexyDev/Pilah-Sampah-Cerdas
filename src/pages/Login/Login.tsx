@@ -1,8 +1,8 @@
 import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, Phone, LogIn } from "lucide-react";
 /**
  * Project: TrashCare
- * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
- * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
 import React, { useState, useRef } from "react";
