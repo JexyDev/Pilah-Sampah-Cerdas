@@ -6,7 +6,6 @@ class UserEntity extends Equatable {
   const UserEntity({
     required this.id,
     required this.name,
-    required this.email,
     required this.role,
     this.phone = '',
     this.kelurahan = '',
@@ -18,7 +17,6 @@ class UserEntity extends Equatable {
 
   final String id;
   final String name;
-  final String email;
   final String phone;
   final UserRole role;
   final String kelurahan;
@@ -30,7 +28,6 @@ class UserEntity extends Equatable {
   UserEntity copyWith({
     String? id,
     String? name,
-    String? email,
     String? phone,
     UserRole? role,
     String? kelurahan,
@@ -42,7 +39,6 @@ class UserEntity extends Equatable {
     return UserEntity(
       id: id ?? this.id,
       name: name ?? this.name,
-      email: email ?? this.email,
       phone: phone ?? this.phone,
       role: role ?? this.role,
       kelurahan: kelurahan ?? this.kelurahan,
@@ -54,7 +50,7 @@ class UserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, email, phone, role];
+  List<Object?> get props => [id, phone, role];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
