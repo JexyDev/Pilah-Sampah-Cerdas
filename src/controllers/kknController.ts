@@ -19,12 +19,11 @@ export class KknController {
       const { PrismaClient } = await import("@prisma/client");
       const prisma = new PrismaClient();
       
-      // Cek apakah bin dengan QR ini sudah ada dan aktif/terdaftar
       const existingBin = await prisma.bin.findUnique({
         where: { qrCode },
       });
 
-      if (existingBin) {
+      if (existingBin && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
         res.status(400).json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada tong lain." });
         return;
       }

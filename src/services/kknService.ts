@@ -393,14 +393,25 @@ export class KknService {
       // Create new batch if needed or use existing
       let batchId = bin.qrBatchId;
       if (!batchId) {
-        const batch = await tx.qrBatch.create({
-          data: {
-            batchCode: `BATCH-${Date.now()}`,
-            assignedPicUserId: kknUserId,
-            status: "DISTRIBUTED",
-            totalQr: 1
-          }
+        const batchCode = `BATCH-${qrCode}`;
+        let batch = await tx.qrBatch.findUnique({
+          where: { batchCode }
         });
+        if (!batch) {
+          batch = await tx.qrBatch.create({
+            data: {
+              batchCode,
+              assignedPicUserId: kknUserId,
+              status: "DISTRIBUTED",
+              totalQr: 1
+            }
+          });
+        } else if (batch.assignedPicUserId !== kknUserId) {
+          await tx.qrBatch.update({
+            where: { id: batch.id },
+            data: { assignedPicUserId: kknUserId }
+          });
+        }
         batchId = batch.id;
       } else if (bin.qrBatch?.assignedPicUserId !== kknUserId) {
          // Reassign if no pic
