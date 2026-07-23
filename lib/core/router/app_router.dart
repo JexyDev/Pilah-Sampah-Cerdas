@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter/material.dart';
 import '../../presentation/splash/splash_screen.dart';
 import '../../presentation/auth/login_screen.dart';
@@ -5,7 +12,6 @@ import '../../presentation/main/main_shell.dart';
 import '../../presentation/scan/scan_flow_screen.dart';
 import '../../presentation/aktivasi/aktivasi_bin_screen.dart';
 import '../../presentation/reset/reset_bin_screen.dart';
-import '../../presentation/notifikasi/notifikasi_screen.dart';
 
 /// Nama-nama route terpusat agar tidak ada magic string di widget.
 class AppRoutes {
@@ -17,7 +23,6 @@ class AppRoutes {
   static const String scan = '/scan';
   static const String aktivasiBin = '/aktivasi-bin';
   static const String resetBin = '/reset-bin';
-  static const String notifikasi = '/notifikasi';
 }
 
 /// Route generator terpusat.
@@ -38,8 +43,6 @@ class AppRouter {
         return _buildRoute(const AktivasiBinScreen(), settings);
       case AppRoutes.resetBin:
         return _buildRoute(const ResetBinScreen(), settings);
-      case AppRoutes.notifikasi:
-        return _buildRoute(const NotifikasiScreen(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

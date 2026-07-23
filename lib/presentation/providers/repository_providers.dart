@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
@@ -5,13 +12,11 @@ import '../../core/utils/safe_storage.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/bin_repository.dart';
 import '../../domain/repositories/waste_log_repository.dart';
-import '../../domain/repositories/notification_repository.dart';
 
 import '../../data/network/api_client.dart';
 import '../../data/repositories/api_auth_repository.dart';
 import '../../data/repositories/api_bin_repository.dart';
 import '../../data/repositories/api_waste_log_repository.dart';
-import '../../data/repositories/api_notification_repository.dart';
 
 final secureStorageProvider = Provider<SafeStorage>((ref) {
   return const SafeStorage();
@@ -43,12 +48,6 @@ final binRepositoryProvider = Provider<BinRepository>((ref) {
 
 final wasteLogRepositoryProvider = Provider<WasteLogRepository>((ref) {
   return ApiWasteLogRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
-});
-
-final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  return ApiNotificationRepository(
     apiClient: ref.read(apiClientProvider),
   );
 });

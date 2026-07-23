@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -84,7 +91,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
         final start = now.subtract(Duration(days: now.weekday - 1));
         return logs
             .where(
-              (l) => l.createdAt.toLocal().isAfter(
+              (l) => l.createdAt.isAfter(
                 DateTime(start.year, start.month, start.day),
               ),
             )
@@ -92,11 +99,9 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
       case 2: // Bulan ini
         return logs
             .where(
-              (l) {
-                final localDate = l.createdAt.toLocal();
-                return localDate.month == now.month &&
-                    localDate.year == now.year;
-              },
+              (l) =>
+                  l.createdAt.month == now.month &&
+                  l.createdAt.year == now.year,
             )
             .toList();
       default:
@@ -143,7 +148,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
     final Map<String, List<WasteLogEntity>> grouped = {};
     final now = DateTime.now();
     for (final log in logs) {
-      final String key = _groupLabel(log.createdAt.toLocal(), now);
+      final String key = _groupLabel(log.createdAt, now);
       grouped.putIfAbsent(key, () => []).add(log);
     }
 
@@ -351,7 +356,7 @@ class _RiwayatItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt.toLocal()),
+                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt),
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textHint,

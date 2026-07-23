@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../../domain/entities/ai_detection_entity.dart';
@@ -231,21 +238,18 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   final BinRepository _binRepository;
 
   Future<void> submitReset({
-    required List<String> binIds,
+    required String binId,
     required String userId,
     required String evidencePhotoPath,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
-      BinResetEntity? lastResult;
-      for (final binId in binIds) {
-        lastResult = await _binRepository.submitResetRequest(
-          binId: binId,
-          userId: userId,
-          evidencePhotoPath: evidencePhotoPath,
-        );
-      }
-      state = ResetBinState(result: lastResult);
+      final result = await _binRepository.submitResetRequest(
+        binId: binId,
+        userId: userId,
+        evidencePhotoPath: evidencePhotoPath,
+      );
+      state = ResetBinState(result: result);
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
     }

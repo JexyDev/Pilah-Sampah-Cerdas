@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:dio/dio.dart';
 import '../../../domain/entities/bin_entity.dart';
 import '../../../domain/entities/ai_detection_entity.dart';
@@ -90,8 +97,8 @@ class ApiBinRepository implements BinRepository {
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          // AI bisa butuh waktu agak lama saat terhalang queue atau latency jaringan (hingga 30s)
-          receiveTimeout: const Duration(seconds: 30),
+          // AI bisa butuh sampai 5 detik saat queue penuh
+          receiveTimeout: const Duration(seconds: 10),
         ),
       );
 
@@ -205,18 +212,6 @@ class ApiBinRepository implements BinRepository {
           'QR Code tong tidak ditemukan.',
         );
       }
-      if (errorCode == 'BIN_NOT_ACTIVATED') {
-        throw const BinException(
-          'BIN_NOT_ACTIVATED',
-          'Tong sampah belum diaktivasi.',
-        );
-      }
-      if (errorCode == 'BIN_NOT_OWNED') {
-        throw const BinException(
-          'BIN_NOT_OWNED',
-          'Tong ini bukan milik Anda.',
-        );
-      }
       if (errorCode == 'VALIDATION_ERROR') {
         // householdId kosong atau tidak valid
         throw const BinException(
@@ -237,7 +232,7 @@ class ApiBinRepository implements BinRepository {
   }
 
   // ─── Activate Bin ─────────────────────────────────────────────────────────
-  // Mengaktivasi tong sampah kosong menjadi milik warga melalui HTTP POST.
+  // Cari bin dari /bins/my berdasarkan qrSerial.
 
   @override
   Future<BinEntity> activateBin({
@@ -246,54 +241,22 @@ class ApiBinRepository implements BinRepository {
     required String householdId,
   }) async {
     try {
-      final response = await apiClient.dio.post(
-        '/bins/activate',
-        data: {'qrCode': qrSerial},
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        return _mapMyBin(data);
-      }
-      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tong sampah');
-    } on DioException catch (e) {
-      final errorCode = e.response?.data?['error']?.toString();
-      final message = e.response?.data?['message']?.toString();
-
-      if (errorCode == 'NOT_FOUND') {
+      final bin = await getBinByQrSerial(qrSerial);
+      if (bin == null) {
         throw const BinException(
           'BIN_NOT_FOUND',
-          'QR Code tong tidak terdaftar di sistem.',
+          'QR Code tong tidak ditemukan.',
         );
       }
-      if (errorCode == 'ALREADY_ACTIVATED') {
-        throw const BinException(
-          'ALREADY_ACTIVATED',
-          'Tong ini sudah diaktivasi oleh warga lain.',
-        );
-      }
-      if (errorCode == 'BAD_REQUEST') {
-        throw BinException(
-          'BAD_REQUEST',
-          message ?? 'Permintaan tidak valid.',
-        );
-      }
-      throw BinException(
-        'NETWORK_ERROR',
-        'Gagal terhubung ke server: ${e.message}',
-      );
+      return bin;
+    } on BinException {
+      rethrow;
     } catch (e) {
-      throw BinException(
-        'UNKNOWN_ERROR',
-        'Terjadi kesalahan sistem: $e',
-      );
+      throw BinException('UNKNOWN_ERROR', e.toString());
     }
   }
 
   // ─── Submit Reset Request ─────────────────────────────────────────────────
-  // POST /api/v1/bins/reset
-  // Request: multipart/form-data — field "binId" (UUID) + file "evidence" (image)
-  // Response: { success: true, data: { id, binId, userId, status, evidencePhotoUrl, createdAt } }
 
   @override
   Future<BinResetEntity> submitResetRequest({
@@ -301,62 +264,14 @@ class ApiBinRepository implements BinRepository {
     required String userId,
     required String evidencePhotoPath,
   }) async {
-    try {
-      final formData = FormData.fromMap({
-        'binId': binId,
-        'evidence': await MultipartFile.fromFile(
-          evidencePhotoPath,
-          filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-      });
-
-      final response = await apiClient.dio.post(
-        '/bins/reset',
-        data: formData,
-        options: Options(contentType: 'multipart/form-data'),
-      );
-
-      if (response.statusCode == 201) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        return _mapResetRequest(data);
-      }
-      throw const BinException('RESET_FAILED', 'Gagal mengajukan pengosongan tong');
-    } on DioException catch (e) {
-      final errorCode = e.response?.data?['error']?.toString();
-      final message = e.response?.data?['message']?.toString();
-
-      if (errorCode == 'DUPLICATE_REQUEST') {
-        throw BinException(
-          'DUPLICATE_REQUEST',
-          message ?? 'Sudah ada pengajuan pengosongan aktif untuk tong ini.',
-        );
-      }
-      if (errorCode == 'BIN_NOT_OWNED') {
-        throw const BinException(
-          'BIN_NOT_OWNED',
-          'Tong ini bukan milik Anda.',
-        );
-      }
-      if (errorCode == 'RESOURCE_NOT_FOUND') {
-        throw const BinException(
-          'BIN_NOT_FOUND',
-          'Tong tidak ditemukan.',
-        );
-      }
-      if (errorCode == 'VALIDATION_ERROR') {
-        throw BinException(
-          'VALIDATION_ERROR',
-          message ?? 'Foto bukti wajib diunggah.',
-        );
-      }
-      throw BinException(
-        'NETWORK_ERROR',
-        'Gagal terhubung ke server: ${e.message}',
-      );
-    } catch (e) {
-      if (e is BinException) rethrow;
-      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
-    }
+    return BinResetEntity(
+      id: 'reset-${DateTime.now().millisecondsSinceEpoch}',
+      binId: binId,
+      userId: userId,
+      status: BinResetStatus.pending,
+      evidencePhotoUrl: evidencePhotoPath,
+      createdAt: DateTime.now(),
+    );
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -387,38 +302,11 @@ class ApiBinRepository implements BinRepository {
       maxCapacityL: maxL,
       lat: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       lng: (json['longitude'] as num?)?.toDouble() ?? 0.0,
-      householdName: json['householdName']?.toString() ?? '',
+      householdName: json['kelurahan']?.toString() ?? '',
       rt: json['rtRw']?.toString() ?? '',
       rw: '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       isActive: json['isActive'] as bool? ?? true,
-    );
-  }
-
-  /// Map response dari POST /bins/reset ke BinResetEntity
-  BinResetEntity _mapResetRequest(Map<String, dynamic> json) {
-    final statusStr = (json['status']?.toString() ?? 'PENDING').toUpperCase();
-    BinResetStatus status;
-    switch (statusStr) {
-      case 'APPROVED':
-        status = BinResetStatus.approved;
-        break;
-      case 'REJECTED':
-        status = BinResetStatus.rejected;
-        break;
-      default:
-        status = BinResetStatus.pending;
-    }
-
-    return BinResetEntity(
-      id: json['id']?.toString() ?? '',
-      binId: json['binId']?.toString() ?? '',
-      userId: json['userId']?.toString() ?? '',
-      status: status,
-      evidencePhotoUrl: json['evidencePhotoUrl']?.toString(),
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
     );
   }
 }

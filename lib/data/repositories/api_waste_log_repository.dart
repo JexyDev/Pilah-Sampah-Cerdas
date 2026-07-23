@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:dio/dio.dart';
 import '../../../domain/entities/waste_log_entity.dart';
 import '../../../domain/entities/point_history_entity.dart';
@@ -83,35 +90,6 @@ class ApiWasteLogRepository implements WasteLogRepository {
     } catch (e) {
       if (e is AppNetworkException) rethrow;
       throw AppNetworkException('Kesalahan sistem: $e');
-    }
-  }
-
-  // ─── Peringkat User ───────────────────────────────────────────────────────
-
-  @override
-  Future<String> getUserLeaderboardRank(String userId) async {
-    try {
-      final response = await apiClient.dio.get('/points/leaderboard');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['data'] as List<dynamic>;
-        
-        final userEntry = data.firstWhere(
-          (entry) => entry['id'] == userId,
-          orElse: () => null,
-        );
-
-        if (userEntry != null) {
-          final rank = userEntry['rank'];
-          return '#$rank';
-        }
-        return 'Belum ada rank';
-      }
-      return 'Belum ada rank';
-    } on DioException catch (_) {
-      return 'Belum ada rank';
-    } catch (_) {
-      return 'Belum ada rank';
     }
   }
 

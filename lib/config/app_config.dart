@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -16,36 +23,37 @@ class AppConfig {
   // iOS Simulator    : 127.0.0.1 → otomatis (tidak perlu diubah)
   // HP fisik Android : isi _devServerIp dengan IP laptop
   // HP fisik iOS     : isi _devServerIp dengan IP laptop
-  static const String _devServerIp = '157.10.252.252'; // IP VPS backend
+  static const String _devServerIp = '192.168.1.21'; // IP laptop lokal/backend utama
 
   static const int _port = 3000;
 
-  static String get baseUrl {
+  static String get apiBaseUrl {
     if (kIsWeb) {
       final baseUri = Uri.base;
       if (baseUri.host.contains('ngrok') || baseUri.host.contains('tunnel')) {
-        return '${baseUri.scheme}://${baseUri.host}';
+        return '${baseUri.scheme}://${baseUri.host}/api/v1';
       }
       final host = baseUri.host.isEmpty ? 'localhost' : baseUri.host;
-      return 'http://$host:$_port';
+      return 'http://$host:$_port/api/v1';
     }
 
+    // Jika _devServerIp diisi, pakai itu (HP fisik / Ngrok)
     if (_devServerIp.isNotEmpty) {
       if (_devServerIp.startsWith('http://') || _devServerIp.startsWith('https://')) {
-        return _devServerIp;
+        return '$_devServerIp/api/v1';
       }
-      return 'http://$_devServerIp:$_port';
+      return 'http://$_devServerIp:$_port/api/v1';
     }
 
     try {
-      if (Platform.isAndroid) return 'http://10.0.2.2:$_port';
-      if (Platform.isIOS) return 'http://127.0.0.1:$_port';
+      // Emulator Android → 10.0.2.2 adalah alias localhost host machine
+      if (Platform.isAndroid) return 'http://10.0.2.2:$_port/api/v1';
+      // iOS Simulator
+      if (Platform.isIOS) return 'http://127.0.0.1:$_port/api/v1';
     } catch (_) {}
 
-    return 'http://127.0.0.1:$_port';
+    return 'http://127.0.0.1:$_port/api/v1';
   }
-
-  static String get apiBaseUrl => '$baseUrl/api/v1';
 
   static const String appName = 'Pilah Sampah Cerdas';
 

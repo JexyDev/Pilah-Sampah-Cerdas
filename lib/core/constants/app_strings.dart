@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 /// String konstanta user-facing.
 /// Disiapkan untuk lokalisasi di masa mendatang.
 /// Sesuai CLAUDE.md §4.3 — tidak ada hardcoded string user-facing.
@@ -5,7 +12,7 @@ class AppStrings {
   AppStrings._();
 
   // --- App ---
-  static const String appName = 'Pilah Sampah Cerdas';
+  static const String appName = 'TrashCare';
   static const String appTagline = 'Sampah Terdaftar, Lingkungan Tertata';
 
   // --- Auth ---

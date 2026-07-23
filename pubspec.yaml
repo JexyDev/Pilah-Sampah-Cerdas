@@ -1,5 +1,7 @@
 name: mobile_app_sampah
-description: Aplikasi Mobile Warga - Pilah Sampah Cerdas (pilahsampah.id)
+description: Aplikasi Mobile Warga - TrashCare (trashcare.id)
+# Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+# Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
 publish_to: 'none'
 version: 1.0.0+1
 

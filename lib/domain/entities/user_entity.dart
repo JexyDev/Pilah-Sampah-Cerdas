@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:equatable/equatable.dart';
 
 /// Entitas pengguna — sesuai schema backend tabel `users`.
@@ -13,7 +20,6 @@ class UserEntity extends Equatable {
     this.rtRw = '',
     this.householdId,
     this.fcmToken,
-    this.fotoProfil,
   });
 
   final String id;
@@ -25,7 +31,6 @@ class UserEntity extends Equatable {
   final String rtRw;
   final String? householdId; // diisi setelah GET /households/me
   final String? fcmToken;
-  final String? fotoProfil;
 
   UserEntity copyWith({
     String? id,
@@ -37,7 +42,6 @@ class UserEntity extends Equatable {
     String? rtRw,
     String? householdId,
     String? fcmToken,
-    String? fotoProfil,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -49,7 +53,6 @@ class UserEntity extends Equatable {
       rtRw: rtRw ?? this.rtRw,
       householdId: householdId ?? this.householdId,
       fcmToken: fcmToken ?? this.fcmToken,
-      fotoProfil: fotoProfil ?? this.fotoProfil,
     );
   }
 

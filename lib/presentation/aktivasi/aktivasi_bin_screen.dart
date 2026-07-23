@@ -1,9 +1,15 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
-import '../providers/notification_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
 
@@ -25,8 +31,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
   void _onQrDetected(String qr) {
     setState(() {
       _detectedQr = qr.trim();
-      final upperQr = _detectedQr.toUpperCase();
-      _isOrganic = !upperQr.contains('NON') && !upperQr.contains('ANORG');
+      _isOrganic = !_detectedQr.toUpperCase().contains('NON');
       _binDetected = true;
     });
   }
@@ -41,20 +46,16 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
           householdId: user?.householdId ?? '',
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
-      // Refresh semua data yang terpengaruh setelah tong baru diaktivasi
       ref.invalidate(binsProvider);
-      ref.invalidate(notificationsProvider);
-      // Refresh profil agar data tong di halaman Profil ikut segar
-      await ref.read(authProvider.notifier).fetchProfile();
     }
   }
 
   String _mapError(String code, String? msg) {
     switch (code) {
-      case 'ALREADY_ACTIVATED':
+      case 'BIN_ALREADY_ACTIVE':
         return 'Tong ini sudah aktif dan terdaftar.';
-      case 'BIN_NOT_FOUND':
-        return 'QR Serial tidak terdaftar di sistem.';
+      case 'RESOURCE_NOT_FOUND':
+        return 'QR Serial tidak ditemukan.';
       default:
         return msg ?? 'Terjadi kesalahan. Silakan coba lagi.';
     }
@@ -166,7 +167,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
-                        hint: 'BIN-ORG-EF2072F0',
+                        hint: 'PSC-DAGO-ORG-0042',
                         overlayColor: AppColors.primaryGreen,
                         onQrDetected: _onQrDetected,
                       ),

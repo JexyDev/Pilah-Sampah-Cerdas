@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import '../entities/user_entity.dart';
 
 /// Interface repository autentikasi.
@@ -22,9 +29,6 @@ abstract class AuthRepository {
 
   /// Mengambil data profil terbaru dari server (GET /api/v1/auth/me)
   Future<UserEntity> fetchProfile();
-
-  /// Mengunggah foto profil baru.
-  Future<void> uploadAvatar(String imagePath);
 }
 
 /// Exception khusus untuk auth errors.

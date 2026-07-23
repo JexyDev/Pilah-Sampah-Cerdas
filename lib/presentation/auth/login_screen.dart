@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -147,7 +154,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Pilah Sampah Cerdas',
+                            'TrashCare',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
@@ -331,7 +338,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 Pilah Sampah Cerdas. All rights reserved.',
+                          '© 2026 TrashCare. All rights reserved.',
                           style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
                         ),
                       ),

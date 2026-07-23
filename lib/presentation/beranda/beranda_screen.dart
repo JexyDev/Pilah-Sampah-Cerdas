@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +18,6 @@ import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
 import '../providers/waste_log_provider.dart';
 import '../providers/connectivity_provider.dart';
-import '../providers/notification_provider.dart';
 import '../shared/widgets/app_error.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
@@ -32,7 +38,6 @@ class BerandaScreen extends ConsumerWidget {
     final totalPointsAsync = ref.watch(totalPointsProvider);
     final wasteLogsAsync = ref.watch(wasteLogsProvider);
     final bool isOnline = ref.watch(isOnlineProvider);
-    final int unreadCount = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -41,8 +46,6 @@ class BerandaScreen extends ConsumerWidget {
           ref.invalidate(binsProvider);
           ref.invalidate(totalPointsProvider);
           ref.invalidate(wasteLogsProvider);
-          ref.invalidate(notificationsProvider);
-          ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -54,7 +57,6 @@ class BerandaScreen extends ConsumerWidget {
                 user?.name ?? 'Warga',
                 user?.rtRw ?? 'RT 04 / RW 02',
                 isOnline,
-                unreadCount,
               ),
             ),
 
@@ -168,7 +170,6 @@ class BerandaScreen extends ConsumerWidget {
     String name,
     String rtRw,
     bool isOnline,
-    int unreadCount,
   ) {
     return Container(
       color: Colors.white,
@@ -256,51 +257,6 @@ class BerandaScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              // ─── Bell icon with badge ───────────────────────────────
-              GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: AppColors.primaryGreen,
-                        size: 22,
-                      ),
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: -4,
-                        right: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                          decoration: const BoxDecoration(
-                            color: AppColors.dangerRed,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            unreadCount > 99 ? '99+' : '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
             ],
           ),
         ],
@@ -334,10 +290,6 @@ class BerandaScreen extends ConsumerWidget {
         builder: (context, ref, _) {
           final dailyAsync = ref.watch(dailyPointsProvider);
           final daily = dailyAsync.maybeWhen(data: (v) => v, orElse: () => 0);
-          
-          final rankAsync = ref.watch(userLeaderboardRankProvider);
-          final rankValue = rankAsync.maybeWhen(data: (r) => r, orElse: () => '-');
-
           return Row(
             children: [
               _StatItem(
@@ -355,10 +307,10 @@ class BerandaScreen extends ConsumerWidget {
                 valueColor: AppColors.primaryGreen,
               ),
               _VerticalDivider(),
-              _StatItem(
+              const _StatItem(
                 icon: Icons.emoji_events_outlined,
                 iconColor: AppColors.warningYellow,
-                value: rankValue,
+                value: '-',
                 label: 'Peringkat',
               ),
             ],
@@ -578,7 +530,7 @@ class _RiwayatCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Dibuang pada: ${DateFormat('HH:mm', 'id_ID').format(log.createdAt.toLocal())} WIB',
+                  'Dibuang pada: ${DateFormat('HH:mm', 'id_ID').format(log.createdAt)} WIB',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,

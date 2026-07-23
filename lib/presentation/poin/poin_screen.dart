@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +31,6 @@ class PoinScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(pointHistoryProvider);
-          ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -32,7 +38,7 @@ class PoinScreen extends ConsumerWidget {
             // ─── Header biru besar ─────────────────────────────────────
             SliverToBoxAdapter(
               child: totalAsync.when(
-                data: (total) => _buildHeader(context, ref, total),
+                data: (total) => _buildHeader(context, total),
                 loading: () => _buildHeaderSkeleton(context),
                 error: (_, __) => _buildHeaderSkeleton(context),
               ),
@@ -43,7 +49,7 @@ class PoinScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ─── Stats 3 kolom ──────────────────────────────────
-                  _buildStatsRow(historyAsync.value ?? []),
+                  _buildStatsRow(),
                   const SizedBox(height: 20),
 
                   // ─── Riwayat Poin ───────────────────────────────────
@@ -135,9 +141,7 @@ class PoinScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, int total) {
-    final rankAsync = ref.watch(userLeaderboardRankProvider);
-    
+  Widget _buildHeader(BuildContext context, int total) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -205,38 +209,20 @@ class PoinScreen extends ConsumerWidget {
                   color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.emoji_events_rounded,
                       color: AppColors.warningYellow,
                       size: 16,
                     ),
-                    const SizedBox(width: 4),
-                    rankAsync.when(
-                      data: (rank) => Text(
-                        rank,
-                        style: const TextStyle(
-                          color: AppColors.primaryGreen,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      loading: () => const SizedBox(
-                        width: 40,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                      error: (_, __) => const Text(
-                        '-',
-                        style: TextStyle(
-                          color: AppColors.primaryGreen,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    SizedBox(width: 4),
+                    Text(
+                      '#3 di RT 03',
+                      style: TextStyle(
+                        color: AppColors.primaryGreen,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -270,40 +256,19 @@ class PoinScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(List<PointHistoryEntity> history) {
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
-    final monthStart = DateTime(now.year, now.month, 1);
-
-    int todayPts = 0;
-    int weekPts = 0;
-    int monthPts = 0;
-
-    for (final h in history) {
-      if (!h.createdAt.isBefore(todayStart)) {
-        todayPts += h.points;
-      }
-      if (!h.createdAt.isBefore(weekStart)) {
-        weekPts += h.points;
-      }
-      if (!h.createdAt.isBefore(monthStart)) {
-        monthPts += h.points;
-      }
-    }
-
-    return Row(
+  Widget _buildStatsRow() {
+    return const Row(
       children: [
-        _StatsCard(label: 'Hari Ini', value: '$todayPts', sub: 'Poin'),
-        const SizedBox(width: 8),
+        _StatsCard(label: 'Hari Ini', value: '25', sub: '+5%'),
+        SizedBox(width: 8),
         _StatsCard(
           label: 'Minggu Ini',
-          value: '$weekPts',
-          sub: 'Poin',
+          value: '150',
+          sub: '+12%',
           underline: true,
         ),
-        const SizedBox(width: 8),
-        _StatsCard(label: 'Bulan Ini', value: '$monthPts', sub: 'Poin'),
+        SizedBox(width: 8),
+        _StatsCard(label: 'Bulan Ini', value: '620', sub: '+8%'),
       ],
     );
   }
@@ -412,7 +377,7 @@ class _PoinHistoryItem extends StatelessWidget {
                   DateFormat(
                     'd MMM yyyy • HH:mm',
                     'id_ID',
-                  ).format(item.createdAt.toLocal()),
+                  ).format(item.createdAt),
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textHint,

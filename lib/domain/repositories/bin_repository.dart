@@ -1,9 +1,16 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import '../entities/bin_entity.dart';
 import '../entities/ai_detection_entity.dart';
 import '../entities/bin_reset_entity.dart';
 
 /// Interface repository tong sampah.
-/// Implementasi: ApiBinRepository (data layer).
+/// Implementasi: MockBinRepository (data layer).
 abstract class BinRepository {
   /// Ambil tong sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);

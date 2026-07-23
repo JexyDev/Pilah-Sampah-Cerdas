@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -23,17 +30,10 @@ class ApiClient {
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
 
-  // ── Cache Token untuk Optimasi Performa ────────────────────────────────────
-  String? _cachedToken;
-
-  void clearTokenCache() {
-    _cachedToken = null;
-  }
-
   ApiClient({required this.dio, required this.secureStorage}) {
     dio.options.baseUrl = AppConfig.apiBaseUrl;
-    dio.options.connectTimeout = const Duration(seconds: 30);
-    dio.options.receiveTimeout = const Duration(seconds: 30);
+    dio.options.connectTimeout = const Duration(seconds: 15);
+    dio.options.receiveTimeout = const Duration(seconds: 15);
     dio.options.headers = {
       'Content-Type': 'application/json',
       'Bypass-Tunnel-Reminder': 'true' // Bypass localtunnel warning page
@@ -42,10 +42,9 @@ class ApiClient {
       InterceptorsWrapper(
         // ── Inject access token ke setiap request ────────────────────────
         onRequest: (options, handler) async {
-          _cachedToken ??= await secureStorage.read(key: AppConfig.accessTokenKey);
-          
-          if (_cachedToken != null && _cachedToken!.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $_cachedToken';
+          final token = await secureStorage.read(key: AppConfig.accessTokenKey);
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
         },
@@ -119,7 +118,6 @@ class ApiClient {
                 key: AppConfig.accessTokenKey,
                 value: newAccessToken,
               );
-              _cachedToken = newAccessToken; // UPDATE CACHE
               final newRefreshToken =
                   refreshRes.data['data']['refreshToken']?.toString();
               if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
@@ -158,7 +156,6 @@ class ApiClient {
   // ── Force Logout — hapus token & navigate ke Login ──────────────────────────
 
   Future<void> _forceLogout() async {
-    _cachedToken = null; // HAPUS CACHE
     // Hapus semua data autentikasi dari secure storage
     await Future.wait([
       secureStorage.delete(key: AppConfig.accessTokenKey),

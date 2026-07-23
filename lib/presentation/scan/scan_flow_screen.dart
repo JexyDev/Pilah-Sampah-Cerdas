@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -7,8 +14,6 @@ import '../../core/utils/platform_utils.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/bin_provider.dart';
 import '../providers/connectivity_provider.dart';
-import '../providers/notification_provider.dart';
-import '../providers/waste_log_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/inline_camera_widget.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
@@ -119,52 +124,29 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
           next.currentStep == 2 &&
           next.aiResult != null &&
           !next.isLoading) {
+        // Set step ke 1.5 (pakai nilai khusus) — kita pakai state lokal
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            // Kembali ke step 1 (loading selesai, sheet akan muncul)
+            // Sheet yang akan set step ke 2 saat user tap Lanjut
             showAiSuccessSheet(context, ref);
-          }
-        });
-      }
-      // ─── AUTO-REFRESH setelah transaksi berhasil (step 2→3) ─────────────
-      // Invalidate semua provider terkait agar data langsung segar di semua
-      // layar (Beranda, Riwayat, Poin) tanpa user harus pull-to-refresh manual.
-      if ((prev?.currentStep ?? 0) < 3 &&
-          next.currentStep == 3 &&
-          next.scanResult != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ref.invalidate(wasteLogsProvider);
-            ref.invalidate(totalPointsProvider);
-            ref.invalidate(pointHistoryProvider);
-            ref.invalidate(dailyPointsProvider);
-            ref.invalidate(notificationsProvider);
-            ref.invalidate(binsProvider);
           }
         });
       }
     });
 
-    return PopScope(
-      canPop: state.currentStep == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          // You could show a toast here if you want to tell them they can't leave,
-          // but 'mode absolute' means just ignoring the back press.
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            // Background kamera simulasi
-            _buildCameraBackground(state.currentStep),
-            // Content sesuai step
-            if (state.isLoading)
-              const Center(child: AppLoading())
-            else
-              _buildStepContent(context, state, isOnline),
-          ],
-        ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Background kamera simulasi
+          _buildCameraBackground(state.currentStep),
+          // Content sesuai step
+          if (state.isLoading)
+            const Center(child: AppLoading())
+          else
+            _buildStepContent(context, state, isOnline),
+        ],
       ),
     );
   }
@@ -468,13 +450,20 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
 
     return Column(
       children: [
-        const SafeArea(
+        SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                SizedBox(width: 48),
-                Expanded(
+                IconButton(
+                  onPressed: () =>
+                      ref.read(scanFlowProvider.notifier).goToStep(0),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                const Expanded(
                   child: Text(
                     'Scan QR Tong Sampah',
                     style: TextStyle(
@@ -485,7 +474,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                Icon(Icons.info_outline_rounded, color: Colors.white),
+                const Icon(Icons.info_outline_rounded, color: Colors.white),
               ],
             ),
           ),
@@ -544,7 +533,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
               padding: const EdgeInsets.all(16),
               child: QrScannerWidget(
                 key: ValueKey(_qrScanAttempt),
-                hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
+                hint: isOrganic ? 'PSC-DEWI-ORG-001' : 'PSC-DEWI-NON-001',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) {
                   // Guard: skip jika sudah loading atau sudah sukses
@@ -897,14 +886,6 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    // Invalidate ulang sebagai safety fallback sebelum kembali
-                    // (mencegah edge case jika addPostFrameCallback terlewat)
-                    ref.invalidate(wasteLogsProvider);
-                    ref.invalidate(totalPointsProvider);
-                    ref.invalidate(pointHistoryProvider);
-                    ref.invalidate(dailyPointsProvider);
-                    ref.invalidate(notificationsProvider);
-                    ref.invalidate(binsProvider);
                     ref.read(scanFlowProvider.notifier).reset();
                     Navigator.of(context).pop();
                   },
@@ -989,13 +970,8 @@ void showAiSuccessSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    isDismissible: false,
-    enableDrag: false,
     backgroundColor: Colors.transparent,
-    builder: (_) => PopScope(
-      canPop: false,
-      child: _AiSuccessSheet(result: result, ref: ref),
-    ),
+    builder: (_) => _AiSuccessSheet(result: result, ref: ref),
   );
 }
 

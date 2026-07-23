@@ -1,3 +1,10 @@
+/**
+ * Project: Pilah Sampah Cerdas
+ * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
+ * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
@@ -29,7 +36,6 @@ class ApiAuthRepository implements AuthRepository {
     required String nik,
     required String password,
   }) async {
-    apiClient.clearTokenCache();
     try {
       final response = await apiClient.dio.post(
         '/auth/login',
@@ -92,7 +98,6 @@ class ApiAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
-    apiClient.clearTokenCache(); // Reset memory cache
     try {
       final refreshToken = await secureStorage.read(
         key: AppConfig.refreshTokenKey,
@@ -237,7 +242,7 @@ class ApiAuthRepository implements AuthRepository {
   // ─── Fetch Profile ────────────────────────────────────────────────────────
   @override
   Future<UserEntity> fetchProfile() {
-    return _fetchAndAttachHousehold(const UserEntity(
+    return _fetchAndAttachHousehold(UserEntity(
       id: '',
       name: '',
       email: '',
@@ -261,32 +266,6 @@ class ApiAuthRepository implements AuthRepository {
     });
   }
 
-  // ─── Upload Avatar ────────────────────────────────────────────────────────
-  @override
-  Future<void> uploadAvatar(String imagePath) async {
-    try {
-      final formData = FormData.fromMap({
-        'avatar': await MultipartFile.fromFile(imagePath),
-      });
-
-      final response = await apiClient.dio.post(
-        '/auth/upload-avatar',
-        data: formData,
-      );
-
-      if (response.statusCode != 200) {
-        throw const AuthException('UPLOAD_FAILED', 'Gagal mengunggah foto profil');
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 400) {
-        throw const AuthException('BAD_REQUEST', 'Format file tidak didukung atau terlalu besar');
-      }
-      throw const AuthException('NETWORK_ERROR', 'Terjadi kesalahan jaringan');
-    } catch (e) {
-      throw AuthException('UNKNOWN_ERROR', 'Gagal memproses gambar: $e');
-    }
-  }
-
   // ─── Helper ───────────────────────────────────────────────────────────────
 
   UserEntity _mapUser(Map<String, dynamic> userMap) {
@@ -296,7 +275,6 @@ class ApiAuthRepository implements AuthRepository {
       email: userMap['email']?.toString() ?? '',
       nik: userMap['nik']?.toString(),
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
-      fotoProfil: userMap['fotoProfil']?.toString(),
     );
   }
 }
