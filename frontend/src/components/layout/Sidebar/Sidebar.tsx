@@ -41,6 +41,12 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => (
   </NavLink>
 );
 
+const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
+  <div className="px-4 py-2 text-[10px] uppercase font-bold text-primary tracking-wider mt-4 mb-1 border-t border-outline-variant/20 pt-3 first:border-t-0 first:pt-0 first:mt-2">
+    {label}
+  </div>
+);
+
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -80,6 +86,7 @@ const Sidebar: React.FC = () => {
         className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4"
         style={{ scrollbarWidth: "thin", scrollbarColor: "#bccabc transparent" }}
       >
+        <SectionHeader label="Layanan Utama" />
         <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
         {hasAccess(["WARGA"]) && (
@@ -94,12 +101,17 @@ const Sidebar: React.FC = () => {
           <NavItem to="/residu-portal" icon={Shield} label="Portal Pengawasan" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/manajemen-pengguna" icon={Users} label="Manajemen Pengguna" />
+        {hasAccess(["RW"]) && (
+          <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
         )}
 
+        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]) && (
+          <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
+        )}
+
+        <SectionHeader label="Manajemen Data" />
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
+          <NavItem to="/manajemen-pengguna" icon={Users} label="Manajemen Pengguna" />
         )}
 
         {hasAccess([
@@ -119,16 +131,12 @@ const Sidebar: React.FC = () => {
         )}
 
         {hasAccess(["RW"]) && (
-          <>
-            <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
-            <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
-          </>
+          <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
         )}
 
-        <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
-
+        <SectionHeader label="Laporan & Validasi" />
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/kategori-sampah" icon={Tags} label="Master Poin/Reward" />
+          <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
         )}
 
         {hasAccess([
@@ -141,20 +149,20 @@ const Sidebar: React.FC = () => {
           "MAHASISWA_KKN",
         ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
 
-        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
-        )}
-
-        <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
-
-        <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
-
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
           <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />
         )}
 
-        <NavItem to="/notifikasi" icon={Bell} label="Notifikasi" badge={8} />
+        <SectionHeader label="Edukasi & Gamifikasi" />
+        <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
+        <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
+        <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
+          <NavItem to="/kategori-sampah" icon={Tags} label="Master Poin/Reward" />
+        )}
 
+        <SectionHeader label="Sistem" />
+        <NavItem to="/notifikasi" icon={Bell} label="Notifikasi" badge={8} />
         {hasAccess([
           "SUPER_ADMIN",
           "ADMIN_DLH",
@@ -168,9 +176,7 @@ const Sidebar: React.FC = () => {
 
         {hasAccess(["SUPER_ADMIN"]) && (
           <>
-            <div className="px-4 py-2 text-[10px] uppercase font-bold text-primary tracking-wider mt-2 border-t border-outline-variant/35">
-              Super Admin Panel
-            </div>
+            <SectionHeader label="Super Admin Panel" />
             <NavItem to="/superadmin/dashboard" icon={BarChart2} label="Dashboard Kota" />
             <NavItem to="/superadmin/configs" icon={Sliders} label="Rule Engine" />
             <NavItem to="/superadmin/qr-master" icon={QrCode} label="Master QR & Inaktif" />
