@@ -42,4 +42,10 @@ router.post(
   transactionController.createResiduDeposit
 );
 
+router.get(
+  "/:id",
+  authMiddleware,
+  transactionController.getDepositDetails
+);
+
 export default router;

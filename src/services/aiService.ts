@@ -76,6 +76,22 @@ export class AiService {
               }
 
               const dominant = detections.reduce((prev, current) => (prev.volumeEstimate > current.volumeEstimate) ? prev : current);
+              const orgDet = detections.find(d => d.detectedType === "ORGANIC");
+              const nonOrgDet = detections.find(d => d.detectedType === "NON_ORGANIC");
+              const orgVol = orgDet ? orgDet.volumeEstimate : 0;
+              const nonOrgVol = nonOrgDet ? nonOrgDet.volumeEstimate : 0;
+              const totalVol = orgVol + nonOrgVol;
+              
+              let organik_percent = 0;
+              let non_organik_percent = 0;
+              if (totalVol > 0) {
+                organik_percent = Math.round((orgVol / totalVol) * 100);
+                non_organik_percent = 100 - organik_percent;
+              } else if (dominant.detectedType === "ORGANIC") {
+                organik_percent = 100;
+              } else {
+                non_organik_percent = 100;
+              }
 
               resolve({
                 requestId,
@@ -84,6 +100,9 @@ export class AiService {
                 confidence: dominant.confidence,
                 detections,
                 isBlurry: false,
+                organik_percent,
+                non_organik_percent,
+                recommended_bin: dominant.detectedType.toLowerCase() === "organic" ? "organik" : "anorganik",
               });
             }
           }, duration);

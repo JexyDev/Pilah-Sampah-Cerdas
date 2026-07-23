@@ -310,6 +310,7 @@ export class AuthService {
       phone: user.phone,
       address: user.address,
       fotoProfil: user.fotoProfil,
+      qrCode: `USER:${user.id}`,
       streakInfo,
     };
   }

@@ -32,6 +32,7 @@ import residuRouter from "./routes/residuRoutes.js";
 import superAdminRouter from "./routes/superAdminRoutes.js";
 import rwRouter from "./routes/rwRoutes.js";
 import ideDaurUlangRouter from "./routes/ideDaurUlangRoutes.js";
+import areaRouter from "./routes/areaRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
@@ -86,6 +87,7 @@ app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/rw", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
+app.use("/api/v1/areas", areaRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {

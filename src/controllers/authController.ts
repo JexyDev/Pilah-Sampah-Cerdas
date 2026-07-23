@@ -593,7 +593,7 @@ export class AuthController {
       );
       res
         .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email, qrCode: `USER:${user.id}` } });
     } catch (error: any) {
       res
         .status(400)
