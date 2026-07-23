@@ -92,8 +92,8 @@ jobs:
             # Build TypeScript ke JavaScript
             npm run build
             
-            # Restart layanan dengan PM2
-            pm2 restart psc-backend
+            # Restart layanan dengan PM2 (atau Start jika belum ada)
+            pm2 restart psc-backend || pm2 start dist/index.js --name psc-backend
             
             echo "Starting Frontend Deployment..."
             cd /var/www/pilah-sampah-cerdas/frontend
