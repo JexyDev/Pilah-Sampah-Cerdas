@@ -32,7 +32,7 @@ const Login: React.FC = () => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Helper validation regex
-  const isEmailValid = (val: string) => /^[^s@]+@[^s@]+.[^s@]+$/.test(val) || /^\d{16}$/.test(val);
+  const isEmailValid = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || /^\d{16}$/.test(val);
   const isPhoneValid = (val: string) => /^\+62\d{8,15}$/.test(val);
 
   // Real-time Validation handlers
