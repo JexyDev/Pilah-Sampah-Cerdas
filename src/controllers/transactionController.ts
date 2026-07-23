@@ -60,7 +60,7 @@ export const transactionController = {
     try {
       const petugasId = req.user!.userId;
       const { wargaId, beratKg, kategoriId, overridePoin } = req.body;
-      const photoPath = req.file ? `/uploads/avatars/${req.file.filename}` : null;
+      const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
       if (!wargaId || !beratKg || !kategoriId) {
         res.status(400).json({ success: false, message: "Data tidak lengkap" });
@@ -98,7 +98,7 @@ export const transactionController = {
     try {
       const petugasId = req.user!.userId;
       const { rtRwId, beratKg } = req.body;
-      const photoPath = req.file ? `/uploads/avatars/${req.file.filename}` : null;
+      const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
       if (!rtRwId || !beratKg) {
         res.status(400).json({ success: false, message: "Data tidak lengkap" });

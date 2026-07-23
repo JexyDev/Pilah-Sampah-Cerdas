@@ -164,10 +164,11 @@ export const dashboardService = {
 
     wasteByCategory.forEach((log) => {
       const kg = Number(log.weightKg);
+      const catName = log.category.name.toUpperCase();
       if (
-        log.category.name.toUpperCase().includes("ORGANIC") &&
-        !log.category.name.toUpperCase().includes("NON_ORGANIC") &&
-        !log.category.name.toUpperCase().includes("ANORGANIK")
+        (catName.includes("ORGANIC") || catName.includes("ORGANIK")) &&
+        !catName.includes("NON") &&
+        !catName.includes("ANORGANIK")
       ) {
         organikKg += kg;
       } else {
@@ -277,8 +278,8 @@ export const dashboardService = {
         const kg = Number(log.weightKg);
         const name = log.category.name.toUpperCase();
         if (
-          name.includes("ORGANIC") &&
-          !name.includes("NON_ORGANIC") &&
+          (name.includes("ORGANIC") || name.includes("ORGANIK")) &&
+          !name.includes("NON") &&
           !name.includes("ANORGANIK")
         ) {
           organicWeight += kg;
@@ -335,10 +336,11 @@ export const dashboardService = {
 
       wasteLogs.forEach((log) => {
         const kg = Number(log.weightKg);
+        const name = log.category.name.toUpperCase();
         if (
-          log.category.name.toUpperCase().includes("ORGANIC") &&
-          !log.category.name.toUpperCase().includes("NON_ORGANIC") &&
-          !log.category.name.toUpperCase().includes("ANORGANIK")
+          (name.includes("ORGANIC") || name.includes("ORGANIK")) &&
+          !name.includes("NON") &&
+          !name.includes("ANORGANIK")
         ) {
           organikKg += kg;
         } else {

@@ -28,6 +28,18 @@ import { HandoverForm } from "./HandoverForm";
 import { BantuFasilitasForm } from "./BantuFasilitasForm";
 import { BantuPetugasForm } from "./BantuPetugasForm";
 import api from "../../services/api";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 const KknDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -159,6 +171,29 @@ const KknDashboard: React.FC = () => {
 
   const { studentKkn, stats: kStats } = stats || {};
 
+  // 1. Process Registration Trend Data
+  const regTrendMap: { [key: string]: number } = {};
+  wargaList.forEach((w) => {
+    try {
+      const dateStr = new Date(w.registeredAt).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+      });
+      regTrendMap[dateStr] = (regTrendMap[dateStr] || 0) + 1;
+    } catch (_) {}
+  });
+
+  const registrationTrendData = Object.keys(regTrendMap).map((date) => ({
+    tanggal: date,
+    warga: regTrendMap[date],
+  })).slice(-7);
+
+  // 2. Process Compliance Data
+  const complianceData = wargaList.map((w) => ({
+    nama: w.name.split(" ")[0],
+    skor: w.complianceScore,
+  })).slice(0, 10);
+
   return (
     <div className="space-y-6 pb-12">
 
@@ -245,6 +280,59 @@ const KknDashboard: React.FC = () => {
             <p className="text-[10px] text-on-surface-variant mt-1">
               Status: Aktif Mendampingi Warga
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Monitoring & Analitik Pendampingan (Line & Bar Charts) */}
+      <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-6">
+        <div>
+          <h3 className="font-extrabold text-lg flex items-center gap-2">
+            <Compass className="text-primary w-5 h-5" />
+            Grafik Analitik Pendampingan KKN
+          </h3>
+          <p className="text-xs text-on-surface-variant">
+            Visualisasi tren pendaftaran warga dampingan dan skor kepatuhan daur ulang
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Chart 1: Registration Trend */}
+          <div className="space-y-2">
+            <h4 className="font-bold text-sm text-slate-700 text-center">Tren Registrasi Warga (7 Tanggal Terakhir)</h4>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={registrationTrendData}>
+                  <defs>
+                    <linearGradient id="colorWarga" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="tanggal" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="warga" name="Jumlah Warga" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorWarga)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Chart 2: Compliance Score per citizen */}
+          <div className="space-y-2">
+            <h4 className="font-bold text-sm text-slate-700 text-center">Skor Kepatuhan per Warga Dampingan (Top 10)</h4>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={complianceData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="nama" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="skor" name="Skor Kepatuhan" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>

@@ -1,17 +1,15 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import '../../presentation/splash/splash_screen.dart';
 import '../../presentation/auth/login_screen.dart';
+import '../../presentation/auth/register_screen.dart';
+import '../../presentation/auth/forgot_password_screen.dart';
 import '../../presentation/main/main_shell.dart';
 import '../../presentation/scan/scan_flow_screen.dart';
 import '../../presentation/aktivasi/aktivasi_bin_screen.dart';
+import '../../presentation/aktivasi/ukur_kapasitas_screen.dart';
 import '../../presentation/reset/reset_bin_screen.dart';
+import '../../presentation/notifikasi/notifikasi_screen.dart';
+import '../../presentation/petugas/timbangan_residu_screen.dart';
 
 /// Nama-nama route terpusat agar tidak ada magic string di widget.
 class AppRoutes {
@@ -19,10 +17,15 @@ class AppRoutes {
 
   static const String splash = '/';
   static const String login = '/login';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String main = '/main';
   static const String scan = '/scan';
   static const String aktivasiBin = '/aktivasi-bin';
+  static const String ukurKapasitas = '/ukur-kapasitas';
   static const String resetBin = '/reset-bin';
+  static const String notifikasi = '/notifikasi';
+  static const String timbanganResidu = '/timbangan-residu';
 }
 
 /// Route generator terpusat.
@@ -35,14 +38,24 @@ class AppRouter {
         return _buildRoute(const SplashScreen(), settings);
       case AppRoutes.login:
         return _buildRoute(const LoginScreen(), settings);
+      case AppRoutes.register:
+        return _buildRoute(const RegisterScreen(), settings);
+      case AppRoutes.forgotPassword:
+        return _buildRoute(const ForgotPasswordScreen(), settings);
       case AppRoutes.main:
         return _buildRoute(const MainShell(), settings);
       case AppRoutes.scan:
         return _buildRoute(const ScanFlowScreen(), settings);
       case AppRoutes.aktivasiBin:
         return _buildRoute(const AktivasiBinScreen(), settings);
+      case AppRoutes.ukurKapasitas:
+        return _buildRoute(const UkurKapasitasScreen(), settings);
       case AppRoutes.resetBin:
         return _buildRoute(const ResetBinScreen(), settings);
+      case AppRoutes.notifikasi:
+        return _buildRoute(const NotifikasiScreen(), settings);
+      case AppRoutes.timbanganResidu:
+        return _buildRoute(const TimbanganResiduScreen(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

@@ -1,18 +1,23 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import '../entities/user_entity.dart';
 
 /// Interface repository autentikasi.
 abstract class AuthRepository {
-  /// Login dengan NIK dan password.
+  /// Login dengan nomor telepon dan password.
   /// Returns [UserEntity] jika berhasil.
   /// Throws [AuthException] jika gagal.
-  Future<UserEntity> login({required String nik, required String password});
+  Future<UserEntity> login({required String phone, required String password});
+
+  /// Register warga, mahasiswa, atau petugas baru.
+  Future<UserEntity> register({
+    required String role,
+    required Map<String, dynamic> data,
+  });
+
+  /// Meminta OTP untuk login/reset password
+  Future<void> requestOtp({required String phone});
+
+  /// Verifikasi OTP
+  Future<UserEntity> verifyOtp({required String phone, required String otp});
 
   /// Logout — hapus token dari secure storage.
   Future<void> logout();
@@ -29,6 +34,19 @@ abstract class AuthRepository {
 
   /// Mengambil data profil terbaru dari server (GET /api/v1/auth/me)
   Future<UserEntity> fetchProfile();
+
+  /// Mengunggah foto profil baru.
+  Future<void> uploadAvatar(String imagePath);
+
+  /// Request token untuk lupa kata sandi.
+  Future<String?> forgotPassword({required String email});
+
+  /// Reset kata sandi menggunakan token/kode verifikasi.
+  Future<void> resetPassword({
+    required String email,
+    required String token,
+    required String newPassword,
+  });
 }
 
 /// Exception khusus untuk auth errors.

@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:equatable/equatable.dart';
 import 'bin_entity.dart';
 
@@ -16,6 +9,8 @@ class AiDetectionEntity extends Equatable {
     required this.isBlurry,
     this.weightKg,
     this.confidence,
+    this.organicPercentage,
+    this.estimatedPoints,
     this.requestId,
   });
 
@@ -29,6 +24,12 @@ class AiDetectionEntity extends Equatable {
 
   /// Confidence score 0.0–1.0
   final double? confidence;
+  
+  /// Persentase probabilitas sampah ini organik (0.0-1.0)
+  final double? organicPercentage;
+  
+  /// Estimasi poin yang akan didapat
+  final int? estimatedPoints;
 
   final bool isBlurry;
   final String? requestId;

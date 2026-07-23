@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:equatable/equatable.dart';
 import '../../config/app_config.dart';
 
@@ -62,26 +55,13 @@ class BinEntity extends Equatable {
 }
 
 /// Jenis sampah sesuai srs.md FR-01 dan sdd.md tabel `waste_categories`.
-enum WasteType { organic, nonOrganic }
+enum WasteType {
+  organic('Organik', 'ORGANIC'),
+  nonOrganic('Anorganik', 'NON_ORGANIC');
 
-extension WasteTypeExtension on WasteType {
-  String get apiValue {
-    switch (this) {
-      case WasteType.organic:
-        return 'ORGANIC';
-      case WasteType.nonOrganic:
-        return 'NON_ORGANIC';
-    }
-  }
-
-  String get displayName {
-    switch (this) {
-      case WasteType.organic:
-        return 'Organik';
-      case WasteType.nonOrganic:
-        return 'Anorganik';
-    }
-  }
+  const WasteType(this.displayName, this.apiValue);
+  final String displayName;
+  final String apiValue;
 }
 
 /// Status kapasitas tong.

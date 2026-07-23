@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -14,6 +7,8 @@ import '../../core/utils/platform_utils.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/bin_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/notification_provider.dart';
+import '../providers/waste_log_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/inline_camera_widget.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
@@ -124,29 +119,52 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
           next.currentStep == 2 &&
           next.aiResult != null &&
           !next.isLoading) {
-        // Set step ke 1.5 (pakai nilai khusus) — kita pakai state lokal
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            // Kembali ke step 1 (loading selesai, sheet akan muncul)
-            // Sheet yang akan set step ke 2 saat user tap Lanjut
             showAiSuccessSheet(context, ref);
+          }
+        });
+      }
+      // ─── AUTO-REFRESH setelah transaksi berhasil (step 2→3) ─────────────
+      // Invalidate semua provider terkait agar data langsung segar di semua
+      // layar (Beranda, Riwayat, Poin) tanpa user harus pull-to-refresh manual.
+      if ((prev?.currentStep ?? 0) < 3 &&
+          next.currentStep == 3 &&
+          next.scanResult != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.invalidate(wasteLogsProvider);
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
+            ref.invalidate(notificationsProvider);
+            ref.invalidate(binsProvider);
           }
         });
       }
     });
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Background kamera simulasi
-          _buildCameraBackground(state.currentStep),
-          // Content sesuai step
-          if (state.isLoading)
-            const Center(child: AppLoading())
-          else
-            _buildStepContent(context, state, isOnline),
-        ],
+    return PopScope(
+      canPop: state.currentStep == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          // You could show a toast here if you want to tell them they can't leave,
+          // but 'mode absolute' means just ignoring the back press.
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // Background kamera simulasi
+            _buildCameraBackground(state.currentStep),
+            // Content sesuai step
+            if (state.isLoading)
+              const Center(child: AppLoading())
+            else
+              _buildStepContent(context, state, isOnline),
+          ],
+        ),
       ),
     );
   }
@@ -450,20 +468,13 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
 
     return Column(
       children: [
-        SafeArea(
+        const SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                IconButton(
-                  onPressed: () =>
-                      ref.read(scanFlowProvider.notifier).goToStep(0),
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const Expanded(
+                SizedBox(width: 48),
+                Expanded(
                   child: Text(
                     'Scan QR Tong Sampah',
                     style: TextStyle(
@@ -474,7 +485,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const Icon(Icons.info_outline_rounded, color: Colors.white),
+                Icon(Icons.info_outline_rounded, color: Colors.white),
               ],
             ),
           ),
@@ -533,7 +544,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
               padding: const EdgeInsets.all(16),
               child: QrScannerWidget(
                 key: ValueKey(_qrScanAttempt),
-                hint: isOrganic ? 'PSC-DEWI-ORG-001' : 'PSC-DEWI-NON-001',
+                hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) {
                   // Guard: skip jika sudah loading atau sudah sukses
@@ -886,6 +897,14 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
+                    // Invalidate ulang sebagai safety fallback sebelum kembali
+                    // (mencegah edge case jika addPostFrameCallback terlewat)
+                    ref.invalidate(wasteLogsProvider);
+                    ref.invalidate(totalPointsProvider);
+                    ref.invalidate(pointHistoryProvider);
+                    ref.invalidate(dailyPointsProvider);
+                    ref.invalidate(notificationsProvider);
+                    ref.invalidate(binsProvider);
                     ref.read(scanFlowProvider.notifier).reset();
                     Navigator.of(context).pop();
                   },
@@ -970,8 +989,13 @@ void showAiSuccessSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
     backgroundColor: Colors.transparent,
-    builder: (_) => _AiSuccessSheet(result: result, ref: ref),
+    builder: (_) => PopScope(
+      canPop: false,
+      child: _AiSuccessSheet(result: result, ref: ref),
+    ),
   );
 }
 
@@ -1021,7 +1045,7 @@ class _AiSuccessSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Scan Berhasil!',
+            'Deteksi Berhasil!',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -1035,110 +1059,223 @@ class _AiSuccessSheet extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
+          
+          // Container AI Results
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color:
-                  (isOrganic
-                          ? AppColors.organicColor
-                          : AppColors.nonOrganicColor)
-                      .withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.backgroundCanvas,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isOrganic
-                        ? AppColors.organicColor
-                        : AppColors.nonOrganicColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.delete_rounded,
-                    color: Colors.white,
-                    size: 18,
+                // Header: Rekomendasi Bin
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'REKOMENDASI TONG',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                          Text(
+                            'Bin ${result.detectedType.displayName}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 16),
+                
+                // Confidence & Estimasi Berat
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDetailItem(
+                        icon: Icons.psychology_rounded,
+                        label: 'CONFIDENCE',
+                        value: '${((result.confidence ?? 0.85) * 100).toStringAsFixed(0)}%',
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildDetailItem(
+                        icon: Icons.scale_rounded,
+                        label: 'EST. BERAT',
+                        value: '${result.displayWeightKg.toStringAsFixed(1)} kg',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Progress Bar Organik vs Anorganik
+                const Text(
+                  'KOMPOSISI SAMPAH',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textHint,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      'Org',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.organicColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: result.organicPercentage ?? (isOrganic ? 0.85 : 0.15),
+                          minHeight: 8,
+                          backgroundColor: AppColors.nonOrganicColor,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.organicColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Anorg',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.nonOrganicColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 12),
+                
+                // Estimasi Poin
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'JENIS SAMPAH',
+                      'Estimasi Poin:',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    Text(
-                      result.detectedType.displayName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryGreen,
-                      ),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.stars_rounded,
+                          color: AppColors.warningYellow,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '+${result.estimatedPoints ?? (isOrganic ? 150 : 100)} Pts',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.warningYellow,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundCanvas,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'BERAT',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        '${result.displayWeightKg.toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ],
-                  ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // State sudah di step 2 dari provider
+              },
+              icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+              label: const Text(
+                'LANJUT SCAN TONG SAMPAH',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // State sudah di step 2 dari provider
-            },
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            label: const Text('LANJUT SCAN TONG SAMPAH'),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Lihat Panduan Pemilahan',
-              style: TextStyle(color: AppColors.primaryGreen),
             ),
           ),
         ],
       ),
       ),
+    );
+  }
+
+  Widget _buildDetailItem({required IconData icon, required String label, required String value}) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textHint,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

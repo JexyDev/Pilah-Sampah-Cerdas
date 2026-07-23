@@ -1,0 +1,59 @@
+# .gitignore — pilahsampah.id Monorepo
+
+# Environment variables (JANGAN PERNAH DI-COMMIT!)
+.env
+.env.local
+.env.*.local
+
+# Node.js
+node_modules/
+dist/
+build/
+
+# TypeScript build artifacts
+*.js.map
+*.d.ts
+
+# Backend dist is tracked — Railway compiles from source OR runs pre-compiled dist
+# Only ignore dist in non-backend directories
+frontend/dist/
+
+# Prisma generated client
+prisma/client/
+
+# Flutter / Dart
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/android/app/debug/
+mobile/android/app/profile/
+mobile/android/app/release/
+mobile/ios/Runner/
+mobile/pubspec.lock
+
+# Frontend build
+frontend/dist/
+frontend/node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Ngrok binary
+ngrok.exe
+ngrok
