@@ -198,9 +198,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                         ),
                         _divider(),
                         _InfoTile(
-                          Icons.email_outlined,
-                          'Email',
-                          user?.email ?? '-',
+                          Icons.phone_iphone_rounded,
+                          'No. Telepon',
+                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
                         ),
                         _divider(),
                         _InfoTile(
