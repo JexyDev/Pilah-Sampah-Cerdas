@@ -18,9 +18,16 @@ export class AuthService {
    */
   async login(emailOrNik: string, password: string) {
     const isNik = /^\d{16}$/.test(emailOrNik);
-    const user = isNik
-      ? await authRepository.findUserByNik(emailOrNik)
-      : await authRepository.findUserByEmail(emailOrNik);
+    const isPhone = /^\+62\d{8,15}$/.test(emailOrNik);
+    
+    let user;
+    if (isNik) {
+      user = await authRepository.findUserByNik(emailOrNik);
+    } else if (isPhone) {
+      user = await authRepository.findUserByPhone(emailOrNik);
+    } else {
+      user = await authRepository.findUserByEmail(emailOrNik);
+    }
 
     if (!user) {
       throw new Error("USER_NOT_FOUND");
