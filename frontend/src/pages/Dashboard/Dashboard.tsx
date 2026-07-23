@@ -15,7 +15,6 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
-import L from "leaflet";
 import { Badge } from "../../components/common/Badge";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 
@@ -1559,38 +1558,6 @@ const Dashboard: React.FC = () => {
       ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
       : "";
 
-  // Helpers for coordinates & styles
-  const getCoords = (rwName: string, index: number): [number, number] => {
-    const rwCoordinates: { [key: string]: [number, number] } = {
-      "RW 01": [-6.882, 107.614],
-      "RW 02": [-6.880, 107.617],
-      "RW 03": [-6.884, 107.616],
-      "RW 04": [-6.878, 107.612],
-      "RW 05": [-6.876, 107.615],
-      "RW 06": [-6.881, 107.619],
-      "RW 07": [-6.879, 107.610],
-    };
-    const cleanKey = rwName.toUpperCase().trim();
-    if (rwCoordinates[cleanKey]) return rwCoordinates[cleanKey];
-    const angle = (index * 60 * Math.PI) / 180;
-    return [-6.880 + 0.004 * Math.sin(angle), 107.615 + 0.004 * Math.cos(angle)];
-  };
-
-  const getComplianceColor = (patuh: number) => {
-    if (patuh >= 80) return "#10b981"; // Green
-    if (patuh >= 60) return "#f59e0b"; // Yellow
-    return "#ef4444"; // Red
-  };
-
-  const createRwMarkerIcon = (color: string) => {
-    return L.divIcon({
-      className: "custom-rw-icon",
-      html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [12, 12],
-      iconAnchor: [6, 6]
-    });
-  };
-
   // QR Bin Lifecycle Count
   const qrStateCounts = {
     PRINTED: 0,
@@ -1862,7 +1829,7 @@ const Dashboard: React.FC = () => {
 
         {/* Bar Chart Race / Leaderboard */}
         <div className="lg:col-span-3 h-[340px]">
-          <LeaderboardWidget limit={5} />
+          <LeaderboardWidget />
         </div>
       </div>
 
