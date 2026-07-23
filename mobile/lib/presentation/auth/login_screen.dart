@@ -62,12 +62,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final password = _passwordController.text;
 
     if (nik.isEmpty && password.isEmpty) {
-      _showToast('NIK dan Kata sandi wajib diisi');
+      _showToast('Identitas dan Kata sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (nik.isEmpty) {
-      _showToast('NIK wajib diisi');
+      _showToast('Identitas wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -208,7 +208,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Silakan masukkan NIK 16 digit Anda',
+                                'Silakan masukkan NIK atau No HP Anda',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -216,9 +216,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Field NIK
+                              // Field NIK/HP
                               const Text(
-                                'NIK',
+                                'NIK ATAU NO HP',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -229,11 +229,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _nikController,
-                                keyboardType: TextInputType.number,
+                                keyboardType: TextInputType.text,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
                                 decoration: const InputDecoration(
-                                  hintText: 'Masukkan 16 digit NIK...',
+                                  hintText: 'Contoh: 327... atau +628...',
                                   prefixIcon: Icon(
                                     Icons.badge_outlined,
                                     color: AppColors.textSecondary,
@@ -242,10 +242,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'NIK wajib diisi';
+                                    return 'Identitas wajib diisi';
                                   }
-                                  if (v.length < 16) {
-                                    return 'NIK minimal 16 digit';
+                                  if (v.length < 9) {
+                                    return 'Identitas terlalu pendek';
                                   }
                                   return null;
                                 },
