@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, BarChart2, Sliders, QrCode, FileText, FilePlus, Lightbulb } from "lucide-react";
+import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -158,7 +158,7 @@ const Sidebar: React.FC = () => {
         <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
         <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/kategori-sampah" icon={Tags} label="Master Poin/Reward" />
+          <NavItem to="/kategori-sampah" icon={Tags} label="Kategori Sampah" />
         )}
 
         <SectionHeader label="Sistem" />
@@ -177,7 +177,6 @@ const Sidebar: React.FC = () => {
         {hasAccess(["SUPER_ADMIN"]) && (
           <>
             <SectionHeader label="Super Admin Panel" />
-            <NavItem to="/superadmin/dashboard" icon={BarChart2} label="Dashboard Kota" />
             <NavItem to="/superadmin/configs" icon={Sliders} label="Rule Engine" />
             <NavItem to="/superadmin/qr-master" icon={QrCode} label="Master QR & Inaktif" />
             <NavItem to="/superadmin/audit" icon={FileText} label="Audit Trail" />

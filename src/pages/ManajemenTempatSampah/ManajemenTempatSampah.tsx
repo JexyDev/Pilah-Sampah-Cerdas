@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download } from "lucide-react";
+import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download, Search, Filter } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -79,10 +79,22 @@ const ManajemenTempatSampah: React.FC = () => {
   const [logTransactions, setLogTransactions] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
+  // Search & Filter state
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+
   const fetchBins = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/bins");
+      const query = new URLSearchParams();
+      if (searchInput) query.append("search", searchInput);
+      if (statusFilter) query.append("status", statusFilter);
+      if (areaFilter) query.append("areaId", areaFilter);
+      if (categoryFilter) query.append("categoryId", categoryFilter);
+
+      const response = await api.get(`/bins?${query.toString()}`);
       setBins(response.data.data);
     } catch (err) {
       setError("Gagal memuat data dari server.");
@@ -118,9 +130,19 @@ const ManajemenTempatSampah: React.FC = () => {
 
   useEffect(() => {
     fetchBins();
+  }, [statusFilter, areaFilter, categoryFilter]);
+
+  useEffect(() => {
     fetchHouseholds();
     loadFormOptions();
   }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchBins();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
 
   const handleOpenAddModal = () => {
     setModalType("add");
@@ -314,6 +336,63 @@ const ManajemenTempatSampah: React.FC = () => {
             <Download size={20} />
             Laporan
           </button>
+        </div>
+      </div>
+
+      {/* Filter & Search Bar */}
+      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-4 mb-4 flex flex-col sm:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Cari ID Tong, QR Code..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+          />
+        </div>
+        
+        <div className="flex gap-3 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
+          <div className="flex items-center gap-2 min-w-[140px]">
+            <Filter size={16} className="text-slate-500" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full py-2.5 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary"
+            >
+              <option value="">Semua Status</option>
+              <option value="Normal">Normal</option>
+              <option value="Penuh">Penuh</option>
+              <option value="Sedang">Sedang</option>
+              <option value="Perbaikan">Perbaikan</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 min-w-[140px]">
+            <select
+              value={areaFilter}
+              onChange={(e) => setAreaFilter(e.target.value)}
+              className="w-full py-2.5 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary"
+            >
+              <option value="">Semua Wilayah</option>
+              {areas.map(area => (
+                <option key={area.id} value={area.id}>{area.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 min-w-[140px]">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full py-2.5 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary"
+            >
+              <option value="">Semua Kategori</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

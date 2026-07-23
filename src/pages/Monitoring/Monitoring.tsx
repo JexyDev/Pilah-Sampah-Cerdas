@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../../utils/api";
@@ -103,6 +103,28 @@ const createFacilityIcon = (jenis: string) => {
   });
 };
 
+const createRwIcon = (totalBins: number) => {
+  return L.divIcon({
+    className: "custom-div-icon",
+    html: `
+      <div style="background-color: rgba(59, 130, 246, 0.8); width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold;">
+        ${totalBins}
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+};
+
+const MapEventHandler = ({ setZoom }: { setZoom: (z: number) => void }) => {
+  useMapEvents({
+    zoomend: (e) => {
+      setZoom(e.target.getZoom());
+    }
+  });
+  return null;
+};
+
 const Monitoring: React.FC = () => {
   const { user } = useAuthStore();
   const { bins, fetchBins } = useMonitoringStore();
@@ -111,6 +133,7 @@ const Monitoring: React.FC = () => {
   const [kpi, setKpi] = useState<KPIStats | null>(null);
   const [trends, setTrends] = useState<TrendWeek[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [zoomLevel, setZoomLevel] = useState<number>((user?.peran as string) === "LURAH" ? 14 : (user?.peran as string) === "RW" ? 16 : (user?.peran as string) === "RT" ? 18 : 15);
 
   // Scoped variables based on role
   const displayScope = useMemo(() => {
@@ -170,18 +193,41 @@ const Monitoring: React.FC = () => {
 
   // Group bins by household (userId or coordinates)
   const householdGroups = useMemo(() => {
-    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number }> = {};
+    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; rtRw?: string }> = {};
     bins
       .filter((b) => b.latitude && b.longitude)
       .forEach((bin) => {
         const key = bin.userId || `${bin.latitude},${bin.longitude}`;
         if (!groups[key]) {
-          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude) };
+          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude), rtRw: bin.rtRw };
         }
         groups[key].bins.push(bin);
       });
     return Object.values(groups);
   }, [bins]);
+
+  // Group by RW (Zona)
+  const rwGroups = useMemo(() => {
+    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; count: number }> = {};
+    householdGroups.forEach((hg) => {
+      const key = hg.rtRw ? `rw-${hg.rtRw}` : "unknown";
+      if (!groups[key]) {
+        groups[key] = { bins: [], latitude: 0, longitude: 0, count: 0 };
+      }
+      groups[key].bins.push(...hg.bins);
+      groups[key].latitude += hg.latitude;
+      groups[key].longitude += hg.longitude;
+      groups[key].count += 1;
+    });
+
+    // Calculate center
+    return Object.values(groups).map((g) => ({
+      ...g,
+      latitude: g.latitude / g.count,
+      longitude: g.longitude / g.count,
+      totalBins: g.bins.length,
+    }));
+  }, [householdGroups]);
 
   if (loading) {
     return (
@@ -291,14 +337,32 @@ const Monitoring: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 relative z-10">
-            <MapContainer center={mapCenter} zoom={(user?.peran as string) === "LURAH" ? 14 : (user?.peran as string) === "RW" ? 16 : (user?.peran as string) === "RT" ? 18 : 15} className="h-full w-full">
+            <MapContainer center={mapCenter} zoom={zoomLevel} className="h-full w-full">
+              <MapEventHandler setZoom={setZoomLevel} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* Bins Layer Grouped by Household */}
-              {householdGroups.map((group, idx) => {
+              {/* Bins Layer Grouped by Household or RW Zona */}
+              {zoomLevel < 16 ? (
+                rwGroups.map((group, idx) => (
+                  <Marker
+                    key={`rw-${idx}`}
+                    position={[group.latitude, group.longitude]}
+                    icon={createRwIcon(group.totalBins)}
+                  >
+                    <Popup>
+                      <div className="text-xs p-1 text-center">
+                        <strong className="text-sm font-bold block mb-1">Zona RW</strong>
+                        <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
+                        <p className="text-[10px] text-primary italic">Zoom in untuk melihat detail</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))
+              ) : (
+                householdGroups.map((group, idx) => {
                 // Determine highest status among bins in group
                 let maxPercentage = 0;
                 group.bins.forEach(bin => {
@@ -337,7 +401,8 @@ const Monitoring: React.FC = () => {
                     </Popup>
                   </Marker>
                 );
-              })}
+                })
+              )}
 
               {/* Facilities Layer */}
               {facilities

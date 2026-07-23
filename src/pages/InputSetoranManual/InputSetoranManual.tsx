@@ -4,15 +4,12 @@ import toast from "react-hot-toast";
 import api from "../../utils/api";
 
 const InputSetoranManual: React.FC = () => {
-  const [wargaList, setWargaList] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [rtRwList, setRtRwList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
-  const [wargaId, setWargaId] = useState("");
+  const [rtRwId, setRtRwId] = useState("");
   const [beratKg, setBeratKg] = useState("");
-  const [kategoriId, setKategoriId] = useState("");
-  const [overridePoin, setOverridePoin] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -25,16 +22,10 @@ const InputSetoranManual: React.FC = () => {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      // Ambil daftar warga
-      const resUsers = await api.get("/users?role=WARGA");
-      if (resUsers.data?.success) {
-        setWargaList(resUsers.data.data);
-      }
-
-      // Ambil kategori sampah
-      const resCategories = await api.get("/categories");
-      if (resCategories.data?.success) {
-        setCategories(resCategories.data.data);
+      // Ambil daftar RT/RW
+      const resAreas = await api.get("/bins/areas");
+      if (resAreas.data?.success) {
+        setRtRwList(resAreas.data.data);
       }
     } catch (err) {
       console.error("Gagal memuat data awal", err);
@@ -54,7 +45,7 @@ const InputSetoranManual: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wargaId || !beratKg || !kategoriId || !photo) {
+    if (!rtRwId || !beratKg || !photo) {
       toast.error("Mohon lengkapi semua field wajib dan foto bukti.");
       return;
     }
@@ -62,15 +53,11 @@ const InputSetoranManual: React.FC = () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("wargaId", wargaId);
+      formData.append("rtRwId", rtRwId);
       formData.append("beratKg", beratKg);
-      formData.append("kategoriId", kategoriId);
       formData.append("image", photo);
-      if (overridePoin) {
-        formData.append("overridePoin", overridePoin);
-      }
 
-      const res = await api.post("/transactions/manual", formData, {
+      const res = await api.post("/transactions/residu", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -81,10 +68,8 @@ const InputSetoranManual: React.FC = () => {
         }
         
         // Reset form
-        setWargaId("");
+        setRtRwId("");
         setBeratKg("");
-        setKategoriId("");
-        setOverridePoin("");
         setPhoto(null);
         setPhotoPreview(null);
       }
@@ -110,7 +95,7 @@ const InputSetoranManual: React.FC = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-extrabold text-on-surface">Input Setoran Manual</h2>
         <p className="text-sm text-on-surface-variant mt-1">
-          Gunakan form ini untuk mencatat setoran warga secara manual (Khusus Petugas Residu).
+          Gunakan form ini untuk mencatat setoran residu agregat per wilayah (Khusus Petugas Residu).
         </p>
       </div>
 
@@ -118,17 +103,17 @@ const InputSetoranManual: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Warga Selection */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Nama Warga *</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Wilayah RT/RW *</label>
             <select
-              value={wargaId}
-              onChange={(e) => setWargaId(e.target.value)}
+              value={rtRwId}
+              onChange={(e) => setRtRwId(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
               required
             >
-              <option value="">-- Pilih Warga --</option>
-              {wargaList.map((warga) => (
-                <option key={warga.id} value={warga.id}>
-                  {warga.name} ({warga.email})
+              <option value="">-- Pilih Wilayah --</option>
+              {rtRwList.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name} - {area.kelurahan?.name}
                 </option>
               ))}
             </select>
@@ -137,54 +122,18 @@ const InputSetoranManual: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Berat Kg */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Berat (Kg) *</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Berat Agregat (Kg) *</label>
               <input
                 type="number"
                 step="0.01"
                 min="0.1"
                 value={beratKg}
                 onChange={(e) => setBeratKg(e.target.value)}
-                placeholder="Contoh: 2.5"
+                placeholder="Contoh: 15.5"
                 className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                 required
               />
             </div>
-
-            {/* Kategori Sampah */}
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Kategori Sampah *</label>
-              <select
-                value={kategoriId}
-                onChange={(e) => setKategoriId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
-                required
-              >
-                <option value="">-- Pilih Kategori --</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name} ({cat.pointsPerKg} Pts/Kg)
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Override Poin */}
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-              Override Nilai Poin (Opsional)
-            </label>
-            <p className="text-[11px] text-slate-500 mb-2 leading-relaxed">
-              Kosongkan jika ingin menggunakan kalkulasi otomatis dari kategori (Berat × Pts/Kg). Isi jika ingin memberikan poin khusus.
-            </p>
-            <input
-              type="number"
-              min="0"
-              value={overridePoin}
-              onChange={(e) => setOverridePoin(e.target.value)}
-              placeholder="Nilai Poin (Opsional)"
-              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
-            />
           </div>
 
           {/* Upload Foto */}

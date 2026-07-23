@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Upload, Send, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Upload, Send, Loader2, CheckCircle, XCircle, Search, Filter } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -30,10 +30,18 @@ const IdeDaurUlang: React.FC = () => {
   const [foto, setFoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Search & Filter
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   const fetchIdes = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/ide-daur-ulang");
+      const query = new URLSearchParams();
+      if (searchInput) query.append("search", searchInput);
+      if (statusFilter) query.append("status", statusFilter);
+
+      const res = await api.get(`/ide-daur-ulang?${query.toString()}`);
       if (res.data.success) {
         setIdes(res.data.data);
       }
@@ -46,7 +54,14 @@ const IdeDaurUlang: React.FC = () => {
 
   useEffect(() => {
     fetchIdes();
-  }, []);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchIdes();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,6 +190,35 @@ const IdeDaurUlang: React.FC = () => {
 
         {/* Kolom Kanan: Feed List */}
         <div className={isWarga ? "lg:col-span-2" : "lg:col-span-3"}>
+          
+          {/* Search & Filter Bar */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4 items-center">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="Cari ide, material, atau nama penulis..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-[150px]">
+              <Filter size={16} className="text-gray-500" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full py-2.5 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-primary"
+              >
+                <option value="">Semua Status</option>
+                <option value="APPROVED">Disetujui</option>
+                <option value="PENDING">Menunggu</option>
+                <option value="REJECTED">Ditolak</option>
+              </select>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Feed Publik</h2>
             {loading ? (
