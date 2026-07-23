@@ -49,8 +49,9 @@ jobs:
             echo "Starting Frontend Deployment..."
             cd /var/www/pilah-sampah-cerdas/frontend
             
-            # Tarik perubahan terbaru dari GitHub
-            git pull
+            # Tarik perubahan terbaru dari GitHub dengan paksa (menimpa jika ada konflik lokal di VPS)
+            git fetch --all
+            git reset --hard origin/frontend
             
             # Install dependencies jika ada perubahan package.json
             npm install
