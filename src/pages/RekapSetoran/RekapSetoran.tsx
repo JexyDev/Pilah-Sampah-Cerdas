@@ -1,5 +1,6 @@
+import { Loader2, Grid, Receipt, MapPin } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -13,6 +14,9 @@ const RekapSetoran: React.FC = () => {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filterKategori, setFilterKategori] = useState("ALL");
+  const [filterRtRw, setFilterRtRw] = useState("");
+  const [filterPeriode, setFilterPeriode] = useState("ALL");
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -29,8 +33,37 @@ const RekapSetoran: React.FC = () => {
     fetchDeposits();
   }, []);
 
+  const filteredDeposits = React.useMemo(() => {
+    return deposits.filter((d) => {
+      // 1. Filter Kategori
+      if (filterKategori !== "ALL") {
+        if (d.jenis !== filterKategori) return false;
+      }
+
+      // 2. Filter RT/RW
+      if (filterRtRw.trim() !== "") {
+        const query = filterRtRw.toLowerCase();
+        if (!d.rtRw?.toLowerCase().includes(query)) return false;
+      }
+
+      // 3. Filter Periode
+      if (filterPeriode !== "ALL") {
+        const depositDate = new Date(d.waktu);
+        const limitDate = new Date();
+        if (filterPeriode === "7d") {
+          limitDate.setDate(limitDate.getDate() - 7);
+        } else if (filterPeriode === "30d") {
+          limitDate.setDate(limitDate.getDate() - 30);
+        }
+        if (depositDate < limitDate) return false;
+      }
+
+      return true;
+    });
+  }, [deposits, filterKategori, filterRtRw, filterPeriode]);
+
   const handleExportCSV = () => {
-    if (deposits.length === 0) {
+    if (filteredDeposits.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
@@ -46,7 +79,7 @@ const RekapSetoran: React.FC = () => {
       "Lokasi Tong",
       "Status",
     ];
-    const csvData = deposits.map((d) => [
+    const csvData = filteredDeposits.map((d) => [
       d.id,
       d.warga,
       d.rtRw,
@@ -90,9 +123,49 @@ const RekapSetoran: React.FC = () => {
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-outline-variant/50 rounded-lg text-on-surface text-[12px] font-bold hover:bg-surface-container-low transition-colors shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">grid_on</span>
+            <Grid size={18} />
             Ekspor CSV
           </button>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="bg-white p-4 rounded-xl border border-outline-variant/50 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Kategori</label>
+          <select
+            value={filterKategori}
+            onChange={(e) => setFilterKategori(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700"
+          >
+            <option value="ALL">Semua Kategori</option>
+            <option value="ORGANIC">Organik</option>
+            <option value="NON_ORGANIC">Anorganik</option>
+            <option value="MIXED">Campuran</option>
+            <option value="RESIDU">Residu</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Cari RT/RW</label>
+          <input
+            type="text"
+            placeholder="Contoh: RT 01 / RW 02"
+            value={filterRtRw}
+            onChange={(e) => setFilterRtRw(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 placeholder-slate-400"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Periode</label>
+          <select
+            value={filterPeriode}
+            onChange={(e) => setFilterPeriode(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700"
+          >
+            <option value="ALL">Semua Waktu</option>
+            <option value="7d">7 Hari Terakhir</option>
+            <option value="30d">30 Hari Terakhir</option>
+          </select>
         </div>
       </div>
 
@@ -100,7 +173,7 @@ const RekapSetoran: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden mb-6 flex-1">
         <div className="p-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest">
           <h3 className="font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+            <Receipt className="text-primary" size={20} />
             Riwayat Setoran Warga
           </h3>
         </div>
@@ -131,9 +204,7 @@ const RekapSetoran: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                        autorenew
-                      </span>
+                      <Loader2 className="animate-spin text-primary" size={32} />
                       <p>Memuat data transaksi...</p>
                     </div>
                   </td>
@@ -144,14 +215,14 @@ const RekapSetoran: React.FC = () => {
                     {error}
                   </td>
                 </tr>
-              ) : deposits.length === 0 ? (
+              ) : filteredDeposits.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-on-surface-variant">
                     Belum ada data setoran.
                   </td>
                 </tr>
               ) : (
-                deposits.map((dep) => (
+                filteredDeposits.map((dep) => (
                   <tr
                     key={dep.id}
                     className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150"
@@ -178,7 +249,7 @@ const RekapSetoran: React.FC = () => {
                         {new Date(dep.waktu).toLocaleString()}
                       </div>
                       <div className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5">
-                        <span className="material-symbols-outlined text-[14px]">location_on</span>
+                        <MapPin size={14} />
                         {dep.lokasi}
                       </div>
                     </td>

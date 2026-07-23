@@ -1,5 +1,6 @@
+import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, Calendar, MapPin, X } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -187,7 +188,7 @@ const JadwalKegiatan: React.FC = () => {
                   onClick={prevMonth}
                   className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"
                 >
-                  <span className="material-symbols-outlined">chevron_left</span>
+                  <ChevronLeft />
                 </button>
                 <button
                   onClick={goToToday}
@@ -199,7 +200,7 @@ const JadwalKegiatan: React.FC = () => {
                   onClick={nextMonth}
                   className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"
                 >
-                  <span className="material-symbols-outlined">chevron_right</span>
+                  <ChevronRight />
                 </button>
               </div>
             </div>
@@ -208,7 +209,7 @@ const JadwalKegiatan: React.FC = () => {
                 className="bg-primary text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors active:scale-95 transform shadow-sm"
                 onClick={() => setIsModalOpen(true)}
               >
-                <span className="material-symbols-outlined text-sm">add</span>
+                <Plus size={14} />
                 Buat Jadwal Baru
               </button>
             )}
@@ -297,9 +298,7 @@ const JadwalKegiatan: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
             {loading ? (
               <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3">
-                <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                  autorenew
-                </span>
+                <Loader2 className="animate-spin text-primary" size={32} />
                 <p>Memuat agenda...</p>
               </div>
             ) : error ? (
@@ -333,7 +332,7 @@ const JadwalKegiatan: React.FC = () => {
                         {schedule.category || "Kegiatan"}
                       </span>
                       <span className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
+                        <Clock size={14} />
                         {schedule.time || safeFormatTime(schedule.date)}
                       </span>
                     </div>
@@ -341,7 +340,7 @@ const JadwalKegiatan: React.FC = () => {
                       {schedule.title || "(tanpa judul)"}
                     </h4>
                     <p className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1 pl-2 mb-1">
-                      <span className="material-symbols-outlined text-[14px]">event</span>
+                      <Calendar size={14} />
                       {safeFormatDate(schedule.date, {
                         weekday: "long",
                         day: "numeric",
@@ -349,7 +348,7 @@ const JadwalKegiatan: React.FC = () => {
                       })}
                     </p>
                     <p className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1 pl-2">
-                      <span className="material-symbols-outlined text-[14px]">location_on</span>
+                      <MapPin size={14} />
                       {schedule.location || "-"}
                     </p>
                   </div>
@@ -357,9 +356,7 @@ const JadwalKegiatan: React.FC = () => {
               })
             ) : (
               <div className="mt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant/50 rounded-lg text-center opacity-70">
-                <span className="material-symbols-outlined text-4xl text-on-surface-variant mb-2">
-                  event_available
-                </span>
+                <CalendarCheck className="text-on-surface-variant mb-2" size={32} />
                 <p className="text-[11px] font-medium text-on-surface-variant">
                   Tidak ada kegiatan lain dijadwalkan.
                 </p>
@@ -378,7 +375,7 @@ const JadwalKegiatan: React.FC = () => {
                   className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors"
                   onClick={() => setIsModalOpen(false)}
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <X />
                 </button>
               </div>
               <div className="p-6 overflow-y-auto max-h-[60vh] flex flex-col gap-4">
@@ -400,9 +397,7 @@ const JadwalKegiatan: React.FC = () => {
                       Tanggal <span className="text-error">*</span>
                     </label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
-                        calendar_today
-                      </span>
+                      <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
                       <input
                         type="date"
                         value={formData.date}
@@ -416,9 +411,7 @@ const JadwalKegiatan: React.FC = () => {
                       Waktu <span className="text-error">*</span>
                     </label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
-                        schedule
-                      </span>
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
                       <input
                         type="time"
                         value={formData.time}

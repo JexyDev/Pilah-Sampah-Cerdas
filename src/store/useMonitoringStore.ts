@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -18,6 +18,12 @@ export interface Bin {
   category: {
     name: string;
   };
+  status?: string;
+  userId?: string;
+  wargaName?: string;
+  kknName?: string;
+  rtRw?: string;
+  lokasi?: string;
 }
 
 interface MonitoringState {

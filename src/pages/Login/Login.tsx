@@ -1,12 +1,13 @@
+import { Server, WifiOff, User, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, LogIn } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -73,20 +74,16 @@ const Login: React.FC = () => {
         >
           <div className="flex-shrink-0 flex items-center">
             {type === "error" && (
-              <span className="material-symbols-outlined text-[24px] text-red-500">error</span>
+              <AlertCircle className="text-red-500" size={24} />
             )}
             {type === "warning" && (
-              <span className="material-symbols-outlined text-[24px] text-amber-500">warning</span>
+              <AlertTriangle className="text-amber-500" size={24} />
             )}
             {type === "server" && (
-              <span className="material-symbols-outlined text-[24px] text-red-500 animate-pulse">
-                dns
-              </span>
+              <Server className="text-red-500 animate-pulse" size={24} />
             )}
             {type === "network" && (
-              <span className="material-symbols-outlined text-[24px] text-red-500 animate-pulse">
-                wifi_off
-              </span>
+              <WifiOff className="text-red-500 animate-pulse" size={24} />
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -109,7 +106,7 @@ const Login: React.FC = () => {
             onClick={() => toast.dismiss(t.id)}
             className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">close</span>
+            <X size={16} />
           </button>
         </div>
       ),
@@ -201,7 +198,7 @@ const Login: React.FC = () => {
         <div className="fixed inset-0 bg-gradient-to-br from-green-600 to-emerald-800 flex flex-col items-center justify-center z-50 transition-all duration-500 animate-in fade-in">
           <div className="flex flex-col items-center gap-6 text-center text-white px-6">
             <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-bounce shadow-lg border border-white/30">
-              <span className="material-symbols-outlined text-[64px] text-white">check_circle</span>
+              <CheckCircle2 className="text-white" size={64} />
             </div>
             <div>
               <h2 className="text-[28px] font-bold tracking-tight mb-2">Login Berhasil!</h2>
@@ -210,7 +207,7 @@ const Login: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-green-200">
-              <span className="material-symbols-outlined animate-spin text-lg">autorenew</span>
+              <RefreshCcw className="animate-spin text-lg" />
               <span>Memuat Halaman...</span>
             </div>
           </div>
@@ -221,7 +218,7 @@ const Login: React.FC = () => {
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 z-10 transition-all duration-300">
         {/* Header / Logo */}
         <div className="flex flex-col items-center text-center gap-3">
-          <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-28 w-auto object-contain" />
+          <img src="/logo.png" alt="TrashCare" className="h-28 w-auto object-contain" />
           <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium">
             Masukkan email dan kata sandi Anda untuk masuk ke sistem.
           </p>
@@ -231,7 +228,7 @@ const Login: React.FC = () => {
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
           <div className="flex items-center justify-between mb-3 border-b border-slate-200/60 pb-2">
             <p className="font-bold flex items-center gap-1.5 text-slate-800">
-              <span className="material-symbols-outlined text-[16px] text-primary">info</span>
+              <Info className="text-primary" size={16} />
               Pilih Akun Demo (Klik untuk auto-fill)
             </p>
             <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
@@ -274,12 +271,12 @@ const Login: React.FC = () => {
                 bg: "bg-orange-50 text-orange-700 border-orange-200",
               },
               {
-                email: "warga@psc.id",
+                email: "warga1@psc.id",
                 label: "Warga Utama",
                 bg: "bg-green-50 text-green-700 border-green-200",
               },
               {
-                email: "wargatambahan@psc.id",
+                email: "warga2@psc.id",
                 label: "Warga Tamb.",
                 bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
               },
@@ -320,9 +317,7 @@ const Login: React.FC = () => {
               Email atau NIK
             </label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
-                person
-              </span>
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
               <input
                 className={`w-full pl-10 pr-4 h-11 bg-surface-container-low border ${
                   emailError
@@ -347,7 +342,7 @@ const Login: React.FC = () => {
                 id="email-error"
                 className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1"
               >
-                <span className="material-symbols-outlined text-[12px]">warning</span>
+                <AlertTriangle size={12} />
                 {emailError}
               </p>
             )}
@@ -358,9 +353,7 @@ const Login: React.FC = () => {
               Kata Sandi
             </label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
-                lock
-              </span>
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
               <input
                 ref={passwordInputRef}
                 className={`w-full pl-10 pr-10 h-11 bg-surface-container-low border ${
@@ -386,9 +379,7 @@ const Login: React.FC = () => {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
                 disabled={isStoreLoading || isLocalLoading || showSuccessOverlay}
               >
-                <span className="material-symbols-outlined text-[20px]">
-                  {showPassword ? "visibility_off" : "visibility"}
-                </span>
+                {showPassword ? <EyeOff className="text-[20px]" size={20}/> : <Eye className="text-[20px]" size={20}/>}
               </button>
             </div>
             {passwordError && (
@@ -396,7 +387,7 @@ const Login: React.FC = () => {
                 id="password-error"
                 className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1"
               >
-                <span className="material-symbols-outlined text-[12px]">warning</span>
+                <AlertTriangle size={12} />
                 {passwordError}
               </p>
             )}
@@ -409,12 +400,12 @@ const Login: React.FC = () => {
           >
             {isLocalLoading || isStoreLoading ? (
               <>
-                <span className="material-symbols-outlined animate-spin text-sm">autorenew</span>
+                <RefreshCcw className="animate-spin" size={14} />
                 <span>Memproses...</span>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[18px]">login</span>
+                <LogIn size={18} />
                 <span>Masuk Sistem</span>
               </>
             )}
@@ -422,7 +413,8 @@ const Login: React.FC = () => {
         </form>
 
         <div className="text-center text-[11px] text-on-surface-variant mt-2 border-t border-outline-variant/30 pt-4">
-          <p>© 2026 Pilah Sampah Cerdas. Kecamatan Coblong, Kota Bandung.</p>
+          <p className="mb-2">Mahasiswa KKN? <Link to="/register-mahasiswa" className="text-primary font-bold hover:underline">Daftar di sini</Link></p>
+          <p>© 2026 TrashCare. Kecamatan Coblong, Kota Bandung.</p>
         </div>
       </div>
     </div>

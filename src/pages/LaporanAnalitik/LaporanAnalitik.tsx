@@ -1,5 +1,6 @@
+import { LineChart, FileText, Grid, Download, TrendingUp, MoreVertical, Cpu, Network, ArrowUpDown } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -41,7 +42,7 @@ const LaporanAnalitik: React.FC = () => {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-on-surface-variant">
-        <span className="material-symbols-outlined text-6xl mb-4 text-outline">analytics</span>
+        <LineChart className="text-6xl mb-4 text-outline" />
         <p>Gagal memuat data laporan</p>
       </div>
     );
@@ -65,12 +66,19 @@ const LaporanAnalitik: React.FC = () => {
             <span className="text-[14px] font-bold text-on-surface">Pusat</span>
           </div>
           <button className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold">
-            <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+            <FileText size={20} />
             Export PDF
           </button>
           <button className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold">
-            <span className="material-symbols-outlined text-[20px]">grid_on</span>
+            <Grid size={20} />
             Export CSV
+          </button>
+          <button 
+            onClick={() => window.open('/api/v1/dashboard/export-dataset', '_blank')}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl transition-colors cursor-pointer text-[12px] font-bold shadow-md shadow-indigo-600/20"
+          >
+            <Download size={20} />
+            Export Dataset AI
           </button>
         </div>
       </div>
@@ -121,7 +129,7 @@ const LaporanAnalitik: React.FC = () => {
               </p>
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[16px]">trending_up</span>{" "}
+              <TrendingUp size={16} />{" "}
               {data.aiAccuracy.toFixed(1)}%
             </span>
           </div>
@@ -162,7 +170,7 @@ const LaporanAnalitik: React.FC = () => {
               </p>
             </div>
             <button className="text-on-surface-variant hover:text-blue-600 transition-colors">
-              <span className="material-symbols-outlined text-xl">more_vert</span>
+              <MoreVertical size={20} />
             </button>
           </div>
           <div className="flex-1 h-[200px] bg-surface-container-low rounded-lg flex items-center justify-center border-2 border-dashed border-outline-variant/50 relative overflow-hidden">
@@ -272,7 +280,7 @@ const LaporanAnalitik: React.FC = () => {
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${data.cpuUsage < 80 ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"} text-[11px] font-bold uppercase tracking-wider`}
             >
-              <span className="material-symbols-outlined text-[16px]">memory</span>
+              <Cpu size={16} />
               {data.cpuUsage < 80 ? "Optimal" : "High"}
             </div>
           </div>
@@ -307,7 +315,7 @@ const LaporanAnalitik: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[16px]">hub</span>
+              <Network size={16} />
               Optimal
             </div>
           </div>
@@ -344,7 +352,7 @@ const LaporanAnalitik: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[16px]">swap_vert</span>
+              <ArrowUpDown size={16} />
               Active
             </div>
           </div>

@@ -1,5 +1,6 @@
+import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Edit, Trash2, X } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,8 +9,12 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const ManajemenPengguna: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+
   const [users, setUsers] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +36,7 @@ const ManajemenPengguna: React.FC = () => {
     email: "",
     password: "",
     roleName: "WARGA",
-    nik: "",
+    phone: "",
     status: "Aktif",
     rtRwId: "",
   });
@@ -105,7 +110,7 @@ const ManajemenPengguna: React.FC = () => {
       email: "",
       password: "",
       roleName: "WARGA",
-      nik: "",
+      phone: "",
       status: "Aktif",
       rtRwId: areas[0]?.id?.toString() || "",
     });
@@ -126,7 +131,7 @@ const ManajemenPengguna: React.FC = () => {
       email: user.email,
       password: "",
       roleName: user.role || "WARGA",
-      nik: user.nik === "-" ? "" : user.nik,
+      phone: user.phone || "",
       status: user.status || "Aktif",
       rtRwId: matchedAreaId,
     });
@@ -185,17 +190,18 @@ const ManajemenPengguna: React.FC = () => {
     const headers = [
       "Nama Lengkap",
       "Email",
-      "NIK",
+      "No. Telfon",
       "Peran",
       "Wilayah",
       "Setoran (kg)",
       "Status",
       "Tanggal Terdaftar",
     ];
+
     const csvData = users.map((u) => [
       u.name,
       u.email,
-      u.nik,
+      u.phone || "-",
       u.role,
       u.wilayah,
       u.setoran,
@@ -228,18 +234,20 @@ const ManajemenPengguna: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold text-on-surface">Daftar Pengguna Sistem</h2>
         <div className="flex gap-4">
-          <button
-            onClick={handleOpenAddModal}
-            className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">person_add</span>
-            Tambah Pengguna
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+            >
+              <UserPlus size={20} />
+              Tambah Pengguna
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             className="bg-white border border-outline-variant text-on-surface-variant px-6 h-12 rounded-lg font-medium text-base hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">download</span>
+            <Download size={20} />
             Ekspor CSV
           </button>
         </div>
@@ -251,14 +259,12 @@ const ManajemenPengguna: React.FC = () => {
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs text-on-surface-variant mb-1">Pencarian</label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
-                search
-              </span>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 h-10 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
-                placeholder="Cari nama, NIK..."
+                placeholder="Cari nama, No. Telfon..."
                 type="text"
               />
             </div>
@@ -334,7 +340,7 @@ const ManajemenPengguna: React.FC = () => {
               <tr className="bg-surface-container-low border-b border-outline-variant/50">
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold w-16">Avatar</th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Nama</th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">NIK</th>
+                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">No. Telfon</th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Peran</th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Wilayah</th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-right">
@@ -343,9 +349,11 @@ const ManajemenPengguna: React.FC = () => {
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center">
                   Status
                 </th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center w-24">
-                  Aksi
-                </th>
+                {!isReadOnly && (
+                  <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center w-24">
+                    Aksi
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -353,9 +361,7 @@ const ManajemenPengguna: React.FC = () => {
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                        autorenew
-                      </span>
+                      <Loader2 className="animate-spin text-primary" size={32} />
                       <p>Memuat pengguna...</p>
                     </div>
                   </td>
@@ -381,26 +387,20 @@ const ManajemenPengguna: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 font-bold text-on-surface">{user.name}</td>
                     <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">
-                      {user.nik}
+                      {user.phone || "-"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 w-fit">
                         {["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role) && (
-                          <span className="material-symbols-outlined text-[15px] text-blue-600">
-                            admin_panel_settings
-                          </span>
+                          <ShieldAlert className="text-blue-600" size={15} />
                         )}
                         {["CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(
                           user.role
                         ) && (
-                          <span className="material-symbols-outlined text-[15px] text-orange-600">
-                            engineering
-                          </span>
+                          <HardHat className="text-orange-600" size={15} />
                         )}
                         {user.role === "WARGA" && (
-                          <span className="material-symbols-outlined text-[15px] text-green-600">
-                            person
-                          </span>
+                          <User className="text-green-600" size={15} />
                         )}
                         <span
                           className={`inline-block px-2.5 py-1 ${
@@ -441,24 +441,26 @@ const ManajemenPengguna: React.FC = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center gap-1">
-                        <button
-                          onClick={() => handleOpenEditModal(user)}
-                          className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
-                          title="Edit"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user)}
-                          className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
-                          title="Hapus"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
-                      </div>
-                    </td>
+                    {!isReadOnly && (
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditModal(user)}
+                            className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user)}
+                            className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Hapus"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
@@ -488,7 +490,7 @@ const ManajemenPengguna: React.FC = () => {
                 onClick={handleCloseModal}
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X />
               </button>
             </div>
             <form
@@ -509,17 +511,15 @@ const ManajemenPengguna: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">
-                  NIK (16 Digit)
+                  No. Telfon
                 </label>
                 <input
                   type="text"
                   required
-                  maxLength={16}
-                  minLength={16}
-                  value={formData.nik}
-                  onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-mono"
-                  placeholder="3273123456789012"
+                  placeholder="081234567890"
                 />
               </div>
               <div>
@@ -554,9 +554,7 @@ const ManajemenPengguna: React.FC = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer flex items-center justify-center"
                   >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {showPassword ? "visibility_off" : "visibility"}
-                    </span>
+                    {showPassword ? <EyeOff className="text-[20px]" size={20}/> : <Eye className="text-[20px]" size={20}/>}
                   </button>
                 </div>
               </div>
@@ -623,9 +621,7 @@ const ManajemenPengguna: React.FC = () => {
                   className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting && (
-                    <span className="material-symbols-outlined animate-spin text-[18px]">
-                      progress_activity
-                    </span>
+                    <Loader2 className="animate-spin" size={18} />
                   )}
                   Simpan
                 </button>

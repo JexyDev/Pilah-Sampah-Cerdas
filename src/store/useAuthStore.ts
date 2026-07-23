@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -38,6 +38,8 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
+  requestOtp: (phone: string) => Promise<boolean>;
+  verifyOtp: (phone: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateWilayah: (newWilayah: string) => void;
   updateUser: (updatedFields: Partial<User>) => void;
@@ -124,6 +126,60 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       // Buat user object untuk store
+      const avatarConfig = getAvatarConfig(backendUser.role);
+      const user: User = {
+        id: backendUser.id,
+        name: backendUser.name,
+        email: backendUser.email,
+        peran: backendUser.role as UserRole,
+        wilayah: getWilayahByRole(backendUser.role),
+        avatar: backendUser.name.substring(0, 2).toUpperCase(),
+        fotoProfil: backendUser.fotoProfil,
+        phone: backendUser.phone,
+        address: backendUser.address,
+        ...avatarConfig,
+      };
+
+      localStorage.setItem("psc_user", JSON.stringify(user));
+      set({ user, isAuthenticated: true, isLoading: false, error: null });
+      return true;
+    } catch (err: any) {
+      const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
+      set({ isLoading: false, error: code, isAuthenticated: false });
+      return false;
+    }
+  },
+
+  requestOtp: async (phone: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post("/auth/request-otp", { phone });
+      set({ isLoading: false, error: null });
+      return true;
+    } catch (err: any) {
+      const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
+      set({ isLoading: false, error: code });
+      return false;
+    }
+  },
+
+  verifyOtp: async (phone: string, otp: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post("/auth/verify-otp", { phone, otp });
+      const payload = response.data?.data ?? response.data;
+
+      if (!payload?.user || !payload?.accessToken) {
+        throw new Error("Response tidak valid dari server");
+      }
+
+      const { user: backendUser, accessToken, refreshToken } = payload;
+
+      localStorage.setItem("psc_access_token", accessToken);
+      if (refreshToken) {
+        localStorage.setItem("psc_refresh_token", refreshToken);
+      }
+
       const avatarConfig = getAvatarConfig(backendUser.role);
       const user: User = {
         id: backendUser.id,

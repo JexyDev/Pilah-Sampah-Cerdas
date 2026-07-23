@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,10 +8,14 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, Trash2, Edit } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../../store/useAuthStore";
 import { useMasterDataStore } from "../../store/useMasterDataStore";
 import styles from "./MasterData.module.css";
 
 const MasterData: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+
   const { users, bins, isLoading, error, fetchMasterData, deleteUser, deleteBin } =
     useMasterDataStore();
   const [activeTab, setActiveTab] = useState<"users" | "bins">("users");
@@ -87,9 +91,10 @@ const MasterData: React.FC = () => {
               <tr>
                 <th>ID</th>
                 <th>Nama</th>
+                <th>Email</th>
                 <th>Role</th>
                 <th>Poin</th>
-                <th>Aksi</th>
+                {!isReadOnly && <th>Aksi</th>}
               </tr>
             </thead>
             <tbody>
@@ -99,24 +104,26 @@ const MasterData: React.FC = () => {
                   <td>{u.name}</td>
                   <td>{u.role}</td>
                   <td>{u.totalPoin}</td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button
-                        className={styles.iconBtn}
-                        title="Edit"
-                        onClick={() => toast("Fitur Edit belum tersedia")}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        className={`${styles.iconBtn} ${styles.danger}`}
-                        title="Hapus"
-                        onClick={() => handleDeleteUser(u.id, u.name)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+                  {!isReadOnly && (
+                    <td>
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.iconBtn}
+                          title="Edit"
+                          onClick={() => toast("Fitur Edit belum tersedia")}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className={`${styles.iconBtn} ${styles.danger}`}
+                          title="Hapus"
+                          onClick={() => handleDeleteUser(u.id, u.name)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -132,7 +139,7 @@ const MasterData: React.FC = () => {
                 <th>Kapasitas Max (L)</th>
                 <th>Volume (L)</th>
                 <th>Status</th>
-                <th>Aksi</th>
+                {!isReadOnly && <th>Aksi</th>}
               </tr>
             </thead>
             <tbody>
@@ -147,24 +154,26 @@ const MasterData: React.FC = () => {
                       {b.status.toUpperCase()}
                     </span>
                   </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button
-                        className={styles.iconBtn}
-                        title="Edit"
-                        onClick={() => toast("Fitur Edit belum tersedia")}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        className={`${styles.iconBtn} ${styles.danger}`}
-                        title="Hapus"
-                        onClick={() => handleDeleteBin(b.id, b.qrCode)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+                  {!isReadOnly && (
+                    <td>
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.iconBtn}
+                          title="Edit"
+                          onClick={() => toast("Fitur Edit belum tersedia")}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className={`${styles.iconBtn} ${styles.danger}`}
+                          title="Hapus"
+                          onClick={() => handleDeleteBin(b.id, b.qrCode)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

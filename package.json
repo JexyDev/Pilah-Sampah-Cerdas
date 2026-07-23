@@ -18,13 +18,14 @@
     "axios": "^1.18.1",
     "browser-image-compression": "^2.0.2",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.24.0",
+    "lucide-react": "^1.25.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-error-boundary": "^6.1.2",
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.1",
+    "recharts": "^3.10.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

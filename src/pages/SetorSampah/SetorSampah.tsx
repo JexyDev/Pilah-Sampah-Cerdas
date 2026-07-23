@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -49,6 +49,7 @@ export default function SetorSampah() {
     estimasi_volume: number;
     confidence?: number;
     quotaRemaining?: number;
+    detections?: Array<{ detectedType: string; volumeEstimate: number; confidence?: number }>;
   } | null>(null);
   const [transactionData, setTransactionData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -258,8 +259,15 @@ export default function SetorSampah() {
         qrCode: qrCodeText,
         detectedType: aiResult?.jenis_sampah || "ORGANIC",
         estimatedVolume: aiResult?.estimasi_volume || 1.5,
+        aiConfidence: aiResult?.confidence || 1.0,
         userLat: coords.lat,
         userLng: coords.lng,
+        evidencePhotoUrl: previewUrl || "", // Send photo URL with transaction
+        detections: aiResult?.detections?.map(d => ({
+          detectedType: d.detectedType,
+          volumeEstimate: d.volumeEstimate,
+          confidence: d.confidence
+        })),
       };
 
       const response = await api.post("/bins/scan", payload);
@@ -548,36 +556,60 @@ export default function SetorSampah() {
             </div>
 
             <div className="w-full space-y-3">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center space-y-1.5">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center space-y-3">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                  Kategori Sampah
+                  Hasil Klasifikasi Sampah
                 </span>
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${
-                    aiResult.jenis_sampah === "ORGANIC"
-                      ? "bg-green-50 text-green-700 border-green-200"
-                      : "bg-blue-50 text-blue-700 border-blue-200"
-                  }`}
-                >
-                  {aiResult.jenis_sampah === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}
-                </span>
+                
+                {aiResult.detections && aiResult.detections.length > 0 ? (
+                  <div className="space-y-2">
+                    {aiResult.detections.map((d, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+                            d.detectedType === "ORGANIC"
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
+                        >
+                          {d.detectedType === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}
+                        </span>
+                        <div className="text-right text-xs font-semibold text-slate-700">
+                          <span>{d.volumeEstimate} Liter ({d.confidence ? `${Math.round(d.confidence * 100)}%` : "96%"})</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${
+                        aiResult.jenis_sampah === "ORGANIC"
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-blue-50 text-blue-700 border-blue-200"
+                      }`}
+                    >
+                      {aiResult.jenis_sampah === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}
+                    </span>
 
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 text-xs font-bold text-slate-700 mt-2">
-                  <div>
-                    <span className="text-[9px] text-slate-400 font-bold block uppercase">
-                      Estimasi Vol
-                    </span>
-                    <span>{aiResult.estimasi_volume} Liter</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 font-bold block uppercase">
-                      Akurasi
-                    </span>
-                    <span>
-                      {aiResult.confidence ? `${Math.round(aiResult.confidence * 100)}%` : "96%"}
-                    </span>
-                  </div>
-                </div>
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 text-xs font-bold text-slate-700 mt-2">
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase">
+                          Estimasi Vol
+                        </span>
+                        <span>{aiResult.estimasi_volume} Liter</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase">
+                          Akurasi
+                        </span>
+                        <span>
+                          {aiResult.confidence ? `${Math.round(aiResult.confidence * 100)}%` : "96%"}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {aiResult.quotaRemaining !== undefined && (

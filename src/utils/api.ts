@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,7 +8,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://157.10.252.252:3000/api/v1",
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://157.10.252.252:3000/api/v1",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -34,8 +36,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
-    // Jika 401 dan bukan request login, clear token & redirect login
-    if (status === 401 && !error.config?.url?.includes("/auth/login")) {
+    if (
+      status === 401 && 
+      !error.config?.url?.includes("/auth/login") && 
+      !error.config?.url?.includes("/auth/verify-otp")
+    ) {
       localStorage.removeItem("psc_access_token");
       localStorage.removeItem("psc_user");
       window.location.href = "/login";

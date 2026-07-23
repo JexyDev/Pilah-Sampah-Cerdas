@@ -1,5 +1,6 @@
+
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -14,6 +15,7 @@ import MasterData from "../pages/MasterData/MasterData";
 import Leaderboard from "../pages/Leaderboard/Leaderboard";
 import NotFound from "../pages/NotFound/NotFound";
 import Login from "../pages/Login/Login";
+import MahasiswaRegistration from "../pages/Registration/MahasiswaRegistration";
 
 import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
 import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
@@ -30,6 +32,15 @@ import KknDashboard from "../pages/KknDashboard/KknDashboard";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import { useAuthStore } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
+import { SuperAdminDashboard } from "../pages/SuperAdmin/SuperAdminDashboard";
+import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
+import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
+import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
+import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
+import { RwApproval } from "../pages/RwPortal/RwApproval";
+import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
+import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
+import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -72,6 +83,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register-mahasiswa" element={<MahasiswaRegistration />} />
       <Route
         path="/"
         element={
@@ -84,7 +96,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="monitoring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -142,7 +154,20 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="jadwal-kegiatan" element={<JadwalKegiatan />} />
+        <Route
+          path="jadwal-kegiatan"
+          element={<JadwalKegiatan />}
+        />
+        
+        <Route
+          path="input-manual"
+          element={
+            <ProtectedRoute allowedRoles={["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]}>
+              <InputSetoranManual />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="kategori-sampah"
           element={
@@ -224,6 +249,66 @@ const AppRoutes: React.FC = () => {
               <ResiduDashboard />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="superadmin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/configs"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <ManageConfigs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/audit"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <AuditTrailList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/qr-master"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <MasterQrManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="superadmin/discrepancies"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+              <ReviewDiscrepancy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="rw/approval"
+          element={
+            <ProtectedRoute allowedRoles={["RW"]}>
+              <RwApproval />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="rw/fasilitas"
+          element={
+            <ProtectedRoute allowedRoles={["RW"]}>
+              <RwFacilityInput />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ide-daur-ulang"
+          element={<IdeDaurUlang />}
         />
         <Route path="*" element={<NotFound />} />
       </Route>
