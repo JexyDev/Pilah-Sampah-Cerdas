@@ -30,8 +30,7 @@ const Login: React.FC = () => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Helper validation regex
-  // Helper validation regex
-  const isPhoneValid = (val: string) => /^\+62\d{8,15}$/.test(val);
+  const isPhoneValid = (val: string) => /^(?:\+62|08)\d{8,15}$/.test(val);
 
   // Real-time Validation handlers
   const handleIdentifierBlur = () => {
@@ -84,7 +83,10 @@ const Login: React.FC = () => {
     if (e) e.preventDefault();
     if (isStoreLoading || isLocalLoading || showSuccessOverlay) return;
 
-    const idVal = identifier.trim();
+    let idVal = identifier.trim();
+    if (idVal.startsWith("0")) {
+      idVal = "+62" + idVal.slice(1);
+    }
     const passVal = password.trim();
     let hasError = false;
     
