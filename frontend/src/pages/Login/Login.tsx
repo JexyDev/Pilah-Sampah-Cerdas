@@ -124,6 +124,8 @@ const Login: React.FC = () => {
           setPasswordError("Password salah");
           setPassword(""); 
           setTimeout(() => passwordInputRef.current?.focus(), 50);
+        } else if (storeErr === "USER_INACTIVE") {
+          showToast("Akun Anda belum disetujui atau sudah tidak aktif.", "warning");
         } else if (storeErr === "SERVICE_UNAVAILABLE") {
           showToast("Server sedang bermasalah, silakan coba lagi dalam beberapa saat", "server", handleSubmit);
         } else if (storeErr === "TOO_MANY_ATTEMPTS") {
