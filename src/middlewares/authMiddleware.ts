@@ -58,7 +58,7 @@ export const authMiddleware = async (
       select: { status: true },
     });
 
-    if (!dbUser || dbUser.status !== "Aktif") {
+    if (!dbUser || (dbUser.status !== "Aktif" && dbUser.status !== "ACTIVE")) {
       res
         .status(401)
         .json({ error: "UNAUTHORIZED", message: "Akun Anda tidak aktif atau belum disetujui" });

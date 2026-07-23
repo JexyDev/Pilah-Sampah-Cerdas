@@ -28,6 +28,10 @@ export class AuthService {
       throw new Error("USER_NOT_FOUND");
     }
 
+    if (user.status !== "Aktif" && user.status !== "ACTIVE") {
+      throw new Error("USER_INACTIVE");
+    }
+
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       throw new Error("WRONG_PASSWORD");
