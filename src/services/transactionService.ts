@@ -74,6 +74,35 @@ export class TransactionService {
     });
   }
 
+  async getDepositDetails(id: string) {
+    return prisma.wasteLog.findUnique({
+      where: { id },
+      include: {
+        household: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        category: true,
+        bin: {
+          include: {
+            rtRw: true,
+          },
+        },
+        verifiedByPetugas: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
   async createManualDeposit(
     petugasId: string,
     wargaId: string,

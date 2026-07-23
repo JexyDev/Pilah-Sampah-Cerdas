@@ -127,4 +127,19 @@ export const transactionController = {
       res.status(500).json({ success: false, message: error.message || "Gagal mencatat setoran residu" });
     }
   },
+
+  getDepositDetails: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const deposit = await transactionService.getDepositDetails(id);
+      if (!deposit) {
+        res.status(404).json({ success: false, message: "Setoran tidak ditemukan" });
+        return;
+      }
+      res.status(200).json({ success: true, data: deposit });
+    } catch (error) {
+      console.error("[TransactionController] getDepositDetails error:", error);
+      res.status(500).json({ success: false, message: "Gagal mengambil detail setoran" });
+    }
+  },
 };

@@ -11,6 +11,7 @@ import { getDistanceMeters } from "../utils/haversineUtils.js";
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { websocketService } from "./websocketService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 const prisma = new PrismaClient();
 
@@ -92,6 +93,9 @@ export class BinService {
     if (!bin) {
       throw new Error("BIN_NOT_FOUND");
     }
+    if (bin.status !== "ACTIVE_BOUND") {
+      throw new Error("BIN_NOT_ACTIVE");
+    }
 
     // 2. Validate ownership (if bin is private to a user)
     if (bin.binOwnerships && bin.binOwnerships.length > 0) {
@@ -135,6 +139,10 @@ export class BinService {
         category: true
       }
     });
+
+    if (userBins.length === 0) {
+      throw new Error("NO_ACTIVE_BINS");
+    }
 
     if (detections && detections.length > 0) {
       let totalWeightKg = 0;
@@ -218,10 +226,13 @@ export class BinService {
           (currentTimeVal >= parseTimeToMinutes(eveningStartStr) && currentTimeVal <= parseTimeToMinutes(eveningEndStr));
 
         let multiplier = 1.0;
-        if (isWithinMissionWindow) {
+        if (!isWithinMissionWindow) {
+          const discountVal = (await prisma.systemConfig.findUnique({ where: { key: "late_submission_discount" } }))?.value;
+          multiplier = discountVal ? Number(discountVal) : 0.3;
+        } else {
           const multKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
           const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))?.value;
-          multiplier = multVal ? Number(multVal) : (isOrganic ? 2.0 : 1.5);
+          multiplier = multVal ? Number(multVal) : 1.0;
         }
 
         const pointsPerKg = targetBin.category.pointsPerKg || 10;
@@ -254,6 +265,19 @@ export class BinService {
           volumeLiter: vol,
           pointsAwarded: calculatedPoints,
         });
+      }
+
+      // Send push notification if user has FCM token
+      const userObj = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { fcmToken: true },
+      });
+      if (userObj?.fcmToken && totalPointsAwarded > 0) {
+        await notificationIntegrationService.sendPushNotification(
+          userObj.fcmToken,
+          "Poin Bertambah!",
+          `Selamat! Anda mendapatkan +${totalPointsAwarded} poin dari setoran sampah Anda.`
+        ).catch(e => console.error("FCM Error:", e));
       }
 
       return {
@@ -340,10 +364,13 @@ export class BinService {
       (currentTimeVal >= parseTimeToMinutes(eveningStartStr) && currentTimeVal <= parseTimeToMinutes(eveningEndStr));
 
     let multiplier = 1.0;
-    if (isWithinMissionWindow) {
+    if (!isWithinMissionWindow) {
+      const discountVal = (await prisma.systemConfig.findUnique({ where: { key: "late_submission_discount" } }))?.value;
+      multiplier = discountVal ? Number(discountVal) : 0.3;
+    } else {
       const multKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
       const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))?.value;
-      multiplier = multVal ? Number(multVal) : (isOrganic ? 2.0 : 1.5);
+      multiplier = multVal ? Number(multVal) : 1.0;
     }
 
     const pointsPerKg = bin.category.pointsPerKg || 10;
@@ -365,6 +392,19 @@ export class BinService {
       aiConfidence,
       evidencePhotoUrl
     );
+
+    // Send push notification if user has FCM token
+    const userObj = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { fcmToken: true },
+    });
+    if (userObj?.fcmToken && calculatedPoints > 0) {
+      await notificationIntegrationService.sendPushNotification(
+        userObj.fcmToken,
+        "Poin Bertambah!",
+        `Selamat! Anda mendapatkan +${calculatedPoints} poin dari setoran sampah Anda.`
+      ).catch(e => console.error("FCM Error:", e));
+    }
 
     return {
       wasteLogId: result.wasteLog.id,
@@ -407,8 +447,8 @@ export class BinService {
   async registerWargaBin(
     userId: string,
     data: {
-      qrCode: string;
-      maxCapacityLiter?: number;
+      qrCode?: string;
+      qrCodes?: string[];
       latitude?: number;
       longitude?: number;
     }
@@ -423,50 +463,84 @@ export class BinService {
     }
     const household = user.households[0];
 
-    const bin = await prisma.bin.findUnique({
-      where: { qrCode: data.qrCode },
-    });
-    if (!bin) {
-      throw new Error("BIN_NOT_FOUND");
-    }
-    if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
-      throw new Error("BIN_ALREADY_USED");
-    }
+    const codes = data.qrCodes || (data.qrCode ? [data.qrCode] : []);
+    if (codes.length === 0) throw new Error("QR_CODES_REQUIRED");
 
     const result = await prisma.$transaction(async (tx) => {
-      const updatedBin = await tx.bin.update({
-        where: { id: bin.id },
-        data: {
-          status: "PENDING_APPROVAL",
-          userId: user.id,
-          rtRwId: user.rtRwId ?? household.rtRwId,
-          maxCapacityLiter: data.maxCapacityLiter || bin.maxCapacityLiter,
-          latitude: data.latitude ?? household.latitude,
-          longitude: data.longitude ?? household.longitude,
-        },
-      });
+      const updatedBins = [];
+      for (const qrCode of codes) {
+        const bin = await tx.bin.findUnique({
+          where: { qrCode },
+        });
+        if (!bin) {
+          throw new Error(`BIN_NOT_FOUND: ${qrCode}`);
+        }
+        if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
+          throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
+        }
 
-      await tx.binOwnership.create({
-        data: {
-          binId: bin.id,
-          userId: user.id,
-          type: "UTAMA",
-        },
-      });
+        const updatedBin = await tx.bin.update({
+          where: { id: bin.id },
+          data: {
+            status: "PENDING_APPROVAL",
+            userId: user.id,
+            rtRwId: user.rtRwId ?? household.rtRwId,
+            latitude: data.latitude ?? household.latitude,
+            longitude: data.longitude ?? household.longitude,
+          },
+        });
 
-      await tx.auditTrail.create({
-        data: {
-          action: "WARGA_REGISTER_BIN",
-          userId: user.id,
-          oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
-          newValue: { qrCode: bin.qrCode, status: "PENDING_APPROVAL" } as any,
-        },
-      });
+        await tx.binOwnership.create({
+          data: {
+            binId: bin.id,
+            userId: user.id,
+            type: "UTAMA",
+          },
+        });
 
-      return updatedBin;
+        await tx.auditTrail.create({
+          data: {
+            action: "WARGA_REGISTER_BIN",
+            userId: user.id,
+            oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
+            newValue: { qrCode: bin.qrCode, status: "PENDING_APPROVAL" } as any,
+          },
+        });
+        updatedBins.push(updatedBin);
+      }
+      return updatedBins;
     });
 
     return result;
+  }
+
+  async measureBin(data: {
+    qrCode: string;
+    binType: string;
+    maxCapacityLiter: number;
+    height?: number;
+    width?: number;
+    length?: number;
+    diameter?: number;
+    shape?: string;
+  }) {
+    const bin = await prisma.bin.findUnique({
+      where: { qrCode: data.qrCode },
+    });
+    if (!bin) throw new Error("BIN_NOT_FOUND");
+
+    return prisma.bin.update({
+      where: { id: bin.id },
+      data: {
+        binType: data.binType,
+        maxCapacityLiter: data.maxCapacityLiter,
+        height: data.height,
+        width: data.width,
+        length: data.length,
+        diameter: data.diameter,
+        shape: data.shape,
+      },
+    });
   }
 
   /**

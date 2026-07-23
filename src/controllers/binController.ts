@@ -172,6 +172,11 @@ export class BinController {
         res
           .status(404)
           .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code Tong Sampah tidak ditemukan" });
+      } else if (error.message === "BIN_NOT_ACTIVE" || error.message === "NO_ACTIVE_BINS") {
+        res.status(400).json({
+          error: "BIN_NOT_ACTIVE",
+          message: "Tidak bisa scan, Anda belum memiliki tempat sampah aktif.",
+        });
       } else if (error.message === "BIN_NOT_OWNED") {
         res.status(403).json({
           error: "BIN_NOT_OWNED",
@@ -593,6 +598,17 @@ export class BinController {
     } catch (error: any) {
       console.error("[BinController] updateCapacity error:", error);
       res.status(500).json({ success: false, message: "Gagal memperbarui kapasitas tong" });
+    }
+  }
+
+  async measure(req: Request, res: Response): Promise<void> {
+    try {
+      const data = req.body;
+      const result = await binService.measureBin(data);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] measureBin error:", error);
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 }

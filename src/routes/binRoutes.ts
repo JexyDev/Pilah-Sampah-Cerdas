@@ -100,6 +100,7 @@ router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, roleMiddleware(["WARGA"]), binController.getMyBins);
 router.get("/areas", binController.getAreas);
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
+router.post("/measure", authMiddleware, binController.measure);
 router.post(
   "/areas",
   authMiddleware,

@@ -26,6 +26,14 @@ export class CronService {
       this.evaluateDailyWargaPenalty();
     });
 
+    // Window absence penalty (At the end of each window)
+    cron.schedule("5 8 * * *", () => {
+      this.checkWindowAbsence("MORNING");
+    });
+    cron.schedule("5 18 * * *", () => {
+      this.checkWindowAbsence("EVENING");
+    });
+
     console.log("[CronService] Escalation cron jobs started.");
   }
 
@@ -251,6 +259,94 @@ export class CronService {
       }
     } catch (error) {
       console.error("[CronService] evaluateDailyWargaPenalty error:", error);
+    }
+  }
+
+  public async checkWindowAbsence(window: "MORNING" | "EVENING") {
+    try {
+      console.log(`[CronService] Evaluating window absence penalty for ${window}...`);
+      const wargaList = await prisma.user.findMany({
+        where: {
+          role: { name: "WARGA" },
+        },
+      });
+
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+      // Define window start/end hours
+      const startHour = window === "MORNING" ? 6 : 16;
+      const endHour = window === "MORNING" ? 8 : 18;
+
+      const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0, 0);
+      const windowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0, 0);
+
+      const penaltyConfig = await prisma.systemConfig.findUnique({
+        where: { key: "window_absence_penalty" },
+      });
+      const penaltyAmount = penaltyConfig ? Math.abs(Number(penaltyConfig.value)) : 5;
+
+      for (const warga of wargaList) {
+        // Check if citizens have active bins first (if no active bins, do not penalize them yet!)
+        const activeBinsCount = await prisma.bin.count({
+          where: {
+            OR: [
+              { userId: warga.id },
+              { binOwnerships: { some: { userId: warga.id } } },
+            ],
+            status: "ACTIVE_BOUND",
+          },
+        });
+
+        if (activeBinsCount === 0) {
+          continue; // Warga does not have active bins yet
+        }
+
+        // Check if warga submitted any waste log within this window today
+        const hasSubmitted = await prisma.wasteLog.findFirst({
+          where: {
+            household: { userId: warga.id },
+            createdAt: {
+              gte: windowStart,
+              lte: windowEnd,
+            },
+          },
+        });
+
+        if (!hasSubmitted) {
+          // Check current points total to not drop below zero
+          const pointSumObj = await prisma.pointHistory.aggregate({
+            where: { userId: warga.id },
+            _sum: { points: true },
+          });
+          const currentPoints = pointSumObj._sum.points || 0;
+
+          if (currentPoints > 0) {
+            const deduction = Math.min(penaltyAmount, currentPoints);
+            await prisma.pointHistory.create({
+              data: {
+                userId: warga.id,
+                points: -deduction,
+                description: `Penalti melewatkan jadwal buang sampah ${window === "MORNING" ? "Pagi" : "Sore"}`,
+                kategori: "REDUKSI_TONASE", // standard category
+              },
+            });
+            console.log(`[CronService] Deducted ${deduction} points from citizen ${warga.name} for missing ${window} window.`);
+          }
+
+          // Create notification
+          await prisma.notification.create({
+            data: {
+              userId: warga.id,
+              title: `Jadwal Buang Sampah Terlewat (${window === "MORNING" ? "Pagi" : "Sore"})`,
+              message: `Anda tidak memindai sampah pada jadwal ${window === "MORNING" ? "pagi (06:00-08:00)" : "sore (16:00-18:00)"}. Poin Anda dikurangi -${penaltyAmount}.`,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[CronService] checkWindowAbsence error:", error);
     }
   }
 }

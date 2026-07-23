@@ -29,5 +29,6 @@ router.put(
 );
 
 router.get("/leaderboard", authMiddleware, gamificationController.getLeaderboard);
+router.get("/leaderboard/all", authMiddleware, gamificationController.getLeaderboard);
 
 export default router;
