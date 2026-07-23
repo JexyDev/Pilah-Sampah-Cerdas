@@ -2,8 +2,8 @@ import { IconRenderer } from "../../components/common/IconRenderer";
 import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
 /**
  * Project: TrashCare
- * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
- * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 

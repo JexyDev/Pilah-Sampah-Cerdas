@@ -1,7 +1,7 @@
 /**
  * Project: Pilah Sampah Cerdas
- * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
- * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
@@ -299,7 +299,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   const SizedBox(height: 12),
                   const Center(
                     child: Text(
-                      '© 2026 TrashCare\n© 2026 Jeremy Darrell & Muhammad Habil Putrawan. Developed by Jeremy Darrell & Muhammad Habil Putrawan.',
+                      '© 2026 TrashCare\n© 2026 PT Makerindo. Developed by PT Makerindo.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 11, color: AppColors.textHint),
                     ),
