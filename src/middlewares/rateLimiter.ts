@@ -17,11 +17,8 @@ const attempts = new Map<string, AttemptRecord>();
 
 export const loginRateLimiter = (req: Request, res: Response, next: NextFunction): void => {
   const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
-  const email = (req.body?.email || "unknown").toString().toLowerCase().trim();
-
-  // Rate limit key combines IP and email to prevent distributed attacks on single accounts
-  // and brute force from single IPs
-  const key = `${ip}:${email}`;
+  const identifier = (req.body?.phone || req.body?.email || "unknown").toString().toLowerCase().trim();
+  const key = `${ip}:${identifier}`;
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 minute window
   const maxAttempts = 5;

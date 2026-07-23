@@ -268,10 +268,9 @@ export class SuperAdminService {
         },
       });
 
-      // Get category to determine prefix
       const category = await tx.wasteCategory.findUnique({ where: { id: categoryId } });
       if (!category) throw new Error("CATEGORY_NOT_FOUND");
-      const prefix = category.name === "ORGANIC" ? "ORG" : "ANO";
+      const prefix = (category.name.toUpperCase() === "ORGANIC" || category.name.toUpperCase() === "ORGANIK") ? "ORG" : "ANO";
       const year = new Date().getFullYear().toString();
 
       // Find the latest QR code for this prefix and year
