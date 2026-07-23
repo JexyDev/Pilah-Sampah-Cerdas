@@ -38,7 +38,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
 
 const KknDashboard: React.FC = () => {

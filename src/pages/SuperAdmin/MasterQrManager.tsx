@@ -40,7 +40,6 @@ export const MasterQrManager: React.FC = () => {
 
   // Modal generate states
   const [showGenerateModal, setShowGenerateModal] = useState<boolean>(false);
-  const [batchCode, setBatchCode] = useState<string>("");
   const [totalQr, setTotalQr] = useState<number>(10);
   const [categoryId, setCategoryId] = useState<string>("");
   const [rtRwId, setRtRwId] = useState<number>(1);
@@ -81,7 +80,7 @@ export const MasterQrManager: React.FC = () => {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!batchCode || !categoryId || !rtRwId) {
+    if (!categoryId || !rtRwId) {
       toast.error("Semua field wajib diisi");
       return;
     }
@@ -89,7 +88,7 @@ export const MasterQrManager: React.FC = () => {
     try {
       const res = await api.post(
         "/super-admin/bins/generate-qr",
-        { batchCode, totalQr, categoryId, rtRwId }
+        { totalQr, categoryId, rtRwId }
       );
       if (res.data.success) {
         toast.success("Batch QR Code berhasil diproduksi");
@@ -290,11 +289,9 @@ export const MasterQrManager: React.FC = () => {
                 <label className="text-xs font-semibold text-gray-700">Kode Batch</label>
                 <input
                   type="text"
-                  placeholder="Contoh: BATCH-01"
-                  value={batchCode}
-                  onChange={(e) => setBatchCode(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  required
+                  value="Otomatis (Sistem)"
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
 
