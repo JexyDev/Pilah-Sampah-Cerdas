@@ -110,7 +110,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       // Axios returns { data, status, ... }; backend body is { message, data: { user, accessToken, refreshToken } }
-      const response = await api.post("/auth/login", { phone, password });
+      // Send both phone and email for backward compatibility with older VPS backend
+      const response = await api.post("/auth/login", { phone, email: phone, password });
       const payload = response.data?.data ?? response.data;
 
       if (!payload?.user || !payload?.accessToken) {
