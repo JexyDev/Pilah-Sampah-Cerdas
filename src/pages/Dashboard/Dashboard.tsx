@@ -67,7 +67,7 @@ const WargaDashboard: React.FC = () => {
 
   const handleUpdateCapacity = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let capacityValue = 25;
     let evidencePhotoUrl = "";
 
@@ -229,21 +229,21 @@ const WargaDashboard: React.FC = () => {
 
     setIsSubmittingIssue(true);
     try {
-      const payload = { 
-        issueType, 
+      const payload = {
+        issueType,
         notes: issueNotes,
         photoUrl: issuePhotoPreview, // mocked for now
         evidencePhotoUrl: issuePhotoPreview,
         binId: issueBinId
       };
-      
+
       let res;
       if (issueType === "EMPTY_REQUEST") {
         res = await api.post(`/bins/reset-request`, payload);
       } else {
         res = await api.post(`/bins/${issueBinId}/report-issue`, payload);
       }
-      
+
       if (res.data?.success) {
         toast.success(res.data.data?.message || "Laporan berhasil dikirim!");
         setShowIssueModal(false);
@@ -836,7 +836,7 @@ const WargaDashboard: React.FC = () => {
 
             <div className="p-6">
               <form onSubmit={handleUpdateCapacity} className="space-y-4">
-                
+
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase">
                     Opsi Kapasitas
@@ -866,7 +866,7 @@ const WargaDashboard: React.FC = () => {
                         onChange={(e) => setEditCapValue(e.target.value)}
                       />
                     </div>
-                    
+
                     <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase">
                         Upload Foto Bukti Tong
@@ -1173,11 +1173,10 @@ const WargaDashboard: React.FC = () => {
                   <button
                     key={type}
                     onClick={() => setFilterWasteType(type)}
-                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer border ${
-                      filterWasteType === type
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer border ${filterWasteType === type
                         ? "bg-primary text-white border-primary"
                         : "bg-white border-outline-variant hover:bg-slate-50 text-on-surface-variant"
-                    }`}
+                      }`}
                   >
                     {type === "ALL" ? "Semua" : type === "ORGANIC" ? "Organik" : "Anorganik"}
                   </button>
@@ -1216,11 +1215,10 @@ const WargaDashboard: React.FC = () => {
                             </td>
                             <td className="p-3">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
-                                  log.jenis === "ORGANIC"
+                                className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${log.jenis === "ORGANIC"
                                     ? "bg-green-50 text-green-700 border border-green-200"
                                     : "bg-blue-50 text-blue-700 border border-blue-200"
-                                }`}
+                                  }`}
                               >
                                 {log.jenis === "ORGANIC" ? "Organik" : "Anorganik"}
                               </span>
@@ -1586,7 +1584,7 @@ const Dashboard: React.FC = () => {
   const kknStudents = allUsers.filter(
     (u) => u.peran === "MAHASISWA_KKN" || u.role === "MAHASISWA_KKN"
   );
-  
+
   const wargaList = allUsers.filter(
     (u) => u.peran === "WARGA" || u.role === "WARGA"
   );
@@ -1858,7 +1856,7 @@ const Dashboard: React.FC = () => {
                 {recentBins.map((bin, i) => {
                   const cap = Math.round(
                     bin.kapasitas ||
-                      (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
+                    (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
                   );
                   return (
                     <tr key={bin.id || bin.kode || i} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150">
@@ -2047,7 +2045,7 @@ const Dashboard: React.FC = () => {
               </div>
               <Server className="text-emerald-600" size={20} />
             </div>
-            
+
             <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-100 rounded-xl">
               <div>
                 <p className="text-[10px] text-blue-800 font-bold uppercase">Akurasi AI</p>
@@ -2066,22 +2064,22 @@ const Dashboard: React.FC = () => {
             <h4 className="font-bold text-[20px] text-on-surface">Pusat Monitoring Lapangan</h4>
             <p className="text-xs text-on-surface-variant">Laporan aktivitas pendampingan KKN, keaktifan warga, dan performa tim residu kota.</p>
           </div>
-          
+
           <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button 
-              onClick={() => setActiveTab("kkn")} 
+            <button
+              onClick={() => setActiveTab("kkn")}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "kkn" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
             >
               Mahasiswa KKN
             </button>
-            <button 
-              onClick={() => setActiveTab("warga")} 
+            <button
+              onClick={() => setActiveTab("warga")}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "warga" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
             >
               Warga Dampingan
             </button>
-            <button 
-              onClick={() => setActiveTab("petugas")} 
+            <button
+              onClick={() => setActiveTab("petugas")}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "petugas" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
             >
               Petugas Residu
@@ -2296,7 +2294,7 @@ const Dashboard: React.FC = () => {
               <p className="text-xs text-on-surface-variant">
                 Detail material timbulan sampah organik (kompos, sisa makanan) dan anorganik (plastik, kertas, logam) di wilayah Kecamatan Coblong.
               </p>
-              
+
               <div className="space-y-3">
                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
                   <h4 className="font-bold text-emerald-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
@@ -2336,7 +2334,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="border-t border-gray-100 pt-4 space-y-2">
                 <h5 className="font-bold text-gray-800 text-xs">Kontribusi Tonase Terbesar per RW</h5>
                 {locations.slice(0, 3).map((loc) => (
@@ -2390,13 +2388,12 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
                   <span className="text-on-surface-variant">Kategori Sampah</span>
                   <span
-                    className={`font-bold uppercase ${
-                      (selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || "")
+                    className={`font-bold uppercase ${(selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || "")
                         .toUpperCase()
                         .includes("ORGANIK")
                         ? "text-primary"
                         : "text-secondary"
-                    }`}
+                      }`}
                   >
                     {selectedBinForDetail.category?.name || selectedBinForDetail.categoryId}
                   </span>
@@ -2412,22 +2409,21 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
                   <span className="text-on-surface-variant">Status Kapasitas</span>
                   <span
-                    className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                      (selectedBinForDetail.kapasitas ||
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold ${(selectedBinForDetail.kapasitas ||
                         (Number(selectedBinForDetail.currentVolumeLiter) /
                           Number(selectedBinForDetail.maxCapacityLiter)) *
-                          100) > 90
+                        100) > 90
                         ? "bg-red-100 text-red-700"
                         : "bg-green-100 text-green-700"
-                    }`}
+                      }`}
                   >
                     {selectedBinForDetail.currentVolumeLiter}L /{" "}
                     {selectedBinForDetail.maxCapacityLiter}L (
                     {Math.round(
                       selectedBinForDetail.kapasitas ||
-                        (Number(selectedBinForDetail.currentVolumeLiter) /
-                          Number(selectedBinForDetail.maxCapacityLiter)) *
-                          100
+                      (Number(selectedBinForDetail.currentVolumeLiter) /
+                        Number(selectedBinForDetail.maxCapacityLiter)) *
+                      100
                     )}
                     %)
                   </span>
