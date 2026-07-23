@@ -37,7 +37,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (phone: string, password: string) => Promise<boolean>;
   requestOtp: (phone: string) => Promise<boolean>;
   verifyOtp: (phone: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -106,11 +106,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   error: null,
 
-  login: async (email: string, password: string) => {
+  login: async (phone: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
       // Axios returns { data, status, ... }; backend body is { message, data: { user, accessToken, refreshToken } }
-      const response = await api.post("/auth/login", { email, password });
+      const response = await api.post("/auth/login", { phone, password });
       const payload = response.data?.data ?? response.data;
 
       if (!payload?.user || !payload?.accessToken) {
