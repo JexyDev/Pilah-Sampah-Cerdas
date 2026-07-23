@@ -15,9 +15,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
-import { MapContainer, TileLayer, Circle, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { Badge } from "../../components/common/Badge";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 
@@ -1862,48 +1860,9 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Interactive Compliance Map (Dago) */}
-        <div className="lg:col-span-3 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden relative border border-outline-variant/30 flex flex-col justify-between card-polish h-[340px]">
-          <div className="p-4 border-b border-outline-variant/10 flex justify-between items-center bg-gray-50/50">
-            <h4 className="font-bold text-[14px] text-on-surface">Kepatuhan RT/RW Dago</h4>
-            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-extrabold border border-emerald-100">Live</span>
-          </div>
-          <div className="flex-1 relative z-10">
-            <MapContainer center={[-6.880, 107.615]} zoom={14} className="h-full w-full" zoomControl={false}>
-              <TileLayer
-                attribution='&copy; OpenStreetMap contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {locations.map((loc, idx) => {
-                const coords = getCoords(loc.rw, idx);
-                const col = getComplianceColor(loc.patuh);
-                return (
-                  <React.Fragment key={loc.id || idx}>
-                    <Circle
-                      center={coords}
-                      radius={220}
-                      pathOptions={{ color: col, fillColor: col, fillOpacity: 0.25, weight: 1.5 }}
-                    />
-                    <Marker position={coords} icon={createRwMarkerIcon(col)}>
-                      <Popup>
-                        <div className="text-xs p-1">
-                          <strong className="text-sm font-bold block mb-1">{loc.rw} ({loc.kelurahan})</strong>
-                          <span className="block text-gray-500">Tingkat Kepatuhan: <strong className="text-on-surface">{loc.patuh}%</strong></span>
-                          <span className="block text-gray-500">Titik Tong Sampah: {loc.titikCount}</span>
-                          <span className="block text-gray-500">Jumlah RT: {loc.rtCount}</span>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  </React.Fragment>
-                );
-              })}
-            </MapContainer>
-          </div>
-          <div className="p-3 bg-white border-t border-outline-variant/20 flex justify-between items-center text-[10px] font-bold text-gray-500">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#10b981] rounded-full"></span> &gt;=80%</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#f59e0b] rounded-full"></span> 60-79%</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full"></span> &lt;60%</span>
-          </div>
+        {/* Bar Chart Race / Leaderboard */}
+        <div className="lg:col-span-3 h-[340px]">
+          <LeaderboardWidget limit={5} />
         </div>
       </div>
 
