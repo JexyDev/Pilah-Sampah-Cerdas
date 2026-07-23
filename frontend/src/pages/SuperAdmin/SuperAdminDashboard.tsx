@@ -35,6 +35,11 @@ export const SuperAdminDashboard: React.FC = () => {
   const [kelurahanWeights, setKelurahanWeights] = useState<KelurahanWeightData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Search & Sort States for Heatmap Table
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<"region" | "score">("region");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -73,6 +78,30 @@ export const SuperAdminDashboard: React.FC = () => {
   const totalNonOrganic = trends.reduce((sum, t) => sum + t.nonOrganic, 0);
   const totalResidu = trends.reduce((sum, t) => sum + t.residu, 0);
   const totalWeight = totalOrganic + totalNonOrganic + totalResidu;
+
+  // Filter & Sort Heatmap Data
+  const filteredHeatmap = heatmap
+    .filter((item) =>
+      item.region.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortField === "region") {
+        comparison = a.region.localeCompare(b.region);
+      } else if (sortField === "score") {
+        comparison = a.medianScore - b.medianScore;
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+
+  const toggleSort = (field: "region" | "score") => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -210,24 +239,80 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
 
       {/* Heatmap / Region Overview List */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Heatmap Indeks Kepatuhan Wilayah</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {heatmap.map((item, idx) => {
-            let colorClass = "bg-red-50 border-red-200 text-red-700";
-            if (item.medianScore >= 80) colorClass = "bg-green-50 border-green-200 text-green-700";
-            else if (item.medianScore >= 60) colorClass = "bg-yellow-50 border-yellow-200 text-yellow-700";
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Heatmap Indeks Kepatuhan Wilayah</h3>
+            <p className="text-xs text-gray-500">Tabel monitoring kepatuhan tingkat RT/RW seluruh kelurahan.</p>
+          </div>
+          <div className="flex gap-2 w-full md:w-auto">
+            <input
+              type="text"
+              placeholder="Cari RT / RW / Kelurahan..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full md:w-64"
+            />
+          </div>
+        </div>
 
-            return (
-              <div key={idx} className={`p-4 rounded-xl border ${colorClass} flex flex-col justify-between gap-2 shadow-sm`}>
-                <span className="text-sm font-bold">{item.region}</span>
-                <div className="flex justify-between items-end">
-                  <span className="text-xs">Skor Median Kepatuhan</span>
-                  <span className="text-2xl font-extrabold">{item.medianScore}%</span>
-                </div>
-              </div>
-            );
-          })}
+        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="max-h-[350px] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th
+                    onClick={() => toggleSort("region")}
+                    className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  >
+                    Wilayah (RT / RW / Kelurahan) {sortField === "region" ? (sortOrder === "asc" ? " ▲" : " ▼") : ""}
+                  </th>
+                  <th
+                    onClick={() => toggleSort("score")}
+                    className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  >
+                    Skor Median Kepatuhan {sortField === "score" ? (sortOrder === "asc" ? " ▲" : " ▼") : ""}
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Status Kepatuhan
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredHeatmap.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-10 text-center text-sm text-gray-400">
+                      Tidak ada data wilayah yang cocok
+                    </td>
+                  </tr>
+                ) : (
+                  filteredHeatmap.map((item, idx) => {
+                    let statusLabel = "Kurang Patuh";
+                    let badgeClass = "bg-red-50 text-red-700 border-red-100";
+                    if (item.medianScore >= 80) {
+                      statusLabel = "Sangat Patuh";
+                      badgeClass = "bg-green-50 text-green-700 border-green-100";
+                    } else if (item.medianScore >= 60) {
+                      statusLabel = "Cukup Patuh";
+                      badgeClass = "bg-yellow-50 text-yellow-700 border-yellow-100";
+                    }
+
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50/75 transition-colors">
+                        <td className="px-6 py-3.5 text-sm font-bold text-gray-900">{item.region}</td>
+                        <td className="px-6 py-3.5 text-sm font-extrabold text-gray-900 text-right">{item.medianScore}%</td>
+                        <td className="px-6 py-3.5 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${badgeClass}`}>
+                            {statusLabel}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
