@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../../utils/api";
+import { X, QrCode, MapPin, Camera, Plus, Info, Check, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -119,7 +120,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-slate-800">Registrasi Warga Baru</h2>
           <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 transition-colors">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -152,7 +153,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
             <div className="space-y-6 animate-fadeIn">
               <div className="text-center p-6 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-4">
-                  <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                  <QrCode className="w-8 h-8 text-emerald-600" />
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-2">Scan QR Code Tong Sampah</h3>
                 <p className="text-sm text-slate-500 mb-4">Pastikan Anda telah mengklaim stiker QR Code ini sebelumnya.</p>
@@ -210,7 +211,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                 {/* GPS Mapping */}
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-3 text-emerald-700 font-medium text-sm">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <MapPin className="w-5 h-5" />
                     Koordinat GPS Tersimpan
                   </div>
                   <div className="aspect-video bg-slate-200 rounded-lg overflow-hidden relative group">
@@ -231,7 +232,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                 {/* Photo Upload */}
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col">
                   <div className="flex items-center gap-2 mb-3 text-emerald-700 font-medium text-sm">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <Camera className="w-5 h-5" />
                     Foto Tong Sampah
                   </div>
                   <div className="flex-1 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center relative overflow-hidden bg-white">
@@ -239,7 +240,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                       <img src={formData.photoUrl} alt="Tong" className="w-full h-full object-cover" />
                     ) : (
                       <button type="button" onClick={handleTakePhoto} className="text-slate-500 hover:text-emerald-600 flex flex-col items-center transition-colors">
-                        <svg className="w-10 h-10 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                        <Plus className="w-10 h-10 mb-2 opacity-50" />
                         <span className="text-sm font-medium">Buka Kamera</span>
                       </button>
                     )}
@@ -322,7 +323,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
               </div>
               
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex gap-3 text-amber-800 text-sm">
-                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <Info className="w-5 h-5 shrink-0" />
                 <p>Setelah disubmit, kepemilikan tong sampah ini akan berstatus <strong>PENDING_APPROVAL</strong>. RW setempat harus memberikan persetujuan sebelum tong aktif.</p>
               </div>
             </div>
@@ -346,9 +347,9 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
               {loading ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Memproses...</>
               ) : step === totalSteps ? (
-                <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Submit Pendaftaran</>
+                <><Check className="w-4 h-4" /> Submit Pendaftaran</>
               ) : (
-                <>Lanjut <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
+                <>Lanjut <ChevronRight className="w-4 h-4" /></>
               )}
             </button>
           </div>

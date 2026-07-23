@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -70,7 +70,7 @@ const Sidebar: React.FC = () => {
       <div className="px-6 py-5 flex items-center justify-center border-b border-outline-variant/35 bg-white">
         <img
           src="/logo.png"
-          alt="Pilah Sampah Cerdas - Sampah Terdata, Lingkungan Tertata"
+          alt="TrashCare - Sampah Terdata, Lingkungan Tertata"
           className="h-20 w-auto object-contain"
         />
       </div>

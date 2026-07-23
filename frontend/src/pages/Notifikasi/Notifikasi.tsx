@@ -1,7 +1,7 @@
 import { IconRenderer } from "../../components/common/IconRenderer";
 import { ShieldAlert, Loader2, ImageOff, RefreshCcw, AlertCircle, Info, CheckCheck, Trash2, Settings, BellOff } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.

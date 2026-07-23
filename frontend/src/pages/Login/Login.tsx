@@ -1,6 +1,6 @@
 import { Server, WifiOff, User, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, LogIn } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -218,7 +218,7 @@ const Login: React.FC = () => {
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 z-10 transition-all duration-300">
         {/* Header / Logo */}
         <div className="flex flex-col items-center text-center gap-3">
-          <img src="/logo.png" alt="Pilah Sampah Cerdas" className="h-28 w-auto object-contain" />
+          <img src="/logo.png" alt="TrashCare" className="h-28 w-auto object-contain" />
           <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium">
             Masukkan email dan kata sandi Anda untuk masuk ke sistem.
           </p>
@@ -414,7 +414,7 @@ const Login: React.FC = () => {
 
         <div className="text-center text-[11px] text-on-surface-variant mt-2 border-t border-outline-variant/30 pt-4">
           <p className="mb-2">Mahasiswa KKN? <Link to="/register-mahasiswa" className="text-primary font-bold hover:underline">Daftar di sini</Link></p>
-          <p>© 2026 Pilah Sampah Cerdas. Kecamatan Coblong, Kota Bandung.</p>
+          <p>© 2026 TrashCare. Kecamatan Coblong, Kota Bandung.</p>
         </div>
       </div>
     </div>

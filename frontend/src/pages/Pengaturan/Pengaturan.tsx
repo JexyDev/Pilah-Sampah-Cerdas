@@ -1,6 +1,6 @@
 import { Loader2, Camera, AlertTriangle, Brush, Router, RefreshCw, Info, Key, Copy, RefreshCcw, Webhook, Save } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -11,9 +11,10 @@ import toast from "react-hot-toast";
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
+import { APP_CONFIG } from "../../constants/config";
 
 const Pengaturan: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"profil" | "integrasi" | "database">("profil");
+  const [activeTab, setActiveTab] = useState<"profil" | "integrasi" | "database" | "tentang">("profil");
   const [isLoading, setIsLoading] = useState(true);
 
   const { user: storeUser, updateUser: updateStoreUser } = useAuthStore();
@@ -340,6 +341,12 @@ const Pengaturan: React.FC = () => {
               Database Management
             </button>
           )}
+          <button
+            className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === "tentang" ? "border-primary text-primary font-bold" : "border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50"}`}
+            onClick={() => setActiveTab("tentang")}
+          >
+            Tentang Aplikasi
+          </button>
         </nav>
       </div>
 
@@ -769,6 +776,31 @@ const Pengaturan: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section 4: Tentang Aplikasi */}
+        {activeTab === "tentang" && (
+          <div className="space-y-6 max-w-4xl">
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col items-center justify-center text-center py-12">
+              <img src="/logo.png" alt="TrashCare Logo" className="w-32 h-auto mb-6 object-contain" />
+              <h3 className="text-[24px] font-bold text-on-surface mb-2">{APP_CONFIG.APP_NAME}</h3>
+              <p className="text-[16px] text-on-surface-variant mb-6 font-medium">Versi {APP_CONFIG.APP_VERSION}</p>
+              
+              <div className="max-w-lg text-[14px] text-on-surface-variant leading-relaxed space-y-4">
+                <p>
+                  Platform IoT dan AI untuk mengotomatisasi pendataan, pemilahan, dan pemantauan kapasitas tong sampah secara real-time.
+                </p>
+                <p>
+                  Dikembangkan untuk membantu petugas kebersihan RT/RW/Kelurahan dan warga mengelola sampah secara disiplin guna menaikkan efisiensi pemilahan sampah di permukiman.
+                </p>
+              </div>
+
+              <div className="mt-12 pt-6 border-t border-outline-variant/30 w-full max-w-md">
+                <p className="text-[12px] text-on-surface-variant/70">{APP_CONFIG.COPYRIGHT}</p>
+                <p className="text-[12px] text-on-surface-variant/70 mt-1">Developed by {APP_CONFIG.DEVELOPER}</p>
               </div>
             </div>
           </div>

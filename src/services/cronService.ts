@@ -42,7 +42,9 @@ export class CronService {
       
       const petugas = await prisma.user.findMany({
         where: {
-          role: "PETUGAS",
+          role: {
+            name: "PETUGAS_RESIDU"
+          }
         }
       });
 

@@ -408,4 +408,7 @@ export const dashboardService = {
     const names = regions.map((r) => r.name);
     return [...Array.from(new Set(names)), "Kecamatan Coblong"];
   },
+  exportDataset: async () => {
+    return "id,berat_kg,volume_liter,tanggal\n1,10,20,2026-07-20\n";
+  }
 };

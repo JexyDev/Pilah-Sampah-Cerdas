@@ -49,7 +49,7 @@ export class ResiduController {
       // Get petugas assigned zone
       const { PrismaClient } = await import("@prisma/client");
       const prisma = new PrismaClient();
-      const petugas = await prisma.user.findUnique({ where: { id: userId } });
+      const petugas = await prisma.petugasResidu.findUnique({ where: { userId: userId } });
       
       const zoneSearch = petugas?.assignedZone || "";
       

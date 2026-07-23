@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 
@@ -46,10 +47,10 @@ const MahasiswaRegistration: React.FC = () => {
       <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 max-w-xl w-full relative z-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0v6" /></svg>
+            <GraduationCap className="w-8 h-8" />
           </div>
           <h2 className="text-3xl font-bold text-slate-800">Registrasi Mahasiswa KKN</h2>
-          <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator Pilah Sampah Cerdas</p>
+          <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator TrashCare</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

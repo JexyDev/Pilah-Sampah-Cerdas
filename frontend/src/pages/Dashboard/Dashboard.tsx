@@ -1,7 +1,7 @@
 import { IconRenderer } from "../../components/common/IconRenderer";
 import { PlusCircle, X, RefreshCcw, UserCheck, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, Radio, Server, BrainCircuit, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
  * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -2259,7 +2259,7 @@ const Dashboard: React.FC = () => {
       {/* === Footer === */}
       <footer className="flex justify-between items-center pt-4 pb-4 border-t border-outline-variant/10">
         <p className="text-[12px] text-on-surface-variant">
-          © 2026 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.
+          © 2026 TrashCare. Sampah Terdata, Lingkungan Tertata.
         </p>
         <div className="flex gap-gutter">
           <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
