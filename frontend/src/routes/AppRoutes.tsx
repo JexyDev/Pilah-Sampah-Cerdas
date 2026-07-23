@@ -1,3 +1,4 @@
+
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -14,6 +15,7 @@ import MasterData from "../pages/MasterData/MasterData";
 import Leaderboard from "../pages/Leaderboard/Leaderboard";
 import NotFound from "../pages/NotFound/NotFound";
 import Login from "../pages/Login/Login";
+import MahasiswaRegistration from "../pages/Registration/MahasiswaRegistration";
 
 import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
 import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
@@ -35,6 +37,8 @@ import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
 import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
 import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
 import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
+import { RwApproval } from "../pages/RwPortal/RwApproval";
+import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -77,6 +81,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register-mahasiswa" element={<MahasiswaRegistration />} />
       <Route
         path="/"
         element={
@@ -233,7 +238,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="superadmin/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <SuperAdminDashboard />
             </ProtectedRoute>
           }
@@ -267,6 +272,22 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
               <ReviewDiscrepancy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="rw/approval"
+          element={
+            <ProtectedRoute allowedRoles={["RW"]}>
+              <RwApproval />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="rw/fasilitas"
+          element={
+            <ProtectedRoute allowedRoles={["RW"]}>
+              <RwFacilityInput />
             </ProtectedRoute>
           }
         />

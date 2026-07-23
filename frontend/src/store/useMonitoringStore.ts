@@ -18,6 +18,10 @@ export interface Bin {
   category: {
     name: string;
   };
+  wargaName?: string;
+  kknName?: string;
+  rtRw?: string;
+  lokasi?: string;
 }
 
 interface MonitoringState {

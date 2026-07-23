@@ -1,3 +1,4 @@
+import { Edit, CheckCircle2, RefreshCw, AlertTriangle, Save } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -124,7 +125,7 @@ export const ManageConfigs: React.FC = () => {
                         }}
                         className="text-primary hover:text-primary-dark font-semibold text-xs flex items-center gap-1 ml-auto"
                       >
-                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                        <Edit size={16} />
                         Ubah
                       </button>
                     </td>
@@ -197,17 +198,17 @@ export const ManageConfigs: React.FC = () => {
                 <div className="space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
                   <div className="flex items-center justify-between text-xs font-medium text-gray-700">
                     <span>1. Input (Mahasiswa)</span>
-                    <span className="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+                    <CheckCircle2 className="text-green-500" size={16} />
                   </div>
                   <div className="w-0.5 h-3 bg-gray-300 ml-2"></div>
                   <div className="flex items-center justify-between text-xs font-medium text-gray-700">
                     <span>2. Reviewer (RW)</span>
-                    <span className="material-symbols-outlined text-[16px] text-blue-500">sync</span>
+                    <RefreshCw className="text-blue-500" size={16} />
                   </div>
                   <div className="w-0.5 h-3 bg-gray-300 ml-2"></div>
                   <div className="flex items-center justify-between text-xs font-medium text-gray-700">
                     <span>3. Escalated (Admin DLH)</span>
-                    <span className="material-symbols-outlined text-[16px] text-purple-500">warning</span>
+                    <AlertTriangle className="text-purple-500" size={16} />
                   </div>
                 </div>
               </div>
@@ -216,7 +217,7 @@ export const ManageConfigs: React.FC = () => {
                 onClick={handleSaveWorkflow}
                 className="w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition flex items-center justify-center gap-2 shadow-sm"
               >
-                <span className="material-symbols-outlined text-[18px]">save</span>
+                <Save size={18} />
                 Simpan Alur Workflow
               </button>
             </div>

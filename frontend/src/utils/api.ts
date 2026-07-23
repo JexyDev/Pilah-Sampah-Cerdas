@@ -36,8 +36,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
-    // Jika 401 dan bukan request login, clear token & redirect login
-    if (status === 401 && !error.config?.url?.includes("/auth/login")) {
+    if (
+      status === 401 && 
+      !error.config?.url?.includes("/auth/login") && 
+      !error.config?.url?.includes("/auth/verify-otp")
+    ) {
       localStorage.removeItem("psc_access_token");
       localStorage.removeItem("psc_user");
       window.location.href = "/login";

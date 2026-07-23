@@ -1,3 +1,4 @@
+import { BarChart3, Search, Loader2, PlusCircle, MinusCircle, X, SearchX, Star, History } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -113,17 +114,13 @@ const PoinWarga: React.FC = () => {
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 border-b border-outline-variant/30 gap-4">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary bg-green-50 p-1.5 rounded-lg">
-                leaderboard
-              </span>
+              <BarChart3 className="text-primary bg-green-50 p-1.5 rounded-lg" />
               <h3 className="text-[20px] font-bold text-on-surface">Leaderboard Warga</h3>
             </div>
             <div className="flex items-center gap-4 w-full sm:w-auto">
               {/* POIN-02: Search bar fungsional */}
               <div className="relative w-full sm:w-64">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">
-                  search
-                </span>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={14} />
                 <input
                   type="text"
                   placeholder="Cari Nama atau RT/RW..."
@@ -136,7 +133,7 @@ const PoinWarga: React.FC = () => {
                     onClick={() => setSearchQuery("")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                   >
-                    <span className="material-symbols-outlined text-[16px]">close</span>
+                    <X size={16} />
                   </button>
                 )}
               </div>
@@ -180,16 +177,14 @@ const PoinWarga: React.FC = () => {
           <div className="flex flex-col gap-2">
             {loading ? (
               <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3">
-                <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                  autorenew
-                </span>
+                <Loader2 className="animate-spin text-primary" size={32} />
                 <p>Memuat leaderboard...</p>
               </div>
             ) : error ? (
               <div className="p-8 text-center text-error font-medium">{error}</div>
             ) : filteredLeaders.length === 0 ? (
               <div className="p-8 text-center text-on-surface-variant flex flex-col items-center gap-2">
-                <span className="material-symbols-outlined text-4xl">search_off</span>
+                <SearchX size={32} />
                 <p className="text-[14px]">Tidak ada warga dengan nama "{searchQuery}"</p>
               </div>
             ) : (
@@ -262,7 +257,7 @@ const PoinWarga: React.FC = () => {
                 onClick={() => setSelectedUser(null)}
                 className="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-low"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
 
@@ -287,7 +282,7 @@ const PoinWarga: React.FC = () => {
 
               {/* Total poin */}
               <div className="bg-green-50 rounded-xl p-4 flex items-center gap-3 border border-green-100">
-                <span className="material-symbols-outlined text-primary text-[28px]">stars</span>
+                <Star className="text-primary" size={28} />
                 <div>
                   <p className="text-[28px] font-bold text-primary">
                     {(selectedUser.poin || 0).toLocaleString()}
@@ -305,9 +300,7 @@ const PoinWarga: React.FC = () => {
                 </p>
                 {loadingDetail ? (
                   <div className="flex items-center justify-center p-6 gap-2 text-on-surface-variant">
-                    <span className="material-symbols-outlined animate-spin text-primary">
-                      autorenew
-                    </span>
+                    <Loader2 className="animate-spin text-primary" />
                     <span className="text-[13px]">Memuat riwayat...</span>
                   </div>
                 ) : userDetail?.history && userDetail.history.length > 0 ? (
@@ -318,11 +311,7 @@ const PoinWarga: React.FC = () => {
                         className="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/20"
                       >
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`material-symbols-outlined text-[18px] ${h.points >= 0 ? "text-green-500" : "text-red-500"}`}
-                          >
-                            {h.points >= 0 ? "add_circle" : "remove_circle"}
-                          </span>
+                          {h.points >= 0 ? <PlusCircle className={`text-[18px] ${h.points >= 0 ? "text-green-500" : "text-red-500"}`} size={18}/> : <MinusCircle className={`text-[18px] ${h.points >= 0 ? "text-green-500" : "text-red-500"}`} size={18}/>}
                           <div>
                             <p className="text-[12px] font-medium text-on-surface">
                               {h.description || "Setoran sampah"}
@@ -354,7 +343,7 @@ const PoinWarga: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center p-6 text-on-surface-variant gap-2">
-                    <span className="material-symbols-outlined text-3xl">history</span>
+                    <History size={28} />
                     <p className="text-[12px]">Belum ada riwayat poin</p>
                   </div>
                 )}

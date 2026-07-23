@@ -6,19 +6,23 @@
  */
 
 import React from "react";
+import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, BarChart2, Sliders, QrCode, FileText } from "lucide-react";
+
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
 
+import type { LucideIcon } from "lucide-react";
+
 interface NavItemProps {
   to: string;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   badge?: number;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, badge }) => (
+const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
@@ -29,7 +33,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, badge }) => (
       }`
     }
   >
-    <span className="material-symbols-outlined mr-3 text-[20px]">{icon}</span>
+    <Icon className="mr-3 text-[20px]" size={20} />
     <span className="flex-1">{label}</span>
     {badge !== undefined && (
       <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{badge}</span>
@@ -76,26 +80,26 @@ const Sidebar: React.FC = () => {
         className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4"
         style={{ scrollbarWidth: "thin", scrollbarColor: "#bccabc transparent" }}
       >
-        <NavItem to="/" icon="dashboard" label="Dashboard" />
+        <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
         {hasAccess(["WARGA"]) && (
-          <NavItem to="/setor" icon="qr_code_scanner" label="Setor Sampah" />
+          <NavItem to="/setor" icon={ScanLine} label="Setor Sampah" />
         )}
 
         {hasAccess(["MAHASISWA_KKN"]) && (
-          <NavItem to="/kkn-portal" icon="explore" label="Portal Pendampingan" />
+          <NavItem to="/kkn-portal" icon={Compass} label="Portal Pendampingan" />
         )}
 
         {hasAccess(["PETUGAS_RESIDU"]) && (
-          <NavItem to="/residu-portal" icon="shield" label="Portal Pengawasan" />
+          <NavItem to="/residu-portal" icon={Shield} label="Portal Pengawasan" />
         )}
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/manajemen-pengguna" icon="group" label="Manajemen Pengguna" />
+          <NavItem to="/manajemen-pengguna" icon={Users} label="Manajemen Pengguna" />
         )}
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/superadmin/discrepancies" icon="fact_check" label="Review Diskrepansi AI" />
+          <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
         )}
 
         {hasAccess([
@@ -107,17 +111,24 @@ const Sidebar: React.FC = () => {
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && (
-          <NavItem to="/manajemen-tempat-sampah" icon="delete" label="Manajemen Tempat Sampah" />
+          <NavItem to="/manajemen-tempat-sampah" icon={Trash2} label="Manajemen Tempat Sampah" />
         )}
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
-          <NavItem to="/manajemen-lokasi" icon="location_on" label="Manajemen Lokasi" />
+          <NavItem to="/manajemen-lokasi" icon={MapPin} label="Manajemen Lokasi" />
         )}
 
-        <NavItem to="/jadwal-kegiatan" icon="calendar_today" label="Jadwal Kegiatan" />
+        {hasAccess(["RW"]) && (
+          <>
+            <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
+            <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
+          </>
+        )}
+
+        <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/kategori-sampah" icon="category" label="Kategori Sampah" />
+          <NavItem to="/kategori-sampah" icon={Tags} label="Kategori Sampah" />
         )}
 
         {hasAccess([
@@ -128,15 +139,15 @@ const Sidebar: React.FC = () => {
           "RW",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
-        ]) && <NavItem to="/rekap-setoran" icon="receipt_long" label="Rekap Setoran" />}
+        ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
 
-        <NavItem to="/poin-warga" icon="stars" label="Poin Warga" />
+        <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
-          <NavItem to="/laporan-analitik" icon="analytics" label="Laporan & Analitik" />
+          <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />
         )}
 
-        <NavItem to="/notifikasi" icon="notifications" label="Notifikasi" badge={8} />
+        <NavItem to="/notifikasi" icon={Bell} label="Notifikasi" badge={8} />
 
         {hasAccess([
           "SUPER_ADMIN",
@@ -147,17 +158,17 @@ const Sidebar: React.FC = () => {
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
           "WARGA",
-        ]) && <NavItem to="/pengaturan" icon="settings" label="Pengaturan" />}
+        ]) && <NavItem to="/pengaturan" icon={Settings} label="Pengaturan" />}
 
         {hasAccess(["SUPER_ADMIN"]) && (
           <>
             <div className="px-4 py-2 text-[10px] uppercase font-bold text-primary tracking-wider mt-2 border-t border-outline-variant/35">
               Super Admin Panel
             </div>
-            <NavItem to="/superadmin/dashboard" icon="query_stats" label="Dashboard Kota" />
-            <NavItem to="/superadmin/configs" icon="tune" label="Rule Engine" />
-            <NavItem to="/superadmin/qr-master" icon="qr_code_2" label="Master QR & Inaktif" />
-            <NavItem to="/superadmin/audit" icon="assignment" label="Audit Trail" />
+            <NavItem to="/superadmin/dashboard" icon={BarChart2} label="Dashboard Kota" />
+            <NavItem to="/superadmin/configs" icon={Sliders} label="Rule Engine" />
+            <NavItem to="/superadmin/qr-master" icon={QrCode} label="Master QR & Inaktif" />
+            <NavItem to="/superadmin/audit" icon={FileText} label="Audit Trail" />
           </>
         )}
       </nav>
@@ -196,7 +207,7 @@ const Sidebar: React.FC = () => {
             className="ml-auto text-on-surface-variant hover:text-error transition-colors flex-shrink-0"
             title="Keluar Sistem"
           >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
+            <LogOut size={20} />
           </button>
         </div>
         <div className="mt-3 text-[9px] text-on-surface-variant/65 text-center">

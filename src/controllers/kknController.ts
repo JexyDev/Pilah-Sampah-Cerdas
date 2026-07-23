@@ -9,6 +9,40 @@ import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
 
 export class KknController {
+  async validateQrMaster(req: Request, res: Response): Promise<void> {
+    try {
+      const { qrCode } = req.body;
+      if (!qrCode) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "QR Code diperlukan." });
+        return;
+      }
+      const { PrismaClient } = await import("@prisma/client");
+      const prisma = new PrismaClient();
+      
+      // Cek apakah bin dengan QR ini sudah ada dan aktif/terdaftar
+      const existingBin = await prisma.bin.findUnique({
+        where: { qrCode },
+      });
+
+      if (existingBin) {
+        res.status(400).json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada tong lain." });
+        return;
+      }
+
+      // Validasi terhadap master QR (asumsi master QR format valid jika memenuhi kriteria misal diawali TS- atau ada di tabel Master)
+      // Untuk MVP Pilah Sampah Cerdas, kita simulasikan validasi format TS-XXXX
+      if (!qrCode.toUpperCase().startsWith("TS-")) {
+        res.status(400).json({ error: "INVALID_QR", message: "Format QR Master tidak valid. Harus diawali TS-" });
+        return;
+      }
+
+      res.status(200).json({ success: true, message: "QR Code Master Valid dan belum digunakan." });
+    } catch (error: any) {
+      console.error("[KknController] validateQrMaster error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memvalidasi QR Master" });
+    }
+  }
+
   async getDashboardStats(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
@@ -77,6 +111,40 @@ export class KknController {
     } catch (error: any) {
       console.error("[KknController] getActivityLog error:", error);
       res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  async claimQr(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const { qrCode, latitude, longitude } = req.body;
+      const data = await kknService.claimQr(kknUserId, qrCode, Number(latitude), Number(longitude));
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] claimQr error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async handover(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const { toKknUserId, rtRwId, notes } = req.body;
+      const data = await kknService.handover(kknUserId, toKknUserId, Number(rtRwId), notes);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] handover error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async inputFacility(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.bantuInputFasilitas(kknUserId, req.body);
+      res.status(201).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] inputFacility error:", error);
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 }

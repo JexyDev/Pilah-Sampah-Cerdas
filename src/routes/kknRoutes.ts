@@ -13,6 +13,13 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
 
 // Only MAHASISWA_KKN allowed
+router.post(
+  "/validate-qr-master",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.validateQrMaster
+);
+
 router.get(
   "/dashboard",
   authMiddleware,
@@ -48,6 +55,25 @@ router.get(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getActivityLog
+);
+
+router.post(
+  "/qr/claim",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.claimQr
+);
+router.post(
+  "/handover",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.handover
+);
+router.post(
+  "/fasilitas/bantu-input",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.inputFacility
 );
 
 export default router;

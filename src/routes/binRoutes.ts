@@ -267,4 +267,11 @@ router.post(
   binController.reportIssue
 );
 
+router.post(
+  "/register-warga",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.registerWargaBin
+);
+
 export default router;

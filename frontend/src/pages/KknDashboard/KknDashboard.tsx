@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import {
   Users,
@@ -13,18 +13,19 @@ import {
   ShieldCheck,
   MapPin,
   Award,
-  CheckCircle,
   Search,
-  Plus,
   Calendar,
   Compass,
   PhoneCall,
   RefreshCw,
   X,
   FileText,
-  Sparkles,
-  Upload,
 } from "lucide-react";
+import { KknQrClaim } from "./KknQrClaim";
+import { WargaRegistrationWizard } from "./WargaRegistrationWizard";
+import { HandoverForm } from "./HandoverForm";
+import { BantuFasilitasForm } from "./BantuFasilitasForm";
+import { BantuPetugasForm } from "./BantuPetugasForm";
 import api from "../../services/api";
 
 const KknDashboard: React.FC = () => {
@@ -36,7 +37,6 @@ const KknDashboard: React.FC = () => {
 
   // Loading & UI States
   const [isLoading, setIsLoading] = useState(true);
-  const [showRegModal, setShowRegModal] = useState(false);
   const [selectedWarga, setSelectedWarga] = useState<any | null>(null);
 
   // Filters
@@ -89,28 +89,7 @@ const KknDashboard: React.FC = () => {
     }
   };
 
-  // Registration Form State
-  const [regForm, setRegForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    nik: "",
-    address: "",
-    rtRwId: "",
-    binQrCode: "",
-    binCategoryId: "",
-  });
-  const [regPhoto, setRegPhoto] = useState<File | null>(null);
-  const [regPhotoPreview, setRegPhotoPreview] = useState<string | null>(null);
-  const [aiVolumeEstimate, setAiVolumeEstimate] = useState<number | null>(null);
-  const [isAiEstimating, setIsAiEstimating] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
-  // Categories list (fetched from DB)
-  const [categories, setCategories] = useState<any[]>([]);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -119,13 +98,12 @@ const KknDashboard: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      const [statsRes, wargaRes, housesRes, logsRes, areasRes, catsRes] = await Promise.all([
+      const [statsRes, wargaRes, housesRes, logsRes, areasRes] = await Promise.all([
         api.get("/kkn/dashboard"),
         api.get("/kkn/warga"),
         api.get("/kkn/unregistered"),
         api.get("/kkn/activities"),
         api.get("/bins/locations"),
-        api.get("/categories"),
       ]);
 
       setStats(statsRes.data?.data);
@@ -133,7 +111,7 @@ const KknDashboard: React.FC = () => {
       setUnregisteredHouses(housesRes.data?.data || []);
       setActivityLogs(logsRes.data?.data || []);
       setRtRwAreas(areasRes.data?.data || []);
-      setCategories(catsRes.data?.data || []);
+      setRtRwAreas(areasRes.data?.data || []);
     } catch (err: any) {
       console.error("Gagal memuat data portal KKN:", err);
       toast.error(err.response?.data?.message || "Gagal memuat data portal KKN");
@@ -157,95 +135,7 @@ const KknDashboard: React.FC = () => {
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setRegPhoto(file);
-      setRegPhotoPreview(URL.createObjectURL(file));
 
-      // Trigger AI volume estimation
-      try {
-        setIsAiEstimating(true);
-        const formData = new FormData();
-        formData.append("image", file);
-        const uploadRes = await api.post("/waste/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        const imageUrl = uploadRes.data.data.imageUrl;
-
-        const aiRes = await api.post("/waste/estimate-volume", { imageUrl });
-        if (aiRes.data?.success) {
-          setAiVolumeEstimate(aiRes.data.data.volumeLiters);
-          toast.success(`AI Estimasi: ${aiRes.data.data.volumeLiters} Liter`);
-        }
-      } catch (err) {
-        console.error("Gagal estimasi AI:", err);
-        toast.error("Gagal mengestimasi volume dari foto (menggunakan default)");
-      } finally {
-        setIsAiEstimating(false);
-      }
-    }
-  };
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-      !regForm.name ||
-      !regForm.email ||
-      !regForm.binQrCode ||
-      !regForm.binCategoryId ||
-      !regForm.rtRwId
-    ) {
-      toast.error("Mohon lengkapi semua bidang wajib!");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-
-      let evidencePhotoUrl = "";
-      if (regPhoto) {
-        const formData = new FormData();
-        formData.append("image", regPhoto);
-        const uploadRes = await api.post("/waste/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        evidencePhotoUrl = uploadRes.data.data.imageUrl;
-      }
-
-      await api.post("/kkn/register-warga", {
-        ...regForm,
-        rtRwId: parseInt(regForm.rtRwId, 10),
-        evidencePhotoUrl,
-      });
-
-      setShowSuccessOverlay(true);
-      setTimeout(() => {
-        setShowSuccessOverlay(false);
-        setShowRegModal(false);
-        // Reset form
-        setRegForm({
-          name: "",
-          email: "",
-          phone: "",
-          nik: "",
-          address: "",
-          rtRwId: "",
-          binQrCode: "",
-          binCategoryId: "",
-        });
-        setRegPhoto(null);
-        setRegPhotoPreview(null);
-        setAiVolumeEstimate(null);
-        fetchInitialData();
-      }, 2500);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Gagal meregistrasi warga");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleWargaClick = async (wargaId: string) => {
     try {
@@ -270,20 +160,7 @@ const KknDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* SUCCESS OVERLAY */}
-      {showSuccessOverlay && (
-        <div className="fixed inset-0 bg-primary/95 flex flex-col items-center justify-center z-[100] animate-in fade-in duration-300">
-          <div className="text-center text-white space-y-4 max-w-sm px-6">
-            <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto animate-bounce border border-white/30">
-              <CheckCircle className="w-12 h-12 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold">Registrasi Sukses!</h2>
-            <p className="text-sm text-green-100">
-              Data warga dan tempat sampah cerdas telah berhasil didaftarkan di sistem wilayah.
-            </p>
-          </div>
-        </div>
-      )}
+
 
       {/* Header */}
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-outline-variant shadow-sm">
@@ -297,13 +174,6 @@ const KknDashboard: React.FC = () => {
             {studentKkn?.assignedArea}
           </p>
         </div>
-        <button
-          onClick={() => setShowRegModal(true)}
-          className="bg-primary hover:bg-primary/95 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Registrasi Warga Baru
-        </button>
       </div>
 
       {/* KPI Stats Widgets */}
@@ -812,225 +682,38 @@ const KknDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* REGISTRATION MODAL */}
-      {showRegModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="font-extrabold text-lg flex items-center gap-2 text-on-surface">
-                <Compass className="text-primary w-5 h-5" />
-                Registrasi Warga & Aktivasi QR
-              </h3>
-              <button
-                onClick={() => setShowRegModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Aksi Mahasiswa KKN Forms */}
+      <div className="grid grid-cols-1 gap-6 mt-8">
+        <h2 className="text-xl font-bold border-b pb-2">Aksi Mahasiswa KKN</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <KknQrClaim onClaimSuccess={fetchInitialData} />
+            <WargaRegistrationWizard 
+              onSuccess={() => {
+                fetchInitialData();
+                toast.success("Silahkan kembali ke menu utama.");
+              }} 
+              onCancel={() => {
+                toast("Registrasi dibatalkan.", { icon: "ℹ️" });
+              }} 
+            />
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <h3 className="font-extrabold text-lg text-slate-800">Bantuan Fasilitas</h3>
+            <p className="text-xs text-slate-500 mt-2">Daftarkan RT/RW untuk fasilitas daur ulang / Bank Sampah</p>
+            <BantuFasilitasForm onSuccess={fetchInitialData} />
+            
+            <div className="w-full border-t border-slate-100 my-6"></div>
+            
+            <h3 className="font-extrabold text-lg text-slate-800">Daftar Petugas</h3>
+            <p className="text-xs text-slate-500 mt-2">Daftarkan Petugas Residu untuk operasional penjemputan</p>
+            <BantuPetugasForm onSuccess={fetchInitialData} />
 
-            <form
-              onSubmit={handleRegisterSubmit}
-              className="p-6 space-y-4 overflow-y-auto flex-1"
-              style={{ scrollbarWidth: "thin" }}
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Nama Lengkap *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.name}
-                    onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
-                    placeholder="Nama warga..."
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Email Warga *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={regForm.email}
-                    onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    placeholder="email@example.com"
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    No WhatsApp *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.phone}
-                    onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
-                    placeholder="Contoh: 081234567..."
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    NIK KTP
-                  </label>
-                  <input
-                    type="text"
-                    value={regForm.nik}
-                    onChange={(e) => setRegForm({ ...regForm, nik: e.target.value })}
-                    placeholder="16 digit NIK..."
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Wilayah (RT/RW) *
-                  </label>
-                  <select
-                    required
-                    value={regForm.rtRwId}
-                    onChange={(e) => setRegForm({ ...regForm, rtRwId: e.target.value })}
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="">Pilih RT/RW...</option>
-                    {rtRwAreas.map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.rw || loc.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Alamat Fisik *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.address}
-                    onChange={(e) => setRegForm({ ...regForm, address: e.target.value })}
-                    placeholder="Nama jalan & No Rumah..."
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    ID QR Tong Sampah *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.binQrCode}
-                    onChange={(e) => setRegForm({ ...regForm, binQrCode: e.target.value })}
-                    placeholder="Contoh: TS-COB-001..."
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Kategori Tong *
-                  </label>
-                  <select
-                    required
-                    value={regForm.binCategoryId}
-                    onChange={(e) => setRegForm({ ...regForm, binCategoryId: e.target.value })}
-                    className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="">Pilih Kategori...</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Foto bukti & AI Volume */}
-              <div className="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-700">
-                    Foto Fisik Tempat Sampah (Opsional)
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-slate-500" /> Upload File
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </div>
-
-                {regPhotoPreview && (
-                  <div className="flex gap-4 items-center animate-in fade-in duration-200">
-                    <img
-                      src={regPhotoPreview}
-                      alt="Preview"
-                      className="w-24 h-24 rounded-lg object-cover border border-slate-200"
-                    />
-                    {isAiEstimating ? (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <RefreshCw className="animate-spin w-4 h-4 text-primary" />
-                        AI menganalisis volume tempat sampah...
-                      </div>
-                    ) : aiVolumeEstimate !== null ? (
-                      <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-lg text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-emerald-600" />
-                        Estimasi AI Volume: {aiVolumeEstimate} Liter
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowRegModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 transition-colors cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/95 transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="animate-spin w-4 h-4" /> Memproses...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4" /> Simpan Registrasi
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+            <div className="w-full border-t border-slate-100 my-6"></div>
+            <HandoverForm onSuccess={fetchInitialData} />
           </div>
         </div>
-      )}
+      </div>
 
       {/* DETAIL WARGA DRAWER */}
       {selectedWarga && (

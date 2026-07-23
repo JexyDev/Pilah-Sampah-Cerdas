@@ -185,7 +185,89 @@ export class BinService {
     if (!bin) {
       throw new Error("BIN_NOT_FOUND");
     }
-    return bin;
+
+    let realStatus = bin.status;
+    if (realStatus === "ACTIVE_BOUND" || realStatus === "PENDING_APPROVAL") {
+      const lastLog = await prisma.wasteLog.findFirst({
+        where: { binId: bin.id },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const refDate = lastLog?.createdAt || bin.updatedAt;
+      if (refDate < thirtyDaysAgo) {
+        realStatus = "INACTIVE";
+      }
+    }
+
+    return { ...bin, status: realStatus };
+  }
+
+  async registerWargaBin(
+    userId: string,
+    data: {
+      qrCode: string;
+      maxCapacityLiter?: number;
+      latitude?: number;
+      longitude?: number;
+    }
+  ) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { households: true },
+    });
+    if (!user) throw new Error("USER_NOT_FOUND");
+    if (!user.households || user.households.length === 0) {
+      throw new Error("HOUSEHOLDS_NOT_FOUND");
+    }
+    const household = user.households[0];
+
+    const bin = await prisma.bin.findUnique({
+      where: { qrCode: data.qrCode },
+    });
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+    if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
+      throw new Error("BIN_ALREADY_USED");
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedBin = await tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: "PENDING_APPROVAL",
+          userId: user.id,
+          rtRwId: user.rtRwId ?? household.rtRwId,
+          maxCapacityLiter: data.maxCapacityLiter || bin.maxCapacityLiter,
+          latitude: data.latitude ?? household.latitude,
+          longitude: data.longitude ?? household.longitude,
+        },
+      });
+
+      await tx.binOwnership.create({
+        data: {
+          binId: bin.id,
+          userId: user.id,
+          type: "UTAMA",
+        },
+      });
+
+      await tx.auditTrail.create({
+        data: {
+          action: "WARGA_REGISTER_BIN",
+          userId: user.id,
+          oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
+          newValue: { qrCode: bin.qrCode, status: "PENDING_APPROVAL" } as any,
+        },
+      });
+
+      return updatedBin;
+    });
+
+    return result;
   }
 
   /**
@@ -270,12 +352,42 @@ export class BinService {
   async getMyBins(userId: string) {
     const bins = await binRepository.findBinsByUserId(userId);
 
+    // Fetch last waste log for these bins to determine 30-day inactivity
+    const binIds = bins.map((b: any) => b.id);
+    const lastLogs = await prisma.wasteLog.groupBy({
+      by: ["binId"],
+      _max: {
+        createdAt: true,
+      },
+      where: {
+        binId: { in: binIds },
+      },
+    });
+
+    const lastLogMap = new Map();
+    lastLogs.forEach((log) => {
+      lastLogMap.set(log.binId, log._max.createdAt);
+    });
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     return bins.map((bin: any) => {
       const currentVol = Number(bin.currentVolumeLiter);
       const maxVol = Number(bin.maxCapacityLiter);
       const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
       const utamaOwner = bin.binOwnerships?.find((o: any) => o.type === "UTAMA")?.user;
       const householdName = utamaOwner ? utamaOwner.name : "Tempat Sampah Umum";
+
+      // 30 days inactivity check
+      let realStatus = bin.status;
+      if (realStatus === "ACTIVE_BOUND" || realStatus === "PENDING_APPROVAL") {
+        const lastActivity = lastLogMap.get(bin.id);
+        const refDate = lastActivity || bin.updatedAt;
+        if (refDate < thirtyDaysAgo) {
+          realStatus = "TIDAK_AKTIF";
+        }
+      }
 
       return {
         id: bin.id,
@@ -285,9 +397,16 @@ export class BinService {
         maxCapacityLiter: maxVol,
         kapasitas,
         rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
-        status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+        status:
+          realStatus === "TIDAK_AKTIF"
+            ? "TIDAK AKTIF"
+            : kapasitas > 80
+              ? "Penuh"
+              : kapasitas > 50
+                ? "Sedang"
+                : "Normal",
         householdName,
-        realStatus: bin.status,
+        realStatus,
       };
     });
   }
@@ -472,15 +591,12 @@ export class BinService {
   async approveActivation(binIdOrQrCode: string, adminUserId: string) {
     const bin = await prisma.bin.findFirst({
       where: {
-        OR: [
-          { id: binIdOrQrCode },
-          { qrCode: binIdOrQrCode }
-        ]
+        OR: [{ id: binIdOrQrCode }, { qrCode: binIdOrQrCode }],
       },
       include: {
         qrBatch: true,
         user: true,
-      }
+      },
     });
 
     if (!bin) {
@@ -500,8 +616,8 @@ export class BinService {
       const updatedBin = await tx.bin.update({
         where: { id: bin.id },
         data: {
-          status: "ACTIVE_BOUND"
-        }
+          status: "ACTIVE_BOUND",
+        },
       });
 
       const assignedPicUserId = bin.qrBatch?.assignedPicUserId;
@@ -511,17 +627,17 @@ export class BinService {
             userId: citizenUserId,
             points: 50,
             description: "Poin awal aktivasi tempat sampah cerdas (KKN)",
-            kategori: "REDUKSI_TONASE"
-          }
+            kategori: "REDUKSI_TONASE",
+          },
         });
 
         await tx.pointHistory.create({
           data: {
             userId: assignedPicUserId,
             points: 10,
-            description: `Registrasi pendampingan warga: ${bin.user?.name || 'Warga'}`,
-            kategori: "IDE_DAUR_ULANG"
-          }
+            description: `Registrasi pendampingan warga: ${bin.user?.name || "Warga"}`,
+            kategori: "IDE_DAUR_ULANG",
+          },
         });
       } else {
         await tx.pointHistory.create({
@@ -529,8 +645,8 @@ export class BinService {
             userId: citizenUserId,
             points: 10,
             description: `Bonus aktivasi tempat sampah ${bin.qrCode}`,
-            kategori: "REDUKSI_TONASE"
-          }
+            kategori: "REDUKSI_TONASE",
+          },
         });
       }
 
@@ -538,8 +654,8 @@ export class BinService {
         data: {
           userId: citizenUserId,
           title: "Aktivasi Tempat Sampah Disetujui",
-          message: `Selamat! Pengajuan aktivasi tempat sampah ${bin.qrCode} Anda telah disetujui. Poin bonus telah ditambahkan ke akun Anda.`
-        }
+          message: `Selamat! Pengajuan aktivasi tempat sampah ${bin.qrCode} Anda telah disetujui. Poin bonus telah ditambahkan ke akun Anda.`,
+        },
       });
 
       await tx.auditTrail.create({
@@ -548,25 +664,37 @@ export class BinService {
           userId: adminUserId,
           oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
           newValue: { id: bin.id, qrCode: bin.qrCode, status: "ACTIVE_BOUND" } as any,
-        }
+        },
       });
 
       return updatedBin;
     });
   }
 
+  async reactivateBin(binId: string) {
+    const bin = await binRepository.findById(binId);
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
+    // Force an update to bump updatedAt and set status ACTIVE_BOUND
+    return prisma.bin.update({
+      where: { id: bin.id },
+      data: {
+        status: "ACTIVE_BOUND",
+      },
+    });
+  }
+
   async rejectActivation(binIdOrQrCode: string, adminUserId: string) {
     const bin = await prisma.bin.findFirst({
       where: {
-        OR: [
-          { id: binIdOrQrCode },
-          { qrCode: binIdOrQrCode }
-        ]
+        OR: [{ id: binIdOrQrCode }, { qrCode: binIdOrQrCode }],
       },
       include: {
         qrBatch: true,
         user: true,
-      }
+      },
     });
 
     if (!bin) {
@@ -585,23 +713,23 @@ export class BinService {
         where: { id: bin.id },
         data: {
           status: newStatus as any,
-          userId: null
-        }
+          userId: null,
+        },
       });
 
       await tx.binOwnership.deleteMany({
         where: {
-          binId: bin.id
-        }
+          binId: bin.id,
+        },
       });
 
       if (citizenUserId) {
         await tx.household.deleteMany({
-          where: { userId: citizenUserId }
+          where: { userId: citizenUserId },
         });
 
         await tx.user.delete({
-          where: { id: citizenUserId }
+          where: { id: citizenUserId },
         });
       }
 
@@ -611,17 +739,22 @@ export class BinService {
           userId: adminUserId,
           oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
           newValue: { id: bin.id, qrCode: bin.qrCode, status: newStatus } as any,
-        }
+        },
       });
 
       return updatedBin;
     });
   }
 
-  async reportIssue(binId: string, userId: string, issueType: "EMPTY_REQUEST" | "BROKEN_REPORT", notes: string) {
+  async reportIssue(
+    binId: string,
+    userId: string,
+    issueType: "EMPTY_REQUEST" | "BROKEN_REPORT",
+    _notes: string
+  ) {
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
-      include: { rtRw: true }
+      include: { rtRw: true },
     });
 
     if (!bin) {
@@ -629,7 +762,7 @@ export class BinService {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user) {
@@ -640,9 +773,9 @@ export class BinService {
       where: {
         rtRwId: bin.rtRwId,
         role: {
-          name: { in: ["RW", "PETUGAS_RESIDU"] }
-        }
-      }
+          name: { in: ["RW", "PETUGAS_RESIDU"] },
+        },
+      },
     });
 
     if (issueType === "EMPTY_REQUEST") {
@@ -650,43 +783,52 @@ export class BinService {
       const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw.name}) meminta petugas segera mengosongkan tong sampah ${bin.qrCode}.`;
 
       for (const staff of staffList) {
-        await prisma.notification.create({
-          data: {
-            userId: staff.id,
-            title,
-            message
-          }
-        }).catch(() => {});
+        await prisma.notification
+          .create({
+            data: {
+              userId: staff.id,
+              title,
+              message,
+            },
+          })
+          .catch(() => {});
       }
 
-      return { success: true, message: "Permintaan pengosongan sampah berhasil dikirim ke petugas" };
+      return {
+        success: true,
+        message: "Permintaan pengosongan sampah berhasil dikirim ke petugas",
+      };
     } else {
       await prisma.bin.update({
         where: { id: bin.id },
-        data: { status: "BROKEN" }
+        data: { status: "BROKEN" },
       });
 
       const title = "Laporan Tempat Sampah Rusak";
       const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rtRw.name}) rusak atau QR code-nya sobek/rusak.`;
 
       for (const staff of staffList) {
-        await prisma.notification.create({
-          data: {
-            userId: staff.id,
-            title,
-            message
-          }
-        }).catch(() => {});
+        await prisma.notification
+          .create({
+            data: {
+              userId: staff.id,
+              title,
+              message,
+            },
+          })
+          .catch(() => {});
       }
 
-      await prisma.auditTrail.create({
-        data: {
-          action: "REPORT_BIN_BROKEN",
-          userId: userId,
-          oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
-          newValue: { id: bin.id, qrCode: bin.qrCode, status: "BROKEN" } as any,
-        }
-      }).catch(() => {});
+      await prisma.auditTrail
+        .create({
+          data: {
+            action: "REPORT_BIN_BROKEN",
+            userId: userId,
+            oldValue: { id: bin.id, qrCode: bin.qrCode, status: bin.status } as any,
+            newValue: { id: bin.id, qrCode: bin.qrCode, status: "BROKEN" } as any,
+          },
+        })
+        .catch(() => {});
 
       return { success: true, message: "Laporan tempat sampah rusak berhasil dikirim" };
     }

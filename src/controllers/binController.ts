@@ -45,6 +45,7 @@ export class BinController {
           currentVolumeLiter: currentVol,
           category: bin.category,
           wargaName: bin.user?.name || "-",
+          kknName: bin.qrBatch?.assignedPic?.name || "-",
           userId: bin.userId || null,
           realStatus: bin.status,
         };
@@ -179,6 +180,18 @@ export class BinController {
           message: "Gagal memproses pemindaian tong sampah",
         });
       }
+    }
+  }
+
+  async registerWargaBin(req: Request, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const data = req.body;
+      const result = await binService.registerWargaBin(userId, data);
+      res.status(201).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] registerWargaBin error:", error);
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 
@@ -525,6 +538,16 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] reportIssue error:", error);
+      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+  async reactivateBin(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const result = await binService.reactivateBin(id);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] reactivateBin error:", error);
       res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }

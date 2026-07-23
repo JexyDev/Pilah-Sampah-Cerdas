@@ -9,6 +9,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { kknService } from "./kknService.js";
 import { residuService } from "./residuService.js";
+import { rwService } from "./rwService.js";
 
 const prisma = new PrismaClient();
 
@@ -111,6 +112,9 @@ describe("Portals A & B Service Integration Tests", () => {
       expect(result).toHaveProperty("newWarga");
       expect(result.newWarga.email).toBe(citizenEmail);
 
+      // Approve bin activation using rwService
+      await rwService.approveBin(testBin.id);
+
       // Verify bin is now active
       const updatedBin = await prisma.bin.findUnique({
         where: { id: testBin.id },
@@ -118,11 +122,11 @@ describe("Portals A & B Service Integration Tests", () => {
       expect(updatedBin!.status).toBe("ACTIVE_BOUND");
       expect(updatedBin!.userId).toBe(result.newWarga.id);
 
-      // Verify points recorded
+      // Verify points recorded (+10 points for activation approved by RW)
       const wargaPoints = await prisma.pointHistory.findFirst({
         where: { userId: result.newWarga.id },
       });
-      expect(wargaPoints!.points).toBe(50);
+      expect(wargaPoints!.points).toBe(10);
     });
   });
 

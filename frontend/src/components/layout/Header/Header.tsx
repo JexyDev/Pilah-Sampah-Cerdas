@@ -1,3 +1,4 @@
+import { MapPin, ChevronDown, Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -209,13 +210,11 @@ const Header: React.FC = () => {
             onClick={() => setShowLocation(!showLocation)}
             className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-lg cursor-pointer hover:bg-surface-container-high transition-all border border-outline-variant/30 select-none"
           >
-            <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
+            <MapPin className="text-primary" size={20} />
             <span className="text-label-md font-bold text-on-surface">
               {user?.wilayah || "Kecamatan Coblong"}
             </span>
-            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
-              keyboard_arrow_down
-            </span>
+            <ChevronDown className="text-on-surface-variant" size={18} />
           </div>
 
           {showLocation && (
@@ -244,7 +243,7 @@ const Header: React.FC = () => {
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all border border-outline-variant/30 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
+              <Bell size={22} />
               <span className="absolute top-2 right-2 w-4 h-4 bg-error text-white text-[9px] flex items-center justify-center rounded-full border border-white font-bold">
                 3
               </span>
@@ -300,7 +299,7 @@ const Header: React.FC = () => {
               onClick={() => setShowApps(!showApps)}
               className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all border border-outline-variant/30 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[22px]">apps</span>
+              <LayoutGrid size={22} />
             </button>
 
             {showApps && (
@@ -316,18 +315,14 @@ const Header: React.FC = () => {
                     }}
                     className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-primary/5 hover:border-primary transition-all text-center gap-1 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-primary text-[24px]">
-                      redeem
-                    </span>
+                    <Gift className="text-primary" size={24} />
                     <span className="text-[11px] font-bold text-on-surface">Tukar Poin</span>
                   </button>
                   <button
                     onClick={triggerCallOfficer}
                     className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-green-50 hover:border-green-600 transition-all text-center gap-1 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-green-600 text-[24px]">
-                      chat_bubble
-                    </span>
+                    <MessageSquare className="text-green-600" size={24} />
                     <span className="text-[11px] font-bold text-on-surface">Hubungi RT</span>
                   </button>
                   <button
@@ -337,9 +332,7 @@ const Header: React.FC = () => {
                     }}
                     className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-blue-50 hover:border-blue-600 transition-all text-center gap-1 cursor-pointer col-span-2"
                   >
-                    <span className="material-symbols-outlined text-blue-600 text-[24px]">
-                      menu_book
-                    </span>
+                    <BookOpen className="text-blue-600" size={24} />
                     <span className="text-[11px] font-bold text-on-surface">
                       Panduan Pemilahan Sampah
                     </span>
@@ -388,14 +381,14 @@ const Header: React.FC = () => {
                 }}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-on-surface hover:bg-surface-container transition-all text-left cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">settings</span>
+                <Settings size={18} />
                 Profil & Pengaturan
               </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-error hover:bg-red-50 transition-all text-left border-t border-outline-variant/20 mt-1 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">logout</span>
+                <LogOut size={18} />
                 Keluar Sistem
               </button>
             </div>
@@ -474,7 +467,7 @@ const Header: React.FC = () => {
               type="submit"
               className="w-full h-11 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-primary/10 mt-2"
             >
-              <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+              <Wallet size={18} />
               Proses Pencairan Poin
             </button>
           </form>
@@ -487,9 +480,7 @@ const Header: React.FC = () => {
           <div className="bg-white rounded-2xl border border-outline-variant shadow-2xl p-6 max-w-md w-full flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
               <h3 className="text-[16px] font-bold text-on-surface flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-primary text-[20px]">
-                  menu_book
-                </span>
+                <BookOpen className="text-primary" size={20} />
                 Panduan Klasifikasi Sampah Cerdas
               </h3>
               <button
@@ -504,7 +495,7 @@ const Header: React.FC = () => {
               {/* Organik */}
               <div className="p-3 bg-green-50 rounded-xl border border-green-200">
                 <p className="text-xs font-bold text-green-800 uppercase tracking-wider flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">eco</span>
+                  <Leaf size={16} />
                   Sampah Organik (Hijau)
                 </p>
                 <p className="text-[11px] text-green-700 leading-relaxed mt-1">
@@ -521,7 +512,7 @@ const Header: React.FC = () => {
               {/* Anorganik */}
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
                 <p className="text-xs font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">local_drink</span>
+                  <GlassWater size={16} />
                   Sampah Anorganik (Biru)
                 </p>
                 <p className="text-[11px] text-blue-700 leading-relaxed mt-1">

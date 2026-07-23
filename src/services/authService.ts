@@ -32,6 +32,7 @@ export class AuthService {
     const payload = {
       userId: user.id,
       role: user.role.name,
+      rtRwId: user.rtRwId ?? undefined,
     };
 
     // Generate tokens
@@ -76,6 +77,7 @@ export class AuthService {
     const payload = {
       userId: tokenRecord.user.id,
       role: tokenRecord.user.role.name,
+      rtRwId: tokenRecord.user.rtRwId ?? undefined,
     };
     const newAccessToken = generateAccessToken(payload);
 
@@ -89,6 +91,68 @@ export class AuthService {
    */
   async logout(token: string) {
     await authRepository.deleteRefreshToken(token);
+  }
+
+  async requestOtp(phone: string) {
+    const user = await authRepository.findUserByPhone(phone);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    // Generate 6 digit OTP
+    const otp = "123456"; // MOCK OTP for dev
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
+    await authRepository.createOtp(phone, otp, expiresAt);
+
+    // TODO: Send OTP via notificationIntegrationService
+    
+    return {
+      message: "OTP sent via WhatsApp",
+      expiresIn: "5 minutes"
+    };
+  }
+
+  async verifyOtp(phone: string, otp: string) {
+    const user = await authRepository.findUserByPhone(phone);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    const otpRecord = await authRepository.findOtp(phone, otp);
+    if (!otpRecord) {
+      throw new Error("INVALID_OTP");
+    }
+
+    await authRepository.markOtpUsed(otpRecord.id);
+
+    // Prepare payload
+    const payload = {
+      userId: user.id,
+      role: user.role.name,
+      rtRwId: user.rtRwId ?? undefined,
+    };
+
+    // Generate tokens
+    const accessToken = generateAccessToken(payload);
+    const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
+
+    // Save refresh token to DB
+    await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role.name,
+        phone: user.phone,
+        address: user.address,
+        fotoProfil: user.fotoProfil,
+      },
+    };
   }
   /**
    * Update user profile

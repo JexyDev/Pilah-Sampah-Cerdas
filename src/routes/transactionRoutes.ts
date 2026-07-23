@@ -15,7 +15,7 @@ const router = Router();
 router.get(
   "/deposits",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "LURAH"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "LURAH", "CAMAT", "MAHASISWA_KKN"]),
   transactionController.getDeposits
 );
 router.get(

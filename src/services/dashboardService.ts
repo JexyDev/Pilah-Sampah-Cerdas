@@ -16,7 +16,8 @@ export const dashboardService = {
       wilayah &&
       wilayah !== "Kecamatan Coblong" &&
       wilayah !== "Sistem Pusat" &&
-      wilayah !== "Area KKN Dago";
+      wilayah !== "Area KKN Dago" &&
+      wilayah !== "Dinas Lingkungan Hidup";
 
     // 1. Total Warga Aktif
     const totalWarga = await prisma.user.count({
@@ -164,7 +165,7 @@ export const dashboardService = {
     wasteByCategory.forEach((log) => {
       const kg = Number(log.weightKg);
       if (
-        log.category.name.toUpperCase().includes("ORGANIK") &&
+        log.category.name.toUpperCase().includes("ORGANIC") &&
         !log.category.name.toUpperCase().includes("NON_ORGANIC") &&
         !log.category.name.toUpperCase().includes("ANORGANIK")
       ) {
@@ -195,7 +196,8 @@ export const dashboardService = {
       wilayah &&
       wilayah !== "Kecamatan Coblong" &&
       wilayah !== "Sistem Pusat" &&
-      wilayah !== "Area KKN Dago";
+      wilayah !== "Area KKN Dago" &&
+      wilayah !== "Dinas Lingkungan Hidup";
     const transactions = await prisma.wasteLog.findMany({
       where: isFiltered
         ? {
@@ -242,7 +244,8 @@ export const dashboardService = {
       wilayah &&
       wilayah !== "Kecamatan Coblong" &&
       wilayah !== "Sistem Pusat" &&
-      wilayah !== "Area KKN Dago";
+      wilayah !== "Area KKN Dago" &&
+      wilayah !== "Dinas Lingkungan Hidup";
     const result = [];
     const now = new Date();
 
@@ -274,7 +277,7 @@ export const dashboardService = {
         const kg = Number(log.weightKg);
         const name = log.category.name.toUpperCase();
         if (
-          name.includes("ORGANIK") &&
+          name.includes("ORGANIC") &&
           !name.includes("NON_ORGANIC") &&
           !name.includes("ANORGANIK")
         ) {
@@ -333,7 +336,7 @@ export const dashboardService = {
       wasteLogs.forEach((log) => {
         const kg = Number(log.weightKg);
         if (
-          log.category.name.toUpperCase().includes("ORGANIK") &&
+          log.category.name.toUpperCase().includes("ORGANIC") &&
           !log.category.name.toUpperCase().includes("NON_ORGANIC") &&
           !log.category.name.toUpperCase().includes("ANORGANIK")
         ) {

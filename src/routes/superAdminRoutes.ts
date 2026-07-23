@@ -9,12 +9,14 @@ import { Router } from "express";
 import { superAdminController } from "../controllers/superAdminController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { readOnlyGuard } from "../middlewares/readOnlyGuard.js";
 
 const router = Router();
 
-// Protect all routes within this router for SUPER_ADMIN role only
+// Protect all routes within this router
 router.use(authMiddleware);
-router.use(roleMiddleware(["SUPER_ADMIN"]));
+router.use(roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]));
+router.use(readOnlyGuard);
 
 /**
  * @swagger

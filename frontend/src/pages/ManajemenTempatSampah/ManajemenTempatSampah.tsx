@@ -1,3 +1,4 @@
+import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -297,14 +298,14 @@ const ManajemenTempatSampah: React.FC = () => {
             onClick={handleOpenAddModal}
             className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">add</span>
+            <Plus size={20} />
             Tambah Titik
           </button>
           <button
             onClick={handleExportCSV}
             className="bg-white border border-outline-variant text-on-surface-variant px-6 h-12 rounded-lg font-medium text-base hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">download</span>
+            <Download size={20} />
             Laporan
           </button>
         </div>
@@ -330,9 +331,7 @@ const ManajemenTempatSampah: React.FC = () => {
               <tr>
                 <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
                   <div className="flex flex-col items-center justify-center gap-3">
-                    <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                      autorenew
-                    </span>
+                    <Loader2 className="animate-spin text-primary" size={32} />
                     <p>Memuat data...</p>
                   </div>
                 </td>
@@ -412,14 +411,14 @@ const ManajemenTempatSampah: React.FC = () => {
                             className="w-8 h-8 rounded-md bg-green-50 text-green-700 hover:bg-green-600 hover:text-white transition-colors flex items-center justify-center"
                             title="Setujui Aktivasi"
                           >
-                            <span className="material-symbols-outlined text-[18px]">check</span>
+                            <Check size={18} />
                           </button>
                           <button
                             onClick={() => handleRejectActivation(bin.kode)}
                             className="w-8 h-8 rounded-md bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
                             title="Tolak Aktivasi"
                           >
-                            <span className="material-symbols-outlined text-[18px]">close</span>
+                            <X size={18} />
                           </button>
                         </>
                       )}
@@ -428,21 +427,21 @@ const ManajemenTempatSampah: React.FC = () => {
                         className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
                         title="Log Transaksi"
                       >
-                        <span className="material-symbols-outlined text-[18px]">history</span>
+                        <History size={18} />
                       </button>
                       <button
                         onClick={() => handleOpenEditModal(bin)}
                         className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
                         title="Edit"
                       >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        <Edit size={18} />
                       </button>
                       <button
                         onClick={() => handleDelete(bin.kode)}
                         className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
                         title="Hapus"
                       >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -462,7 +461,7 @@ const ManajemenTempatSampah: React.FC = () => {
       {/* Geospatial Map */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 space-y-4">
         <h3 className="font-bold text-[18px] text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">map</span>
+          <Map className="text-primary" />
           Peta Sebaran Bins & Rumah Warga (Geospatial)
         </h3>
         <div className="h-[400px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
@@ -546,16 +545,14 @@ const ManajemenTempatSampah: React.FC = () => {
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
                 onClick={closeLogModal}
               >
-                <span className="material-symbols-outlined">close</span>
+                <X />
               </button>
             </div>
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               {loadingLogs ? (
                 <div className="flex justify-center items-center py-12">
-                  <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                    autorenew
-                  </span>
+                  <Loader2 className="animate-spin text-primary" size={32} />
                 </div>
               ) : logTransactions.length > 0 ? (
                 <table className="w-full text-left border-collapse">
@@ -627,7 +624,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 onClick={closeFormModal}
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X />
               </button>
             </div>
             <form
@@ -755,9 +752,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting && (
-                    <span className="material-symbols-outlined animate-spin text-[18px]">
-                      progress_activity
-                    </span>
+                    <Loader2 className="animate-spin" size={18} />
                   )}
                   Simpan
                 </button>

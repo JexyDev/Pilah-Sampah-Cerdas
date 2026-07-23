@@ -69,6 +69,9 @@ const router = Router();
  */
 router.post("/login", loginRateLimiter, authController.login);
 
+router.post("/request-otp", loginRateLimiter, authController.requestOtp);
+router.post("/verify-otp", loginRateLimiter, authController.verifyOtp);
+
 /**
  * @swagger
  * /api/v1/auth/refresh:
@@ -249,7 +252,7 @@ router.post(
 router.post(
   "/register/petugas-residu",
   authMiddleware,
-  roleMiddleware(["ADMIN_DLH", "RW"]),
+  roleMiddleware(["ADMIN_DLH", "RW", "MAHASISWA_KKN"]),
   authController.registerPetugasResidu
 );
 

@@ -1,3 +1,4 @@
+import { QrCode, AlertTriangle, PlayCircle } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -8,6 +9,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
+import { Badge } from "../../components/common/Badge";
 
 interface BinQr {
   id: string;
@@ -136,7 +138,7 @@ export const MasterQrManager: React.FC = () => {
           onClick={() => setShowGenerateModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-semibold hover:bg-primary-dark transition"
         >
-          <span className="material-symbols-outlined text-white text-[20px]">qr_code_2</span>
+          <QrCode className="text-white" size={20} />
           Generate QR Batch
         </button>
       </div>
@@ -145,7 +147,7 @@ export const MasterQrManager: React.FC = () => {
       {inactiveBins.length > 0 && (
         <div className="bg-red-50/50 border border-red-200/60 p-6 rounded-2xl space-y-4">
           <div className="flex items-center gap-2 text-red-800">
-            <span className="material-symbols-outlined text-[24px]">warning</span>
+            <AlertTriangle size={24} />
             <h3 className="font-bold text-sm">Peringatan: Ada Tempat Sampah Berstatus TIDAK AKTIF</h3>
           </div>
           <div className="bg-white rounded-xl border border-red-100 overflow-hidden shadow-sm">
@@ -176,7 +178,7 @@ export const MasterQrManager: React.FC = () => {
                         onClick={() => handleReactivate(b.id)}
                         className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-semibold shadow-sm transition inline-flex items-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-[14px]">play_circle</span>
+                        <PlayCircle size={14} />
                         Aktifkan Kembali
                       </button>
                     </td>
@@ -238,16 +240,11 @@ export const MasterQrManager: React.FC = () => {
                 </tr>
               ) : (
                 qrs.map((q, idx) => {
-                  let badge = "bg-gray-100 text-gray-600";
-                  if (q.status === "ACTIVE_BOUND") badge = "bg-green-100 text-green-800";
-                  else if (q.status === "PENDING_APPROVAL") badge = "bg-yellow-100 text-yellow-800";
-                  else if (q.status === "BROKEN") badge = "bg-red-100 text-red-800";
-
                   return (
                     <tr key={idx} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4 font-mono text-xs font-bold text-gray-900">{q.qrCode}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badge}`}>{q.status}</span>
+                        <Badge status={q.status} />
                       </td>
                       <td className="px-6 py-4 text-xs font-mono text-gray-500">
                         {q.qrBatch ? q.qrBatch.batchCode : "-"}

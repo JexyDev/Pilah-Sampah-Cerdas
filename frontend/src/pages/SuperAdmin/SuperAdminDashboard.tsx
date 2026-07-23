@@ -1,3 +1,4 @@
+import { Download, FileText, Trees, Recycle, Trash, Scale } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -6,6 +7,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 
@@ -78,14 +80,14 @@ export const SuperAdminDashboard: React.FC = () => {
             onClick={() => handleExport("CSV")}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
           >
-            <span className="material-symbols-outlined text-gray-500 text-[20px]">download</span>
+            <Download className="text-gray-500" size={20} />
             Export CSV
           </button>
           <button
             onClick={() => handleExport("PDF")}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-medium hover:bg-primary-dark transition"
           >
-            <span className="material-symbols-outlined text-white text-[20px]">picture_as_pdf</span>
+            <FileText className="text-white" size={20} />
             Export PDF
           </button>
         </div>
@@ -95,7 +97,7 @@ export const SuperAdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-4 bg-green-50 rounded-xl text-green-600">
-            <span className="material-symbols-outlined text-[32px]">forest</span>
+            <Trees size={32} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Organik</p>
@@ -105,7 +107,7 @@ export const SuperAdminDashboard: React.FC = () => {
 
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
-            <span className="material-symbols-outlined text-[32px]">recycling</span>
+            <Recycle size={32} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Anorganik</p>
@@ -115,7 +117,7 @@ export const SuperAdminDashboard: React.FC = () => {
 
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-4 bg-red-50 rounded-xl text-red-600">
-            <span className="material-symbols-outlined text-[32px]">delete_sweep</span>
+            <Trash size={32} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Residu Hilir</p>
@@ -125,7 +127,7 @@ export const SuperAdminDashboard: React.FC = () => {
 
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-4 bg-purple-50 rounded-xl text-purple-600">
-            <span className="material-symbols-outlined text-[32px]">scale</span>
+            <Scale size={32} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Total Berat</p>
@@ -135,70 +137,49 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
 
       {/* Grid: Trends Chart and Leaderboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Trend Chart (Interactive SVG Line) */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col h-fit">
           <div>
             <h3 className="text-lg font-bold text-gray-900">Tren Pengumpulan Sampah</h3>
             <p className="text-xs text-gray-500">Kapasitas setoran mingguan (Organik vs Anorganik vs Residu)</p>
           </div>
-          <div className="h-64 mt-6 flex items-end relative border-b border-l border-gray-200 p-2">
+          {/* Chart */}
+          <div className="flex-1 w-full mt-6 h-64 min-h-[250px]">
             {trends.length === 0 ? (
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
+              <div className="flex items-center justify-center h-full text-sm text-gray-400">
                 Belum ada data transaksi masuk
               </div>
             ) : (
-              <div className="w-full h-full flex justify-around items-end">
-                {trends.slice(-6).map((t, idx) => {
-                  const maxVal = Math.max(1, ...trends.map(x => x.organic + x.nonOrganic + x.residu));
-                  const orgHeight = (t.organic / maxVal) * 100;
-                  const nonOrgHeight = (t.nonOrganic / maxVal) * 100;
-                  const residuHeight = (t.residu / maxVal) * 100;
-
-                  return (
-                    <div key={idx} className="flex flex-col items-center gap-2 w-full max-w-[60px]">
-                      <div className="w-full flex items-end gap-1 h-44">
-                        <div
-                          style={{ height: `${orgHeight}%` }}
-                          className="w-4 bg-green-500 rounded-t-sm transition-all duration-500 hover:opacity-85"
-                          title={`Organik: ${t.organic} Kg`}
-                        ></div>
-                        <div
-                          style={{ height: `${nonOrgHeight}%` }}
-                          className="w-4 bg-blue-500 rounded-t-sm transition-all duration-500 hover:opacity-85"
-                          title={`Anorganik: ${t.nonOrganic} Kg`}
-                        ></div>
-                        <div
-                          style={{ height: `${residuHeight}%` }}
-                          className="w-4 bg-red-500 rounded-t-sm transition-all duration-500 hover:opacity-85"
-                          title={`Residu: ${t.residu} Kg`}
-                        ></div>
-                      </div>
-                      <span className="text-[10px] text-gray-500 whitespace-nowrap">{t.period}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                  <Line type="monotone" dataKey="organic" name="Organik (Kg)" stroke="#22c55e" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="nonOrganic" name="Anorganik (Kg)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="residu" name="Residu (Kg)" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
             )}
-          </div>
-          <div className="flex gap-4 justify-center mt-4 text-xs font-semibold">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-500 rounded-full"></span> Organik</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded-full"></span> Anorganik</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-500 rounded-full"></span> Residu</span>
           </div>
         </div>
 
         {/* Region Leaderboard */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-full">
           <div>
             <h3 className="text-lg font-bold text-gray-900">Leaderboard Wilayah</h3>
             <p className="text-xs text-gray-500">Skor kepatuhan median per kelurahan / RT / RW</p>
           </div>
-          <div className="flex-1 overflow-y-auto space-y-4 mt-6 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-4 mt-6 pr-1 max-h-[280px]">
             {leaderboard.length === 0 ? (
               <div className="text-center text-sm text-gray-400 py-12">Belum ada data wilayah</div>
             ) : (
-              leaderboard.map((item, idx) => {
+              leaderboard.slice(0, 10).map((item, idx) => {
                 let badgeColor = "bg-gray-100 text-gray-600";
                 if (idx === 0) badgeColor = "bg-yellow-100 text-yellow-800 font-bold";
                 else if (idx === 1) badgeColor = "bg-slate-200 text-slate-800 font-semibold";

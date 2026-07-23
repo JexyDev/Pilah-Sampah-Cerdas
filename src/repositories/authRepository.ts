@@ -63,6 +63,20 @@ export class AuthRepository {
     }
   }
 
+  async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
+    try {
+      return (await prisma.user.findFirst({
+        where: { phone },
+        include: { role: true },
+      })) as (User & { role: Role }) | null;
+    } catch (error: any) {
+      if (isDatabaseConnectionError(error)) {
+        throw new DatabaseUnavailableError();
+      }
+      throw error;
+    }
+  }
+
   /**
    * Store a refresh token in the database.
    */
@@ -103,6 +117,36 @@ export class AuthRepository {
       .catch(() => {
         // Ignore if token doesn't exist
       });
+  }
+
+  async createOtp(phone: string, code: string, expiresAt: Date) {
+    return prisma.otpCode.create({
+      data: {
+        phone,
+        code,
+        expiresAt,
+      },
+    });
+  }
+
+  async findOtp(phone: string, code: string) {
+    return prisma.otpCode.findFirst({
+      where: {
+        phone,
+        code,
+        used: false,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+  }
+
+  async markOtpUsed(id: string) {
+    return prisma.otpCode.update({
+      where: { id },
+      data: { used: true },
+    });
   }
   /**
    * Find a user by ID, including their role details.

@@ -1,3 +1,4 @@
+import { ShieldCheck } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -195,7 +196,7 @@ export const ReviewDiscrepancy: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-              <span className="material-symbols-outlined text-[64px] text-gray-300">verified_user</span>
+              <ShieldCheck className="text-gray-300" size={64} />
               <div>
                 <h4 className="font-bold text-gray-800 text-sm">Tidak Ada Tinjauan Aktif</h4>
                 <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">

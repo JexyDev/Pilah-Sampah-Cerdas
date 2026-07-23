@@ -13,11 +13,29 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
 
 // Only PETUGAS_RESIDU allowed
+router.get(
+  "/pending-logs",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  residuController.getPendingLogs
+);
+router.get(
+  "/jadwal-harian",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  residuController.getJadwalHarian
+);
 router.post(
   "/violation",
   authMiddleware,
   roleMiddleware(["PETUGAS_RESIDU"]),
   residuController.recordViolation
+);
+router.post(
+  "/submit-log",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  residuController.submitLog
 );
 router.get(
   "/dashboard",

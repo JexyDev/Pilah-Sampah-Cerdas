@@ -89,6 +89,12 @@ router.get(
   roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
   dashboardController.getAnalytics
 );
+router.get(
+  "/export-dataset",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  dashboardController.exportDataset
+);
 router.get("/regions", authMiddleware, dashboardController.getRegions);
 router.get("/trend", authMiddleware, dashboardController.getTrend);
 

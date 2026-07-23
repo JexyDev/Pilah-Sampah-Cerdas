@@ -33,6 +33,11 @@ export class BinRepository {
         category: true,
         rtRw: true,
         user: true,
+        qrBatch: {
+          include: {
+            assignedPic: true,
+          }
+        },
       },
     });
   }

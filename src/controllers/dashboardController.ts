@@ -94,4 +94,16 @@ export const dashboardController = {
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   },
+
+  exportDataset: async (req: Request, res: Response) => {
+    try {
+      const csvData = await dashboardService.exportDataset();
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=waste_dataset.csv");
+      res.status(200).send(csvData);
+    } catch (error) {
+      console.error("[DashboardController] exportDataset error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
 };

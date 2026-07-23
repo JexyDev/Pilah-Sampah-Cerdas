@@ -1,3 +1,4 @@
+import { Loader2, Grid, Receipt, MapPin } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -90,7 +91,7 @@ const RekapSetoran: React.FC = () => {
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-outline-variant/50 rounded-lg text-on-surface text-[12px] font-bold hover:bg-surface-container-low transition-colors shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">grid_on</span>
+            <Grid size={18} />
             Ekspor CSV
           </button>
         </div>
@@ -100,7 +101,7 @@ const RekapSetoran: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden mb-6 flex-1">
         <div className="p-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest">
           <h3 className="font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+            <Receipt className="text-primary" size={20} />
             Riwayat Setoran Warga
           </h3>
         </div>
@@ -131,9 +132,7 @@ const RekapSetoran: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                        autorenew
-                      </span>
+                      <Loader2 className="animate-spin text-primary" size={32} />
                       <p>Memuat data transaksi...</p>
                     </div>
                   </td>
@@ -178,7 +177,7 @@ const RekapSetoran: React.FC = () => {
                         {new Date(dep.waktu).toLocaleString()}
                       </div>
                       <div className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5">
-                        <span className="material-symbols-outlined text-[14px]">location_on</span>
+                        <MapPin size={14} />
                         {dep.lokasi}
                       </div>
                     </td>

@@ -38,6 +38,29 @@ vi.mock("../utils/rbacScoping.js", () => {
   };
 });
 
+const { mockPrismaUserCreate, mockPrismaStudentKknCreate, mockPrismaTransaction } = vi.hoisted(() => {
+  const userCreate = vi.fn();
+  const studentCreate = vi.fn();
+  return {
+    mockPrismaUserCreate: userCreate,
+    mockPrismaStudentKknCreate: studentCreate,
+    mockPrismaTransaction: vi.fn((callback) => callback({
+      user: { create: userCreate },
+      studentKkn: { create: studentCreate }
+    }))
+  };
+});
+
+vi.mock("@prisma/client", () => {
+  return {
+    PrismaClient: class {
+      $transaction = mockPrismaTransaction;
+      user = { create: mockPrismaUserCreate };
+      studentKkn = { create: mockPrismaStudentKknCreate };
+    }
+  };
+});
+
 describe("UserService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,6 +108,7 @@ describe("UserService", () => {
         setoran: 4.0,
         totalPoin: 150,
         createdAt: mockUsers[0].createdAt,
+        studentProfile: null,
       });
     });
   });
@@ -101,7 +125,7 @@ describe("UserService", () => {
 
       vi.mocked(userRepository.findRoleByName).mockResolvedValue(mockRole as any);
       vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
-      vi.mocked(userRepository.create).mockResolvedValue(mockCreatedUser as any);
+      mockPrismaUserCreate.mockResolvedValue(mockCreatedUser);
 
       const result = await userService.createUser({
         name: "New Warga",
@@ -113,7 +137,7 @@ describe("UserService", () => {
 
       expect(userRepository.findRoleByName).toHaveBeenCalledWith("WARGA");
       expect(userRepository.findByEmail).toHaveBeenCalledWith("new@psc.id");
-      expect(userRepository.create).toHaveBeenCalled();
+      expect(mockPrismaTransaction).toHaveBeenCalled();
       expect(result).toEqual({
         id: "user-new",
         name: "New Warga",

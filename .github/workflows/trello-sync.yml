@@ -87,9 +87,9 @@ jobs:
         id: trello-sync
         run: node scripts/trello-sync.js
         env:
-          TRELLO_API_KEY:      ${{ secrets.TRELLO_API_KEY }}
-          TRELLO_TOKEN:        ${{ secrets.TRELLO_TOKEN }}
-          TRELLO_BOARD_ID:     ${{ secrets.TRELLO_BOARD_ID }}
+          TRELLO_API_KEY: "${{ secrets['TRELLO_API_KEY'] }}"
+          TRELLO_TOKEN: "${{ secrets['TRELLO_TOKEN'] }}"
+          TRELLO_BOARD_ID: "${{ secrets['TRELLO_BOARD_ID'] }}"
           TRELLO_MODULE_LABELS: ${{ steps.detect-labels.outputs.labels }}
           GITHUB_REPOSITORY:   ${{ github.repository }}
           GITHUB_SERVER_URL:   ${{ github.server_url }}

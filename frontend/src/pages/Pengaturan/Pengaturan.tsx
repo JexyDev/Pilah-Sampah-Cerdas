@@ -1,3 +1,4 @@
+import { Loader2, Camera, AlertTriangle, Brush, Router, RefreshCw, Info, Key, Copy, RefreshCcw, Webhook, Save } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -372,9 +373,7 @@ const Pengaturan: React.FC = () => {
                     >
                       {isUploading ? (
                         <div className="flex flex-col items-center justify-center text-primary gap-1">
-                          <span className="material-symbols-outlined animate-spin text-[32px]">
-                            autorenew
-                          </span>
+                          <Loader2 className="animate-spin" size={32} />
                           <span className="text-[9px] font-bold uppercase tracking-wider">
                             Mengunggah
                           </span>
@@ -395,9 +394,7 @@ const Pengaturan: React.FC = () => {
 
                       {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-center p-2">
-                        <span className="material-symbols-outlined text-white text-[24px] mb-1">
-                          photo_camera
-                        </span>
+                        <Camera className="text-white  mb-1" size={24} />
                         <span className="text-[9px] font-bold uppercase tracking-widest">
                           Ubah Foto
                         </span>
@@ -589,7 +586,7 @@ const Pengaturan: React.FC = () => {
           <div className="space-y-6 max-w-4xl">
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
               <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
-                <span className="material-symbols-outlined text-blue-600 text-[28px]">router</span>
+                <Router className="text-blue-600" size={28} />
                 <div>
                   <h3 className="text-[20px] font-bold text-on-surface">Ngrok Port Tunnel</h3>
                   <p className="text-[14px] text-on-surface-variant mt-1">
@@ -613,12 +610,12 @@ const Pengaturan: React.FC = () => {
                       onClick={handleUpdateTunnel}
                       className="px-4 py-2 border border-outline-variant/50 rounded-lg text-on-surface text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors flex items-center gap-2 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[18px]">sync</span>
+                      <RefreshCw size={18} />
                       Perbarui
                     </button>
                   </div>
                   <p className="text-[11px] font-bold text-blue-600 mt-2 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">info</span>
+                    <Info size={14} />
                     Gunakan URL ini untuk endpoint aplikasi seluler.
                   </p>
                 </div>
@@ -627,7 +624,7 @@ const Pengaturan: React.FC = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
               <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
-                <span className="material-symbols-outlined text-blue-600 text-[28px]">key</span>
+                <Key className="text-blue-600" size={28} />
                 <div>
                   <h3 className="text-[20px] font-bold text-on-surface">API Token Generator</h3>
                   <p className="text-[14px] text-on-surface-variant mt-1">
@@ -651,7 +648,7 @@ const Pengaturan: React.FC = () => {
                       onClick={handleCopyToken}
                       className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-[12px] font-bold uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-2 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                      <Copy size={18} />
                       Salin
                     </button>
                   </div>
@@ -661,7 +658,7 @@ const Pengaturan: React.FC = () => {
                   disabled={isLoadingToken}
                   className="text-red-500 text-[12px] font-bold uppercase tracking-wider hover:underline flex items-center gap-1 mt-2 cursor-pointer disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[16px]">autorenew</span>
+                  <RefreshCcw size={16} />
                   {isLoadingToken ? "Memproses..." : "Revoke & Generate Token Baru"}
                 </button>
               </div>
@@ -669,7 +666,7 @@ const Pengaturan: React.FC = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
               <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
-                <span className="material-symbols-outlined text-blue-600 text-[28px]">webhook</span>
+                <Webhook className="text-blue-600" size={28} />
                 <div>
                   <h3 className="text-[20px] font-bold text-on-surface">Webhook Receiver</h3>
                   <p className="text-[14px] text-on-surface-variant mt-1">
@@ -723,9 +720,7 @@ const Pengaturan: React.FC = () => {
           <div className="space-y-6 max-w-4xl">
             <div className="bg-red-50/50 rounded-xl shadow-sm border border-red-500/20 p-6">
               <div className="flex items-start gap-4">
-                <span className="material-symbols-outlined text-red-500 text-[32px] mt-1">
-                  warning
-                </span>
+                <AlertTriangle className="text-red-500  mt-1" size={32} />
                 <div className="flex-1">
                   <h3 className="text-[20px] font-bold text-on-surface mb-2">Area Berbahaya</h3>
                   <p className="text-[14px] text-on-surface-variant mb-6">
@@ -750,7 +745,7 @@ const Pengaturan: React.FC = () => {
                         disabled={isBackingUp}
                         className="bg-primary text-white rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                       >
-                        <span className="material-symbols-outlined text-[18px]">save</span>
+                        <Save size={18} />
                         {isBackingUp ? "Memproses..." : "Buat Backup Database"}
                       </button>
                     </div>
@@ -768,9 +763,7 @@ const Pengaturan: React.FC = () => {
                         disabled={isClearingCache}
                         className="border border-outline-variant/50 text-on-surface rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          cleaning_services
-                        </span>
+                        <Brush size={18} />
                         {isClearingCache ? "Memproses..." : "Bersihkan Cache System"}
                       </button>
                     </div>

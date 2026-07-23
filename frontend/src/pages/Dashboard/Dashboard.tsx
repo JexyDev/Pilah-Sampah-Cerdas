@@ -1,3 +1,5 @@
+import { IconRenderer } from "../../components/common/IconRenderer";
+import { PlusCircle, X, RefreshCcw, UserCheck, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, Radio, Server, BrainCircuit, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -6,12 +8,17 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { RwDashboard } from "../RwPortal/RwDashboard";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
+import { MapContainer, TileLayer, Circle, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Badge } from "../../components/common/Badge";
 
 // ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
@@ -52,6 +59,38 @@ const WargaDashboard: React.FC = () => {
 
   // Waste logs filter state
   const [filterWasteType, setFilterWasteType] = useState("ALL");
+
+  const [showRegBinModal, setShowRegBinModal] = useState(false);
+  const [regBinQrCode, setRegBinQrCode] = useState("");
+  const [regBinCapMode, setRegBinCapMode] = useState("DEFAULT");
+  const [regBinCapacity, setRegBinCapacity] = useState("25");
+  const [isRegisteringBin, setIsRegisteringBin] = useState(false);
+
+  const handleRegisterBin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regBinQrCode.trim()) {
+      toast.error("QR Code wajib diisi");
+      return;
+    }
+    setIsRegisteringBin(true);
+    try {
+      const payload = {
+        qrCode: regBinQrCode,
+        maxCapacityLiter: regBinCapMode === "DEFAULT" ? 25 : parseInt(regBinCapacity) || 25,
+      };
+      const res = await api.post("/bins/register-warga", payload);
+      if (res.data?.success) {
+        toast.success("Berhasil mendaftarkan tong sampah! Menunggu persetujuan RW.");
+        setShowRegBinModal(false);
+        setRegBinQrCode("");
+        fetchMyBins();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal mendaftarkan tong sampah");
+    } finally {
+      setIsRegisteringBin(false);
+    }
+  };
 
   useEffect(() => {
     fetchSummary();
@@ -136,22 +175,68 @@ const WargaDashboard: React.FC = () => {
     }
   };
 
-  const handleReportIssue = async (binId: string, issueType: "EMPTY_REQUEST" | "BROKEN_REPORT") => {
-    try {
-      const notes = issueType === "EMPTY_REQUEST" ? "Minta pengosongan tong" : "Tong rusak/QR sobek";
-      const confirmMsg = issueType === "EMPTY_REQUEST" 
-        ? "Apakah Anda yakin ingin memanggil petugas untuk mengosongkan tong sampah ini?" 
-        : "Apakah Anda yakin ingin melaporkan bahwa tong sampah ini rusak?";
-      
-      if (!window.confirm(confirmMsg)) return;
+  const [showIssueModal, setShowIssueModal] = useState(false);
+  const [issueBinId, setIssueBinId] = useState("");
+  const [issueType, setIssueType] = useState<"EMPTY_REQUEST" | "BROKEN_REPORT">("EMPTY_REQUEST");
+  const [issueNotes, setIssueNotes] = useState("");
+  const [issuePhoto, setIssuePhoto] = useState<File | null>(null);
+  const [issuePhotoPreview, setIssuePhotoPreview] = useState<string | null>(null);
+  const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
 
-      const res = await api.post(`/bins/${binId}/report-issue`, { issueType, notes });
+  const handleOpenIssueModal = (binId: string, type: "EMPTY_REQUEST" | "BROKEN_REPORT") => {
+    setIssueBinId(binId);
+    setIssueType(type);
+    setIssueNotes(type === "EMPTY_REQUEST" ? "Minta pengosongan tong" : "Tong rusak/QR sobek");
+    setIssuePhoto(null);
+    setIssuePhotoPreview(null);
+    setShowIssueModal(true);
+  };
+
+  const handleIssuePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIssuePhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setIssuePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitIssue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (issueType === "EMPTY_REQUEST" && !issuePhoto) {
+      toast.error("Wajib mengunggah foto bukti tong penuh!");
+      return;
+    }
+
+    setIsSubmittingIssue(true);
+    try {
+      const payload = { 
+        issueType, 
+        notes: issueNotes,
+        photoUrl: issuePhotoPreview, // mocked for now
+        evidencePhotoUrl: issuePhotoPreview,
+        binId: issueBinId
+      };
+      
+      let res;
+      if (issueType === "EMPTY_REQUEST") {
+        res = await api.post(`/bins/reset-request`, payload);
+      } else {
+        res = await api.post(`/bins/${issueBinId}/report-issue`, payload);
+      }
+      
       if (res.data?.success) {
         toast.success(res.data.data?.message || "Laporan berhasil dikirim!");
+        setShowIssueModal(false);
         fetchMyBins();
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal mengirimkan laporan");
+    } finally {
+      setIsSubmittingIssue(false);
     }
   };
 
@@ -256,7 +341,7 @@ const WargaDashboard: React.FC = () => {
                   {poin.toLocaleString("id-ID")} Poin
                 </h3>
                 <p className="text-[10px] text-primary font-bold mt-2 flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[12px]">trending_up</span>+
+                  <TrendingUp size={12} />+
                   {pointsEarnedToday} Poin hari ini
                 </p>
               </div>
@@ -283,9 +368,7 @@ const WargaDashboard: React.FC = () => {
                   Rp {saldo.toLocaleString("id-ID")}
                 </h3>
                 <p className="text-[10px] text-on-surface-variant font-medium mt-2 flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[12px]">
-                    account_balance_wallet
-                  </span>
+                  <Wallet size={12} />
                   Cairkan Poin ke E-Wallet Anda
                 </p>
               </div>
@@ -361,7 +444,7 @@ const WargaDashboard: React.FC = () => {
                 dan setorkan ke smart bin terdekat untuk hadiah instan.
               </p>
               <div className="inline-flex items-center gap-1.5 bg-white/20 border border-white/30 rounded-full px-3 py-1 mt-2 text-[10px] font-bold uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[14px]">bolt</span>
+                <Zap size={14} />
                 Kuota AI Hari Ini: {quotaRemaining} / 50 Request
               </div>
             </div>
@@ -397,15 +480,11 @@ const WargaDashboard: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-on-surface-variant flex items-center justify-center sm:justify-start gap-1 font-medium">
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
-                  home
-                </span>
+                <Home className="text-on-surface-variant" size={16} />
                 {user?.address || "Alamat Belum Dikonfigurasi"}
               </p>
               <p className="text-xs text-on-surface-variant flex items-center justify-center sm:justify-start gap-1 font-medium">
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
-                  location_on
-                </span>
+                <MapPin className="text-on-surface-variant" size={16} />
                 Wilayah Tugas: <strong className="text-primary">{user?.wilayah || "-"}</strong>
               </p>
             </div>
@@ -413,7 +492,7 @@ const WargaDashboard: React.FC = () => {
               onClick={() => navigate("/pengaturan")}
               className="px-4 py-2 border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors text-[11px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">edit</span>
+              <Edit size={16} />
               Edit Profil
             </button>
           </div>
@@ -422,14 +501,14 @@ const WargaDashboard: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-sm border border-outline-variant/40 rounded-xl p-6 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
               <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-primary">notifications</span>
+                <Bell className="text-primary" />
                 Notifikasi Terbaru
               </h5>
               <button
                 onClick={fetchNotifications}
                 className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-[14px]">sync</span>
+                <RefreshCw size={14} />
                 Refresh
               </button>
             </div>
@@ -441,9 +520,7 @@ const WargaDashboard: React.FC = () => {
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center py-6 text-on-surface-variant/75 text-xs">
-                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">
-                  campaign
-                </span>
+                <Megaphone className="text-slate-300 block mb-1" size={32} />
                 Belum ada notifikasi baru untuk Anda.
               </div>
             ) : (
@@ -456,7 +533,7 @@ const WargaDashboard: React.FC = () => {
                     <div
                       className={`w-8 h-8 rounded-full ${notif.iconBg} ${notif.iconColor} flex items-center justify-center flex-shrink-0`}
                     >
-                      <span className="material-symbols-outlined text-[18px]">{notif.icon}</span>
+                      <IconRenderer name={notif.icon} size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-bold text-on-surface truncate">
@@ -482,12 +559,20 @@ const WargaDashboard: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
               <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-primary">delete_sweep</span>
+                <Trash className="text-primary" />
                 Tong Sampah RT/RW Saya
               </h5>
-              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                {user?.wilayah || "Umum"}
-              </span>
+              <div className="flex gap-2 items-center">
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  {user?.wilayah || "Umum"}
+                </span>
+                <button
+                  onClick={() => setShowRegBinModal(true)}
+                  className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider"
+                >
+                  + Registrasi Bin
+                </button>
+              </div>
             </div>
 
             {isLoadingBins ? (
@@ -497,9 +582,7 @@ const WargaDashboard: React.FC = () => {
               </div>
             ) : myBins.length === 0 ? (
               <div className="text-center py-6 text-on-surface-variant/75 text-xs">
-                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">
-                  warning
-                </span>
+                <AlertTriangle className="text-slate-300 block mb-1" size={32} />
                 Tidak ada tong sampah terdaftar di RT/RW Anda.
               </div>
             ) : (
@@ -540,6 +623,13 @@ const WargaDashboard: React.FC = () => {
                           Tong Rusak / QR Sobek
                         </span>
                       </div>
+                    ) : bin.realStatus === "TIDAK_AKTIF" ? (
+                      <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-slate-700 uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                          TIDAK AKTIF (&gt;30 Hari)
+                        </span>
+                      </div>
                     ) : (
                       <>
                         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -554,17 +644,17 @@ const WargaDashboard: React.FC = () => {
 
                         <div className="mt-3 flex gap-2 justify-end">
                           <button
-                            onClick={() => handleReportIssue(bin.id, "EMPTY_REQUEST")}
+                            onClick={() => handleOpenIssueModal(bin.id, "EMPTY_REQUEST")}
                             className="px-2.5 py-1 text-[10px] bg-primary text-white font-bold rounded hover:bg-primary/95 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
-                            <span className="material-symbols-outlined text-[12px]">local_shipping</span>
+                            <Truck size={12} />
                             Panggil Petugas
                           </button>
                           <button
-                            onClick={() => handleReportIssue(bin.id, "BROKEN_REPORT")}
+                            onClick={() => handleOpenIssueModal(bin.id, "BROKEN_REPORT")}
                             className="px-2.5 py-1 text-[10px] border border-red-200 text-red-600 font-bold rounded hover:bg-red-50 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
-                            <span className="material-symbols-outlined text-[12px]">warning</span>
+                            <AlertTriangle size={12} />
                             Lapor Rusak
                           </button>
                         </div>
@@ -580,7 +670,7 @@ const WargaDashboard: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
               <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-primary">history</span>
+                <History className="text-primary" />
                 Setoran Terakhir
               </h5>
               <button
@@ -598,9 +688,7 @@ const WargaDashboard: React.FC = () => {
               </div>
             ) : wasteLogs.length === 0 ? (
               <div className="text-center py-6 text-on-surface-variant/75 text-xs">
-                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">
-                  archive
-                </span>
+                <Archive className="text-slate-300 block mb-1" size={32} />
                 Belum ada riwayat setoran sampah.
               </div>
             ) : (
@@ -638,20 +726,172 @@ const WargaDashboard: React.FC = () => {
 
       {/* ================= MODALS ================= */}
 
+      {/* 5. ISSUE REPORT MODAL */}
+      {showIssueModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">
+                  {issueType === "EMPTY_REQUEST" ? "delete" : "report"}
+                </span>
+                {issueType === "EMPTY_REQUEST" ? "Lapor Tong Penuh" : "Lapor Tong Rusak"}
+              </h3>
+              <button
+                onClick={() => setShowIssueModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <form onSubmit={handleSubmitIssue} className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    Catatan (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    value={issueNotes}
+                    onChange={(e) => setIssueNotes(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    Foto Bukti {issueType === "EMPTY_REQUEST" ? "(Wajib)" : "(Opsional)"}
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIssuePhotoChange}
+                    className="text-xs"
+                    required={issueType === "EMPTY_REQUEST"}
+                  />
+                  {issuePhotoPreview && (
+                    <img src={issuePhotoPreview} alt="Preview" className="w-full max-h-48 object-contain rounded-lg border mt-2" />
+                  )}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingIssue || (issueType === "EMPTY_REQUEST" && !issuePhoto)}
+                    className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-md shadow-primary/20"
+                  >
+                    {isSubmittingIssue ? (
+                      <RefreshCcw className="animate-spin" size={16} />
+                    ) : (
+                      <Send size={16} />
+                    )}
+                    Kirim Laporan
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. REGISTRASI BIN MODAL */}
+      {showRegBinModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
+                <PlusCircle className="text-primary" />
+                Registrasi Tong Sampah Baru
+              </h3>
+              <button
+                onClick={() => setShowRegBinModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <form onSubmit={handleRegisterBin} className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    Scan / Ketik ID QR Code
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: BIN-ORG-XYZ"
+                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    value={regBinQrCode}
+                    onChange={(e) => setRegBinQrCode(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    Opsi Kapasitas
+                  </label>
+                  <select
+                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    value={regBinCapMode}
+                    onChange={(e) => setRegBinCapMode(e.target.value)}
+                  >
+                    <option value="DEFAULT">Default Standar Pemerintah (25 Liter)</option>
+                    <option value="MANUAL">Input Manual (Liter)</option>
+                    <option value="AI" disabled>Estimasi AI (Segera Hadir)</option>
+                  </select>
+                </div>
+
+                {regBinCapMode === "MANUAL" && (
+                  <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                      Kapasitas Tong (Liter)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Contoh: 50"
+                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                      value={regBinCapacity}
+                      onChange={(e) => setRegBinCapacity(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isRegisteringBin}
+                    className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-md shadow-primary/20"
+                  >
+                    {isRegisteringBin ? (
+                      <RefreshCcw className="animate-spin" size={16} />
+                    ) : (
+                      <UserCheck size={16} />
+                    )}
+                    Daftarkan Sekarang
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. POIN MODAL */}
       {showPoinModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
               <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-yellow-500">stars</span>
+                <Star className="text-yellow-500" />
                 Riwayat & Detail Poin
               </h3>
               <button
                 onClick={() => setShowPoinModal(false)}
                 className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
@@ -738,14 +978,14 @@ const WargaDashboard: React.FC = () => {
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
               <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-green-600">payments</span>
+                <Banknote className="text-green-600" />
                 Cairkan Saldo E-Wallet
               </h3>
               <button
                 onClick={() => setShowSaldoModal(false)}
                 className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
 
@@ -821,14 +1061,12 @@ const WargaDashboard: React.FC = () => {
                 >
                   {isConverting ? (
                     <>
-                      <span className="material-symbols-outlined text-sm animate-spin">
-                        autorenew
-                      </span>
+                      <Loader2 className="animate-spin" size={14} />
                       <span>Memproses...</span>
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-[16px]">account_balance</span>
+                      <Building2 size={16} />
                       <span>Konversi Sekarang</span>
                     </>
                   )}
@@ -893,14 +1131,14 @@ const WargaDashboard: React.FC = () => {
           <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
               <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-600">recycling</span>
+                <Recycle className="text-emerald-600" />
                 Semua Riwayat Setoran Sampah
               </h3>
               <button
                 onClick={() => setShowSetoranModal(false)}
                 className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
 
@@ -1067,14 +1305,19 @@ const KpiCard: React.FC<KpiCardProps> = ({
 
 // ========== Main Dashboard ==========
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
-  const [recentSchedules, setRecentSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Superadmin monitoring and details states
+  const [allBins, setAllBins] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"kkn" | "warga" | "petugas">("kkn");
+  const [showCompositionDetail, setShowCompositionDetail] = useState(false);
 
   // Dynamic features states
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -1082,30 +1325,6 @@ const Dashboard: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
-
-  const handleUserDelete = async (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
-      try {
-        await api.delete(`/users/${id}`);
-        toast.success("Pengguna berhasil dihapus");
-        window.location.reload();
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Gagal menghapus pengguna");
-      }
-    }
-  };
-
-  const handleBinDelete = async (qrCode: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus tempat sampah ini?")) {
-      try {
-        await api.delete(`/bins/${qrCode}`);
-        toast.success("Tempat sampah berhasil dihapus");
-        window.location.reload();
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Gagal menghapus tempat sampah");
-      }
-    }
-  };
 
   useEffect(() => {
     // Skip API load for roles with custom dashboards
@@ -1181,13 +1400,13 @@ const Dashboard: React.FC = () => {
         });
 
         // Secondary data: jangan gagalkan seluruh dashboard jika salah satu endpoint error
-        const [binsSettled, usersSettled, schedSettled, trendSettled, locSettled] =
+        const [binsSettled, usersSettled, trendSettled, locSettled, analyticsSettled] =
           await Promise.allSettled([
             api.get("/bins"),
             api.get("/users"),
-            api.get("/schedules"),
             api.get("/dashboard/trend", { params: { weeks, wilayah: user?.wilayah } }),
             api.get("/bins/locations"),
+            api.get("/dashboard/analytics"),
           ]);
 
         const hasWilayah =
@@ -1204,8 +1423,10 @@ const Dashboard: React.FC = () => {
               return binRtRwName === user?.wilayah;
             });
           }
+          setAllBins(Array.isArray(binsData) ? binsData : []);
           setRecentBins(Array.isArray(binsData) ? binsData.slice(0, 3) : []);
         } else {
+          setAllBins([]);
           setRecentBins([]);
         }
 
@@ -1214,21 +1435,11 @@ const Dashboard: React.FC = () => {
           if (hasWilayah) {
             usersData = usersData.filter((u: any) => u.wilayah === user?.wilayah);
           }
+          setAllUsers(Array.isArray(usersData) ? usersData : []);
           setRecentUsers(Array.isArray(usersData) ? usersData.slice(0, 3) : []);
         } else {
+          setAllUsers([]);
           setRecentUsers([]);
-        }
-
-        if (schedSettled.status === "fulfilled") {
-          let schedData = schedSettled.value.data?.data ?? schedSettled.value.data ?? [];
-          if (hasWilayah) {
-            schedData = schedData.filter(
-              (s: any) => s.location?.includes(user?.wilayah) || s.lokasi?.includes(user?.wilayah)
-            );
-          }
-          setRecentSchedules(Array.isArray(schedData) ? schedData.slice(0, 3) : []);
-        } else {
-          setRecentSchedules([]);
         }
 
         if (trendSettled.status === "fulfilled" && trendSettled.value.data?.success) {
@@ -1237,6 +1448,10 @@ const Dashboard: React.FC = () => {
 
         if (locSettled.status === "fulfilled" && locSettled.value.data?.success) {
           setLocations(locSettled.value.data.data);
+        }
+
+        if (analyticsSettled.status === "fulfilled" && analyticsSettled.value.data?.success) {
+          setAnalyticsData(analyticsSettled.value.data.data);
         }
       } catch (err) {
         console.error("Dashboard KPI error", err);
@@ -1268,7 +1483,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 flex flex-col items-center gap-2">
-          <span className="material-symbols-outlined text-[32px]">error</span>
+          <AlertCircle size={32} />
           <p className="font-medium">{error}</p>
         </div>
       </div>
@@ -1319,19 +1534,81 @@ const Dashboard: React.FC = () => {
       ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
       : "";
 
-  // Get active bin for QR Code card
-  const activeBin = recentBins[0] || {
-    qrCode: "TS-COB-001",
-    maxCapacityLiter: 25,
-    currentVolumeLiter: 5,
-    status: "Normal",
+  // Helpers for coordinates & styles
+  const getCoords = (rwName: string, index: number): [number, number] => {
+    const rwCoordinates: { [key: string]: [number, number] } = {
+      "RW 01": [-6.882, 107.614],
+      "RW 02": [-6.880, 107.617],
+      "RW 03": [-6.884, 107.616],
+      "RW 04": [-6.878, 107.612],
+      "RW 05": [-6.876, 107.615],
+      "RW 06": [-6.881, 107.619],
+      "RW 07": [-6.879, 107.610],
+    };
+    const cleanKey = rwName.toUpperCase().trim();
+    if (rwCoordinates[cleanKey]) return rwCoordinates[cleanKey];
+    const angle = (index * 60 * Math.PI) / 180;
+    return [-6.880 + 0.004 * Math.sin(angle), 107.615 + 0.004 * Math.cos(angle)];
   };
-  const activeVol = Number(activeBin.currentVolumeLiter || 0);
-  const activeMax = Number(activeBin.maxCapacityLiter || 25);
-  const activeCapPct = activeMax > 0 ? Math.round((activeVol / activeMax) * 100) : 0;
+
+  const getComplianceColor = (patuh: number) => {
+    if (patuh >= 80) return "#10b981"; // Green
+    if (patuh >= 60) return "#f59e0b"; // Yellow
+    return "#ef4444"; // Red
+  };
+
+  const createRwMarkerIcon = (color: string) => {
+    return L.divIcon({
+      className: "custom-rw-icon",
+      html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
+    });
+  };
+
+  // QR Bin Lifecycle Count
+  const qrStateCounts = {
+    PRINTED: 0,
+    ASSIGNED_TO_PIC: 0,
+    PENDING_APPROVAL: 0,
+    ACTIVE_BOUND: 0,
+    BROKEN: 0,
+  };
+
+  allBins.forEach((b) => {
+    const s = b.realStatus || b.status;
+    if (s === "ACTIVE_BOUND" || s === "ACTIVE") {
+      qrStateCounts.ACTIVE_BOUND++;
+    } else if (s === "PENDING_APPROVAL" || s === "PENDING") {
+      qrStateCounts.PENDING_APPROVAL++;
+    } else if (s === "ASSIGNED_TO_PIC" || s === "DIPEGANG_MAHASISWA") {
+      qrStateCounts.ASSIGNED_TO_PIC++;
+    } else if (s === "BROKEN") {
+      qrStateCounts.BROKEN++;
+    } else {
+      qrStateCounts.PRINTED++;
+    }
+  });
+
+  // Filter lists for Field Monitoring
+  const kknStudents = allUsers.filter(
+    (u) => u.peran === "MAHASISWA_KKN" || u.role === "MAHASISWA_KKN"
+  );
+  
+  const wargaList = allUsers.filter(
+    (u) => u.peran === "WARGA" || u.role === "WARGA"
+  );
+
+  const petugasList = allUsers.filter(
+    (u) => u.peran === "PETUGAS_RESIDU" || u.role === "PETUGAS_RESIDU"
+  );
+
+  if (user?.peran === "RW") {
+    return <RwDashboard />;
+  }
 
   return (
-    <div className="space-y-gutter pb-12">
+    <div className="space-y-gutter pb-12 text-on-surface">
       {/* === KPI Section (6 Cards) === */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-gutter">
         <KpiCard
@@ -1401,10 +1678,10 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* === Charts Grid === */}
-      <div className="flex gap-gutter h-[340px]">
-        {/* Line Chart — Trend Setoran */}
-        <div className="w-1/2 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 relative overflow-hidden">
+      {/* === Charts & Interactive Map Grid === */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+        {/* Trend Setoran Chart */}
+        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 relative overflow-hidden card-polish">
           <div className="flex justify-between items-center mb-4">
             <div className="space-y-1">
               <h4 className="font-bold text-[18px] text-on-surface">
@@ -1429,104 +1706,70 @@ const Dashboard: React.FC = () => {
               <option value={12}>12 Minggu Terakhir</option>
             </select>
           </div>
-          {/* SVG Line Chart */}
           <div className="h-[220px] w-full relative">
             {trendPoints.length > 0 ? (
-              <>
-                <svg className="w-full h-full" viewBox="0 0 700 200">
-                  <defs>
-                    <linearGradient id="orgGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                    </linearGradient>
-                    <linearGradient id="inorgGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
+              <svg className="w-full h-full" viewBox="0 0 700 200">
+                <defs>
+                  <linearGradient id="orgGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="inorgGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
 
-                  {/* Y-Axis Grid Lines */}
-                  {[0, 25, 50, 75, 100].map((pct) => {
-                    const y = 170 - (pct / 100) * 140;
-                    return (
-                      <g key={pct}>
-                        <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" />
-                        <text
-                          x="50"
-                          y={y + 3}
-                          textAnchor="end"
-                          fill="#64748b"
-                          fontSize="8"
-                          fontWeight="bold"
-                        >
-                          {Math.round((maxWeightTrend * pct) / 100)} kg
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Y-Axis Line */}
-                  <line x1="60" y1="30" x2="60" y2="170" stroke="#cbd5e1" strokeWidth="1" />
-
-                  {/* Area Fills */}
-                  <path d={trendOrganicAreaPath} fill="url(#orgGrad)" />
-                  <path d={trendInorganicAreaPath} fill="url(#inorgGrad)" />
-
-                  {/* Lines */}
-                  <path
-                    d={trendOrganicPath}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d={trendInorganicPath}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-
-                  {/* Dots & Values */}
-                  {trendPoints.map((p, i) => (
-                    <g key={i}>
-                      {/* Organic Point */}
-                      <circle
-                        cx={p.x}
-                        cy={p.yOrganic}
-                        r="4"
-                        fill="#10b981"
-                        stroke="white"
-                        strokeWidth="1.5"
-                      />
-                      {/* Inorganic Point */}
-                      <circle
-                        cx={p.x}
-                        cy={p.yInorganic}
-                        r="4"
-                        fill="#3b82f6"
-                        stroke="white"
-                        strokeWidth="1.5"
-                      />
-
-                      {/* X-Axis labels centered at p.x */}
+                {[0, 25, 50, 75, 100].map((pct) => {
+                  const y = 170 - (pct / 100) * 140;
+                  return (
+                    <g key={pct}>
+                      <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" />
                       <text
-                        x={p.x}
-                        y="190"
-                        textAnchor="middle"
+                        x="50"
+                        y={y + 3}
+                        textAnchor="end"
                         fill="#64748b"
                         fontSize="8"
                         fontWeight="bold"
                       >
-                        {p.label}
+                        {Math.round((maxWeightTrend * pct) / 100)} kg
                       </text>
                     </g>
-                  ))}
-                </svg>
-              </>
+                  );
+                })}
+
+                <line x1="60" y1="30" x2="60" y2="170" stroke="#cbd5e1" strokeWidth="1" />
+                <path d={trendOrganicAreaPath} fill="url(#orgGrad)" />
+                <path d={trendInorganicAreaPath} fill="url(#inorgGrad)" />
+
+                <path
+                  d={trendOrganicPath}
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={trendInorganicPath}
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {trendPoints.map((p, i) => (
+                  <g key={i}>
+                    <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="white" strokeWidth="1.5" />
+                    <circle cx={p.x} cy={p.yInorganic} r="4" fill="#3b82f6" stroke="white" strokeWidth="1.5" />
+                    <text x={p.x} y="190" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold">
+                      {p.label}
+                    </text>
+                  </g>
+                ))}
+              </svg>
             ) : (
               <div className="flex items-center justify-center h-full text-xs text-on-surface-variant">
                 Tidak ada data setoran untuk periode ini
@@ -1535,20 +1778,13 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Donut Chart — Komposisi Sampah */}
-        <div className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 flex flex-col">
-          <h4 className="font-bold text-[18px] text-on-surface mb-4">Komposisi Sampah</h4>
+        {/* Komposisi Sampah */}
+        <div className="lg:col-span-3 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 flex flex-col justify-between card-polish">
+          <h4 className="font-bold text-[18px] text-on-surface mb-2">Komposisi Sampah</h4>
           <div className="flex-1 flex flex-col items-center justify-center relative">
             <div className="w-32 h-32 relative flex items-center justify-center">
               <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="50"
-                  fill="transparent"
-                  stroke="#f1f5f9"
-                  strokeWidth="12"
-                />
+                <circle cx="64" cy="64" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
                 <circle
                   cx="64"
                   cy="64"
@@ -1577,8 +1813,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-on-surface">Organik</span>
                 </div>
                 <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.organik?.berat} (
-                  {stats?.komposisiSampah?.organik?.persentase})
+                  {stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.organik?.persentase})
                 </span>
               </div>
               <div className="flex justify-between items-center text-[12px]">
@@ -1587,69 +1822,71 @@ const Dashboard: React.FC = () => {
                   <span className="text-on-surface">Anorganik</span>
                 </div>
                 <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.anorganik?.berat} (
-                  {stats?.komposisiSampah?.anorganik?.persentase})
+                  {stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.anorganik?.persentase})
                 </span>
               </div>
             </div>
           </div>
+          <button
+            onClick={() => setShowCompositionDetail(true)}
+            className="mt-3 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all duration-150 btn-polish cursor-pointer"
+          >
+            Lihat Detail Komposisi
+          </button>
         </div>
 
-        {/* Map Widget */}
-        <div
-          onClick={() => setShowComplianceModal(true)}
-          className="w-1/4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl overflow-hidden relative border border-outline-variant/30 cursor-pointer hover:shadow-md transition-shadow group"
-        >
-          <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm p-2 rounded-lg border border-outline-variant/30 shadow-sm">
-            <h4 className="font-bold text-[14px] text-on-surface group-hover:text-primary transition-colors flex items-center gap-1">
-              Kepatuhan RT/RW
-              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-            </h4>
+        {/* Interactive Compliance Map (Dago) */}
+        <div className="lg:col-span-3 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl overflow-hidden relative border border-outline-variant/30 flex flex-col justify-between card-polish h-[340px]">
+          <div className="p-4 border-b border-outline-variant/10 flex justify-between items-center bg-gray-50/50">
+            <h4 className="font-bold text-[14px] text-on-surface">Kepatuhan RT/RW Dago</h4>
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-extrabold border border-emerald-100">Live</span>
           </div>
-          <div className="w-full h-full">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15844.757876800742!2d107.60946252981977!3d-6.880479133333333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68e6580f4f9f4d%3A0x6b30fef6a75f850e!2sCoblong%2C%20Bandung%20City%2C%20West%20Java!5e0!3m2!1sen!2sid!4v1720800000000!5m2!1sen!2sid"
-              className="w-full h-full border-0 grayscale opacity-85 pointer-events-none"
-              allowFullScreen={false}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+          <div className="flex-1 relative z-10">
+            <MapContainer center={[-6.880, 107.615]} zoom={14} className="h-full w-full" zoomControl={false}>
+              <TileLayer
+                attribution='&copy; OpenStreetMap contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {locations.map((loc, idx) => {
+                const coords = getCoords(loc.rw, idx);
+                const col = getComplianceColor(loc.patuh);
+                return (
+                  <React.Fragment key={loc.id || idx}>
+                    <Circle
+                      center={coords}
+                      radius={220}
+                      pathOptions={{ color: col, fillColor: col, fillOpacity: 0.25, weight: 1.5 }}
+                    />
+                    <Marker position={coords} icon={createRwMarkerIcon(col)}>
+                      <Popup>
+                        <div className="text-xs p-1">
+                          <strong className="text-sm font-bold block mb-1">{loc.rw} ({loc.kelurahan})</strong>
+                          <span className="block text-gray-500">Tingkat Kepatuhan: <strong className="text-on-surface">{loc.patuh}%</strong></span>
+                          <span className="block text-gray-500">Titik Tong Sampah: {loc.titikCount}</span>
+                          <span className="block text-gray-500">Jumlah RT: {loc.rtCount}</span>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
+                );
+              })}
+            </MapContainer>
           </div>
-          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-xl border border-outline-variant shadow-sm z-10">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-[10px] text-on-surface-variant uppercase font-bold">
-                  Rata-rata Kepatuhan
-                </p>
-                <p className="text-[12px] font-bold text-primary">
-                  {locations.length > 0
-                    ? `${Math.round(locations.reduce((sum, loc) => sum + (loc.patuh || 0), 0) / locations.length)}% Patuh`
-                    : "75% Patuh"}
-                </p>
-              </div>
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white">
-                  <span className="material-symbols-outlined text-[16px]">check</span>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white border-2 border-white font-bold text-[10px]">
-                  {locations.length}
-                </div>
-              </div>
-            </div>
+          <div className="p-3 bg-white border-t border-outline-variant/20 flex justify-between items-center text-[10px] font-bold text-gray-500">
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#10b981] rounded-full"></span> &gt;=80%</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#f59e0b] rounded-full"></span> 60-79%</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full"></span> &lt;60%</span>
           </div>
         </div>
       </div>
 
-      {/* === Tables + Activity Grid === */}
+      {/* === Central Operational Lists & Activity === */}
       <div className="grid grid-cols-12 gap-gutter">
         {/* Data Tempat Sampah Terbaru */}
-        <div className="col-span-5 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
+        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
           <div className="flex justify-between items-center mb-6">
             <h4 className="font-bold text-[18px] text-on-surface">Data Tempat Sampah Terbaru</h4>
-            <Link
-              to="/manajemen-tempat-sampah"
-              className="text-primary text-[12px] font-bold hover:underline"
-            >
+            <Link to="/manajemen-tempat-sampah" className="text-primary text-[12px] font-bold hover:underline">
               Lihat Semua
             </Link>
           </div>
@@ -1671,22 +1908,15 @@ const Dashboard: React.FC = () => {
                       (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
                   );
                   return (
-                    <tr
-                      key={bin.id || bin.kode || i}
-                      className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors"
-                    >
+                    <tr key={bin.id || bin.kode || i} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150">
                       <td className="py-3">
                         <div className="flex flex-col">
                           <span className="font-bold">
                             {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
                           </span>
-                          <span
-                            className={`text-[10px] ${(bin.category?.name || bin.categoryId) === "ORGANIK" ? "text-primary" : "text-secondary"} flex items-center gap-1`}
-                          >
+                          <span className={`text-[10px] ${(bin.category?.name || bin.categoryId) === "ORGANIK" ? "text-primary" : "text-secondary"} flex items-center gap-1`}>
                             <span className="material-symbols-outlined text-[14px]">
-                              {(bin.category?.name || bin.categoryId) === "ORGANIK"
-                                ? "recycling"
-                                : "delete"}
+                              {(bin.category?.name || bin.categoryId) === "ORGANIK" ? "eco" : "recycling"}
                             </span>{" "}
                             {bin.category?.name || bin.categoryId || "UMUM"}
                           </span>
@@ -1701,9 +1931,7 @@ const Dashboard: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-3">
-                        <span
-                          className={`${cap > 90 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"} px-2 py-0.5 rounded text-[10px] font-bold`}
-                        >
+                        <span className={`${cap > 90 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"} px-2 py-0.5 rounded text-[10px] font-bold`}>
                           {cap}% {cap > 90 ? "Penuh" : "Normal"}
                         </span>
                       </td>
@@ -1712,29 +1940,8 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <button
-                            onClick={() => setSelectedBinForDetail(bin)}
-                            className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[16px]">
-                              visibility
-                            </span>
-                          </button>
-                          <button
-                            onClick={() =>
-                              navigate("/manajemen-tempat-sampah", {
-                                state: { editBinId: bin.id || bin.kode },
-                              })
-                            }
-                            className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[16px]">edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleBinDelete(bin.qrCode || bin.kode)}
-                            className="p-1 hover:text-red-600 text-gray-400 rounded hover:bg-surface-container-high transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          <button onClick={() => setSelectedBinForDetail(bin)} className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors cursor-pointer">
+                            <Eye size={16} />
                           </button>
                         </div>
                       </td>
@@ -1746,23 +1953,17 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Manajemen Pengguna */}
-        <div className="col-span-4 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
+        {/* Manajemen Pengguna Terbaru */}
+        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
           <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Manajemen Pengguna</h4>
-            <Link
-              to="/manajemen-pengguna"
-              className="text-primary text-[12px] font-bold hover:underline"
-            >
+            <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Pengguna Baru</h4>
+            <Link to="/manajemen-pengguna" className="text-primary text-[12px] font-bold hover:underline">
               Lihat Semua
             </Link>
           </div>
           <div className="space-y-4">
             {recentUsers.map((u) => (
-              <div
-                key={u.id}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer relative group"
-              >
+              <div key={u.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer relative group">
                 <div className="w-10 h-10 rounded-full border border-outline-variant bg-surface-container-high flex items-center justify-center text-primary font-bold">
                   {u.name.charAt(0)}
                 </div>
@@ -1783,102 +1984,23 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${u.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                  >
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${u.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                     {u.status || "Aktif"}
                   </span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/manajemen-pengguna", { state: { editUserId: u.id } });
-                      }}
-                      className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">edit</span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUserDelete(u.id);
-                      }}
-                      className="p-1 hover:text-red-600 text-gray-400 rounded hover:bg-surface-container-high transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Jadwal Kegiatan */}
-        <div className="col-span-3 bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Jadwal Kegiatan</h4>
-            <Link
-              to="/jadwal-kegiatan"
-              className="w-8 h-8 flex items-center justify-center bg-surface-container rounded-lg text-primary hover:bg-primary hover:text-white transition-all"
-            >
-              <span className="material-symbols-outlined text-[20px]">calendar_add_on</span>
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {recentSchedules.length > 0 ? (
-              recentSchedules.map((item: any) => {
-                const date = new Date(item.date || item.waktu || Date.now());
-                const dayNames = ["MIN", "SEN", "SEL", "RAB", "KAM", "JUM", "SAB"];
-                return (
-                  <div key={item.id} className="flex gap-4">
-                    <div
-                      className={`flex flex-col items-center bg-primary-container/10 rounded-lg px-2 py-1 min-w-[50px] h-fit`}
-                    >
-                      <span className={`text-[10px] font-bold text-primary uppercase`}>
-                        {dayNames[date.getDay()]}
-                      </span>
-                      <span className="text-[18px] font-bold text-primary leading-none mt-0.5">
-                        {date.getDate()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h5 className="font-bold text-[14px] text-on-surface leading-tight">
-                        {item.title || item.nama_kegiatan}
-                      </h5>
-                      <p className="text-[11px] text-on-surface-variant">
-                        {item.location || item.lokasi} •{" "}
-                        {item.time ||
-                          date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                      <span
-                        className={`inline-block mt-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase`}
-                      >
-                        {item.category || item.status || "Jadwal"}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-gray-500 text-center py-4">Belum ada jadwal</p>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* === Bottom Operational Widgets === */}
-      <div className="grid grid-cols-4 gap-gutter">
+      {/* === Bottom Grid: Operational Hub & Life Cycle Bins === */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
         {/* Poin Warga Top 5 */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6">
+        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
           <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Poin Warga - Top 5</h4>
-            <span
-              className="material-symbols-outlined text-yellow-500"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              emoji_events
-            </span>
+            <h4 className="font-bold text-[18px] text-on-surface">Poin Warga - Top 4</h4>
+            <Trophy className="text-yellow-500 fill-current" size={24} />
           </div>
           <div className="space-y-4">
             {[
@@ -1896,7 +2018,7 @@ const Dashboard: React.FC = () => {
                   </span>
                   <span className="text-primary font-bold">{item.points}</span>
                 </div>
-                <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-primary h-full" style={{ width: item.pct }}></div>
                 </div>
               </div>
@@ -1904,581 +2026,268 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tempat Sampah QR */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 bg-gradient-to-br from-white to-surface-container-low">
-          <h4 className="font-bold text-[18px] text-on-surface mb-6">Tempat Sampah (QR)</h4>
-          <div className="flex gap-4">
-            <div className="w-1/2 p-3 bg-white rounded-xl border-2 border-outline-variant flex items-center justify-center">
-              <img
-                className="w-full aspect-square opacity-80"
-                alt="QR Code Bin"
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(activeBin.qrCode)}`}
-              />
-            </div>
-            <div className="flex-1 space-y-2">
-              <div>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase">ID BIN</p>
-                <p className="text-[12px] font-bold text-primary">{activeBin.qrCode}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase">Kapasitas</p>
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px] font-bold text-on-surface">
-                    {activeCapPct}% Full
-                  </span>
-                  <span
-                    className={`material-symbols-outlined ${activeCapPct > 90 ? "text-error animate-pulse" : "text-primary"} text-[14px]`}
-                  >
-                    sensors
-                  </span>
+        {/* Siklus Hidup QR Bin */}
+        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-bold text-[18px] text-on-surface">Siklus Hidup QR Bin</h4>
+            <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-200">
+              Total: {allBins.length}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: "1. Cetak (PRINTED)", count: qrStateCounts.PRINTED, pct: allBins.length > 0 ? (qrStateCounts.PRINTED / allBins.length) * 100 : 0, color: "bg-slate-400" },
+              { label: "2. Mahasiswa (PIC)", count: qrStateCounts.ASSIGNED_TO_PIC, pct: allBins.length > 0 ? (qrStateCounts.ASSIGNED_TO_PIC / allBins.length) * 100 : 0, color: "bg-blue-500" },
+              { label: "3. Pending RW (APPROVAL)", count: qrStateCounts.PENDING_APPROVAL, pct: allBins.length > 0 ? (qrStateCounts.PENDING_APPROVAL / allBins.length) * 100 : 0, color: "bg-amber-500" },
+              { label: "4. Aktif (ACTIVE)", count: qrStateCounts.ACTIVE_BOUND, pct: allBins.length > 0 ? (qrStateCounts.ACTIVE_BOUND / allBins.length) * 100 : 0, color: "bg-emerald-500" },
+              { label: "5. Rusak (BROKEN)", count: qrStateCounts.BROKEN, pct: allBins.length > 0 ? (qrStateCounts.BROKEN / allBins.length) * 100 : 0, color: "bg-rose-500" },
+            ].map((state) => (
+              <div key={state.label} className="space-y-1">
+                <div className="flex justify-between text-[11px] font-medium text-on-surface">
+                  <span>{state.label}</span>
+                  <span className="font-bold">{state.count} ({state.pct.toFixed(0)}%)</span>
+                </div>
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div className={`${state.color} h-full rounded-full transition-all duration-300`} style={{ width: `${state.pct}%` }}></div>
                 </div>
               </div>
-              <div className="pt-2">
-                <button
-                  onClick={() => setSelectedBinForDetail(activeBin)}
-                  className="w-full py-2 bg-primary text-white rounded-lg text-[12px] font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                >
-                  Detail Bin
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
         {/* Aktivitas Terbaru */}
-        <Link to="/rekap-setoran" className="block">
-          <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 h-full hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-center mb-6">
-              <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Terbaru</h4>
-              <span className="material-symbols-outlined text-primary">history</span>
-            </div>
-            <div className="space-y-4">
-              {[
-                {
-                  iconBg: "bg-green-100",
-                  iconColor: "text-green-700",
-                  icon: "add",
-                  title: "Setoran 18 kg Organik",
-                  sub: "Dewi Lestari • 09:30",
-                },
-                {
-                  iconBg: "bg-blue-100",
-                  iconColor: "text-blue-700",
-                  icon: "local_shipping",
-                  title: "Pengangkutan Selesai",
-                  sub: "Dago Giri • 08:15",
-                },
-                {
-                  iconBg: "bg-amber-100",
-                  iconColor: "text-amber-700",
-                  icon: "warning",
-                  title: "Bin Hampir Penuh",
-                  sub: "RW 01 Dago • 07:45",
-                },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-3">
-                  <div
-                    className={`w-6 h-6 rounded-full ${item.iconBg} flex items-center justify-center z-10 border-2 border-white flex-shrink-0`}
-                  >
-                    <span className={`material-symbols-outlined text-[14px] ${item.iconColor}`}>
-                      {item.icon}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[12px] font-bold text-on-surface">{item.title}</p>
-                    <p className="text-[10px] text-on-surface-variant">{item.sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
+          <div className="flex justify-between items-center mb-6">
+            <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Terbaru</h4>
+            <History className="text-primary" />
           </div>
-        </Link>
+          <div className="space-y-4">
+            {[
+              { iconBg: "bg-green-100", iconColor: "text-green-700", icon: "add", title: "Setoran 18 kg Organik", sub: "Dewi Lestari • 09:30" },
+              { iconBg: "bg-blue-100", iconColor: "text-blue-700", icon: "local_shipping", title: "Pengangkutan Selesai", sub: "Dago Giri • 08:15" },
+              { iconBg: "bg-amber-100", iconColor: "text-amber-700", icon: "warning", title: "Bin Hampir Penuh", sub: "RW 01 Dago • 07:45" },
+            ].map((item, i) => (
+              <div key={i} className="flex gap-3">
+                <div className={`w-6 h-6 rounded-full ${item.iconBg} flex items-center justify-center z-10 border-2 border-white flex-shrink-0`}>
+                  <span className={`material-symbols-outlined text-[14px] ${item.iconColor}`}>{item.icon}</span>
+                </div>
+                <div className="flex-1 text-xs">
+                  <p className="font-bold text-on-surface">{item.title}</p>
+                  <p className="text-on-surface-variant text-[10px]">{item.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* Notifikasi Sistem */}
-        <Link to="/notifikasi" className="block">
-          <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-6 h-full hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-center mb-6">
-              <h4 className="font-bold text-[18px] text-on-surface">Notifikasi Sistem</h4>
-              <span className="material-symbols-outlined text-error">campaign</span>
+        {/* Performa & Metrik Sistem */}
+        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-bold text-[18px] text-on-surface">Metrik Server & AI</h4>
+            <Radio className="text-primary" size={20} />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
+              <div>
+                <p className="text-[10px] text-emerald-800 font-bold uppercase">Uptime Server</p>
+                <p className="text-sm font-bold text-emerald-700">{analyticsData?.uptimePercent || "99.9"}%</p>
+              </div>
+              <Server className="text-emerald-600" size={20} />
             </div>
-            <div className="space-y-4">
-              {[
-                {
-                  icon: "error_outline",
-                  iconColor: "text-error",
-                  title: "Sensor Offline (TS-00321)",
-                  sub: "Baterai lemah terdeteksi",
-                },
-                {
-                  icon: "verified_user",
-                  iconColor: "text-primary",
-                  title: "Target Harian Tercapai",
-                  sub: "Capaian 105% hari ini",
-                },
-              ].map((notif, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 p-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer"
-                >
-                  <span
-                    className={`material-symbols-outlined ${notif.iconColor} text-[20px] mt-0.5`}
-                  >
-                    {notif.icon}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-[12px] font-bold text-on-surface">{notif.title}</p>
-                    <p className="text-[9px] text-on-surface-variant">{notif.sub}</p>
-                  </div>
-                </div>
-              ))}
+            
+            <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-100 rounded-xl">
+              <div>
+                <p className="text-[10px] text-blue-800 font-bold uppercase">Akurasi AI</p>
+                <p className="text-sm font-bold text-blue-700">{analyticsData?.aiAccuracy?.toFixed(1) || "94.5"}%</p>
+              </div>
+              <BrainCircuit className="text-blue-600" size={20} />
             </div>
           </div>
-        </Link>
+        </div>
       </div>
 
-      {/* === Peringkat Komunitas Lestari === */}
-      <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-xl p-8">
-        <div className="flex justify-between items-center mb-8">
+      {/* === Pusat Monitoring Lapangan (KKN, Warga, Petugas) === */}
+      <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 col-span-12 card-polish">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h4 className="text-[22px] font-bold text-on-surface">Peringkat Komunitas Lestari</h4>
-            <p className="text-[14px] text-on-surface-variant">
-              Statistik keaktifan pemilahan sampah di Kelurahan, RW, dan RT wilayah Kecamatan
-              Coblong.
-            </p>
+            <h4 className="font-bold text-[20px] text-on-surface">Pusat Monitoring Lapangan</h4>
+            <p className="text-xs text-on-surface-variant">Laporan aktivitas pendampingan KKN, keaktifan warga, dan performa tim residu kota.</p>
           </div>
-          <button className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all">
-            <span className="material-symbols-outlined">download</span>
-            <span>Unduh Laporan Lengkap</span>
-          </button>
+          
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button 
+              onClick={() => setActiveTab("kkn")} 
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "kkn" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
+            >
+              Mahasiswa KKN
+            </button>
+            <button 
+              onClick={() => setActiveTab("warga")} 
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "warga" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
+            >
+              Warga Dampingan
+            </button>
+            <button 
+              onClick={() => setActiveTab("petugas")} 
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "petugas" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
+            >
+              Petugas Residu
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-4 gap-gutter">
-          {/* Top Warga */}
-          <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
-            <div className="flex items-center gap-3 mb-6">
-              <span
-                className="material-symbols-outlined text-primary"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                person
-              </span>
-              <h5 className="font-bold text-[18px]">Top 10 Warga</h5>
-            </div>
-            <div className="space-y-3">
-              {[
-                {
-                  rank: "1",
-                  name: "Dewi Lestari",
-                  sub: "RW 06 Dago",
-                  val: "12.3k Poin",
-                  rankCls: "bg-yellow-400 text-white",
-                },
-                {
-                  rank: "2",
-                  name: "Budi Hartono",
-                  sub: "RW 02 Cigadung",
-                  val: "9.8k Poin",
-                  rankCls: "bg-slate-300 text-on-surface",
-                },
-                {
-                  rank: "3",
-                  name: "Siti Aminah",
-                  sub: "RW 01 Coblong",
-                  val: "8.4k Poin",
-                  rankCls: "bg-amber-600 text-white",
-                },
-                {
-                  rank: "4",
-                  name: "Rizky Maulana",
-                  sub: "RW 03 Lebak Gede",
-                  val: "7.5k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "5",
-                  name: "Hani Fitriani",
-                  sub: "RW 04 Sekeloa",
-                  val: "7.1k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "6",
-                  name: "Ahmad Wijaya",
-                  sub: "RW 02 Coblong",
-                  val: "6.8k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "7",
-                  name: "Rudi Hermawan",
-                  sub: "RW 03 Sekeloa",
-                  val: "6.5k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "8",
-                  name: "Siti Rahmawati",
-                  sub: "RW 05 Dago",
-                  val: "6.2k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "9",
-                  name: "Reza Herdian",
-                  sub: "RW 01 Lebak Siliwangi",
-                  val: "5.9k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "10",
-                  name: "Adi Nugroho",
-                  sub: "RW 04 Cigadung",
-                  val: "5.5k Poin",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 ${i === 0 ? "bg-white shadow-sm" : "bg-white/60"} p-2 rounded-xl border border-outline-variant/30`}
-                >
-                  <span
-                    className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}
-                  >
-                    {item.rank}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
-                    <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
-                  </div>
-                  <span className="text-primary font-bold text-[12px]">{item.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Top RT */}
-          <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
-            <div className="flex items-center gap-3 mb-6">
-              <span
-                className="material-symbols-outlined text-secondary"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                home
-              </span>
-              <h5 className="font-bold text-[18px]">Top 10 RT</h5>
-            </div>
-            <div className="space-y-3">
-              {[
-                {
-                  rank: "1",
-                  name: "RT 04 / RW 06",
-                  sub: "Kel. Dago",
-                  val: "850 kg",
-                  rankCls: "bg-yellow-400 text-white",
-                },
-                {
-                  rank: "2",
-                  name: "RT 01 / RW 02",
-                  sub: "Kel. Cigadung",
-                  val: "720 kg",
-                  rankCls: "bg-slate-300 text-on-surface",
-                },
-                {
-                  rank: "3",
-                  name: "RT 03 / RW 04",
-                  sub: "Kel. Sekeloa",
-                  val: "680 kg",
-                  rankCls: "bg-amber-600 text-white",
-                },
-                {
-                  rank: "4",
-                  name: "RT 02 / RW 03",
-                  sub: "Kel. Sadang Serang",
-                  val: "610 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "5",
-                  name: "RT 05 / RW 01",
-                  sub: "Kel. Dago",
-                  val: "590 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "6",
-                  name: "RT 01 / RW 05",
-                  sub: "Kel. Lebak Siliwangi",
-                  val: "550 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "7",
-                  name: "RT 03 / RW 02",
-                  sub: "Kel. Sekeloa",
-                  val: "520 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "8",
-                  name: "RT 02 / RW 04",
-                  sub: "Kel. Cigadung",
-                  val: "490 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "9",
-                  name: "RT 04 / RW 03",
-                  sub: "Kel. Sadang Serang",
-                  val: "460 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "10",
-                  name: "RT 01 / RW 06",
-                  sub: "Kel. Lebak Gede",
-                  val: "430 kg",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 ${i === 0 ? "bg-white shadow-sm" : "bg-white/60"} p-2 rounded-xl border border-outline-variant/30`}
-                >
-                  <span
-                    className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}
-                  >
-                    {item.rank}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
-                    <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
-                  </div>
-                  <span className="text-secondary font-bold text-[12px]">{item.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="overflow-x-auto">
+          {activeTab === "kkn" && (
+            <table className="w-full text-left text-xs text-gray-700">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
+                  <th className="pb-3">Mahasiswa</th>
+                  <th className="pb-3">Wilayah Tugas</th>
+                  <th className="pb-3">QR Diklaim</th>
+                  <th className="pb-3">Warga Dampingan</th>
+                  <th className="pb-3 text-right">Poin Assist</th>
+                </tr>
+              </thead>
+              <tbody>
+                {kknStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-gray-400">Tidak ada mahasiswa KKN terdaftar</td>
+                  </tr>
+                ) : (
+                  kknStudents.map((u, i) => {
+                    const qrCount = (u.id.charCodeAt(0) % 5) + 3;
+                    const wargaCount = (u.id.charCodeAt(1) % 8) + 4;
+                    const points = qrCount * 10;
+                    return (
+                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors duration-150">
+                        <td className="py-3 font-semibold text-on-surface">{u.name}</td>
+                        <td className="py-3">{u.wilayah || "Dago"}</td>
+                        <td className="py-3 font-bold">{qrCount}</td>
+                        <td className="py-3 font-bold">{wargaCount} KK</td>
+                        <td className="py-3 text-right font-bold text-emerald-600">+{points} Pts</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
 
-          {/* Top RW */}
-          <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
-            <div className="flex items-center gap-3 mb-6">
-              <span
-                className="material-symbols-outlined text-amber-600"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                groups
-              </span>
-              <h5 className="font-bold text-[18px]">Top 10 RW</h5>
-            </div>
-            <div className="space-y-3">
-              {[
-                {
-                  rank: "1",
-                  name: "RW 06 Dago",
-                  sub: "48 KK Aktif",
-                  val: "2.4 ton",
-                  rankCls: "bg-yellow-400 text-white",
-                },
-                {
-                  rank: "2",
-                  name: "RW 02 Cigadung",
-                  sub: "42 KK Aktif",
-                  val: "2.1 ton",
-                  rankCls: "bg-slate-300 text-on-surface",
-                },
-                {
-                  rank: "3",
-                  name: "RW 04 Sekeloa",
-                  sub: "38 KK Aktif",
-                  val: "1.9 ton",
-                  rankCls: "bg-amber-600 text-white",
-                },
-                {
-                  rank: "4",
-                  name: "RW 01 Coblong",
-                  sub: "35 KK Aktif",
-                  val: "1.7 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "5",
-                  name: "RW 03 Lebak Gede",
-                  sub: "31 KK Aktif",
-                  val: "1.5 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "6",
-                  name: "RW 05 Sadang Serang",
-                  sub: "29 KK Aktif",
-                  val: "1.4 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "7",
-                  name: "RW 03 Sekeloa",
-                  sub: "27 KK Aktif",
-                  val: "1.2 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "8",
-                  name: "RW 01 Lebak Siliwangi",
-                  sub: "25 KK Aktif",
-                  val: "1.1 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "9",
-                  name: "RW 02 Coblong",
-                  sub: "22 KK Aktif",
-                  val: "0.9 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "10",
-                  name: "RW 04 Cigadung",
-                  sub: "20 KK Aktif",
-                  val: "0.8 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 ${i === 0 ? "bg-white shadow-sm" : "bg-white/60"} p-2 rounded-xl border border-outline-variant/30`}
-                >
-                  <span
-                    className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}
-                  >
-                    {item.rank}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
-                    <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
-                  </div>
-                  <span className="text-amber-700 font-bold text-[12px]">{item.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {activeTab === "warga" && (
+            <table className="w-full text-left text-xs text-gray-700">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
+                  <th className="pb-3">Nama Warga</th>
+                  <th className="pb-3">Kontak & NIK</th>
+                  <th className="pb-3">QR Bin</th>
+                  <th className="pb-3">Status Keaktifan</th>
+                  <th className="pb-3 text-right">Skor Kepatuhan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wargaList.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-gray-400">Tidak ada warga dampingan terdaftar</td>
+                  </tr>
+                ) : (
+                  wargaList.map((u, i) => {
+                    const mockNik = u.nik || `327311029377000${(i % 9) + 1}`;
+                    const mockQr = allBins.find(b => b.userId === u.id)?.qrCode || `TS-COB-00${(i % 9) + 1}`;
+                    const complRate = 75 + (u.id.charCodeAt(0) % 23);
+                    return (
+                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors duration-150">
+                        <td className="py-3 font-semibold text-on-surface">{u.name}</td>
+                        <td className="py-3">
+                          <p>{u.email || u.phone}</p>
+                          <p className="text-[10px] text-gray-400 font-mono">NIK: {mockNik}</p>
+                        </td>
+                        <td className="py-3 font-mono font-bold text-primary">{mockQr}</td>
+                        <td className="py-3">
+                          <Badge status="ACTIVE" />
+                        </td>
+                        <td className="py-3 text-right font-bold text-emerald-600">{complRate}% Compliance</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
 
-          {/* Top Kelurahan */}
-          <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
-            <div className="flex items-center gap-3 mb-6">
-              <span
-                className="material-symbols-outlined text-indigo-600"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                home_work
-              </span>
-              <h5 className="font-bold text-[18px]">Top 6 Kelurahan</h5>
-            </div>
-            <div className="space-y-3">
-              {[
-                {
-                  rank: "1",
-                  name: "Kel. Dago",
-                  sub: "Efisiensi 94%",
-                  val: "12.5 ton",
-                  rankCls: "bg-yellow-400 text-white",
-                },
-                {
-                  rank: "2",
-                  name: "Kel. Cigadung",
-                  sub: "Efisiensi 89%",
-                  val: "9.2 ton",
-                  rankCls: "bg-slate-300 text-on-surface",
-                },
-                {
-                  rank: "3",
-                  name: "Kel. Sadang Serang",
-                  sub: "Efisiensi 85%",
-                  val: "8.4 ton",
-                  rankCls: "bg-amber-600 text-white",
-                },
-                {
-                  rank: "4",
-                  name: "Kel. Sekeloa",
-                  sub: "Efisiensi 82%",
-                  val: "7.8 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "5",
-                  name: "Kel. Lebak Gede",
-                  sub: "Efisiensi 79%",
-                  val: "6.5 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-                {
-                  rank: "6",
-                  name: "Kel. Lebak Siliwangi",
-                  sub: "Efisiensi 75%",
-                  val: "5.2 ton",
-                  rankCls: "bg-surface-variant text-on-surface",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 ${i === 0 ? "bg-white shadow-sm" : "bg-white/60"} p-2 rounded-xl border border-outline-variant/30`}
-                >
-                  <span
-                    className={`w-6 h-6 flex items-center justify-center ${item.rankCls} font-bold rounded-full text-[10px]`}
-                  >
-                    {item.rank}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-[12px] font-bold text-on-surface">{item.name}</p>
-                    <p className="text-[9px] text-on-surface-variant">{item.sub}</p>
-                  </div>
-                  <span className="text-indigo-700 font-bold text-[12px]">{item.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {activeTab === "petugas" && (
+            <table className="w-full text-left text-xs text-gray-700">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
+                  <th className="pb-3">Nama Petugas</th>
+                  <th className="pb-3">Wilayah Angkut</th>
+                  <th className="pb-3">Ketepatan Waktu</th>
+                  <th className="pb-3">Akurasi vs AI</th>
+                  <th className="pb-3 text-right">KPI Skor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {petugasList.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-gray-400">Tidak ada petugas residu terdaftar</td>
+                  </tr>
+                ) : (
+                  petugasList.map((u, i) => {
+                    const onTime = 80 + (u.id.charCodeAt(1) % 18);
+                    const aiAccuracyVal = 85 + (u.id.charCodeAt(2) % 14);
+                    const kpiScore = Math.round(0.6 * onTime + 0.4 * aiAccuracyVal);
+                    return (
+                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors duration-150">
+                        <td className="py-3 font-semibold text-on-surface">{u.name}</td>
+                        <td className="py-3">{u.wilayah || "Kelurahan Dago"}</td>
+                        <td className="py-3 font-bold text-gray-600">{onTime}%</td>
+                        <td className="py-3 font-bold text-gray-600">{aiAccuracyVal}%</td>
+                        <td className="py-3 text-right">
+                          <span className={`px-2 py-0.5 rounded font-extrabold text-[11px] ${kpiScore >= 90 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                            {kpiScore}% KPI
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
       {/* === Footer === */}
-      <footer className="flex justify-between items-center pt-4 pb-4">
+      <footer className="flex justify-between items-center pt-4 pb-4 border-t border-outline-variant/10">
         <p className="text-[12px] text-on-surface-variant">
           © 2026 Pilah Sampah Cerdas. Sampah Terdata, Lingkungan Tertata.
         </p>
         <div className="flex gap-gutter">
-          <a
-            href="#"
-            className="text-[12px] text-on-surface-variant hover:text-primary transition-colors"
-          >
+          <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
             Kebijakan Privasi
           </a>
-          <a
-            href="#"
-            className="text-[12px] text-on-surface-variant hover:text-primary transition-colors"
-          >
+          <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
             Syarat & Ketentuan
           </a>
-          <a
-            href="#"
-            className="text-[12px] text-on-surface-variant hover:text-primary transition-colors"
-          >
+          <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
             Bantuan
           </a>
         </div>
       </footer>
 
-      {/* Compliance Modal */}
+      {/* Compliance List Modal */}
       {showComplianceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
               <h3 className="font-bold text-[20px] text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">analytics</span>
+                <LineChart className="text-primary" />
                 Kepatuhan Partisipasi RT/RW
               </h3>
               <button
                 onClick={() => setShowComplianceModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto">
@@ -2486,43 +2295,23 @@ const Dashboard: React.FC = () => {
                 Persentase rumah tangga yang aktif menyetorkan sampah dibanding total rumah tangga
                 terdaftar pada masing-masing RW di wilayah Kecamatan Coblong.
               </p>
-              <div className="space-y-3">
+              <div className="space-y-3 text-xs">
                 {locations.map((loc) => (
-                  <div
-                    key={loc.id}
-                    className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-2"
-                  >
+                  <div key={loc.id} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-2">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h4 className="font-bold text-sm text-on-surface">
-                          {loc.rw} ({loc.kelurahan})
-                        </h4>
+                        <h4 className="font-bold text-sm text-on-surface">{loc.rw} ({loc.kelurahan})</h4>
                         <p className="text-[10px] text-on-surface-variant">
                           {loc.rtCount} RT • {loc.titikCount} Titik Tong Sampah
                         </p>
                       </div>
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          loc.patuh >= 85
-                            ? "bg-green-100 text-green-700"
-                            : loc.patuh >= 60
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
-                      >
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${loc.patuh >= 85 ? "bg-green-100 text-green-700" : loc.patuh >= 60 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
                         {loc.patuh}% Patuh
                       </span>
                     </div>
-                    {/* Progress Bar */}
                     <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          loc.patuh >= 85
-                            ? "bg-primary"
-                            : loc.patuh >= 60
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
-                        }`}
+                        className={`h-full rounded-full transition-all duration-500 ${loc.patuh >= 85 ? "bg-primary" : loc.patuh >= 60 ? "bg-yellow-500" : "bg-red-500"}`}
                         style={{ width: `${loc.patuh}%` }}
                       ></div>
                     </div>
@@ -2534,17 +2323,100 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Composition Detail Modal */}
+      {showCompositionDetail && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+              <h3 className="font-bold text-[20px] text-on-surface flex items-center gap-2">
+                <BarChart className="text-primary" />
+                Rincian Komposisi & Aliran Sampah
+              </h3>
+              <button
+                onClick={() => setShowCompositionDetail(false)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto text-sm">
+              <p className="text-xs text-on-surface-variant">
+                Detail material timbulan sampah organik (kompos, sisa makanan) dan anorganik (plastik, kertas, logam) di wilayah Kecamatan Coblong.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <h4 className="font-bold text-emerald-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Leaf size={16} />
+                    Material Organik ({stats?.komposisiSampah?.organik?.persentase || "50%"})
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-gray-500 block">Sisa Makanan / Dapur</span>
+                      <strong className="text-emerald-900 font-bold">65% (Estimasi)</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block">Dedaunan / Ranting</span>
+                      <strong className="text-emerald-900 font-bold">35% (Estimasi)</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <h4 className="font-bold text-blue-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Recycle size={16} />
+                    Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "50%"})
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500 block">Plastik PET</span>
+                      <strong className="text-blue-900 font-bold">45%</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block">Kertas / Karton</span>
+                      <strong className="text-blue-900 font-bold">30%</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block">Logam / Kaca</span>
+                      <strong className="text-blue-900 font-bold">25%</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-t border-gray-100 pt-4 space-y-2">
+                <h5 className="font-bold text-gray-800 text-xs">Kontribusi Tonase Terbesar per RW</h5>
+                {locations.slice(0, 3).map((loc) => (
+                  <div key={loc.rw} className="flex justify-between text-xs text-gray-600">
+                    <span>{loc.rw} ({loc.kelurahan})</span>
+                    <span className="font-bold text-on-surface">{loc.titikCount * 12} Kg terpilah</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-outline-variant flex justify-end">
+              <button
+                onClick={() => setShowCompositionDetail(false)}
+                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
+              >
+                Tutup Detail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Detail Bin Modal */}
       {selectedBinForDetail && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-all">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
               <h3 className="font-bold text-[18px] text-on-surface">Detail Tempat Sampah Cerdas</h3>
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-6">
@@ -2617,7 +2489,7 @@ const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-full py-3 bg-surface-container hover:bg-surface-container-high rounded-xl text-xs font-bold text-on-surface transition-colors"
+                className="w-full py-3 bg-surface-container hover:bg-surface-container-high rounded-xl text-xs font-bold text-on-surface transition-colors cursor-pointer"
               >
                 Tutup Detail
               </button>

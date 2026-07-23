@@ -74,6 +74,17 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model OtpCode {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  used      Boolean  @default(false)
+
+  @@map("otp_codes")
+}
+
 model Kelurahan {
   id        String     @id @default(uuid())
   name      String     @unique // e.g., "Dago", "Sadangserang"
@@ -97,6 +108,7 @@ model RtRwArea {
   users       User[]
   studentsKkn StudentKkn[]
   handovers   KknHandoverHistory[]
+  facilities  Facility[]
 
   @@unique([kelurahanId, name])
   @@map("rt_rw_areas")
@@ -240,6 +252,7 @@ model PetugasResidu {
   assignedZone String?  @map("assigned_zone")
   latitude     Decimal? @db.Decimal(11, 8) @map("latitude")
   longitude    Decimal? @db.Decimal(11, 8) @map("longitude")
+  whitelistStatus String @default("PENDING") @map("whitelist_status") // PENDING, APPROVED, REJECTED
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -264,6 +277,9 @@ model Facility {
   kapasitas      Decimal?                @db.Decimal(10, 2)
   latitude       Decimal                 @db.Decimal(11, 8)
   longitude      Decimal                 @db.Decimal(11, 8)
+  rtRwId         Int?                    @map("rt_rw_id")
+  rtRw           RtRwArea?               @relation(fields: [rtRwId], references: [id])
+  statusApproval String                  @default("PENDING") @map("status_approval") // PENDING, APPROVED, REJECTED
   createdAt      DateTime                @default(now()) @map("created_at")
   updatedAt      DateTime                @updatedAt @map("updated_at")
   productionLogs FacilityProductionLog[]
@@ -309,6 +325,21 @@ model IdeDaurUlang {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("ide_daur_ulang")
+}
+
+model FlashDropEvent {
+  id        String   @id @default(uuid())
+  title     String
+  latitude  Decimal  @db.Decimal(11, 8)
+  longitude Decimal  @db.Decimal(11, 8)
+  radius    Int      @default(100) // meter
+  points    Int      @default(50)
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("flash_drop_events")
 }
 
 model SystemConfig {
@@ -444,6 +475,7 @@ enum DispatchStatus {
   PENDING
   CLAIMED
   COMPLETED
+  ESCALATED
 }
 
 model DispatchTask {

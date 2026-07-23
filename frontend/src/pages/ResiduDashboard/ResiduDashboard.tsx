@@ -27,6 +27,8 @@ const ResiduDashboard: React.FC = () => {
   const { user } = useAuthStore();
   const [summary, setSummary] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [jadwal, setJadwal] = useState<any[]>([]);
+  const [pendingLogs, setPendingLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Form states
@@ -41,6 +43,15 @@ const ResiduDashboard: React.FC = () => {
   const [violationPhotoPreview, setViolationPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  
+  // Submit Log states
+  const [showSubmitLogModal, setShowSubmitLogModal] = useState(false);
+  const [submitLogForm, setSubmitLogForm] = useState({
+    logId: "",
+    actualWeightKg: "",
+    classification: "ORGANIK",
+  });
+  const [isSubmittingLog, setIsSubmittingLog] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,12 +62,16 @@ const ResiduDashboard: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      const [summaryRes, analyticsRes] = await Promise.all([
+      const [summaryRes, analyticsRes, jadwalRes, pendingLogsRes] = await Promise.all([
         api.get("/residu/dashboard"),
         api.get("/residu/analytics"),
+        api.get("/residu/jadwal-harian").catch(() => ({ data: { data: [] } })),
+        api.get("/residu/pending-logs").catch(() => ({ data: { data: [] } })),
       ]);
       setSummary(summaryRes.data?.data);
       setAnalytics(analyticsRes.data?.data);
+      setJadwal(jadwalRes.data?.data || []);
+      setPendingLogs(pendingLogsRes.data?.data || []);
     } catch (err: any) {
       console.error("Gagal memuat data portal residu:", err);
       toast.error(err.response?.data?.message || "Gagal memuat data portal residu");
@@ -124,6 +139,37 @@ const ResiduDashboard: React.FC = () => {
     }
   };
 
+  const handleSubmitLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submitLogForm.logId || !submitLogForm.actualWeightKg) {
+      toast.error("Semua field wajib diisi!");
+      return;
+    }
+
+    try {
+      setIsSubmittingLog(true);
+      await api.post("/residu/submit-log", {
+        logId: submitLogForm.logId,
+        actualWeightKg: parseFloat(submitLogForm.actualWeightKg),
+        classification: submitLogForm.classification,
+      });
+
+      toast.success("Setoran berhasil divalidasi!");
+      setShowSubmitLogModal(false);
+      setSubmitLogForm({
+        logId: "",
+        actualWeightKg: "",
+        classification: "ORGANIK",
+      });
+      fetchInitialData();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Gagal mencatat setoran");
+    } finally {
+      setIsSubmittingLog(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
@@ -162,17 +208,26 @@ const ResiduDashboard: React.FC = () => {
             Petugas: {user?.name} • Zona Tugas: {summary?.assignedZone}
           </p>
         </div>
-        <button
-          onClick={() => setShowViolationModal(true)}
-          className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
-        >
-          <Camera className="w-4 h-4" />
-          Input Ketidakpatuhan
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSubmitLogModal(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Validasi Berat Aktual
+          </button>
+          <button
+            onClick={() => setShowViolationModal(true)}
+            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <Camera className="w-4 h-4" />
+            Input Ketidakpatuhan
+          </button>
+        </div>
       </div>
 
       {/* KPI Stats widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Violations Count Card */}
         <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-center">
@@ -214,12 +269,100 @@ const ResiduDashboard: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Schedule Summary widget */}
+        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-on-surface-variant font-bold">PROGRES HARIAN</span>
+            <AlertTriangle className="text-amber-500 w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-amber-600">
+              {summary?.tugasSelesaiHariIni || 0} / {(summary?.tugasSelesaiHariIni || 0) + jadwal.length}
+            </h3>
+            <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+              <div
+                className="bg-amber-500 h-full rounded-full transition-all"
+                style={{
+                  width: `${((summary?.tugasSelesaiHariIni || 0) / (((summary?.tugasSelesaiHariIni || 0) + jadwal.length) || 1)) * 100}%`
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main content grid */}
       <div className="grid grid-cols-12 gap-6">
-        {/* Analytics charts & reports */}
-        <div className="col-span-8 space-y-6">
+        {/* Schedule List */}
+        <div className="col-span-12 lg:col-span-8 space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
+            <h3 className="font-extrabold text-lg flex items-center gap-1.5">
+              <Map className="text-primary w-5 h-5" />
+              Estimasi Tugas Harian (Jemput &gt;70%)
+            </h3>
+            {jadwal.length === 0 ? (
+              <div className="text-center text-slate-500 text-sm py-4">Tidak ada tugas jemput mendesak hari ini.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {jadwal.map(j => {
+                  const vol = Number(j.currentVolumeLiter);
+                  const max = Number(j.maxCapacityLiter);
+                  const percentage = max > 0 ? (vol/max)*100 : 0;
+                  return (
+                    <div key={j.id} className="p-4 border border-slate-100 rounded-xl flex justify-between items-center shadow-sm">
+                      <div>
+                        <p className="font-bold text-sm text-slate-800">{j.rtRw?.name}</p>
+                        <p className="text-xs text-slate-500 mt-1">QR: {j.qrCode}</p>
+                        <p className="text-xs text-slate-500">Pemilik: {j.user?.name || "-"}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-lg font-black ${percentage > 90 ? 'text-red-500' : 'text-amber-500'}`}>
+                          {percentage.toFixed(0)}%
+                        </span>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{vol}L / {max}L</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          {/* Chart volume residu aggregate */}
+          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
+            <h3 className="font-extrabold text-lg flex items-center gap-1.5">
+              <Map className="text-primary w-5 h-5" />
+              Estimasi Tugas Harian (Jemput &gt;70%)
+            </h3>
+            {jadwal.length === 0 ? (
+              <div className="text-center text-slate-500 text-sm py-4">Tidak ada tugas jemput mendesak hari ini.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {jadwal.map(j => {
+                  const vol = Number(j.currentVolumeLiter);
+                  const max = Number(j.maxCapacityLiter);
+                  const percentage = max > 0 ? (vol/max)*100 : 0;
+                  return (
+                    <div key={j.id} className="p-4 border border-slate-100 rounded-xl flex justify-between items-center shadow-sm">
+                      <div>
+                        <p className="font-bold text-sm text-slate-800">{j.rtRw?.name}</p>
+                        <p className="text-xs text-slate-500 mt-1">QR: {j.qrCode}</p>
+                        <p className="text-xs text-slate-500">Pemilik: {j.user?.name || "-"}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-lg font-black ${percentage > 90 ? 'text-red-500' : 'text-amber-500'}`}>
+                          {percentage.toFixed(0)}%
+                        </span>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{vol}L / {max}L</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
           {/* Chart volume residu aggregate */}
           <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
             <h3 className="font-extrabold text-lg flex items-center gap-1.5">
@@ -457,6 +600,145 @@ const ResiduDashboard: React.FC = () => {
                   ) : (
                     <>
                       <CheckCircle className="w-4 h-4" /> Catat Pelanggaran
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMIT LOG MODAL */}
+      {showSubmitLogModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="font-extrabold text-lg flex items-center gap-2 text-on-surface">
+                <CheckCircle className="text-indigo-600 w-5 h-5" />
+                Validasi Berat Aktual Setoran
+              </h3>
+              <button
+                onClick={() => setShowSubmitLogModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitLog} className="p-6 space-y-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  Pilih Setoran (Log ID) *
+                </label>
+                <select
+                  required
+                  value={submitLogForm.logId}
+                  onChange={(e) => {
+                    const selLog = pendingLogs.find((l: any) => l.id === e.target.value);
+                    setSubmitLogForm({
+                      ...submitLogForm,
+                      logId: e.target.value,
+                      classification: selLog?.aiClassification || "ORGANIK",
+                    });
+                  }}
+                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
+                >
+                  <option value="">-- Pilih Setoran --</option>
+                  {pendingLogs.map((log: any) => (
+                    <option key={log.id} value={log.id}>
+                      {log.bin?.qrCode} - {log.bin?.user?.name || "Warga"} ({log.volumeLiter} L)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {submitLogForm.logId && (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-2">Info AI & Setoran</h4>
+                  
+                  {(() => {
+                     const l = pendingLogs.find((x: any) => x.id === submitLogForm.logId);
+                     return (
+                       <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <p className="text-slate-500 mb-0.5">Klasifikasi AI</p>
+                            <p className="font-bold text-slate-800">{l?.aiClassification || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500 mb-0.5">Confidence AI</p>
+                            <p className="font-bold text-slate-800">{l?.aiConfidence ? `${(Number(l.aiConfidence)*100).toFixed(1)}%` : "-"}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-slate-500 mb-0.5">Geolokasi Saat Setor</p>
+                            <p className="font-mono text-slate-800">{l?.geolocation || "-"}</p>
+                          </div>
+                          {l?.evidencePhotoUrl && (
+                            <div className="col-span-2 mt-2">
+                              <p className="text-slate-500 mb-1">Foto Bukti</p>
+                              <img src={l.evidencePhotoUrl} alt="Bukti" className="w-full h-32 object-cover rounded-lg border border-slate-200" />
+                            </div>
+                          )}
+                       </div>
+                     )
+                  })()}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  Klasifikasi Aktual Petugas *
+                </label>
+                <select
+                  required
+                  value={submitLogForm.classification}
+                  onChange={(e) => setSubmitLogForm({ ...submitLogForm, classification: e.target.value })}
+                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
+                >
+                  <option value="ORGANIK">Organik</option>
+                  <option value="ANORGANIK">Anorganik</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  Berat Aktual Timbangan (Kg) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.1"
+                  required
+                  value={submitLogForm.actualWeightKg}
+                  onChange={(e) =>
+                    setSubmitLogForm({ ...submitLogForm, actualWeightKg: e.target.value })
+                  }
+                  placeholder="0.0"
+                  className="border border-slate-200 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
+                />
+                <p className="text-[10px] text-slate-500">Angka manual dari pembacaan timbangan industri fisik.</p>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitLogModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingLog}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isSubmittingLog ? (
+                    <>
+                      <RefreshCw className="animate-spin w-4 h-4" /> Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" /> Simpan
                     </>
                   )}
                 </button>

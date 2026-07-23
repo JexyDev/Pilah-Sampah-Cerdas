@@ -28,6 +28,15 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token diperlukan"),
 });
 
+const requestOtpSchema = z.object({
+  phone: z.string().regex(/^\+62\d{8,15}$/, "Format nomor HP tidak valid (harus diawali +62 dan 9-16 digit)"),
+});
+
+const verifyOtpSchema = z.object({
+  phone: z.string().regex(/^\+62\d{8,15}$/, "Format nomor HP tidak valid"),
+  otp: z.string().length(6, "OTP harus 6 digit"),
+});
+
 const updateProfileSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   email: z.string().email("Format email tidak valid").optional(),
@@ -45,8 +54,8 @@ const registerStaffSchema = z.object({
   name: z.string().min(1, "Nama diperlukan"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  nik: z.string().length(16, "NIK harus 16 digit"),
-  phone: z.string().optional(),
+  nik: z.string().optional(),
+  phone: z.string().min(1, "No. Telfon diperlukan"),
   address: z.string().optional(),
 });
 
@@ -150,6 +159,78 @@ export class AuthController {
           code: "INTERNAL_SERVER_ERROR",
           message: "Terjadi kesalahan pada server",
         });
+      }
+    }
+  }
+
+  async requestOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = requestOtpSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Format nomor HP tidak valid",
+          fields: parsed.error.format(),
+        });
+        return;
+      }
+      
+      const { phone } = parsed.data;
+      const result = await authService.requestOtp(phone);
+      
+      res.status(200).json({
+        success: true,
+        message: "OTP berhasil dikirim",
+        data: result
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ success: false, code: "USER_NOT_FOUND", message: "Nomor HP tidak terdaftar" });
+      } else {
+        res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: "Gagal meminta OTP" });
+      }
+    }
+  }
+
+  async verifyOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = verifyOtpSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Format nomor HP atau OTP tidak valid",
+          fields: parsed.error.format(),
+        });
+        return;
+      }
+      
+      const { phone, otp } = parsed.data;
+      const result = await authService.verifyOtp(phone, otp);
+      
+      // Set HttpOnly Cookie for Web (Access Token)
+      res.cookie("accessToken", result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 60 * 60 * 1000, // 1 hour
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Login berhasil",
+        data: {
+          user: result.user,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        },
+      });
+    } catch (error: any) {
+      if (error.message === "INVALID_OTP") {
+        res.status(401).json({ success: false, code: "INVALID_OTP", message: "OTP salah atau sudah kedaluwarsa" });
+      } else {
+        res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: "Gagal memverifikasi OTP" });
       }
     }
   }
@@ -453,8 +534,8 @@ export class AuthController {
           name: z.string().min(1),
           email: z.string().email(),
           password: z.string().min(6),
-          nik: z.string().length(16),
-          phone: z.string().optional(),
+          nik: z.string().optional(),
+          phone: z.string().min(1),
           address: z.string().optional(),
           rtRwId: z.number().int(),
         })

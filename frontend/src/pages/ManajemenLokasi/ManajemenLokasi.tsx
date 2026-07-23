@@ -1,3 +1,4 @@
+import { ChevronDown, Search, Loader2, MapPinPlus, X } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -236,7 +237,7 @@ const ManajemenLokasi: React.FC = () => {
                   onClick={handleOpenAddModal}
                   className="bg-primary hover:bg-primary/90 text-white font-bold text-[11px] py-2 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm uppercase tracking-wider cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[16px]">add_location_alt</span>
+                  <MapPinPlus size={16} />
                   Tambah
                 </button>
               </div>
@@ -256,14 +257,10 @@ const ManajemenLokasi: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <span className="material-symbols-outlined absolute right-2 top-2 text-on-surface-variant pointer-events-none text-[18px]">
-                  expand_more
-                </span>
+                <ChevronDown className="absolute right-2 top-2 text-on-surface-variant pointer-events-none" size={18} />
               </div>
               <div className="flex-1 relative">
-                <span className="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant text-[18px]">
-                  search
-                </span>
+                <Search className="absolute left-3 top-2 text-on-surface-variant" size={18} />
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -280,9 +277,7 @@ const ManajemenLokasi: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-surface-container-lowest">
           {loading ? (
             <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3">
-              <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                autorenew
-              </span>
+              <Loader2 className="animate-spin text-primary" size={32} />
               <p>Memuat lokasi...</p>
             </div>
           ) : error ? (
@@ -342,7 +337,7 @@ const ManajemenLokasi: React.FC = () => {
                 onClick={() => setIsAddModalOpen(false)}
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X />
               </button>
             </div>
             <form onSubmit={handleSubmitArea} className="p-6 flex flex-col gap-4">
@@ -389,9 +384,7 @@ const ManajemenLokasi: React.FC = () => {
                   className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting && (
-                    <span className="material-symbols-outlined animate-spin text-[18px]">
-                      progress_activity
-                    </span>
+                    <Loader2 className="animate-spin" size={18} />
                   )}
                   Simpan
                 </button>

@@ -222,20 +222,38 @@ export class AiService {
    * Calculate Warga compliance score
    */
   async calculateComplianceScore(userId: string) {
-    const total = await prisma.wasteLog.count({
+    const logs = await prisma.wasteLog.findMany({
       where: {
         household: { userId },
       },
     });
 
-    const discrepant = await prisma.wasteLog.count({
-      where: {
-        household: { userId },
-        discrepancyStatus: "PENDING_REVIEW",
-      },
-    });
+    if (logs.length === 0) return 100;
 
-    const score = total > 0 ? ((total - discrepant) / total) * 100 : 100;
+    let onTimeCount = 0;
+    let totalConfidence = 0;
+    let confidenceCount = 0;
+
+    for (const log of logs) {
+      // 1. OnTimeSubmissionRate (6-8 AM or 4-6 PM window)
+      const hour = log.createdAt.getHours();
+      if ((hour >= 6 && hour < 8) || (hour >= 16 && hour < 18)) {
+        onTimeCount++;
+      }
+
+      // 2. AI Confidence
+      if (log.aiConfidence) {
+        totalConfidence += Number(log.aiConfidence);
+        confidenceCount++;
+      }
+    }
+
+    const onTimeRate = (onTimeCount / logs.length) * 100;
+    const avgConfidence = confidenceCount > 0 ? (totalConfidence / confidenceCount) * 100 : 100;
+
+    // Formula: Compliance_Score = (0.5 * OnTimeSubmissionRate) + (0.5 * AI_Confidence_Rate rata-rata)
+    const score = (0.5 * onTimeRate) + (0.5 * avgConfidence);
+    
     return Math.round(score * 10) / 10;
   }
 

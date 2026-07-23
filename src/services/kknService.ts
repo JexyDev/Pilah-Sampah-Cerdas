@@ -79,12 +79,10 @@ export class KknService {
       evidencePhotoUrl?: string;
       latitude?: number;
       longitude?: number;
+      maxCapacityLiter?: number;
     }
   ) {
-    if (data.latitude === undefined || data.longitude === undefined) {
-      throw new Error("GPS_COORDINATES_REQUIRED");
-    }
-
+    // GPS now comes from claimQr, but we can accept it if re-sent
     const student = await prisma.studentKkn.findUnique({
       where: { userId: kknUserId },
     });
@@ -103,8 +101,8 @@ export class KknService {
     if (!bin) {
       throw new Error("BIN_NOT_FOUND");
     }
-    if (bin.status === "ACTIVE_BOUND") {
-      throw new Error("BIN_ALREADY_ACTIVE");
+    if (bin.status !== "ASSIGNED_TO_PIC") {
+      throw new Error("BIN_MUST_BE_CLAIMED_FIRST");
     }
     if (bin.qrBatch?.assignedPicUserId !== kknUserId) {
       throw new Error("BIN_BATCH_PIC_MISMATCH");
@@ -154,8 +152,8 @@ export class KknService {
           userId: newWarga.id,
           address: data.address,
           rtRwId: data.rtRwId,
-          latitude: data.latitude!,
-          longitude: data.longitude!,
+          latitude: data.latitude ?? -6.88923,
+          longitude: data.longitude ?? 107.6105,
         },
       });
 
@@ -166,6 +164,9 @@ export class KknService {
           status: "PENDING_APPROVAL",
           userId: newWarga.id,
           rtRwId: data.rtRwId,
+          maxCapacityLiter: data.maxCapacityLiter || bin.maxCapacityLiter,
+          latitude: data.latitude ?? bin.latitude,
+          longitude: data.longitude ?? bin.longitude,
         },
       });
 
@@ -348,11 +349,106 @@ export class KknService {
     return prisma.auditTrail.findMany({
       where: {
         userId: kknUserId,
-        action: "ACTIVATE_BIN",
+        action: "REQUEST_ACTIVATE_BIN",
       },
       orderBy: { timestamp: "desc" },
       take: 10,
     });
+  }
+
+  async claimQr(kknUserId: string, qrCode: string, latitude: number, longitude: number) {
+    const bin = await prisma.bin.findUnique({
+      where: { qrCode },
+      include: { qrBatch: true }
+    });
+    if (!bin) throw new Error("BIN_NOT_FOUND");
+    if (bin.status !== "PRINTED") throw new Error("BIN_NOT_AVAILABLE");
+    
+    // Assign bin to pic if it has qr batch
+    const updatedBin = await prisma.$transaction(async (tx) => {
+      // Create new batch if needed or use existing
+      let batchId = bin.qrBatchId;
+      if (!batchId) {
+        const batch = await tx.qrBatch.create({
+          data: {
+            batchCode: `BATCH-${Date.now()}`,
+            assignedPicUserId: kknUserId,
+            status: "DISTRIBUTED",
+            totalQr: 1
+          }
+        });
+        batchId = batch.id;
+      } else if (bin.qrBatch?.assignedPicUserId !== kknUserId) {
+         // Reassign if no pic
+         await tx.qrBatch.update({
+           where: { id: batchId },
+           data: { assignedPicUserId: kknUserId }
+         });
+      }
+
+      return tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: "ASSIGNED_TO_PIC",
+          latitude,
+          longitude,
+          qrBatchId: batchId
+        }
+      });
+    });
+
+    return updatedBin;
+  }
+
+  async handover(fromKknUserId: string, toKknUserId: string, rtRwId: number, notes?: string) {
+    return prisma.$transaction(async (tx) => {
+      const batches = await tx.qrBatch.findMany({
+        where: { assignedPicUserId: fromKknUserId }
+      });
+      
+      for (const batch of batches) {
+        await tx.qrBatch.update({
+          where: { id: batch.id },
+          data: { assignedPicUserId: toKknUserId }
+        });
+      }
+
+      const handover = await tx.kknHandoverHistory.create({
+        data: {
+          fromUserId: fromKknUserId,
+          toUserId: toKknUserId,
+          rtRwId,
+          notes
+        }
+      });
+
+      return handover;
+    });
+  }
+
+  async bantuInputFasilitas(kknUserId: string, data: { userId: string, rtRwId: number, nama: string, jenis: any, longitude: number, latitude: number }) {
+    const facility = await prisma.facility.create({
+      data: {
+        nama: data.nama,
+        jenis: data.jenis,
+        pic: data.userId, // Warga's name or ID
+        latitude: data.latitude,
+        longitude: data.longitude,
+        rtRwId: data.rtRwId,
+        statusApproval: "PENDING",
+      }
+    });
+    
+    await prisma.pointHistory.create({
+      data: {
+        userId: kknUserId,
+        points: 5,
+        description: `Bantu warga input fasilitas GIS: ${data.nama}`,
+        kategori: "PARTISIPASI_STREAK"
+      }
+    });
+
+    return facility;
   }
 }
 

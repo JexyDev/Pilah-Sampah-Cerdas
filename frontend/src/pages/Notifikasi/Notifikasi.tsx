@@ -1,3 +1,5 @@
+import { IconRenderer } from "../../components/common/IconRenderer";
+import { ShieldAlert, Loader2, ImageOff, RefreshCcw, AlertCircle, Info, CheckCheck, Trash2, Settings, BellOff } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -107,9 +109,7 @@ const NotificationModal = ({
       return (
         <div className="mt-4 flex flex-col gap-4">
           <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex gap-3">
-            <span className="material-symbols-outlined text-orange-500 shrink-0 mt-0.5">
-              admin_panel_settings
-            </span>
+            <ShieldAlert className="text-orange-500 shrink-0 mt-0.5" />
             <div className="text-sm text-orange-800">
               <p className="font-semibold mb-1">Tindakan Review Diperlukan</p>
               <p>
@@ -139,7 +139,7 @@ const NotificationModal = ({
               ) : (
                 <>
                   <div className="w-full h-36 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-                    <span className="material-symbols-outlined text-4xl">image_not_supported</span>
+                    <ImageOff size={32} />
                   </div>
                   <p className="text-xs text-gray-400 text-center">
                     Foto bukti belum diunggah oleh warga
@@ -235,7 +235,7 @@ const NotificationModal = ({
           >
             {isSubmitting ? (
               <>
-                <span className="material-symbols-outlined animate-spin text-sm">autorenew</span>
+                <RefreshCcw className="animate-spin" size={14} />
                 <span>Mengirim...</span>
               </>
             ) : (
@@ -310,7 +310,7 @@ const NotificationModal = ({
             <div
               className={`w-12 h-12 rounded-full ${notif.iconBg} ${notif.iconColor} flex items-center justify-center shrink-0 shadow-sm border border-white`}
             >
-              <span className="material-symbols-outlined text-[24px]">{notif.icon}</span>
+              <IconRenderer name={notif.icon} size={24} />
             </div>
             <div>
               <h4 className="text-[16px] font-bold text-gray-800 leading-tight mb-1">
@@ -477,11 +477,11 @@ const Notifikasi: React.FC = () => {
               Semua ({notifications.length})
             </button>
             <button className="px-4 py-1.5 rounded-full border border-outline-variant/50 text-on-surface-variant text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px] text-red-500">error</span>
+              <AlertCircle className="text-red-500" size={16} />
               Critical (1)
             </button>
             <button className="px-4 py-1.5 rounded-full border border-outline-variant/50 text-on-surface-variant text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px] text-blue-500">info</span>
+              <Info className="text-blue-500" size={16} />
               Info ({notifications.length - 1})
             </button>
           </div>
@@ -491,21 +491,21 @@ const Notifikasi: React.FC = () => {
             onClick={handleMarkAllRead}
             className="px-4 py-2 text-[12px] font-bold text-primary hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">done_all</span>
+            <CheckCheck size={18} />
             Tandai Semua Dibaca
           </button>
           <button
             onClick={handleClearAll}
             className="px-4 py-2 text-[12px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
+            <Trash2 size={18} />
             Hapus Semua
           </button>
           <button
             onClick={() => navigate("/pengaturan")}
             className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors flex items-center justify-center cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <Settings size={20} />
           </button>
         </div>
       </div>
@@ -513,9 +513,7 @@ const Notifikasi: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden flex flex-col p-4 gap-3 min-h-[400px]">
         {loading ? (
           <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3 h-full">
-            <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-              autorenew
-            </span>
+            <Loader2 className="animate-spin text-primary" size={32} />
             <p>Memuat notifikasi...</p>
           </div>
         ) : error ? (
@@ -524,7 +522,7 @@ const Notifikasi: React.FC = () => {
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-gray-400 font-medium h-full flex flex-col items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-4xl">notifications_off</span>
+            <BellOff size={32} />
             <p>Belum ada notifikasi</p>
           </div>
         ) : (
@@ -541,7 +539,7 @@ const Notifikasi: React.FC = () => {
               <div
                 className={`w-11 h-11 rounded-full ${notif.iconBg} ${notif.iconColor} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform`}
               >
-                <span className="material-symbols-outlined text-[22px]">{notif.icon}</span>
+                <IconRenderer name={notif.icon} size={22} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-1 gap-2">

@@ -1,3 +1,4 @@
+import { Loader2, Plus, Edit, Trash2, X } from "lucide-react";
 /**
  * Project: Pilah Sampah Cerdas
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -103,7 +104,7 @@ const KategoriSampah: React.FC = () => {
           onClick={openAddModal}
           className="bg-primary text-white px-5 h-10 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm"
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
+          <Plus size={18} />
           Tambah Kategori
         </button>
       </div>
@@ -133,9 +134,7 @@ const KategoriSampah: React.FC = () => {
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-                        autorenew
-                      </span>
+                      <Loader2 className="animate-spin text-primary" size={32} />
                       <p>Memuat data...</p>
                     </div>
                   </td>
@@ -174,14 +173,14 @@ const KategoriSampah: React.FC = () => {
                           className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
                           title="Edit"
                         >
-                          <span className="material-symbols-outlined text-[20px]">edit</span>
+                          <Edit size={20} />
                         </button>
                         <button
                           onClick={() => handleDelete(cat.id)}
                           className="p-2 rounded-full text-red-600 hover:bg-red-50 transition-colors inline-flex items-center justify-center"
                           title="Hapus"
                         >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                          <Trash2 size={20} />
                         </button>
                       </div>
                     </td>
@@ -205,7 +204,7 @@ const KategoriSampah: React.FC = () => {
                 onClick={() => setIsModalOpen(false)}
                 className="text-on-surface-variant hover:text-on-surface rounded-full p-1 hover:bg-surface-container-highest transition-colors"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X />
               </button>
             </div>
 
@@ -270,9 +269,7 @@ const KategoriSampah: React.FC = () => {
                   className="px-5 py-2.5 rounded-lg font-bold text-[14px] bg-primary text-white hover:bg-primary/90 disabled:opacity-70 transition-colors flex items-center justify-center min-w-[120px]"
                 >
                   {isSubmitting ? (
-                    <span className="material-symbols-outlined animate-spin text-[20px]">
-                      autorenew
-                    </span>
+                    <Loader2 className="animate-spin" size={20} />
                   ) : (
                     "Simpan"
                   )}

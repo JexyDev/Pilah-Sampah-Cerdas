@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 export interface TokenPayload {
   userId: string;
   role: string;
+  rtRwId?: number;
 }
 
 // In production, these should be loaded from environment variables (.env)
