@@ -13,6 +13,7 @@ export interface LeaderboardUser {
   name: string;
   points: number;
   avatarUrl?: string;
+  wilayah?: string;
 }
 
 interface LeaderboardState {
@@ -38,6 +39,7 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
         rank: index + 1,
         name: u.user?.name || "Unknown",
         points: u.totalPoints,
+        wilayah: typeof u.user?.rtRw === 'string' ? u.user.rtRw : (u.user?.rtRw?.name || u.user?.wilayah || "-"),
       }));
 
       set({
