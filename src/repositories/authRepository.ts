@@ -202,7 +202,7 @@ export class AuthRepository {
     return prisma.$transaction(async (tx) => {
       // 1. Find Bin with row-level lock (FOR UPDATE)
       const bins = await tx.$queryRaw<any[]>`
-        SELECT * FROM bins WHERE qr_code = ${qrCode} FOR UPDATE
+        SELECT * FROM tong_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
       `;
       if (!bins || bins.length === 0) throw new Error("BIN_NOT_FOUND");
       const bin = bins[0];

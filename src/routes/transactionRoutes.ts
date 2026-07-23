@@ -34,4 +34,12 @@ router.post(
   transactionController.createManualDeposit
 );
 
+router.post(
+  "/residu",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  uploadAvatarMiddleware.single("image"),
+  transactionController.createResiduDeposit
+);
+
 export default router;

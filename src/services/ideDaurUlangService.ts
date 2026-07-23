@@ -16,8 +16,21 @@ export class IdeDaurUlangService {
     return ide;
   }
 
-  async getSemuaIde() {
+  async getSemuaIde(filters?: { search?: string; status?: string }) {
+    let whereClause: any = {};
+    if (filters?.status) {
+      whereClause.statusApproval = filters.status;
+    }
+    if (filters?.search) {
+      whereClause.OR = [
+        { judul: { contains: filters.search, mode: "insensitive" } },
+        { material: { contains: filters.search, mode: "insensitive" } },
+        { user: { name: { contains: filters.search, mode: "insensitive" } } },
+      ];
+    }
+
     return prisma.ideDaurUlang.findMany({
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
         user: {

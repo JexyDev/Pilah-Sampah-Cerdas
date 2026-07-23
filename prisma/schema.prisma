@@ -59,6 +59,7 @@ model User {
   recordedViolations Violation[]      @relation("RecordedViolations")
   fromHandovers KknHandoverHistory[] @relation("FromStudentHandovers")
   toHandovers   KknHandoverHistory[] @relation("ToStudentHandovers")
+  residuLogs        ResiduLog[]
 
   @@map("pengguna")
 }
@@ -109,6 +110,7 @@ model RtRwArea {
   studentsKkn StudentKkn[]
   handovers   KknHandoverHistory[]
   facilities  Facility[]
+  residuLogs  ResiduLog[]
 
   @@unique([kelurahanId, name])
   @@map("wilayah_rt_rw")
@@ -222,6 +224,21 @@ model WasteLog {
   updatedAt            DateTime      @updatedAt @map("diperbarui_pada")
 
   @@map("catatan_setoran")
+}
+
+model ResiduLog {
+  id               String   @id @default(uuid())
+  rtRwId           Int      @map("id_rt_rw")
+  rtRw             RtRwArea @relation(fields: [rtRwId], references: [id])
+  petugasId        String   @map("id_pengguna_petugas")
+  petugas          User     @relation(fields: [petugasId], references: [id])
+  beratKg          Decimal  @map("berat_kg") @db.Decimal(10, 2)
+  fotoUrl          String?  @map("url_foto")
+  waktu            DateTime @default(now()) @map("waktu")
+  createdAt        DateTime @default(now()) @map("dibuat_pada")
+  updatedAt        DateTime @updatedAt @map("diperbarui_pada")
+
+  @@map("catatan_residu")
 }
 
 model StudentKkn {

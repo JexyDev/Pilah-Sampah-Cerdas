@@ -22,7 +22,11 @@ export class IdeDaurUlangController {
 
   async getIdeDaurUlang(req: Request, res: Response) {
     try {
-      const ides = await ideDaurUlangService.getSemuaIde();
+      const { search, status } = req.query;
+      const ides = await ideDaurUlangService.getSemuaIde({
+        search: search as string,
+        status: status as string,
+      });
       res.status(200).json({ success: true, data: ides });
     } catch (error) {
       console.error("[IdeDaurUlangController] getIdeDaurUlang error:", error);
