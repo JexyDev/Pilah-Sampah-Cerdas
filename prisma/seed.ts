@@ -270,6 +270,35 @@ async function main() {
     });
   }
 
+  // Create 3-5 REQUEST_ACTIVATE_BIN audit trail logs to simulate citizens helped by KKN student
+  const wargaList = await prisma.user.findMany({
+    where: { role: { name: "WARGA" } },
+    take: 5
+  });
+
+  for (let i = 0; i < wargaList.length; i++) {
+    const w = wargaList[i];
+    const binsOfWarga = await prisma.bin.findMany({ where: { userId: w.id } });
+    const qrCodes = binsOfWarga.map(b => b.qrCode);
+    
+    await prisma.auditTrail.create({
+      data: {
+        action: "REQUEST_ACTIVATE_BIN",
+        userId: kknUser.id,
+        timestamp: new Date(Date.now() - i * 2 * 24 * 60 * 60 * 1000), // different days
+        newValue: {
+          qrCodes,
+          status: "PENDING_APPROVAL",
+          ownerUserId: w.id,
+          kknLocation: {
+            latitude: -6.890000 + (i * 0.0002),
+            longitude: 107.610000 + (i * 0.0002)
+          }
+        }
+      }
+    });
+  }
+
   console.log("Demo Data seeded successfully!");
 }
 
