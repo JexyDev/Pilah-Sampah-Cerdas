@@ -8,6 +8,7 @@ class UserEntity extends Equatable {
     required this.name,
     required this.email,
     required this.role,
+    this.phone = '',
     this.kelurahan = '',
     this.rtRw = '',
     this.householdId,
@@ -18,6 +19,7 @@ class UserEntity extends Equatable {
   final String id;
   final String name;
   final String email;
+  final String phone;
   final UserRole role;
   final String kelurahan;
   final String rtRw;
@@ -29,6 +31,7 @@ class UserEntity extends Equatable {
     String? id,
     String? name,
     String? email,
+    String? phone,
     UserRole? role,
     String? kelurahan,
     String? rtRw,
@@ -40,6 +43,7 @@ class UserEntity extends Equatable {
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
+      phone: phone ?? this.phone,
       role: role ?? this.role,
       kelurahan: kelurahan ?? this.kelurahan,
       rtRw: rtRw ?? this.rtRw,
@@ -50,7 +54,7 @@ class UserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, email, role];
+  List<Object?> get props => [id, email, phone, role];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.

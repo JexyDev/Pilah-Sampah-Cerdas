@@ -483,6 +483,7 @@ class ApiAuthRepository implements AuthRepository {
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       email: userMap['email']?.toString() ?? '',
+      phone: userMap['phone']?.toString() ?? '',
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
       fotoProfil: userMap['fotoProfil']?.toString(),
     );
