@@ -95,11 +95,4 @@ jobs:
             # Restart layanan dengan PM2 (atau Start jika belum ada)
             pm2 restart psc-backend || pm2 start dist/index.js --name psc-backend
             
-            echo "Starting Frontend Deployment..."
-            cd /var/www/pilah-sampah-cerdas/frontend
-            
-            # Install dependencies dan build frontend
-            npm install
-            npm run build
-            
-            echo "Deployment Completed Successfully!"
+            echo "Backend Deployment Completed Successfully!"
