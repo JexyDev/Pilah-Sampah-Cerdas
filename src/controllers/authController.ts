@@ -9,9 +9,19 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { authService } from "../services/authService.js";
 
+/**
+ * Normalize phone: 08xxx → +628xxx, 628xxx → +628xxx
+ */
+function normalizePhone(phone: string): string {
+  let p = phone.trim();
+  if (p.startsWith("08")) p = "+62" + p.slice(1);
+  else if (p.startsWith("62") && !p.startsWith("+")) p = "+" + p;
+  return p;
+}
+
 // Validation Schemas
 const loginSchema = z.object({
-  phone: z.string().regex(/^\+62\d{8,15}$/, "Format nomor HP tidak valid (harus diawali +62)"),
+  phone: z.string().min(1, "Nomor HP diperlukan"),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
@@ -50,12 +60,22 @@ const registerStaffSchema = z.object({
   address: z.string().optional(),
 });
 
-const registerWargaSchema = registerStaffSchema.extend({
-  qrCode: z.string().min(1, "QR Code diperlukan").optional(),
+const registerWargaSchema = z.object({
+  name: z.string().min(1, "Nama diperlukan").optional(),
+  nama: z.string().min(1).optional(), // alias for name (mobile compat)
+  email: z.string().email("Format email tidak valid").optional(),
+  password: z.string().min(6, "Password minimal 6 karakter"),
+  nik: z.string().optional(),
+  phone: z.string().min(1, "No. Telfon diperlukan"),
+  noWa: z.string().optional(), // alias for phone whatsapp
+  address: z.string().optional(),
+  qrCode: z.string().optional(),
   wargaSubtype: z.enum(["UTAMA", "TAMBAHAN"]).optional(),
-  rtRwId: z.number().int("RT/RW ID harus integer"),
-  latitude: z.number(),
-  longitude: z.number(),
+  rtRwId: z.number().int().optional(),
+  rtRw: z.string().optional(), // string "01/02" from mobile
+  kelurahan: z.string().optional(), // kelurahan name from mobile
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 const registerKknSchema = registerStaffSchema.extend({
@@ -83,13 +103,18 @@ export class AuthController {
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
+      // Normalize phone before validation
+      if (req.body?.phone) {
+        req.body.phone = normalizePhone(req.body.phone);
+      }
+
       // 1. Validate Input
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({
           success: false,
           code: "VALIDATION_ERROR",
-          message: "Format email atau password tidak valid",
+          message: "Format nomor HP atau password tidak valid",
           fields: parsed.error.format(),
         });
         return;
@@ -144,7 +169,14 @@ export class AuthController {
           code: "WRONG_PASSWORD",
           message: "Password salah",
         });
+      } else if (error.message === "USER_INACTIVE") {
+        res.status(403).json({
+          success: false,
+          code: "USER_INACTIVE",
+          message: "Akun Anda belum aktif atau telah dinonaktifkan",
+        });
       } else {
+        console.error("[Login Error Detail]", error);
         res.status(500).json({
           success: false,
           code: "INTERNAL_SERVER_ERROR",
@@ -554,6 +586,12 @@ export class AuthController {
    */
   async registerWarga(req: Request, res: Response): Promise<void> {
     try {
+      // Normalize phone before validation
+      if (req.body?.phone) req.body.phone = normalizePhone(req.body.phone);
+      if (req.body?.noWa) req.body.noWa = normalizePhone(req.body.noWa);
+      // Accept 'nama' as alias for 'name'
+      if (!req.body?.name && req.body?.nama) req.body.name = req.body.nama;
+
       const parsed = registerWargaSchema.safeParse(req.body);
       if (!parsed.success) {
         res
@@ -561,13 +599,25 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { qrCode, wargaSubtype, rtRwId, latitude, longitude, ...userData } = parsed.data;
+      const { qrCode, wargaSubtype, rtRwId, rtRw, kelurahan, latitude, longitude, nama, noWa, ...userData } = parsed.data;
+
+      // Resolve rtRwId from string if needed
+      let resolvedRtRwId = rtRwId;
+      if (!resolvedRtRwId && (rtRw || kelurahan)) {
+        resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
+      }
+
       const householdData = {
         address: userData.address || "",
-        rtRwId,
-        latitude,
-        longitude,
+        rtRwId: resolvedRtRwId || 1, // fallback to first area
+        latitude: latitude || 0,
+        longitude: longitude || 0,
       };
+
+      // Generate dummy email from phone if not provided
+      if (!userData.email) {
+        userData.email = userData.phone.replace("+", "") + "@pilahsampah.id";
+      }
 
       let token = "";
       if (req.cookies && req.cookies.accessToken) {
@@ -587,7 +637,7 @@ export class AuthController {
       const result = await authService.registerWarga(
         userData,
         householdData,
-        qrCode,
+        qrCode || undefined,
         wargaSubtype,
         scannerUser
       );
@@ -613,6 +663,15 @@ export class AuthController {
    */
   async registerKkn(req: Request, res: Response): Promise<void> {
     try {
+      // Normalize phone before validation
+      if (req.body?.phone) req.body.phone = normalizePhone(req.body.phone);
+      if (req.body?.noWa) req.body.noWa = normalizePhone(req.body.noWa);
+      if (!req.body?.name && req.body?.nama) req.body.name = req.body.nama;
+      // Generate dummy email from phone if not provided
+      if (!req.body?.email && req.body?.phone) {
+        req.body.email = normalizePhone(req.body.phone).replace("+", "") + "@pilahsampah.id";
+      }
+
       const parsed = registerKknSchema.safeParse(req.body);
       if (!parsed.success) {
         res
@@ -649,6 +708,14 @@ export class AuthController {
    */
   async registerPetugasResidu(req: Request, res: Response): Promise<void> {
     try {
+      // Normalize phone before validation
+      if (req.body?.phone) req.body.phone = normalizePhone(req.body.phone);
+      if (req.body?.noWa) req.body.noWa = normalizePhone(req.body.noWa);
+      if (!req.body?.name && req.body?.nama) req.body.name = req.body.nama;
+      if (!req.body?.email && req.body?.phone) {
+        req.body.email = normalizePhone(req.body.phone).replace("+", "") + "@pilahsampah.id";
+      }
+
       const parsed = registerPetugasSchema.safeParse(req.body);
       if (!parsed.success) {
         res

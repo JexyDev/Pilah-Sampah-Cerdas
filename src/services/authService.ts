@@ -18,11 +18,7 @@ export class AuthService {
    * Authenticate user with email and password, returning tokens if successful.
    */
   async login(phone: string, password: string) {
-    const isPhone = /^\+62\d{8,15}$/.test(phone);
-    if (!isPhone) {
-      throw new Error("USER_NOT_FOUND");
-    }
-    
+    // Phone is already normalized by controller (08xxx → +62xxx)
     let user = await authRepository.findUserByPhone(phone);
 
     if (!user) {
@@ -345,6 +341,34 @@ export class AuthService {
   }
 
   /**
+   * Resolve RT/RW ID from string rtRw name and kelurahan name
+   */
+  async resolveRtRwId(rtRw?: string, kelurahan?: string): Promise<number | undefined> {
+    if (!kelurahan) return undefined;
+
+    const kel = await prisma.kelurahan.findFirst({
+      where: { name: { equals: kelurahan, mode: "insensitive" } },
+    });
+    if (!kel) return undefined;
+
+    if (rtRw) {
+      const area = await prisma.rtRwArea.findFirst({
+        where: {
+          kelurahanId: kel.id,
+          name: { contains: rtRw, mode: "insensitive" },
+        },
+      });
+      if (area) return area.id;
+    }
+
+    // Fallback: return first RT/RW in that kelurahan
+    const firstArea = await prisma.rtRwArea.findFirst({
+      where: { kelurahanId: kel.id },
+    });
+    return firstArea?.id;
+  }
+
+  /**
    * Register Warga
    */
   async registerWarga(
@@ -369,9 +393,15 @@ export class AuthService {
       }
     }
 
+    // Check duplicate phone
+    const existingUserByPhone = await authRepository.findUserByPhone(userData.phone);
+    if (existingUserByPhone) throw new Error("PHONE_ALREADY_IN_USE");
+
     // Check duplicate email
-    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
-    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+    if (userData.email) {
+      const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+      if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+    }
 
     // Check duplicate NIK
     if (userData.nik) {
