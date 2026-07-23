@@ -69,7 +69,7 @@ for (const file of Object.keys(missingImports)) {
   
   if (content.includes('from "lucide-react";')) {
      content = content.replace(/import\s*\{\s*([^}]*)\s*\}\s*from\s*"lucide-react";/, (m, inner) => {
-         const existing = inner.split(',').map(s => s.trim()).filter(Boolean);
+         const existing = inner.split(',').map((s: string) => s.trim()).filter(Boolean);
          const newImports = Array.from(new Set([...existing, ...toImport]));
          return 'import { ' + newImports.join(', ') + ' } from "lucide-react";';
      });

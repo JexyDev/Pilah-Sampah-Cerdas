@@ -95,4 +95,11 @@ jobs:
             # Restart layanan dengan PM2
             pm2 restart psc-backend
             
-            echo "Backend Deployment Completed Successfully!"
+            echo "Starting Frontend Deployment..."
+            cd /var/www/pilah-sampah-cerdas/frontend
+            
+            # Install dependencies dan build frontend
+            npm install
+            npm run build
+            
+            echo "Deployment Completed Successfully!"
