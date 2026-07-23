@@ -221,7 +221,9 @@ export class KknService {
     // We get warga whose bins belong to batches assigned to this KKN PIC
     const bins = await prisma.bin.findMany({
       where: {
-        status: "ACTIVE_BOUND",
+        status: {
+          in: ["ACTIVE_BOUND", "PENDING_APPROVAL"],
+        },
         qrBatch: {
           assignedPicUserId: kknUserId,
         },
