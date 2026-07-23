@@ -93,4 +93,38 @@ export const transactionController = {
       res.status(500).json({ success: false, message: error.message || "Gagal mencatat setoran" });
     }
   },
+
+  createResiduDeposit: async (req: any, res: any) => {
+    try {
+      const petugasId = req.user!.userId;
+      const { rtRwId, beratKg } = req.body;
+      const photoPath = req.file ? `/uploads/avatars/${req.file.filename}` : null;
+
+      if (!rtRwId || !beratKg) {
+        res.status(400).json({ success: false, message: "Data tidak lengkap" });
+        return;
+      }
+
+      if (!photoPath) {
+        res.status(400).json({ success: false, message: "Foto bukti wajib diunggah" });
+        return;
+      }
+
+      const result = await transactionService.createResiduDeposit(
+        petugasId,
+        parseInt(rtRwId, 10),
+        parseFloat(beratKg),
+        photoPath
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Setoran residu agregat berhasil dicatat",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[TransactionController] createResiduDeposit error:", error);
+      res.status(500).json({ success: false, message: error.message || "Gagal mencatat setoran residu" });
+    }
+  },
 };

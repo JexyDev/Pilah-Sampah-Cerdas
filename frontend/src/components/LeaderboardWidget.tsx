@@ -41,17 +41,17 @@ const LeaderboardWidget: React.FC = () => {
           Papan Peringkat Warga
         </h5>
         <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-          Top 5
+          Top 10
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[320px] custom-scrollbar">
         {leaderboard.length === 0 ? (
           <div className="text-center py-6 text-on-surface-variant/75 text-xs">
             Belum ada perolehan poin.
           </div>
         ) : (
-          leaderboard.slice(0, 5).map((user, index) => (
+          leaderboard.slice(0, 10).map((user, index) => (
             <div
               key={user.id}
               className="flex items-center gap-3 p-3 rounded-lg border border-outline-variant/20 bg-surface-container-lowest hover:bg-surface-container-low transition-colors"

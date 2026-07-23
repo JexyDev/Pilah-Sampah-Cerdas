@@ -42,7 +42,19 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
               req.originalUrl.includes("/waste/logs/") &&
               req.originalUrl.endsWith("/resolve");
 
-            if (!isResolveDiscrepancy) {
+            // Exception: ADMIN_DLH can register staff (Camat, Lurah, RW, Petugas)
+            const isRegisterStaff =
+              role === "ADMIN_DLH" &&
+              req.method === "POST" &&
+              /\/api\/v1\/auth\/register\/(camat|lurah|rw|petugas-residu)/.test(req.originalUrl);
+
+            // Exception: ADMIN_DLH can approve KKN whitelist
+            const isKknApproval =
+              role === "ADMIN_DLH" &&
+              (req.method === "PATCH" || req.method === "PUT") &&
+              req.originalUrl.includes("/auth/kkn/whitelist");
+
+            if (!isResolveDiscrepancy && !isRegisterStaff && !isKknApproval) {
               res.status(403).json({
                 error: "FORBIDDEN",
                 message: `Role ${role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,

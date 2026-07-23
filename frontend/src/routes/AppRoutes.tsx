@@ -32,7 +32,6 @@ import KknDashboard from "../pages/KknDashboard/KknDashboard";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import { useAuthStore } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
-import { SuperAdminDashboard } from "../pages/SuperAdmin/SuperAdminDashboard";
 import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
 import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
 import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
@@ -247,14 +246,6 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["PETUGAS_RESIDU"]}>
               <ResiduDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="superadmin/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
-              <SuperAdminDashboard />
             </ProtectedRoute>
           }
         />

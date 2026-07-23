@@ -196,13 +196,18 @@ export class KknService {
         ],
       });
 
-      // 5. Audit log activation request
+      // 5. Audit log activation request with Mahasiswa GPS location
       await tx.auditTrail.create({
         data: {
           action: "REQUEST_ACTIVATE_BIN",
           userId: kknUserId,
           oldValue: { qrCodes: [binOrg.qrCode, binIno.qrCode] } as any,
-          newValue: { qrCodes: [binOrg.qrCode, binIno.qrCode], status: "PENDING_APPROVAL", ownerUserId: newWarga.id } as any,
+          newValue: { 
+            qrCodes: [binOrg.qrCode, binIno.qrCode], 
+            status: "PENDING_APPROVAL", 
+            ownerUserId: newWarga.id,
+            kknLocation: { latitude: data.latitude, longitude: data.longitude }
+          } as any,
         },
       });
 

@@ -33,7 +33,15 @@ export class BinController {
    */
   async getAllBins(req: Request, res: Response): Promise<void> {
     try {
-      const bins = await binService.getAllBins(req.user);
+      const { search, status, areaId, categoryId } = req.query;
+      const filters = {
+        search: search as string,
+        status: status as string,
+        areaId: areaId as string,
+        categoryId: categoryId as string,
+      };
+
+      const bins = await binService.getAllBins(req.user, filters);
       const mappedBins = bins.map((bin: any) => {
         const currentVol = Number(bin.currentVolumeLiter);
         const maxVol = Number(bin.maxCapacityLiter);

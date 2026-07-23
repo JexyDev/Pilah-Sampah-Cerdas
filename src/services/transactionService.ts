@@ -164,6 +164,22 @@ export class TransactionService {
       return { log, discrepancyStatus, calculatedPoints };
     });
   }
+
+  async createResiduDeposit(
+    petugasId: string,
+    rtRwId: number,
+    beratKg: number,
+    photoPath: string
+  ) {
+    return prisma.residuLog.create({
+      data: {
+        petugasId,
+        rtRwId,
+        beratKg,
+        fotoUrl: photoPath,
+      },
+    });
+  }
 }
 
 export const transactionService = new TransactionService();

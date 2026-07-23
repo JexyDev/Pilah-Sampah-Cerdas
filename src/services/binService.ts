@@ -24,13 +24,41 @@ export class BinService {
   /**
    * Get all bins
    */
-  async getAllBins(currentUser?: { userId: string; role: string }) {
+  async getAllBins(
+    currentUser?: { userId: string; role: string },
+    filters?: {
+      search?: string;
+      status?: string;
+      areaId?: string;
+      categoryId?: string;
+    }
+  ) {
+    let whereClause: any = {};
     if (currentUser) {
       const { getScopingFilters } = await import("../utils/rbacScoping.js");
       const scoping = await getScopingFilters(currentUser);
-      return binRepository.findAll(scoping.binFilter);
+      whereClause = { ...scoping.binFilter };
     }
-    return binRepository.findAll();
+
+    if (filters) {
+      if (filters.status) {
+        whereClause.status = filters.status;
+      }
+      if (filters.areaId) {
+        whereClause.rtRwId = parseInt(filters.areaId, 10);
+      }
+      if (filters.categoryId) {
+        whereClause.categoryId = filters.categoryId;
+      }
+      if (filters.search) {
+        whereClause.OR = [
+          { qrCode: { contains: filters.search, mode: "insensitive" } },
+          { id: { contains: filters.search, mode: "insensitive" } },
+        ];
+      }
+    }
+
+    return binRepository.findAll(whereClause);
   }
 
   /**

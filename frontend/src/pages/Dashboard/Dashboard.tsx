@@ -1,5 +1,5 @@
 import { IconRenderer } from "../../components/common/IconRenderer";
-import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, Radio, Server, BrainCircuit, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
+import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -1337,8 +1337,9 @@ const Dashboard: React.FC = () => {
   // Superadmin monitoring and details states
   const [allBins, setAllBins] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"kkn" | "warga" | "petugas">("kkn");
+  const [monitoringSearch, setMonitoringSearch] = useState("");
+  const [monitoringSort, setMonitoringSort] = useState<"asc" | "desc">("asc");
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
 
   // Dynamic features states
@@ -1472,8 +1473,8 @@ const Dashboard: React.FC = () => {
           setLocations(locSettled.value.data.data);
         }
 
-        if (analyticsSettled.status === "fulfilled" && analyticsSettled.value.data?.success) {
-          setAnalyticsData(analyticsSettled.value.data.data);
+        if (analyticsSettled.status === "fulfilled") {
+          // Do nothing, analytics is no longer used here
         }
       } catch (err) {
         console.error("Dashboard KPI error", err);
@@ -1581,17 +1582,44 @@ const Dashboard: React.FC = () => {
   });
 
   // Filter lists for Field Monitoring
-  const kknStudents = allUsers.filter(
+  let kknStudents = allUsers.filter(
     (u) => u.peran === "MAHASISWA_KKN" || u.role === "MAHASISWA_KKN"
   );
 
-  const wargaList = allUsers.filter(
+  let wargaList = allUsers.filter(
     (u) => u.peran === "WARGA" || u.role === "WARGA"
   );
 
-  const petugasList = allUsers.filter(
+  let petugasList = allUsers.filter(
     (u) => u.peran === "PETUGAS_RESIDU" || u.role === "PETUGAS_RESIDU"
   );
+
+  const applySearchAndSort = (list: any[]) => {
+    let result = list;
+    if (monitoringSearch.trim()) {
+      const query = monitoringSearch.toLowerCase();
+      result = result.filter(u => 
+        (u.name || "").toLowerCase().includes(query) ||
+        (u.email || "").toLowerCase().includes(query) ||
+        (u.phone || "").toLowerCase().includes(query) ||
+        (u.wilayah || "").toLowerCase().includes(query)
+      );
+    }
+    result.sort((a, b) => {
+      const nameA = (a.name || "").toLowerCase();
+      const nameB = (b.name || "").toLowerCase();
+      if (monitoringSort === "asc") {
+        return nameA.localeCompare(nameB);
+      }
+      return nameB.localeCompare(nameA);
+    });
+    return result;
+  };
+
+  kknStudents = applySearchAndSort(kknStudents);
+  wargaList = applySearchAndSort(wargaList);
+  petugasList = applySearchAndSort(petugasList);
+
 
   if (user?.peran === "RW") {
     return <RwDashboard />;
@@ -2005,58 +2033,7 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
         </div>
-
-        {/* Aktivitas Terbaru */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Terbaru</h4>
-            <History className="text-primary" />
-          </div>
-          <div className="space-y-4">
-            {[
-              { iconBg: "bg-green-100", iconColor: "text-green-700", icon: "add", title: "Setoran 18 kg Organik", sub: "Dewi Lestari • 09:30" },
-              { iconBg: "bg-blue-100", iconColor: "text-blue-700", icon: "local_shipping", title: "Pengangkutan Selesai", sub: "Dago Giri • 08:15" },
-              { iconBg: "bg-amber-100", iconColor: "text-amber-700", icon: "warning", title: "Bin Hampir Penuh", sub: "RW 01 Dago • 07:45" },
-            ].map((item, i) => (
-              <div key={i} className="flex gap-3">
-                <div className={`w-6 h-6 rounded-full ${item.iconBg} flex items-center justify-center z-10 border-2 border-white flex-shrink-0`}>
-                  <span className={`material-symbols-outlined text-[14px] ${item.iconColor}`}>{item.icon}</span>
-                </div>
-                <div className="flex-1 text-xs">
-                  <p className="font-bold text-on-surface">{item.title}</p>
-                  <p className="text-on-surface-variant text-[10px]">{item.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Performa & Metrik Sistem */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="font-bold text-[18px] text-on-surface">Metrik Server & AI</h4>
-            <Radio className="text-primary" size={20} />
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
-              <div>
-                <p className="text-[10px] text-emerald-800 font-bold uppercase">Uptime Server</p>
-                <p className="text-sm font-bold text-emerald-700">{analyticsData?.uptimePercent || "99.9"}%</p>
-              </div>
-              <Server className="text-emerald-600" size={20} />
-            </div>
-
-            <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-100 rounded-xl">
-              <div>
-                <p className="text-[10px] text-blue-800 font-bold uppercase">Akurasi AI</p>
-                <p className="text-sm font-bold text-blue-700">{analyticsData?.aiAccuracy?.toFixed(1) || "94.5"}%</p>
-              </div>
-              <BrainCircuit className="text-blue-600" size={20} />
-            </div>
-          </div>
-        </div>
       </div>
-
       {/* === Pusat Monitoring Lapangan (KKN, Warga, Petugas) === */}
       <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 col-span-12 card-polish">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -2065,25 +2042,47 @@ const Dashboard: React.FC = () => {
             <p className="text-xs text-on-surface-variant">Laporan aktivitas pendampingan KKN, keaktifan warga, dan performa tim residu kota.</p>
           </div>
 
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button
-              onClick={() => setActiveTab("kkn")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "kkn" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
-            >
-              Mahasiswa KKN
-            </button>
-            <button
-              onClick={() => setActiveTab("warga")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "warga" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
-            >
-              Warga Dampingan
-            </button>
-            <button
-              onClick={() => setActiveTab("petugas")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "petugas" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
-            >
-              Petugas Residu
-            </button>
+          <div className="flex flex-col xl:flex-row gap-3 w-full md:w-auto">
+            <div className="flex bg-slate-100 p-1 rounded-xl flex-wrap">
+              <button
+                onClick={() => setActiveTab("kkn")}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "kkn" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
+              >
+                Mahasiswa KKN
+              </button>
+              <button
+                onClick={() => setActiveTab("warga")}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "warga" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
+              >
+                Warga Dampingan
+              </button>
+              <button
+                onClick={() => setActiveTab("petugas")}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "petugas" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
+              >
+                Petugas Residu
+              </button>
+            </div>
+            
+            <div className="flex gap-2 w-full xl:w-auto">
+              <div className="relative flex-1 xl:w-56">
+                <input
+                  type="text"
+                  placeholder="Cari pengguna..."
+                  value={monitoringSearch}
+                  onChange={(e) => setMonitoringSearch(e.target.value)}
+                  className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-full transition-all h-full"
+                />
+                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-slate-400">search</span>
+              </div>
+              <button
+                onClick={() => setMonitoringSort(prev => prev === "asc" ? "desc" : "asc")}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center flex-shrink-0"
+                title={`Sort ${monitoringSort === "asc" ? "Z-A" : "A-Z"}`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{monitoringSort === "asc" ? "arrow_downward" : "arrow_upward"}</span>
+              </button>
+            </div>
           </div>
         </div>
 
