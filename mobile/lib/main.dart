@@ -19,7 +19,7 @@ import 'core/utils/platform_utils.dart';
 /// force-navigate ke Login saat sesi habis (refresh token expired).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// Entry point aplikasi Pilah Sampah Cerdas — Mobile (Warga).
+/// Entry point aplikasi TrashCare — Mobile (Warga).
 ///
 /// Arsitektur: Clean Architecture + Riverpod
 /// - Presentation Layer: lib/presentation/

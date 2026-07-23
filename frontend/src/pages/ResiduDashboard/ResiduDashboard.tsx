@@ -49,8 +49,11 @@ const ResiduDashboard: React.FC = () => {
   const [submitLogForm, setSubmitLogForm] = useState({
     logId: "",
     actualWeightKg: "",
-    classification: "ORGANIK",
+    classification: "RESIDU",
   });
+  const [submitLogPhoto, setSubmitLogPhoto] = useState<File | null>(null);
+  const [submitLogPhotoPreview, setSubmitLogPhotoPreview] = useState<string | null>(null);
+  const submitLogFileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmittingLog, setIsSubmittingLog] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,17 +144,26 @@ const ResiduDashboard: React.FC = () => {
 
   const handleSubmitLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!submitLogForm.logId || !submitLogForm.actualWeightKg) {
-      toast.error("Semua field wajib diisi!");
+    if (!submitLogForm.logId || !submitLogForm.actualWeightKg || !submitLogPhoto) {
+      toast.error("Semua field wajib diisi termasuk foto dokumentasi riil!");
       return;
     }
 
     try {
       setIsSubmittingLog(true);
+      
+      // Upload evidence photo first
+      const formData = new FormData();
+      formData.append("image", submitLogPhoto);
+      const uploadRes = await api.post("/waste/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const evidencePhotoUrl = uploadRes.data.data.imageUrl;
       await api.post("/residu/submit-log", {
         logId: submitLogForm.logId,
         actualWeightKg: parseFloat(submitLogForm.actualWeightKg),
-        classification: submitLogForm.classification,
+        classification: "RESIDU",
+        evidencePhotoUrl,
       });
 
       toast.success("Setoran berhasil divalidasi!");
@@ -159,8 +171,10 @@ const ResiduDashboard: React.FC = () => {
       setSubmitLogForm({
         logId: "",
         actualWeightKg: "",
-        classification: "ORGANIK",
+        classification: "RESIDU",
       });
+      setSubmitLogPhoto(null);
+      setSubmitLogPhotoPreview(null);
       fetchInitialData();
     } catch (err: any) {
       console.error(err);
@@ -635,12 +649,11 @@ const ResiduDashboard: React.FC = () => {
                   required
                   value={submitLogForm.logId}
                   onChange={(e) => {
-                    const selLog = pendingLogs.find((l: any) => l.id === e.target.value);
-                    setSubmitLogForm({
-                      ...submitLogForm,
-                      logId: e.target.value,
-                      classification: selLog?.aiClassification || "ORGANIK",
-                    });
+                      setSubmitLogForm({
+                        ...submitLogForm,
+                        logId: e.target.value,
+                        classification: "RESIDU",
+                      });
                   }}
                   className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
                 >
@@ -689,15 +702,50 @@ const ResiduDashboard: React.FC = () => {
                 <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   Klasifikasi Aktual Petugas *
                 </label>
-                <select
-                  required
-                  value={submitLogForm.classification}
-                  onChange={(e) => setSubmitLogForm({ ...submitLogForm, classification: e.target.value })}
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
-                >
-                  <option value="ORGANIK">Organik</option>
-                  <option value="ANORGANIK">Anorganik</option>
-                </select>
+                <div className="border border-slate-200 rounded-lg p-2.5 text-xs bg-slate-100 text-slate-500 font-bold">
+                  Residu
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-700">Foto Dokumentasi Riil *</span>
+                    <button
+                      type="button"
+                      onClick={() => submitLogFileInputRef.current?.click()}
+                      className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-slate-500" /> Ambil Foto
+                    </button>
+                    <input
+                      ref={submitLogFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setSubmitLogPhotoPreview(URL.createObjectURL(file));
+                          setSubmitLogPhoto(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+  
+                  {submitLogPhotoPreview && (
+                    <div className="flex gap-4 items-center animate-in fade-in duration-200">
+                      <img
+                        src={submitLogPhotoPreview}
+                        alt="Preview Bukti"
+                        className="w-24 h-24 rounded-lg object-cover border border-slate-200"
+                      />
+                      <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
+                        <Check className="w-4 h-4" /> Foto Terlampir
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-1">

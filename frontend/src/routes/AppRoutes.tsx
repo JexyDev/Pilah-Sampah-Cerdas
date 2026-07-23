@@ -39,6 +39,8 @@ import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
 import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
 import { RwApproval } from "../pages/RwPortal/RwApproval";
 import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
+import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
+import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -152,7 +154,20 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="jadwal-kegiatan" element={<JadwalKegiatan />} />
+        <Route
+          path="jadwal-kegiatan"
+          element={<JadwalKegiatan />}
+        />
+        
+        <Route
+          path="input-manual"
+          element={
+            <ProtectedRoute allowedRoles={["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]}>
+              <InputSetoranManual />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="kategori-sampah"
           element={
@@ -290,6 +305,10 @@ const AppRoutes: React.FC = () => {
               <RwFacilityInput />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="ide-daur-ulang"
+          element={<IdeDaurUlang />}
         />
         <Route path="*" element={<NotFound />} />
       </Route>

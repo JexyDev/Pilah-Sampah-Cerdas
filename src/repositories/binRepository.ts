@@ -155,7 +155,9 @@ export class BinRepository {
     requestId: string,
     userId: string,
     pointsAwarded: number,
-    categoryName: string
+    categoryName: string,
+    aiConfidence?: number,
+    evidencePhotoUrl?: string
   ): Promise<{ wasteLog: WasteLog; points: PointHistory; notification: Notification }> {
     return prisma.$transaction(async (tx) => {
       // 1. Create Waste Log
@@ -167,6 +169,8 @@ export class BinRepository {
           volumeLiter,
           categoryId,
           requestId,
+          aiConfidence,
+          evidencePhotoUrl,
         },
       });
 

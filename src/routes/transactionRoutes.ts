@@ -9,6 +9,7 @@ import { Router } from "express";
 import { transactionController } from "../controllers/transactionController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -23,6 +24,14 @@ router.get(
   authMiddleware,
   roleMiddleware(["WARGA"]),
   transactionController.getMyDeposits
+);
+
+router.post(
+  "/manual",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]),
+  uploadAvatarMiddleware.single("image"),
+  transactionController.createManualDeposit
 );
 
 export default router;

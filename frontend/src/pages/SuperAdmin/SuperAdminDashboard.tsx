@@ -23,10 +23,16 @@ interface HeatmapData {
   medianScore: number;
 }
 
+interface KelurahanWeightData {
+  kelurahan: string;
+  medianWeightKg: number;
+}
+
 export const SuperAdminDashboard: React.FC = () => {
   const [trends, setTrends] = useState<TrendData[]>([]);
   const [heatmap, setHeatmap] = useState<HeatmapData[]>([]);
   const [leaderboard, setLeaderboard] = useState<HeatmapData[]>([]);
+  const [kelurahanWeights, setKelurahanWeights] = useState<KelurahanWeightData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -37,6 +43,7 @@ export const SuperAdminDashboard: React.FC = () => {
           setTrends(res.data.data.trends || []);
           setHeatmap(res.data.data.heatmap || []);
           setLeaderboard(res.data.data.leaderboard || []);
+          setKelurahanWeights(res.data.data.kelurahanWeightMedians || []);
         }
       } catch (error) {
         console.error("Gagal memuat analitik dashboard:", error);
@@ -221,6 +228,32 @@ export const SuperAdminDashboard: React.FC = () => {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Agregasi Berat Sampah Kelurahan (Median) */}
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Scale className="text-primary w-5 h-5" />
+          <h3 className="text-lg font-bold text-gray-900">Agregasi Berat Sampah (Median Kelurahan)</h3>
+        </div>
+        <p className="text-sm text-gray-500 mb-6">Distribusi agregasi volume / berat sampah warga (dalam kg), menggunakan median untuk menghindari outlier.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {(!kelurahanWeights || kelurahanWeights.length === 0) ? (
+            <div className="col-span-full text-center text-sm text-gray-400 py-4">Belum ada data setoran per kelurahan</div>
+          ) : (
+            kelurahanWeights.map((kw, idx) => (
+              <div key={idx} className="p-4 rounded-xl border border-gray-200 flex flex-col gap-1 bg-gray-50 hover:bg-white transition-colors">
+                <span className="text-xs text-gray-500 font-medium tracking-wide uppercase">Kelurahan</span>
+                <span className="text-sm font-bold text-gray-900 truncate">{kw.kelurahan}</span>
+                <div className="mt-2 flex items-baseline gap-1 text-primary">
+                  <span className="text-2xl font-black">{kw.medianWeightKg}</span>
+                  <span className="text-sm font-semibold">kg</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

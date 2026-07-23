@@ -50,7 +50,10 @@ export class BinService {
     detectedType: string,
     estimatedVolume: number,
     userLat?: number,
-    userLng?: number
+    userLng?: number,
+    aiConfidence?: number,
+    evidencePhotoUrl?: string,
+    detections?: Array<{ detectedType: string; volumeEstimate: number; confidence?: number }>
   ) {
     if (userLat === undefined || userLng === undefined) {
       throw new Error("GPS_COORDINATES_REQUIRED");
@@ -91,7 +94,150 @@ export class BinService {
       }
     }
 
-    // 3. Validate trash type matching
+    // Find all bins owned by the user (or under the same household)
+    const userBins = await prisma.bin.findMany({
+      where: {
+        OR: [
+          { userId },
+          { binOwnerships: { some: { userId } } }
+        ],
+        status: "ACTIVE_BOUND"
+      },
+      include: {
+        category: true
+      }
+    });
+
+    if (detections && detections.length > 0) {
+      let totalWeightKg = 0;
+      let totalVolumeLiter = 0;
+      let totalPointsAwarded = 0;
+      const results = [];
+
+      for (const det of detections) {
+        // Find matching bin for this detection category
+        let targetBin = userBins.find(b => b.category.name === det.detectedType);
+        
+        // If not found in user's bins, try to see if the scanned bin matches
+        if (!targetBin && bin.category.name === det.detectedType) {
+          targetBin = bin;
+        }
+
+        if (!targetBin) {
+          continue;
+        }
+
+        const current = Number(targetBin.currentVolumeLiter);
+        const max = Number(targetBin.maxCapacityLiter);
+        const vol = det.volumeEstimate;
+
+        if (current + vol > max) {
+          await binRepository.createOverflowNotification(userId, targetBin.qrCode).catch(() => {});
+          throw new Error("BIN_OVERFLOW");
+        }
+
+        const newVolume = current + vol;
+        await binRepository.updateVolume(targetBin.id, newVolume);
+
+        // Trigger dispatch if fullness >= trigger
+        const triggerVal = await configService.getConfig("bin_fullness_trigger_wa");
+        const triggerPct = triggerVal ? Number(triggerVal) : 80;
+        const fullness = max > 0 ? (newVolume / max) * 100 : 0;
+        if (fullness >= triggerPct) {
+          const existingTask = await prisma.dispatchTask.findFirst({
+            where: {
+              binId: targetBin.id,
+              status: { in: ["PENDING", "CLAIMED"] },
+            },
+          });
+
+          if (!existingTask) {
+            await prisma.dispatchTask.create({
+              data: {
+                binId: targetBin.id,
+                status: "PENDING",
+              },
+            });
+
+            if (targetBin.latitude !== null && targetBin.longitude !== null) {
+              await websocketService
+                .broadcastDispatch(targetBin.id, targetBin.qrCode, Number(targetBin.latitude), Number(targetBin.longitude))
+                .catch(() => {});
+            }
+          }
+        }
+
+        // Weight
+        const isOrganic = targetBin.category.name === "ORGANIC";
+        const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
+        const weightKg = parseFloat((vol * factor).toFixed(2));
+
+        // Time-based points calculation with multiplier
+        const now = new Date();
+        const currentTimeVal = now.getHours() * 60 + now.getMinutes();
+        const morningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } }))?.value || "06:00";
+        const morningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } }))?.value || "08:00";
+        const eveningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } }))?.value || "16:00";
+        const eveningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } }))?.value || "18:00";
+
+        const parseTimeToMinutes = (timeStr: string) => {
+          const [h, m] = timeStr.split(":").map(Number);
+          return h * 60 + m;
+        };
+
+        const isWithinMissionWindow = 
+          (currentTimeVal >= parseTimeToMinutes(morningStartStr) && currentTimeVal <= parseTimeToMinutes(morningEndStr)) ||
+          (currentTimeVal >= parseTimeToMinutes(eveningStartStr) && currentTimeVal <= parseTimeToMinutes(eveningEndStr));
+
+        let multiplier = 1.0;
+        if (isWithinMissionWindow) {
+          const multKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
+          const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))?.value;
+          multiplier = multVal ? Number(multVal) : (isOrganic ? 2.0 : 1.5);
+        }
+
+        const pointsPerKg = targetBin.category.pointsPerKg || 10;
+        const conf = det.confidence || 1.0;
+        const calculatedPoints = Math.round(conf * pointsPerKg * multiplier);
+
+        const requestId = uuidv4();
+        const result = await binRepository.recordScanTransaction(
+          householdId,
+          targetBin.id,
+          targetBin.categoryId,
+          weightKg,
+          vol,
+          requestId,
+          userId,
+          calculatedPoints,
+          targetBin.category.name,
+          conf,
+          evidencePhotoUrl
+        );
+
+        totalWeightKg += weightKg;
+        totalVolumeLiter += vol;
+        totalPointsAwarded += calculatedPoints;
+
+        results.push({
+          wasteLogId: result.wasteLog.id,
+          category: targetBin.category.name,
+          weightKg,
+          volumeLiter: vol,
+          pointsAwarded: calculatedPoints,
+        });
+      }
+
+      return {
+        isMixture: true,
+        weightKg: parseFloat(totalWeightKg.toFixed(2)),
+        volumeLiter: parseFloat(totalVolumeLiter.toFixed(2)),
+        pointsAwarded: totalPointsAwarded,
+        detections: results,
+      };
+    }
+
+    // 3. Validate trash type matching (Fallback for single detection)
     if (bin.category.name !== detectedType) {
       const error = new Error("BIN_TYPE_MISMATCH");
       (error as any).binType = bin.category.name;
@@ -148,10 +294,33 @@ export class BinService {
     const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
     const weightKg = parseFloat((estimatedVolume * factor).toFixed(2));
 
-    // 7. Calculate points
-    // Fallback if pointsPerKg is 0 in DB
-    const pointsPerKg = bin.category.pointsPerKg || (isOrganic ? 100 : 50);
-    const calculatedPoints = Math.round(weightKg * pointsPerKg);
+    // Time-based points calculation with multiplier
+    const now = new Date();
+    const currentTimeVal = now.getHours() * 60 + now.getMinutes();
+    const morningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } }))?.value || "06:00";
+    const morningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } }))?.value || "08:00";
+    const eveningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } }))?.value || "16:00";
+    const eveningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } }))?.value || "18:00";
+
+    const parseTimeToMinutes = (timeStr: string) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const isWithinMissionWindow = 
+      (currentTimeVal >= parseTimeToMinutes(morningStartStr) && currentTimeVal <= parseTimeToMinutes(morningEndStr)) ||
+      (currentTimeVal >= parseTimeToMinutes(eveningStartStr) && currentTimeVal <= parseTimeToMinutes(eveningEndStr));
+
+    let multiplier = 1.0;
+    if (isWithinMissionWindow) {
+      const multKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
+      const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))?.value;
+      multiplier = multVal ? Number(multVal) : (isOrganic ? 2.0 : 1.5);
+    }
+
+    const pointsPerKg = bin.category.pointsPerKg || 10;
+    const conf = aiConfidence || 1.0;
+    const calculatedPoints = Math.round(conf * pointsPerKg * multiplier);
 
     // 8. Record transaction (WasteLog, PointHistory, Notification)
     const requestId = uuidv4();
@@ -164,7 +333,9 @@ export class BinService {
       requestId,
       userId,
       calculatedPoints,
-      bin.category.name
+      bin.category.name,
+      aiConfidence,
+      evidencePhotoUrl
     );
 
     return {
@@ -832,6 +1003,31 @@ export class BinService {
 
       return { success: true, message: "Laporan tempat sampah rusak berhasil dikirim" };
     }
+  }
+
+  async updateCapacity(binId: string, maxCapacityLiter: number, evidencePhotoUrl: string | null) {
+    const bin = await prisma.bin.findUnique({ where: { id: binId } });
+    if (!bin) throw new Error("BIN_NOT_FOUND");
+
+    const updatedBin = await prisma.bin.update({
+      where: { id: binId },
+      data: {
+        maxCapacityLiter
+      }
+    });
+
+    if (evidencePhotoUrl) {
+      await prisma.auditTrail.create({
+        data: {
+          action: "UPDATE_BIN_CAPACITY",
+          userId: bin.userId || "system",
+          oldValue: { maxCapacityLiter: Number(bin.maxCapacityLiter) } as any,
+          newValue: { maxCapacityLiter, evidencePhotoUrl } as any,
+        }
+      });
+    }
+
+    return updatedBin;
   }
 }
 

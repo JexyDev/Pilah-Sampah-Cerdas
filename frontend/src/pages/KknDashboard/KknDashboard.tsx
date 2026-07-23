@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import LeaderboardWidget from "../../components/LeaderboardWidget";
 import {
   Users,
   Trash2,
@@ -345,8 +346,9 @@ const KknDashboard: React.FC = () => {
 
         {/* Side Panel: Map & Checklist */}
         <div className="col-span-4 space-y-6">
-          {/* Simulated Geographic Heatmap Map */}
-          <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm space-y-4">
+          <LeaderboardWidget />
+          
+          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
             <h4 className="font-extrabold text-sm flex items-center gap-1.5 text-on-surface">
               <MapPin className="text-primary w-4.5 h-4.5" />
               Peta Sebaran Dampingan
@@ -685,34 +687,53 @@ const KknDashboard: React.FC = () => {
       {/* Aksi Mahasiswa KKN Forms */}
       <div className="grid grid-cols-1 gap-6 mt-8">
         <h2 className="text-xl font-bold border-b pb-2">Aksi Mahasiswa KKN</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <KknQrClaim onClaimSuccess={fetchInitialData} />
-            <WargaRegistrationWizard 
-              onSuccess={() => {
-                fetchInitialData();
-                toast.success("Silahkan kembali ke menu utama.");
-              }} 
-              onCancel={() => {
-                toast("Registrasi dibatalkan.", { icon: "ℹ️" });
-              }} 
-            />
+        {kStats && kStats.remainingQuota <= 0 ? (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center space-y-3">
+            <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-[28px]">notifications_active</span>
+            </div>
+            <h3 className="font-extrabold text-base text-amber-800">Target Registrasi Tercapai!</h3>
+            <p className="text-xs text-amber-700 max-w-lg mx-auto">
+              Progres pendaftaran warga Anda telah mencapai 100% dari threshold yang ditentukan.
+              Fitur pendaftaran warga baru dinonaktifkan. Silakan fokus melakukan pendampingan, edukasi, 
+              serta pemantauan terhadap warga dampingan Anda.
+            </p>
+            <div className="pt-2">
+              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                Mode Pengingat & Notifikasi Aktif
+              </span>
+            </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-            <h3 className="font-extrabold text-lg text-slate-800">Bantuan Fasilitas</h3>
-            <p className="text-xs text-slate-500 mt-2">Daftarkan RT/RW untuk fasilitas daur ulang / Bank Sampah</p>
-            <BantuFasilitasForm onSuccess={fetchInitialData} />
-            
-            <div className="w-full border-t border-slate-100 my-6"></div>
-            
-            <h3 className="font-extrabold text-lg text-slate-800">Daftar Petugas</h3>
-            <p className="text-xs text-slate-500 mt-2">Daftarkan Petugas Residu untuk operasional penjemputan</p>
-            <BantuPetugasForm onSuccess={fetchInitialData} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <KknQrClaim onClaimSuccess={fetchInitialData} />
+              <WargaRegistrationWizard 
+                onSuccess={() => {
+                  fetchInitialData();
+                  toast.success("Silahkan kembali ke menu utama.");
+                }} 
+                onCancel={() => {
+                  toast("Registrasi dibatalkan.", { icon: "ℹ️" });
+                }} 
+              />
+            </div>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+              <h3 className="font-extrabold text-lg text-slate-800">Bantuan Fasilitas</h3>
+              <p className="text-xs text-slate-500 mt-2">Daftarkan RT/RW untuk fasilitas daur ulang / Bank Sampah</p>
+              <BantuFasilitasForm onSuccess={fetchInitialData} />
+              
+              <div className="w-full border-t border-slate-100 my-6"></div>
+              
+              <h3 className="font-extrabold text-lg text-slate-800">Daftar Petugas</h3>
+              <p className="text-xs text-slate-500 mt-2">Daftarkan Petugas Residu untuk operasional penjemputan</p>
+              <BantuPetugasForm onSuccess={fetchInitialData} />
 
-            <div className="w-full border-t border-slate-100 my-6"></div>
-            <HandoverForm onSuccess={fetchInitialData} />
+              <div className="w-full border-t border-slate-100 my-6"></div>
+              <HandoverForm onSuccess={fetchInitialData} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* DETAIL WARGA DRAWER */}

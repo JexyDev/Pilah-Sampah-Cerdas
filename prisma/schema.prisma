@@ -217,6 +217,7 @@ model WasteLog {
   verifiedByPetugas    User?         @relation("VerifiedLogs", fields: [verifiedByPetugasId], references: [id], onDelete: SetNull)
   verifiedAt           DateTime?     @map("diverifikasi_pada")
   petugasClassification String?      @map("klasifikasi_petugas")
+  evidencePhotoUrl     String?       @map("url_foto_bukti_petugas")
   createdAt            DateTime      @default(now()) @map("dibuat_pada")
   updatedAt            DateTime      @updatedAt @map("diperbarui_pada")
 
@@ -406,6 +407,7 @@ model PointHistory {
   points      Int
   description String
   kategori    String   @default("REDUKSI_TONASE") @map("kategori") // REDUKSI_TONASE, PARTISIPASI_STREAK, IDE_DAUR_ULANG
+  redeemable  Boolean  @default(false)
   createdAt   DateTime @default(now()) @map("dibuat_pada")
 
   @@map("riwayat_poin")

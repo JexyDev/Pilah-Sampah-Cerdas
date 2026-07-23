@@ -6,10 +6,11 @@ import { ChevronDown, Search, Loader2, MapPinPlus, X } from "lucide-react";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useAuthStore } from "../../store/useAuthStore";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -44,7 +45,18 @@ const createHouseIcon = () => {
   });
 };
 
+const MapUpdater = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, zoom, { duration: 1.5 });
+  }, [center, zoom, map]);
+  return null;
+};
+
 const ManajemenLokasi: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+
   const [locations, setLocations] = useState<any[]>([]);
   const [bins, setBins] = useState<any[]>([]);
   const [households, setHouseholds] = useState<any[]>([]);
@@ -63,7 +75,23 @@ const ManajemenLokasi: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Map view reference
-  const [mapCenter] = useState<[number, number]>([-6.8903, 107.611]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8903, 107.611]);
+  const [mapZoom, setMapZoom] = useState<number>((user?.peran as string) === "LURAH" ? 14 : (user?.peran as string) === "RW" ? 16 : (user?.peran as string) === "RT" ? 18 : 15);
+
+  // Group bins by household (userId or coordinates)
+  const householdGroups = useMemo(() => {
+    const groups: Record<string, { bins: any[]; latitude: number; longitude: number }> = {};
+    bins
+      .filter((b) => b.latitude && b.longitude)
+      .forEach((bin) => {
+        const key = bin.userId || `${bin.latitude},${bin.longitude}`;
+        if (!groups[key]) {
+          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude) };
+        }
+        groups[key].bins.push(bin);
+      });
+    return Object.values(groups);
+  }, [bins]);
 
   const fetchData = async () => {
     try {
@@ -127,6 +155,19 @@ const ManajemenLokasi: React.FC = () => {
     return matchesSearch && matchesKelurahan;
   });
 
+  const handleLocationClick = (loc: any) => {
+    // Attempt to find average coord from bins in this RW to fly to
+    const rwBins = bins.filter(b => b.rtRw === loc.rw && b.latitude && b.longitude);
+    if (rwBins.length > 0) {
+      const avgLat = rwBins.reduce((sum, b) => sum + Number(b.latitude), 0) / rwBins.length;
+      const avgLng = rwBins.reduce((sum, b) => sum + Number(b.longitude), 0) / rwBins.length;
+      setMapCenter([avgLat, avgLng]);
+      setMapZoom(17);
+    } else {
+      toast.error("Tidak ada koordinat terdaftar untuk RW ini");
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-6 bg-surface-container">
       {/* Left Panel: Map Container */}
@@ -135,25 +176,23 @@ const ManajemenLokasi: React.FC = () => {
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3">
             <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-              Status Tempat Sampah
+              Legenda Peta
             </p>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Organik Aktif</span>
+              <span className="text-[12px] font-semibold text-on-surface">Organik / Kompos</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,99,151,0.4)]"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Non-Organik Aktif</span>
+              <div className="w-3 h-3 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.4)]"></div>
+              <span className="text-[12px] font-semibold text-on-surface">Daur Ulang</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-error shadow-[0_0_8px_rgba(186,26,26,0.4)] animate-pulse"></div>
-              <span className="text-[12px] font-semibold text-on-surface">
-                Perlu Perhatian / Penuh
-              </span>
+              <div className="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
+              <span className="text-[12px] font-semibold text-on-surface">Residu / TPA</span>
             </div>
             <div className="flex items-center gap-3 border-t border-outline-variant/20 pt-2">
-              <div className="w-3 h-3 rounded-md bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.4)]"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Rumah Tangga Warga</span>
+              <div className="w-3 h-3 rounded-full bg-[#eab308] shadow-[0_0_8px_rgba(234,179,8,0.4)] animate-pulse"></div>
+              <span className="text-[12px] font-semibold text-on-surface">Flash Drop Challenge</span>
             </div>
           </div>
         </div>
@@ -162,39 +201,66 @@ const ManajemenLokasi: React.FC = () => {
         <div className="w-full h-full relative" style={{ zIndex: 1 }}>
           <MapContainer
             center={mapCenter}
-            zoom={15}
+            zoom={mapZoom}
             scrollWheelZoom={true}
             style={{ height: "100%", width: "100%" }}
           >
+            <MapUpdater center={mapCenter} zoom={mapZoom} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {/* Active Bins */}
-            {bins
-              .filter((b) => b.latitude && b.longitude)
-              .map((b) => (
+            {/* Active Bins (Grouped by Household) */}
+            {householdGroups.map((group, idx) => {
+              // Determine highest status among bins in group
+              let maxPercentage = 0;
+              group.bins.forEach(bin => {
+                const vol = Number(bin.currentVolumeLiter || 0);
+                const max = Number(bin.maxCapacityLiter || 25);
+                const pct = max > 0 ? (vol / max) * 100 : 0;
+                if (pct > maxPercentage) maxPercentage = pct;
+              });
+
+              let status = "Aman";
+              if (maxPercentage >= 90) status = "Penuh";
+              else if (maxPercentage >= 70) status = "Sedang";
+
+              return (
                 <Marker
-                  key={b.kode}
-                  position={[Number(b.latitude), Number(b.longitude)]}
-                  icon={createMapBinIcon(b.status)}
+                  key={`hh-bin-${idx}`}
+                  position={[group.latitude, group.longitude]}
+                  icon={createMapBinIcon(status)}
+                  eventHandlers={{
+                    click: () => {
+                      setMapCenter([group.latitude, group.longitude]);
+                      setMapZoom(19);
+                    },
+                  }}
                 >
                   <Popup>
-                    <div className="text-[12px] space-y-1">
-                      <strong>Tong: {b.kode}</strong>
-                      <br />
-                      Kategori: {b.category?.name || b.categoryId}
-                      <br />
-                      Kapasitas: {b.kapasitas}% terisi ({b.currentVolumeLiter || 0}L /{" "}
-                      {b.maxCapacityLiter || 25}L)
-                      <br />
-                      RT/RW: {b.rtRw}
-                      <br />
-                      Status: {b.status}
+                    <div className="text-[12px] space-y-2">
+                      <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tong Rumah Tangga</strong>
+                      {group.bins.map(b => {
+                        const vol = Number(b.currentVolumeLiter || 0);
+                        const max = Number(b.maxCapacityLiter || 25);
+                        const pct = max > 0 ? (vol / max) * 100 : 0;
+                        return (
+                          <div key={b.id} className="border-b last:border-0 pb-1 mb-1">
+                            <span className="font-bold text-primary">{b.category?.name === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({b.kode})</span>
+                            <br />
+                            Kapasitas: {pct.toFixed(1)}% terisi ({vol}L / {max}L)
+                            <br />
+                            RT/RW: {b.rtRw || "-"}
+                            <br />
+                            Status: {b.status}
+                          </div>
+                        );
+                      })}
                     </div>
                   </Popup>
                 </Marker>
-              ))}
+              );
+            })}
 
             {/* Households */}
             {households
@@ -204,6 +270,12 @@ const ManajemenLokasi: React.FC = () => {
                   key={h.id}
                   position={[Number(h.latitude), Number(h.longitude)]}
                   icon={createHouseIcon()}
+                  eventHandlers={{
+                    click: () => {
+                      setMapCenter([Number(h.latitude), Number(h.longitude)]);
+                      setMapZoom(19);
+                    },
+                  }}
                 >
                   <Popup>
                     <div className="text-[12px]">
@@ -233,13 +305,15 @@ const ManajemenLokasi: React.FC = () => {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={handleOpenAddModal}
-                  className="bg-primary hover:bg-primary/90 text-white font-bold text-[11px] py-2 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm uppercase tracking-wider cursor-pointer"
-                >
-                  <MapPinPlus size={16} />
-                  Tambah
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold text-[11px] py-2 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm uppercase tracking-wider cursor-pointer"
+                  >
+                    <MapPinPlus size={16} />
+                    Tambah
+                  </button>
+                )}
               </div>
             </div>
 
@@ -286,7 +360,8 @@ const ManajemenLokasi: React.FC = () => {
             filteredLocations.map((loc) => (
               <div
                 key={loc.id || loc.rw}
-                className="group bg-white border border-outline-variant/50 rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-all duration-200"
+                onClick={() => handleLocationClick(loc)}
+                className="group bg-white border border-outline-variant/50 rounded-xl p-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">

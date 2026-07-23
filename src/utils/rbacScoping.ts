@@ -88,6 +88,25 @@ export async function getScopingFilters(user: {
     };
   }
 
+  // 3b. RT is scoped by their exact RT/RW area
+  if (role === "RT") {
+    const rtRwId = dbUser.rtRwId;
+    if (!rtRwId) {
+      return {
+        userFilter: { id: "none" },
+        binFilter: { id: "none" },
+        householdFilter: { id: "none" },
+        wasteLogFilter: { id: "none" },
+      };
+    }
+    return {
+      userFilter: { rtRwId },
+      binFilter: { rtRwId },
+      householdFilter: { rtRwId },
+      wasteLogFilter: { bin: { rtRwId } },
+    };
+  }
+
   // 4. MAHASISWA_KKN is scoped by their assigned RT/RW area polygon
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({

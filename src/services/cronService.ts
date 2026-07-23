@@ -20,6 +20,12 @@ export class CronService {
     cron.schedule("1 18 * * *", () => {
       this.checkEscalations("EVENING");
     });
+
+    // Daily citizens absence penalty
+    cron.schedule("0 0 * * *", () => {
+      this.evaluateDailyWargaPenalty();
+    });
+
     console.log("[CronService] Escalation cron jobs started.");
   }
 
@@ -37,8 +43,6 @@ export class CronService {
         const max = Number(b.maxCapacityLiter);
         return max > 0 && (vol / max) >= 0.7;
       });
-
-      const rtRwIds = [...new Set(targetBins.map(b => b.rtRwId))];
       
       const petugas = await prisma.user.findMany({
         where: {
@@ -138,6 +142,83 @@ export class CronService {
       await prisma.notification.createMany({
         data: notifications,
       });
+    }
+  }
+
+  public async evaluateDailyWargaPenalty() {
+    try {
+      console.log("[CronService] Evaluating daily citizens waste submission penalty...");
+      const wargaList = await prisma.user.findMany({
+        where: {
+          role: { name: "WARGA" }
+        }
+      });
+
+      for (const warga of wargaList) {
+        let absenceStreak = 0;
+        let dayOffset = 1;
+        while (true) {
+          const startOfCheckDay = new Date();
+          startOfCheckDay.setDate(startOfCheckDay.getDate() - dayOffset);
+          startOfCheckDay.setHours(0, 0, 0, 0);
+
+          const endOfCheckDay = new Date();
+          endOfCheckDay.setDate(endOfCheckDay.getDate() - dayOffset);
+          endOfCheckDay.setHours(23, 59, 59, 999);
+
+          const hasSubmittedOnDay = await prisma.wasteLog.findFirst({
+            where: {
+              household: { userId: warga.id },
+              createdAt: {
+                gte: startOfCheckDay,
+                lte: endOfCheckDay,
+              }
+            }
+          });
+
+          if (!hasSubmittedOnDay) {
+            absenceStreak++;
+            dayOffset++;
+            if (dayOffset > 30) break; // Limit check to 30 days
+          } else {
+            break;
+          }
+        }
+
+        if (absenceStreak > 0) {
+          const penaltyAmount = absenceStreak; // day 1 is -1, day 2 is -2, etc.
+
+          const pointSumObj = await prisma.pointHistory.aggregate({
+            where: { userId: warga.id },
+            _sum: { points: true }
+          });
+          const currentPoints = pointSumObj._sum.points || 0;
+
+          if (currentPoints > 0) {
+            const deduction = Math.min(penaltyAmount, currentPoints);
+            await prisma.pointHistory.create({
+              data: {
+                userId: warga.id,
+                points: -deduction,
+                description: `Penalti absen buang sampah harian (hari ke-${absenceStreak})`,
+                kategori: "REDUKSI_TONASE"
+              }
+            });
+            console.log(`[CronService] Deducted ${deduction} points from citizen ${warga.name} due to ${absenceStreak} days of absence.`);
+          }
+
+          // Always send notification
+          await prisma.notification.create({
+            data: {
+              userId: warga.id,
+              title: "Penalti Absen Buang Sampah",
+              message: `Anda belum menyetor sampah selama ${absenceStreak} hari berturut-turut. Poin Anda berkurang -${penaltyAmount} hari ini. Ayo segera setor dan pilah sampah Anda!`,
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[CronService] evaluateDailyWargaPenalty error:", error);
     }
   }
 }

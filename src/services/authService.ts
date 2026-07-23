@@ -8,6 +8,9 @@
 import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class AuthService {
   /**
@@ -187,6 +190,98 @@ export class AuthService {
     return updatedUser;
   }
 
+  async getCitizenStreak(userId: string): Promise<number> {
+    const streakDaysConfig = await prisma.systemConfig.findUnique({
+      where: { key: "streak_bonus_days" },
+    });
+    const maxStreakToCheck = streakDaysConfig ? Number(streakDaysConfig.value) : 5;
+
+    let streakCount = 0;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const hasSubmittedToday = await prisma.wasteLog.findFirst({
+      where: {
+        household: { userId },
+        createdAt: { gte: startOfToday, lte: endOfToday }
+      }
+    });
+
+    let startIndex = 0;
+    if (hasSubmittedToday) {
+      streakCount = 1;
+      startIndex = 1;
+    } else {
+      const startOfYesterday = new Date();
+      startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+      startOfYesterday.setHours(0, 0, 0, 0);
+      const endOfYesterday = new Date();
+      endOfYesterday.setDate(endOfYesterday.getDate() - 1);
+      endOfYesterday.setHours(23, 59, 59, 999);
+
+      const hasSubmittedYesterday = await prisma.wasteLog.findFirst({
+        where: {
+          household: { userId },
+          createdAt: { gte: startOfYesterday, lte: endOfYesterday }
+        }
+      });
+
+      if (hasSubmittedYesterday) {
+        streakCount = 1;
+        startIndex = 2;
+      } else {
+        return 0;
+      }
+    }
+
+    for (let i = startIndex; i < maxStreakToCheck + 5; i++) {
+      const checkDateStart = new Date();
+      checkDateStart.setDate(checkDateStart.getDate() - i);
+      checkDateStart.setHours(0, 0, 0, 0);
+
+      const checkDateEnd = new Date();
+      checkDateEnd.setDate(checkDateEnd.getDate() - i);
+      checkDateEnd.setHours(23, 59, 59, 999);
+
+      const logOnDay = await prisma.wasteLog.findFirst({
+        where: {
+          household: { userId },
+          createdAt: { gte: checkDateStart, lte: checkDateEnd }
+        }
+      });
+
+      if (logOnDay) {
+        streakCount++;
+      } else {
+        break;
+      }
+    }
+
+    return streakCount;
+  }
+
+  async getCitizenMotivation(userId: string) {
+    const streak = await this.getCitizenStreak(userId);
+    let configKey = "motivational_template_streak_0";
+    if (streak >= 5) {
+      configKey = "motivational_template_streak_5";
+    } else if (streak >= 3) {
+      configKey = "motivational_template_streak_3";
+    } else if (streak >= 1) {
+      configKey = "motivational_template_streak_1";
+    }
+
+    const template = await prisma.systemConfig.findUnique({ where: { key: configKey } });
+    const message = template ? template.value : "Ayo terus pilah sampahmu demi lingkungan yang lebih bersih!";
+
+    return {
+      streak,
+      message
+    };
+  }
+
   /**
    * Get user profile by ID
    */
@@ -195,6 +290,12 @@ export class AuthService {
     if (!user) {
       throw new Error("USER_NOT_FOUND");
     }
+
+    let streakInfo = undefined;
+    if (user.role.name === "WARGA") {
+      streakInfo = await this.getCitizenMotivation(userId);
+    }
+
     return {
       id: user.id,
       name: user.name,
@@ -203,6 +304,7 @@ export class AuthService {
       phone: user.phone,
       address: user.address,
       fotoProfil: user.fotoProfil,
+      streakInfo,
     };
   }
 

@@ -68,15 +68,14 @@ export class KknService {
   async registerWarga(
     kknUserId: string,
     data: {
+      qrCodeOrganic: string;
+      qrCodeInorganic: string;
       name: string;
       email: string;
       phone: string;
-      nik: string;
       address: string;
+      nik?: string;
       rtRwId: number;
-      binQrCode: string;
-      binCategoryId: string;
-      evidencePhotoUrl?: string;
       latitude?: number;
       longitude?: number;
       maxCapacityLiter?: number;
@@ -92,21 +91,40 @@ export class KknService {
     if (student.whitelistStatus !== "APPROVED") {
       throw new Error("KKN_STUDENT_NOT_APPROVED");
     }
+    // Check KKN registration threshold/limit
+    const totalRegistered = await prisma.bin.count({
+      where: {
+        status: "ACTIVE_BOUND",
+        qrBatch: {
+          assignedPicUserId: kknUserId,
+        },
+      },
+    });
 
-    // Validate QR Bin
-    const bin = await prisma.bin.findUnique({
-      where: { qrCode: data.binQrCode },
+    const maxLimitStr = await configService.getConfig("kkn_max_assignment_per_student");
+    const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : 100;
+
+    if (totalRegistered >= maxLimit) {
+      throw new Error("KKN_ASSIGNMENT_LIMIT_EXCEEDED");
+    }
+
+    // Validate Organic Bin
+    const binOrg = await prisma.bin.findUnique({
+      where: { qrCode: data.qrCodeOrganic },
       include: { qrBatch: true },
     });
-    if (!bin) {
-      throw new Error("BIN_NOT_FOUND");
-    }
-    if (bin.status !== "ASSIGNED_TO_PIC") {
-      throw new Error("BIN_MUST_BE_CLAIMED_FIRST");
-    }
-    if (bin.qrBatch?.assignedPicUserId !== kknUserId) {
-      throw new Error("BIN_BATCH_PIC_MISMATCH");
-    }
+    if (!binOrg) throw new Error("ORGANIC_BIN_NOT_FOUND");
+    if (binOrg.status !== "ASSIGNED_TO_PIC") throw new Error("ORGANIC_BIN_MUST_BE_CLAIMED_FIRST");
+    if (binOrg.qrBatch?.assignedPicUserId !== kknUserId) throw new Error("ORGANIC_BIN_BATCH_PIC_MISMATCH");
+
+    // Validate Inorganic Bin
+    const binIno = await prisma.bin.findUnique({
+      where: { qrCode: data.qrCodeInorganic },
+      include: { qrBatch: true },
+    });
+    if (!binIno) throw new Error("INORGANIC_BIN_NOT_FOUND");
+    if (binIno.status !== "ASSIGNED_TO_PIC") throw new Error("INORGANIC_BIN_MUST_BE_CLAIMED_FIRST");
+    if (binIno.qrBatch?.assignedPicUserId !== kknUserId) throw new Error("INORGANIC_BIN_BATCH_PIC_MISMATCH");
 
     // Check if NIK already used
     if (data.nik) {
@@ -157,26 +175,25 @@ export class KknService {
         },
       });
 
-      // 3. Bind the bin to citizen
-      await tx.bin.update({
-        where: { id: bin.id },
+      // 3. Bind the bins to citizen
+      await tx.bin.updateMany({
+        where: { id: { in: [binOrg.id, binIno.id] } },
         data: {
           status: "PENDING_APPROVAL",
           userId: newWarga.id,
           rtRwId: data.rtRwId,
-          maxCapacityLiter: data.maxCapacityLiter || bin.maxCapacityLiter,
-          latitude: data.latitude ?? bin.latitude,
-          longitude: data.longitude ?? bin.longitude,
+          maxCapacityLiter: data.maxCapacityLiter || 25.0, // default 25kg
+          latitude: data.latitude ?? binOrg.latitude,
+          longitude: data.longitude ?? binOrg.longitude,
         },
       });
 
-      // 4. Create Bin Ownership
-      await tx.binOwnership.create({
-        data: {
-          binId: bin.id,
-          userId: newWarga.id,
-          type: "UTAMA",
-        },
+      // 4. Create Bin Ownerships
+      await tx.binOwnership.createMany({
+        data: [
+          { binId: binOrg.id, userId: newWarga.id, type: "UTAMA" },
+          { binId: binIno.id, userId: newWarga.id, type: "UTAMA" },
+        ],
       });
 
       // 5. Audit log activation request
@@ -184,8 +201,8 @@ export class KknService {
         data: {
           action: "REQUEST_ACTIVATE_BIN",
           userId: kknUserId,
-          oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
-          newValue: { qrCode: bin.qrCode, status: "PENDING_APPROVAL", ownerUserId: newWarga.id } as any,
+          oldValue: { qrCodes: [binOrg.qrCode, binIno.qrCode] } as any,
+          newValue: { qrCodes: [binOrg.qrCode, binIno.qrCode], status: "PENDING_APPROVAL", ownerUserId: newWarga.id } as any,
         },
       });
 

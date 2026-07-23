@@ -299,7 +299,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   const SizedBox(height: 12),
                   const Center(
                     child: Text(
-                      '© 2026 Pilah Sampah Cerdas\n© 2026 Jeremy Darrell & Muhammad Habil Putrawan. Developed by Jeremy Darrell & Muhammad Habil Putrawan.',
+                      '© 2026 TrashCare\n© 2026 Jeremy Darrell & Muhammad Habil Putrawan. Developed by Jeremy Darrell & Muhammad Habil Putrawan.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 11, color: AppColors.textHint),
                     ),

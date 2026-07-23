@@ -9,6 +9,7 @@ import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download } from "l
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -45,6 +46,9 @@ const createHouseIcon = () => {
 };
 
 const ManajemenTempatSampah: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+
   const [bins, setBins] = useState<any[]>([]);
   const [households, setHouseholds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -294,13 +298,15 @@ const ManajemenTempatSampah: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="font-headline-xl text-headline-xl text-on-surface">Manajemen Smart Bin</h2>
         <div className="flex gap-3">
-          <button
-            onClick={handleOpenAddModal}
-            className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
-          >
-            <Plus size={20} />
-            Tambah Titik
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+            >
+              <Plus size={20} />
+              Tambah Titik
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             className="bg-white border border-outline-variant text-on-surface-variant px-6 h-12 rounded-lg font-medium text-base hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
@@ -323,7 +329,7 @@ const ManajemenTempatSampah: React.FC = () => {
               <th className="px-6 py-4">Kapasitas</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Update Terakhir</th>
-              <th className="px-6 py-4 text-center">Aksi</th>
+              {!isReadOnly && <th className="px-6 py-4 text-center">Aksi</th>}
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -402,49 +408,51 @@ const ManajemenTempatSampah: React.FC = () => {
                   <td className="px-6 py-4 text-on-surface-variant text-[12px]">
                     {bin.lastUpdate}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {bin.realStatus === "PENDING_APPROVAL" && (
-                        <>
-                          <button
-                            onClick={() => handleApproveActivation(bin.kode)}
-                            className="w-8 h-8 rounded-md bg-green-50 text-green-700 hover:bg-green-600 hover:text-white transition-colors flex items-center justify-center"
-                            title="Setujui Aktivasi"
-                          >
-                            <Check size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleRejectActivation(bin.kode)}
-                            className="w-8 h-8 rounded-md bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
-                            title="Tolak Aktivasi"
-                          >
-                            <X size={18} />
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => openLogModal(bin.kode)}
-                        className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
-                        title="Log Transaksi"
-                      >
-                        <History size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleOpenEditModal(bin)}
-                        className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
-                        title="Edit"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(bin.kode)}
-                        className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
-                        title="Hapus"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
+                  {!isReadOnly && (
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        {bin.realStatus === "PENDING_APPROVAL" && (
+                          <>
+                            <button
+                              onClick={() => handleApproveActivation(bin.kode)}
+                              className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors flex items-center justify-center"
+                              title="Setujui Aktivasi"
+                            >
+                              <Check size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleRejectActivation(bin.kode)}
+                              className="w-8 h-8 rounded-md bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
+                              title="Tolak Aktivasi & Hapus Akun"
+                            >
+                              <X size={18} />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => openLogModal(bin.kode)}
+                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
+                          title="Log Transaksi"
+                        >
+                          <History size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditModal(bin)}
+                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
+                          title="Edit"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(bin.kode)}
+                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
+                          title="Hapus"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (

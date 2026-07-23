@@ -126,6 +126,25 @@ export class UserService {
       }
     }
 
+    if (roleName === "PETUGAS_RESIDU" && rtRwId) {
+      const area = await prisma.rtRwArea.findUnique({ where: { id: parseInt(rtRwId) } });
+      if (area) {
+        const rwMatch = area.name.match(/RW\s+(\d+)/i);
+        if (rwMatch) {
+          const rwNumber = rwMatch[1];
+          const existingPetugas = await prisma.user.findFirst({
+            where: {
+              role: { name: "PETUGAS_RESIDU" },
+              rtRw: { name: { contains: `RW ${rwNumber}` } }
+            }
+          });
+          if (existingPetugas) {
+            throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
+          }
+        }
+      }
+    }
+
     const passwordHash = await hashPassword(password);
 
     const newUser = await prisma.$transaction(async (tx) => {
@@ -190,6 +209,29 @@ export class UserService {
         throw new Error("ROLE_NOT_FOUND");
       }
       roleId = role.id;
+    }
+
+    const checkRoleName = roleName || user.role.name;
+    const checkRtRwId = rtRwId !== undefined ? rtRwId : user.rtRwId;
+
+    if (checkRoleName === "PETUGAS_RESIDU" && checkRtRwId) {
+      const area = await prisma.rtRwArea.findUnique({ where: { id: parseInt(checkRtRwId) } });
+      if (area) {
+        const rwMatch = area.name.match(/RW\s+(\d+)/i);
+        if (rwMatch) {
+          const rwNumber = rwMatch[1];
+          const existingPetugas = await prisma.user.findFirst({
+            where: {
+              id: { not: user.id },
+              role: { name: "PETUGAS_RESIDU" },
+              rtRw: { name: { contains: `RW ${rwNumber}` } }
+            }
+          });
+          if (existingPetugas) {
+            throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
+          }
+        }
+      }
     }
 
     const updateData: any = { name, email, roleId };

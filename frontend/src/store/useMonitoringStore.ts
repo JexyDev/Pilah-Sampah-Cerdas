@@ -18,6 +18,8 @@ export interface Bin {
   category: {
     name: string;
   };
+  status?: string;
+  userId?: string;
   wargaName?: string;
   kknName?: string;
   rtRw?: string;

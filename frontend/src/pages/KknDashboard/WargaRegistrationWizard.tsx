@@ -14,18 +14,21 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    binQrCode: "",
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    rtRwId: "",
-    binCategoryId: "1", // Default to Organik
-    latitude: -6.88923,
-    longitude: 107.6105,
-    capacityOption: "DEFAULT",
-    manualCapacity: "",
-    photoUrl: ""
+    qrCodeOrganic: '',
+    qrCodeInorganic: '',
+    name: '',
+    email: '',
+    phone: '',
+    nik: '',
+    address: '',
+    rtRwId: '',
+    latitude: 0,
+    longitude: 0,
+    useCustomCapacity: false,
+    maxCapacityLiter: 25,
+    capacityOption: 'DEFAULT',
+    manualCapacity: '',
+    photoUrl: '',
   });
 
   // Mock API to fetch RT/RW list
@@ -51,13 +54,15 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
 
   const nextStep = async () => {
     if (step === 1) {
-      if (!formData.binQrCode) {
-        setError("QR Code wajib diisi");
+      if (!formData.qrCodeOrganic || !formData.qrCodeInorganic) {
+        setError("Kedua QR Code wajib diisi");
         return;
       }
       try {
         setLoading(true);
-        await api.post("/kkn/validate-qr-master", { qrCode: formData.binQrCode });
+        // validate both QR codes
+        await api.post("/kkn/validate-qr-master", { qrCode: formData.qrCodeOrganic });
+        await api.post("/kkn/validate-qr-master", { qrCode: formData.qrCodeInorganic });
         setError("");
         setStep(s => s + 1);
       } catch (err: any) {
@@ -158,16 +163,31 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                 <h3 className="font-semibold text-slate-800 mb-2">Scan QR Code Tong Sampah</h3>
                 <p className="text-sm text-slate-500 mb-4">Pastikan Anda telah mengklaim stiker QR Code ini sebelumnya.</p>
                 
-                <div className="max-w-xs mx-auto">
-                  <input 
-                    type="text" 
-                    name="binQrCode" 
-                    required 
-                    value={formData.binQrCode} 
-                    onChange={handleChange} 
-                    placeholder="Contoh: TS-0001"
-                    className="w-full text-center text-lg font-mono uppercase rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
-                  />
+                <div className="max-w-xs mx-auto space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1 text-left">QR Code Organik</label>
+                    <input 
+                      type="text" 
+                      name="qrCodeOrganic" 
+                      required 
+                      value={formData.qrCodeOrganic} 
+                      onChange={handleChange} 
+                      placeholder="Contoh: ORG00012026"
+                      className="w-full text-center text-lg font-mono uppercase rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1 text-left">QR Code Anorganik</label>
+                    <input 
+                      type="text" 
+                      name="qrCodeInorganic" 
+                      required 
+                      value={formData.qrCodeInorganic} 
+                      onChange={handleChange} 
+                      placeholder="Contoh: ANO00012026"
+                      className="w-full text-center text-lg font-mono uppercase rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -253,31 +273,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
           {/* STEP 4: KAPASITAS */}
           {step === 4 && (
             <div className="space-y-6 animate-fadeIn">
-              <h3 className="font-semibold text-slate-800 border-b pb-2">Kategori & Kapasitas Tong</h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Kategori Tong Sampah</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <label className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${formData.binCategoryId === '1' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-emerald-200'}`}>
-                    <div className="flex items-center gap-3">
-                      <input type="radio" name="binCategoryId" value="1" checked={formData.binCategoryId === '1'} onChange={handleChange} className="text-emerald-600 focus:ring-emerald-500 w-5 h-5" />
-                      <div>
-                        <div className="font-semibold text-emerald-800">Organik</div>
-                        <div className="text-xs text-emerald-600/80">Sisa makanan, daun</div>
-                      </div>
-                    </div>
-                  </label>
-                  <label className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${formData.binCategoryId === '2' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-200'}`}>
-                    <div className="flex items-center gap-3">
-                      <input type="radio" name="binCategoryId" value="2" checked={formData.binCategoryId === '2'} onChange={handleChange} className="text-blue-600 focus:ring-blue-500 w-5 h-5" />
-                      <div>
-                        <div className="font-semibold text-blue-800">Anorganik</div>
-                        <div className="text-xs text-blue-600/80">Plastik, kertas, kaca</div>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
+              <h3 className="font-semibold text-slate-800 border-b pb-2">Kapasitas Tong</h3>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Penentuan Kapasitas Liter</label>

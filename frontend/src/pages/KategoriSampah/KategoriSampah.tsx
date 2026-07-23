@@ -9,8 +9,12 @@ import { Loader2, Plus, Edit, Trash2, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const KategoriSampah: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,21 +96,17 @@ const KategoriSampah: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Header Section */}
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-on-surface mb-2">Konfigurasi Kategori Sampah</h2>
-          <p className="text-[14px] text-on-surface-variant max-w-3xl">
-            Atur poin untuk setiap jenis sampah. Faktor poin digunakan untuk kalkulasi poin warga
-            secara otomatis berdasarkan berat (Kg).
-          </p>
-        </div>
-        <button
-          onClick={openAddModal}
-          className="bg-primary text-white px-5 h-10 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm"
-        >
-          <Plus size={18} />
-          Tambah Kategori
-        </button>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-on-surface">Master Poin/Reward</h2>
+        {!isReadOnly && (
+          <button
+            onClick={openAddModal}
+            className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+          >
+            <Plus size={20} />
+            Tambah Kategori
+          </button>
+        )}
       </div>
 
       {/* Table Container */}
@@ -121,12 +121,12 @@ const KategoriSampah: React.FC = () => {
                 <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
                   Poin per Kg
                 </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Deskripsi
-                </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider text-right">
-                  Aksi
-                </th>
+                <th className="text-xs text-on-surface-variant px-6 py-4 font-medium">Deskripsi</th>
+                {!isReadOnly && (
+                  <th className="text-xs text-on-surface-variant px-6 py-4 font-medium text-center w-24">
+                    Aksi
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="text-[14px] text-on-surface">
@@ -163,27 +163,29 @@ const KategoriSampah: React.FC = () => {
                     <td className="py-4 px-6">
                       <span className="font-bold text-primary">{cat.pointsPerKg} Poin</span>
                     </td>
-                    <td className="py-4 px-6 text-[12px] text-on-surface-variant max-w-xs">
+                    <td className="px-6 py-4 text-on-surface-variant text-sm max-w-xs truncate">
                       {cat.description || "-"}
                     </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(cat)}
-                          className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
-                          title="Edit"
-                        >
-                          <Edit size={20} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cat.id)}
-                          className="p-2 rounded-full text-red-600 hover:bg-red-50 transition-colors inline-flex items-center justify-center"
-                          title="Hapus"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                    </td>
+                    {!isReadOnly && (
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => openEditModal(cat)}
+                            className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cat.id)}
+                            className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Hapus"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

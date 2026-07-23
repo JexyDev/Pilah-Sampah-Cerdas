@@ -171,7 +171,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         child: FadeTransition(
                           opacity: _titleFade,
                           child: Text(
-                            'Pilah Sampah Cerdas',
+                            'TrashCare',
                             style: GoogleFonts.plusJakartaSans(
                               color: AppColors.primaryGreen,
                               fontSize: 26,

@@ -16,6 +16,15 @@ const scanSchema = z.object({
   householdId: z.string().uuid("Household ID tidak valid"),
   userLat: z.number().min(-90).max(90),
   userLng: z.number().min(-180).max(180),
+  aiConfidence: z.number().optional(),
+  evidencePhotoUrl: z.string().optional(),
+  detections: z.array(
+    z.object({
+      detectedType: z.string(),
+      volumeEstimate: z.number().positive(),
+      confidence: z.number().optional(),
+    })
+  ).optional(),
 });
 
 export class BinController {
@@ -130,7 +139,8 @@ export class BinController {
         return;
       }
 
-      const { qrCode, detectedType, estimatedVolume, householdId, userLat, userLng } = parsed.data;
+      const { qrCode, detectedType, estimatedVolume, householdId, userLat, userLng, aiConfidence, evidencePhotoUrl, detections } =
+        parsed.data as any;
 
       const result = await binService.processScan(
         qrCode,
@@ -139,7 +149,10 @@ export class BinController {
         detectedType,
         estimatedVolume,
         userLat,
-        userLng
+        userLng,
+        aiConfidence,
+        evidencePhotoUrl,
+        detections
       );
 
       res.status(200).json({
@@ -549,6 +562,29 @@ export class BinController {
     } catch (error: any) {
       console.error("[BinController] reactivateBin error:", error);
       res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  async updateCapacity(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { maxCapacityLiter, evidencePhotoUrl } = req.body;
+      
+      if (!maxCapacityLiter) {
+        res.status(400).json({ success: false, message: "Kapasitas wajib diisi" });
+        return;
+      }
+
+      if (req.user!.role === "WARGA" && !evidencePhotoUrl) {
+        res.status(400).json({ success: false, message: "Foto bukti wajib diunggah" });
+        return;
+      }
+
+      const result = await binService.updateCapacity(id, Number(maxCapacityLiter), evidencePhotoUrl || null);
+      res.status(200).json({ success: true, data: result, message: "Kapasitas tong berhasil diperbarui" });
+    } catch (error: any) {
+      console.error("[BinController] updateCapacity error:", error);
+      res.status(500).json({ success: false, message: "Gagal memperbarui kapasitas tong" });
     }
   }
 }

@@ -11,7 +11,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useMonitoringStore } from "../../store/useMonitoringStore";
+import { useMonitoringStore, type Bin } from "../../store/useMonitoringStore";
 import toast from "react-hot-toast";
 
 // Fix Leaflet icons in Vite
@@ -75,22 +75,26 @@ const createBinIcon = (status: "aman" | "waspada" | "penuh") => {
 
 const createFacilityIcon = (jenis: string) => {
   let iconName = "storefront";
-  let colorClass = "bg-purple-600";
-  if (jenis === "loseda") {
-    iconName = "water_pipe";
-    colorClass = "bg-emerald-600";
-  } else if (jenis === "bata_terawang") {
-    iconName = "grid_view";
-    colorClass = "bg-amber-600";
-  } else if (jenis === "rumah_maggot") {
-    iconName = "bug_report";
-    colorClass = "bg-indigo-600";
+  let colorClass = "bg-purple-600"; // fallback
+
+  if (jenis === "loseda" || jenis === "bata_terawang" || jenis === "rumah_maggot") {
+    iconName = jenis === "loseda" ? "water_pipe" : jenis === "rumah_maggot" ? "bug_report" : "grid_view";
+    colorClass = "bg-[#10b981]"; // Hijau (Organik/Kompos)
+  } else if (jenis === "bank_sampah" || jenis === "daur_ulang") {
+    iconName = "recycling";
+    colorClass = "bg-[#3b82f6]"; // Biru (Daur Ulang)
+  } else if (jenis === "tpa" || jenis === "residu") {
+    iconName = "delete";
+    colorClass = "bg-[#ef4444]"; // Merah (Residu/TPA)
+  } else if (jenis === "flash_drop") {
+    iconName = "bolt";
+    colorClass = "bg-[#eab308]"; // Emas (Flash Drop Challenge)
   }
 
   return L.divIcon({
     className: "relative flex h-8 w-8 items-center justify-center",
     html: `
-      <div class="${colorClass} text-white rounded-lg p-1.5 shadow-lg flex items-center justify-center">
+      <div class="${colorClass} text-white rounded-lg p-1.5 shadow-lg flex items-center justify-center border-2 border-white">
         <span class="material-symbols-outlined text-[16px] text-white font-bold">${iconName}</span>
       </div>
     `,
@@ -162,6 +166,21 @@ const Monitoring: React.FC = () => {
     const binWithLoc = bins.find((b) => b.latitude && b.longitude);
     if (binWithLoc) return [Number(binWithLoc.latitude), Number(binWithLoc.longitude)];
     return [-6.8903, 107.611]; // Default Coblong, Bandung
+  }, [bins]);
+
+  // Group bins by household (userId or coordinates)
+  const householdGroups = useMemo(() => {
+    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number }> = {};
+    bins
+      .filter((b) => b.latitude && b.longitude)
+      .forEach((bin) => {
+        const key = bin.userId || `${bin.latitude},${bin.longitude}`;
+        if (!groups[key]) {
+          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude) };
+        }
+        groups[key].bins.push(bin);
+      });
+    return Object.values(groups);
   }, [bins]);
 
   if (loading) {
@@ -260,47 +279,65 @@ const Monitoring: React.FC = () => {
               <h3 className="font-bold text-sm text-gray-800">GIS Peta Wilayah</h3>
               <p className="text-[10px] text-gray-400">Monitoring real-time volume tong dan fasilitas lingkungan</p>
             </div>
-            <div className="flex gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1"><span className="w-3.5 h-3.5 bg-green-500 border border-white rounded-full"></span> Aman</span>
-              <span className="flex items-center gap-1"><span className="w-3.5 h-3.5 bg-yellow-500 border border-white rounded-full"></span> Waspada</span>
-              <span className="flex items-center gap-1"><span className="w-3.5 h-3.5 bg-red-500 border border-white rounded-full animate-ping"></span> Penuh</span>
+            <div className="flex gap-4 text-xs font-semibold flex-wrap justify-end max-w-md">
+              <span className="flex items-center gap-1"><span className="w-3.5 h-3.5 bg-green-500 border border-white rounded-full"></span> Tong Aman</span>
+              <span className="flex items-center gap-1"><span className="w-3.5 h-3.5 bg-yellow-500 border border-white rounded-full"></span> Tong Waspada</span>
+              <span className="flex items-center gap-1"><span className="w-3.5 h-3.5 bg-red-500 border border-white rounded-full animate-ping"></span> Tong Penuh</span>
+              <div className="w-full h-px bg-gray-200 my-1"></div>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 bg-[#10b981] rounded-sm"></span> Organik/Kompos</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 bg-[#3b82f6] rounded-sm"></span> Daur Ulang</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 bg-[#ef4444] rounded-sm"></span> Residu/TPA</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 bg-[#eab308] rounded-sm"></span> Flash Drop</span>
             </div>
           </div>
           <div className="flex-1 relative z-10">
-            <MapContainer center={mapCenter} zoom={15} className="h-full w-full">
+            <MapContainer center={mapCenter} zoom={(user?.peran as string) === "LURAH" ? 14 : (user?.peran as string) === "RW" ? 16 : (user?.peran as string) === "RT" ? 18 : 15} className="h-full w-full">
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* Bins Layer */}
-              {bins
-                .filter((bin) => bin.latitude && bin.longitude)
-                .map((bin) => {
+              {/* Bins Layer Grouped by Household */}
+              {householdGroups.map((group, idx) => {
+                // Determine highest status among bins in group
+                let maxPercentage = 0;
+                group.bins.forEach(bin => {
                   const vol = Number(bin.currentVolumeLiter);
                   const max = Number(bin.maxCapacityLiter);
-                  const percentage = max > 0 ? (vol / max) * 100 : 0;
+                  const pct = max > 0 ? (vol / max) * 100 : 0;
+                  if (pct > maxPercentage) maxPercentage = pct;
+                });
 
-                  let status: "aman" | "waspada" | "penuh" = "aman";
-                  if (percentage >= 90) status = "penuh";
-                  else if (percentage >= 70) status = "waspada";
+                let status: "aman" | "waspada" | "penuh" = "aman";
+                if (maxPercentage >= 90) status = "penuh";
+                else if (maxPercentage >= 70) status = "waspada";
 
-                  return (
-                    <Marker
-                      key={bin.id}
-                      position={[Number(bin.latitude), Number(bin.longitude)]}
-                      icon={createBinIcon(status)}
-                    >
-                      <Popup>
-                        <div className="text-xs p-1">
-                          <strong className="text-sm font-bold block mb-1">Tong Sampah ({bin.category.name})</strong>
-                          <span className="block text-gray-500">Kode QR: {bin.qrCode}</span>
-                          <span className="block text-gray-700 font-semibold mt-1">Kapasitas: {percentage.toFixed(1)}% (${vol}L / ${max}L)</span>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
+                return (
+                  <Marker
+                    key={`hh-${idx}`}
+                    position={[group.latitude, group.longitude]}
+                    icon={createBinIcon(status)}
+                  >
+                    <Popup>
+                      <div className="text-xs p-1 min-w-[150px]">
+                        <strong className="text-sm font-bold block mb-2 border-b pb-1">Data Tong Rumah Tangga</strong>
+                        {group.bins.map(bin => {
+                          const vol = Number(bin.currentVolumeLiter);
+                          const max = Number(bin.maxCapacityLiter);
+                          const percentage = max > 0 ? (vol / max) * 100 : 0;
+                          return (
+                            <div key={bin.id} className="mb-2 last:mb-0">
+                              <span className="font-semibold">{bin.category.name}</span>
+                              <span className="block text-gray-500 text-[10px]">QR: {bin.qrCode}</span>
+                              <span className="block text-gray-700">Terisi: {percentage.toFixed(1)}% ({vol}L / {max}L)</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
 
               {/* Facilities Layer */}
               {facilities

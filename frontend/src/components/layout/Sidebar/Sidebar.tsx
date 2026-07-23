@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, BarChart2, Sliders, QrCode, FileText } from "lucide-react";
+import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, BarChart2, Sliders, QrCode, FileText, FilePlus, Lightbulb } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -128,7 +128,7 @@ const Sidebar: React.FC = () => {
         <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/kategori-sampah" icon={Tags} label="Kategori Sampah" />
+          <NavItem to="/kategori-sampah" icon={Tags} label="Master Poin/Reward" />
         )}
 
         {hasAccess([
@@ -141,7 +141,13 @@ const Sidebar: React.FC = () => {
           "MAHASISWA_KKN",
         ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
 
+        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]) && (
+          <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
+        )}
+
         <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
+
+        <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
 
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
           <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />

@@ -44,14 +44,45 @@ export class AiService {
             } else if (isUnreadable) {
               reject(new Error("IMAGE_UNREADABLE"));
             } else {
-              const types = ["ORGANIC", "NON_ORGANIC"];
-              const detectedType = types[Math.floor(Math.random() * types.length)];
-              // Estimate volume between 1.5 and 6.0 Liters
-              const volumeEstimate = parseFloat((Math.random() * 4.5 + 1.5).toFixed(2));
+              // 80% chance of mixture, 10% organic only, 10% inorganic only
+              const rand = Math.random();
+              const detections = [];
+              if (rand < 0.8) {
+                // Mixture
+                detections.push({
+                  detectedType: "ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 3 + 1.0).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)), // 80%-100%
+                });
+                detections.push({
+                  detectedType: "NON_ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 3 + 1.0).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)), // 80%-100%
+                });
+              } else if (rand < 0.9) {
+                // Organic only
+                detections.push({
+                  detectedType: "ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 4.5 + 1.5).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)),
+                });
+              } else {
+                // Inorganic only
+                detections.push({
+                  detectedType: "NON_ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 4.5 + 1.5).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)),
+                });
+              }
+
+              const dominant = detections.reduce((prev, current) => (prev.volumeEstimate > current.volumeEstimate) ? prev : current);
+
               resolve({
                 requestId,
-                detectedType,
-                volumeEstimate,
+                detectedType: dominant.detectedType,
+                volumeEstimate: dominant.volumeEstimate,
+                confidence: dominant.confidence,
+                detections,
                 isBlurry: false,
               });
             }

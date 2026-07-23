@@ -55,4 +55,42 @@ export const transactionController = {
       res.status(500).json({ success: false, message: "Gagal mengambil riwayat setoran Anda" });
     }
   },
+
+  createManualDeposit: async (req: Request, res: Response) => {
+    try {
+      const petugasId = req.user!.userId;
+      const { wargaId, beratKg, kategoriId, overridePoin } = req.body;
+      const photoPath = req.file ? `/uploads/avatars/${req.file.filename}` : null;
+
+      if (!wargaId || !beratKg || !kategoriId) {
+        res.status(400).json({ success: false, message: "Data tidak lengkap" });
+        return;
+      }
+
+      if (!photoPath) {
+        res.status(400).json({ success: false, message: "Foto bukti wajib diunggah" });
+        return;
+      }
+
+      const overridePoinVal = overridePoin ? parseInt(overridePoin, 10) : null;
+
+      const result = await transactionService.createManualDeposit(
+        petugasId,
+        wargaId,
+        parseFloat(beratKg),
+        kategoriId,
+        photoPath,
+        overridePoinVal
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Setoran manual berhasil dicatat",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[TransactionController] createManualDeposit error:", error);
+      res.status(500).json({ success: false, message: error.message || "Gagal mencatat setoran" });
+    }
+  },
 };

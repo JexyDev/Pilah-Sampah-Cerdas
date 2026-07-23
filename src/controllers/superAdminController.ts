@@ -24,7 +24,7 @@ export class SuperAdminController {
     try {
       const { id } = req.params;
       const adminUserId = req.user!.userId;
-      const result = await superAdminService.reactivateBin(id, adminUserId);
+      await superAdminService.reactivateBin(id, adminUserId);
       res.status(200).json({ success: true, message: "Tempat sampah berhasil diaktifkan kembali" });
     } catch (error: any) {
       console.error("[SuperAdminController] reactivateBin error:", error);

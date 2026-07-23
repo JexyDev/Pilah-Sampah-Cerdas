@@ -9,8 +9,12 @@ import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download,
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const ManajemenPengguna: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+
   const [users, setUsers] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,13 +234,15 @@ const ManajemenPengguna: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold text-on-surface">Daftar Pengguna Sistem</h2>
         <div className="flex gap-4">
-          <button
-            onClick={handleOpenAddModal}
-            className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
-          >
-            <UserPlus size={20} />
-            Tambah Pengguna
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+            >
+              <UserPlus size={20} />
+              Tambah Pengguna
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             className="bg-white border border-outline-variant text-on-surface-variant px-6 h-12 rounded-lg font-medium text-base hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
@@ -343,9 +349,11 @@ const ManajemenPengguna: React.FC = () => {
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center">
                   Status
                 </th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center w-24">
-                  Aksi
-                </th>
+                {!isReadOnly && (
+                  <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center w-24">
+                    Aksi
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -433,24 +441,26 @@ const ManajemenPengguna: React.FC = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center gap-1">
-                        <button
-                          onClick={() => handleOpenEditModal(user)}
-                          className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
-                          title="Edit"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user)}
-                          className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
-                          title="Hapus"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+                    {!isReadOnly && (
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditModal(user)}
+                            className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user)}
+                            className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Hapus"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (

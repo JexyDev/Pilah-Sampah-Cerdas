@@ -12,7 +12,7 @@ async function main() {
   console.log("Start seeding massive dummy data...");
 
   // 1. Roles
-  const roles = ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "WARGA", "MAHASISWA_KKN"];
+  const roles = ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "WARGA", "MAHASISWA_KKN"];
   const roleMap: Record<string, any> = {};
   for (const roleName of roles) {
     roleMap[roleName] = await prisma.role.upsert({
@@ -79,6 +79,10 @@ async function main() {
     { key: "streak_bonus_points", value: "10", tipe: "number", deskripsi: "Bonus poin streak warga tambahan" },
     { key: "idea_approval_points", value: "50", tipe: "number", deskripsi: "Poin untuk ide daur ulang yang disetujui" },
     { key: "emission_factor_metana", value: "0.05", tipe: "number", deskripsi: "Faktor emisi metana yang dihindari (kgCO2e per kg)" },
+    { key: "motivational_template_streak_0", value: "Ayo mulai pilah sampahmu hari ini demi lingkungan bersih!", tipe: "string", deskripsi: "Pesan motivasi jika streak 0 hari" },
+    { key: "motivational_template_streak_1", value: "Hebat! 1 hari memilah sampah, pertahankan kebiasaan baik ini!", tipe: "string", deskripsi: "Pesan motivasi jika streak 1 hari" },
+    { key: "motivational_template_streak_3", value: "Luar biasa! Kamu sudah 3 hari berturut-turut memilah sampah!", tipe: "string", deskripsi: "Pesan motivasi jika streak >= 3 hari" },
+    { key: "motivational_template_streak_5", value: "Sangat menginspirasi! Streak 5 hari dicapai, kamu adalah Pahlawan TrashCare sejati!", tipe: "string", deskripsi: "Pesan motivasi jika streak >= 5 hari" }
   ];
   for (const config of configs) {
     await prisma.systemConfig.upsert({
@@ -97,6 +101,7 @@ async function main() {
     { email: "camat@psc.id", name: "Camat Coblong", roleId: roleMap["CAMAT"].id, nik: "3273012345678907", rtRwId: null },
     { email: "lurah@psc.id", name: "Lurah Dago", roleId: roleMap["LURAH"].id, nik: "3273012345678908", rtRwId: null },
     { email: "rw@psc.id", name: "Asep RW 06", roleId: roleMap["RW"].id, nik: "3273012345678903", rtRwId: rtRwAreas.find(r => r.name.includes("RW 06"))?.id },
+    { email: "rt@psc.id", name: "Bambang RT 01", roleId: roleMap["RT"].id, nik: "3273012345678999", rtRwId: rtRwAreas.find(r => r.name === "RT 01 / RW 06")?.id },
     { email: "petugas@psc.id", name: "Budi Petugas Residu", roleId: roleMap["PETUGAS_RESIDU"].id, nik: "3273012345678902", rtRwId: rtRwAreas.find(r => r.name.includes("RW 06"))?.id },
     { email: "petugaspending1@psc.id", name: "Candra Petugas", roleId: roleMap["PETUGAS_RESIDU"].id, nik: "3273012345678912", rtRwId: rtRwAreas.find(r => r.name.includes("RW 06"))?.id },
     { email: "petugaspending2@psc.id", name: "Deni Petugas", roleId: roleMap["PETUGAS_RESIDU"].id, nik: "3273012345678913", rtRwId: rtRwAreas.find(r => r.name.includes("RW 06"))?.id },

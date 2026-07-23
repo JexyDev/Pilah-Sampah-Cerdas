@@ -27,7 +27,14 @@ export const predictWaste = async (file: File) => {
     // 2. Perform AI detection using the uploaded image URL
     const response = await api.post(`/waste/detect-mock`, { imageUrl });
 
-    return response.data.data; // { jenis_sampah, estimasi_volume, confidence, quotaRemaining }
+    const raw = response.data.data;
+    return {
+      jenis_sampah: raw.detectedType,
+      estimasi_volume: raw.volumeEstimate,
+      confidence: raw.confidence,
+      quotaRemaining: raw.quotaRemaining,
+      detections: raw.detections,
+    };
   } catch (error) {
     console.error("Error predicting waste:", error);
     throw error;

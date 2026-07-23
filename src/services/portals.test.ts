@@ -48,11 +48,24 @@ describe("Portals A & B Service Integration Tests", () => {
     // Create a category
     const category = await prisma.wasteCategory.findFirst();
 
-    // Create a test bin assigned to this batch
+    // Create test bins assigned to this batch
     testBin = await prisma.bin.create({
       data: {
-        qrCode: `TS-TEST-${Date.now()}`,
+        qrCode: `ORG-TEST-${Date.now()}`,
         categoryId: category!.id,
+        maxCapacityLiter: 25.0,
+        rtRwId: rtRwArea.id,
+        status: "ASSIGNED_TO_PIC",
+        qrBatchId: qrBatch.id,
+      },
+    });
+    
+    // Create second bin for Inorganic
+    const catIno = await prisma.wasteCategory.findFirst({ where: { name: "INORGANIC" } });
+    await prisma.bin.create({
+      data: {
+        qrCode: `ANO-TEST-${Date.now()}`,
+        categoryId: catIno!.id,
         maxCapacityLiter: 25.0,
         rtRwId: rtRwArea.id,
         status: "ASSIGNED_TO_PIC",
@@ -88,8 +101,8 @@ describe("Portals A & B Service Integration Tests", () => {
           nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
           address: "Jl. Dago Giri No. 12",
           rtRwId: rtRwArea.id,
-          binQrCode: diffBin.qrCode,
-          binCategoryId: testBin.categoryId,
+          qrCodeOrganic: diffBin.qrCode,
+          qrCodeInorganic: diffBin.qrCode,
         })
       ).rejects.toThrow("BIN_BATCH_PIC_MISMATCH");
     });
@@ -103,8 +116,8 @@ describe("Portals A & B Service Integration Tests", () => {
         nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
         address: "Jl. Dago Giri No. 12",
         rtRwId: rtRwArea.id,
-        binQrCode: testBin.qrCode,
-        binCategoryId: testBin.categoryId,
+        qrCodeOrganic: testBin.qrCode,
+        qrCodeInorganic: testBin.qrCode.replace("ORG", "ANO"),
       });
 
       citizenUser = result.newWarga;

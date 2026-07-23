@@ -1,5 +1,5 @@
 import { IconRenderer } from "../../components/common/IconRenderer";
-import { PlusCircle, X, RefreshCcw, UserCheck, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, Radio, Server, BrainCircuit, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
+import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, Radio, Server, BrainCircuit, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -19,6 +19,7 @@ import { MapContainer, TileLayer, Circle, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Badge } from "../../components/common/Badge";
+import LeaderboardWidget from "../../components/LeaderboardWidget";
 
 // ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
@@ -60,35 +61,53 @@ const WargaDashboard: React.FC = () => {
   // Waste logs filter state
   const [filterWasteType, setFilterWasteType] = useState("ALL");
 
-  const [showRegBinModal, setShowRegBinModal] = useState(false);
-  const [regBinQrCode, setRegBinQrCode] = useState("");
-  const [regBinCapMode, setRegBinCapMode] = useState("DEFAULT");
-  const [regBinCapacity, setRegBinCapacity] = useState("25");
-  const [isRegisteringBin, setIsRegisteringBin] = useState(false);
+  const [showEditCapModal, setShowEditCapModal] = useState(false);
+  const [editCapBinId, setEditCapBinId] = useState("");
+  const [editCapMode, setEditCapMode] = useState("DEFAULT");
+  const [editCapValue, setEditCapValue] = useState("25");
+  const [editCapPhoto, setEditCapPhoto] = useState<File | null>(null);
+  const [isUpdatingCap, setIsUpdatingCap] = useState(false);
 
-  const handleRegisterBin = async (e: React.FormEvent) => {
+  const handleUpdateCapacity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regBinQrCode.trim()) {
-      toast.error("QR Code wajib diisi");
-      return;
-    }
-    setIsRegisteringBin(true);
-    try {
-      const payload = {
-        qrCode: regBinQrCode,
-        maxCapacityLiter: regBinCapMode === "DEFAULT" ? 25 : parseInt(regBinCapacity) || 25,
-      };
-      const res = await api.post("/bins/register-warga", payload);
-      if (res.data?.success) {
-        toast.success("Berhasil mendaftarkan tong sampah! Menunggu persetujuan RW.");
-        setShowRegBinModal(false);
-        setRegBinQrCode("");
-        fetchMyBins();
+    
+    let capacityValue = 25;
+    let evidencePhotoUrl = "";
+
+    if (editCapMode === "MANUAL") {
+      if (!editCapPhoto) {
+        toast.error("Wajib mengunggah foto bukti jika mengubah kapasitas manual!");
+        return;
       }
+      capacityValue = Number(editCapValue);
+    }
+
+    setIsUpdatingCap(true);
+    try {
+      if (editCapMode === "MANUAL" && editCapPhoto) {
+        const formData = new FormData();
+        formData.append("image", editCapPhoto);
+        const uploadRes = await api.post("/waste/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        evidencePhotoUrl = uploadRes.data?.data?.imageUrl || "";
+      }
+
+      await api.put(`/bins/${editCapBinId}/capacity`, {
+        maxCapacityLiter: capacityValue,
+        evidencePhotoUrl,
+      });
+
+      toast.success("Pengajuan perubahan kapasitas berhasil dikirim! Menunggu validasi.");
+      setShowEditCapModal(false);
+      setEditCapPhoto(null);
+      fetchMyBins();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mendaftarkan tong sampah");
+      toast.error(err.response?.data?.message || "Gagal mengubah kapasitas tong sampah");
     } finally {
-      setIsRegisteringBin(false);
+      setIsUpdatingCap(false);
     }
   };
 
@@ -566,12 +585,6 @@ const WargaDashboard: React.FC = () => {
                 <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                   {user?.wilayah || "Umum"}
                 </span>
-                <button
-                  onClick={() => setShowRegBinModal(true)}
-                  className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider"
-                >
-                  + Registrasi Bin
-                </button>
               </div>
             </div>
 
@@ -644,6 +657,16 @@ const WargaDashboard: React.FC = () => {
 
                         <div className="mt-3 flex gap-2 justify-end">
                           <button
+                            onClick={() => {
+                              setEditCapBinId(bin.id);
+                              setShowEditCapModal(true);
+                            }}
+                            className="px-2.5 py-1 text-[10px] bg-white border border-outline-variant text-on-surface font-bold rounded hover:bg-slate-50 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                          >
+                            <Settings size={12} />
+                            Ubah Kapasitas
+                          </button>
+                          <button
                             onClick={() => handleOpenIssueModal(bin.id, "EMPTY_REQUEST")}
                             className="px-2.5 py-1 text-[10px] bg-primary text-white font-bold rounded hover:bg-primary/95 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
@@ -665,6 +688,8 @@ const WargaDashboard: React.FC = () => {
               </div>
             )}
           </div>
+
+          <LeaderboardWidget />
 
           {/* Recent Activity */}
           <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
@@ -795,17 +820,17 @@ const WargaDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 4. REGISTRASI BIN MODAL */}
-      {showRegBinModal && (
+      {/* 4. EDIT CAPACITY MODAL */}
+      {showEditCapModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
               <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <PlusCircle className="text-primary" />
-                Registrasi Tong Sampah Baru
+                <Settings className="text-primary" />
+                Ubah Kapasitas Tong
               </h3>
               <button
-                onClick={() => setShowRegBinModal(false)}
+                onClick={() => setShowEditCapModal(false)}
                 className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
               >
                 <X size={20} />
@@ -813,63 +838,65 @@ const WargaDashboard: React.FC = () => {
             </div>
 
             <div className="p-6">
-              <form onSubmit={handleRegisterBin} className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                    Scan / Ketik ID QR Code
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: BIN-ORG-XYZ"
-                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
-                    value={regBinQrCode}
-                    onChange={(e) => setRegBinQrCode(e.target.value)}
-                    required
-                  />
-                </div>
-
+              <form onSubmit={handleUpdateCapacity} className="space-y-4">
+                
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase">
                     Opsi Kapasitas
                   </label>
                   <select
                     className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
-                    value={regBinCapMode}
-                    onChange={(e) => setRegBinCapMode(e.target.value)}
+                    value={editCapMode}
+                    onChange={(e) => setEditCapMode(e.target.value)}
                   >
                     <option value="DEFAULT">Default Standar Pemerintah (25 Liter)</option>
-                    <option value="MANUAL">Input Manual (Liter)</option>
+                    <option value="MANUAL">Input Manual (Wajib Foto Bukti)</option>
                     <option value="AI" disabled>Estimasi AI (Segera Hadir)</option>
                   </select>
                 </div>
 
-                {regBinCapMode === "MANUAL" && (
-                  <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      Kapasitas Tong (Liter)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Contoh: 50"
-                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
-                      value={regBinCapacity}
-                      onChange={(e) => setRegBinCapacity(e.target.value)}
-                    />
-                  </div>
+                {editCapMode === "MANUAL" && (
+                  <>
+                    <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                        Kapasitas Tong Baru (Liter)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="Contoh: 50"
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                        value={editCapValue}
+                        onChange={(e) => setEditCapValue(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                        Upload Foto Bukti Tong
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setEditCapPhoto(e.target.files?.[0] || null)}
+                        className="w-full border border-outline-variant rounded-lg p-2 text-xs bg-white focus:border-primary focus:outline-none"
+                        required
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={isRegisteringBin}
+                    disabled={isUpdatingCap}
                     className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-md shadow-primary/20"
                   >
-                    {isRegisteringBin ? (
+                    {isUpdatingCap ? (
                       <RefreshCcw className="animate-spin" size={16} />
                     ) : (
-                      <UserCheck size={16} />
+                      <Save size={16} />
                     )}
-                    Daftarkan Sekarang
+                    {isUpdatingCap ? "Menyimpan..." : "Simpan Perubahan"}
                   </button>
                 </div>
               </form>

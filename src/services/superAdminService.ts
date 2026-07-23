@@ -268,10 +268,36 @@ export class SuperAdminService {
         },
       });
 
+      // Get category to determine prefix
+      const category = await tx.wasteCategory.findUnique({ where: { id: categoryId } });
+      if (!category) throw new Error("CATEGORY_NOT_FOUND");
+      const prefix = category.name === "ORGANIC" ? "ORG" : "ANO";
+      const year = new Date().getFullYear().toString();
+
+      // Find the latest QR code for this prefix and year
+      const latestBin = await tx.bin.findFirst({
+        where: {
+          qrCode: {
+            startsWith: prefix,
+            endsWith: year,
+          },
+        },
+        orderBy: { qrCode: "desc" },
+      });
+
+      let startNum = 1;
+      if (latestBin) {
+        const match = latestBin.qrCode.match(new RegExp(`^${prefix}(\\d+)${year}$`));
+        if (match) {
+          startNum = parseInt(match[1], 10) + 1;
+        }
+      }
+
       // Create Bins corresponding to the QR codes
       const binsData = [];
-      for (let i = 1; i <= totalQr; i++) {
-        const qrCode = `${batchCode}-${i.toString().padStart(4, "0")}`;
+      for (let i = 0; i < totalQr; i++) {
+        const sequence = (startNum + i).toString().padStart(4, "0");
+        const qrCode = `${prefix}${sequence}${year}`;
         binsData.push({
           qrCode,
           categoryId,
@@ -402,6 +428,34 @@ export class SuperAdminService {
     // 3. Leaderboard wilayah
     const sortedLeaderboard = regionMedians.sort((a, b) => b.medianScore - a.medianScore);
 
+    // 4. Agregasi Berat Sampah per Kelurahan (Median)
+    const kelurahanWeights: Record<string, number[]> = {};
+    users.forEach((u) => {
+      if (u.households.length === 0) return;
+      const h = u.households[0];
+      const kelurahanName = h.rtRw.kelurahan.name;
+      
+      const totalWeight = h.wasteLogs.reduce((sum, l) => sum + Number(l.weightKg), 0);
+      if (totalWeight > 0) {
+        if (!kelurahanWeights[kelurahanName]) {
+          kelurahanWeights[kelurahanName] = [];
+        }
+        kelurahanWeights[kelurahanName].push(totalWeight);
+      }
+    });
+
+    const kelurahanWeightMedians = Object.keys(kelurahanWeights).map((name) => {
+      const weights = kelurahanWeights[name].sort((a, b) => a - b);
+      const half = Math.floor(weights.length / 2);
+      const median =
+        weights.length % 2 !== 0 ? weights[half] : (weights[half - 1] + weights[half]) / 2.0;
+
+      return {
+        kelurahan: name,
+        medianWeightKg: parseFloat(median.toFixed(2)),
+      };
+    }).sort((a, b) => b.medianWeightKg - a.medianWeightKg);
+
     return {
       trends: Object.keys(weeklyData).map((k) => {
         const d = weeklyData[k];
@@ -417,6 +471,7 @@ export class SuperAdminService {
       }),
       heatmap: regionMedians,
       leaderboard: sortedLeaderboard,
+      kelurahanWeightMedians,
     };
   }
 }

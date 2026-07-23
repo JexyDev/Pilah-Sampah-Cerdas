@@ -17,7 +17,6 @@
     "@zxing/library": "^0.23.0",
     "axios": "^1.18.1",
     "browser-image-compression": "^2.0.2",
-    "date-fns": "^4.4.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",

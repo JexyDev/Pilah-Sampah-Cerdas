@@ -267,6 +267,13 @@ router.post(
   binController.reportIssue
 );
 
+router.put(
+  "/:id/capacity",
+  authMiddleware,
+  roleMiddleware(["WARGA", "SUPER_ADMIN", "RW"]),
+  binController.updateCapacity
+);
+
 router.post(
   "/register-warga",
   authMiddleware,
