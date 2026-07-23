@@ -37,6 +37,7 @@ async function testRBAC() {
         data: {
           name: `Test ${role.name}`,
           email: `test_${role.name.toLowerCase()}@example.com`,
+          phone: `0899999999${role.id}`,
           password: 'password',
           roleId: role.id,
           status: 'Aktif',

@@ -31,6 +31,9 @@ vi.mock("@prisma/client", () => {
       findMany: (...args: any[]) => mockFindMany(...args),
       update: (...args: any[]) => mockUpdate(...args),
     },
+    residuLog: {
+      count: (...args: any[]) => mockCount(...args),
+    },
     auditTrail: {
       create: (...args: any[]) => mockCreate(...args),
     },
@@ -61,6 +64,7 @@ vi.mock("@prisma/client", () => {
     PrismaClient: class {
       wasteLog = mPrisma.wasteLog;
       petugasResidu = mPrisma.petugasResidu;
+      residuLog = mPrisma.residuLog;
       auditTrail = mPrisma.auditTrail;
       dispatchTask = mPrisma.dispatchTask;
       user = mPrisma.user;

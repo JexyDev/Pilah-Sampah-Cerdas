@@ -103,7 +103,16 @@ export class UserService {
   }
 
   async createUser(data: any, currentUser?: { userId: string; role: string }) {
-    const { name, email, password, roleName, nik, status, rtRwId, studentProfile } = data;
+    const { name, email, password, phone, roleName, nik, status, rtRwId, studentProfile } = data;
+
+    if (!phone) {
+      throw new Error("PHONE_REQUIRED");
+    }
+
+    const existingPhone = await prisma.user.findUnique({ where: { phone } });
+    if (existingPhone) {
+      throw new Error("PHONE_CONFLICT");
+    }
 
     if (["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName) && currentUser?.role !== "SUPER_ADMIN") {
       throw new Error("FORBIDDEN_ROLE_CREATION");
@@ -153,6 +162,7 @@ export class UserService {
           name,
           email,
           password: passwordHash,
+          phone,
           roleId: role.id,
           nik: nik || null,
           status: status || "Aktif",
@@ -184,7 +194,7 @@ export class UserService {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
-      role: newUser.role.name,
+      role: (newUser as any).role.name,
     };
   }
 
