@@ -1,7 +1,7 @@
 /**
  * Project: Pilah Sampah Cerdas
- * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
- * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
 import { Router } from "express";

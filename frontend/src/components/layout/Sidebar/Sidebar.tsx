@@ -1,7 +1,7 @@
 /**
  * Project: TrashCare
- * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
- * Copyright (c) 2026 Jeremy Darrell & Muhammad Habil Putrawan. All rights reserved.
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
@@ -222,7 +222,7 @@ const Sidebar: React.FC = () => {
           </button>
         </div>
         <div className="mt-3 text-[9px] text-on-surface-variant/65 text-center">
-          © 2026 Jeremy Darrell & Muhammad Habil Putrawan. Developed by Jeremy Darrell & Muhammad
+          © 2026 PT Makerindo. Developed by Jeremy Darrell & Muhammad
           Habil Putrawan.
         </div>
       </div>
