@@ -25,6 +25,15 @@ export const ManageConfigs: React.FC = () => {
   const [escalationDays, setEscalationDays] = useState<number>(3);
   const [workflowLevels, setWorkflowLevels] = useState<string[]>(["RW", "ADMIN_DLH"]);
 
+  // Game Rules Configurator States
+  const [organicMultiplier, setOrganicMultiplier] = useState("2.0");
+  const [nonorganicMultiplier, setNonorganicMultiplier] = useState("1.5");
+  const [penaltyMultiplier, setPenaltyMultiplier] = useState("-1.0");
+  const [morningStart, setMorningStart] = useState("06:00");
+  const [morningEnd, setMorningEnd] = useState("08:00");
+  const [eveningStart, setEveningStart] = useState("16:00");
+  const [eveningEnd, setEveningEnd] = useState("18:00");
+
   const fetchConfigs = async () => {
     try {
       const res = await api.get("/configs");
@@ -42,6 +51,23 @@ export const ManageConfigs: React.FC = () => {
             console.error("Gagal parsing konfigurasi workflow");
           }
         }
+
+        // Parse Game Rules
+        const orgMult = res.data.data.find((c: any) => c.key === "organic_point_multiplier");
+        const nonorgMult = res.data.data.find((c: any) => c.key === "nonorganic_point_multiplier");
+        const penMult = res.data.data.find((c: any) => c.key === "residu_penalty_multiplier");
+        const mornStart = res.data.data.find((c: any) => c.key === "reporting_window_morning_start");
+        const mornEnd = res.data.data.find((c: any) => c.key === "reporting_window_morning_end");
+        const eveStart = res.data.data.find((c: any) => c.key === "reporting_window_evening_start");
+        const eveEnd = res.data.data.find((c: any) => c.key === "reporting_window_evening_end");
+
+        if (orgMult) setOrganicMultiplier(orgMult.value);
+        if (nonorgMult) setNonorganicMultiplier(nonorgMult.value);
+        if (penMult) setPenaltyMultiplier(penMult.value);
+        if (mornStart) setMorningStart(mornStart.value);
+        if (mornEnd) setMorningEnd(mornEnd.value);
+        if (eveStart) setEveningStart(eveStart.value);
+        if (eveEnd) setEveningEnd(eveEnd.value);
       }
     } catch (error) {
       console.error("Gagal memuat konfigurasi:", error);
@@ -78,6 +104,22 @@ export const ManageConfigs: React.FC = () => {
       levels: workflowLevels,
     });
     await handleUpdateConfig("workflow_escalation_facilities", value);
+  };
+
+  const handleSaveGameRules = async () => {
+    try {
+      await api.post("/configs", { key: "organic_point_multiplier", value: organicMultiplier });
+      await api.post("/configs", { key: "nonorganic_point_multiplier", value: nonorganicMultiplier });
+      await api.post("/configs", { key: "residu_penalty_multiplier", value: penaltyMultiplier });
+      await api.post("/configs", { key: "reporting_window_morning_start", value: morningStart });
+      await api.post("/configs", { key: "reporting_window_morning_end", value: morningEnd });
+      await api.post("/configs", { key: "reporting_window_evening_start", value: eveningStart });
+      await api.post("/configs", { key: "reporting_window_evening_end", value: eveningEnd });
+      toast.success("Aturan Bisnis & Gamifikasi berhasil diperbarui!");
+      fetchConfigs();
+    } catch (e) {
+      toast.error("Gagal menyimpan aturan bisnis");
+    }
   };
 
   if (loading) {
@@ -138,6 +180,101 @@ export const ManageConfigs: React.FC = () => {
 
         {/* Edit Parameter Panel / Workflow Designer */}
         <div className="space-y-6">
+          {/* Game Rules & Gamification Configurator */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+            <div>
+              <h3 className="font-bold text-gray-800 text-sm">Aturan Poin & Jam Operasional</h3>
+              <p className="text-xs text-gray-500 mt-1">Konfigurasi reward warga, penalty, dan jam setor agar dapet poin.</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Point Multipliers */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-600 uppercase">Organik (Poin/Kg)</label>
+                  <input
+                    type="text"
+                    value={organicMultiplier}
+                    onChange={(e) => setOrganicMultiplier(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-600 uppercase">Anorganik (Poin/Kg)</label>
+                  <input
+                    type="text"
+                    value={nonorganicMultiplier}
+                    onChange={(e) => setNonorganicMultiplier(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Penalty */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-600 uppercase">Penalty Tidak Setor (Poin/Hari)</label>
+                <input
+                  type="text"
+                  value={penaltyMultiplier}
+                  onChange={(e) => setPenaltyMultiplier(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-red-600 font-bold focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Morning Window */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-600 uppercase">Window Setoran Pagi</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Mulai"
+                    value={morningStart}
+                    onChange={(e) => setMorningStart(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span className="text-gray-400 text-xs">s/d</span>
+                  <input
+                    type="text"
+                    placeholder="Selesai"
+                    value={morningEnd}
+                    onChange={(e) => setMorningEnd(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Evening Window */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-600 uppercase">Window Setoran Sore</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Mulai"
+                    value={eveningStart}
+                    onChange={(e) => setEveningStart(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span className="text-gray-400 text-xs">s/d</span>
+                  <input
+                    type="text"
+                    placeholder="Selesai"
+                    value={eveningEnd}
+                    onChange={(e) => setEveningEnd(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveGameRules}
+                className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+              >
+                <Save size={14} />
+                Simpan Aturan Gamifikasi & Jam
+              </button>
+            </div>
+          </div>
+
           {/* Edit Parameter Panel */}
           {selectedConfig && (
             <div className="bg-white p-6 rounded-2xl border border-primary/20 shadow-md space-y-4">
