@@ -51,8 +51,8 @@ const registerStaffSchema = z.object({
 });
 
 const registerWargaSchema = registerStaffSchema.extend({
-  qrCode: z.string().min(1, "QR Code diperlukan"),
-  wargaSubtype: z.enum(["UTAMA", "TAMBAHAN"]),
+  qrCode: z.string().min(1, "QR Code diperlukan").optional(),
+  wargaSubtype: z.enum(["UTAMA", "TAMBAHAN"]).optional(),
   rtRwId: z.number().int("RT/RW ID harus integer"),
   latitude: z.number(),
   longitude: z.number(),
