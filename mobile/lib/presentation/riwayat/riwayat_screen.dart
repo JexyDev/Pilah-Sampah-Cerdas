@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -91,7 +84,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
         final start = now.subtract(Duration(days: now.weekday - 1));
         return logs
             .where(
-              (l) => l.createdAt.isAfter(
+              (l) => l.createdAt.toLocal().isAfter(
                 DateTime(start.year, start.month, start.day),
               ),
             )
@@ -99,9 +92,11 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
       case 2: // Bulan ini
         return logs
             .where(
-              (l) =>
-                  l.createdAt.month == now.month &&
-                  l.createdAt.year == now.year,
+              (l) {
+                final localDate = l.createdAt.toLocal();
+                return localDate.month == now.month &&
+                    localDate.year == now.year;
+              },
             )
             .toList();
       default:
@@ -148,7 +143,7 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
     final Map<String, List<WasteLogEntity>> grouped = {};
     final now = DateTime.now();
     for (final log in logs) {
-      final String key = _groupLabel(log.createdAt, now);
+      final String key = _groupLabel(log.createdAt.toLocal(), now);
       grouped.putIfAbsent(key, () => []).add(log);
     }
 
@@ -356,7 +351,7 @@ class _RiwayatItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt),
+                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt.toLocal()),
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textHint,
@@ -367,35 +362,50 @@ class _RiwayatItem extends StatelessWidget {
               ],
             ),
           ),
-          // TERVALIDASI badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.statusTervalidasiBg,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.statusTervalidasi,
-                  size: 12,
-                ),
-                SizedBox(width: 3),
-                Text(
-                  'TERVALIDASI',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.statusTervalidasi,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Schedule badge
+          _buildScheduleBadge(log.createdAt.toLocal()),
         ],
       ),
     );
+  }
+
+  Widget _buildScheduleBadge(DateTime date) {
+    final hour = date.hour;
+    // Window Pagi: 07-08, Sore: 16-17. Tolerance until 08:59 and 17:59
+    final isFullPoin = (hour >= 7 && hour < 9) || (hour >= 16 && hour < 18);
+    
+    if (isFullPoin) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'FULL POIN',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.warningYellow.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'SEBAGIAN',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: AppColors.warningYellow,
+          ),
+        ),
+      );
+    }
   }
 }

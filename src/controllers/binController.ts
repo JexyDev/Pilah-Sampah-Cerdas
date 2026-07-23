@@ -611,6 +611,29 @@ export class BinController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async createResetRequestMobile(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const { binId } = req.body;
+      if (!req.file) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "File evidence tidak ditemukan" });
+        return;
+      }
+      if (!binId) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "binId wajib diisi" });
+        return;
+      }
+      const evidencePhotoUrl = `/uploads/${req.file.filename}`;
+      const result = await binService.createResetRequest(binId, userId, evidencePhotoUrl);
+      res.status(201).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] createResetRequestMobile error:", error);
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+    }
+  }
 }
 
 export const binController = new BinController();

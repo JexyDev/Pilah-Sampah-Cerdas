@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -31,6 +24,7 @@ class PoinScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(totalPointsProvider);
           ref.invalidate(pointHistoryProvider);
+          ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -38,7 +32,7 @@ class PoinScreen extends ConsumerWidget {
             // ─── Header biru besar ─────────────────────────────────────
             SliverToBoxAdapter(
               child: totalAsync.when(
-                data: (total) => _buildHeader(context, total),
+                data: (total) => _buildHeader(context, ref, total),
                 loading: () => _buildHeaderSkeleton(context),
                 error: (_, __) => _buildHeaderSkeleton(context),
               ),
@@ -49,7 +43,11 @@ class PoinScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ─── Stats 3 kolom ──────────────────────────────────
-                  _buildStatsRow(),
+                  _buildStatsRow(historyAsync.value ?? []),
+                  const SizedBox(height: 16),
+                  
+                  // ─── Status Jadwal Hari Ini ──────────────────────────
+                  _buildScheduleStatusCard(),
                   const SizedBox(height: 20),
 
                   // ─── Riwayat Poin ───────────────────────────────────
@@ -141,7 +139,74 @@ class PoinScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, int total) {
+  Widget _buildScheduleStatusCard() {
+    // Mock the status based on current time
+    final now = DateTime.now();
+    final isPagiOver = now.hour >= 8;
+    final isSoreOver = now.hour >= 17;
+    // Normally this would be checked against actual user data for today
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Status Jadwal Hari Ini',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _ScheduleTimeItem(
+                  title: 'Pagi',
+                  time: '07:00 - 08:00',
+                  status: isPagiOver ? 'Terlewat' : 'Tersedia', // Mock status
+                  statusColor: isPagiOver ? AppColors.dangerRed : AppColors.primaryGreen,
+                  icon: Icons.wb_sunny_rounded,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppColors.border,
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              Expanded(
+                child: _ScheduleTimeItem(
+                  title: 'Sore',
+                  time: '16:00 - 17:00',
+                  status: isSoreOver ? 'Terlewat' : 'Tersedia', // Mock status
+                  statusColor: isSoreOver ? AppColors.dangerRed : AppColors.primaryGreen,
+                  icon: Icons.nights_stay_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, WidgetRef ref, int total) {
+    final rankAsync = ref.watch(userLeaderboardRankProvider);
+    
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -209,20 +274,38 @@ class PoinScreen extends ConsumerWidget {
                   color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.emoji_events_rounded,
                       color: AppColors.warningYellow,
                       size: 16,
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      '#3 di RT 03',
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 4),
+                    rankAsync.when(
+                      data: (rank) => Text(
+                        rank,
+                        style: const TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      loading: () => const SizedBox(
+                        width: 40,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                      error: (_, __) => const Text(
+                        '-',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -256,19 +339,40 @@ class PoinScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow() {
-    return const Row(
+  Widget _buildStatsRow(List<PointHistoryEntity> history) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    int todayPts = 0;
+    int weekPts = 0;
+    int monthPts = 0;
+
+    for (final h in history) {
+      if (!h.createdAt.isBefore(todayStart)) {
+        todayPts += h.points;
+      }
+      if (!h.createdAt.isBefore(weekStart)) {
+        weekPts += h.points;
+      }
+      if (!h.createdAt.isBefore(monthStart)) {
+        monthPts += h.points;
+      }
+    }
+
+    return Row(
       children: [
-        _StatsCard(label: 'Hari Ini', value: '25', sub: '+5%'),
-        SizedBox(width: 8),
+        _StatsCard(label: 'Hari Ini', value: '$todayPts', sub: 'Poin'),
+        const SizedBox(width: 8),
         _StatsCard(
           label: 'Minggu Ini',
-          value: '150',
-          sub: '+12%',
+          value: '$weekPts',
+          sub: 'Poin',
           underline: true,
         ),
-        SizedBox(width: 8),
-        _StatsCard(label: 'Bulan Ini', value: '620', sub: '+8%'),
+        const SizedBox(width: 8),
+        _StatsCard(label: 'Bulan Ini', value: '$monthPts', sub: 'Poin'),
       ],
     );
   }
@@ -333,6 +437,70 @@ class _StatsCard extends StatelessWidget {
   }
 }
 
+class _ScheduleTimeItem extends StatelessWidget {
+  const _ScheduleTimeItem({
+    required this.title,
+    required this.time,
+    required this.status,
+    required this.statusColor,
+    required this.icon,
+  });
+
+  final String title;
+  final String time;
+  final String status;
+  final Color statusColor;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundCanvas,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.warningYellow, size: 16),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                time,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                status,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _PoinHistoryItem extends StatelessWidget {
   const _PoinHistoryItem({required this.item});
   final PointHistoryEntity item;
@@ -377,7 +545,7 @@ class _PoinHistoryItem extends StatelessWidget {
                   DateFormat(
                     'd MMM yyyy • HH:mm',
                     'id_ID',
-                  ).format(item.createdAt),
+                  ).format(item.createdAt.toLocal()),
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textHint,
@@ -386,21 +554,73 @@ class _PoinHistoryItem extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            '+${item.points}',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryGreen,
-            ),
-          ),
-          const SizedBox(width: 2),
-          const Text(
-            'pts',
-            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '+${item.points}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Text(
+                    'pts',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              _buildScheduleBadge(item.createdAt.toLocal()),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildScheduleBadge(DateTime date) {
+    final hour = date.hour;
+    // Window Pagi: 07-08, Sore: 16-17. Tolerance until 08:59 and 17:59
+    final isFullPoin = (hour >= 7 && hour < 9) || (hour >= 16 && hour < 18);
+    
+    if (isFullPoin) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          'FULL POIN',
+          style: TextStyle(
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.warningYellow.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          'SEBAGIAN',
+          style: TextStyle(
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+            color: AppColors.warningYellow,
+          ),
+        ),
+      );
+    }
   }
 }

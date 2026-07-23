@@ -1,15 +1,11 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/platform_utils.dart';
 import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
+import '../providers/notification_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
 
@@ -24,38 +20,159 @@ class AktivasiBinScreen extends ConsumerStatefulWidget {
 }
 
 class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
-  bool _binDetected = false;
-  String _detectedQr = '';
-  bool _isOrganic = true;
+  int _step = 1; // 1 = Organik, 2 = Anorganik
+  String _qrOrganik = '';
+  String _qrAnorganik = '';
+  bool _bothBinsDetected = false;
+  bool _localLoading = false;
 
-  void _onQrDetected(String qr) {
-    setState(() {
-      _detectedQr = qr.trim();
-      _isOrganic = !_detectedQr.toUpperCase().contains('NON');
-      _binDetected = true;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndRequestLocation();
     });
   }
 
+  Future<bool> _checkAndRequestLocation({bool showDialogs = true}) async {
+    if (!PlatformUtils.isMobile) return true;
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted && showDialogs) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('GPS Tidak Aktif'),
+            content: const Text('Silakan aktifkan GPS/Layanan Lokasi pada perangkat Anda untuk mencatat titik posisi tong sampah.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Geolocator.openLocationSettings();
+                },
+                child: const Text('Buka Pengaturan'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+            ],
+          ),
+        );
+      }
+      return false;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.denied) {
+      if (mounted && showDialogs) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tong sampah.'),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  void _onQrDetected(String qr) {
+    if (_bothBinsDetected) return;
+
+    setState(() {
+      final detected = qr.trim();
+      final upperQr = detected.toUpperCase();
+      final isScanOrganik = !upperQr.contains('NON') && !upperQr.contains('ANORG');
+
+      if (_step == 1) {
+        if (!isScanOrganik) {
+          _showErrorSnackBar('Mohon scan QR Code untuk Bin Organik terlebih dahulu.');
+          return;
+        }
+        _qrOrganik = detected;
+        _step = 2; // Lanjut ke scan Anorganik
+      } else if (_step == 2) {
+        if (isScanOrganik) {
+          _showErrorSnackBar('Mohon scan QR Code untuk Bin Anorganik sekarang.');
+          return;
+        }
+        _qrAnorganik = detected;
+        _bothBinsDetected = true; // Kedua tong berhasil di-scan
+      }
+    });
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.dangerRed,
+      ),
+    );
+  }
+
   Future<void> _onAktivasi() async {
+    final hasPermission = await _checkAndRequestLocation(showDialogs: true);
+    if (!hasPermission) return;
+
+    double? lat;
+    double? lng;
+
+    if (PlatformUtils.isMobile) {
+      setState(() => _localLoading = true);
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        lat = position.latitude;
+        lng = position.longitude;
+      } catch (e) {
+        debugPrint('[AktivasiBinScreen] Gagal mengambil lokasi GPS: $e. Menggunakan fallback.');
+      } finally {
+        if (mounted) {
+          setState(() => _localLoading = false);
+        }
+      }
+    }
+
     final user = ref.read(authProvider).user;
     await ref
         .read(aktivasiBinProvider.notifier)
-        .aktivasi(
-          qrSerial: _detectedQr,
+        .aktivasiBatch(
+          qrSerials: [_qrOrganik, _qrAnorganik],
           userId: user?.id ?? '',
           householdId: user?.householdId ?? '',
+          latitude: lat,
+          longitude: lng,
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
+      // Refresh semua data yang terpengaruh setelah tong baru diaktivasi
       ref.invalidate(binsProvider);
+      ref.invalidate(notificationsProvider);
+      // Refresh profil agar data tong di halaman Profil ikut segar
+      await ref.read(authProvider.notifier).fetchProfile();
     }
   }
 
   String _mapError(String code, String? msg) {
     switch (code) {
-      case 'BIN_ALREADY_ACTIVE':
+      case 'ALREADY_ACTIVATED':
         return 'Tong ini sudah aktif dan terdaftar.';
-      case 'RESOURCE_NOT_FOUND':
-        return 'QR Serial tidak ditemukan.';
+      case 'BIN_NOT_FOUND':
+        return 'QR Serial tidak terdaftar di sistem.';
       default:
         return msg ?? 'Terjadi kesalahan. Silakan coba lagi.';
     }
@@ -74,12 +191,18 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
           ),
         );
         ref.read(aktivasiBinProvider.notifier).reset();
-        setState(() => _binDetected = false);
+        setState(() {
+          _step = 1;
+          _qrOrganik = '';
+          _qrAnorganik = '';
+          _bothBinsDetected = false;
+        });
       }
     });
 
-    if (aktivasiState.isLoading) {
-      return const Scaffold(body: AppLoading(message: 'Mengaktivasi tong...'));
+    if (aktivasiState.isLoading || _localLoading) {
+      final loadingMessage = _localLoading ? 'Mencari lokasi GPS tong...' : 'Mengaktivasi tong...';
+      return Scaffold(body: AppLoading(message: loadingMessage));
     }
 
     if (aktivasiState.isSuccess) {
@@ -113,8 +236,8 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         children: [
           // ── Area Scanner ──────────────────────────────────────────
           Expanded(
-            child: _binDetected
-                // Setelah tong terdeteksi — tampil konfirmasi
+            child: _bothBinsDetected
+                // Setelah kedua tong terdeteksi — tampil konfirmasi
                 ? Container(
                     color: const Color(0xFF3D4A3F),
                     child: Center(
@@ -127,28 +250,22 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                             size: 72,
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            _detectedQr,
-                            style: const TextStyle(
+                          const Text(
+                            'Kedua Tong Berhasil Di-scan',
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _isOrganic ? 'Tong Organik' : 'Tong Non-Organik',
-                            style: TextStyle(
-                              color: _isOrganic
-                                  ? AppColors.primaryGreen
-                                  : AppColors.nonOrganicColor,
-                              fontSize: 13,
-                            ),
-                          ),
                           const SizedBox(height: 16),
                           TextButton.icon(
-                            onPressed: () =>
-                                setState(() => _binDetected = false),
+                            onPressed: () => setState(() {
+                              _bothBinsDetected = false;
+                              _step = 1;
+                              _qrOrganik = '';
+                              _qrAnorganik = '';
+                            }),
                             icon: const Icon(
                               Icons.refresh_rounded,
                               color: Colors.white54,
@@ -162,14 +279,15 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                       ),
                     ),
                   )
-                // Belum terdeteksi — tampil QR scanner
+                // Belum terdeteksi — tampil QR scanner (gantian)
                 : Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
-                        hint: 'PSC-DAGO-ORG-0042',
-                        overlayColor: AppColors.primaryGreen,
+                        hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
+                        overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
+                        key: ValueKey('scanner_step_$_step'), // Rekreasi widget saat step ganti
                       ),
                     ),
                   ),
@@ -194,7 +312,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                 ],
               ),
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              child: _binDetected ? _buildDetectedContent() : _buildScanPrompt(),
+              child: _bothBinsDetected ? _buildDetectedContent() : _buildScanPrompt(),
             ),
           ),
         ],
@@ -221,9 +339,11 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
           size: 32,
         ),
         const SizedBox(height: 10),
-        const Text(
-          'Arahkan kamera ke QR Code\npada tong sampah Anda',
-          style: TextStyle(
+        Text(
+          _step == 1
+              ? 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tong Sampah Organik Anda'
+              : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tong Sampah Anorganik Anda',
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
             height: 1.5,
@@ -240,12 +360,8 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
   }
 
   Widget _buildDetectedContent() {
-    final Color typeColor = _isOrganic
-        ? AppColors.primaryGreen
-        : AppColors.nonOrganicColor;
-    final String displayId = _detectedQr.length > 12
-        ? _detectedQr.substring(_detectedQr.length - 12)
-        : _detectedQr;
+    final displayOrgId = _qrOrganik.length > 12 ? _qrOrganik.substring(_qrOrganik.length - 12) : _qrOrganik;
+    final displayNonId = _qrAnorganik.length > 12 ? _qrAnorganik.substring(_qrAnorganik.length - 12) : _qrAnorganik;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -268,7 +384,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             ),
             const SizedBox(width: 8),
             const Text(
-              'Tong Terdeteksi!',
+              'Kedua Tong Siap!',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -277,7 +393,12 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () => setState(() => _binDetected = false),
+              onTap: () => setState(() {
+                _bothBinsDetected = false;
+                _step = 1;
+                _qrOrganik = '';
+                _qrAnorganik = '';
+              }),
               child: const Icon(
                 Icons.close_rounded,
                 color: AppColors.textHint,
@@ -288,104 +409,20 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         ),
         const SizedBox(height: 14),
 
-        // Info card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F7FA),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'ID PERANGKAT',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textHint,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          displayId.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'TIPE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textHint,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: typeColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _isOrganic ? 'Organik' : 'Non-Organik',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: typeColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              const SizedBox(height: 10),
-              const Row(
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Area Komunal, RT 04/02',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        // Info card Organik
+        _buildInfoCard(
+          title: 'Organik',
+          id: displayOrgId.toUpperCase(),
+          color: AppColors.organicColor,
         ),
+        const SizedBox(height: 8),
+        // Info card Anorganik
+        _buildInfoCard(
+          title: 'Anorganik',
+          id: displayNonId.toUpperCase(),
+          color: AppColors.nonOrganicColor,
+        ),
+
         const SizedBox(height: 16),
 
         // Tombol AKTIVASI
@@ -396,7 +433,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             onPressed: _onAktivasi,
             icon: const Icon(Icons.sensors_rounded, size: 18),
             label: const Text(
-              'AKTIVASI TONG INI',
+              'AKTIVASI KEDUA TONG INI',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -416,12 +453,53 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         const SizedBox(height: 10),
         const Center(
           child: Text(
-            'Gunakan tong ini untuk mengumpulkan poin sampah\nrumah tangga Anda.',
+            'Gunakan kedua tong ini untuk mengumpulkan poin\nsampah rumah tangga Anda.',
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoCard({required String title, required String id, required Color color}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FA),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            id,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -468,7 +546,7 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Tong Berhasil Diaktivasi!',
+                'Kedua Tong Berhasil Diaktivasi!',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -478,7 +556,7 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Tong sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                'Kedua tong sampah Anda telah terhubung\ndengan akun rumah tangga.',
                 style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),

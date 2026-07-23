@@ -82,6 +82,7 @@ export class UserService {
         email: u.email,
         role: u.role.name,
         nik: u.nik ?? "-",
+        phone: u.phone,
         status: u.status,
         wilayah,
         setoran: parseFloat(totalSetoranKg.toFixed(1)),

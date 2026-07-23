@@ -71,6 +71,7 @@ app.use("/api/v1/households", householdRouter);
 app.use("/api/v1/bins", binRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/waste", aiRouter);
+app.use("/api/v1/ai", aiRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/categories", categoryRouter);

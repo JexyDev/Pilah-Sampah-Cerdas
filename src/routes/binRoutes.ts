@@ -7,6 +7,7 @@
 
 import { Router } from "express";
 import { binController } from "../controllers/binController.js";
+import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
@@ -280,6 +281,21 @@ router.post(
   authMiddleware,
   roleMiddleware(["WARGA"]),
   binController.registerWargaBin
+);
+
+router.post(
+  "/activate",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.registerWargaBin
+);
+
+router.post(
+  "/reset",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  uploadAvatarMiddleware.single("evidence"),
+  binController.createResetRequestMobile
 );
 
 export default router;

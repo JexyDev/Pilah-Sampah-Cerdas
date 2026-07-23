@@ -249,12 +249,7 @@ router.post(
   authController.registerRw
 );
 
-router.post(
-  "/register/petugas-residu",
-  authMiddleware,
-  roleMiddleware(["ADMIN_DLH", "RW", "MAHASISWA_KKN"]),
-  authController.registerPetugasResidu
-);
+router.post("/register/petugas-residu", authController.registerPetugasResidu);
 
 router.post("/register/warga", authController.registerWarga);
 

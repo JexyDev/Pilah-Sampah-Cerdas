@@ -1,16 +1,9 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import '../entities/bin_entity.dart';
 import '../entities/ai_detection_entity.dart';
 import '../entities/bin_reset_entity.dart';
 
 /// Interface repository tong sampah.
-/// Implementasi: MockBinRepository (data layer).
+/// Implementasi: ApiBinRepository (data layer).
 abstract class BinRepository {
   /// Ambil tong sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);
@@ -42,6 +35,8 @@ abstract class BinRepository {
     required String qrSerial,
     required String userId,
     required String householdId,
+    double? latitude,
+    double? longitude,
   });
 
   /// Ajukan pengosongan tong — FR (prd.md §3.1, sdd.md §7.1).

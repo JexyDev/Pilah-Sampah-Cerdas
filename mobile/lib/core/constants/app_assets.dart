@@ -1,17 +1,10 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 /// Path asset terpusat — semua Image.asset() menggunakan konstanta dari sini.
 /// Menghindari typo path dan memudahkan refactor.
 class AppAssets {
   AppAssets._();
 
   // ─── Logo ─────────────────────────────────────────────────────────────────
-  static const String logo = 'assets/logo.png';
+  static const String logo = 'assets/logos.jpeg';
 
   // ─── Stitch UI — Screen References ───────────────────────────────────────
   static const String splash =

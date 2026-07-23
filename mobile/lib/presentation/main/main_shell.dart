@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_assets.dart';
@@ -18,6 +11,10 @@ import '../beranda/beranda_screen.dart';
 import '../riwayat/riwayat_screen.dart';
 import '../poin/poin_screen.dart';
 import '../profil/profil_screen.dart';
+import '../kkn/monitoring_warga_screen.dart';
+import '../providers/auth_provider.dart';
+import '../../domain/entities/user_entity.dart';
+import '../../core/utils/scan_guard.dart';
 
 /// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
@@ -31,17 +28,17 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
-  List<Widget> get _screens => [
+  List<Widget> _getScreens(UserRole role) => [
     BerandaScreen(onNavigateToHistory: () => _onTabTap(1)),
     const RiwayatScreen(),
     const SizedBox.shrink(),
+    role == UserRole.mahasiswaKkn ? const MonitoringWargaScreen() : const PoinScreen(),
     const ProfilScreen(),
-    const PoinScreen(),
   ];
 
   void _onTabTap(int index) {
     if (index == 2) {
-      Navigator.of(context).pushNamed(AppRoutes.scan);
+      ScanGuard.handleScanNavigation(context, ref);
       return;
     }
     setState(() => _selectedIndex = index);
@@ -50,23 +47,26 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final bool isOnline = ref.watch(isOnlineProvider);
+    final user = ref.watch(authProvider).user;
+    final role = user?.role ?? UserRole.warga;
 
     return ResponsiveLayout(
-      mobile: _buildMobileShell(isOnline),
-      tablet: _buildTabletShell(isOnline),
+      mobile: _buildMobileShell(isOnline, role),
+      tablet: _buildTabletShell(isOnline, role),
     );
   }
 
-  Widget _buildMobileShell(bool isOnline) {
+  Widget _buildMobileShell(bool isOnline, UserRole role) {
+    final screens = _getScreens(role);
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: Column(
         children: [
           const OfflineBanner(),
-          Expanded(child: _screens[_selectedIndex]),
+          Expanded(child: screens[_selectedIndex]),
         ],
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: _buildBottomBar(role),
       floatingActionButton: _buildFab(isOnline),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -95,7 +95,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: isOnline
-              ? () => Navigator.of(context).pushNamed(AppRoutes.scan)
+              ? () => ScanGuard.handleScanNavigation(context, ref)
               : null,
           child: const Icon(
             Icons.qr_code_scanner_rounded,
@@ -107,7 +107,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  BottomAppBar _buildBottomBar() {
+  BottomAppBar _buildBottomBar(UserRole role) {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
@@ -128,11 +128,16 @@ class _MainShellState extends ConsumerState<MainShell> {
             const SizedBox(width: 60),
             _navItem(
               3,
+              role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : Icons.stars_rounded,
+              role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : Icons.stars_outlined,
+              role == UserRole.mahasiswaKkn ? 'Monitoring' : 'Poin',
+            ),
+            _navItem(
+              4,
               Icons.person_rounded,
               Icons.person_outline_rounded,
               'Profile',
             ),
-            _navItem(4, Icons.stars_rounded, Icons.stars_outlined, 'Poin'),
           ],
         ),
       ),
@@ -170,7 +175,8 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   // ─── Tablet (NavigationRail) ──────────────────────────────────────────────
-  Widget _buildTabletShell(bool isOnline) {
+  Widget _buildTabletShell(bool isOnline, UserRole role) {
+    final screens = _getScreens(role);
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: Column(
@@ -179,9 +185,9 @@ class _MainShellState extends ConsumerState<MainShell> {
           Expanded(
             child: Row(
               children: [
-                _buildNavigationRail(isOnline),
+                _buildNavigationRail(isOnline, role),
                 const VerticalDivider(width: 1),
-                Expanded(child: _screens[_selectedIndex]),
+                Expanded(child: screens[_selectedIndex]),
               ],
             ),
           ),
@@ -190,7 +196,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  Widget _buildNavigationRail(bool isOnline) {
+  Widget _buildNavigationRail(bool isOnline, UserRole role) {
     final int railIndex = _selectedIndex > 2
         ? _selectedIndex - 1
         : _selectedIndex;
@@ -239,7 +245,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             const SizedBox(height: 12),
             FloatingActionButton.small(
               onPressed: isOnline
-                  ? () => Navigator.of(context).pushNamed(AppRoutes.scan)
+                  ? () => ScanGuard.handleScanNavigation(context, ref)
                   : null,
               backgroundColor: isOnline
                   ? AppColors.primaryGreen
@@ -249,26 +255,26 @@ class _MainShellState extends ConsumerState<MainShell> {
           ],
         ),
       ),
-      destinations: const [
-        NavigationRailDestination(
+      destinations: [
+        const NavigationRailDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home_rounded),
           label: Text('Home'),
         ),
-        NavigationRailDestination(
+        const NavigationRailDestination(
           icon: Icon(Icons.history_outlined),
           selectedIcon: Icon(Icons.history_rounded),
           label: Text('History'),
         ),
         NavigationRailDestination(
+          icon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : Icons.stars_outlined),
+          selectedIcon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : Icons.stars_rounded),
+          label: Text(role == UserRole.mahasiswaKkn ? 'Monitoring' : 'Poin'),
+        ),
+        const NavigationRailDestination(
           icon: Icon(Icons.person_outline_rounded),
           selectedIcon: Icon(Icons.person_rounded),
           label: Text('Profile'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.stars_outlined),
-          selectedIcon: Icon(Icons.stars_rounded),
-          label: Text('Poin'),
         ),
       ],
     );

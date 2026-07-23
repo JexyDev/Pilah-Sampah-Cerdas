@@ -1,20 +1,13 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../providers/auth_provider.dart';
 
-/// Layar login — email + password sesuai backend auth contract.
-/// Redesign total untuk menyelaraskan dengan DNA visual web (Plus Jakarta Sans, gradient background).
+/// Layar login — nomor telepon + password.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -24,7 +17,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nikController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -35,7 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _nikController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _toastTimer?.cancel();
     super.dispose();
@@ -47,27 +40,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _toastMessage = message;
       _isToastVisible = true;
     });
-
     _toastTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() {
-          _isToastVisible = false;
-        });
-      }
+      if (mounted) setState(() => _isToastVisible = false);
     });
   }
 
+  String _normalizePhone(String raw) {
+    // Normalisasi: hilangkan spasi dan tanda hubung
+    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
+    if (!phone.startsWith('0') && phone.startsWith('8')) phone = '0$phone';
+    return phone;
+  }
+
   Future<void> _onLogin() async {
-    final nik = _nikController.text.trim();
+    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (nik.isEmpty && password.isEmpty) {
-      _showToast('Identitas dan Kata sandi wajib diisi');
+    if (phone.isEmpty && password.isEmpty) {
+      _showToast('Nomor telepon dan kata sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
-    if (nik.isEmpty) {
-      _showToast('Identitas wajib diisi');
+    if (phone.isEmpty) {
+      _showToast('Nomor telepon wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -78,25 +73,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     if (!_formKey.currentState!.validate()) return;
-    
+
+    final normalizedPhone = _normalizePhone(phone);
     ref.read(authProvider.notifier).clearError();
-    final bool ok = await ref
-        .read(authProvider.notifier)
-        .login(
-          nik: nik,
+
+    final bool ok = await ref.read(authProvider.notifier).login(
+          phone: normalizedPhone,
           password: password,
         );
-    
+
     if (ok && mounted) {
       Navigator.of(context).pushReplacementNamed(AppRoutes.main);
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Email atau password salah. Coba lagi.';
+      String errorText = 'Nomor telepon atau password salah. Coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       }
       _showToast(errorText);
-      _passwordController.clear(); // Kosongkan password setelah gagal
+      _passwordController.clear();
     }
   }
 
@@ -113,15 +108,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Color(0xFFF0F9FF), // Sky-50 equivalent
-            ],
+            colors: [Colors.white, Color(0xFFF0F9FF)],
           ),
         ),
         child: Stack(
           children: [
-            // Konten Form utama
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -129,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo & Judul Aplikasi
+                      // Logo & Judul
                       Column(
                         children: [
                           Container(
@@ -147,14 +138,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.asset(
-                              AppAssets.logo,
-                              fit: BoxFit.cover,
-                            ),
+                            child: Image.asset(AppAssets.logo, fit: BoxFit.cover),
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'TrashCare',
+                            'Pilah Sampah Cerdas',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
@@ -208,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Silakan masukkan NIK atau No HP Anda',
+                                'Masukkan nomor HP terdaftar Anda',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -216,9 +204,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Field NIK/HP
+                              // Field No. Telepon
                               const Text(
-                                'NIK ATAU NO HP',
+                                'NOMOR TELEPON',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -228,24 +216,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               const SizedBox(height: 6),
                               TextFormField(
-                                controller: _nikController,
-                                keyboardType: TextInputType.text,
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9\+\-\s]'),
+                                  ),
+                                ],
                                 decoration: const InputDecoration(
-                                  hintText: 'Contoh: 327... atau +628...',
+                                  hintText: '081234567890',
                                   prefixIcon: Icon(
-                                    Icons.badge_outlined,
+                                    Icons.phone_outlined,
                                     color: AppColors.textSecondary,
                                     size: 20,
                                   ),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'Identitas wajib diisi';
+                                    return 'Nomor telepon wajib diisi';
                                   }
-                                  if (v.length < 9) {
-                                    return 'Identitas terlalu pendek';
+                                  final digits = v.replaceAll(RegExp(r'[^\d]'), '');
+                                  if (digits.length < 10 || digits.length > 13) {
+                                    return 'Format nomor telepon tidak valid (10-13 digit)';
                                   }
                                   return null;
                                 },
@@ -298,6 +292,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   return null;
                                 },
                               ),
+                              const SizedBox(height: 8),
+
+                              // Lupa sandi
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.of(context)
+                                      .pushNamed(AppRoutes.forgotPassword),
+                                  child: const Text(
+                                    'Lupa kata sandi?',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                  ),
+                                ),
+                              ),
                               const SizedBox(height: 24),
 
                               // Tombol Masuk
@@ -328,18 +340,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         ],
                                       ),
                               ),
+                              const SizedBox(height: 16),
+
+                              // Daftar
+                              Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Belum memiliki akun? ',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => Navigator.of(context)
+                                          .pushNamed(AppRoutes.register),
+                                      child: const Text(
+                                        'Daftar',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.primaryGreen,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 32),
 
-                      // Footer copyright
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 TrashCare. All rights reserved.',
-                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                          '© 2026 Pilah Sampah Cerdas. All rights reserved.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -348,7 +391,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
 
-            // Web-style Toast Notification
+            // Toast
             if (_isToastVisible && _toastMessage != null)
               SafeArea(
                 child: Align(
@@ -390,11 +433,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(width: 10),
                           GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isToastVisible = false;
-                              });
-                            },
+                            onTap: () => setState(() => _isToastVisible = false),
                             child: const Icon(
                               Icons.close_rounded,
                               size: 16,
