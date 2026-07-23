@@ -198,32 +198,35 @@ export class AuthRepository {
   /**
    * Register Warga Transaction
    */
-  async registerWargaTx(userData: any, householdData: any, qrCode: string, wargaSubtype: string) {
+  async registerWargaTx(userData: any, householdData: any, qrCode?: string | null, wargaSubtype?: string | null) {
     return prisma.$transaction(async (tx) => {
-      // 1. Find Bin with row-level lock (FOR UPDATE)
-      const bins = await tx.$queryRaw<any[]>`
-        SELECT * FROM tong_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
-      `;
-      if (!bins || bins.length === 0) throw new Error("BIN_NOT_FOUND");
-      const bin = bins[0];
+      let bin: any = null;
+      if (qrCode) {
+        // 1. Find Bin with row-level lock (FOR UPDATE)
+        const bins = await tx.$queryRaw<any[]>`
+          SELECT * FROM tong_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
+        `;
+        if (!bins || bins.length === 0) throw new Error("BIN_NOT_FOUND");
+        bin = bins[0];
 
-      // 2. Validate Bin status & ownership
-      const existingUtama = await tx.binOwnership.findFirst({
-        where: {
-          binId: bin.id,
-          type: "UTAMA",
-        },
-      });
+        // 2. Validate Bin status & ownership
+        const existingUtama = await tx.binOwnership.findFirst({
+          where: {
+            binId: bin.id,
+            type: "UTAMA",
+          },
+        });
 
-      if (wargaSubtype === "UTAMA") {
-        if (existingUtama) throw new Error("BIN_ALREADY_HAS_PRIMARY_OWNER");
-        if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
-          throw new Error("BIN_NOT_AVAILABLE_FOR_ACTIVATION");
-        }
-      } else {
-        // TAMBAHAN
-        if (bin.status !== "ACTIVE_BOUND") {
-          throw new Error("BIN_NOT_ACTIVE_YET");
+        if (wargaSubtype === "UTAMA") {
+          if (existingUtama) throw new Error("BIN_ALREADY_HAS_PRIMARY_OWNER");
+          if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
+            throw new Error("BIN_NOT_AVAILABLE_FOR_ACTIVATION");
+          }
+        } else {
+          // TAMBAHAN
+          if (bin.status !== "ACTIVE_BOUND") {
+            throw new Error("BIN_NOT_ACTIVE_YET");
+          }
         }
       }
 
@@ -235,7 +238,7 @@ export class AuthRepository {
         data: {
           ...userData,
           roleId: role.id,
-          wargaSubtype,
+          wargaSubtype: wargaSubtype || "UTAMA",
         },
       });
 
@@ -248,30 +251,32 @@ export class AuthRepository {
       });
 
       // 5. Create Bin ownership & Update Bin status
-      await tx.binOwnership.create({
-        data: {
-          binId: bin.id,
-          userId: user.id,
-          type: wargaSubtype === "UTAMA" ? "UTAMA" : "TAMBAHAN",
-        },
-      });
-
-      if (wargaSubtype === "UTAMA") {
-        const updatedBin = await tx.bin.update({
-          where: { id: bin.id },
+      if (bin) {
+        await tx.binOwnership.create({
           data: {
-            status: "PENDING_APPROVAL",
-          },
-        });
-
-        await tx.auditTrail.create({
-          data: {
-            action: "REQUEST_ACTIVATE_BIN",
+            binId: bin.id,
             userId: user.id,
-            oldValue: JSON.parse(JSON.stringify(bin)),
-            newValue: JSON.parse(JSON.stringify(updatedBin)),
+            type: wargaSubtype === "UTAMA" ? "UTAMA" : "TAMBAHAN",
           },
         });
+
+        if (wargaSubtype === "UTAMA") {
+          const updatedBin = await tx.bin.update({
+            where: { id: bin.id },
+            data: {
+              status: "PENDING_APPROVAL",
+            },
+          });
+
+          await tx.auditTrail.create({
+            data: {
+              action: "REQUEST_ACTIVATE_BIN",
+              userId: user.id,
+              oldValue: JSON.parse(JSON.stringify(bin)),
+              newValue: JSON.parse(JSON.stringify(updatedBin)),
+            },
+          });
+        }
       }
 
       return user;

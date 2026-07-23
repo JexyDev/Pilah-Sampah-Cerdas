@@ -350,15 +350,15 @@ export class AuthService {
   async registerWarga(
     userData: any,
     householdData: any,
-    qrCode: string,
-    wargaSubtype: string,
+    qrCode?: string,
+    wargaSubtype?: string,
     scannerUser?: any
   ) {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
     // If scanner is Mahasiswa KKN, validate PIC matching
-    if (scannerUser && scannerUser.role === "MAHASISWA_KKN") {
+    if (qrCode && scannerUser && scannerUser.role === "MAHASISWA_KKN") {
       const { binRepository } = await import("../repositories/binRepository.js");
       const bin = await binRepository.findByQrCode(qrCode);
       if (!bin) throw new Error("BIN_NOT_FOUND");
