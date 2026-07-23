@@ -289,9 +289,10 @@ const KknDashboard: React.FC = () => {
               <thead>
                 <tr className="text-on-surface-variant border-b border-outline-variant/60 pb-3">
                   <th className="pb-3 font-bold">Nama & Alamat</th>
-                  <th className="pb-3 font-bold">Kode Bin</th>
-                  <th className="pb-3 font-bold">Tanggal Reg</th>
-                  <th className="pb-3 font-bold">Kepatuhan</th>
+                  <th className="pb-3 text-left font-bold text-on-surface-variant">ID Tong</th>
+                  <th className="pb-3 text-left font-bold text-on-surface-variant">Terdaftar</th>
+                  <th className="pb-3 text-left font-bold text-on-surface-variant">Status</th>
+                  <th className="pb-3 text-left font-bold text-on-surface-variant">Skor Kepatuhan</th>
                   <th className="pb-3 text-right font-bold">Aksi</th>
                 </tr>
               </thead>
@@ -311,6 +312,13 @@ const KknDashboard: React.FC = () => {
                       <td className="py-3 font-mono font-bold text-primary">{w.binCode}</td>
                       <td className="py-3 text-on-surface-variant">
                         {new Date(w.registeredAt).toLocaleDateString("id-ID")}
+                      </td>
+                      <td className="py-3">
+                        {w.binStatus === "PENDING_APPROVAL" ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Menunggu RW</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">Aktif</span>
+                        )}
                       </td>
                       <td className="py-3">
                         <span
