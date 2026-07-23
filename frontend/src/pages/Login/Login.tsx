@@ -1,4 +1,4 @@
-import { Server, WifiOff, User, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, LogIn, Phone } from "lucide-react";
+import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, Phone, LogIn } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -14,8 +14,6 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading: isStoreLoading } = useAuthStore();
 
-  const [loginMode, setLoginMode] = useState<"STAFF" | "WARGA">("STAFF");
-  
   // Login State
   const [identifier, setIdentifier] = useState(""); // Email, NIK, or Phone
   const [password, setPassword] = useState("");
@@ -32,18 +30,16 @@ const Login: React.FC = () => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Helper validation regex
-  const isEmailValid = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || /^\d{16}$/.test(val);
+  // Helper validation regex
   const isPhoneValid = (val: string) => /^\+62\d{8,15}$/.test(val);
 
   // Real-time Validation handlers
   const handleIdentifierBlur = () => {
     const trimmed = identifier.trim();
     if (!trimmed) {
-      setIdentifierError(loginMode === "STAFF" ? "Email atau NIK wajib diisi" : "Nomor HP wajib diisi");
-    } else if (loginMode === "STAFF" && !isEmailValid(trimmed)) {
-      setIdentifierError("Format email atau 16 digit NIK tidak valid");
-    } else if (loginMode === "WARGA" && !isPhoneValid(trimmed)) {
-      setIdentifierError("Format nomor HP tidak valid (harus diawali +62)");
+      setIdentifierError("Nomor HP wajib diisi");
+    } else if (!isPhoneValid(trimmed)) {
+      setIdentifierError("Format nomor HP tidak valid (harus diawali +62 atau 08)");
     } else {
       setIdentifierError("");
     }
@@ -93,13 +89,10 @@ const Login: React.FC = () => {
     let hasError = false;
     
     if (!idVal) {
-      setIdentifierError(loginMode === "STAFF" ? "Email atau NIK wajib diisi" : "Nomor HP wajib diisi");
+      setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
-    } else if (loginMode === "STAFF" && !isEmailValid(idVal)) {
-      setIdentifierError("Format email atau 16 digit NIK tidak valid");
-      hasError = true;
-    } else if (loginMode === "WARGA" && !isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid (harus diawali +62)");
+    } else if (!isPhoneValid(idVal)) {
+      setIdentifierError("Format nomor HP tidak valid (harus diawali +62 atau 08)");
       hasError = true;
     }
     
@@ -124,7 +117,7 @@ const Login: React.FC = () => {
       } else {
         const storeErr = useAuthStore.getState().error;
         if (storeErr === "USER_NOT_FOUND") {
-          setIdentifierError(loginMode === "STAFF" ? "User tidak ditemukan" : "Nomor HP tidak terdaftar");
+          setIdentifierError("Nomor HP tidak terdaftar");
         } else if (storeErr === "WRONG_PASSWORD") {
           setPasswordError("Password salah");
           setPassword(""); 
@@ -142,13 +135,7 @@ const Login: React.FC = () => {
     }, remainingTime);
   };
 
-  const switchTab = (mode: "STAFF" | "WARGA") => {
-    setLoginMode(mode);
-    setIdentifier("");
-    setPassword("");
-    setIdentifierError("");
-    setPasswordError("");
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-6 relative overflow-hidden">
@@ -180,108 +167,56 @@ const Login: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex rounded-lg bg-slate-100 p-1">
-          <button
-            type="button"
-            className={`flex-1 text-[11px] font-bold py-2 rounded-md transition-colors ${loginMode === "STAFF" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-            onClick={() => switchTab("STAFF")}
-          >
-            Staf / Admin
-          </button>
-          <button
-            type="button"
-            className={`flex-1 text-[11px] font-bold py-2 rounded-md transition-colors ${loginMode === "WARGA" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-            onClick={() => switchTab("WARGA")}
-          >
-            Warga
-          </button>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-200/60 pb-2">
+            <p className="font-bold flex items-center gap-1.5 text-slate-800">
+              <Info className="text-primary" size={16} />
+              Pilih Akun Demo 
+            </p>
+            <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
+              pass: password123
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+            {[
+              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200" },
+              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200" },
+              { phone: "08111111113", label: "Camat", bg: "bg-purple-50 text-purple-700 border-purple-200" },
+              { phone: "08111111114", label: "Lurah", bg: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+              { phone: "08111111115", label: "RW", bg: "bg-amber-50 text-amber-700 border-amber-200" },
+              { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200" },
+              { phone: "08111111118", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
+              { phone: "082100000001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200" },
+            ].map((acc) => (
+              <button
+                key={acc.phone}
+                type="button"
+                onClick={() => {
+                  setIdentifier(acc.phone);
+                  setPassword("password123");
+                  setIdentifierError("");
+                  setPasswordError("");
+                  toast.success(`Mengisi kredensial ${acc.label}`, { id: "autofill-toast", duration: 1500 });
+                }}
+                className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left"
+              >
+                <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${acc.bg}`}>{acc.label}</span>
+                <span className="text-[10px] font-mono text-slate-500">{acc.phone}</span>
+              </button>
+            ))}
+          </div>
         </div>
-
-        {loginMode === "STAFF" && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
-            <div className="flex items-center justify-between mb-3 border-b border-slate-200/60 pb-2">
-              <p className="font-bold flex items-center gap-1.5 text-slate-800">
-                <Info className="text-primary" size={16} />
-                Pilih Akun Demo 
-              </p>
-              <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
-                pass: password123
-              </span>
-            </div>
-            <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-              {[
-                { email: "superadmin@psc.id", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200" },
-                { email: "admin@psc.id", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-                { email: "camat@psc.id", label: "Camat", bg: "bg-purple-50 text-purple-700 border-purple-200" },
-                { email: "lurah@psc.id", label: "Lurah", bg: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-                { email: "rw@psc.id", label: "RW", bg: "bg-amber-50 text-amber-700 border-amber-200" },
-                { email: "petugas@psc.id", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200" },
-                { email: "kkn@psc.id", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
-              ].map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => {
-                    setIdentifier(acc.email);
-                    setPassword("password123");
-                    setIdentifierError("");
-                    setPasswordError("");
-                    toast.success(`Mengisi kredensial ${acc.label}`, { id: "autofill-toast", duration: 1500 });
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left"
-                >
-                  <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${acc.bg}`}>{acc.label}</span>
-                  <span className="text-[10px] font-mono text-slate-500">{acc.email}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {loginMode === "WARGA" && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
-            <div className="flex items-center justify-between mb-3 border-b border-slate-200/60 pb-2">
-              <p className="font-bold flex items-center gap-1.5 text-slate-800">
-                <Info className="text-primary" size={16} />
-                Pilih Akun Demo Warga
-              </p>
-              <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
-                pass: password123
-              </span>
-            </div>
-            <div className="flex flex-col gap-1.5">
-               <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier("+6281234567890");
-                    setPassword("password123");
-                    setIdentifierError("");
-                    setPasswordError("");
-                    toast.success("Mengisi kredensial Warga 1", { id: "autofill-warga", duration: 1500 });
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left"
-                >
-                  <span className="px-2 py-0.5 text-[9px] font-bold rounded border bg-green-50 text-green-700 border-green-200">Warga Utama</span>
-                  <span className="text-[10px] font-mono text-slate-500">+6281234567890</span>
-                </button>
-            </div>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-              {loginMode === "STAFF" ? "Email atau NIK" : "Nomor HP"}
+              Nomor HP
             </label>
             <div className="relative">
-              {loginMode === "STAFF" ? (
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
-              ) : (
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
-              )}
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
               <input
                 className={`w-full pl-10 pr-4 h-11 bg-surface-container-low border ${identifierError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary"} rounded-lg text-sm focus:ring-1 outline-none`}
-                placeholder={loginMode === "STAFF" ? "Email atau 16 digit NIK..." : "+628..."}
+                placeholder="08..."
                 type="text"
                 value={identifier}
                 onChange={(e) => { setIdentifier(e.target.value); if(e.target.value.trim()) setIdentifierError(""); }}
