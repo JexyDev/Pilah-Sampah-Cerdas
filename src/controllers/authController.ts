@@ -584,7 +584,7 @@ export class AuthController {
         } catch {}
       }
 
-      const user = await authService.registerWarga(
+      const result = await authService.registerWarga(
         userData,
         householdData,
         qrCode,
@@ -593,7 +593,14 @@ export class AuthController {
       );
       res
         .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email, qrCode: `USER:${user.id}` } });
+        .json({
+          success: true,
+          data: {
+            user: result.user,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+          },
+        });
     } catch (error: any) {
       res
         .status(400)

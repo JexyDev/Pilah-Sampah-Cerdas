@@ -16,6 +16,7 @@ vi.mock("../repositories/authRepository.js", () => {
       findUserByEmail: vi.fn(),
       findUserByNik: vi.fn(),
       registerWargaTx: vi.fn(),
+      createRefreshToken: vi.fn(),
     },
   };
 });
@@ -100,6 +101,19 @@ describe("AuthService - registerWarga security", () => {
     );
 
     expect(authRepository.registerWargaTx).toHaveBeenCalled();
-    expect(result).toEqual({ id: "warga-1" });
+    expect(authRepository.createRefreshToken).toHaveBeenCalledWith("warga-1", expect.any(String), expect.any(Date));
+    expect(result).toEqual({
+      user: {
+        id: "warga-1",
+        name: undefined,
+        email: undefined,
+        phone: undefined,
+        role: "WARGA",
+        rtRwId: undefined,
+        fotoProfil: undefined,
+      },
+      accessToken: expect.any(String),
+      refreshToken: expect.any(String),
+    });
   });
 });

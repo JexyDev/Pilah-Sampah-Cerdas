@@ -16,21 +16,38 @@ const prisma = new PrismaClient();
 
 describe("E2E & Security Validation for All 8 Roles", () => {
   beforeAll(async () => {
-    const roleWarga = await prisma.role.findFirst({ where: { name: "WARGA" } });
+    const rolesList = ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "WARGA"];
+    const roleMap: Record<string, any> = {};
+    for (const r of rolesList) {
+      roleMap[r] = await prisma.role.upsert({
+        where: { name: r },
+        update: {},
+        create: { name: r },
+      });
+    }
+
     const passwordHash = await bcrypt.hash("password123", 10);
-    await prisma.user.upsert({
-      where: { phone: "+6282100000001" },
-      update: {},
-      create: {
-        phone: "+6282100000001",
-        email: "warga.test@psc.id",
-        name: "Test Warga E2E",
-        roleId: roleWarga!.id,
-        nik: "3273010000000099",
-        password: passwordHash,
-        status: "Aktif",
-      }
-    });
+    const userSeeds = [
+      { phone: "+628111111111", email: `superadmin.test-${Date.now()}@psc.id`, name: "Super Admin", roleId: roleMap["SUPER_ADMIN"].id, nik: "3273010000000001" },
+      { phone: "+628111111112", email: `admin.test-${Date.now()}@psc.id`, name: "Admin DLH", roleId: roleMap["ADMIN_DLH"].id, nik: "3273010000000002" },
+      { phone: "+628111111113", email: `camat.test-${Date.now()}@psc.id`, name: "Camat Coblong", roleId: roleMap["CAMAT"].id, nik: "3273010000000003" },
+      { phone: "+628111111114", email: `lurah.test-${Date.now()}@psc.id`, name: "Lurah Dago", roleId: roleMap["LURAH"].id, nik: "3273010000000004" },
+      { phone: "+628111111115", email: `rw.test-${Date.now()}@psc.id`, name: "Asep RW 06", roleId: roleMap["RW"].id, nik: "3273010000000005" },
+      { phone: "+628111111117", email: `petugas.test-${Date.now()}@psc.id`, name: "Budi Petugas Residu", roleId: roleMap["PETUGAS_RESIDU"].id, nik: "3273010000000007" },
+      { phone: "+6282100000001", email: `warga.test-${Date.now()}@psc.id`, name: "Test Warga E2E", roleId: roleMap["WARGA"].id, nik: "3273" + Math.floor(100000000000 + Math.random() * 900000000000).toString() },
+    ];
+
+    for (const u of userSeeds) {
+      await prisma.user.upsert({
+        where: { phone: u.phone },
+        update: {},
+        create: {
+          ...u,
+          password: passwordHash,
+          status: "Aktif",
+        },
+      });
+    }
   });
 
   const roles = [

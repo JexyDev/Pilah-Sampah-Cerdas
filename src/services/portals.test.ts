@@ -108,7 +108,7 @@ describe("Portals A & B Service Integration Tests", () => {
         kknService.registerWarga(kknUser.id, {
           name: "Warga Test Mismatch",
           email: `wargadiff-${Date.now()}@psc.id`,
-          phone: "+6281234567890",
+          phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
           nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
           address: "Jl. Dago Giri No. 12",
           rtRwId: rtRwArea.id,
@@ -123,7 +123,7 @@ describe("Portals A & B Service Integration Tests", () => {
       const result = await kknService.registerWarga(kknUser.id, {
         name: "Warga Test KKN",
         email: citizenEmail,
-        phone: "+6281234567891",
+        phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
         nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
         address: "Jl. Dago Giri No. 12",
         rtRwId: rtRwArea.id,
