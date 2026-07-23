@@ -55,7 +55,7 @@ jobs:
           git archive origin/local-dev frontend/ | tar -x -C /tmp/local-frontend --strip-components=1
           
           # Sync files
-          rsync -a --delete --exclude='.git' --exclude='.github' --exclude='.env.production' --exclude='public/logo.png' --exclude='public/favicon.png' /tmp/local-frontend/ ./
+          rsync -a --delete --exclude='.git' --exclude='.github' --exclude='.env.production' /tmp/local-frontend/ ./
           
           git add .
           if ! git diff --staged --quiet; then
