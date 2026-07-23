@@ -29,8 +29,21 @@ jobs:
         run: |
           echo "Syncing backend branch..."
           git checkout -B backend origin/backend || git checkout -b backend
-          git merge origin/local-dev --strategy-option theirs -m "chore: auto-sync backend with local-dev"
-          git push origin backend
+          
+          # Extract root from local-dev
+          mkdir -p /tmp/local-backend
+          git archive origin/local-dev | tar -x -C /tmp/local-backend
+          
+          # Sync files (exclude .git and .github)
+          rsync -a --delete --exclude='.git' --exclude='.github' /tmp/local-backend/ ./
+          
+          git add .
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: auto-sync backend with local-dev"
+            git push origin backend
+          else
+            echo "Backend is up to date."
+          fi
 
       - name: Sync Frontend
         run: |
