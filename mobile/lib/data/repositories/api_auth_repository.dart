@@ -371,7 +371,6 @@ class ApiAuthRepository implements AuthRepository {
     return _fetchAndAttachHousehold(const UserEntity(
       id: '',
       name: '',
-      email: '',
       role: UserRole.warga,
     )).then((user) async {
       // Tunggu, kalau backend ada endpoint `/api/v1/auth/me`, kita panggil itu.
@@ -482,7 +481,6 @@ class ApiAuthRepository implements AuthRepository {
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
-      email: userMap['email']?.toString() ?? '',
       phone: userMap['phone']?.toString() ?? '',
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
       fotoProfil: userMap['fotoProfil']?.toString(),
