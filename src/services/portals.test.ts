@@ -22,6 +22,16 @@ describe("Portals A & B Service Integration Tests", () => {
   let citizenUser: any;
 
   beforeAll(async () => {
+    // Clear conflicting data to prevent KKN limit issues
+    await prisma.refreshToken.deleteMany({});
+    await prisma.pointHistory.deleteMany({});
+    await prisma.notification.deleteMany({});
+    await prisma.violation.deleteMany({});
+    await prisma.wasteLog.deleteMany({});
+    await prisma.bin.deleteMany({});
+    await prisma.household.deleteMany({});
+    await prisma.user.deleteMany({ where: { role: { name: "WARGA" } } });
+
     // Get seeded KKN student and Petugas
     kknUser = await prisma.user.findFirst({
       where: { role: { name: "MAHASISWA_KKN" } },
@@ -35,10 +45,11 @@ describe("Portals A & B Service Integration Tests", () => {
 
     rtRwArea = await prisma.rtRwArea.findFirst();
 
+    const timestamp = Date.now();
     // Create a QR batch assigned to KKN PIC
     qrBatch = await prisma.qrBatch.create({
       data: {
-        batchCode: `BATCH-TEST-${Date.now()}`,
+        batchCode: `BATCH-TEST-${timestamp}`,
         status: "ASSIGNED_TO_PIC",
         assignedPicUserId: kknUser.id,
         totalQr: 5,
@@ -51,7 +62,7 @@ describe("Portals A & B Service Integration Tests", () => {
     // Create test bins assigned to this batch
     testBin = await prisma.bin.create({
       data: {
-        qrCode: `ORG-TEST-${Date.now()}`,
+        qrCode: `ORG-TEST-${timestamp}`,
         categoryId: category!.id,
         maxCapacityLiter: 25.0,
         rtRwId: rtRwArea.id,
@@ -61,10 +72,10 @@ describe("Portals A & B Service Integration Tests", () => {
     });
     
     // Create second bin for Inorganic
-    const catIno = await prisma.wasteCategory.findFirst({ where: { name: "INORGANIC" } });
+    const catIno = await prisma.wasteCategory.findFirst({ where: { name: "Anorganik" } });
     await prisma.bin.create({
       data: {
-        qrCode: `ANO-TEST-${Date.now()}`,
+        qrCode: `ANO-TEST-${timestamp}`,
         categoryId: catIno!.id,
         maxCapacityLiter: 25.0,
         rtRwId: rtRwArea.id,
@@ -97,7 +108,7 @@ describe("Portals A & B Service Integration Tests", () => {
         kknService.registerWarga(kknUser.id, {
           name: "Warga Test Mismatch",
           email: `wargadiff-${Date.now()}@psc.id`,
-          phone: "081234567",
+          phone: "+6281234567890",
           nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
           address: "Jl. Dago Giri No. 12",
           rtRwId: rtRwArea.id,
@@ -112,7 +123,7 @@ describe("Portals A & B Service Integration Tests", () => {
       const result = await kknService.registerWarga(kknUser.id, {
         name: "Warga Test KKN",
         email: citizenEmail,
-        phone: "081234567",
+        phone: "+6281234567891",
         nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
         address: "Jl. Dago Giri No. 12",
         rtRwId: rtRwArea.id,
@@ -126,7 +137,7 @@ describe("Portals A & B Service Integration Tests", () => {
       expect(result.newWarga.email).toBe(citizenEmail);
 
       // Approve bin activation using rwService
-      await rwService.approveBin(testBin.id);
+      await rwService.approveBin(testBin.id, rtRwArea.id);
 
       // Verify bin is now active
       const updatedBin = await prisma.bin.findUnique({

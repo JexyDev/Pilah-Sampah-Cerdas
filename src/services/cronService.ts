@@ -67,8 +67,40 @@ export class CronService {
     }
   }
 
-  public async evaluateShiftPenalty(_shift: string) {
-    // Stub for testing
+  public async evaluateShiftPenalty(shift: string) {
+    try {
+      const petugasList = await prisma.petugasResidu.findMany({
+        where: { whitelistStatus: "APPROVED" }
+      });
+
+      for (const petugas of petugasList) {
+        const count = await prisma.residuLog.count({
+          where: {
+            petugasId: petugas.userId,
+          }
+        });
+
+        if (count === 0) {
+          const penaltyPercent = 15; // standard penalty
+          const newScore = Math.max(0, Number(petugas.kpiScore) - penaltyPercent);
+
+          await prisma.petugasResidu.update({
+            where: { id: petugas.id },
+            data: { kpiScore: newScore }
+          });
+
+          await prisma.auditTrail.create({
+            data: {
+              action: "SYSTEM_KPI_PENALTY",
+              userId: petugas.userId,
+              newValue: { petugasId: petugas.id, kpiScore: newScore }
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.error("[CronService] evaluateShiftPenalty error:", e);
+    }
   }
 
   private async checkEscalations(window: "MORNING" | "EVENING") {

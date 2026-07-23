@@ -39,7 +39,7 @@ router.get("/bins/pending", async (req, res, next) => {
 
 router.put("/bins/:id/approve", async (req, res, next) => {
   try {
-    const data = await rwService.approveBin(req.params.id);
+    const data = await rwService.approveBin(req.params.id, req.user!.rtRwId!);
     res.json({ message: "Bin berhasil diaktifkan", data });
   } catch (error) {
     next(error);
@@ -50,7 +50,7 @@ router.put("/bins/:id/reject", async (req, res, next) => {
   try {
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ error: "Reason is required" });
-    const data = await rwService.rejectBin(req.params.id, reason);
+    const data = await rwService.rejectBin(req.params.id, reason, req.user!.rtRwId!);
     res.json({ message: "Pengajuan bin ditolak", data });
   } catch (error) {
     next(error);
@@ -68,7 +68,7 @@ router.get("/bins/inactive", async (req, res, next) => {
 
 router.put("/bins/:id/broken", async (req, res, next) => {
   try {
-    const data = await rwService.markBinBroken(req.params.id, req.user!.userId);
+    const data = await rwService.markBinBroken(req.params.id, req.user!.userId, req.user!.rtRwId!);
     res.json({ message: "Bin ditandai rusak", data });
   } catch (error) {
     next(error);
@@ -91,7 +91,7 @@ router.put("/petugas/:id/verify", async (req, res, next) => {
     if (!["APPROVED", "REJECTED"].includes(action)) {
       return res.status(400).json({ error: "Invalid action" });
     }
-    const data = await rwService.verifyPetugas(req.params.id, action as "APPROVED" | "REJECTED");
+    const data = await rwService.verifyPetugas(req.params.id, action as "APPROVED" | "REJECTED", req.user!.rtRwId!);
     res.json({ message: "Verifikasi petugas berhasil", data });
   } catch (error) {
     next(error);
@@ -111,7 +111,7 @@ router.get("/ide", async (req, res, next) => {
 router.put("/ide/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body; // "APPROVED" or "REJECTED"
-    const data = await rwService.verifyIde(req.params.id, action as "APPROVED" | "REJECTED", req.user!.userId);
+    const data = await rwService.verifyIde(req.params.id, action as "APPROVED" | "REJECTED", req.user!.userId, req.user!.rtRwId!);
     res.json({ message: "Ide diverifikasi", data });
   } catch (error) {
     next(error);
@@ -131,7 +131,7 @@ router.get("/facilities/pending", async (req, res, next) => {
 router.put("/facilities/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body;
-    const data = await rwService.verifyFacility(req.params.id, action as "APPROVED" | "REJECTED");
+    const data = await rwService.verifyFacility(req.params.id, action as "APPROVED" | "REJECTED", req.user!.rtRwId!);
     res.json({ message: "Fasilitas diverifikasi", data });
   } catch (error) {
     next(error);
@@ -155,7 +155,8 @@ router.post("/facilities/:id/production", async (req, res, next) => {
       Number(materialMasukKg),
       Number(outputKg),
       jenisOutput,
-      periode
+      periode,
+      req.user!.rtRwId!
     );
     res.json({ message: "Data produksi berhasil disimpan", data });
   } catch (error) {

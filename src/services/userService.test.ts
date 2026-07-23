@@ -38,14 +38,16 @@ vi.mock("../utils/rbacScoping.js", () => {
   };
 });
 
-const { mockPrismaUserCreate, mockPrismaStudentKknCreate, mockPrismaTransaction } = vi.hoisted(() => {
+const { mockPrismaUserCreate, mockPrismaStudentKknCreate, mockPrismaUserFindUnique, mockPrismaTransaction } = vi.hoisted(() => {
   const userCreate = vi.fn();
   const studentCreate = vi.fn();
+  const userFindUnique = vi.fn().mockResolvedValue(null);
   return {
     mockPrismaUserCreate: userCreate,
     mockPrismaStudentKknCreate: studentCreate,
+    mockPrismaUserFindUnique: userFindUnique,
     mockPrismaTransaction: vi.fn((callback) => callback({
-      user: { create: userCreate },
+      user: { create: userCreate, findUnique: userFindUnique },
       studentKkn: { create: studentCreate }
     }))
   };
@@ -55,7 +57,7 @@ vi.mock("@prisma/client", () => {
   return {
     PrismaClient: class {
       $transaction = mockPrismaTransaction;
-      user = { create: mockPrismaUserCreate };
+      user = { create: mockPrismaUserCreate, findUnique: mockPrismaUserFindUnique };
       studentKkn = { create: mockPrismaStudentKknCreate };
     }
   };
@@ -131,6 +133,7 @@ describe("UserService", () => {
         name: "New Warga",
         email: "new@psc.id",
         password: "password123",
+        phone: "+6281122233344",
         roleName: "WARGA",
         nik: "1234567890000000",
       });
@@ -154,6 +157,7 @@ describe("UserService", () => {
           name: "New Warga",
           email: "new@psc.id",
           password: "password123",
+          phone: "+6281122233345",
           roleName: "INVALID_ROLE",
         })
       ).rejects.toThrow("ROLE_NOT_FOUND");
@@ -168,6 +172,7 @@ describe("UserService", () => {
           name: "New Warga",
           email: "existing@psc.id",
           password: "password123",
+          phone: "+6281122233346",
           roleName: "WARGA",
         })
       ).rejects.toThrow("EMAIL_CONFLICT");

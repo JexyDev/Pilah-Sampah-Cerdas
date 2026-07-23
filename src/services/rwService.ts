@@ -61,7 +61,7 @@ export const rwService = {
     });
   },
 
-  approveBin: async (binId: string) => {
+  approveBin: async (binId: string, rtRwId: number) => {
     return prisma.$transaction(async (tx) => {
       const bin = await tx.bin.findUnique({
         where: { id: binId },
@@ -70,6 +70,10 @@ export const rwService = {
 
       if (!bin || bin.status !== "PENDING_APPROVAL") {
         throw new Error("Bin not found or not in PENDING_APPROVAL status");
+      }
+
+      if (bin.rtRwId !== rtRwId) {
+        throw new Error("Bin does not belong to your RW area");
       }
 
       const updatedBin = await tx.bin.update({
@@ -112,7 +116,12 @@ export const rwService = {
     });
   },
 
-  rejectBin: async (binId: string, reason: string) => {
+  rejectBin: async (binId: string, reason: string, rtRwId: number) => {
+    const binCheck = await prisma.bin.findUnique({ where: { id: binId } });
+    if (!binCheck || binCheck.rtRwId !== rtRwId) {
+      throw new Error("Bin not found or does not belong to your RW area");
+    }
+
     const bin = await prisma.bin.update({
       where: { id: binId },
       data: { status: "PRINTED", userId: null }, // Reset to PRINTED
@@ -149,7 +158,16 @@ export const rwService = {
     });
   },
 
-  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED") => {
+  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rtRwId: number) => {
+    const rw = await prisma.rtRwArea.findUnique({ where: { id: rtRwId } });
+    if (!rw) throw new Error("RW Area not found");
+    const rwPart = rw.name.split("/").map(s => s.trim()).find(s => s.startsWith("RW")) || rw.name;
+
+    const petugasCheck = await prisma.petugasResidu.findUnique({ where: { id: petugasId } });
+    if (!petugasCheck || (!petugasCheck.assignedZone?.includes(rwPart) && !petugasCheck.assignedZone?.includes(rw.name))) {
+      throw new Error("Petugas is not in your RW area");
+    }
+
     const petugas = await prisma.petugasResidu.update({
       where: { id: petugasId },
       data: { whitelistStatus: action },
@@ -172,7 +190,12 @@ export const rwService = {
     });
   },
 
-  markBinBroken: async (binId: string, userId: string) => {
+  markBinBroken: async (binId: string, userId: string, rtRwId: number) => {
+    const binCheck = await prisma.bin.findUnique({ where: { id: binId } });
+    if (!binCheck || binCheck.rtRwId !== rtRwId) {
+      throw new Error("Bin not found or does not belong to your RW area");
+    }
+
     const bin = await prisma.bin.update({
       where: { id: binId },
       data: { status: "BROKEN" },
@@ -200,8 +223,17 @@ export const rwService = {
     });
   },
 
-  verifyIde: async (ideId: string, action: "APPROVED" | "REJECTED", rwUserId: string) => {
+  verifyIde: async (ideId: string, action: "APPROVED" | "REJECTED", rwUserId: string, rtRwId: number) => {
     return prisma.$transaction(async (tx) => {
+      const ideCheck = await tx.ideDaurUlang.findUnique({
+        where: { id: ideId },
+        include: { user: true }
+      });
+
+      if (!ideCheck || ideCheck.user.rtRwId !== rtRwId) {
+        throw new Error("Idea not found or does not belong to your RW area");
+      }
+
       const ide = await tx.ideDaurUlang.update({
         where: { id: ideId },
         data: { statusApproval: action, approvedBy: rwUserId },
@@ -238,7 +270,12 @@ export const rwService = {
     });
   },
 
-  verifyFacility: async (facilityId: string, action: "APPROVED" | "REJECTED") => {
+  verifyFacility: async (facilityId: string, action: "APPROVED" | "REJECTED", rtRwId: number) => {
+    const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
+    if (!facilityCheck || facilityCheck.rtRwId !== rtRwId) {
+      throw new Error("Facility not found or does not belong to your RW area");
+    }
+
     return prisma.facility.update({
       where: { id: facilityId },
       data: { statusApproval: action }
@@ -252,7 +289,12 @@ export const rwService = {
     });
   },
 
-  inputFacilityProduction: async (facilityId: string, materialMasukKg: number, outputKg: number, jenisOutput: string, periode: string) => {
+  inputFacilityProduction: async (facilityId: string, materialMasukKg: number, outputKg: number, jenisOutput: string, periode: string, rtRwId: number) => {
+    const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
+    if (!facilityCheck || facilityCheck.rtRwId !== rtRwId) {
+      throw new Error("Facility not found or does not belong to your RW area");
+    }
+
     return prisma.facilityProductionLog.create({
       data: {
         facilityId,

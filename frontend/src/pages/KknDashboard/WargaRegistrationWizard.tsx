@@ -47,7 +47,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
           }));
           setGpsError("");
         },
-        (err) => {
+        () => {
           setGpsError("GPS tidak aktif atau akses ditolak. Harap izinkan akses lokasi.");
         }
       );
@@ -269,7 +269,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                               }));
                               setGpsError("");
                             },
-                            (err) => setGpsError("Akses ditolak atau gagal mendapatkan lokasi.")
+                            () => setGpsError("Akses ditolak atau gagal mendapatkan lokasi.")
                           );
                         }
                       }} className="block mt-2 font-bold underline">Coba Lagi</button>
