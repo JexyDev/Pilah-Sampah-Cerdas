@@ -11,17 +11,7 @@ import { authService } from "../services/authService.js";
 
 // Validation Schemas
 const loginSchema = z.object({
-  email: z.string().refine(
-    (val) => {
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-      const isNik = /^\d{16}$/.test(val);
-      const isPhone = /^\+62\d{8,15}$/.test(val);
-      return isEmail || isNik || isPhone;
-    },
-    {
-      message: "Format email, NIK, atau Nomor HP tidak valid",
-    }
-  ),
+  phone: z.string().regex(/^\+62\d{8,15}$/, "Format nomor HP tidak valid (harus diawali +62)"),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
@@ -104,10 +94,10 @@ export class AuthController {
         });
         return;
       }
-      const { email: emailOrNik, password } = parsed.data;
+      const { phone, password } = parsed.data;
 
       // 2. Call Service
-      const result = await authService.login(emailOrNik, password);
+      const result = await authService.login(phone, password);
 
       // 3. Set HttpOnly Cookie for Web (Access Token)
       res.cookie("accessToken", result.accessToken, {
@@ -128,9 +118,9 @@ export class AuthController {
       });
     } catch (error: any) {
       const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
-      const emailLog = req.body?.email || "unknown";
+      const phoneLog = req.body?.phone || "unknown";
       console.warn(
-        `[Login Failed] IP: ${ip} | Email/NIK: ${emailLog} | Reason: ${error.message || error.name}`
+        `[Login Failed] IP: ${ip} | Phone: ${phoneLog} | Reason: ${error.message || error.name}`
       );
 
       if (

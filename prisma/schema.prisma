@@ -23,7 +23,7 @@ model Role {
 model User {
   id              String            @id @default(uuid())
   name            String            @map("nama")
-  email           String            @unique @map("surel")
+  email           String?           @unique @map("surel")
   password        String            @map("kata_sandi")
   nik             String?           @unique
   status          String            @default("Aktif")
@@ -33,7 +33,7 @@ model User {
   rtRwId          Int?              @map("id_rt_rw")
   rtRw            RtRwArea?         @relation(fields: [rtRwId], references: [id])
   fotoProfil      String?           @map("foto_profil")
-  phone           String?           @map("phone")
+  phone           String            @unique @map("phone")
   address         String?           @map("address")
   wargaSubtype    String?           @map("warga_subtype") // "UTAMA", "TAMBAHAN"
   createdAt       DateTime          @default(now()) @map("dibuat_pada")
