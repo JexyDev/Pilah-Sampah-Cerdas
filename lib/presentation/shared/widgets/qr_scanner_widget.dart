@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -77,7 +70,6 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
   void _startScanner() {
     _controller?.dispose();
     _controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       autoStart: true,
     );

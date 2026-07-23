@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../../domain/entities/ai_detection_entity.dart';
@@ -192,6 +185,8 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
     required String qrSerial,
     required String userId,
     required String householdId,
+    double? latitude,
+    double? longitude,
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
@@ -199,8 +194,35 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
         qrSerial: qrSerial,
         userId: userId,
         householdId: householdId,
+        latitude: latitude,
+        longitude: longitude,
       );
       state = AktivasiBinState(result: result);
+    } on BinException catch (e) {
+      state = AktivasiBinState(errorCode: e.code, errorMessage: e.message);
+    }
+  }
+
+  Future<void> aktivasiBatch({
+    required List<String> qrSerials,
+    required String userId,
+    required String householdId,
+    double? latitude,
+    double? longitude,
+  }) async {
+    state = const AktivasiBinState(isLoading: true);
+    try {
+      BinEntity? lastResult;
+      for (final qr in qrSerials) {
+        lastResult = await _binRepository.activateBin(
+          qrSerial: qr,
+          userId: userId,
+          householdId: householdId,
+          latitude: latitude,
+          longitude: longitude,
+        );
+      }
+      state = AktivasiBinState(result: lastResult);
     } on BinException catch (e) {
       state = AktivasiBinState(errorCode: e.code, errorMessage: e.message);
     }
@@ -238,18 +260,21 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   final BinRepository _binRepository;
 
   Future<void> submitReset({
-    required String binId,
+    required List<String> binIds,
     required String userId,
     required String evidencePhotoPath,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
-      final result = await _binRepository.submitResetRequest(
-        binId: binId,
-        userId: userId,
-        evidencePhotoPath: evidencePhotoPath,
-      );
-      state = ResetBinState(result: result);
+      BinResetEntity? lastResult;
+      for (final binId in binIds) {
+        lastResult = await _binRepository.submitResetRequest(
+          binId: binId,
+          userId: userId,
+          evidencePhotoPath: evidencePhotoPath,
+        );
+      }
+      state = ResetBinState(result: lastResult);
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
     }

@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -14,13 +7,16 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../../domain/entities/waste_log_entity.dart';
+import '../../domain/entities/user_entity.dart';
 import '../providers/auth_provider.dart';
 import '../providers/bin_provider.dart';
 import '../providers/waste_log_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/notification_provider.dart';
 import '../shared/widgets/app_error.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
+import '../../core/utils/scan_guard.dart';
 
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
@@ -38,6 +34,7 @@ class BerandaScreen extends ConsumerWidget {
     final totalPointsAsync = ref.watch(totalPointsProvider);
     final wasteLogsAsync = ref.watch(wasteLogsProvider);
     final bool isOnline = ref.watch(isOnlineProvider);
+    final int unreadCount = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -46,6 +43,8 @@ class BerandaScreen extends ConsumerWidget {
           ref.invalidate(binsProvider);
           ref.invalidate(totalPointsProvider);
           ref.invalidate(wasteLogsProvider);
+          ref.invalidate(notificationsProvider);
+          ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -57,6 +56,7 @@ class BerandaScreen extends ConsumerWidget {
                 user?.name ?? 'Warga',
                 user?.rtRw ?? 'RT 04 / RW 02',
                 isOnline,
+                unreadCount,
               ),
             ),
 
@@ -89,7 +89,7 @@ class BerandaScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppDimensions.sm),
-                  _buildAksiCepat(context, isOnline),
+                  _buildAksiCepat(context, ref, isOnline),
 
                   const SizedBox(height: AppDimensions.lg),
 
@@ -170,6 +170,7 @@ class BerandaScreen extends ConsumerWidget {
     String name,
     String rtRw,
     bool isOnline,
+    int unreadCount,
   ) {
     return Container(
       color: Colors.white,
@@ -257,6 +258,51 @@ class BerandaScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              // ─── Bell icon with badge ───────────────────────────────
+              GestureDetector(
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: AppColors.primaryGreen,
+                        size: 22,
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          decoration: const BoxDecoration(
+                            color: AppColors.dangerRed,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -290,6 +336,10 @@ class BerandaScreen extends ConsumerWidget {
         builder: (context, ref, _) {
           final dailyAsync = ref.watch(dailyPointsProvider);
           final daily = dailyAsync.maybeWhen(data: (v) => v, orElse: () => 0);
+          
+          final rankAsync = ref.watch(userLeaderboardRankProvider);
+          final rankValue = rankAsync.maybeWhen(data: (r) => r, orElse: () => '-');
+
           return Row(
             children: [
               _StatItem(
@@ -307,10 +357,10 @@ class BerandaScreen extends ConsumerWidget {
                 valueColor: AppColors.primaryGreen,
               ),
               _VerticalDivider(),
-              const _StatItem(
+              _StatItem(
                 icon: Icons.emoji_events_outlined,
                 iconColor: AppColors.warningYellow,
-                value: '-',
+                value: rankValue,
                 label: 'Peringkat',
               ),
             ],
@@ -320,14 +370,116 @@ class BerandaScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAksiCepat(BuildContext context, bool isOnline) {
+  Widget _buildAksiCepat(BuildContext context, WidgetRef ref, bool isOnline) {
+    final user = ref.watch(authProvider).user;
+    final role = user?.role ?? UserRole.warga;
+
+    if (role == UserRole.mahasiswaKkn) {
+      // Mahasiswa KKN Quick Action: Aktivasi Bin
+      return Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.aktivasiBin),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryBlue, Color(0xFF2196F3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.sensors_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Bantu Warga Aktivasi Bin',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (role == UserRole.petugasResidu) {
+      // Petugas Residu Quick Action: Timbang Residu
+      return Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.timbanganResidu),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE65100), Colors.orange],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.scale_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Input Timbangan Residu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Default: Warga
     return Row(
       children: [
         // Scan Sampah — hijau/biru gradient
         Expanded(
           child: GestureDetector(
             onTap: isOnline
-                ? () => Navigator.of(context).pushNamed(AppRoutes.scan)
+                ? () => ScanGuard.handleScanNavigation(context, ref)
                 : null,
             child: AnimatedOpacity(
               opacity: isOnline ? 1.0 : 0.5,
@@ -369,30 +521,30 @@ class BerandaScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 12),
-        // Aktivasi Bin — outline biru
+        // Minta Kosongkan Bin — outline merah/biru
         Expanded(
           child: GestureDetector(
-            onTap: () => Navigator.of(context).pushNamed(AppRoutes.aktivasiBin),
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.resetBin),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryBlue, width: 1.5),
+                border: Border.all(color: AppColors.primaryGreen, width: 1.5),
               ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    Icons.sensors_rounded,
-                    color: AppColors.primaryBlue,
+                    Icons.delete_sweep_rounded,
+                    color: AppColors.primaryGreen,
                     size: 28,
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Aktivasi Bin',
+                    'Minta Kosongkan',
                     style: TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryGreen,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -530,7 +682,7 @@ class _RiwayatCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Dibuang pada: ${DateFormat('HH:mm', 'id_ID').format(log.createdAt)} WIB',
+                  'Dibuang pada: ${DateFormat('HH:mm', 'id_ID').format(log.createdAt.toLocal())} WIB',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -558,23 +710,49 @@ class _RiwayatCard extends StatelessWidget {
             ),
           ),
           // Status badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.statusSelesaiBg,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'SELESAI',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.statusSelesai,
-              ),
-            ),
-          ),
+          _buildScheduleBadge(log.createdAt.toLocal()),
         ],
       ),
     );
+  }
+
+  Widget _buildScheduleBadge(DateTime date) {
+    final hour = date.hour;
+    // Window Pagi: 07-08, Sore: 16-17. Tolerance until 08:59 and 17:59
+    final isFullPoin = (hour >= 7 && hour < 9) || (hour >= 16 && hour < 18);
+    
+    if (isFullPoin) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'FULL POIN',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.warningYellow.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'SEBAGIAN',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: AppColors.warningYellow,
+          ),
+        ),
+      );
+    }
   }
 }

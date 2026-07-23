@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/auth_provider.dart';
+import '../../config/app_config.dart';
 import '../providers/bin_provider.dart';
 
 /// Halaman profil — sesuai desain:
@@ -40,7 +34,28 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
       setState(() => _profileImage = File(picked.path));
-      // TODO-SYNC: panggil repository untuk upload foto profil ke backend
+      
+      if (!mounted) return;
+      
+      final success = await ref.read(authProvider.notifier).uploadAvatar(picked.path);
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto profil berhasil diperbarui!'),
+              backgroundColor: AppColors.primaryGreen,
+            ),
+          );
+        } else {
+          final error = ref.read(authProvider).errorCode ?? 'Gagal mengunggah foto';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload gagal: $error'),
+              backgroundColor: AppColors.dangerRed,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -85,9 +100,18 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                                     image: FileImage(_profileImage!),
                                     fit: BoxFit.cover,
                                   )
-                                : null,
+                                : (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty
+                                    ? DecorationImage(
+                                        image: NetworkImage(
+                                          user.fotoProfil!.startsWith('http')
+                                              ? user.fotoProfil!
+                                              : '${AppConfig.baseUrl}${user.fotoProfil}',
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null),
                           ),
-                          child: _profileImage == null
+                          child: _profileImage == null && (user?.fotoProfil == null || user!.fotoProfil!.isEmpty)
                               ? const Icon(
                                   Icons.person_rounded,
                                   color: AppColors.primaryGreen,
@@ -174,9 +198,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                         ),
                         _divider(),
                         _InfoTile(
-                          Icons.credit_card_outlined,
-                          'NIK',
-                          user?.nik ?? '-',
+                          Icons.email_outlined,
+                          'Email',
+                          user?.email ?? '-',
                         ),
                         _divider(),
                         _InfoTile(
@@ -299,8 +323,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   const SizedBox(height: 12),
                   const Center(
                     child: Text(
-                      '© 2026 TrashCare\n© 2026 PT Makerindo. Developed by PT Makerindo.',
-                      textAlign: TextAlign.center,
+                      '© 2026 Pilah Sampah Cerdas',
                       style: TextStyle(fontSize: 11, color: AppColors.textHint),
                     ),
                   ),
@@ -330,7 +353,10 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
               Navigator.of(ctx).pop();
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRoutes.login,
+                  (route) => false,
+                );
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.dangerRed),

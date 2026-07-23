@@ -1,10 +1,3 @@
-/**
- * Project: Pilah Sampah Cerdas
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -171,7 +164,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         child: FadeTransition(
                           opacity: _titleFade,
                           child: Text(
-                            'TrashCare',
+                            'Pilah Sampah Cerdas',
                             style: GoogleFonts.plusJakartaSans(
                               color: AppColors.primaryGreen,
                               fontSize: 26,
