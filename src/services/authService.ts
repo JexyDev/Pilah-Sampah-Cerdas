@@ -9,6 +9,7 @@ import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { PrismaClient } from "@prisma/client";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 const prisma = new PrismaClient();
 
@@ -108,13 +109,17 @@ export class AuthService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    // Generate 6 digit OTP
-    const otp = "123456"; // MOCK OTP for dev
+    // Generate 6 digit random OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
 
     await authRepository.createOtp(phone, otp, expiresAt);
 
-    // TODO: Send OTP via notificationIntegrationService
+    await notificationIntegrationService.sendWhatsApp(
+      phone,
+      `Kode OTP Anda untuk masuk ke Pilah Sampah Cerdas adalah: ${otp}. Kode berlaku selama 5 menit.`,
+      "OTP"
+    ).catch(e => console.error("WhatsApp OTP error:", e));
     
     return {
       message: "OTP sent via WhatsApp",
