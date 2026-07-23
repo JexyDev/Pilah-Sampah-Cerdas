@@ -15,10 +15,11 @@ const loginSchema = z.object({
     (val) => {
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
       const isNik = /^\d{16}$/.test(val);
-      return isEmail || isNik;
+      const isPhone = /^\+62\d{8,15}$/.test(val);
+      return isEmail || isNik || isPhone;
     },
     {
-      message: "Format email atau NIK tidak valid",
+      message: "Format email, NIK, atau Nomor HP tidak valid",
     }
   ),
   password: z.string().min(6, "Password minimal 6 karakter"),

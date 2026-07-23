@@ -1,4 +1,6 @@
-import { Server, WifiOff, User, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, LogIn, Phone } from "lucide-react";
+import fs from "fs";
+
+const content = `import { Server, WifiOff, User, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Info, LogIn, Phone } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: Jeremy Darrell & Muhammad Habil Putrawan
@@ -32,8 +34,8 @@ const Login: React.FC = () => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Helper validation regex
-  const isEmailValid = (val: string) => /^[^s@]+@[^s@]+.[^s@]+$/.test(val) || /^\d{16}$/.test(val);
-  const isPhoneValid = (val: string) => /^\+62\d{8,15}$/.test(val);
+  const isEmailValid = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || /^\\d{16}$/.test(val);
+  const isPhoneValid = (val: string) => /^\\+62\\d{8,15}$/.test(val);
 
   // Real-time Validation handlers
   const handleIdentifierBlur = () => {
@@ -62,7 +64,7 @@ const Login: React.FC = () => {
   const showToast = (message: string, type: "error" | "warning" | "server" | "network" = "error", retryAction?: () => void) => {
     toast.custom(
       (t) => (
-        <div className={`${t.visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"} transform transition-all duration-300 max-w-sm w-full bg-white shadow-xl rounded-xl pointer-events-auto flex border border-outline-variant/30 p-4 gap-3 items-center`}>
+        <div className={\`\${t.visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"} transform transition-all duration-300 max-w-sm w-full bg-white shadow-xl rounded-xl pointer-events-auto flex border border-outline-variant/30 p-4 gap-3 items-center\`}>
           <div className="flex-shrink-0 flex items-center">
             {type === "error" && <AlertCircle className="text-red-500" size={24} />}
             {type === "warning" && <AlertTriangle className="text-amber-500" size={24} />}
@@ -183,14 +185,14 @@ const Login: React.FC = () => {
         <div className="flex rounded-lg bg-slate-100 p-1">
           <button
             type="button"
-            className={`flex-1 text-[11px] font-bold py-2 rounded-md transition-colors ${loginMode === "STAFF" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            className={\`flex-1 text-[11px] font-bold py-2 rounded-md transition-colors \${loginMode === "STAFF" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}\`}
             onClick={() => switchTab("STAFF")}
           >
             Staf / Admin
           </button>
           <button
             type="button"
-            className={`flex-1 text-[11px] font-bold py-2 rounded-md transition-colors ${loginMode === "WARGA" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            className={\`flex-1 text-[11px] font-bold py-2 rounded-md transition-colors \${loginMode === "WARGA" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}\`}
             onClick={() => switchTab("WARGA")}
           >
             Warga
@@ -226,11 +228,11 @@ const Login: React.FC = () => {
                     setPassword("password123");
                     setIdentifierError("");
                     setPasswordError("");
-                    toast.success(`Mengisi kredensial ${acc.label}`, { id: "autofill-toast", duration: 1500 });
+                    toast.success(\`Mengisi kredensial \${acc.label}\`, { id: "autofill-toast", duration: 1500 });
                   }}
                   className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left"
                 >
-                  <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${acc.bg}`}>{acc.label}</span>
+                  <span className={\`px-2 py-0.5 text-[9px] font-bold rounded border \${acc.bg}\`}>{acc.label}</span>
                   <span className="text-[10px] font-mono text-slate-500">{acc.email}</span>
                 </button>
               ))}
@@ -280,7 +282,7 @@ const Login: React.FC = () => {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
               )}
               <input
-                className={`w-full pl-10 pr-4 h-11 bg-surface-container-low border ${identifierError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary"} rounded-lg text-sm focus:ring-1 outline-none`}
+                className={\`w-full pl-10 pr-4 h-11 bg-surface-container-low border \${identifierError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary"} rounded-lg text-sm focus:ring-1 outline-none\`}
                 placeholder={loginMode === "STAFF" ? "Email atau 16 digit NIK..." : "+628..."}
                 type="text"
                 value={identifier}
@@ -298,7 +300,7 @@ const Login: React.FC = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
               <input
                 ref={passwordInputRef}
-                className={`w-full pl-10 pr-10 h-11 bg-surface-container-low border ${passwordError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary"} rounded-lg text-sm focus:ring-1 outline-none`}
+                className={\`w-full pl-10 pr-10 h-11 bg-surface-container-low border \${passwordError ? "border-red-500 focus:ring-red-500" : "border-outline-variant/50 focus:border-primary"} rounded-lg text-sm focus:ring-1 outline-none\`}
                 placeholder="Masukkan kata sandi..."
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -336,3 +338,7 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+`;
+
+fs.writeFileSync("c:\\Users\\USER\\.gemini\\antigravity-ide\\scratch\\pilahsampah-id\\frontend\\src\\pages\\Login\\Login.tsx", content);
+console.log("Written Login.tsx");
