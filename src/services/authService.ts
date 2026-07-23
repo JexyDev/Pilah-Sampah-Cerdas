@@ -379,7 +379,7 @@ export class AuthService {
       if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
     }
 
-    return authRepository.registerWargaTx(
+    const user = await authRepository.registerWargaTx(
       {
         ...userData,
         password: hashedPassword,
@@ -388,6 +388,29 @@ export class AuthService {
       qrCode,
       wargaSubtype
     );
+
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      role: "WARGA",
+      rtRwId: user.rtRwId ?? undefined,
+    });
+    const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
+
+    await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: "WARGA",
+        rtRwId: user.rtRwId,
+        fotoProfil: user.fotoProfil,
+      },
+      accessToken,
+      refreshToken,
+    };
   }
 
   /**
