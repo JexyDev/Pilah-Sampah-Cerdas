@@ -23,9 +23,10 @@ const RekapSetoran: React.FC = () => {
       try {
         const response = await api.get("/transactions/deposits");
         setDeposits(response.data.data);
-      } catch (err) {
-        setError("Gagal memuat data dari server.");
-        toast.error("Gagal memuat data setoran");
+      } catch (err: any) {
+        const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal memuat data dari server.";
+        setError(errMsg);
+        toast.error(`Gagal memuat data setoran: ${errMsg}`);
       } finally {
         setLoading(false);
       }
@@ -37,7 +38,11 @@ const RekapSetoran: React.FC = () => {
     return deposits.filter((d) => {
       // 1. Filter Kategori
       if (filterKategori !== "ALL") {
-        if (d.jenis !== filterKategori) return false;
+        const catUpper = d.jenis ? d.jenis.toUpperCase() : "";
+        if (filterKategori === "ORGANIC" && !catUpper.includes("ORGANIK") && !catUpper.includes("ORGANIC")) return false;
+        if (filterKategori === "NON_ORGANIC" && !catUpper.includes("ANORGANIK") && !catUpper.includes("NON_ORGANIC") && !catUpper.includes("NON-ORGANIC")) return false;
+        if (filterKategori === "RESIDU" && !catUpper.includes("RESIDU")) return false;
+        if (filterKategori === "MIXED" && !catUpper.includes("CAMPURAN") && !catUpper.includes("MIXED")) return false;
       }
 
       // 2. Filter RT/RW
