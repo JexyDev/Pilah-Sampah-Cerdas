@@ -8,7 +8,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, RefreshCw } from "lucide-react";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import toast from "react-hot-toast";
@@ -114,7 +114,6 @@ interface ScheduleActivity {
 }
 
 const MonitoringAbsen: React.FC = () => {
-  const { user } = useAuthStore();
   const [schedules, setSchedules] = useState<ScheduleActivity[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
