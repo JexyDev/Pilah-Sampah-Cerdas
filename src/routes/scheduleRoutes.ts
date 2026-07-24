@@ -19,5 +19,11 @@ router.post(
   roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
   scheduleController.createSchedule
 );
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN"]),
+  scheduleController.deleteSchedule
+);
 
 export default router;

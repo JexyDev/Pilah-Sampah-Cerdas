@@ -229,6 +229,17 @@ export class BinController {
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] registerWargaBin error:", error);
+      
+      if (error.message.startsWith("BIN_CATEGORY_DUPLICATE:")) {
+        const cat = error.message.split(":")[1];
+        res.status(400).json({ success: false, error: "BIN_CATEGORY_DUPLICATE", message: `Tong sampah ${cat} sudah terdaftar untuk Anda.` });
+        return;
+      }
+      if (error.message === "BIN_CATEGORY_DUPLICATE_IN_REQUEST") {
+        res.status(400).json({ success: false, error: "BIN_CATEGORY_DUPLICATE", message: "Tidak boleh mengaktivasi dua tong dengan kategori yang sama sekaligus." });
+        return;
+      }
+
       res.status(400).json({ success: false, message: error.message });
     }
   }

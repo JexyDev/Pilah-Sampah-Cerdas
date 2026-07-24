@@ -506,15 +506,45 @@ export class BinService {
 
     const result = await prisma.$transaction(async (tx) => {
       const updatedBins = [];
+      const requestedCategoryIds = new Set<string>();
+
       for (const qrCode of codes) {
         const bin = await tx.bin.findUnique({
           where: { qrCode },
+          include: { category: true },
         });
         if (!bin) {
           throw new Error(`BIN_NOT_FOUND: ${qrCode}`);
         }
         if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
           throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
+        }
+
+        if (bin.categoryId) {
+          // Check for duplicate in the same request payload
+          if (requestedCategoryIds.has(bin.categoryId)) {
+            throw new Error("BIN_CATEGORY_DUPLICATE_IN_REQUEST");
+          }
+          requestedCategoryIds.add(bin.categoryId);
+
+          // Check for existing bin of the same category owned by user
+          const existingOwnership = await tx.binOwnership.findFirst({
+            where: {
+              userId: user.id,
+              bin: {
+                categoryId: bin.categoryId,
+                status: {
+                  notIn: ["BROKEN", "INACTIVE"],
+                },
+              },
+            },
+            include: { bin: { include: { category: true } } },
+          });
+
+          if (existingOwnership) {
+            const catName = existingOwnership.bin.category?.name || "kategori ini";
+            throw new Error(`BIN_CATEGORY_DUPLICATE:${catName}`);
+          }
         }
 
         const updatedBin = await tx.bin.update({

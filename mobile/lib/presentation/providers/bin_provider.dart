@@ -214,16 +214,16 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
-      BinEntity? lastResult;
+      final results = await _binRepository.activateBinsBatch(
+        qrSerials: qrSerials,
+        userId: userId,
+        householdId: householdId,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      
+      // Panggil measureBin sesuai jenis QR Code secara berurutan
       for (final qr in qrSerials) {
-        lastResult = await _binRepository.activateBin(
-          qrSerial: qr,
-          userId: userId,
-          householdId: householdId,
-          latitude: latitude,
-          longitude: longitude,
-        );
-        // Panggil measureBin sesuai jenis QR Code
         final isOrganik = !qr.toUpperCase().contains('NON') && !qr.toUpperCase().contains('ANORG');
         await _binRepository.measureBin(
           qrCode: qr,
@@ -231,7 +231,7 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
           maxCapacityLiter: isOrganik ? orgCapacity : anorgCapacity,
         );
       }
-      state = AktivasiBinState(result: lastResult);
+      state = AktivasiBinState(result: results.isNotEmpty ? results.last : null);
     } on BinException catch (e) {
       state = AktivasiBinState(errorCode: e.code, errorMessage: e.message);
     }

@@ -288,14 +288,58 @@ class ApiBinRepository implements BinRepository {
         );
       }
       throw BinException(
-        'NETWORK_ERROR',
-        'Gagal terhubung ke server: ${e.message}',
+        errorCode ?? 'UNKNOWN_ERROR',
+        message ?? 'Gagal menghubungi server.',
       );
     } catch (e) {
-      throw BinException(
-        'UNKNOWN_ERROR',
-        'Terjadi kesalahan sistem: $e',
+      throw BinException('UNKNOWN_ERROR', e.toString());
+    }
+  }
+
+  @override
+  Future<List<BinEntity>> activateBinsBatch({
+    required List<String> qrSerials,
+    required String userId,
+    required String householdId,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/bins/activate',
+        data: {
+          'qrCodes': qrSerials,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        },
       );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data['data'];
+        if (data is List) {
+          return data.map((e) => _mapMyBin(e as Map<String, dynamic>)).toList();
+        }
+      }
+      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tong sampah');
+    } on DioException catch (e) {
+      final errorCode = e.response?.data?['error']?.toString();
+      final message = e.response?.data?['message']?.toString();
+
+      if (errorCode == 'NOT_FOUND') {
+        throw const BinException('BIN_NOT_FOUND', 'QR Code tong tidak terdaftar di sistem.');
+      }
+      if (errorCode == 'ALREADY_ACTIVATED') {
+        throw const BinException('ALREADY_ACTIVATED', 'Tong ini sudah diaktivasi oleh warga lain.');
+      }
+      if (errorCode == 'BIN_CATEGORY_DUPLICATE') {
+        throw BinException('BIN_CATEGORY_DUPLICATE', message ?? 'Kategori tong sudah terdaftar.');
+      }
+      if (errorCode == 'BAD_REQUEST') {
+        throw BinException('BAD_REQUEST', message ?? 'Permintaan tidak valid.');
+      }
+      throw BinException(errorCode ?? 'UNKNOWN_ERROR', message ?? 'Gagal menghubungi server.');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', e.toString());
     }
   }
 
