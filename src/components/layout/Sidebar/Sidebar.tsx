@@ -47,7 +47,12 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
   </div>
 );
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -71,23 +76,34 @@ const Sidebar: React.FC = () => {
   const hasAccess = (allowed: UserRole[]) => allowed.includes(currentRole);
 
   return (
-    <aside className="w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50">
-      {/* Brand Header */}
-      <div className="px-6 py-5 flex items-center justify-center border-b border-outline-variant/35 bg-white">
-        <img
-          src="/logo.png"
-          alt="TrashCare - Sampah Terdata, Lingkungan Tertata"
-          className="h-20 w-auto object-contain"
+    <>
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] lg:hidden"
+          onClick={onClose}
         />
-      </div>
+      )}
+      <aside className={`w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50 transition-transform duration-300 ease-in-out transform lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        {/* Brand Header */}
+        <div className="px-6 py-5 flex items-center justify-center border-b border-outline-variant/35 bg-white">
+          <img
+            src="/logo.png"
+            alt="TrashCare - Sampah Terdata, Lingkungan Tertata"
+            className="h-20 w-auto object-contain"
+          />
+        </div>
 
-      {/* Navigation Menu */}
-      <nav
-        className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#bccabc transparent" }}
-      >
-        <SectionHeader label="Layanan Utama" />
-        <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+        {/* Navigation Menu */}
+        <nav
+          className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4"
+          style={{ scrollbarWidth: "thin", scrollbarColor: "#bccabc transparent" }}
+          onClick={() => {
+            if (window.innerWidth < 1024) onClose();
+          }}
+        >
+          <SectionHeader label="Layanan Utama" />
+          <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
         {hasAccess(["WARGA"]) && (
           <NavItem to="/setor" icon={ScanLine} label="Setor Sampah" />
@@ -227,7 +243,8 @@ const Sidebar: React.FC = () => {
         </div>
       </div>
     </aside>
-  );
+  </>
+);
 };
 
 export default Sidebar;

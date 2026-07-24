@@ -412,7 +412,7 @@ const ManajemenTempatSampah: React.FC = () => {
       </div>
 
       {/* Bin Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-surface-container-low text-on-surface-variant text-[12px] font-bold uppercase tracking-wider">
