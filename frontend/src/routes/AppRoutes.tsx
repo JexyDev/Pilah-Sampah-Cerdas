@@ -40,6 +40,7 @@ import { RwApproval } from "../pages/RwPortal/RwApproval";
 import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
 import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
+import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -301,6 +302,7 @@ const AppRoutes: React.FC = () => {
           path="ide-daur-ulang"
           element={<IdeDaurUlang />}
         />
+        <Route path="tentang" element={<TentangAplikasi />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

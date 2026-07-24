@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -114,7 +114,7 @@ export class AuthService {
     await notificationIntegrationService
       .sendWhatsApp(
         phone,
-        `Kode OTP Anda untuk masuk ke Pilah Sampah Cerdas adalah: ${otp}. Kode berlaku selama 5 menit.`,
+        `Kode OTP Anda untuk masuk ke TrashCare adalah: ${otp}. Kode berlaku selama 5 menit.`,
         "OTP"
       )
       .catch((e) => console.error("WhatsApp OTP error:", e));

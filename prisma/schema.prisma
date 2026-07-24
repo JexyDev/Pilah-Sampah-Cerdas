@@ -33,9 +33,9 @@ model User {
   rtRwId          Int?              @map("id_rt_rw")
   rtRw            RtRwArea?         @relation(fields: [rtRwId], references: [id])
   fotoProfil      String?           @map("foto_profil")
-  phone           String            @unique @map("phone")
-  address         String?           @map("address")
-  wargaSubtype    String?           @map("warga_subtype") // "UTAMA", "TAMBAHAN"
+  phone           String            @unique @map("no_telepon")
+  address         String?           @map("alamat")
+  wargaSubtype    String?           @map("subtipe_warga") // "UTAMA", "TAMBAHAN"
   createdAt       DateTime          @default(now()) @map("dibuat_pada")
   updatedAt       DateTime          @updatedAt @map("diperbarui_pada")
   households      Household[]
@@ -46,6 +46,7 @@ model User {
   requestedResets BinResetRequest[] @relation("RequestedResets")
   reviewedResets  BinResetRequest[] @relation("ReviewedResets")
   bins            Bin[]             @relation("UserBins")
+  registeredBins  Bin[]             @relation("StudentRegisteredBins")
   binOwnerships   BinOwnership[]
   picBatches      QrBatch[]         @relation("PicBatches")
   studentProfile  StudentKkn?
@@ -197,6 +198,8 @@ model Bin {
   updatedAt                   DateTime          @updatedAt @map("diperbarui_pada")
   userId                      String?           @map("id_pengguna")
   user                        User?             @relation("UserBins", fields: [userId], references: [id], onDelete: SetNull)
+  registeredByStudentId       String?           @map("id_mahasiswa_pendaftar")
+  registeredByStudent         User?             @relation("StudentRegisteredBins", fields: [registeredByStudentId], references: [id], onDelete: SetNull)
   wasteLogs                   WasteLog[]
   binResetRequests            BinResetRequest[]
   dispatchTasks               DispatchTask[]

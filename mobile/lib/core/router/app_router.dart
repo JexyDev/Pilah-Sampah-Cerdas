@@ -10,6 +10,7 @@ import '../../presentation/aktivasi/ukur_kapasitas_screen.dart';
 import '../../presentation/reset/reset_bin_screen.dart';
 import '../../presentation/notifikasi/notifikasi_screen.dart';
 import '../../presentation/petugas/timbangan_residu_screen.dart';
+import '../../presentation/tentang/tentang_aplikasi_screen.dart';
 
 /// Nama-nama route terpusat agar tidak ada magic string di widget.
 class AppRoutes {
@@ -26,6 +27,7 @@ class AppRoutes {
   static const String resetBin = '/reset-bin';
   static const String notifikasi = '/notifikasi';
   static const String timbanganResidu = '/timbangan-residu';
+  static const String tentang = '/tentang';
 }
 
 /// Route generator terpusat.
@@ -56,6 +58,8 @@ class AppRouter {
         return _buildRoute(const NotifikasiScreen(), settings);
       case AppRoutes.timbanganResidu:
         return _buildRoute(const TimbanganResiduScreen(), settings);
+      case AppRoutes.tentang:
+        return _buildRoute(const TentangAplikasiScreen(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

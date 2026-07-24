@@ -18,7 +18,13 @@ def main():
     search_paths = [
         'frontend/src/**/*.ts',
         'frontend/src/**/*.tsx',
-        'frontend/index.html'
+        'frontend/index.html',
+        'src/**/*.ts',
+        'mobile/lib/**/*.dart',
+        'mobile/pubspec.yaml',
+        'mobile/android/app/src/main/res/values/strings.xml',
+        'README.md',
+        'package.json'
     ]
     
     for path in search_paths:

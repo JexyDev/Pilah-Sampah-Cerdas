@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb } from "lucide-react";
+import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb, Info } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -189,6 +189,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "MAHASISWA_KKN",
           "WARGA",
         ]) && <NavItem to="/pengaturan" icon={Settings} label="Pengaturan" />}
+        <NavItem to="/tentang" icon={Info} label="Tentang Aplikasi" />
 
         {hasAccess(["SUPER_ADMIN"]) && (
           <>

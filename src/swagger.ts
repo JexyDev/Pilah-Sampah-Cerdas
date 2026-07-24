@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -13,7 +13,7 @@ const options: swaggerJSDoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Pilah Sampah Cerdas API Documentation",
+      title: "TrashCare API Documentation",
       version: "1.0.0",
       description: "Dokumentasi API untuk sistem manajemen pilah sampah cerdas (pilahsampah.id)",
     },
