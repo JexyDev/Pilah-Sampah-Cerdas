@@ -1,4 +1,4 @@
-import { MapPin, ChevronDown, Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater } from "lucide-react";
+import { MapPin, ChevronDown, Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -12,7 +12,11 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
 import api from "../../../services/api";
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onToggleSidebar: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, updateWilayah } = useAuthStore();
@@ -197,13 +201,21 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 h-[72px] bg-white border-b border-outline-variant px-container-margin flex items-center justify-between z-40">
-      <div>
-        <h2 className="font-headline-lg text-[20px] font-bold text-on-surface">
-          {headerInfo.title}
-        </h2>
-        <p className="text-body-md text-[14px] text-on-surface-variant">{headerInfo.subtitle}</p>
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container rounded-lg lg:hidden cursor-pointer"
+        >
+          <Menu size={24} />
+        </button>
+        <div className="min-w-0">
+          <h2 className="font-headline-lg text-[18px] sm:text-[20px] font-bold text-on-surface truncate">
+            {headerInfo.title}
+          </h2>
+          <p className="text-body-md text-[11px] sm:text-[14px] text-on-surface-variant truncate">{headerInfo.subtitle}</p>
+        </div>
       </div>
-      <div className="flex items-center gap-gutter">
+      <div className="flex items-center gap-gutter flex-shrink-0">
         {/* Location Picker Dropdown */}
         <div className="relative" ref={locRef}>
           <div
