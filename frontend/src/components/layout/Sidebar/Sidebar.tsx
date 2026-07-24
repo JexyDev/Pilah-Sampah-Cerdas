@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb, Info } from "lucide-react";
+import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb, Info, GraduationCap } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -128,6 +128,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <SectionHeader label="Manajemen Data" />
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
           <NavItem to="/manajemen-pengguna" icon={Users} label="Manajemen Pengguna" />
+        )}
+
+        {hasAccess(["SUPER_ADMIN"]) && (
+          <NavItem to="/manajemen-mahasiswa" icon={GraduationCap} label="Manajemen Mahasiswa" />
         )}
 
         {hasAccess([
