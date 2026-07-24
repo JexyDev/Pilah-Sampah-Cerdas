@@ -3,14 +3,13 @@ const { Client } = require('ssh2');
 const conn = new Client();
 
 const commands = [
-  'cd /var/www/pilah-sampah-cerdas/backend && git fetch origin local-dev && git checkout local-dev && git pull origin local-dev',
+  'cd /var/www/pilah-sampah-cerdas/backend && git fetch origin local-dev && git reset --hard origin/local-dev && git clean -fd',
   'cd /var/www/pilah-sampah-cerdas/backend && npm install',
   'cd /var/www/pilah-sampah-cerdas/backend && npm run build',
   'pm2 restart psc-backend',
-  'cd /var/www/pilah-sampah-cerdas/frontend && git fetch origin local-dev && git checkout local-dev && git pull origin local-dev',
-  'cd /var/www/pilah-sampah-cerdas/frontend/frontend && npm install',
-  'cd /var/www/pilah-sampah-cerdas/frontend/frontend && npm run build',
-  'pm2 restart psc-frontend'
+  'cd /var/www/pilah-sampah-cerdas/frontend && git fetch origin local-dev && git reset --hard origin/local-dev && git clean -fd',
+  'cd /var/www/pilah-sampah-cerdas/frontend && npm install',
+  'cd /var/www/pilah-sampah-cerdas/frontend && npm run build'
 ];
 
 conn.on('ready', () => {
