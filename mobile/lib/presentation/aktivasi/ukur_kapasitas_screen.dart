@@ -1,35 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
+import '../../domain/entities/bin_entity.dart';
+import '../providers/bin_provider.dart';
 
-class UkurKapasitasScreen extends StatefulWidget {
+class UkurKapasitasScreen extends ConsumerStatefulWidget {
   const UkurKapasitasScreen({super.key});
 
   @override
-  State<UkurKapasitasScreen> createState() => _UkurKapasitasScreenState();
+  ConsumerState<UkurKapasitasScreen> createState() => _UkurKapasitasScreenState();
 }
 
-class _UkurKapasitasScreenState extends State<UkurKapasitasScreen> {
+class _UkurKapasitasScreenState extends ConsumerState<UkurKapasitasScreen> {
   // State for Organic Bin
   String _organicMode = 'Standar';
-  String _organicStandardSize = '20L';
+  String _organicStandardSize = '25 Kg';
   final TextEditingController _orgPanjangCtrl = TextEditingController();
   final TextEditingController _orgLebarCtrl = TextEditingController();
   final TextEditingController _orgTinggiCtrl = TextEditingController();
 
   // State for Non-Organic Bin
   String _nonOrganicMode = 'Standar';
-  String _nonOrganicStandardSize = '20L';
+  String _nonOrganicStandardSize = '25 Kg';
   final TextEditingController _nonOrgPanjangCtrl = TextEditingController();
   final TextEditingController _nonOrgLebarCtrl = TextEditingController();
   final TextEditingController _nonOrgTinggiCtrl = TextEditingController();
 
-  final List<String> _standardSizes = ['20L', '40L', '60L', '120L'];
+  final List<String> _standardSizes = ['10 Kg', '20 Kg', '25 Kg', '40 Kg', '60 Kg', '120 Kg'];
   bool _isLoading = false;
 
-  void _submit() async {
+  void _submit(bool hasOrganic, bool hasAnorganic) async {
     // Validasi input manual jika dipilih
-    if (_organicMode == 'Manual') {
+    if (!hasOrganic && _organicMode == 'Manual') {
       if (_orgPanjangCtrl.text.isEmpty ||
           _orgLebarCtrl.text.isEmpty ||
           _orgTinggiCtrl.text.isEmpty) {
@@ -37,7 +40,7 @@ class _UkurKapasitasScreenState extends State<UkurKapasitasScreen> {
         return;
       }
     }
-    if (_nonOrganicMode == 'Manual') {
+    if (!hasAnorganic && _nonOrganicMode == 'Manual') {
       if (_nonOrgPanjangCtrl.text.isEmpty ||
           _nonOrgLebarCtrl.text.isEmpty ||
           _nonOrgTinggiCtrl.text.isEmpty) {
@@ -48,15 +51,33 @@ class _UkurKapasitasScreenState extends State<UkurKapasitasScreen> {
 
     setState(() => _isLoading = true);
 
-    // TODO: Panggil API `POST /api/v1/bins/measure` di sini
-    // Mensimulasikan loading API
-    await Future.delayed(const Duration(seconds: 1));
-
     if (!mounted) return;
     setState(() => _isLoading = false);
 
+    double parseCapacity(String mode, String standardSize, TextEditingController p, TextEditingController l, TextEditingController t) {
+      if (mode == 'Standar') {
+        return double.tryParse(standardSize.replaceAll(' Kg', '')) ?? 25.0;
+      }
+      final double pp = double.tryParse(p.text) ?? 0.0;
+      final double ll = double.tryParse(l.text) ?? 0.0;
+      final double tt = double.tryParse(t.text) ?? 0.0;
+      return (pp * ll * tt) / 1000.0; // cm3 to Liter
+    }
+
+    final orgCap = parseCapacity(_organicMode, _organicStandardSize, _orgPanjangCtrl, _orgLebarCtrl, _orgTinggiCtrl);
+    final anorgCap = parseCapacity(_nonOrganicMode, _nonOrganicStandardSize, _nonOrgPanjangCtrl, _nonOrgLebarCtrl, _nonOrgTinggiCtrl);
+
     // Lanjut ke aktivasi (scan barcode)
-    Navigator.pushReplacementNamed(context, AppRoutes.aktivasiBin);
+    Navigator.pushReplacementNamed(
+      context, 
+      AppRoutes.aktivasiBin,
+      arguments: {
+        'orgCapacity': orgCap,
+        'anorgCapacity': anorgCap,
+        'hasOrganic': hasOrganic,
+        'hasAnorganic': hasAnorganic,
+      },
+    );
   }
 
   void _showError(String message) {
@@ -81,6 +102,10 @@ class _UkurKapasitasScreenState extends State<UkurKapasitasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final myBins = ref.watch(binsProvider).value ?? [];
+    final hasOrganic = myBins.any((b) => b.binType == WasteType.organic);
+    final hasAnorganic = myBins.any((b) => b.binType == WasteType.nonOrganic);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
@@ -92,7 +117,7 @@ class _UkurKapasitasScreenState extends State<UkurKapasitasScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Masukkan ukuran atau dimensi fisik dari kedua tong sampah Anda sebelum mengaktifkan barcode.',
+              'Masukkan ukuran atau dimensi fisik dari tong sampah Anda sebelum mengaktifkan barcode.',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
@@ -101,37 +126,76 @@ class _UkurKapasitasScreenState extends State<UkurKapasitasScreen> {
             const SizedBox(height: 24),
 
             // Card Organik
-            _buildBinCard(
-              title: 'Bin Organik (Hijau)',
-              color: AppColors.organicColor,
-              mode: _organicMode,
-              onModeChanged: (val) => setState(() => _organicMode = val!),
-              standardSize: _organicStandardSize,
-              onStandardSizeChanged: (val) => setState(() => _organicStandardSize = val!),
-              pCtrl: _orgPanjangCtrl,
-              lCtrl: _orgLebarCtrl,
-              tCtrl: _orgTinggiCtrl,
-            ),
-            
-            const SizedBox(height: 20),
+            if (hasOrganic)
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[400]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: AppColors.organicColor),
+                    const SizedBox(width: 8),
+                    const Text('Bin Organik (Hijau) sudah aktif', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: _buildBinCard(
+                  title: 'Bin Organik (Hijau)',
+                  color: AppColors.organicColor,
+                  mode: _organicMode,
+                  onModeChanged: (val) => setState(() => _organicMode = val!),
+                  standardSize: _organicStandardSize,
+                  onStandardSizeChanged: (val) => setState(() => _organicStandardSize = val!),
+                  pCtrl: _orgPanjangCtrl,
+                  lCtrl: _orgLebarCtrl,
+                  tCtrl: _orgTinggiCtrl,
+                ),
+              ),
 
             // Card Non-Organik
-            _buildBinCard(
-              title: 'Bin Anorganik (Kuning)',
-              color: AppColors.nonOrganicColor,
-              mode: _nonOrganicMode,
-              onModeChanged: (val) => setState(() => _nonOrganicMode = val!),
-              standardSize: _nonOrganicStandardSize,
-              onStandardSizeChanged: (val) => setState(() => _nonOrganicStandardSize = val!),
-              pCtrl: _nonOrgPanjangCtrl,
-              lCtrl: _nonOrgLebarCtrl,
-              tCtrl: _nonOrgTinggiCtrl,
-            ),
+            if (hasAnorganic)
+              Container(
+                margin: const EdgeInsets.only(bottom: 32),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[400]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: AppColors.nonOrganicColor),
+                    const SizedBox(width: 8),
+                    const Text('Bin Anorganik (Kuning) sudah aktif', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 32),
+                child: _buildBinCard(
+                  title: 'Bin Anorganik (Kuning)',
+                  color: AppColors.nonOrganicColor,
+                  mode: _nonOrganicMode,
+                  onModeChanged: (val) => setState(() => _nonOrganicMode = val!),
+                  standardSize: _nonOrganicStandardSize,
+                  onStandardSizeChanged: (val) => setState(() => _nonOrganicStandardSize = val!),
+                  pCtrl: _nonOrgPanjangCtrl,
+                  lCtrl: _nonOrgLebarCtrl,
+                  tCtrl: _nonOrgTinggiCtrl,
+                ),
+              ),
 
-            const SizedBox(height: 32),
-
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
+            if (!hasOrganic || !hasAnorganic)
+              ElevatedButton(
+                onPressed: _isLoading ? null : () => _submit(hasOrganic, hasAnorganic),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 padding: const EdgeInsets.symmetric(vertical: 16),

@@ -258,8 +258,11 @@ class ApiBinRepository implements BinRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        return _mapMyBin(data);
+        final data = response.data['data'];
+        if (data is List && data.isNotEmpty) {
+          return _mapMyBin(data.first as Map<String, dynamic>);
+        }
+        return _mapMyBin(data as Map<String, dynamic>);
       }
       throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tong sampah');
     } on DioException catch (e) {
@@ -361,6 +364,34 @@ class ApiBinRepository implements BinRepository {
       );
     } catch (e) {
       if (e is BinException) rethrow;
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
+  // ─── Measure Bin ──────────────────────────────────────────────────────────
+  // POST /api/v1/bins/measure
+  // Request: { qrCode, binType, maxCapacityLiter }
+  @override
+  Future<void> measureBin({
+    required String qrCode,
+    required WasteType binType,
+    required double maxCapacityLiter,
+  }) async {
+    try {
+      await apiClient.dio.post(
+        '/bins/measure',
+        data: {
+          'qrCode': qrCode,
+          'binType': binType == WasteType.organic ? 'ORGANIC' : 'NON_ORGANIC',
+          'maxCapacityLiter': maxCapacityLiter,
+        },
+      );
+    } on DioException catch (e) {
+      throw BinException(
+        'NETWORK_ERROR',
+        'Gagal mengatur kapasitas tong: ${e.message}',
+      );
+    } catch (e) {
       throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
     }
   }

@@ -26,12 +26,34 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
   bool _bothBinsDetected = false;
   bool _localLoading = false;
 
+  bool _argsLoaded = false;
+  bool _hasOrganic = false;
+  bool _hasAnorganic = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndRequestLocation();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_argsLoaded) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      _hasOrganic = args?['hasOrganic'] ?? false;
+      _hasAnorganic = args?['hasAnorganic'] ?? false;
+      
+      if (_hasOrganic && !_hasAnorganic) {
+        _step = 2; // Langsung ke anorganik
+      }
+      if (_hasOrganic && _hasAnorganic) {
+        _bothBinsDetected = true; // Gak perlu scan lagi
+      }
+      _argsLoaded = true;
+    }
   }
 
   Future<bool> _checkAndRequestLocation({bool showDialogs = true}) async {
@@ -91,23 +113,21 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
 
     setState(() {
       final detected = qr.trim();
-      final upperQr = detected.toUpperCase();
-      final isScanOrganik = !upperQr.contains('NON') && !upperQr.contains('ANORG');
 
       if (_step == 1) {
-        if (!isScanOrganik) {
-          _showErrorSnackBar('Mohon scan QR Code untuk Bin Organik terlebih dahulu.');
-          return;
-        }
         _qrOrganik = detected;
-        _step = 2; // Lanjut ke scan Anorganik
+        if (_hasAnorganic) {
+          _bothBinsDetected = true; // Selesai jika Anorganik sudah ada
+        } else {
+          _step = 2; // Lanjut ke scan Anorganik
+        }
       } else if (_step == 2) {
-        if (isScanOrganik) {
-          _showErrorSnackBar('Mohon scan QR Code untuk Bin Anorganik sekarang.');
+        if (_qrOrganik.isNotEmpty && detected.toUpperCase() == _qrOrganik.toUpperCase()) {
+          _showErrorSnackBar('QR Code ini sudah di-scan untuk Bin Organik.');
           return;
         }
         _qrAnorganik = detected;
-        _bothBinsDetected = true; // Kedua tong berhasil di-scan
+        _bothBinsDetected = true; // Kedua/satu tong berhasil di-scan
       }
     });
   }
@@ -149,14 +169,29 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
     }
 
     final user = ref.read(authProvider).user;
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final double orgCapacity = args?['orgCapacity'] ?? 20.0;
+    final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
+
+    final List<String> serials = [];
+    if (_qrOrganik.isNotEmpty) serials.add(_qrOrganik);
+    if (_qrAnorganik.isNotEmpty) serials.add(_qrAnorganik);
+
+    if (serials.isEmpty) {
+      _showErrorSnackBar('Tidak ada QR Code yang di-scan.');
+      return;
+    }
+
     await ref
         .read(aktivasiBinProvider.notifier)
         .aktivasiBatch(
-          qrSerials: [_qrOrganik, _qrAnorganik],
+          qrSerials: serials,
           userId: user?.id ?? '',
           householdId: user?.householdId ?? '',
           latitude: lat,
           longitude: lng,
+          orgCapacity: orgCapacity,
+          anorgCapacity: anorgCapacity,
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
       // Refresh semua data yang terpengaruh setelah tong baru diaktivasi
@@ -251,7 +286,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Kedua Tong Berhasil Di-scan',
+                            'Tong Berhasil Di-scan',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -262,7 +297,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                           TextButton.icon(
                             onPressed: () => setState(() {
                               _bothBinsDetected = false;
-                              _step = 1;
+                              _step = _hasOrganic ? 2 : 1;
                               _qrOrganik = '';
                               _qrAnorganik = '';
                             }),
@@ -355,6 +390,24 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
           'atau masukkan ID tong secara manual di atas',
           style: TextStyle(fontSize: 12, color: AppColors.textHint),
         ),
+        if (_step == 2 && !_hasOrganic) ...[
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _step = 1;
+                _qrOrganik = '';
+                _qrAnorganik = '';
+                _bothBinsDetected = false;
+              });
+            },
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed),
+            label: const Text(
+              'Ulangi Scan dari Awal',
+              style: TextStyle(color: AppColors.dangerRed),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -384,7 +437,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             ),
             const SizedBox(width: 8),
             const Text(
-              'Kedua Tong Siap!',
+              'Tong Siap Diaktivasi!',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -395,7 +448,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             GestureDetector(
               onTap: () => setState(() {
                 _bothBinsDetected = false;
-                _step = 1;
+                _step = _hasOrganic ? 2 : 1;
                 _qrOrganik = '';
                 _qrAnorganik = '';
               }),
@@ -409,19 +462,24 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         ),
         const SizedBox(height: 14),
 
-        // Info card Organik
-        _buildInfoCard(
-          title: 'Organik',
-          id: displayOrgId.toUpperCase(),
-          color: AppColors.organicColor,
-        ),
-        const SizedBox(height: 8),
-        // Info card Anorganik
-        _buildInfoCard(
-          title: 'Anorganik',
-          id: displayNonId.toUpperCase(),
-          color: AppColors.nonOrganicColor,
-        ),
+        if (_qrOrganik.isNotEmpty) ...[
+          // Info card Organik
+          _buildInfoCard(
+            title: 'Organik',
+            id: displayOrgId.toUpperCase(),
+            color: AppColors.organicColor,
+          ),
+          const SizedBox(height: 8),
+        ],
+        
+        if (_qrAnorganik.isNotEmpty) ...[
+          // Info card Anorganik
+          _buildInfoCard(
+            title: 'Anorganik',
+            id: displayNonId.toUpperCase(),
+            color: AppColors.nonOrganicColor,
+          ),
+        ],
 
         const SizedBox(height: 16),
 
@@ -433,7 +491,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
             onPressed: _onAktivasi,
             icon: const Icon(Icons.sensors_rounded, size: 18),
             label: const Text(
-              'AKTIVASI KEDUA TONG INI',
+              'AKTIVASI TONG',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
