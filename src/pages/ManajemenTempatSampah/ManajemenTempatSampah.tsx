@@ -12,7 +12,6 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
