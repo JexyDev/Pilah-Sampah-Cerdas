@@ -1,7 +1,7 @@
-const BASE_URL = 'http://localhost:3000/api/v1';
+const BASE_URL = 'http://157.10.252.252:3000/api/v1';
 
 async function testSuperAdminApprovals() {
-  console.log('=== START SUPER ADMIN APPROVALS TEST ===');
+  console.log('=== START SUPER ADMIN APPROVALS TEST ON VPS ===');
   
   // 1. Login as Super Admin
   console.log('\n1. Logging in as Super Admin...');
@@ -93,6 +93,10 @@ async function testSuperAdminApprovals() {
   // 4. Verify bin is in pending list for Super Admin
   console.log('\n6. Verifying bin appears in Super Admin pending list...');
   const pendingBinsRes = await fetch(`${BASE_URL}/super-admin/approvals/bins`, { headers: adminHeaders });
+  if (!pendingBinsRes.ok) {
+    console.error('Failed to get pending bins:', pendingBinsRes.status, await pendingBinsRes.text());
+    return;
+  }
   const pendingBinsData = await pendingBinsRes.json();
   const pendingBins = pendingBinsData.data || [];
   const myPendingBin = pendingBins.find((b: any) => b.qrCode === printedQr.qrCode);
@@ -156,6 +160,10 @@ async function testSuperAdminApprovals() {
   // 7. Verify Petugas appears in Super Admin pending list
   console.log('\n9. Verifying petugas appears in Super Admin pending list...');
   const pendingPetugasRes = await fetch(`${BASE_URL}/super-admin/approvals/petugas`, { headers: adminHeaders });
+  if (!pendingPetugasRes.ok) {
+    console.error('Failed to get pending petugas:', pendingPetugasRes.status, await pendingPetugasRes.text());
+    return;
+  }
   const pendingPetugasData = await pendingPetugasRes.json();
   const pendingPetugas = pendingPetugasData.data || [];
   
@@ -167,18 +175,8 @@ async function testSuperAdminApprovals() {
   }
   console.log(`PASS: Petugas is in pending list! ID: ${myPendingPetugas.id}`);
 
-  // 8. Verify Petugas appears in RW pending list
-  console.log('\n10. Verifying petugas appears in RW pending list...');
-  const usersRes = await fetch(`${BASE_URL}/users?roleName=RW`, { headers: adminHeaders });
-  const usersData = await usersRes.json();
-  const rwUser = (usersData.data || []).find((u: any) => u.rtRwId === myPendingBin.rtRwId);
-  
-  if (rwUser) {
-    console.log(`Found RW user ${rwUser.name} for rtRwId ${myPendingBin.rtRwId}.`);
-  }
-  
   // 9. Approve Petugas via Super Admin
-  console.log('\n11. Approving petugas via Super Admin...');
+  console.log('\n10. Approving petugas via Super Admin...');
   const verifyRes = await fetch(`${BASE_URL}/super-admin/approvals/petugas/${myPendingPetugas.id}/verify`, {
     method: 'PUT',
     headers: adminHeaders,
@@ -191,7 +189,7 @@ async function testSuperAdminApprovals() {
   }
   console.log('PASS: Petugas approved successfully!');
 
-  console.log('\n=== ALL SUPER ADMIN APPROVALS TESTS PASSED ===');
+  console.log('\n=== ALL SUPER ADMIN APPROVALS TESTS PASSED ON VPS ===');
 }
 
 testSuperAdminApprovals();
