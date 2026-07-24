@@ -94,7 +94,7 @@ const ManajemenMahasiswa: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-surface-container-lowest font-sans">
-      <Sidebar />
+      <Sidebar isOpen={true} onClose={() => {}} />
       <main className="flex-1 overflow-y-auto p-8 relative">
         <div className="flex justify-between items-end mb-8">
           <div>
