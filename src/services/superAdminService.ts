@@ -252,23 +252,27 @@ export class SuperAdminService {
   ) {
     const { totalQr, categoryId, rtRwId } = data;
 
-    // Find the latest QR batch in the database
-    const latestBatch = await prisma.qrBatch.findFirst({
+    // Find all QR batches in the database starting with "BATCH-"
+    const allBatches = await prisma.qrBatch.findMany({
       where: {
         batchCode: {
           startsWith: "BATCH-",
         },
       },
-      orderBy: { batchCode: "desc" },
+      select: { batchCode: true },
     });
 
-    let nextBatchNum = 1;
-    if (latestBatch) {
-      const match = latestBatch.batchCode.match(/^BATCH-(\d+)$/);
+    let maxNum = 0;
+    for (const b of allBatches) {
+      const match = b.batchCode.match(/^BATCH-(\d+)$/);
       if (match) {
-        nextBatchNum = parseInt(match[1], 10) + 1;
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) {
+          maxNum = num;
+        }
       }
     }
+    const nextBatchNum = maxNum + 1;
     const computedBatchCode = `BATCH-${nextBatchNum.toString().padStart(3, "0")}`;
 
     return prisma.$transaction(async (tx) => {
