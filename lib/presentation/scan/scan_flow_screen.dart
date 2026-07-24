@@ -950,14 +950,20 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
     if (errorCode == 'BIN_TYPE_MISMATCH') {
       _showMismatchDialog(context);
     } else if (errorCode == 'IMAGE_UNREADABLE' || errorCode == 'AI_TIMEOUT') {
-      _showScanFailedDialog(context, errorMessage);
+      _showScanFailedDialog(context, errorMessage, isQrError: false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage ?? 'Terjadi kesalahan.'),
-          backgroundColor: AppColors.dangerRed,
-        ),
-      );
+      // Jika terjadi kesalahan saat scan QR (Step 2)
+      final state = ref.read(scanFlowProvider);
+      if (state.currentStep == 2 || state.aiResult != null) {
+        _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tong sampah.', isQrError: true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage ?? 'Terjadi kesalahan.'),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+      }
     }
   }
 
@@ -989,14 +995,18 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
   }
 
   /// Dialog scan gagal — "Scan Gagal" merah
-  void _showScanFailedDialog(BuildContext context, String? message) {
+  void _showScanFailedDialog(BuildContext context, String? message, {required bool isQrError}) {
     showDialog(
       context: context,
       builder: (_) => _ScanFailedDialog(
         message: message ?? 'Barcode tidak terbaca oleh sistem.',
         onRetry: () {
           Navigator.of(context).pop();
-          ref.read(scanFlowProvider.notifier).reset();
+          if (isQrError) {
+            ref.read(scanFlowProvider.notifier).clearError();
+          } else {
+            ref.read(scanFlowProvider.notifier).reset();
+          }
         },
       ),
     );
