@@ -24,7 +24,7 @@ describe("readOnlyGuard middleware tests", () => {
       method: "POST",
       originalUrl: "/api/v1/users",
       headers: { authorization: `Bearer ${token}` },
-      cookies: {}
+      cookies: {},
     } as unknown as Request;
 
     const res = mockResponse();
@@ -35,7 +35,7 @@ describe("readOnlyGuard middleware tests", () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: "FORBIDDEN"
+        error: "FORBIDDEN",
       })
     );
     expect(next).not.toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe("readOnlyGuard middleware tests", () => {
       method: "PUT",
       originalUrl: "/api/v1/bins/bin-uuid",
       headers: { authorization: `Bearer ${token}` },
-      cookies: {}
+      cookies: {},
     } as unknown as Request;
 
     const res = mockResponse();
@@ -65,7 +65,7 @@ describe("readOnlyGuard middleware tests", () => {
       method: "POST",
       originalUrl: "/api/v1/users",
       headers: { authorization: `Bearer ${token}` },
-      cookies: {}
+      cookies: {},
     } as unknown as Request;
 
     const res = mockResponse();
@@ -83,7 +83,7 @@ describe("readOnlyGuard middleware tests", () => {
       method: "PUT",
       originalUrl: "/api/v1/waste/logs/some-uuid/resolve",
       headers: { authorization: `Bearer ${token}` },
-      cookies: {}
+      cookies: {},
     } as unknown as Request;
 
     const res = mockResponse();
@@ -101,7 +101,7 @@ describe("readOnlyGuard middleware tests", () => {
       method: "POST",
       originalUrl: "/api/v1/users",
       headers: { authorization: `Bearer ${token}` },
-      cookies: {}
+      cookies: {},
     } as unknown as Request;
 
     const res = mockResponse();

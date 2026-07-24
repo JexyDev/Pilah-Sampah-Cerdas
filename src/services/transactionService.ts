@@ -132,14 +132,17 @@ export class TransactionService {
 
       // 3. Mock AI Check
       // Normally we'd call a real AI service, but we mock the result here for the requirements
-      const isOrganic = category.name.toUpperCase().includes("ORGANIK") && !category.name.toUpperCase().includes("ANORGANIK") && !category.name.toUpperCase().includes("NON");
+      const isOrganic =
+        category.name.toUpperCase().includes("ORGANIK") &&
+        !category.name.toUpperCase().includes("ANORGANIK") &&
+        !category.name.toUpperCase().includes("NON");
       const types = ["ORGANIC", "NON_ORGANIC"];
-      
+
       // We'll randomly generate AI confidence to simulate discrepancies
       // Or just always match the category if confidence < 90, but to allow PENDING_REVIEW, we'll randomize a bit
       const aiConfidence = Math.random() * 0.2 + 0.8; // 0.8 to 1.0
       let aiClassification = isOrganic ? "ORGANIC" : "NON_ORGANIC";
-      
+
       // Simulate discrepancy occasionally (if random > 0.8, we flip the AI classification)
       if (Math.random() > 0.8) {
         aiClassification = aiClassification === "ORGANIC" ? "NON_ORGANIC" : "ORGANIC";
@@ -148,16 +151,17 @@ export class TransactionService {
       // Check threshold > 0.90
       let discrepancyStatus = "NONE";
       const manualClass = isOrganic ? "ORGANIC" : "NON_ORGANIC";
-      if (aiClassification !== manualClass && aiConfidence > 0.90) {
+      if (aiClassification !== manualClass && aiConfidence > 0.9) {
         discrepancyStatus = "PENDING_REVIEW";
       }
 
       // 4. Hitung Poin
-      const calculatedPoints = overridePoin !== null ? overridePoin : Math.floor(beratKg * category.pointsPerKg);
+      const calculatedPoints =
+        overridePoin !== null ? overridePoin : Math.floor(beratKg * category.pointsPerKg);
 
       // 5. Buat WasteLog
       const volumeLiter = beratKg * 1.5; // Rough estimate
-      
+
       const log = await tx.wasteLog.create({
         data: {
           householdId: household.id,
@@ -186,7 +190,7 @@ export class TransactionService {
             points: calculatedPoints,
             description: `Setoran sampah via Petugas (${beratKg}kg ${category.name})`,
             kategori: "REDUKSI_TONASE",
-          }
+          },
         });
       }
 
@@ -194,12 +198,7 @@ export class TransactionService {
     });
   }
 
-  async createResiduDeposit(
-    petugasId: string,
-    rtRwId: number,
-    beratKg: number,
-    photoPath: string
-  ) {
+  async createResiduDeposit(petugasId: string, rtRwId: number, beratKg: number, photoPath: string) {
     return prisma.residuLog.create({
       data: {
         petugasId,

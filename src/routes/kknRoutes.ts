@@ -57,18 +57,8 @@ router.get(
   kknController.getActivityLog
 );
 
-router.post(
-  "/qr/claim",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.claimQr
-);
-router.post(
-  "/handover",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.handover
-);
+router.post("/qr/claim", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.claimQr);
+router.post("/handover", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.handover);
 router.post(
   "/fasilitas/bantu-input",
   authMiddleware,

@@ -32,7 +32,7 @@ export class UserRepository {
           select: { points: true },
         },
         studentProfile: {
-          include: { assignedPolygon: true }
+          include: { assignedPolygon: true },
         },
         petugasProfile: true,
       },
@@ -43,7 +43,7 @@ export class UserRepository {
   async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
-      include: { role: true, studentProfile: true, petugasProfile: true }
+      include: { role: true, studentProfile: true, petugasProfile: true },
     });
   }
 

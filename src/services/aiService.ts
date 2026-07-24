@@ -75,13 +75,15 @@ export class AiService {
                 });
               }
 
-              const dominant = detections.reduce((prev, current) => (prev.volumeEstimate > current.volumeEstimate) ? prev : current);
-              const orgDet = detections.find(d => d.detectedType === "ORGANIC");
-              const nonOrgDet = detections.find(d => d.detectedType === "NON_ORGANIC");
+              const dominant = detections.reduce((prev, current) =>
+                prev.volumeEstimate > current.volumeEstimate ? prev : current
+              );
+              const orgDet = detections.find((d) => d.detectedType === "ORGANIC");
+              const nonOrgDet = detections.find((d) => d.detectedType === "NON_ORGANIC");
               const orgVol = orgDet ? orgDet.volumeEstimate : 0;
               const nonOrgVol = nonOrgDet ? nonOrgDet.volumeEstimate : 0;
               const totalVol = orgVol + nonOrgVol;
-              
+
               let organik_percent = 0;
               let non_organik_percent = 0;
               if (totalVol > 0) {
@@ -102,7 +104,8 @@ export class AiService {
                 isBlurry: false,
                 organik_percent,
                 non_organik_percent,
-                recommended_bin: dominant.detectedType.toLowerCase() === "organic" ? "organik" : "anorganik",
+                recommended_bin:
+                  dominant.detectedType.toLowerCase() === "organic" ? "organik" : "anorganik",
               });
             }
           }, duration);
@@ -302,8 +305,8 @@ export class AiService {
     const avgConfidence = confidenceCount > 0 ? (totalConfidence / confidenceCount) * 100 : 100;
 
     // Formula: Compliance_Score = (0.5 * OnTimeSubmissionRate) + (0.5 * AI_Confidence_Rate rata-rata)
-    const score = (0.5 * onTimeRate) + (0.5 * avgConfidence);
-    
+    const score = 0.5 * onTimeRate + 0.5 * avgConfidence;
+
     return Math.round(score * 10) / 10;
   }
 

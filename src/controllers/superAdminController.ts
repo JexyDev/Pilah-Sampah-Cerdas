@@ -16,7 +16,9 @@ export class SuperAdminController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[SuperAdminController] getInactiveBins error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -29,9 +31,13 @@ export class SuperAdminController {
     } catch (error: any) {
       console.error("[SuperAdminController] reactivateBin error:", error);
       if (error.message === "BIN_NOT_FOUND") {
-        res.status(404).json({ success: false, error: "NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+        res
+          .status(404)
+          .json({ success: false, error: "NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
       } else {
-        res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+        res
+          .status(500)
+          .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
       }
     }
   }
@@ -40,7 +46,11 @@ export class SuperAdminController {
     try {
       const { fromUserId, toUserId, rtRwId, notes } = req.body;
       if (!fromUserId || !toUserId || !rtRwId) {
-        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "fromUserId, toUserId, dan rtRwId wajib diisi" });
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "fromUserId, toUserId, dan rtRwId wajib diisi",
+        });
         return;
       }
 
@@ -50,13 +60,21 @@ export class SuperAdminController {
         adminUserId
       );
 
-      res.status(200).json({ success: true, data: result, message: "Handover tugas KKN berhasil diselesaikan" });
+      res
+        .status(200)
+        .json({ success: true, data: result, message: "Handover tugas KKN berhasil diselesaikan" });
     } catch (error: any) {
       console.error("[SuperAdminController] handoverKkn error:", error);
       if (error.message === "FROM_USER_INVALID" || error.message === "TO_USER_INVALID") {
-        res.status(400).json({ success: false, error: "BAD_REQUEST", message: "Mahasiswa asal atau tujuan tidak valid / bukan mahasiswa KKN" });
+        res.status(400).json({
+          success: false,
+          error: "BAD_REQUEST",
+          message: "Mahasiswa asal atau tujuan tidak valid / bukan mahasiswa KKN",
+        });
       } else {
-        res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+        res
+          .status(500)
+          .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
       }
     }
   }
@@ -67,7 +85,9 @@ export class SuperAdminController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[SuperAdminController] getKknHandoverHistory error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -81,31 +101,46 @@ export class SuperAdminController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[SuperAdminController] getQrMaster error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
   async generateQrBatch(req: Request, res: Response): Promise<void> {
     try {
       const { batchCode, totalQr, categoryId, rtRwId } = req.body;
-      if (!batchCode || !totalQr || !categoryId || !rtRwId) {
-        res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "batchCode, totalQr, categoryId, dan rtRwId wajib diisi" });
+      if (!totalQr) {
+        res
+          .status(400)
+          .json({ success: false, error: "VALIDATION_ERROR", message: "totalQr wajib diisi" });
         return;
       }
 
       const adminUserId = req.user!.userId;
       const batch = await superAdminService.generateQrBatch(
-        { batchCode, totalQr: parseInt(totalQr), categoryId, rtRwId: parseInt(rtRwId) },
+        {
+          batchCode: batchCode || undefined,
+          totalQr: parseInt(totalQr),
+          categoryId: categoryId || undefined,
+          rtRwId: rtRwId ? parseInt(rtRwId) : undefined,
+        },
         adminUserId
       );
 
-      res.status(201).json({ success: true, data: batch, message: "Batch QR Code berhasil digenerate" });
+      res
+        .status(201)
+        .json({ success: true, data: batch, message: "Batch QR Code berhasil digenerate" });
     } catch (error: any) {
       console.error("[SuperAdminController] generateQrBatch error:", error);
       if (error.message === "BATCH_CODE_EXISTS") {
-        res.status(409).json({ success: false, error: "CONFLICT", message: "Kode batch sudah digunakan" });
+        res
+          .status(409)
+          .json({ success: false, error: "CONFLICT", message: "Kode batch sudah digunakan" });
       } else {
-        res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+        res
+          .status(500)
+          .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
       }
     }
   }
@@ -120,7 +155,9 @@ export class SuperAdminController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[SuperAdminController] getAuditTrail error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 
@@ -130,7 +167,9 @@ export class SuperAdminController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[SuperAdminController] getAggregatedDashboard error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

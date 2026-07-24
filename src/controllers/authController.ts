@@ -30,7 +30,9 @@ const refreshSchema = z.object({
 });
 
 const requestOtpSchema = z.object({
-  phone: z.string().regex(/^\+62\d{8,15}$/, "Format nomor HP tidak valid (harus diawali +62 dan 9-16 digit)"),
+  phone: z
+    .string()
+    .regex(/^\+62\d{8,15}$/, "Format nomor HP tidak valid (harus diawali +62 dan 9-16 digit)"),
 });
 
 const verifyOtpSchema = z.object({
@@ -198,20 +200,24 @@ export class AuthController {
         });
         return;
       }
-      
+
       const { phone } = parsed.data;
       const result = await authService.requestOtp(phone);
-      
+
       res.status(200).json({
         success: true,
         message: "OTP berhasil dikirim",
-        data: result
+        data: result,
       });
     } catch (error: any) {
       if (error.message === "USER_NOT_FOUND") {
-        res.status(404).json({ success: false, code: "USER_NOT_FOUND", message: "Nomor HP tidak terdaftar" });
+        res
+          .status(404)
+          .json({ success: false, code: "USER_NOT_FOUND", message: "Nomor HP tidak terdaftar" });
       } else {
-        res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: "Gagal meminta OTP" });
+        res
+          .status(500)
+          .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: "Gagal meminta OTP" });
       }
     }
   }
@@ -228,10 +234,10 @@ export class AuthController {
         });
         return;
       }
-      
+
       const { phone, otp } = parsed.data;
       const result = await authService.verifyOtp(phone, otp);
-      
+
       // Set HttpOnly Cookie for Web (Access Token)
       res.cookie("accessToken", result.accessToken, {
         httpOnly: true,
@@ -251,9 +257,17 @@ export class AuthController {
       });
     } catch (error: any) {
       if (error.message === "INVALID_OTP") {
-        res.status(401).json({ success: false, code: "INVALID_OTP", message: "OTP salah atau sudah kedaluwarsa" });
+        res.status(401).json({
+          success: false,
+          code: "INVALID_OTP",
+          message: "OTP salah atau sudah kedaluwarsa",
+        });
       } else {
-        res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: "Gagal memverifikasi OTP" });
+        res.status(500).json({
+          success: false,
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Gagal memverifikasi OTP",
+        });
       }
     }
   }
@@ -599,7 +613,18 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { qrCode, wargaSubtype, rtRwId, rtRw, kelurahan, latitude, longitude, nama, noWa, ...userData } = parsed.data;
+      const {
+        qrCode,
+        wargaSubtype,
+        rtRwId,
+        rtRw,
+        kelurahan,
+        latitude,
+        longitude,
+        nama,
+        noWa,
+        ...userData
+      } = parsed.data;
 
       // Resolve rtRwId from string if needed
       let resolvedRtRwId = rtRwId;
@@ -641,16 +666,14 @@ export class AuthController {
         wargaSubtype,
         scannerUser
       );
-      res
-        .status(201)
-        .json({
-          success: true,
-          data: {
-            user: result.user,
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-          },
-        });
+      res.status(201).json({
+        success: true,
+        data: {
+          user: result.user,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        },
+      });
     } catch (error: any) {
       res
         .status(400)

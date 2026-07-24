@@ -12,6 +12,7 @@ import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { generateNextQrCode } from "../utils/qrGenerator.js";
 
 const prisma = new PrismaClient();
 
@@ -129,15 +130,12 @@ export class BinService {
     // Find all bins owned by the user (or under the same household)
     const userBins = await prisma.bin.findMany({
       where: {
-        OR: [
-          { userId },
-          { binOwnerships: { some: { userId } } }
-        ],
-        status: "ACTIVE_BOUND"
+        OR: [{ userId }, { binOwnerships: { some: { userId } } }],
+        status: "ACTIVE_BOUND",
       },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     if (userBins.length === 0) {
@@ -152,10 +150,10 @@ export class BinService {
 
       for (const det of detections) {
         // Find matching bin for this detection category
-        let targetBin = userBins.find(b => b.category.name === det.detectedType);
-        
+        let targetBin = userBins.find((b) => b.category?.name === det.detectedType);
+
         // If not found in user's bins, try to see if the scanned bin matches
-        if (!targetBin && bin.category.name === det.detectedType) {
+        if (!targetBin && bin.category?.name === det.detectedType) {
           targetBin = bin;
         }
 
@@ -197,45 +195,69 @@ export class BinService {
 
             if (targetBin.latitude !== null && targetBin.longitude !== null) {
               await websocketService
-                .broadcastDispatch(targetBin.id, targetBin.qrCode, Number(targetBin.latitude), Number(targetBin.longitude))
+                .broadcastDispatch(
+                  targetBin.id,
+                  targetBin.qrCode,
+                  Number(targetBin.latitude),
+                  Number(targetBin.longitude)
+                )
                 .catch(() => {});
             }
           }
         }
 
         // Weight
-        const isOrganic = targetBin.category.name === "ORGANIC";
+        const isOrganic = targetBin.category?.name === "ORGANIC";
         const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
         const weightKg = parseFloat((vol * factor).toFixed(2));
 
         // Time-based points calculation with multiplier
         const now = new Date();
         const currentTimeVal = now.getHours() * 60 + now.getMinutes();
-        const morningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } }))?.value || "06:00";
-        const morningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } }))?.value || "08:00";
-        const eveningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } }))?.value || "16:00";
-        const eveningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } }))?.value || "18:00";
+        const morningStartStr =
+          (
+            await prisma.systemConfig.findUnique({
+              where: { key: "reporting_window_morning_start" },
+            })
+          )?.value || "06:00";
+        const morningEndStr =
+          (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } }))
+            ?.value || "08:00";
+        const eveningStartStr =
+          (
+            await prisma.systemConfig.findUnique({
+              where: { key: "reporting_window_evening_start" },
+            })
+          )?.value || "16:00";
+        const eveningEndStr =
+          (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } }))
+            ?.value || "18:00";
 
         const parseTimeToMinutes = (timeStr: string) => {
           const [h, m] = timeStr.split(":").map(Number);
           return h * 60 + m;
         };
 
-        const isWithinMissionWindow = 
-          (currentTimeVal >= parseTimeToMinutes(morningStartStr) && currentTimeVal <= parseTimeToMinutes(morningEndStr)) ||
-          (currentTimeVal >= parseTimeToMinutes(eveningStartStr) && currentTimeVal <= parseTimeToMinutes(eveningEndStr));
+        const isWithinMissionWindow =
+          (currentTimeVal >= parseTimeToMinutes(morningStartStr) &&
+            currentTimeVal <= parseTimeToMinutes(morningEndStr)) ||
+          (currentTimeVal >= parseTimeToMinutes(eveningStartStr) &&
+            currentTimeVal <= parseTimeToMinutes(eveningEndStr));
 
         let multiplier = 1.0;
         if (!isWithinMissionWindow) {
-          const discountVal = (await prisma.systemConfig.findUnique({ where: { key: "late_submission_discount" } }))?.value;
+          const discountVal = (
+            await prisma.systemConfig.findUnique({ where: { key: "late_submission_discount" } })
+          )?.value;
           multiplier = discountVal ? Number(discountVal) : 0.3;
         } else {
           const multKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
-          const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))?.value;
+          const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))
+            ?.value;
           multiplier = multVal ? Number(multVal) : 1.0;
         }
 
-        const pointsPerKg = targetBin.category.pointsPerKg || 10;
+        const pointsPerKg = targetBin.category?.pointsPerKg || 10;
         const conf = det.confidence || 1.0;
         const calculatedPoints = Math.round(conf * pointsPerKg * multiplier);
 
@@ -243,13 +265,13 @@ export class BinService {
         const result = await binRepository.recordScanTransaction(
           householdId,
           targetBin.id,
-          targetBin.categoryId,
+          targetBin.categoryId || "",
           weightKg,
           vol,
           requestId,
           userId,
           calculatedPoints,
-          targetBin.category.name,
+          targetBin.category?.name || "Umum",
           conf,
           evidencePhotoUrl
         );
@@ -260,7 +282,7 @@ export class BinService {
 
         results.push({
           wasteLogId: result.wasteLog.id,
-          category: targetBin.category.name,
+          category: targetBin.category?.name || "Umum",
           weightKg,
           volumeLiter: vol,
           pointsAwarded: calculatedPoints,
@@ -273,11 +295,13 @@ export class BinService {
         select: { fcmToken: true },
       });
       if (userObj?.fcmToken && totalPointsAwarded > 0) {
-        await notificationIntegrationService.sendPushNotification(
-          userObj.fcmToken,
-          "Poin Bertambah!",
-          `Selamat! Anda mendapatkan +${totalPointsAwarded} poin dari setoran sampah Anda.`
-        ).catch(e => console.error("FCM Error:", e));
+        await notificationIntegrationService
+          .sendPushNotification(
+            userObj.fcmToken,
+            "Poin Bertambah!",
+            `Selamat! Anda mendapatkan +${totalPointsAwarded} poin dari setoran sampah Anda.`
+          )
+          .catch((e) => console.error("FCM Error:", e));
       }
 
       return {
@@ -349,23 +373,35 @@ export class BinService {
     // Time-based points calculation with multiplier
     const now = new Date();
     const currentTimeVal = now.getHours() * 60 + now.getMinutes();
-    const morningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } }))?.value || "06:00";
-    const morningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } }))?.value || "08:00";
-    const eveningStartStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } }))?.value || "16:00";
-    const eveningEndStr = (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } }))?.value || "18:00";
+    const morningStartStr =
+      (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } }))
+        ?.value || "06:00";
+    const morningEndStr =
+      (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } }))
+        ?.value || "08:00";
+    const eveningStartStr =
+      (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } }))
+        ?.value || "16:00";
+    const eveningEndStr =
+      (await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } }))
+        ?.value || "18:00";
 
     const parseTimeToMinutes = (timeStr: string) => {
       const [h, m] = timeStr.split(":").map(Number);
       return h * 60 + m;
     };
 
-    const isWithinMissionWindow = 
-      (currentTimeVal >= parseTimeToMinutes(morningStartStr) && currentTimeVal <= parseTimeToMinutes(morningEndStr)) ||
-      (currentTimeVal >= parseTimeToMinutes(eveningStartStr) && currentTimeVal <= parseTimeToMinutes(eveningEndStr));
+    const isWithinMissionWindow =
+      (currentTimeVal >= parseTimeToMinutes(morningStartStr) &&
+        currentTimeVal <= parseTimeToMinutes(morningEndStr)) ||
+      (currentTimeVal >= parseTimeToMinutes(eveningStartStr) &&
+        currentTimeVal <= parseTimeToMinutes(eveningEndStr));
 
     let multiplier = 1.0;
     if (!isWithinMissionWindow) {
-      const discountVal = (await prisma.systemConfig.findUnique({ where: { key: "late_submission_discount" } }))?.value;
+      const discountVal = (
+        await prisma.systemConfig.findUnique({ where: { key: "late_submission_discount" } })
+      )?.value;
       multiplier = discountVal ? Number(discountVal) : 0.3;
     } else {
       const multKey = isOrganic ? "organic_point_multiplier" : "nonorganic_point_multiplier";
@@ -399,11 +435,13 @@ export class BinService {
       select: { fcmToken: true },
     });
     if (userObj?.fcmToken && calculatedPoints > 0) {
-      await notificationIntegrationService.sendPushNotification(
-        userObj.fcmToken,
-        "Poin Bertambah!",
-        `Selamat! Anda mendapatkan +${calculatedPoints} poin dari setoran sampah Anda.`
-      ).catch(e => console.error("FCM Error:", e));
+      await notificationIntegrationService
+        .sendPushNotification(
+          userObj.fcmToken,
+          "Poin Bertambah!",
+          `Selamat! Anda mendapatkan +${calculatedPoints} poin dari setoran sampah Anda.`
+        )
+        .catch((e) => console.error("FCM Error:", e));
     }
 
     return {
@@ -558,7 +596,10 @@ export class BinService {
    * Create a new bin
    */
   async createBin(data: any) {
-    const qrCode = data.qrCode || `TS-${Date.now()}`;
+    if (!data.categoryId) {
+      throw new Error("CATEGORY_ID_REQUIRED");
+    }
+    const qrCode = await generateNextQrCode(data.categoryId);
     let kelurahanId = null;
     if (data.rtRwId) {
       const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
@@ -691,13 +732,15 @@ export class BinService {
     const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
 
     // Notify all Petugas/Admin
-    const petugasList = await binRepository.findPetugasForArea(request.bin.rtRwId);
+    const petugasList = request.bin.rtRwId
+      ? await binRepository.findPetugasForArea(request.bin.rtRwId)
+      : [];
     for (const petugas of petugasList) {
       await binRepository
         .createNotification(
           petugas.id,
           "Pengajuan Pengosongan Baru",
-          `[REQ-${request.id}] Warga (${request.user.name}) mengajukan pengosongan tong ${request.bin.qrCode} di ${request.bin.rtRw.name}.`
+          `[REQ-${request.id}] Warga (${request.user.name}) mengajukan pengosongan tong ${request.bin.qrCode} di ${request.bin.rtRw?.name || "Wilayah Umum"}.`
         )
         .catch(() => {});
     }
@@ -1053,7 +1096,7 @@ export class BinService {
 
     if (issueType === "EMPTY_REQUEST") {
       const title = "Permintaan Pengosongan Sampah";
-      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw.name}) meminta petugas segera mengosongkan tong sampah ${bin.qrCode}.`;
+      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tong sampah ${bin.qrCode}.`;
 
       for (const staff of staffList) {
         await prisma.notification
@@ -1078,7 +1121,7 @@ export class BinService {
       });
 
       const title = "Laporan Tempat Sampah Rusak";
-      const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rtRw.name}) rusak atau QR code-nya sobek/rusak.`;
+      const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) rusak atau QR code-nya sobek/rusak.`;
 
       for (const staff of staffList) {
         await prisma.notification
@@ -1114,8 +1157,8 @@ export class BinService {
     const updatedBin = await prisma.bin.update({
       where: { id: binId },
       data: {
-        maxCapacityLiter
-      }
+        maxCapacityLiter,
+      },
     });
 
     if (evidencePhotoUrl) {
@@ -1125,7 +1168,7 @@ export class BinService {
           userId: bin.userId || "system",
           oldValue: { maxCapacityLiter: Number(bin.maxCapacityLiter) } as any,
           newValue: { maxCapacityLiter, evidencePhotoUrl } as any,
-        }
+        },
       });
     }
 

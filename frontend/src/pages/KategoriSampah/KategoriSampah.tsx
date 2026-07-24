@@ -93,11 +93,27 @@ const KategoriSampah: React.FC = () => {
     }
   };
 
+  const getCategoryIllustration = (name: string) => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes("organik") || nameLower.includes("organic")) {
+      return "https://images.unsplash.com/photo-1595278069441-2cf29f8db058?auto=format&fit=crop&q=80&w=400";
+    }
+    if (nameLower.includes("anorganik") || nameLower.includes("inorganic") || nameLower.includes("non")) {
+      return "https://images.unsplash.com/photo-1605600611281-9b1b702ec945?auto=format&fit=crop&q=80&w=400";
+    }
+    return "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400";
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-on-surface">Master Poin/Reward</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-on-surface">Kategori Tempat Sampah</h2>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Daftar jenis kategori sampah terpilah yang didukung sistem TrashCare.
+          </p>
+        </div>
         {!isReadOnly && (
           <button
             onClick={openAddModal}
@@ -109,90 +125,74 @@ const KategoriSampah: React.FC = () => {
         )}
       </div>
 
-      {/* Table Container */}
-      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-container-low border-b border-outline-variant/30">
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Nama Kategori
-                </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Poin per Kg
-                </th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-medium">Deskripsi</th>
-                {!isReadOnly && (
-                  <th className="text-xs text-on-surface-variant px-6 py-4 font-medium text-center w-24">
-                    Aksi
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="text-[14px] text-on-surface">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <Loader2 className="animate-spin text-primary" size={32} />
-                      <p>Memuat data...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-error font-medium">
-                    {error}
-                  </td>
-                </tr>
-              ) : categories.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-on-surface-variant">
-                    Belum ada data kategori.
-                  </td>
-                </tr>
-              ) : (
-                categories.map((cat) => (
-                  <tr
-                    key={cat.id}
-                    className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150 group"
-                  >
-                    <td className="py-4 px-6">
-                      <span className="font-bold text-on-surface uppercase">{cat.name}</span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="font-bold text-primary">{cat.pointsPerKg} Poin</span>
-                    </td>
-                    <td className="px-6 py-4 text-on-surface-variant text-sm max-w-xs truncate">
-                      {cat.description || "-"}
-                    </td>
-                    {!isReadOnly && (
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-1">
-                          <button
-                            onClick={() => openEditModal(cat)}
-                            className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
-                            title="Edit"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(cat.id)}
-                            className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Hapus"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Grid of Category Cards */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-xl border border-outline-variant/30">
+          <Loader2 className="animate-spin text-primary" size={32} />
+          <p className="text-on-surface-variant font-medium">Memuat data kategori...</p>
         </div>
-      </div>
+      ) : error ? (
+        <div className="p-8 text-center text-error font-medium bg-white rounded-xl border border-outline-variant/30">
+          {error}
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="p-8 text-center text-on-surface-variant font-medium bg-white rounded-xl border border-outline-variant/30">
+          Belum ada data kategori.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              className="bg-white rounded-2xl border border-outline-variant/50 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+            >
+              {/* Illustration Photo */}
+              <div className="h-44 w-full relative overflow-hidden bg-slate-100">
+                <img
+                  src={getCategoryIllustration(cat.name)}
+                  alt={cat.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <span className="absolute top-3 right-3 bg-primary text-white font-bold text-xs px-2.5 py-1 rounded-full shadow">
+                  {cat.pointsPerKg} Poin/Kg
+                </span>
+              </div>
+
+              {/* Card Body */}
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-lg font-bold text-on-surface uppercase tracking-wide mb-2">
+                    {cat.name}
+                  </h4>
+                  <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
+                    {cat.description || "Tidak ada deskripsi singkat."}
+                  </p>
+                </div>
+
+                {/* Card Footer Actions */}
+                {!isReadOnly && (
+                  <div className="flex justify-end gap-2 border-t border-outline-variant/20 pt-4 mt-2">
+                    <button
+                      onClick={() => openEditModal(cat)}
+                      className="w-9 h-9 rounded-lg hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer border border-outline-variant/50"
+                      title="Edit"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cat.id)}
+                      className="w-9 h-9 rounded-lg hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer border border-red-200"
+                      title="Hapus"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {isModalOpen && (

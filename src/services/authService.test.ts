@@ -101,7 +101,11 @@ describe("AuthService - registerWarga security", () => {
     );
 
     expect(authRepository.registerWargaTx).toHaveBeenCalled();
-    expect(authRepository.createRefreshToken).toHaveBeenCalledWith("warga-1", expect.any(String), expect.any(Date));
+    expect(authRepository.createRefreshToken).toHaveBeenCalledWith(
+      "warga-1",
+      expect.any(String),
+      expect.any(Date)
+    );
     expect(result).toEqual({
       user: {
         id: "warga-1",

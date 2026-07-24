@@ -144,11 +144,24 @@ const ManajemenTempatSampah: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchInput]);
 
+  const fetchNextQrCode = async (catId: string) => {
+    if (!catId) return;
+    try {
+      const response = await api.get(`/bins/next-qr?categoryId=${catId}`);
+      if (response.data?.success) {
+        setFormData((prev) => ({ ...prev, qrCode: response.data.data.qrCode }));
+      }
+    } catch (err) {
+      console.error("Gagal mendapatkan kode QR otomatis:", err);
+    }
+  };
+
   const handleOpenAddModal = () => {
     setModalType("add");
+    const defaultCategoryId = categories[0]?.id || "";
     setFormData({
       qrCode: "",
-      categoryId: "",
+      categoryId: defaultCategoryId,
       rtRwId: areas[0]?.id || 1,
       latitude: "",
       longitude: "",
@@ -156,6 +169,9 @@ const ManajemenTempatSampah: React.FC = () => {
       userId: "",
     });
     setIsFormModalOpen(true);
+    if (defaultCategoryId) {
+      fetchNextQrCode(defaultCategoryId);
+    }
   };
 
   const handleOpenEditModal = (bin: any) => {
@@ -720,14 +736,14 @@ const ManajemenTempatSampah: React.FC = () => {
             >
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">
-                  Kode / QR Code (opsional)
+                  Kode / QR Code (Auto-generated)
                 </label>
                 <input
                   type="text"
+                  readOnly
                   value={formData.qrCode}
-                  onChange={(e) => setFormData({ ...formData, qrCode: e.target.value })}
-                  placeholder="TS-XXX-001"
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  placeholder="Generating QR Code..."
+                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none"
                 />
               </div>
               <div>
@@ -737,7 +753,13 @@ const ManajemenTempatSampah: React.FC = () => {
                 <select
                   required
                   value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  onChange={(e) => {
+                    const newCatId = e.target.value;
+                    setFormData({ ...formData, categoryId: newCatId });
+                    if (modalType === "add") {
+                      fetchNextQrCode(newCatId);
+                    }
+                  }}
                   className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs font-bold"
                 >
                   <option value="">Pilih Kategori</option>

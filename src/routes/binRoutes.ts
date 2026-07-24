@@ -31,6 +31,7 @@ const router = Router();
  *         description: Success
  */
 router.get("/", binController.getAllBins);
+router.get("/next-qr", authMiddleware, binController.getNextQr);
 
 /**
  * @swagger
@@ -283,12 +284,7 @@ router.post(
   binController.registerWargaBin
 );
 
-router.post(
-  "/activate",
-  authMiddleware,
-  roleMiddleware(["WARGA"]),
-  binController.registerWargaBin
-);
+router.post("/activate", authMiddleware, roleMiddleware(["WARGA"]), binController.registerWargaBin);
 
 router.post(
   "/reset",

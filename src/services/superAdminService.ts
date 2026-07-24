@@ -75,8 +75,8 @@ export class SuperAdminService {
         id: b.id,
         qrCode: b.qrCode,
         owner: b.user ? b.user.name : "-",
-        ownerEmail: b.user ? b.user.email : "-",
-        wilayah: `${b.rtRw.name} (Kel. ${b.rtRw.kelurahan.name})`,
+        ownerEmail: b.user ? b.user.email || "-" : "-",
+        wilayah: b.rtRw ? `${b.rtRw.name} (Kel. ${b.rtRw.kelurahan.name})` : "-",
         lastActivity: lastLog || b.createdAt,
         notes: latestRequest ? latestRequest.evidencePhotoUrl : "", // temporary use or custom notes field
         status: "INACTIVE",
@@ -247,7 +247,7 @@ export class SuperAdminService {
    * Generate a batch of QR Codes
    */
   async generateQrBatch(
-    data: { batchCode?: string; totalQr: number; categoryId: string; rtRwId: number },
+    data: { batchCode?: string; totalQr: number; categoryId?: string; rtRwId?: number },
     adminUserId: string
   ) {
     const { totalQr, categoryId, rtRwId } = data;
@@ -280,9 +280,14 @@ export class SuperAdminService {
         },
       });
 
-      const category = await tx.wasteCategory.findUnique({ where: { id: categoryId } });
-      if (!category) throw new Error("CATEGORY_NOT_FOUND");
-      const prefix = (category.name.toUpperCase() === "ORGANIC" || category.name.toUpperCase() === "ORGANIK") ? "ORG" : "ANO";
+      let prefix = "ORG"; // fallback to ORG
+      if (categoryId) {
+        const category = await tx.wasteCategory.findUnique({ where: { id: categoryId } });
+        if (category) {
+          const nameUpper = category.name.toUpperCase();
+          prefix = nameUpper === "ORGANIC" || nameUpper === "ORGANIK" ? "ORG" : "ANO";
+        }
+      }
       const year = new Date().getFullYear().toString();
 
       // Find the latest QR code for this prefix and year
@@ -311,8 +316,8 @@ export class SuperAdminService {
         const qrCode = `${prefix}${sequence}${year}`;
         binsData.push({
           qrCode,
-          categoryId,
-          rtRwId,
+          categoryId: (categoryId || null) as any,
+          rtRwId: (rtRwId || null) as any,
           status: "PRINTED" as any,
           qrBatchId: batch.id,
         });
@@ -445,7 +450,7 @@ export class SuperAdminService {
       if (u.households.length === 0) return;
       const h = u.households[0];
       const kelurahanName = h.rtRw.kelurahan.name;
-      
+
       const totalWeight = h.wasteLogs.reduce((sum, l) => sum + Number(l.weightKg), 0);
       if (totalWeight > 0) {
         if (!kelurahanWeights[kelurahanName]) {
@@ -455,17 +460,19 @@ export class SuperAdminService {
       }
     });
 
-    const kelurahanWeightMedians = Object.keys(kelurahanWeights).map((name) => {
-      const weights = kelurahanWeights[name].sort((a, b) => a - b);
-      const half = Math.floor(weights.length / 2);
-      const median =
-        weights.length % 2 !== 0 ? weights[half] : (weights[half - 1] + weights[half]) / 2.0;
+    const kelurahanWeightMedians = Object.keys(kelurahanWeights)
+      .map((name) => {
+        const weights = kelurahanWeights[name].sort((a, b) => a - b);
+        const half = Math.floor(weights.length / 2);
+        const median =
+          weights.length % 2 !== 0 ? weights[half] : (weights[half - 1] + weights[half]) / 2.0;
 
-      return {
-        kelurahan: name,
-        medianWeightKg: parseFloat(median.toFixed(2)),
-      };
-    }).sort((a, b) => b.medianWeightKg - a.medianWeightKg);
+        return {
+          kelurahan: name,
+          medianWeightKg: parseFloat(median.toFixed(2)),
+        };
+      })
+      .sort((a, b) => b.medianWeightKg - a.medianWeightKg);
 
     return {
       trends: Object.keys(weeklyData).map((k) => {

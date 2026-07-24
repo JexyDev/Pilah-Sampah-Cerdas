@@ -18,27 +18,34 @@ export class KknController {
       }
       const { PrismaClient } = await import("@prisma/client");
       const prisma = new PrismaClient();
-      
+
       const existingBin = await prisma.bin.findUnique({
         where: { qrCode },
       });
 
       if (existingBin && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
-        res.status(400).json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada tong lain." });
+        res
+          .status(400)
+          .json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada tong lain." });
         return;
       }
 
       // Validasi terhadap master QR (asumsi master QR format valid jika memenuhi kriteria misal diawali TS- atau ada di tabel Master)
       // Untuk MVP Pilah Sampah Cerdas, kita simulasikan validasi format TS-XXXX
       if (!qrCode.toUpperCase().startsWith("TS-")) {
-        res.status(400).json({ error: "INVALID_QR", message: "Format QR Master tidak valid. Harus diawali TS-" });
+        res.status(400).json({
+          error: "INVALID_QR",
+          message: "Format QR Master tidak valid. Harus diawali TS-",
+        });
         return;
       }
 
       res.status(200).json({ success: true, message: "QR Code Master Valid dan belum digunakan." });
     } catch (error: any) {
       console.error("[KknController] validateQrMaster error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memvalidasi QR Master" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memvalidasi QR Master" });
     }
   }
 

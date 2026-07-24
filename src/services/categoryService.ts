@@ -10,9 +10,21 @@ const prisma = new PrismaClient();
 
 export class CategoryService {
   async getAllCategories() {
-    return prisma.wasteCategory.findMany({
+    let categories = await prisma.wasteCategory.findMany({
       orderBy: { name: "asc" },
     });
+    if (categories.length === 0) {
+      await prisma.wasteCategory.createMany({
+        data: [
+          { name: "Organik", pointsPerKg: 10, description: "Sisa makanan & organik basah" },
+          { name: "Anorganik", pointsPerKg: 15, description: "Plastik, kertas, logam, dll" },
+        ],
+      });
+      categories = await prisma.wasteCategory.findMany({
+        orderBy: { name: "asc" },
+      });
+    }
+    return categories;
   }
 
   async createCategory(data: { name: string; pointsPerKg: number; description?: string }) {

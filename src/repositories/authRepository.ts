@@ -198,7 +198,12 @@ export class AuthRepository {
   /**
    * Register Warga Transaction
    */
-  async registerWargaTx(userData: any, householdData: any, qrCode?: string | null, wargaSubtype?: string | null) {
+  async registerWargaTx(
+    userData: any,
+    householdData: any,
+    qrCode?: string | null,
+    wargaSubtype?: string | null
+  ) {
     return prisma.$transaction(async (tx) => {
       let bin: any = null;
       if (qrCode) {

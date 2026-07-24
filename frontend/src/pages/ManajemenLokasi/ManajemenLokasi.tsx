@@ -10,7 +10,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -43,6 +43,33 @@ const createHouseIcon = () => {
     iconSize: [22, 22],
     iconAnchor: [11, 11],
   });
+};
+
+const createRwZonaIcon = (rwName: string, patuh: number) => {
+  let color = "#10b981"; // green
+  if (patuh < 60) color = "#ef4444"; // red
+  else if (patuh < 85) color = "#f97316"; // orange
+
+  return L.divIcon({
+    className: "custom-div-icon",
+    html: `
+      <div style="background-color: ${color}; width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; line-height: 1.1;">
+        <span style="font-size: 11px;">${rwName.replace("RW ", "")}</span>
+        <span style="font-size: 9px; font-weight: normal;">${patuh}%</span>
+      </div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+  });
+};
+
+const MapEvents = ({ setZoom }: { setZoom: (z: number) => void }) => {
+  useMapEvents({
+    zoomend: (e) => {
+      setZoom(e.target.getZoom());
+    },
+  });
+  return null;
 };
 
 const MapUpdater = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
@@ -92,6 +119,41 @@ const ManajemenLokasi: React.FC = () => {
       });
     return Object.values(groups);
   }, [bins]);
+
+  // Group by RW (Zona)
+  const rwGroups = useMemo(() => {
+    const groups: Record<string, { bins: any[]; latitude: number; longitude: number; count: number; rwName: string }> = {};
+    householdGroups.forEach((hg) => {
+      const firstBin = hg.bins[0];
+      let rwName = "unknown";
+      if (firstBin && firstBin.rtRw) {
+        const nameStr = firstBin.rtRw;
+        const match = nameStr.match(/RW\s*\d+/i);
+        rwName = match ? match[0].toUpperCase() : nameStr;
+      }
+      
+      const key = rwName;
+      if (!groups[key]) {
+        groups[key] = { bins: [], latitude: 0, longitude: 0, count: 0, rwName };
+      }
+      groups[key].bins.push(...hg.bins);
+      groups[key].latitude += hg.latitude;
+      groups[key].longitude += hg.longitude;
+      groups[key].count += 1;
+    });
+
+    return Object.values(groups).map((g) => {
+      const locMatch = locations.find((l) => l.rw.toUpperCase() === g.rwName.toUpperCase());
+      const patuhScore = locMatch ? locMatch.patuh : 75;
+      return {
+        ...g,
+        latitude: g.latitude / g.count,
+        longitude: g.longitude / g.count,
+        totalBins: g.bins.length,
+        patuh: patuhScore,
+      };
+    });
+  }, [householdGroups, locations]);
 
   const fetchData = async () => {
     try {
@@ -206,88 +268,119 @@ const ManajemenLokasi: React.FC = () => {
             style={{ height: "100%", width: "100%" }}
           >
             <MapUpdater center={mapCenter} zoom={mapZoom} />
+            <MapEvents setZoom={setMapZoom} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {/* Active Bins (Grouped by Household) */}
-            {householdGroups.map((group, idx) => {
-              // Determine highest status among bins in group
-              let maxPercentage = 0;
-              group.bins.forEach(bin => {
-                const vol = Number(bin.currentVolumeLiter || 0);
-                const max = Number(bin.maxCapacityLiter || 25);
-                const pct = max > 0 ? (vol / max) * 100 : 0;
-                if (pct > maxPercentage) maxPercentage = pct;
-              });
+            {/* Zoom-dependent rendering: Zona (RW) vs Households */}
+            {mapZoom < 16 ? (
+              rwGroups
+                .filter((g) => g.latitude && g.longitude && g.rwName !== "unknown")
+                .map((group, idx) => (
+                  <Marker
+                    key={`rw-zone-${idx}`}
+                    position={[group.latitude, group.longitude]}
+                    icon={createRwZonaIcon(group.rwName, group.patuh)}
+                    eventHandlers={{
+                      click: () => {
+                        setMapCenter([group.latitude, group.longitude]);
+                        setMapZoom(17);
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs p-1 text-center">
+                        <strong className="text-sm font-bold block mb-1">Zona {group.rwName}</strong>
+                        <p className="text-gray-600 mb-1">Tingkat Kepatuhan: <strong>{group.patuh}%</strong></p>
+                        <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
+                        <p className="text-[10px] text-primary italic">Klik untuk zoom in ke tingkat rumah tangga</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))
+            ) : (
+              <>
+                {/* Active Bins (Grouped by Household) */}
+                {householdGroups.map((group, idx) => {
+                  // Determine highest status among bins in group
+                  let maxPercentage = 0;
+                  group.bins.forEach(bin => {
+                    const vol = Number(bin.currentVolumeLiter || 0);
+                    const max = Number(bin.maxCapacityLiter || 25);
+                    const pct = max > 0 ? (vol / max) * 100 : 0;
+                    if (pct > maxPercentage) maxPercentage = pct;
+                  });
 
-              let status = "Aman";
-              if (maxPercentage >= 90) status = "Penuh";
-              else if (maxPercentage >= 70) status = "Sedang";
+                  let status = "Aman";
+                  if (maxPercentage >= 90) status = "Penuh";
+                  else if (maxPercentage >= 70) status = "Sedang";
 
-              return (
-                <Marker
-                  key={`hh-bin-${idx}`}
-                  position={[group.latitude, group.longitude]}
-                  icon={createMapBinIcon(status)}
-                  eventHandlers={{
-                    click: () => {
-                      setMapCenter([group.latitude, group.longitude]);
-                      setMapZoom(19);
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="text-[12px] space-y-2">
-                      <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tong Rumah Tangga</strong>
-                      {group.bins.map(b => {
-                        const vol = Number(b.currentVolumeLiter || 0);
-                        const max = Number(b.maxCapacityLiter || 25);
-                        const pct = max > 0 ? (vol / max) * 100 : 0;
-                        return (
-                          <div key={b.id} className="border-b last:border-0 pb-1 mb-1">
-                            <span className="font-bold text-primary">{b.category?.name === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({b.kode})</span>
-                            <br />
-                            Kapasitas: {pct.toFixed(1)}% terisi ({vol}L / {max}L)
-                            <br />
-                            RT/RW: {b.rtRw || "-"}
-                            <br />
-                            Status: {b.status}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
+                  return (
+                    <Marker
+                      key={`hh-bin-${idx}`}
+                      position={[group.latitude, group.longitude]}
+                      icon={createMapBinIcon(status)}
+                      eventHandlers={{
+                        click: () => {
+                          setMapCenter([group.latitude, group.longitude]);
+                          setMapZoom(19);
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-[12px] space-y-2">
+                          <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tong Rumah Tangga</strong>
+                          {group.bins.map(b => {
+                            const vol = Number(b.currentVolumeLiter || 0);
+                            const max = Number(b.maxCapacityLiter || 25);
+                            const pct = max > 0 ? (vol / max) * 100 : 0;
+                            return (
+                              <div key={b.id} className="border-b last:border-0 pb-1 mb-1">
+                                <span className="font-bold text-primary">{b.category?.name === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({b.kode})</span>
+                                <br />
+                                Kapasitas: {pct.toFixed(1)}% terisi ({vol}L / {max}L)
+                                <br />
+                                RT/RW: {b.rtRw || "-"}
+                                <br />
+                                Status: {b.status}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
 
-            {/* Households */}
-            {households
-              .filter((h) => h.latitude && h.longitude)
-              .map((h) => (
-                <Marker
-                  key={h.id}
-                  position={[Number(h.latitude), Number(h.longitude)]}
-                  icon={createHouseIcon()}
-                  eventHandlers={{
-                    click: () => {
-                      setMapCenter([Number(h.latitude), Number(h.longitude)]);
-                      setMapZoom(19);
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="text-[12px]">
-                      <strong>Rumah {h.user?.name || "Warga"}</strong>
-                      <br />
-                      Alamat: {h.address}
-                      <br />
-                      RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+                {/* Households */}
+                {households
+                  .filter((h) => h.latitude && h.longitude)
+                  .map((h) => (
+                    <Marker
+                      key={h.id}
+                      position={[Number(h.latitude), Number(h.longitude)]}
+                      icon={createHouseIcon()}
+                      eventHandlers={{
+                        click: () => {
+                          setMapCenter([Number(h.latitude), Number(h.longitude)]);
+                          setMapZoom(19);
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-[12px]">
+                          <strong>Rumah {h.user?.name || "Warga"}</strong>
+                          <br />
+                          Alamat: {h.address}
+                          <br />
+                          RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+              </>
+            )}
           </MapContainer>
         </div>
       </div>
