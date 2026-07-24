@@ -45,6 +45,13 @@ abstract class BinRepository {
     required String userId,
     required String evidencePhotoPath,
   });
+
+  /// Set kapasitas tong setelah aktivasi.
+  Future<void> measureBin({
+    required String qrCode,
+    required WasteType binType,
+    required double maxCapacityLiter,
+  });
 }
 
 /// Hasil transaksi scan QR.

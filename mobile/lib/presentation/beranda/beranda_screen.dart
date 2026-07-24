@@ -380,7 +380,7 @@ class BerandaScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.aktivasiBin),
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                 decoration: BoxDecoration(

@@ -61,8 +61,12 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
+    final userAsync = ref.watch(authProvider);
+    final user = userAsync.user;
     final binsAsync = ref.watch(binsProvider);
+    
+    final hasOrganic = binsAsync.value?.any((b) => b.binType == WasteType.organic) ?? false;
+    final hasAnorganic = binsAsync.value?.any((b) => b.binType == WasteType.nonOrganic) ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -219,18 +223,19 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _sectionLabel('TONG SAYA'),
-                      TextButton(
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pushNamed(AppRoutes.aktivasiBin),
-                        child: const Text(
-                          'Kelola',
-                          style: TextStyle(
-                            color: AppColors.primaryGreen,
-                            fontSize: 13,
+                      if (!(hasOrganic && hasAnorganic))
+                        TextButton(
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.ukurKapasitas),
+                          child: const Text(
+                            'Kelola',
+                            style: TextStyle(
+                              color: AppColors.primaryGreen,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -281,18 +286,20 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                     child: Column(
                       children: [
                         // Aktivasi Tong Baru
-                        _MenuTile(
-                          icon: Icons.qr_code_scanner_rounded,
-                          iconColor: AppColors.primaryGreen,
-                          iconBgColor: AppColors.primaryGreen.withValues(
-                            alpha: 0.1,
+                        if (!(hasOrganic && hasAnorganic))
+                          _MenuTile(
+                            icon: Icons.qr_code_scanner_rounded,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Aktivasi Tong Baru',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.ukurKapasitas),
                           ),
-                          label: 'Aktivasi Tong Baru',
-                          onTap: () => Navigator.of(
-                            context,
-                          ).pushNamed(AppRoutes.aktivasiBin),
-                        ),
-                        const Divider(height: 1, indent: 56),
+                        if (!(hasOrganic && hasAnorganic))
+                          const Divider(height: 1, indent: 56),
                         // Ajukan Pengosongan Tong
                         _MenuTile(
                           icon: Icons.restore_rounded,
