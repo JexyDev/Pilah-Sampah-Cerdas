@@ -289,7 +289,7 @@ export class SuperAdminService {
         const category = await tx.wasteCategory.findUnique({ where: { id: categoryId } });
         if (category) {
           const nameUpper = category.name.toUpperCase();
-          prefix = nameUpper === "ORGANIC" || nameUpper === "ORGANIK" ? "ORG" : "ANO";
+          prefix = nameUpper === "ORGANIC" || nameUpper === "ORGANIK" ? "ORG" : "ANORG";
         }
       }
       const year = new Date().getFullYear().toString();
