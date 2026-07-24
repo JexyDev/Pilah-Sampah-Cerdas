@@ -1,4 +1,4 @@
-import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, Calendar, MapPin, X, Trash2 } from "lucide-react";
+import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, Calendar, MapPin, X, Trash2, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -14,6 +14,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 const JadwalKegiatan: React.FC = () => {
   const { user } = useAuthStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -79,18 +80,50 @@ const JadwalKegiatan: React.FC = () => {
       return;
     }
     try {
-      await api.post("/schedules", {
+      const payload = {
         ...formData,
         date: new Date(formData.date).toISOString(), // kirim ISO 8601 ke backend
-      });
-      toast.success("Jadwal berhasil ditambahkan!");
+      };
+
+      if (editId) {
+        await api.put(`/schedules/${editId}`, payload);
+        toast.success("Jadwal berhasil diperbarui!");
+      } else {
+        await api.post("/schedules", payload);
+        toast.success("Jadwal berhasil ditambahkan!");
+      }
+      
       setIsModalOpen(false);
+      setEditId(null);
       fetchSchedules();
       setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" });
     } catch (err: any) {
-      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menambahkan jadwal";
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menyimpan jadwal";
       toast.error(errMsg);
     }
+  };
+
+  const handleEdit = (schedule: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditId(schedule.id);
+    
+    // Format tanggal ke YYYY-MM-DD untuk input date
+    let formattedDate = "";
+    if (schedule.date) {
+      const d = new Date(schedule.date);
+      if (!isNaN(d.getTime())) {
+        formattedDate = d.toISOString().split("T")[0];
+      }
+    }
+
+    setFormData({
+      title: schedule.title || "",
+      date: formattedDate,
+      time: schedule.time || "",
+      category: schedule.category || "Pengangkutan",
+      location: schedule.location || "",
+    });
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -343,13 +376,22 @@ const JadwalKegiatan: React.FC = () => {
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`}></div>
                     
                     {user?.peran === "SUPER_ADMIN" && (
-                      <button
-                        onClick={(e) => handleDelete(schedule.id, e)}
-                        className="absolute right-2 top-2 p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                        title="Hapus Jadwal"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => handleEdit(schedule, e)}
+                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                          title="Edit Jadwal"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(schedule.id, e)}
+                          className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-md transition-colors"
+                          title="Hapus Jadwal"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     )}
 
                     <div className="flex justify-between items-start mb-2 pl-2">
@@ -397,10 +439,10 @@ const JadwalKegiatan: React.FC = () => {
           <div className="absolute inset-0 bg-on-surface/30 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-white rounded-xl shadow-lg w-[480px] max-w-[90%] overflow-hidden flex flex-col transform transition-all duration-200">
               <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low/30">
-                <h3 className="text-[18px] font-bold text-on-surface">Buat Jadwal Baru</h3>
+                <h3 className="text-[18px] font-bold text-on-surface">{editId ? "Edit Jadwal Kegiatan" : "Buat Jadwal Baru"}</h3>
                 <button
                   className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); setEditId(null); setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" }); }}
                 >
                   <X />
                 </button>
@@ -479,7 +521,7 @@ const JadwalKegiatan: React.FC = () => {
               <div className="p-5 border-t border-outline-variant/30 bg-surface-container-lowest flex justify-end gap-3">
                 <button
                   className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); setEditId(null); setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" }); }}
                 >
                   Batal
                 </button>
@@ -487,7 +529,7 @@ const JadwalKegiatan: React.FC = () => {
                   className="px-4 py-2 text-[14px] font-bold bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors"
                   onClick={handleSubmit}
                 >
-                  Simpan Jadwal
+                  {editId ? "Simpan Perubahan" : "Simpan Jadwal"}
                 </button>
               </div>
             </div>
