@@ -115,6 +115,16 @@ const IdeDaurUlang: React.FC = () => {
     }
   };
 
+  const getImageUrl = (path: string | null) => {
+    if (!path) return "";
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const host = baseUrl.replace("/api/v1", "");
+    return `${host}${path}`;
+  };
+
   const isWarga = user?.peran === "WARGA";
   const isRW = user?.peran === "RW" || user?.peran === "SUPER_ADMIN";
 
@@ -244,7 +254,7 @@ const IdeDaurUlang: React.FC = () => {
                     
                     {ide.foto && (
                       <div className="mb-4">
-                        <img src={`http://localhost:3000${ide.foto}`} alt={ide.judul} className="rounded-lg max-h-64 object-cover" />
+                        <img src={getImageUrl(ide.foto)} alt={ide.judul} className="rounded-lg max-h-64 object-cover" />
                       </div>
                     )}
 
