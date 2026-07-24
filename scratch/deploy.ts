@@ -9,11 +9,7 @@ const config = {
   password: 'Makerdotindo2026'
 };
 
-const COMMANDS = `
-ls -la /var/www
-ls -la /var/www/pilah-sampah-cerdas || true
-ls -la /var/www/pilah-sampah-cerdas/backend || true
-`;
+const COMMANDS = `cd /var/www/pilah-sampah-cerdas/backend && git stash && git pull origin local-dev --rebase && npm install && npx prisma generate && npx prisma db push --accept-data-loss && npm run build && pm2 restart all && echo "DEPLOYMENT_DONE"`;
 
 conn.on('ready', () => {
   console.log('Client :: ready');
