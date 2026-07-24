@@ -18,6 +18,7 @@ import Login from "../pages/Login/Login";
 import MahasiswaRegistration from "../pages/Registration/MahasiswaRegistration";
 
 import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
+import ManajemenMahasiswa from "../pages/ManajemenMahasiswa/ManajemenMahasiswa";
 import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
 import ManajemenLokasi from "../pages/ManajemenLokasi/ManajemenLokasi";
 import JadwalKegiatan from "../pages/JadwalKegiatan/JadwalKegiatan";
@@ -123,6 +124,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
               <ManajemenPengguna />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="manajemen-mahasiswa"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <ManajemenMahasiswa />
             </ProtectedRoute>
           }
         />
