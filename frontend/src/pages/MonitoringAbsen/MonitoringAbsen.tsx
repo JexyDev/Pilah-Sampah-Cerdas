@@ -10,7 +10,6 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-le
 import L from "leaflet";
 import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, RefreshCw } from "lucide-react";
 import api from "../../services/api";
-import { useAuthStore } from "../../store/useAuthStore";
 import toast from "react-hot-toast";
 
 // Fix Leaflet icons in Vite
