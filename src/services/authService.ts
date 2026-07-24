@@ -344,32 +344,47 @@ export class AuthService {
     await authRepository.updatePassword(userId, hashedPassword);
   }
 
-  /**
-   * Resolve RT/RW ID from string rtRw name and kelurahan name
-   */
-  async resolveRtRwId(rtRw?: string, kelurahan?: string): Promise<number | undefined> {
-    if (!kelurahan) return undefined;
-
-    const kel = await prisma.kelurahan.findFirst({
-      where: { name: { equals: kelurahan, mode: "insensitive" } },
-    });
-    if (!kel) return undefined;
-
-    if (rtRw) {
-      const area = await prisma.rtRwArea.findFirst({
-        where: {
-          kelurahanId: kel.id,
-          name: { contains: rtRw, mode: "insensitive" },
-        },
-      });
-      if (area) return area.id;
+  async resolveRtRwId(rtRw?: string, kelurahan?: string): Promise<number> {
+    let kelName = kelurahan;
+    if (!kelName) {
+      const firstKel = await prisma.kelurahan.findFirst();
+      if (firstKel) {
+        kelName = firstKel.name;
+      } else {
+        kelName = "Default";
+      }
     }
 
-    // Fallback: return first RT/RW in that kelurahan
-    const firstArea = await prisma.rtRwArea.findFirst({
-      where: { kelurahanId: kel.id },
+    // Find or create Kelurahan
+    let kel = await prisma.kelurahan.findFirst({
+      where: { name: { equals: kelName, mode: "insensitive" } },
     });
-    return firstArea?.id;
+    if (!kel) {
+      kel = await prisma.kelurahan.create({
+        data: { name: kelName },
+      });
+    }
+
+    const rtRwName = rtRw || "RT 01 / RW 01";
+
+    // Find or create RtRwArea
+    let area = await prisma.rtRwArea.findFirst({
+      where: {
+        kelurahanId: kel.id,
+        name: { equals: rtRwName, mode: "insensitive" },
+      },
+    });
+
+    if (!area) {
+      area = await prisma.rtRwArea.create({
+        data: {
+          kelurahanId: kel.id,
+          name: rtRwName,
+        },
+      });
+    }
+
+    return area.id;
   }
 
   /**
