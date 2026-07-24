@@ -496,6 +496,116 @@ export class SuperAdminService {
       kelurahanWeightMedians,
     };
   }
+
+  async getPendingBins() {
+    return prisma.bin.findMany({
+      where: {
+        status: "PENDING_APPROVAL",
+      },
+      include: {
+        category: true,
+        user: true,
+        qrBatch: {
+          include: { assignedPic: true },
+        },
+      },
+    });
+  }
+
+  async approveBin(binId: string, adminUserId: string) {
+    const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
+    return prisma.$transaction(async (tx) => {
+      const bin = await tx.bin.findUnique({
+        where: { id: binId },
+        include: { user: true, qrBatch: { include: { assignedPic: true } } },
+      });
+
+      if (!bin || bin.status !== "PENDING_APPROVAL") {
+        throw new Error("Bin not found or not in PENDING_APPROVAL status");
+      }
+
+      const updatedBin = await tx.bin.update({
+        where: { id: binId },
+        data: { status: "ACTIVE_BOUND" },
+      });
+
+      // Bonus 10 poin ke warga
+      if (bin.userId) {
+        await tx.pointHistory.create({
+          data: {
+            userId: bin.userId,
+            points: 10,
+            description: "Aktivasi Bin disetujui Admin",
+            kategori: "PARTISIPASI_STREAK",
+          },
+        });
+      }
+
+      // Bonus 10 poin ke Mahasiswa KKN jika ada PIC
+      if (bin.qrBatch?.assignedPicUserId) {
+        await tx.pointHistory.create({
+          data: {
+            userId: bin.qrBatch.assignedPicUserId,
+            points: 10,
+            description: `Membantu aktivasi bin ${bin.qrCode}`,
+            kategori: "PARTISIPASI_STREAK",
+          },
+        });
+      }
+
+      if (bin.user?.phone) {
+        await notificationService.sendWhatsApp(
+          bin.user.phone,
+          `Pengajuan bin ${bin.qrCode} Anda telah disetujui oleh Administrator.`
+        ).catch(e => console.error("WA Error:", e));
+      }
+
+      return updatedBin;
+    });
+  }
+
+  async rejectBin(binId: string, reason: string) {
+    const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
+    const bin = await prisma.bin.update({
+      where: { id: binId },
+      data: { status: "PRINTED", userId: null },
+      include: { user: true },
+    });
+
+    if (bin.user?.phone) {
+      await notificationService.sendWhatsApp(
+        bin.user.phone,
+        `Pengajuan bin ${bin.qrCode} ditolak oleh Administrator. Alasan: ${reason}`
+      ).catch(e => console.error("WA Error:", e));
+    }
+    return bin;
+  }
+
+  async getPendingPetugas() {
+    return prisma.petugasResidu.findMany({
+      where: {
+        whitelistStatus: "PENDING",
+      },
+      include: { user: true },
+    });
+  }
+
+  async verifyPetugas(petugasId: string, action: "APPROVED" | "REJECTED") {
+    const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
+    const petugas = await prisma.petugasResidu.update({
+      where: { id: petugasId },
+      data: { whitelistStatus: action },
+      include: { user: true },
+    });
+
+    if (petugas.user?.phone && action === "APPROVED") {
+      await notificationService.sendWhatsApp(
+        petugas.user.phone,
+        `Akun Petugas Residu Anda telah diverifikasi oleh Administrator dan kini AKTIF.`
+      ).catch(e => console.error("WA Error:", e));
+    }
+    return petugas;
+  }
 }
 
 export const superAdminService = new SuperAdminService();

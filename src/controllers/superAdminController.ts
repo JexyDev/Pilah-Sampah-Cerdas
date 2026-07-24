@@ -172,6 +172,70 @@ export class SuperAdminController {
         .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  async getPendingBins(req: Request, res: Response): Promise<void> {
+    try {
+      const data = await superAdminService.getPendingBins();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[SuperAdminController] getPendingBins error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async approveBin(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminUserId = req.user!.userId;
+      const data = await superAdminService.approveBin(id, adminUserId);
+      res.status(200).json({ success: true, data, message: "Bin berhasil diaktifkan" });
+    } catch (error: any) {
+      console.error("[SuperAdminController] approveBin error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async rejectBin(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      if (!reason) {
+        res.status(400).json({ success: false, message: "Alasan penolakan wajib diisi" });
+        return;
+      }
+      const data = await superAdminService.rejectBin(id, reason);
+      res.status(200).json({ success: true, data, message: "Pengajuan bin ditolak" });
+    } catch (error: any) {
+      console.error("[SuperAdminController] rejectBin error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getPendingPetugas(req: Request, res: Response): Promise<void> {
+    try {
+      const data = await superAdminService.getPendingPetugas();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[SuperAdminController] getPendingPetugas error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async verifyPetugas(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { action } = req.body; // "APPROVED" or "REJECTED"
+      if (!["APPROVED", "REJECTED"].includes(action)) {
+        res.status(400).json({ success: false, message: "Aksi tidak valid" });
+        return;
+      }
+      const data = await superAdminService.verifyPetugas(id, action as "APPROVED" | "REJECTED");
+      res.status(200).json({ success: true, data, message: "Verifikasi petugas berhasil" });
+    } catch (error: any) {
+      console.error("[SuperAdminController] verifyPetugas error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const superAdminController = new SuperAdminController();

@@ -38,6 +38,13 @@ export const MasterQrManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
+  // Approvals states
+  const [activeTab, setActiveTab] = useState<"qrs" | "pending_bins" | "pending_petugas">("qrs");
+  const [pendingBins, setPendingBins] = useState<any[]>([]);
+  const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
+  const [rejectBinId, setRejectBinId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
   // Modal generate states
   const [showGenerateModal, setShowGenerateModal] = useState<boolean>(false);
   const [totalQr, setTotalQr] = useState<number>(10);
@@ -48,14 +55,20 @@ export const MasterQrManager: React.FC = () => {
 
   const fetchQrData = async () => {
     try {
-      const qrsRes = await api.get("/super-admin/bins/qr-master", {
-        params: { search: searchQuery || undefined, status: statusFilter || undefined },
-      });
-      const inactiveRes = await api.get("/super-admin/bins/inactive");
+      const [qrsRes, inactiveRes, pendingBinsRes, pendingPetugasRes] = await Promise.all([
+        api.get("/super-admin/bins/qr-master", {
+          params: { search: searchQuery || undefined, status: statusFilter || undefined },
+        }),
+        api.get("/super-admin/bins/inactive"),
+        api.get("/super-admin/approvals/bins"),
+        api.get("/super-admin/approvals/petugas"),
+      ]);
       if (qrsRes.data.success) setQrs(qrsRes.data.data);
       if (inactiveRes.data.success) setInactiveBins(inactiveRes.data.data);
+      if (pendingBinsRes.data.success) setPendingBins(pendingBinsRes.data.data);
+      if (pendingPetugasRes.data.success) setPendingPetugas(pendingPetugasRes.data.data);
     } catch (e) {
-      console.error("Gagal mengambil data QR:", e);
+      console.error("Gagal mengambil data QR & Persetujuan:", e);
       toast.error("Gagal memuat database QR");
     } finally {
       setLoading(false);
@@ -118,6 +131,42 @@ export const MasterQrManager: React.FC = () => {
     } catch (e) {
       console.error("Gagal mengaktifkan kembali tempat sampah:", e);
       toast.error("Gagal memproses reaktivasi");
+    }
+  };
+
+  const approveBin = async (id: string) => {
+    try {
+      await api.put(`/super-admin/approvals/bins/${id}/approve`);
+      toast.success("QR Bin berhasil disetujui! Warga & Mahasiswa mendapat bonus poin.");
+      fetchQrData();
+    } catch (error) {
+      console.error("Failed to approve bin", error);
+      toast.error("Gagal menyetujui QR Bin");
+    }
+  };
+
+  const rejectBin = async () => {
+    if (!rejectBinId || !rejectReason) return;
+    try {
+      await api.put(`/super-admin/approvals/bins/${rejectBinId}/reject`, { reason: rejectReason });
+      toast.success("Pengajuan QR Bin telah ditolak");
+      setRejectBinId(null);
+      setRejectReason("");
+      fetchQrData();
+    } catch (error) {
+      console.error("Failed to reject bin", error);
+      toast.error("Gagal menolak pengajuan");
+    }
+  };
+
+  const verifyPetugas = async (id: string, action: "APPROVED" | "REJECTED") => {
+    try {
+      await api.put(`/super-admin/approvals/petugas/${id}/verify`, { action });
+      toast.success(action === "APPROVED" ? "Petugas residu berhasil disetujui" : "Pendaftaran petugas residu ditolak");
+      fetchQrData();
+    } catch (error) {
+      console.error("Failed to verify petugas", error);
+      toast.error("Gagal memverifikasi petugas");
     }
   };
 
@@ -193,97 +242,268 @@ export const MasterQrManager: React.FC = () => {
         </div>
       )}
 
-      {/* QR Codes Database Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Filters */}
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-4 justify-between items-center">
-          <h3 className="font-bold text-gray-800 text-sm">Daftar Status Master QR</h3>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Cari Kode QR..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
-            >
-              <option value="">Semua Status</option>
-              <option value="PRINTED">PRINTED</option>
-              <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
-              <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
-              <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
-              <option value="BROKEN">BROKEN</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 gap-4 mb-6">
+        <button
+          onClick={() => setActiveTab("qrs")}
+          className={`pb-3 text-sm font-semibold border-b-2 transition ${
+            activeTab === "qrs" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Semua QR & Bin ({qrs.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("pending_bins")}
+          className={`pb-3 text-sm font-semibold border-b-2 transition ${
+            activeTab === "pending_bins"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Persetujuan Bin Warga ({pendingBins.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("pending_petugas")}
+          className={`pb-3 text-sm font-semibold border-b-2 transition ${
+            activeTab === "pending_petugas"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Verifikasi Petugas Residu ({pendingPetugas.length})
+        </button>
+      </div>
+
+      {activeTab === "qrs" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Filters */}
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-4 justify-between items-center">
+            <h3 className="font-bold text-gray-800 text-sm">Daftar Status Master QR</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Cari Kode QR..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+              >
+                <option value="">Semua Status</option>
+                <option value="PRINTED">PRINTED</option>
+                <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
+                <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
+                <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
+                <option value="BROKEN">BROKEN</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-3">Kode QR</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Batch Asal</th>
+                  <th className="px-6 py-3">Wilayah Terdaftar</th>
+                  <th className="px-6 py-3">Pemegang/Warga</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 text-gray-700">
+                {qrs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                      Tidak ada QR Code ditemukan
+                    </td>
+                  </tr>
+                ) : (
+                  qrs.map((q, idx) => {
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col items-center gap-1 bg-white p-2 rounded-xl border border-gray-200/60 w-fit shadow-sm">
+                            <img
+                              className="w-16 h-16"
+                              alt="QR Code"
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(q.qrCode)}`}
+                            />
+                            <span className="text-[10px] font-mono font-bold text-primary tracking-wider">
+                              {q.qrCode}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge status={q.status} />
+                        </td>
+                        <td className="px-6 py-4 text-xs font-mono text-gray-500">
+                          {q.qrBatch ? q.qrBatch.batchCode : "-"}
+                        </td>
+                        <td className="px-6 py-4 text-xs">
+                          {q.rtRw ? `${q.rtRw.name} (Kel. ${q.rtRw.kelurahan.name})` : "-"}
+                        </td>
+                        <td className="px-6 py-4">
+                          {q.user ? (
+                            <div>
+                              <div className="font-semibold text-gray-900">{q.user.name}</div>
+                              <div className="text-xs text-gray-400">{q.user.email}</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-            <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-3">Kode QR</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Batch Asal</th>
-                <th className="px-6 py-3">Wilayah Terdaftar</th>
-                <th className="px-6 py-3">Pemegang/Warga</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 text-gray-700">
-              {qrs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
-                    Tidak ada QR Code ditemukan
-                  </td>
-                </tr>
-              ) : (
-                qrs.map((q, idx) => {
-                  return (
-                    <tr key={idx} className="hover:bg-gray-50 transition">
+      {activeTab === "pending_bins" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="font-bold text-gray-800 text-sm">Persetujuan Aktivasi QR Bin Warga (Global)</h3>
+          </div>
+          <div className="p-4 overflow-x-auto">
+            {pendingBins.length === 0 ? (
+              <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan aktivasi QR Bin.</p>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-3">Warga & Lokasi</th>
+                    <th className="px-6 py-3">QR Code & Kategori</th>
+                    <th className="px-6 py-3">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 text-gray-700">
+                  {pendingBins.map((bin) => (
+                    <tr key={bin.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4">
-                        <div className="flex flex-col items-center gap-1 bg-white p-2 rounded-xl border border-gray-200/60 w-fit shadow-sm">
-                          <img
-                            className="w-16 h-16"
-                            alt="QR Code"
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(q.qrCode)}`}
-                          />
-                          <span className="text-[10px] font-mono font-bold text-primary tracking-wider">
-                            {q.qrCode}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge status={q.status} />
-                      </td>
-                      <td className="px-6 py-4 text-xs font-mono text-gray-500">
-                        {q.qrBatch ? q.qrBatch.batchCode : "-"}
-                      </td>
-                      <td className="px-6 py-4 text-xs">
-                        {q.rtRw ? `${q.rtRw.name} (Kel. ${q.rtRw.kelurahan.name})` : "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {q.user ? (
-                          <div>
-                            <div className="font-semibold text-gray-900">{q.user.name}</div>
-                            <div className="text-xs text-gray-400">{q.user.email}</div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
+                        <p className="font-semibold text-sm text-gray-900">{bin.user?.name}</p>
+                        <p className="text-xs text-gray-500">{bin.user?.address}</p>
+                        {bin.qrBatch?.assignedPic && (
+                          <p className="text-xs text-blue-600 mt-1">Pendamping: {bin.qrBatch.assignedPic.name}</p>
                         )}
                       </td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-sm">{bin.qrCode}</p>
+                        <Badge status={bin.category?.name || "PRINTED"} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => approveBin(bin.id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+                          >
+                            Setujui
+                          </button>
+                          <button
+                            onClick={() => setRejectBinId(bin.id)}
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+                          >
+                            Tolak
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === "pending_petugas" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="font-bold text-gray-800 text-sm">Verifikasi Akun Petugas Residu (Global)</h3>
+          </div>
+          <div className="p-4 overflow-x-auto">
+            {pendingPetugas.length === 0 ? (
+              <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan petugas residu baru.</p>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-3">Nama & Kontak</th>
+                    <th className="px-6 py-3">Zona Tugas</th>
+                    <th className="px-6 py-3">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 text-gray-700">
+                  {pendingPetugas.map((petugas) => (
+                    <tr key={petugas.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-sm text-gray-900">{petugas.nama}</p>
+                        <p className="text-xs text-gray-500">{petugas.noWa}</p>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-semibold text-gray-600">
+                        {petugas.assignedZone || "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => verifyPetugas(petugas.id, "APPROVED")}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+                          >
+                            Setujui
+                          </button>
+                          <button
+                            onClick={() => verifyPetugas(petugas.id, "REJECTED")}
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+                          >
+                            Tolak
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {rejectBinId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 transition-all duration-300">
+          <div className="bg-white p-6 rounded-2xl w-96 shadow-xl border border-gray-100 scale-95 hover:scale-100 transition-all duration-300">
+            <h3 className="text-lg font-bold mb-2 text-gray-800">Tolak Pengajuan Bin</h3>
+            <p className="text-xs text-gray-500 mb-4">Berikan alasan mengapa pengajuan bin ini ditolak.</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="w-full border border-gray-200 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-150 text-sm"
+              placeholder="Alasan penolakan..."
+              rows={3}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setRejectBinId(null)}
+                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={rejectBin}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-md"
+              >
+                Kirim Penolakan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Generate Batch Modal */}
       {showGenerateModal && (
