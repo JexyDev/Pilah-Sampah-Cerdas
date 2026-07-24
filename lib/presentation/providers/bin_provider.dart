@@ -209,6 +209,8 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
     required String householdId,
     double? latitude,
     double? longitude,
+    required double orgCapacity,
+    required double anorgCapacity,
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
@@ -220,6 +222,13 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
           householdId: householdId,
           latitude: latitude,
           longitude: longitude,
+        );
+        // Panggil measureBin sesuai jenis QR Code
+        final isOrganik = !qr.toUpperCase().contains('NON') && !qr.toUpperCase().contains('ANORG');
+        await _binRepository.measureBin(
+          qrCode: qr,
+          binType: isOrganik ? WasteType.organic : WasteType.nonOrganic,
+          maxCapacityLiter: isOrganik ? orgCapacity : anorgCapacity,
         );
       }
       state = AktivasiBinState(result: lastResult);

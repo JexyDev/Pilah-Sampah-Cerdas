@@ -76,13 +76,16 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
     if (mounted) setState(() => _state = _QrState.ready);
   }
 
-  void _onDetect(BarcodeCapture capture) {
+  void _onDetect(BarcodeCapture capture) async {
     if (_scanned) return;
     final String? code = capture.barcodes.firstOrNull?.rawValue;
     if (code != null && code.isNotEmpty) {
       setState(() => _scanned = true);
       _controller?.stop();
-      widget.onQrDetected(code);
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (mounted) {
+        widget.onQrDetected(code);
+      }
     }
   }
 

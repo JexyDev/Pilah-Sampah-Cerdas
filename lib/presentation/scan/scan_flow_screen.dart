@@ -550,6 +550,30 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                   // Guard: skip jika sudah loading atau sudah sukses
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null) return;
+                  
+                  // Local validation: pastikan QR sesuai jenis AI
+                  final isOrganicAI = s.aiResult?.detectedType == WasteType.organic;
+                  final upperQr = qrCode.toUpperCase();
+                  final isScanOrganik = !upperQr.contains('NON') && !upperQr.contains('ANORG');
+                  
+                  if (isOrganicAI && !isScanOrganik) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bin yang di-scan adalah Anorganik, sedangkan sampah Anda Organik.'),
+                        backgroundColor: AppColors.dangerRed,
+                      ),
+                    );
+                    return;
+                  } else if (!isOrganicAI && isScanOrganik) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Bin yang di-scan adalah Organik, sedangkan sampah Anda Anorganik.'),
+                        backgroundColor: AppColors.dangerRed,
+                      ),
+                    );
+                    return;
+                  }
+
                   ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
