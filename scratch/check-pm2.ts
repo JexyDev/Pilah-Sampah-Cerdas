@@ -10,9 +10,7 @@ const config = {
 
 conn.on('ready', () => {
   console.log('Client :: ready');
-  // Kill root process on port 3000 and restart pm2
-  const cmd = 'echo "Makerdotindo2026" | sudo -S kill -9 $(echo "Makerdotindo2026" | sudo -S lsof -t -i:3000) || true; sleep 2; pm2 restart psc-backend';
-  conn.exec(cmd, (err, stream) => {
+  conn.exec('echo "Makerdotindo2026" | sudo -S pm2 status', (err, stream) => {
     if (err) throw err;
     stream.on('close', (code, signal) => {
       conn.end();
