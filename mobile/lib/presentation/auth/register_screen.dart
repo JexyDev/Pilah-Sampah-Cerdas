@@ -23,7 +23,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _emailController = TextEditingController();
   final _alamatController = TextEditingController();
   final _rtRwController = TextEditingController();
   final _kelurahanController = TextEditingController();
@@ -50,7 +49,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _emailController.dispose();
     _alamatController.dispose();
     _rtRwController.dispose();
     _kelurahanController.dispose();
@@ -124,7 +122,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       'phone': normalizedPhone,
       'noWa': normalizedPhone,
       'password': password,
-      'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+
     };
 
     if (_selectedRole == 'Warga') {
@@ -379,34 +377,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 16),
 
-                              _buildLabel('ALAMAT EMAIL (Opsional untuk Warga)'),
-                              const SizedBox(height: 6),
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                decoration: const InputDecoration(
-                                  hintText: 'nama@email.com',
-                                  prefixIcon: Icon(
-                                    Icons.email_outlined,
-                                    color: AppColors.textSecondary,
-                                    size: 20,
-                                  ),
-                                ),
-                                validator: (v) {
-                                  if (_selectedRole != 'Warga' && (v == null || v.trim().isEmpty)) {
-                                    return 'Email wajib diisi untuk peran $_selectedRole';
-                                  }
-                                  if (v != null && v.trim().isNotEmpty) {
-                                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
-                                      return 'Format email tidak valid';
-                                    }
-                                  }
-                                  return null;
-                                },
-                              ),
                               const SizedBox(height: 16),
 
                               if (_selectedRole == 'Warga') ...[

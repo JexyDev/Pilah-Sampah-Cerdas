@@ -79,7 +79,6 @@ export const scheduleController = {
     try {
       const { id } = req.params;
       const { title, date, time, category, location } = req.body;
-      
       let parsedDate;
       if (date) {
         parsedDate = new Date(date);
