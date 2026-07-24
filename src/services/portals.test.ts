@@ -70,7 +70,7 @@ describe("Portals A & B Service Integration Tests", () => {
         qrBatchId: qrBatch.id,
       },
     });
-    
+
     // Create second bin for Inorganic
     const catIno = await prisma.wasteCategory.findFirst({ where: { name: "Anorganik" } });
     await prisma.bin.create({

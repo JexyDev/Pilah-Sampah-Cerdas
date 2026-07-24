@@ -124,7 +124,9 @@ export const transactionController = {
       });
     } catch (error: any) {
       console.error("[TransactionController] createResiduDeposit error:", error);
-      res.status(500).json({ success: false, message: error.message || "Gagal mencatat setoran residu" });
+      res
+        .status(500)
+        .json({ success: false, message: error.message || "Gagal mencatat setoran residu" });
     }
   },
 

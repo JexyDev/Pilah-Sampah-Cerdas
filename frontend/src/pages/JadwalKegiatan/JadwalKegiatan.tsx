@@ -34,9 +34,10 @@ const JadwalKegiatan: React.FC = () => {
       // Backend returns array under data.data
       const raw = response.data.data;
       setSchedules(Array.isArray(raw) ? raw : []);
-    } catch (err) {
-      setError("Gagal memuat data dari server.");
-      toast.error("Gagal memuat jadwal kegiatan");
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal memuat data dari server.";
+      setError(errMsg);
+      toast.error(`Gagal memuat jadwal kegiatan: ${errMsg}`);
     } finally {
       setLoading(false);
     }
@@ -86,8 +87,9 @@ const JadwalKegiatan: React.FC = () => {
       setIsModalOpen(false);
       fetchSchedules();
       setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" });
-    } catch (err) {
-      toast.error("Gagal menambahkan jadwal");
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menambahkan jadwal";
+      toast.error(errMsg);
     }
   };
 

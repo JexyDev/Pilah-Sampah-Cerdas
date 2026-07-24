@@ -17,7 +17,10 @@ const attempts = new Map<string, AttemptRecord>();
 
 export const loginRateLimiter = (req: Request, res: Response, next: NextFunction): void => {
   const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
-  const identifier = (req.body?.phone || req.body?.email || "unknown").toString().toLowerCase().trim();
+  const identifier = (req.body?.phone || req.body?.email || "unknown")
+    .toString()
+    .toLowerCase()
+    .trim();
   const key = `${ip}:${identifier}`;
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 minute window

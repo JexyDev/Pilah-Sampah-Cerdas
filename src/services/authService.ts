@@ -111,15 +111,17 @@ export class AuthService {
 
     await authRepository.createOtp(phone, otp, expiresAt);
 
-    await notificationIntegrationService.sendWhatsApp(
-      phone,
-      `Kode OTP Anda untuk masuk ke Pilah Sampah Cerdas adalah: ${otp}. Kode berlaku selama 5 menit.`,
-      "OTP"
-    ).catch(e => console.error("WhatsApp OTP error:", e));
-    
+    await notificationIntegrationService
+      .sendWhatsApp(
+        phone,
+        `Kode OTP Anda untuk masuk ke Pilah Sampah Cerdas adalah: ${otp}. Kode berlaku selama 5 menit.`,
+        "OTP"
+      )
+      .catch((e) => console.error("WhatsApp OTP error:", e));
+
     return {
       message: "OTP sent via WhatsApp",
-      expiresIn: "5 minutes"
+      expiresIn: "5 minutes",
     };
   }
 
@@ -212,8 +214,8 @@ export class AuthService {
     const hasSubmittedToday = await prisma.wasteLog.findFirst({
       where: {
         household: { userId },
-        createdAt: { gte: startOfToday, lte: endOfToday }
-      }
+        createdAt: { gte: startOfToday, lte: endOfToday },
+      },
     });
 
     let startIndex = 0;
@@ -231,8 +233,8 @@ export class AuthService {
       const hasSubmittedYesterday = await prisma.wasteLog.findFirst({
         where: {
           household: { userId },
-          createdAt: { gte: startOfYesterday, lte: endOfYesterday }
-        }
+          createdAt: { gte: startOfYesterday, lte: endOfYesterday },
+        },
       });
 
       if (hasSubmittedYesterday) {
@@ -255,8 +257,8 @@ export class AuthService {
       const logOnDay = await prisma.wasteLog.findFirst({
         where: {
           household: { userId },
-          createdAt: { gte: checkDateStart, lte: checkDateEnd }
-        }
+          createdAt: { gte: checkDateStart, lte: checkDateEnd },
+        },
       });
 
       if (logOnDay) {
@@ -281,11 +283,13 @@ export class AuthService {
     }
 
     const template = await prisma.systemConfig.findUnique({ where: { key: configKey } });
-    const message = template ? template.value : "Ayo terus pilah sampahmu demi lingkungan yang lebih bersih!";
+    const message = template
+      ? template.value
+      : "Ayo terus pilah sampahmu demi lingkungan yang lebih bersih!";
 
     return {
       streak,
-      message
+      message,
     };
   }
 

@@ -82,6 +82,16 @@ export const gamificationService = {
         },
       });
 
+      // Add to Social Feed
+      await tx.socialFeed.create({
+        data: {
+          tipe: "RECYCLE_IDEA",
+          deskripsi: `Ide daur ulang "${idea.judul}" telah disetujui untuk diimplementasikan!`,
+          userId: idea.userId,
+          entityId: idea.id,
+        },
+      });
+
       // Hook Audit Trail
       await tx.auditTrail.create({
         data: {

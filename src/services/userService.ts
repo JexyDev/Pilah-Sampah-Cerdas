@@ -88,17 +88,19 @@ export class UserService {
         setoran: parseFloat(totalSetoranKg.toFixed(1)),
         totalPoin,
         createdAt: u.createdAt,
-        studentProfile: u.studentProfile ? {
-          nim: u.studentProfile.nim,
-          jurusan: u.studentProfile.jurusan,
-          fakultas: u.studentProfile.fakultas,
-          noWa: u.studentProfile.noWa,
-          startDate: u.studentProfile.startDate,
-          endDate: u.studentProfile.endDate,
-          assignedPolygonId: u.studentProfile.assignedPolygonId,
-          assignedPolygonName: u.studentProfile.assignedPolygon?.name,
-          whitelistStatus: u.studentProfile.whitelistStatus
-        } : null
+        studentProfile: u.studentProfile
+          ? {
+              nim: u.studentProfile.nim,
+              jurusan: u.studentProfile.jurusan,
+              fakultas: u.studentProfile.fakultas,
+              noWa: u.studentProfile.noWa,
+              startDate: u.studentProfile.startDate,
+              endDate: u.studentProfile.endDate,
+              assignedPolygonId: u.studentProfile.assignedPolygonId,
+              assignedPolygonName: u.studentProfile.assignedPolygon?.name,
+              whitelistStatus: u.studentProfile.whitelistStatus,
+            }
+          : null,
       };
     });
   }
@@ -145,8 +147,8 @@ export class UserService {
           const existingPetugas = await prisma.user.findFirst({
             where: {
               role: { name: "PETUGAS_RESIDU" },
-              rtRw: { name: { contains: `RW ${rwNumber}` } }
-            }
+              rtRw: { name: { contains: `RW ${rwNumber}` } },
+            },
           });
           if (existingPetugas) {
             throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
@@ -169,7 +171,7 @@ export class UserService {
           status: status || "Aktif",
           rtRwId: rtRwId ? parseInt(rtRwId) : null,
         },
-        include: { role: { select: { name: true } } }
+        include: { role: { select: { name: true } } },
       });
 
       if (roleName === "MAHASISWA_KKN" && studentProfile) {
@@ -182,9 +184,11 @@ export class UserService {
             noWa: studentProfile.noWa || "",
             startDate: new Date(studentProfile.startDate),
             endDate: new Date(studentProfile.endDate),
-            assignedPolygonId: studentProfile.assignedPolygonId ? parseInt(studentProfile.assignedPolygonId) : null,
-            whitelistStatus: "APPROVED"
-          }
+            assignedPolygonId: studentProfile.assignedPolygonId
+              ? parseInt(studentProfile.assignedPolygonId)
+              : null,
+            whitelistStatus: "APPROVED",
+          },
         });
       }
 
@@ -208,7 +212,9 @@ export class UserService {
     }
 
     // Check if target user has a restricted role or if trying to change to a restricted role
-    const isRestrictedRole = ["ADMIN_DLH", "CAMAT", "LURAH"].includes(user.role.name) || (roleName && ["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName));
+    const isRestrictedRole =
+      ["ADMIN_DLH", "CAMAT", "LURAH"].includes(user.role.name) ||
+      (roleName && ["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName));
     if (isRestrictedRole && currentUser?.role !== "SUPER_ADMIN") {
       throw new Error("FORBIDDEN_ROLE_UPDATE");
     }
@@ -235,8 +241,8 @@ export class UserService {
             where: {
               id: { not: user.id },
               role: { name: "PETUGAS_RESIDU" },
-              rtRw: { name: { contains: `RW ${rwNumber}` } }
-            }
+              rtRw: { name: { contains: `RW ${rwNumber}` } },
+            },
           });
           if (existingPetugas) {
             throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
@@ -263,7 +269,7 @@ export class UserService {
       const u = await tx.user.update({
         where: { id },
         data: updateData,
-        include: { role: { select: { name: true } } }
+        include: { role: { select: { name: true } } },
       });
 
       if ((roleName === "MAHASISWA_KKN" || u.role.name === "MAHASISWA_KKN") && studentProfile) {
@@ -277,8 +283,10 @@ export class UserService {
             noWa: studentProfile.noWa || "",
             startDate: new Date(studentProfile.startDate),
             endDate: new Date(studentProfile.endDate),
-            assignedPolygonId: studentProfile.assignedPolygonId ? parseInt(studentProfile.assignedPolygonId) : null,
-            whitelistStatus: "APPROVED"
+            assignedPolygonId: studentProfile.assignedPolygonId
+              ? parseInt(studentProfile.assignedPolygonId)
+              : null,
+            whitelistStatus: "APPROVED",
           },
           update: {
             nim: studentProfile.nim,
@@ -287,8 +295,10 @@ export class UserService {
             noWa: studentProfile.noWa,
             startDate: new Date(studentProfile.startDate),
             endDate: new Date(studentProfile.endDate),
-            assignedPolygonId: studentProfile.assignedPolygonId ? parseInt(studentProfile.assignedPolygonId) : null,
-          }
+            assignedPolygonId: studentProfile.assignedPolygonId
+              ? parseInt(studentProfile.assignedPolygonId)
+              : null,
+          },
         });
       }
 

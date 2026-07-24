@@ -45,7 +45,11 @@ export const authMiddleware = async (
 
     // DEV BYPASS
     if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
-      req.user = { userId: "mock-admin-id", role: "SUPER_ADMIN" };
+      const superAdminUser = await prisma.user.findFirst({
+        where: { role: { name: "SUPER_ADMIN" } },
+        select: { id: true },
+      });
+      req.user = { userId: superAdminUser?.id || "mock-admin-id", role: "SUPER_ADMIN" };
       return next();
     }
 

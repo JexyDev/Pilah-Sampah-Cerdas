@@ -44,20 +44,20 @@ export class CronService {
       const fullBins = await prisma.bin.findMany({
         where: {
           status: "ACTIVE_BOUND",
-        }
+        },
       });
-      const targetBins = fullBins.filter(b => {
+      const targetBins = fullBins.filter((b) => {
         const vol = Number(b.currentVolumeLiter);
         const max = Number(b.maxCapacityLiter);
-        return max > 0 && (vol / max) >= 0.7;
+        return max > 0 && vol / max >= 0.7;
       });
-      
+
       const petugas = await prisma.user.findMany({
         where: {
           role: {
-            name: "PETUGAS_RESIDU"
-          }
-        }
+            name: "PETUGAS_RESIDU",
+          },
+        },
       });
 
       // Simple notification
@@ -67,7 +67,7 @@ export class CronService {
             userId: p.id,
             title: `Jadwal Jemput ${window === "MORNING" ? "Pagi" : "Sore"}`,
             message: `Terdapat ${targetBins.length} tempat sampah yang perlu diangkut.`,
-          }
+          },
         });
       }
     } catch (e) {
@@ -78,14 +78,14 @@ export class CronService {
   public async evaluateShiftPenalty(shift: string) {
     try {
       const petugasList = await prisma.petugasResidu.findMany({
-        where: { whitelistStatus: "APPROVED" }
+        where: { whitelistStatus: "APPROVED" },
       });
 
       for (const petugas of petugasList) {
         const count = await prisma.residuLog.count({
           where: {
             petugasId: petugas.userId,
-          }
+          },
         });
 
         if (count === 0) {
@@ -94,15 +94,15 @@ export class CronService {
 
           await prisma.petugasResidu.update({
             where: { id: petugas.id },
-            data: { kpiScore: newScore }
+            data: { kpiScore: newScore },
           });
 
           await prisma.auditTrail.create({
             data: {
               action: "SYSTEM_KPI_PENALTY",
               userId: petugas.userId,
-              newValue: { petugasId: petugas.id, kpiScore: newScore }
-            }
+              newValue: { petugasId: petugas.id, kpiScore: newScore },
+            },
           });
         }
       }
@@ -190,8 +190,8 @@ export class CronService {
       console.log("[CronService] Evaluating daily citizens waste submission penalty...");
       const wargaList = await prisma.user.findMany({
         where: {
-          role: { name: "WARGA" }
-        }
+          role: { name: "WARGA" },
+        },
       });
 
       for (const warga of wargaList) {
@@ -212,8 +212,8 @@ export class CronService {
               createdAt: {
                 gte: startOfCheckDay,
                 lte: endOfCheckDay,
-              }
-            }
+              },
+            },
           });
 
           if (!hasSubmittedOnDay) {
@@ -230,7 +230,7 @@ export class CronService {
 
           const pointSumObj = await prisma.pointHistory.aggregate({
             where: { userId: warga.id },
-            _sum: { points: true }
+            _sum: { points: true },
           });
           const currentPoints = pointSumObj._sum.points || 0;
 
@@ -241,10 +241,12 @@ export class CronService {
                 userId: warga.id,
                 points: -deduction,
                 description: `Penalti absen buang sampah harian (hari ke-${absenceStreak})`,
-                kategori: "REDUKSI_TONASE"
-              }
+                kategori: "REDUKSI_TONASE",
+              },
             });
-            console.log(`[CronService] Deducted ${deduction} points from citizen ${warga.name} due to ${absenceStreak} days of absence.`);
+            console.log(
+              `[CronService] Deducted ${deduction} points from citizen ${warga.name} due to ${absenceStreak} days of absence.`
+            );
           }
 
           // Always send notification
@@ -253,7 +255,7 @@ export class CronService {
               userId: warga.id,
               title: "Penalti Absen Buang Sampah",
               message: `Anda belum menyetor sampah selama ${absenceStreak} hari berturut-turut. Poin Anda berkurang -${penaltyAmount} hari ini. Ayo segera setor dan pilah sampah Anda!`,
-            }
+            },
           });
         }
       }
@@ -273,14 +275,38 @@ export class CronService {
 
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const endOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+        999
+      );
 
       // Define window start/end hours
       const startHour = window === "MORNING" ? 6 : 16;
       const endHour = window === "MORNING" ? 8 : 18;
 
-      const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0, 0);
-      const windowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0, 0);
+      const windowStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        startHour,
+        0,
+        0,
+        0
+      );
+      const windowEnd = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        endHour,
+        0,
+        0,
+        0
+      );
 
       const penaltyConfig = await prisma.systemConfig.findUnique({
         where: { key: "window_absence_penalty" },
@@ -291,10 +317,7 @@ export class CronService {
         // Check if citizens have active bins first (if no active bins, do not penalize them yet!)
         const activeBinsCount = await prisma.bin.count({
           where: {
-            OR: [
-              { userId: warga.id },
-              { binOwnerships: { some: { userId: warga.id } } },
-            ],
+            OR: [{ userId: warga.id }, { binOwnerships: { some: { userId: warga.id } } }],
             status: "ACTIVE_BOUND",
           },
         });
@@ -332,7 +355,9 @@ export class CronService {
                 kategori: "REDUKSI_TONASE", // standard category
               },
             });
-            console.log(`[CronService] Deducted ${deduction} points from citizen ${warga.name} for missing ${window} window.`);
+            console.log(
+              `[CronService] Deducted ${deduction} points from citizen ${warga.name} for missing ${window} window.`
+            );
           }
 
           // Create notification

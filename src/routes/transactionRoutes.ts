@@ -16,7 +16,15 @@ const router = Router();
 router.get(
   "/deposits",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "LURAH", "CAMAT", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_ADMIN",
+    "ADMIN_DLH",
+    "RW",
+    "PETUGAS_RESIDU",
+    "LURAH",
+    "CAMAT",
+    "MAHASISWA_KKN",
+  ]),
   transactionController.getDeposits
 );
 router.get(
@@ -42,10 +50,6 @@ router.post(
   transactionController.createResiduDeposit
 );
 
-router.get(
-  "/:id",
-  authMiddleware,
-  transactionController.getDepositDetails
-);
+router.get("/:id", authMiddleware, transactionController.getDepositDetails);
 
 export default router;

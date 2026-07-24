@@ -257,7 +257,9 @@ export class AiController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[AiController] getPendingDiscrepancies error:", error);
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

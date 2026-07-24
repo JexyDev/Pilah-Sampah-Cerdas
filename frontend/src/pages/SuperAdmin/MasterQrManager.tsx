@@ -42,7 +42,7 @@ export const MasterQrManager: React.FC = () => {
   const [showGenerateModal, setShowGenerateModal] = useState<boolean>(false);
   const [totalQr, setTotalQr] = useState<number>(10);
   const [categoryId, setCategoryId] = useState<string>("");
-  const [rtRwId, setRtRwId] = useState<number>(1);
+  const [rtRwId, setRtRwId] = useState<string>("");
   const [categories, setCategories] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
 
@@ -65,7 +65,7 @@ export const MasterQrManager: React.FC = () => {
   const fetchFormMetadata = async () => {
     try {
       const catRes = await api.get("/categories");
-      const locRes = await api.get("/system/locations/rtrw");
+      const locRes = await api.get("/areas/rt-rw");
       if (catRes.data.success) setCategories(catRes.data.data);
       if (locRes.data.success) setRtRwAreas(locRes.data.data);
     } catch (e) {
@@ -80,15 +80,19 @@ export const MasterQrManager: React.FC = () => {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoryId || !rtRwId) {
-      toast.error("Semua field wajib diisi");
+    if (!categoryId) {
+      toast.error("Kategori wajib dipilih");
       return;
     }
 
     try {
       const res = await api.post(
         "/super-admin/bins/generate-qr",
-        { totalQr, categoryId, rtRwId }
+        {
+          totalQr,
+          categoryId,
+          rtRwId: rtRwId ? parseInt(rtRwId, 10) : undefined,
+        }
       );
       if (res.data.success) {
         toast.success("Batch QR Code berhasil diproduksi");
@@ -329,11 +333,10 @@ export const MasterQrManager: React.FC = () => {
                 <label className="text-xs font-semibold text-gray-700">Wilayah RT / RW Penerima</label>
                 <select
                   value={rtRwId}
-                  onChange={(e) => setRtRwId(parseInt(e.target.value))}
+                  onChange={(e) => setRtRwId(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-                  required
                 >
-                  <option value="">Pilih Wilayah</option>
+                  <option value="">Umum (Tanpa Wilayah)</option>
                   {rtRwAreas.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name} ({item.kelurahan?.name})

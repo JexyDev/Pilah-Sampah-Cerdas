@@ -173,8 +173,8 @@ model QrBatch {
 model Bin {
   id                          String            @id @default(uuid())
   qrCode                      String            @unique @map("kode_qr")
-  categoryId                  String            @map("id_kategori")
-  category                    WasteCategory     @relation(fields: [categoryId], references: [id])
+  categoryId                  String?           @map("id_kategori")
+  category                    WasteCategory?     @relation(fields: [categoryId], references: [id])
   maxCapacityLiter            Decimal           @default(25.0) @map("maks_kapasitas_liter") @db.Decimal(5, 2)
   currentVolumeLiter          Decimal           @default(0.0) @map("volume_sekarang_liter") @db.Decimal(5, 2)
   height                      Decimal?          @db.Decimal(5, 2) @map("tinggi")
@@ -183,8 +183,8 @@ model Bin {
   diameter                    Decimal?          @db.Decimal(5, 2) @map("diameter")
   shape                       String?           @map("bentuk") // RECTANGLE, CYLINDER
   binType                     String?           @map("tipe_wadah") // STANDARD, CUSTOM
-  rtRwId                      Int               @map("id_rt_rw")
-  rtRw                        RtRwArea          @relation(fields: [rtRwId], references: [id])
+  rtRwId                      Int?              @map("id_rt_rw")
+  rtRw                        RtRwArea?         @relation(fields: [rtRwId], references: [id])
   kelurahanId                 String?           @map("id_kelurahan")
   kelurahan                   Kelurahan?        @relation(fields: [kelurahanId], references: [id])
   latitude                    Decimal?          @db.Decimal(11, 8)

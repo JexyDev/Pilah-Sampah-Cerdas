@@ -10,10 +10,14 @@ router.use(authMiddleware);
 // Middleware khusus RW
 router.use((req, res, next) => {
   if (req.user?.role !== "RW") {
-    return res.status(403).json({ error: "FORBIDDEN", message: "Hanya RW yang dapat mengakses portal ini." });
+    return res
+      .status(403)
+      .json({ error: "FORBIDDEN", message: "Hanya RW yang dapat mengakses portal ini." });
   }
   if (!req.user?.rtRwId) {
-    return res.status(400).json({ error: "BAD_REQUEST", message: "Akun RW tidak memiliki wilayah yang valid." });
+    return res
+      .status(400)
+      .json({ error: "BAD_REQUEST", message: "Akun RW tidak memiliki wilayah yang valid." });
   }
   next();
 });
@@ -91,7 +95,11 @@ router.put("/petugas/:id/verify", async (req, res, next) => {
     if (!["APPROVED", "REJECTED"].includes(action)) {
       return res.status(400).json({ error: "Invalid action" });
     }
-    const data = await rwService.verifyPetugas(req.params.id, action as "APPROVED" | "REJECTED", req.user!.rtRwId!);
+    const data = await rwService.verifyPetugas(
+      req.params.id,
+      action as "APPROVED" | "REJECTED",
+      req.user!.rtRwId!
+    );
     res.json({ message: "Verifikasi petugas berhasil", data });
   } catch (error) {
     next(error);
@@ -111,7 +119,12 @@ router.get("/ide", async (req, res, next) => {
 router.put("/ide/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body; // "APPROVED" or "REJECTED"
-    const data = await rwService.verifyIde(req.params.id, action as "APPROVED" | "REJECTED", req.user!.userId, req.user!.rtRwId!);
+    const data = await rwService.verifyIde(
+      req.params.id,
+      action as "APPROVED" | "REJECTED",
+      req.user!.userId,
+      req.user!.rtRwId!
+    );
     res.json({ message: "Ide diverifikasi", data });
   } catch (error) {
     next(error);
@@ -131,7 +144,11 @@ router.get("/facilities/pending", async (req, res, next) => {
 router.put("/facilities/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body;
-    const data = await rwService.verifyFacility(req.params.id, action as "APPROVED" | "REJECTED", req.user!.rtRwId!);
+    const data = await rwService.verifyFacility(
+      req.params.id,
+      action as "APPROVED" | "REJECTED",
+      req.user!.rtRwId!
+    );
     res.json({ message: "Fasilitas diverifikasi", data });
   } catch (error) {
     next(error);

@@ -8,6 +8,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { binService } from "../services/binService.js";
+import { generateNextQrCode } from "../utils/qrGenerator.js";
 
 const scanSchema = z.object({
   qrCode: z.string().min(1, "QR Code diperlukan"),
@@ -18,13 +19,15 @@ const scanSchema = z.object({
   userLng: z.number().min(-180).max(180),
   aiConfidence: z.number().optional(),
   evidencePhotoUrl: z.string().optional(),
-  detections: z.array(
-    z.object({
-      detectedType: z.string(),
-      volumeEstimate: z.number().positive(),
-      confidence: z.number().optional(),
-    })
-  ).optional(),
+  detections: z
+    .array(
+      z.object({
+        detectedType: z.string(),
+        volumeEstimate: z.number().positive(),
+        confidence: z.number().optional(),
+      })
+    )
+    .optional(),
 });
 
 export class BinController {
@@ -49,13 +52,13 @@ export class BinController {
 
         return {
           kode: bin.qrCode,
-          lokasi: `Kategori: ${bin.category?.name || bin.categoryId}`,
-          rtRw: bin.rtRw?.name || `ID RT/RW: ${bin.rtRwId}`,
+          lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
+          rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
           kapasitas,
           status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
           lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
-          categoryId: bin.categoryId,
-          rtRwId: bin.rtRwId,
+          categoryId: bin.categoryId || null,
+          rtRwId: bin.rtRwId || null,
           maxCapacityLiter: maxVol,
           latitude: bin.latitude,
           longitude: bin.longitude,
@@ -147,8 +150,17 @@ export class BinController {
         return;
       }
 
-      const { qrCode, detectedType, estimatedVolume, householdId, userLat, userLng, aiConfidence, evidencePhotoUrl, detections } =
-        parsed.data as any;
+      const {
+        qrCode,
+        detectedType,
+        estimatedVolume,
+        householdId,
+        userLat,
+        userLng,
+        aiConfidence,
+        evidencePhotoUrl,
+        detections,
+      } = parsed.data as any;
 
       const result = await binService.processScan(
         qrCode,
@@ -266,6 +278,21 @@ export class BinController {
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengosongkan tong sampah" });
       }
+    }
+  }
+
+  async getNextQr(req: Request, res: Response): Promise<void> {
+    try {
+      const { categoryId } = req.query;
+      if (!categoryId) {
+        res.status(400).json({ success: false, message: "categoryId is required" });
+        return;
+      }
+      const nextQr = await generateNextQrCode(categoryId as string);
+      res.status(200).json({ success: true, data: { qrCode: nextQr } });
+    } catch (error: any) {
+      console.error("[BinController] getNextQr error:", error);
+      res.status(500).json({ success: false, message: "Failed to generate next QR code" });
     }
   }
 
@@ -535,7 +562,9 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] approveActivation error:", error);
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -547,7 +576,9 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] rejectActivation error:", error);
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -557,14 +588,20 @@ export class BinController {
       const userId = req.user!.userId;
       const { issueType, notes } = req.body;
       if (!issueType || !["EMPTY_REQUEST", "BROKEN_REPORT"].includes(issueType)) {
-        res.status(400).json({ success: false, code: "INVALID_ISSUE_TYPE", message: "Tipe laporan tidak valid" });
+        res.status(400).json({
+          success: false,
+          code: "INVALID_ISSUE_TYPE",
+          message: "Tipe laporan tidak valid",
+        });
         return;
       }
       const result = await binService.reportIssue(id, userId, issueType, notes || "");
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] reportIssue error:", error);
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
   async reactivateBin(req: Request, res: Response): Promise<void> {
@@ -574,7 +611,9 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] reactivateBin error:", error);
-      res.status(400).json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
 
@@ -582,7 +621,7 @@ export class BinController {
     try {
       const { id } = req.params;
       const { maxCapacityLiter, evidencePhotoUrl } = req.body;
-      
+
       if (!maxCapacityLiter) {
         res.status(400).json({ success: false, message: "Kapasitas wajib diisi" });
         return;
@@ -593,8 +632,14 @@ export class BinController {
         return;
       }
 
-      const result = await binService.updateCapacity(id, Number(maxCapacityLiter), evidencePhotoUrl || null);
-      res.status(200).json({ success: true, data: result, message: "Kapasitas tong berhasil diperbarui" });
+      const result = await binService.updateCapacity(
+        id,
+        Number(maxCapacityLiter),
+        evidencePhotoUrl || null
+      );
+      res
+        .status(200)
+        .json({ success: true, data: result, message: "Kapasitas tong berhasil diperbarui" });
     } catch (error: any) {
       console.error("[BinController] updateCapacity error:", error);
       res.status(500).json({ success: false, message: "Gagal memperbarui kapasitas tong" });

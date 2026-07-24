@@ -115,7 +115,8 @@ export class KknService {
     });
     if (!binOrg) throw new Error("ORGANIC_BIN_NOT_FOUND");
     if (binOrg.status !== "ASSIGNED_TO_PIC") throw new Error("ORGANIC_BIN_MUST_BE_CLAIMED_FIRST");
-    if (binOrg.qrBatch?.assignedPicUserId !== kknUserId) throw new Error("ORGANIC_BIN_BATCH_PIC_MISMATCH");
+    if (binOrg.qrBatch?.assignedPicUserId !== kknUserId)
+      throw new Error("ORGANIC_BIN_BATCH_PIC_MISMATCH");
 
     // Validate Inorganic Bin
     const binIno = await prisma.bin.findUnique({
@@ -124,7 +125,8 @@ export class KknService {
     });
     if (!binIno) throw new Error("INORGANIC_BIN_NOT_FOUND");
     if (binIno.status !== "ASSIGNED_TO_PIC") throw new Error("INORGANIC_BIN_MUST_BE_CLAIMED_FIRST");
-    if (binIno.qrBatch?.assignedPicUserId !== kknUserId) throw new Error("INORGANIC_BIN_BATCH_PIC_MISMATCH");
+    if (binIno.qrBatch?.assignedPicUserId !== kknUserId)
+      throw new Error("INORGANIC_BIN_BATCH_PIC_MISMATCH");
 
     // Check if NIK already used
     if (data.nik) {
@@ -202,11 +204,11 @@ export class KknService {
           action: "REQUEST_ACTIVATE_BIN",
           userId: kknUserId,
           oldValue: { qrCodes: [binOrg.qrCode, binIno.qrCode] } as any,
-          newValue: { 
-            qrCodes: [binOrg.qrCode, binIno.qrCode], 
-            status: "PENDING_APPROVAL", 
+          newValue: {
+            qrCodes: [binOrg.qrCode, binIno.qrCode],
+            status: "PENDING_APPROVAL",
             ownerUserId: newWarga.id,
-            kknLocation: { latitude: data.latitude, longitude: data.longitude }
+            kknLocation: { latitude: data.latitude, longitude: data.longitude },
           } as any,
         },
       });
@@ -383,11 +385,11 @@ export class KknService {
   async claimQr(kknUserId: string, qrCode: string, latitude: number, longitude: number) {
     const bin = await prisma.bin.findUnique({
       where: { qrCode },
-      include: { qrBatch: true }
+      include: { qrBatch: true },
     });
     if (!bin) throw new Error("BIN_NOT_FOUND");
     if (bin.status !== "PRINTED") throw new Error("BIN_NOT_AVAILABLE");
-    
+
     // Assign bin to pic if it has qr batch
     const updatedBin = await prisma.$transaction(async (tx) => {
       // Create new batch if needed or use existing
@@ -395,7 +397,7 @@ export class KknService {
       if (!batchId) {
         const batchCode = `BATCH-${qrCode}`;
         let batch = await tx.qrBatch.findUnique({
-          where: { batchCode }
+          where: { batchCode },
         });
         if (!batch) {
           batch = await tx.qrBatch.create({
@@ -403,22 +405,22 @@ export class KknService {
               batchCode,
               assignedPicUserId: kknUserId,
               status: "DISTRIBUTED",
-              totalQr: 1
-            }
+              totalQr: 1,
+            },
           });
         } else if (batch.assignedPicUserId !== kknUserId) {
           await tx.qrBatch.update({
             where: { id: batch.id },
-            data: { assignedPicUserId: kknUserId }
+            data: { assignedPicUserId: kknUserId },
           });
         }
         batchId = batch.id;
       } else if (bin.qrBatch?.assignedPicUserId !== kknUserId) {
-         // Reassign if no pic
-         await tx.qrBatch.update({
-           where: { id: batchId },
-           data: { assignedPicUserId: kknUserId }
-         });
+        // Reassign if no pic
+        await tx.qrBatch.update({
+          where: { id: batchId },
+          data: { assignedPicUserId: kknUserId },
+        });
       }
 
       return tx.bin.update({
@@ -427,8 +429,8 @@ export class KknService {
           status: "ASSIGNED_TO_PIC",
           latitude,
           longitude,
-          qrBatchId: batchId
-        }
+          qrBatchId: batchId,
+        },
       });
     });
 
@@ -438,13 +440,13 @@ export class KknService {
   async handover(fromKknUserId: string, toKknUserId: string, rtRwId: number, notes?: string) {
     return prisma.$transaction(async (tx) => {
       const batches = await tx.qrBatch.findMany({
-        where: { assignedPicUserId: fromKknUserId }
+        where: { assignedPicUserId: fromKknUserId },
       });
-      
+
       for (const batch of batches) {
         await tx.qrBatch.update({
           where: { id: batch.id },
-          data: { assignedPicUserId: toKknUserId }
+          data: { assignedPicUserId: toKknUserId },
         });
       }
 
@@ -453,15 +455,25 @@ export class KknService {
           fromUserId: fromKknUserId,
           toUserId: toKknUserId,
           rtRwId,
-          notes
-        }
+          notes,
+        },
       });
 
       return handover;
     });
   }
 
-  async bantuInputFasilitas(kknUserId: string, data: { userId: string, rtRwId: number, nama: string, jenis: any, longitude: number, latitude: number }) {
+  async bantuInputFasilitas(
+    kknUserId: string,
+    data: {
+      userId: string;
+      rtRwId: number;
+      nama: string;
+      jenis: any;
+      longitude: number;
+      latitude: number;
+    }
+  ) {
     const facility = await prisma.facility.create({
       data: {
         nama: data.nama,
@@ -471,16 +483,16 @@ export class KknService {
         longitude: data.longitude,
         rtRwId: data.rtRwId,
         statusApproval: "PENDING",
-      }
+      },
     });
-    
+
     await prisma.pointHistory.create({
       data: {
         userId: kknUserId,
         points: 5,
         description: `Bantu warga input fasilitas GIS: ${data.nama}`,
-        kategori: "PARTISIPASI_STREAK"
-      }
+        kategori: "PARTISIPASI_STREAK",
+      },
     });
 
     return facility;

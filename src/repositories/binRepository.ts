@@ -36,7 +36,7 @@ export class BinRepository {
         qrBatch: {
           include: {
             assignedPic: true,
-          }
+          },
         },
       },
     });
@@ -477,12 +477,13 @@ export class BinRepository {
       });
 
       // Find default organic category
-      const organicCategory = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
-      const categoryId = organicCategory?.id;
-      if (!categoryId) throw new Error("DEFAULT_ORGANIC_CATEGORY_NOT_FOUND");
+      const organicCategory = await tx.wasteCategory.findFirst({
+        where: { name: { in: ["ORGANIC", "Organik"] } },
+      });
+      const categoryId = organicCategory?.id || null;
 
       const defaultRtRw = await tx.rtRwArea.findFirst();
-      if (!defaultRtRw) throw new Error("NO_RTRW_AREA_FOUND_IN_DB");
+      const rtRwId = defaultRtRw?.id || null;
 
       const binsData = [];
       for (let i = 0; i < quantity; i++) {
@@ -491,11 +492,11 @@ export class BinRepository {
         binsData.push({
           qrCode,
           status: BinStatus.PRINTED,
-          categoryId,
+          categoryId: categoryId as any,
           maxCapacityLiter: 25.0,
           currentVolumeLiter: 0.0,
           qrBatchId: batch.id,
-          rtRwId: defaultRtRw.id,
+          rtRwId: rtRwId as any,
         });
       }
 

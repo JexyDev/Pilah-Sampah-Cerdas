@@ -38,7 +38,12 @@ vi.mock("../utils/rbacScoping.js", () => {
   };
 });
 
-const { mockPrismaUserCreate, mockPrismaStudentKknCreate, mockPrismaUserFindUnique, mockPrismaTransaction } = vi.hoisted(() => {
+const {
+  mockPrismaUserCreate,
+  mockPrismaStudentKknCreate,
+  mockPrismaUserFindUnique,
+  mockPrismaTransaction,
+} = vi.hoisted(() => {
   const userCreate = vi.fn();
   const studentCreate = vi.fn();
   const userFindUnique = vi.fn().mockResolvedValue(null);
@@ -46,10 +51,12 @@ const { mockPrismaUserCreate, mockPrismaStudentKknCreate, mockPrismaUserFindUniq
     mockPrismaUserCreate: userCreate,
     mockPrismaStudentKknCreate: studentCreate,
     mockPrismaUserFindUnique: userFindUnique,
-    mockPrismaTransaction: vi.fn((callback) => callback({
-      user: { create: userCreate, findUnique: userFindUnique },
-      studentKkn: { create: studentCreate }
-    }))
+    mockPrismaTransaction: vi.fn((callback) =>
+      callback({
+        user: { create: userCreate, findUnique: userFindUnique },
+        studentKkn: { create: studentCreate },
+      })
+    ),
   };
 });
 
@@ -59,7 +66,7 @@ vi.mock("@prisma/client", () => {
       $transaction = mockPrismaTransaction;
       user = { create: mockPrismaUserCreate, findUnique: mockPrismaUserFindUnique };
       studentKkn = { create: mockPrismaStudentKknCreate };
-    }
+    },
   };
 });
 

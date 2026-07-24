@@ -59,6 +59,17 @@ export class IdeDaurUlangService {
         userId: ide.userId,
         points: 50,
         description: `Ide Daur Ulang Disetujui: ${ide.judul}`,
+        kategori: "IDE_DAUR_ULANG",
+      },
+    });
+
+    // Add to Social Feed
+    await prisma.socialFeed.create({
+      data: {
+        tipe: "RECYCLE_IDEA",
+        deskripsi: `Ide daur ulang "${ide.judul}" telah disetujui untuk diimplementasikan!`,
+        userId: ide.userId,
+        entityId: ide.id,
       },
     });
 

@@ -12,7 +12,9 @@ export class ResiduController {
   async getPendingLogs(req: Request, res: Response): Promise<void> {
     try {
       if (!req.user || req.user.role !== "PETUGAS_RESIDU") {
-        res.status(403).json({ error: "FORBIDDEN", message: "Only Petugas Residu can access this." });
+        res
+          .status(403)
+          .json({ error: "FORBIDDEN", message: "Only Petugas Residu can access this." });
         return;
       }
       const { PrismaClient } = await import("@prisma/client");
@@ -23,10 +25,10 @@ export class ResiduController {
         },
         include: {
           bin: {
-            include: { user: true, rtRw: true }
+            include: { user: true, rtRw: true },
           },
-          category: true
-        }
+          category: true,
+        },
       });
       res.status(200).json({ success: true, data: logs });
     } catch (error: any) {
@@ -41,48 +43,52 @@ export class ResiduController {
   async getJadwalHarian(req: Request, res: Response): Promise<void> {
     try {
       if (!req.user || req.user.role !== "PETUGAS_RESIDU") {
-        res.status(403).json({ error: "FORBIDDEN", message: "Only Petugas Residu can access this." });
+        res
+          .status(403)
+          .json({ error: "FORBIDDEN", message: "Only Petugas Residu can access this." });
         return;
       }
-      
+
       const userId = req.user.userId;
       // Get petugas assigned zone
       const { PrismaClient } = await import("@prisma/client");
       const prisma = new PrismaClient();
       const petugas = await prisma.petugasResidu.findUnique({ where: { userId: userId } });
-      
+
       const zoneSearch = petugas?.assignedZone || "";
-      
+
       // Get all bins > 70% in zone
       const bins = await prisma.bin.findMany({
         where: {
           status: "ACTIVE_BOUND",
           rtRw: {
             name: {
-              contains: zoneSearch
-            }
-          }
+              contains: zoneSearch,
+            },
+          },
         },
         include: {
           category: true,
           rtRw: true,
-          user: true
-        }
+          user: true,
+        },
       });
-      
-      const targetBins = bins.filter(b => {
+
+      const targetBins = bins.filter((b) => {
         const vol = Number(b.currentVolumeLiter);
         const max = Number(b.maxCapacityLiter);
-        return max > 0 && (vol / max) >= 0.7;
+        return max > 0 && vol / max >= 0.7;
       });
 
       res.status(200).json({
         success: true,
-        data: targetBins
+        data: targetBins,
       });
     } catch (error: any) {
       console.error("[ResiduController] getJadwalHarian error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memuat jadwal harian." });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memuat jadwal harian." });
     }
   }
 

@@ -1,0 +1,35 @@
+# Tracker QC Fix - TrashCare Production Candidate
+
+## Status Overview
+- [x] 1. MANAJEMEN TEMPAT SAMPAH — TOMBOL "TAMBAH TITIK" & KODE QR AUTO-GENERATE
+  - [x] Perbaiki/tambahkan tombol "Tambah Titik Tempat Sampah" di Halaman Manajemen Tempat Sampah.
+  - [x] Buat field Kode QR read-only/auto-generate dari backend dengan format `ORG0000XXXX` / `ANORG0000XXXX` (nomor urut lanjut dari yang ada).
+  - [x] Frontend: tampilkan preview read-only Kode QR saat form tambah dibuka (fetch dari API).
+  - [x] Backend: validasi tolak submit Kode QR kustom dari client.
+- [x] 2. MANAJEMEN LOKASI & PETA — DATA DUMMY REALISTIS + UI ZONA
+  - [x] Generate 30-50 data dummy lokasi warga via API (Coblong, lengkap GPS, nama, alamat, status tong).
+  - [x] Pastikan seluruh titik warga/tong muncul sebagai marker di peta.
+  - [x] Terapkan UI Zona di peta berdasarkan agregat kepatuhan warga (sesuai standar GIS 3-level zoom).
+  - [x] Verifikasi filter RT, pencarian, dan tombol tambah lokasi.
+- [x] 3. REVIEW DISKREPANSI KLASIFIKASI AI — DATA CONTOH REAL
+  - [x] Generate 5-10 kasus discrepancy riil via API (AI confidence > 90% vs Petugas input, status `PENDING_REVIEW`).
+  - [x] Lengkapi data kasus: foto, nama warga, nama petugas, waktu, AI confidence, AI vs Petugas classification.
+  - [x] Verifikasi tampilan detail kasus di dashboard Admin DLH dan fungsionalitas tombol "Setujui AI" / "Setujui Petugas".
+- [x] 4. REKAP SETORAN — BUG "GAGAL MEMUAT DATA DARI SERVER"
+  - [x] Investigasi log backend / response API (cek rename tabel/kolom KBBI, timeout, pagination).
+  - [x] Perbaiki akar masalah query/endpoint Rekap Setoran.
+  - [x] Tambahkan log error detail di server dan error handling ramah di UI.
+  - [x] Verifikasi filter/sortir dan ekspor CSV.
+- [x] 5. IDE DAUR ULANG — TAMBAH DATA DUMMY CONTOH REAL
+  - [x] Generate 5-10 ide daur ulang via API dengan variasi status (PENDING, APPROVED, REJECTED).
+  - [x] Verifikasi status APPROVED memicu +50 poin warga dan tayang di Social Feed.
+- [x] 6. JADWAL KEGIATAN — BUG "GAGAL MEMUAT DATA"
+  - [x] Investigasi penyebab (skema KBBI / rename tabel) pada jadwal kegiatan.
+  - [x] Perbaiki dan verifikasi data jadwal ter-load dengan benar.
+- [x] 7. KATEGORI TEMPAT SAMPAH — BUG "GAGAL MEMUAT DATA"
+  - [x] Investigasi penyebab (skema KBBI / rename tabel) pada kategori tempat sampah.
+  - [x] Perbaiki data kategori agar tampil beserta fotonya.
+- [x] 8. QC MENYELURUH & INVESTIGASI SISTEMIK
+  - [x] Scan seluruh backend untuk referensi nama tabel/kolom lama (belum ter-rename KBBI).
+  - [x] Jalankan QC mandiri ke semua 8 portal dan perbaiki halaman lain yang terdampak.
+  - [x] Buat ringkasan kelayakan rilis.
