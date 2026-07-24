@@ -42,7 +42,7 @@ const verifyOtpSchema = z.object({
 
 const updateProfileSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
-  email: z.string().email("Format email tidak valid").optional(),
+  email: z.union([z.string().email("Format email tidak valid"), z.literal("")]).optional(),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   fotoProfil: z.string().optional().nullable(),
@@ -65,7 +65,7 @@ const registerStaffSchema = z.object({
 const registerWargaSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   nama: z.string().min(1).optional(), // alias for name (mobile compat)
-  email: z.string().email("Format email tidak valid").optional(),
+  email: z.union([z.string().email("Format email tidak valid"), z.literal("")]).optional(),
   password: z.string().min(6, "Password minimal 6 karakter"),
   nik: z.string().optional(),
   phone: z.string().min(1, "No. Telfon diperlukan"),
