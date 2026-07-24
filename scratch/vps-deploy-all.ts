@@ -16,6 +16,14 @@ const SEED_FILES = [
   {
     local: path.resolve("scratch/seed-recycling-ideas.ts"),
     remote: "/var/www/pilah-sampah-cerdas/backend/scratch/seed-recycling-ideas.ts"
+  },
+  {
+    local: path.resolve("scratch/seed-schedules.ts"),
+    remote: "/var/www/pilah-sampah-cerdas/backend/scratch/seed-schedules.ts"
+  },
+  {
+    local: path.resolve("scratch/seed-attendance-demo.ts"),
+    remote: "/var/www/pilah-sampah-cerdas/backend/scratch/seed-attendance-demo.ts"
   }
 ];
 
@@ -102,12 +110,14 @@ function runBuildAndSeed() {
     npx tsc && \
     echo "Stopping backend pm2..." && \
     (echo 'Makerdotindo2026' | sudo -S pm2 stop psc-backend || true) && \
-    echo "Running primary seed..." && \
+     echo "Running primary seed..." && \
     npx prisma db seed && \
     echo "Running extra seeds..." && \
     npx tsx scratch/seed-more-warga.ts && \
     npx tsx scratch/seed-discrepancies.ts && \
     npx tsx scratch/seed-recycling-ideas.ts && \
+    npx tsx scratch/seed-schedules.ts && \
+    npx tsx scratch/seed-attendance-demo.ts && \
     echo "Starting backend pm2..." && \
     echo 'Makerdotindo2026' | sudo -S pm2 start psc-backend
   `;
