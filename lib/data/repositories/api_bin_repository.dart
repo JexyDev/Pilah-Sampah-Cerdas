@@ -449,11 +449,18 @@ class ApiBinRepository implements BinRepository {
         : WasteType.nonOrganic;
   }
 
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   /// Map response dari GET /bins/my (binService.getMyBins shape)
   BinEntity _mapMyBin(Map<String, dynamic> json) {
-    final double maxL = (json['maxCapacityLiter'] as num? ?? 25).toDouble();
-    final double currentL = (json['currentVolumeLiter'] as num? ?? 0)
-        .toDouble();
+    double maxL = _parseDouble(json['maxCapacityLiter']);
+    if (maxL <= 0) maxL = 25.0;
+    final double currentL = _parseDouble(json['currentVolumeLiter']);
 
     final String typeStr = (json['type'] ?? 'ORGANIC').toString().toUpperCase();
     final WasteType binType = typeStr == 'ORGANIC'
@@ -466,8 +473,8 @@ class ApiBinRepository implements BinRepository {
       binType: binType,
       currentVolumeL: currentL,
       maxCapacityL: maxL,
-      lat: (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      lng: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      lat: _parseDouble(json['latitude']),
+      lng: _parseDouble(json['longitude']),
       householdName: json['householdName']?.toString() ?? '',
       rt: json['rtRw']?.toString() ?? '',
       rw: '',
