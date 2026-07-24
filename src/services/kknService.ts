@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -183,6 +183,7 @@ export class KknService {
         data: {
           status: "PENDING_APPROVAL",
           userId: newWarga.id,
+          registeredByStudentId: kknUserId,
           rtRwId: data.rtRwId,
           maxCapacityLiter: data.maxCapacityLiter || 25.0, // default 25kg
           latitude: data.latitude ?? binOrg.latitude,
@@ -472,6 +473,7 @@ export class KknService {
       jenis: any;
       longitude: number;
       latitude: number;
+      foto?: string;
     }
   ) {
     const facility = await prisma.facility.create({
@@ -482,6 +484,7 @@ export class KknService {
         latitude: data.latitude,
         longitude: data.longitude,
         rtRwId: data.rtRwId,
+        foto: data.foto,
         statusApproval: "PENDING",
       },
     });

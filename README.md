@@ -1,4 +1,4 @@
-﻿# Backend Service — Pilah Sampah Cerdas
+﻿# Backend Service — TrashCare
 
 Layanan backend berbasis **Express.js (TypeScript)** untuk mengelola database PostgreSQL, antrian deteksi AI di Redis, dan sistem notifikasi/poin.
 

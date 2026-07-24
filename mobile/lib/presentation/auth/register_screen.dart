@@ -99,6 +99,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedRole == 'Mahasiswa') {
+      if (_tglMulaiKKN == null) {
+        _showToast('Tanggal mulai KKN wajib diisi');
+        return;
+      }
+      if (_tglSelesaiKKN == null) {
+        _showToast('Tanggal selesai KKN wajib diisi');
+        return;
+      }
+      if (_tglSelesaiKKN!.isBefore(_tglMulaiKKN!)) {
+        _showToast('Tanggal selesai tidak boleh sebelum tanggal mulai');
+        return;
+      }
+    }
+
     final normalizedPhone = _normalizePhone(phone);
     
     Map<String, dynamic> data = {
@@ -133,10 +148,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
 
     if (ok && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.main,
-        (route) => false,
-      );
+      if (_selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Registrasi Berhasil'),
+            content: const Text(
+              'Akun Anda berhasil didaftarkan dan sedang menunggu persetujuan (whitelist) dari Admin DLH. Silakan hubungi admin atau coba masuk kembali nanti.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pop(); // Back to Login
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.main,
+          (route) => false,
+        );
+      }
     } else if (mounted) {
       final authState = ref.read(authProvider);
       String errorText = 'Registrasi gagal. Silakan coba lagi.';
@@ -198,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Pilah Sampah Cerdas',
+                            'TrashCare',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -686,7 +723,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 Pilah Sampah Cerdas. All rights reserved.',
+                          '© 2026 TrashCare. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,

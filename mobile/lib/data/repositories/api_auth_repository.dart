@@ -108,6 +108,15 @@ class ApiAuthRepository implements AuthRepository {
       );
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
+        
+        if (role == 'Mahasiswa' || role == 'Petugas Residu' || role == 'Petugas') {
+          return UserEntity(
+            id: data['id']?.toString() ?? '',
+            name: data['name']?.toString() ?? '',
+            role: role == 'Mahasiswa' ? UserRole.mahasiswaKkn : UserRole.petugasResidu,
+          );
+        }
+
         final userMap = data['user'] as Map<String, dynamic>;
         final accessToken = data['accessToken'] as String;
         final refreshToken = data['refreshToken'] as String;

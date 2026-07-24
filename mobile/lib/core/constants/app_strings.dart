@@ -5,7 +5,7 @@ class AppStrings {
   AppStrings._();
 
   // --- App ---
-  static const String appName = 'Pilah Sampah Cerdas';
+  static const String appName = 'TrashCare';
   static const String appTagline = 'Sampah Terdaftar, Lingkungan Tertata';
 
   // --- Auth ---

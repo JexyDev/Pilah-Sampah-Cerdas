@@ -258,7 +258,7 @@ class _ForgotPasswordScreenState
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Pilah Sampah Cerdas',
+                            'TrashCare',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -330,7 +330,7 @@ class _ForgotPasswordScreenState
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 Pilah Sampah Cerdas. All rights reserved.',
+                          '© 2026 TrashCare. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,

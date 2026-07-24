@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -31,7 +31,7 @@ export class KknController {
       }
 
       // Validasi terhadap master QR (asumsi master QR format valid jika memenuhi kriteria misal diawali TS- atau ada di tabel Master)
-      // Untuk MVP Pilah Sampah Cerdas, kita simulasikan validasi format TS-XXXX
+      // Untuk MVP TrashCare, kita simulasikan validasi format TS-XXXX
       if (!qrCode.toUpperCase().startsWith("TS-")) {
         res.status(400).json({
           error: "INVALID_QR",

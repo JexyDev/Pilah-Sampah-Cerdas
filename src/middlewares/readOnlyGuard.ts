@@ -1,5 +1,5 @@
 /**
- * Project: Pilah Sampah Cerdas
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -54,7 +54,13 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
               (req.method === "PATCH" || req.method === "PUT") &&
               req.originalUrl.includes("/auth/kkn/whitelist");
 
-            if (!isResolveDiscrepancy && !isRegisterStaff && !isKknApproval) {
+            // Exception: ADMIN_DLH can generate and assign QR batches
+            const isQrBatchManagement =
+              role === "ADMIN_DLH" &&
+              (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") &&
+              (req.originalUrl.includes("/bins/generate-qr") || req.originalUrl.includes("/bins/qr-batch"));
+
+            if (!isResolveDiscrepancy && !isRegisterStaff && !isKknApproval && !isQrBatchManagement) {
               res.status(403).json({
                 error: "FORBIDDEN",
                 message: `Role ${role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
