@@ -69,8 +69,8 @@ const ManajemenMahasiswa: React.FC = () => {
     setEditId(mhs.id);
     setFormData({
       nama_lengkap: mhs.name || "",
-      nim: mhs.studentKkn?.nim || "",
-      universitas: mhs.studentKkn?.fakultas || "UNIKOM",
+      nim: mhs.studentProfile?.nim || "",
+      universitas: mhs.studentProfile?.fakultas || "UNIKOM",
       no_telepon: mhs.phone || "",
       status_aktif: mhs.status || "Aktif",
     });
@@ -155,9 +155,9 @@ const ManajemenMahasiswa: React.FC = () => {
                     <tr key={mhs.id} className="hover:bg-surface-container-lowest/50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold">{mhs.name}</div>
-                        <div className="text-on-surface-variant text-[12px]">{mhs.studentKkn?.nim || "-"}</div>
+                        <div className="text-on-surface-variant text-[12px]">{mhs.studentProfile?.nim || "-"}</div>
                       </td>
-                      <td className="p-4">{mhs.studentKkn?.fakultas || "-"}</td>
+                      <td className="p-4">{mhs.studentProfile?.fakultas || "-"}</td>
                       <td className="p-4">{mhs.phone}</td>
                       <td className="p-4">
                         <span className={`px-2 py-1 rounded-full text-[12px] font-bold ${
