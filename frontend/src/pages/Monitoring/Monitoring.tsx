@@ -8,7 +8,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore, type Bin } from "../../store/useMonitoringStore";
