@@ -42,6 +42,7 @@ import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
 import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
+import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -99,6 +100,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <Monitoring />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="monitoring-absen"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+              <MonitoringAbsen />
             </ProtectedRoute>
           }
         />

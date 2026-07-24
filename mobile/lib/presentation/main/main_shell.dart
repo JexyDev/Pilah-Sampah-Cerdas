@@ -4,7 +4,6 @@ import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/utils/responsive_utils.dart';
-import '../../core/router/app_router.dart';
 import '../providers/connectivity_provider.dart';
 import '../shared/widgets/offline_banner.dart';
 import '../beranda/beranda_screen.dart';

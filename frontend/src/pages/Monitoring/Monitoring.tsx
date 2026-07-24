@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -344,84 +344,131 @@ const Monitoring: React.FC = () => {
               />
 
               {/* Bins Layer Grouped by Household or RW Zona */}
+              {/* Bins Layer Grouped by Household or RW Zona */}
               {zoomLevel < 16 ? (
                 rwGroups.map((group, idx) => (
-                  <Marker
-                    key={`rw-${idx}`}
-                    position={[group.latitude, group.longitude]}
-                    icon={createRwIcon(group.totalBins)}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 text-center">
-                        <strong className="text-sm font-bold block mb-1">Zona RW</strong>
-                        <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
-                        <p className="text-[10px] text-primary italic">Zoom in untuk melihat detail</p>
-                      </div>
-                    </Popup>
-                  </Marker>
+                  <React.Fragment key={`rw-frag-${idx}`}>
+                    <Circle
+                      center={[group.latitude, group.longitude]}
+                      radius={150}
+                      pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.05, weight: 1, dashArray: "4,4" }}
+                    />
+                    <Marker
+                      position={[group.latitude, group.longitude]}
+                      icon={createRwIcon(group.totalBins)}
+                    >
+                      <Popup>
+                        <div className="text-xs p-1 text-center">
+                          <strong className="text-sm font-bold block mb-1">Zona RW</strong>
+                          <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
+                          <p className="text-[10px] text-primary italic">Zoom in untuk melihat detail</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
                 ))
               ) : (
                 householdGroups.map((group, idx) => {
-                // Determine highest status among bins in group
-                let maxPercentage = 0;
-                group.bins.forEach(bin => {
-                  const vol = Number(bin.currentVolumeLiter);
-                  const max = Number(bin.maxCapacityLiter);
-                  const pct = max > 0 ? (vol / max) * 100 : 0;
-                  if (pct > maxPercentage) maxPercentage = pct;
-                });
+                  // Determine highest status among bins in group
+                  let maxPercentage = 0;
+                  group.bins.forEach(bin => {
+                    const vol = Number(bin.currentVolumeLiter);
+                    const max = Number(bin.maxCapacityLiter);
+                    const pct = max > 0 ? (vol / max) * 100 : 0;
+                    if (pct > maxPercentage) maxPercentage = pct;
+                  });
 
-                let status: "aman" | "waspada" | "penuh" = "aman";
-                if (maxPercentage >= 90) status = "penuh";
-                else if (maxPercentage >= 70) status = "waspada";
+                  let status: "aman" | "waspada" | "penuh" = "aman";
+                  let color = "#10B981"; // green
+                  if (maxPercentage >= 90) {
+                    status = "penuh";
+                    color = "#ef4444"; // red
+                  } else if (maxPercentage >= 70) {
+                    status = "waspada";
+                    color = "#f59e0b"; // yellow
+                  }
 
-                return (
-                  <Marker
-                    key={`hh-${idx}`}
-                    position={[group.latitude, group.longitude]}
-                    icon={createBinIcon(status)}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 min-w-[150px]">
-                        <strong className="text-sm font-bold block mb-2 border-b pb-1">Data Tong Rumah Tangga</strong>
-                        {group.bins.map(bin => {
-                          const vol = Number(bin.currentVolumeLiter);
-                          const max = Number(bin.maxCapacityLiter);
-                          const percentage = max > 0 ? (vol / max) * 100 : 0;
-                          return (
-                            <div key={bin.id} className="mb-2 last:mb-0">
-                              <span className="font-semibold">{bin.category.name}</span>
-                              <span className="block text-gray-500 text-[10px]">QR: {bin.qrCode}</span>
-                              <span className="block text-gray-700">Terisi: {percentage.toFixed(1)}% ({vol}L / {max}L)</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
+                  return (
+                    <React.Fragment key={`hh-frag-${idx}`}>
+                      <Circle
+                        center={[group.latitude, group.longitude]}
+                        radius={20}
+                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.12, weight: 1 }}
+                      />
+                      <Marker
+                        position={[group.latitude, group.longitude]}
+                        icon={createBinIcon(status)}
+                      >
+                        <Popup>
+                          <div className="text-xs p-1 min-w-[150px]">
+                            <strong className="text-sm font-bold block mb-2 border-b pb-1">Data Tong Rumah Tangga</strong>
+                            {group.bins.map(bin => {
+                              const vol = Number(bin.currentVolumeLiter);
+                              const max = Number(bin.maxCapacityLiter);
+                              const percentage = max > 0 ? (vol / max) * 100 : 0;
+                              return (
+                                <div key={bin.id} className="mb-2 last:mb-0">
+                                  <span className="font-semibold">{bin.category.name}</span>
+                                  <span className="block text-gray-500 text-[10px]">QR: {bin.qrCode}</span>
+                                  <span className="block text-gray-700">Terisi: {percentage.toFixed(1)}% ({vol}L / {max}L)</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </React.Fragment>
+                  );
                 })
               )}
 
               {/* Facilities Layer */}
               {facilities
                 .filter((f) => f.latitude && f.longitude)
-                .map((f) => (
-                  <Marker
-                    key={f.id}
-                    position={[Number(f.latitude), Number(f.longitude)]}
-                    icon={createFacilityIcon(f.jenis)}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1">
-                        <strong className="text-sm font-bold block mb-0.5 text-primary uppercase">{f.jenis.replace("_", " ")}</strong>
-                        <span className="font-bold text-gray-800 block text-xs">{f.nama}</span>
-                        <span className="block text-gray-500 mt-1">PIC: {f.pic}</span>
-                        {f.kapasitas && <span className="block text-gray-600">Kapasitas: {f.kapasitas} Kg</span>}
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
+                .map((f) => {
+                  const lat = Number(f.latitude);
+                  const lng = Number(f.longitude);
+                  
+                  // Zone/coverage indicator based on facility type
+                  let zoneColor = "#8b5cf6"; // purple
+                  let zoneRadius = 60;
+                  if (f.jenis === "loseda" || f.jenis === "rumah_maggot") {
+                    zoneColor = "#10b981"; // green
+                    zoneRadius = f.jenis === "loseda" ? 25 : 75;
+                  } else if (f.jenis === "bank_sampah") {
+                    zoneColor = "#3b82f6"; // blue
+                    zoneRadius = 100;
+                  } else if (f.jenis === "tpa" || f.jenis === "residu") {
+                    zoneColor = "#ef4444"; // red
+                    zoneRadius = 150;
+                  } else if (f.jenis === "flash_drop") {
+                    zoneColor = "#eab308"; // gold/yellow
+                    zoneRadius = 80;
+                  }
+
+                  return (
+                    <React.Fragment key={`fac-frag-${f.id}`}>
+                      <Circle
+                        center={[lat, lng]}
+                        radius={zoneRadius}
+                        pathOptions={{ color: zoneColor, fillColor: zoneColor, fillOpacity: 0.08, weight: 1, dashArray: "2,2" }}
+                      />
+                      <Marker
+                        position={[lat, lng]}
+                        icon={createFacilityIcon(f.jenis)}
+                      >
+                        <Popup>
+                          <div className="text-xs p-1">
+                            <strong className="text-sm font-bold block mb-0.5 text-primary uppercase">{f.jenis.replace("_", " ")}</strong>
+                            <span className="font-bold text-gray-800 block text-xs">{f.nama}</span>
+                            <span className="block text-gray-500 mt-1">PIC: {f.pic}</span>
+                            {f.kapasitas && <span className="block text-gray-600">Kapasitas: {f.kapasitas} Kg</span>}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </React.Fragment>
+                  );
+                })}
             </MapContainer>
           </div>
         </div>

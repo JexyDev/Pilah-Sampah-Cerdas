@@ -159,6 +159,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
         )}
 
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+          <NavItem to="/monitoring-absen" icon={Compass} label="Monitoring Absen KKN" />
+        )}
+
         {hasAccess([
           "SUPER_ADMIN",
           "ADMIN_DLH",

@@ -10,6 +10,16 @@ async function main() {
 
   const schedules = [
     {
+      title: "Uji Nyata Absensi Radius KKN",
+      category: "Monitoring",
+      location: "PT Makerindo Prima Solusi",
+      date: new Date(), // Hari ini
+      time: "08:00 - 18:00 WIB",
+      latitude: -6.974052,
+      longitude: 107.663588,
+      radius: 100,
+    },
+    {
       title: "Penyuluhan Kompos Rumah Tangga",
       category: "Edukasi",
       location: "Bale RW 06 Kelurahan Dago",

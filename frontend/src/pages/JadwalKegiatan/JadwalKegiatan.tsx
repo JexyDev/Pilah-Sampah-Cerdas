@@ -10,6 +10,35 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+
+// Fix default Leaflet icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+
+const LocationPickerMap: React.FC<{
+  lat: any;
+  lng: any;
+  onChange: (lat: number, lng: number) => void;
+}> = ({ lat, lng, onChange }) => {
+  useMapEvents({
+    click(e) {
+      onChange(e.latlng.lat, e.latlng.lng);
+    },
+  });
+
+  const parsedLat = lat !== "" && lat !== null && lat !== undefined ? parseFloat(String(lat)) : NaN;
+  const parsedLng = lng !== "" && lng !== null && lng !== undefined ? parseFloat(String(lng)) : NaN;
+
+  return !isNaN(parsedLat) && !isNaN(parsedLng) ? (
+    <Marker position={[parsedLat, parsedLng]} />
+  ) : null;
+};
 
 const JadwalKegiatan: React.FC = () => {
   const { user } = useAuthStore();
@@ -21,12 +50,15 @@ const JadwalKegiatan: React.FC = () => {
 
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     title: "",
     date: "",
     time: "",
     category: "Pengangkutan",
     location: "",
+    latitude: "",
+    longitude: "",
+    radius: 100,
   });
 
   const fetchSchedules = async () => {
@@ -79,10 +111,27 @@ const JadwalKegiatan: React.FC = () => {
       toast.error("Format tanggal tidak valid");
       return;
     }
+    if (formData.latitude && formData.longitude) {
+      const lat = parseFloat(String(formData.latitude));
+      const lng = parseFloat(String(formData.longitude));
+      
+      // Bounding box Coblong: lat [-6.9100, -6.8600], lng [107.6000, 107.6500]
+      // Bounding box Makerindo (Pesona Ciganitri): lat [-6.9900, -6.9500], lng [107.6400, 107.6800]
+      const isInCoblong = (lat >= -6.9100 && lat <= -6.8600 && lng >= 107.6000 && lng <= 107.6500);
+      const isInMakerindo = (lat >= -6.9900 && lat <= -6.9500 && lng >= 107.6400 && lng <= 107.6800);
+      if (!isInCoblong && !isInMakerindo) {
+        toast.error("Lokasi harus berada di dalam wilayah Kecamatan Coblong atau dekat kantor Makerindo (Pesona Ciganitri)!");
+        return;
+      }
+    }
+
     try {
       const payload = {
         ...formData,
         date: new Date(formData.date).toISOString(), // kirim ISO 8601 ke backend
+        latitude: formData.latitude !== "" ? parseFloat(String(formData.latitude)) : null,
+        longitude: formData.longitude !== "" ? parseFloat(String(formData.longitude)) : null,
+        radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 100,
       };
 
       if (editId) {
@@ -96,7 +145,7 @@ const JadwalKegiatan: React.FC = () => {
       setIsModalOpen(false);
       setEditId(null);
       fetchSchedules();
-      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" });
+      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100 });
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menyimpan jadwal";
       toast.error(errMsg);
@@ -122,6 +171,9 @@ const JadwalKegiatan: React.FC = () => {
       time: schedule.time || "",
       category: schedule.category || "Pengangkutan",
       location: schedule.location || "",
+      latitude: schedule.latitude || "",
+      longitude: schedule.longitude || "",
+      radius: schedule.radius || 100,
     });
     setIsModalOpen(true);
   };
@@ -442,7 +494,7 @@ const JadwalKegiatan: React.FC = () => {
                 <h3 className="text-[18px] font-bold text-on-surface">{editId ? "Edit Jadwal Kegiatan" : "Buat Jadwal Baru"}</h3>
                 <button
                   className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors"
-                  onClick={() => { setIsModalOpen(false); setEditId(null); setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" }); }}
+                  onClick={() => { setIsModalOpen(false); setEditId(null); setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100 }); }}
                 >
                   <X />
                 </button>
@@ -517,11 +569,63 @@ const JadwalKegiatan: React.FC = () => {
                     placeholder="Contoh: Balai RW 06"
                   />
                 </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <label className="text-[12px] font-bold text-on-surface-variant">Latitude</label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      value={formData.latitude}
+                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      placeholder="Contoh: -6.8915"
+                    />
+                  </div>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <label className="text-[12px] font-bold text-on-surface-variant">Longitude</label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      value={formData.longitude}
+                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      placeholder="Contoh: 107.6107"
+                    />
+                  </div>
+                  <div className="w-[100px] flex flex-col gap-1.5">
+                    <label className="text-[12px] font-bold text-on-surface-variant">Radius (m)</label>
+                    <input
+                      type="number"
+                      value={formData.radius}
+                      onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      placeholder="100"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-bold text-on-surface-variant">
+                    Pilih Lokasi di Peta (Klik untuk drop pin)
+                  </label>
+                  <div className="h-[180px] rounded-lg overflow-hidden border border-outline-variant z-0">
+                    <MapContainer center={[-6.8915, 107.6107]} zoom={14} style={{ height: "100%", width: "100%" }}>
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <LocationPickerMap
+                        lat={formData.latitude}
+                        lng={formData.longitude}
+                        onChange={(lat, lng) => setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))}
+                      />
+                    </MapContainer>
+                  </div>
+                </div>
               </div>
               <div className="p-5 border-t border-outline-variant/30 bg-surface-container-lowest flex justify-end gap-3">
                 <button
                   className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors"
-                  onClick={() => { setIsModalOpen(false); setEditId(null); setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" }); }}
+                  onClick={() => { setIsModalOpen(false); setEditId(null); setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100 }); }}
                 >
                   Batal
                 </button>

@@ -61,6 +61,8 @@ model User {
   fromHandovers KknHandoverHistory[] @relation("FromStudentHandovers")
   toHandovers   KknHandoverHistory[] @relation("ToStudentHandovers")
   residuLogs        ResiduLog[]
+  attendances ActivityAttendance[] @relation("StudentAttendance")
+  locations   StudentLocation[]    @relation("StudentLocations")
 
   @@map("pengguna")
 }
@@ -474,8 +476,12 @@ model Schedule {
   time      String?
   category  String
   location  String?
+  latitude  Decimal? @db.Decimal(11, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+  radius    Int?     @default(100)
   createdAt DateTime @default(now()) @map("dibuat_pada")
   updatedAt DateTime @updatedAt @map("diperbarui_pada")
+  attendances ActivityAttendance[]
 
   @@map("jadwal")
 }
@@ -574,5 +580,33 @@ model KknHandoverHistory {
   handoverDate  DateTime @default(now()) @map("tanggal_serah_terima")
 
   @@map("riwayat_serah_terima_kkn")
+}
+
+model ActivityAttendance {
+  id          String   @id @default(uuid())
+  studentId   String   @map("id_mahasiswa")
+  student     User     @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  scheduleId  String   @map("id_jadwal")
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  attendedAt  DateTime @default(now()) @map("waktu_absen")
+  method      String   @map("metode") // "OTOMATIS" / "MANUAL"
+  latitude    Decimal  @db.Decimal(11, 8) @map("latitude")
+  longitude   Decimal  @db.Decimal(11, 8) @map("longitude")
+  status      String   @default("DALAM_RADIUS") @map("status") // "DALAM_RADIUS", "LEPAS_RADIUS"
+
+  @@unique([studentId, scheduleId])
+  @@map("kehadiran_kegiatan")
+}
+
+model StudentLocation {
+  id         String   @id @default(uuid())
+  studentId  String   @map("id_mahasiswa")
+  student    User     @relation("StudentLocations", fields: [studentId], references: [id], onDelete: Cascade)
+  latitude   Decimal  @db.Decimal(11, 8)
+  longitude  Decimal  @db.Decimal(11, 8)
+  recordedAt DateTime @default(now()) @map("direkam_pada")
+
+  @@index([recordedAt])
+  @@map("lokasi_mahasiswa")
 }
 
