@@ -60,4 +60,18 @@ export const scheduleController = {
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   },
+
+  deleteSchedule: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await scheduleService.deleteSchedule(id);
+      res.status(200).json({
+        success: true,
+        message: "Jadwal berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("[ScheduleController] deleteSchedule error:", error);
+      res.status(500).json({ success: false, message: "Gagal menghapus jadwal" });
+    }
+  },
 };

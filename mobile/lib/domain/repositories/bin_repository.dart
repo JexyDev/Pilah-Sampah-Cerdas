@@ -39,6 +39,15 @@ abstract class BinRepository {
     double? longitude,
   });
 
+  /// Aktivasi beberapa tong sekaligus secara atomic
+  Future<List<BinEntity>> activateBinsBatch({
+    required List<String> qrSerials,
+    required String userId,
+    required String householdId,
+    double? latitude,
+    double? longitude,
+  });
+
   /// Ajukan pengosongan tong — FR (prd.md §3.1, sdd.md §7.1).
   Future<BinResetEntity> submitResetRequest({
     required String binId,

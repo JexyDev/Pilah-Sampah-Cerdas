@@ -27,4 +27,10 @@ export const scheduleService = {
       data,
     });
   },
+
+  deleteSchedule: async (id: string) => {
+    return prisma.schedule.delete({
+      where: { id },
+    });
+  },
 };

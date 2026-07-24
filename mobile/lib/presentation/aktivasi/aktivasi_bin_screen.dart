@@ -148,6 +148,11 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
     double? lat;
     double? lng;
 
+    final user = ref.read(authProvider).user;
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final double orgCapacity = args?['orgCapacity'] ?? 20.0;
+    final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
+
     if (PlatformUtils.isMobile) {
       setState(() => _localLoading = true);
       try {
@@ -167,11 +172,6 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         }
       }
     }
-
-    final user = ref.read(authProvider).user;
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final double orgCapacity = args?['orgCapacity'] ?? 20.0;
-    final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
 
     final List<String> serials = [];
     if (_qrOrganik.isNotEmpty) serials.add(_qrOrganik);
@@ -208,6 +208,8 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         return 'Tong ini sudah aktif dan terdaftar.';
       case 'BIN_NOT_FOUND':
         return 'QR Serial tidak terdaftar di sistem.';
+      case 'BIN_CATEGORY_DUPLICATE':
+        return msg ?? 'Kategori tong sudah terdaftar untuk warga ini.';
       default:
         return msg ?? 'Terjadi kesalahan. Silakan coba lagi.';
     }
