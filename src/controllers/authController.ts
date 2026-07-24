@@ -97,6 +97,8 @@ const registerKknSchema = registerStaffSchema.extend({
 const registerPetugasSchema = registerStaffSchema.extend({
   noWa: z.string().min(1, "WhatsApp diperlukan"),
   assignedZone: z.string().optional(),
+  rtRw: z.string().optional(),
+  kelurahan: z.string().optional(),
 });
 
 export class AuthController {
@@ -660,7 +662,7 @@ export class AuthController {
       }
 
       const result = await authService.registerWarga(
-        userData,
+        { ...userData, rtRwId: resolvedRtRwId },
         householdData,
         qrCode || undefined,
         wargaSubtype,
@@ -746,14 +748,23 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { noWa, assignedZone, ...userData } = parsed.data;
+      const { noWa, assignedZone, rtRw, kelurahan, ...userData } = parsed.data;
+
+      let resolvedRtRwId: number | undefined;
+      if (rtRw || kelurahan) {
+        resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
+      }
+
       const petugasData = {
         nama: userData.name,
         noWa,
         assignedZone,
       };
 
-      const result = await authService.registerPetugasResidu(userData, petugasData);
+      const result = await authService.registerPetugasResidu(
+        { ...userData, rtRwId: resolvedRtRwId },
+        petugasData
+      );
       res.status(201).json({ success: true, data: { id: result.user.id, name: result.user.name } });
     } catch (error: any) {
       res

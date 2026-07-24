@@ -270,6 +270,10 @@ export class AuthRepository {
             where: { id: bin.id },
             data: {
               status: "PENDING_APPROVAL",
+              userId: user.id,
+              rtRwId: user.rtRwId ?? householdData.rtRwId,
+              latitude: householdData.latitude,
+              longitude: householdData.longitude,
             },
           });
 

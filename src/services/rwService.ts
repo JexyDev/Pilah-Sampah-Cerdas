@@ -153,45 +153,21 @@ export const rwService = {
   },
 
   getPendingPetugas: async (rtRwId: number) => {
-    // Cari petugas yang melamar di RW tersebut
-    // Karena PetugasResidu tidak terikat rtRwId, kita asumsikan wilayah diambil dari kelurahan yg mencakup rtRwId, atau assignedZone.
-    // Untuk simplifikasi kita tampilkan yang pending di assignedZone = nama RW
-    const rw = await prisma.rtRwArea.findUnique({ where: { id: rtRwId } });
-    if (!rw) return [];
-
-    const rwPart =
-      rw.name
-        .split("/")
-        .map((s) => s.trim())
-        .find((s) => s.startsWith("RW")) || rw.name;
-
     return prisma.petugasResidu.findMany({
       where: {
         whitelistStatus: "PENDING",
-        OR: [
-          { assignedZone: { contains: rwPart, mode: "insensitive" } },
-          { assignedZone: { contains: rw.name, mode: "insensitive" } },
-        ],
+        user: { rtRwId },
       },
       include: { user: true },
     });
   },
 
   verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rtRwId: number) => {
-    const rw = await prisma.rtRwArea.findUnique({ where: { id: rtRwId } });
-    if (!rw) throw new Error("RW Area not found");
-    const rwPart =
-      rw.name
-        .split("/")
-        .map((s) => s.trim())
-        .find((s) => s.startsWith("RW")) || rw.name;
-
-    const petugasCheck = await prisma.petugasResidu.findUnique({ where: { id: petugasId } });
-    if (
-      !petugasCheck ||
-      (!petugasCheck.assignedZone?.includes(rwPart) &&
-        !petugasCheck.assignedZone?.includes(rw.name))
-    ) {
+    const petugasCheck = await prisma.petugasResidu.findUnique({
+      where: { id: petugasId },
+      include: { user: true },
+    });
+    if (!petugasCheck || petugasCheck.user.rtRwId !== rtRwId) {
       throw new Error("Petugas is not in your RW area");
     }
 
