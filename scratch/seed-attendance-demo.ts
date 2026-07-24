@@ -76,8 +76,13 @@ async function main() {
   const hashedPassword = await hashPassword("password123");
 
   for (const s of studentNames) {
-    let user = await prisma.user.findUnique({
-      where: { phone: s.phone },
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: s.phone },
+          { email: s.email }
+        ]
+      },
     });
 
     if (!user) {
@@ -92,22 +97,30 @@ async function main() {
           status: "Aktif",
         },
       });
+      console.log(`Membuat akun Mahasiswa KKN: ${s.name}`);
+    }
 
+    // Ensure studentKkn profile exists
+    const profile = await prisma.studentKkn.findUnique({
+      where: { userId: user.id },
+    });
+    if (!profile) {
       await prisma.studentKkn.create({
         data: {
           userId: user.id,
           nim: s.nim,
           jurusan: "Informatika",
           fakultas: "Teknik",
-          noWa: s.phone,
+          noWa: user.phone || s.phone,
           startDate: new Date(),
           endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           whitelistStatus: "APPROVED",
           assignedPolygonId: defaultArea.id,
         },
       });
-      console.log(`Membuat akun Mahasiswa KKN: ${s.name}`);
+      console.log(`Membuat profil KKN untuk: ${s.name}`);
     }
+
     studentsList.push(user);
   }
 
