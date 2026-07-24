@@ -140,11 +140,12 @@ class PoinScreen extends ConsumerWidget {
   }
 
   Widget _buildScheduleStatusCard() {
-    // Mock the status based on current time
+    // Mengikuti aturan operasional:
+    // Pagi: 06:00 - 08:00
+    // Sore: 16:00 - 18:00
     final now = DateTime.now();
     final isPagiOver = now.hour >= 8;
-    final isSoreOver = now.hour >= 17;
-    // Normally this would be checked against actual user data for today
+    final isSoreOver = now.hour >= 18;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -176,8 +177,8 @@ class PoinScreen extends ConsumerWidget {
               Expanded(
                 child: _ScheduleTimeItem(
                   title: 'Pagi',
-                  time: '07:00 - 08:00',
-                  status: isPagiOver ? 'Terlewat' : 'Tersedia', // Mock status
+                  time: '06:00 - 08:00',
+                  status: isPagiOver ? 'Terlewat' : 'Tersedia',
                   statusColor: isPagiOver ? AppColors.dangerRed : AppColors.primaryGreen,
                   icon: Icons.wb_sunny_rounded,
                 ),
@@ -191,8 +192,8 @@ class PoinScreen extends ConsumerWidget {
               Expanded(
                 child: _ScheduleTimeItem(
                   title: 'Sore',
-                  time: '16:00 - 17:00',
-                  status: isSoreOver ? 'Terlewat' : 'Tersedia', // Mock status
+                  time: '16:00 - 18:00',
+                  status: isSoreOver ? 'Terlewat' : 'Tersedia',
                   statusColor: isSoreOver ? AppColors.dangerRed : AppColors.primaryGreen,
                   icon: Icons.nights_stay_rounded,
                 ),
