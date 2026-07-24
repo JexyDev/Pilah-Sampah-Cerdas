@@ -15,7 +15,7 @@ export const adminMahasiswaService = {
     if (search) {
       whereClause.OR = [
         { name: { contains: search, mode: "insensitive" } },
-        { studentKkn: { nim: { contains: search, mode: "insensitive" } } },
+        { studentProfile: { nim: { contains: search, mode: "insensitive" } } },
       ];
     }
 
@@ -23,7 +23,7 @@ export const adminMahasiswaService = {
       prisma.user.findMany({
         where: whereClause,
         include: {
-          studentKkn: {
+          studentProfile: {
             include: {
               assignedPolygon: true,
             },
@@ -68,7 +68,7 @@ export const adminMahasiswaService = {
         },
       });
 
-      const studentKkn = await tx.studentKkn.create({
+      const studentProfile = await tx.studentKkn.create({
         data: {
           userId: user.id,
           nim: data.nim,
@@ -85,7 +85,7 @@ export const adminMahasiswaService = {
         },
       });
 
-      return { user, studentKkn };
+      return { user, studentProfile };
     });
   },
 
@@ -108,9 +108,9 @@ export const adminMahasiswaService = {
         },
       });
 
-      const studentKkn = await tx.studentKkn.findUnique({ where: { userId: id } });
+      const studentProfile = await tx.studentKkn.findUnique({ where: { userId: id } });
       let updatedStudent = null;
-      if (studentKkn) {
+      if (studentProfile) {
         updatedStudent = await tx.studentKkn.update({
           where: { userId: id },
           data: {
@@ -125,7 +125,7 @@ export const adminMahasiswaService = {
         });
       }
 
-      return { user, studentKkn: updatedStudent };
+      return { user, studentProfile: updatedStudent };
     });
   },
 
