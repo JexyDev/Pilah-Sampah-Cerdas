@@ -33,4 +33,18 @@ export const scheduleService = {
       where: { id },
     });
   },
+
+  updateSchedule: async (id: string, data: {
+    title?: string;
+    date?: Date;
+    time?: string;
+    category?: string;
+    location?: string;
+  }) => {
+    return prisma.schedule.update({
+      where: { id },
+      data,
+    });
+  },
 };
+

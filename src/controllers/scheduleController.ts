@@ -74,4 +74,40 @@ export const scheduleController = {
       res.status(500).json({ success: false, message: "Gagal menghapus jadwal" });
     }
   },
+
+  updateSchedule: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { title, date, time, category, location } = req.body;
+      
+      let parsedDate;
+      if (date) {
+        parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+          res.status(400).json({
+            success: false,
+            error: "VALIDATION_ERROR",
+            message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)",
+          });
+          return;
+        }
+      }
+
+      const schedule = await scheduleService.updateSchedule(id, {
+        title,
+        date: parsedDate,
+        time,
+        category,
+        location,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: schedule,
+      });
+    } catch (error) {
+      console.error("[ScheduleController] updateSchedule error:", error);
+      res.status(500).json({ success: false, message: "Gagal mengupdate jadwal" });
+    }
+  },
 };
