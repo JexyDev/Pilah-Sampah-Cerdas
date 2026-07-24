@@ -102,7 +102,7 @@ async function runTest() {
           Authorization: `Bearer ${wargaToken}`
         },
         body: JSON.stringify({
-          qrCodes: [bin.qrCode],
+          qrCodes: [bin!.qrCode],
           latitude: -6.8915,
           longitude: 107.610
         })
@@ -121,7 +121,7 @@ async function runTest() {
 
     // Approve the bin manually for test (since Warga activation makes it PENDING_APPROVAL)
     await prisma.bin.update({
-      where: { id: bin.id },
+      where: { id: bin!.id },
       data: { status: 'ACTIVE_BOUND' }
     });
     console.log("Bin approved to ACTIVE_BOUND.");
@@ -136,7 +136,7 @@ async function runTest() {
           Authorization: `Bearer ${wargaToken}`
         },
         body: JSON.stringify({
-          qrCode: bin.qrCode,
+          qrCode: bin!.qrCode,
           detectedType: "Organik",
           estimatedVolume: 2.5, // liter
           householdId: household.id,

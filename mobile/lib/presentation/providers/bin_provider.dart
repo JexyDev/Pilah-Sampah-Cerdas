@@ -224,7 +224,7 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
       
       // Panggil measureBin sesuai jenis QR Code secara berurutan
       for (final qr in qrSerials) {
-        final isOrganik = !qr.toUpperCase().contains('NON') && !qr.toUpperCase().contains('ANORG');
+        final isOrganik = !qr.toUpperCase().contains('NON') && !qr.toUpperCase().contains('ANORG') && !qr.toUpperCase().startsWith('ANO');
         await _binRepository.measureBin(
           qrCode: qr,
           binType: isOrganik ? WasteType.organic : WasteType.nonOrganic,
