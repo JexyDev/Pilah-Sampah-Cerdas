@@ -462,8 +462,8 @@ class ApiBinRepository implements BinRepository {
     if (maxL <= 0) maxL = 25.0;
     final double currentL = _parseDouble(json['currentVolumeLiter']);
 
-    final String typeStr = (json['type'] ?? 'ORGANIC').toString().toUpperCase();
-    final WasteType binType = typeStr == 'ORGANIC'
+    final String typeStr = (json['category'] ?? json['type'] ?? 'ORGANIC').toString().toUpperCase();
+    final WasteType binType = (typeStr == 'ORGANIC' || typeStr == 'ORGANIK')
         ? WasteType.organic
         : WasteType.nonOrganic;
 
