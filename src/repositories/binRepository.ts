@@ -344,6 +344,7 @@ export class BinRepository {
       include: {
         category: true,
         rtRw: true,
+        kelurahan: true,
         binOwnerships: {
           include: {
             user: true,

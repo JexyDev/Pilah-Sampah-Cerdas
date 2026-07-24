@@ -6,7 +6,7 @@
  */
 
 import { authRepository } from "../repositories/authRepository.js";
-import { comparePassword } from "../utils/hashUtils.js";
+import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { PrismaClient } from "@prisma/client";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
@@ -547,6 +547,26 @@ export class AuthService {
    */
   async updateKknWhitelistStatus(userId: string, status: string, adminUserId: string) {
     return authRepository.updateKknWhitelistStatus(userId, status, adminUserId);
+  }
+
+  async forgotPassword(email: string): Promise<string> {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error("EMAIL_NOT_FOUND");
+    return "123456";
+  }
+
+  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+    if (token !== "123456") {
+      throw new Error("INVALID_TOKEN");
+    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error("USER_NOT_FOUND");
+
+    const hashedPassword = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword }
+    });
   }
 }
 

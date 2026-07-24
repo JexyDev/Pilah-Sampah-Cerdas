@@ -804,6 +804,36 @@ export class AuthController {
         .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  async forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      const token = await authService.forgotPassword(email);
+      res.status(200).json({ success: true, token });
+    } catch (error: any) {
+      if (error.message === "EMAIL_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "Email tidak terdaftar" });
+      } else {
+        res.status(500).json({ success: false, message: error.message });
+      }
+    }
+  }
+
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, token, newPassword } = req.body;
+      await authService.resetPassword(email, token, newPassword);
+      res.status(200).json({ success: true, message: "Kata sandi berhasil disetel ulang" });
+    } catch (error: any) {
+      if (error.message === "INVALID_TOKEN") {
+        res.status(400).json({ success: false, message: "Kode verifikasi salah atau kedaluwarsa" });
+      } else if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "User tidak ditemukan" });
+      } else {
+        res.status(500).json({ success: false, message: error.message });
+      }
+    }
+  }
 }
 
 export const authController = new AuthController();
