@@ -124,8 +124,22 @@ async function main() {
     studentsList.push(user);
   }
 
+  // Filter out duplicates by user ID to guarantee unique students in loop
+  const uniqueStudents = [];
+  const seenIds = new Set();
+  for (const student of studentsList) {
+    if (!seenIds.has(student.id)) {
+      seenIds.add(student.id);
+      uniqueStudents.push(student);
+    }
+  }
+
+  // Ensure we have at least 10 unique items by padding with existing if needed, 
+  // but unique is the priority to prevent database constraints
+  const finalList = uniqueStudents;
+
   // 4. Bersihkan koordinat lama mahasiswa KKN ini agar tidak konflik
-  const studentIds = studentsList.map(s => s.id);
+  const studentIds = finalList.map(s => s.id);
   await prisma.studentLocation.deleteMany({
     where: { studentId: { in: studentIds } },
   });
@@ -145,44 +159,61 @@ async function main() {
     { lat: -6.974300, lng: 107.663800 }, // ~38m
   ];
 
-  for (let i = 0; i < 4; i++) {
-    const student = studentsList[i];
+  const limitA = Math.min(4, finalList.length);
+  for (let i = 0; i < limitA; i++) {
+    const student = finalList[i];
     const pos = inRadiusPositions[i];
 
     // 1. Simpan koordinat lokasi terbaru
-    await prisma.studentLocation.create({
-      data: {
-        studentId: student.id,
-        latitude: pos.lat,
-        longitude: pos.lng,
-        recordedAt: new Date(),
-      },
-    });
+    try {
+      await prisma.studentLocation.create({
+        data: {
+          studentId: student.id,
+          latitude: pos.lat,
+          longitude: pos.lng,
+          recordedAt: new Date(),
+        },
+      });
+    } catch (e) {
+      // ignore GPS insert conflict
+    }
 
     // 2. Tandai Absen (2 manual, 2 otomatis)
     const method = i % 2 === 0 ? "MANUAL" : "OTOMATIS";
-    await prisma.activityAttendance.create({
-      data: {
-        studentId: student.id,
-        scheduleId: schedule.id,
-        method: method,
-        latitude: pos.lat,
-        longitude: pos.lng,
-        status: "DALAM_RADIUS",
-        attendedAt: new Date(Date.now() - (i * 10 * 60 * 1000)), // beberapa menit lalu
-      },
-    });
+    let attendanceCreated = false;
+    try {
+      await prisma.activityAttendance.create({
+        data: {
+          studentId: student.id,
+          scheduleId: schedule.id,
+          method: method,
+          latitude: pos.lat,
+          longitude: pos.lng,
+          status: "DALAM_RADIUS",
+          attendedAt: new Date(Date.now() - (i * 10 * 60 * 1000)), // beberapa menit lalu
+        },
+      });
+      attendanceCreated = true;
+    } catch (e) {
+      console.log(`Absen untuk ${student.name} sudah ada, melewati...`);
+    }
 
     // 3. Tambah Poin KKN (+10)
-    await prisma.pointHistory.create({
-      data: {
-        userId: student.id,
-        points: 10,
-        description: `Bonus kehadiran KKN: ${schedule.title} (${method})`,
-        kategori: "PARTISIPASI_STREAK",
-        redeemable: false,
-      },
-    });
+    if (attendanceCreated) {
+      try {
+        await prisma.pointHistory.create({
+          data: {
+            userId: student.id,
+            points: 10,
+            description: `Bonus kehadiran KKN: ${schedule.title} (${method})`,
+            kategori: "PARTISIPASI_STREAK",
+            redeemable: false,
+          },
+        });
+      } catch (e) {
+        // ignore points conflict
+      }
+    }
 
     console.log(`[HADIR - DI LOKASI] ${student.name} (${method}) di posisi: ${pos.lat}, ${pos.lng}`);
   }
@@ -194,50 +225,68 @@ async function main() {
     { lat: -6.892000, lng: 107.610000 },
   ];
 
-  for (let i = 4; i < 6; i++) {
-    const student = studentsList[i];
+  const limitB = Math.min(6, finalList.length);
+  for (let i = 4; i < limitB; i++) {
+    const student = finalList[i];
     const pos = outRadiusPositions[i - 4];
 
     // 1. Simpan koordinat lokasi terbaru (diluar radius)
-    await prisma.studentLocation.create({
-      data: {
-        studentId: student.id,
-        latitude: pos.lat,
-        longitude: pos.lng,
-        recordedAt: new Date(),
-      },
-    });
+    try {
+      await prisma.studentLocation.create({
+        data: {
+          studentId: student.id,
+          latitude: pos.lat,
+          longitude: pos.lng,
+          recordedAt: new Date(),
+        },
+      });
+    } catch (e) {
+      // ignore
+    }
 
     // 2. Tandai Absen (Sudah absen saat di lokasi tadi)
-    await prisma.activityAttendance.create({
-      data: {
-        studentId: student.id,
-        scheduleId: schedule.id,
-        method: "MANUAL",
-        latitude: -6.974052, // Koordinat saat dia absen di radius tadi
-        longitude: 107.663588,
-        status: "DALAM_RADIUS",
-        attendedAt: new Date(Date.now() - (i * 15 * 60 * 1000)),
-      },
-    });
+    let attendanceCreated = false;
+    try {
+      await prisma.activityAttendance.create({
+        data: {
+          studentId: student.id,
+          scheduleId: schedule.id,
+          method: "MANUAL",
+          latitude: -6.974052, // Koordinat saat dia absen di radius tadi
+          longitude: 107.663588,
+          status: "DALAM_RADIUS",
+          attendedAt: new Date(Date.now() - (i * 15 * 60 * 1000)),
+        },
+      });
+      attendanceCreated = true;
+    } catch (e) {
+      console.log(`Absen untuk ${student.name} sudah ada, melewati...`);
+    }
 
     // 3. Tambah Poin KKN (+10)
-    await prisma.pointHistory.create({
-      data: {
-        userId: student.id,
-        points: 10,
-        description: `Bonus kehadiran KKN: ${schedule.title} (MANUAL)`,
-        kategori: "PARTISIPASI_STREAK",
-        redeemable: false,
-      },
-    });
+    if (attendanceCreated) {
+      try {
+        await prisma.pointHistory.create({
+          data: {
+            userId: student.id,
+            points: 10,
+            description: `Bonus kehadiran KKN: ${schedule.title} (MANUAL)`,
+            kategori: "PARTISIPASI_STREAK",
+            redeemable: false,
+          },
+        });
+      } catch (e) {
+        // ignore
+      }
+    }
 
     console.log(`[HADIR - LEPAS RADIUS] ${student.name} (Telah Absen, posisi sekarang: ${pos.lat}, ${pos.lng})`);
   }
 
   // Skenario C: Mahasiswa DI LOKASI tapi BELUM ABSEN (Menunggu Auto-Absen atau manual klik)
-  for (let i = 6; i < 8; i++) {
-    const student = studentsList[i];
+  const limitC = Math.min(8, finalList.length);
+  for (let i = 6; i < limitC; i++) {
+    const student = finalList[i];
     // Posisi di dalam radius tapi tidak di-insert riwayat absennya
     const pos = { lat: -6.974090, lng: 107.663510 };
 
@@ -255,8 +304,9 @@ async function main() {
 
   // Skenario D: Mahasiswa TIDAK TERDETEKSI / TIDAK HADIR
   // GPS mati (tidak ada koordinat StudentLocation dalam 24 jam terakhir)
-  for (let i = 8; i < 10; i++) {
-    const student = studentsList[i];
+  const limitD = Math.min(10, finalList.length);
+  for (let i = 8; i < limitD; i++) {
+    const student = finalList[i];
     console.log(`[TIDAK TERDETEKSI] ${student.name} (GPS off / tidak ada data)`);
   }
 

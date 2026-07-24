@@ -616,7 +616,7 @@ const JadwalKegiatan: React.FC = () => {
                       <LocationPickerMap
                         lat={formData.latitude}
                         lng={formData.longitude}
-                        onChange={(lat, lng) => setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))}
+                        onChange={(lat, lng) => setFormData((prev: any) => ({ ...prev, latitude: lat, longitude: lng }))}
                       />
                     </MapContainer>
                   </div>
