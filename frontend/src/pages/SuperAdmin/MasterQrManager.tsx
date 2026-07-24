@@ -245,7 +245,18 @@ export const MasterQrManager: React.FC = () => {
                 qrs.map((q, idx) => {
                   return (
                     <tr key={idx} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 font-mono text-xs font-bold text-gray-900">{q.qrCode}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-center gap-1 bg-white p-2 rounded-xl border border-gray-200/60 w-fit shadow-sm">
+                          <img
+                            className="w-16 h-16"
+                            alt="QR Code"
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(q.qrCode)}`}
+                          />
+                          <span className="text-[10px] font-mono font-bold text-primary tracking-wider">
+                            {q.qrCode}
+                          </span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <Badge status={q.status} />
                       </td>
