@@ -306,6 +306,19 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                           ).pushNamed(AppRoutes.resetBin),
                         ),
                         const Divider(height: 1, indent: 56),
+                        // Tentang Aplikasi
+                        _MenuTile(
+                          icon: Icons.info_outline_rounded,
+                          iconColor: AppColors.primaryGreen,
+                          iconBgColor: AppColors.primaryGreen.withValues(
+                            alpha: 0.1,
+                          ),
+                          label: 'Tentang Aplikasi',
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.tentang),
+                        ),
+                        const Divider(height: 1, indent: 56),
                         // Keluar
                         _MenuTile(
                           icon: Icons.logout_rounded,
@@ -323,7 +336,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   const SizedBox(height: 12),
                   const Center(
                     child: Text(
-                      '© 2026 Pilah Sampah Cerdas',
+                      '© 2026 TrashCare',
                       style: TextStyle(fontSize: 11, color: AppColors.textHint),
                     ),
                   ),

@@ -25,7 +25,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM Background] ${message.notification?.title}: ${message.notification?.body}');
 }
 
-/// Entry point aplikasi Pilah Sampah Cerdas — Mobile (Warga).
+/// Entry point aplikasi TrashCare — Mobile (Warga).
 ///
 /// Arsitektur: Clean Architecture + Riverpod
 /// - Presentation Layer: lib/presentation/

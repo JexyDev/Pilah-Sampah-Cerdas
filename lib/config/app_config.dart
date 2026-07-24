@@ -16,7 +16,7 @@ class AppConfig {
 
   static String get apiBaseUrl => '$baseUrl/api/v1';
 
-  static const String appName = 'Pilah Sampah Cerdas';
+  static const String appName = 'TrashCare';
 
   // --- Geofencing (FR-02) ---
   static const int geofenceRadiusMeters = 10;
