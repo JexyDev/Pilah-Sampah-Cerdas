@@ -628,13 +628,13 @@ export class AuthController {
 
       // Resolve rtRwId from string if needed
       let resolvedRtRwId = rtRwId;
-      if (!resolvedRtRwId && (rtRw || kelurahan)) {
+      if (!resolvedRtRwId) {
         resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
       }
 
       const householdData = {
         address: userData.address || "",
-        rtRwId: resolvedRtRwId || 1, // fallback to first area
+        rtRwId: resolvedRtRwId,
         latitude: latitude || 0,
         longitude: longitude || 0,
       };
