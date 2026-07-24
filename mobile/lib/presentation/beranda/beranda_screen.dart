@@ -375,14 +375,14 @@ class BerandaScreen extends ConsumerWidget {
     final role = user?.role ?? UserRole.warga;
 
     if (role == UserRole.mahasiswaKkn) {
-      // Mahasiswa KKN Quick Action: Aktivasi Bin
+      // Mahasiswa KKN Quick Actions
       return Row(
         children: [
           Expanded(
             child: GestureDetector(
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.primaryBlue, Color(0xFF2196F3)],
@@ -404,16 +404,61 @@ class BerandaScreen extends ConsumerWidget {
                     Icon(
                       Icons.sensors_rounded,
                       color: Colors.white,
-                      size: 32,
+                      size: 30,
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Bantu Warga Aktivasi Bin',
+                      'Aktivasi Bin',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.kknAttendance),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryGreen, Color(0xFF66BB6A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Absen Radius',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),

@@ -11,6 +11,7 @@ import '../../presentation/reset/reset_bin_screen.dart';
 import '../../presentation/notifikasi/notifikasi_screen.dart';
 import '../../presentation/petugas/timbangan_residu_screen.dart';
 import '../../presentation/tentang/tentang_aplikasi_screen.dart';
+import '../../presentation/kkn/kkn_attendance_screen.dart';
 
 /// Nama-nama route terpusat agar tidak ada magic string di widget.
 class AppRoutes {
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String notifikasi = '/notifikasi';
   static const String timbanganResidu = '/timbangan-residu';
   static const String tentang = '/tentang';
+  static const String kknAttendance = '/kkn-attendance';
 }
 
 /// Route generator terpusat.
@@ -60,6 +62,8 @@ class AppRouter {
         return _buildRoute(const TimbanganResiduScreen(), settings);
       case AppRoutes.tentang:
         return _buildRoute(const TentangAplikasiScreen(), settings);
+      case AppRoutes.kknAttendance:
+        return _buildRoute(const KknAttendanceScreen(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

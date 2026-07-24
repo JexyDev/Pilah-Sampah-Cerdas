@@ -10,7 +10,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 
 // Fix default Leaflet icon issue
@@ -277,26 +277,32 @@ const ManajemenLokasi: React.FC = () => {
               rwGroups
                 .filter((g) => g.latitude && g.longitude && g.rwName !== "unknown")
                 .map((group, idx) => (
-                  <Marker
-                    key={`rw-zone-${idx}`}
-                    position={[group.latitude, group.longitude]}
-                    icon={createRwZonaIcon(group.rwName, group.patuh)}
-                    eventHandlers={{
-                      click: () => {
-                        setMapCenter([group.latitude, group.longitude]);
-                        setMapZoom(17);
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 text-center">
-                        <strong className="text-sm font-bold block mb-1">Zona {group.rwName}</strong>
-                        <p className="text-gray-600 mb-1">Tingkat Kepatuhan: <strong>{group.patuh}%</strong></p>
-                        <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
-                        <p className="text-[10px] text-primary italic">Klik untuk zoom in ke tingkat rumah tangga</p>
-                      </div>
-                    </Popup>
-                  </Marker>
+                  <React.Fragment key={`rw-zone-frag-${idx}`}>
+                    <Circle
+                      center={[group.latitude, group.longitude]}
+                      radius={150}
+                      pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.05, weight: 1, dashArray: "4,4" }}
+                    />
+                    <Marker
+                      position={[group.latitude, group.longitude]}
+                      icon={createRwZonaIcon(group.rwName, group.patuh)}
+                      eventHandlers={{
+                        click: () => {
+                          setMapCenter([group.latitude, group.longitude]);
+                          setMapZoom(17);
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-xs p-1 text-center">
+                          <strong className="text-sm font-bold block mb-1">Zona {group.rwName}</strong>
+                          <p className="text-gray-600 mb-1">Tingkat Kepatuhan: <strong>{group.patuh}%</strong></p>
+                          <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
+                          <p className="text-[10px] text-primary italic">Klik untuk zoom in ke tingkat rumah tangga</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
                 ))
             ) : (
               <>
@@ -312,43 +318,55 @@ const ManajemenLokasi: React.FC = () => {
                   });
 
                   let status = "Aman";
-                  if (maxPercentage >= 90) status = "Penuh";
-                  else if (maxPercentage >= 70) status = "Sedang";
+                  let color = "#10B981"; // green
+                  if (maxPercentage >= 90) {
+                    status = "Penuh";
+                    color = "#ef4444"; // red
+                  } else if (maxPercentage >= 70) {
+                    status = "Sedang";
+                    color = "#f59e0b"; // yellow
+                  }
 
                   return (
-                    <Marker
-                      key={`hh-bin-${idx}`}
-                      position={[group.latitude, group.longitude]}
-                      icon={createMapBinIcon(status)}
-                      eventHandlers={{
-                        click: () => {
-                          setMapCenter([group.latitude, group.longitude]);
-                          setMapZoom(19);
-                        },
-                      }}
-                    >
-                      <Popup>
-                        <div className="text-[12px] space-y-2">
-                          <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tong Rumah Tangga</strong>
-                          {group.bins.map(b => {
-                            const vol = Number(b.currentVolumeLiter || 0);
-                            const max = Number(b.maxCapacityLiter || 25);
-                            const pct = max > 0 ? (vol / max) * 100 : 0;
-                            return (
-                              <div key={b.id} className="border-b last:border-0 pb-1 mb-1">
-                                <span className="font-bold text-primary">{b.category?.name === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({b.kode})</span>
-                                <br />
-                                Kapasitas: {pct.toFixed(1)}% terisi ({vol}L / {max}L)
-                                <br />
-                                RT/RW: {b.rtRw || "-"}
-                                <br />
-                                Status: {b.status}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </Popup>
-                    </Marker>
+                    <React.Fragment key={`hh-bin-frag-${idx}`}>
+                      <Circle
+                        center={[group.latitude, group.longitude]}
+                        radius={20}
+                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.12, weight: 1 }}
+                      />
+                      <Marker
+                        position={[group.latitude, group.longitude]}
+                        icon={createMapBinIcon(status)}
+                        eventHandlers={{
+                          click: () => {
+                            setMapCenter([group.latitude, group.longitude]);
+                            setMapZoom(19);
+                          },
+                        }}
+                      >
+                        <Popup>
+                          <div className="text-[12px] space-y-2">
+                            <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tong Rumah Tangga</strong>
+                            {group.bins.map(b => {
+                              const vol = Number(b.currentVolumeLiter || 0);
+                              const max = Number(b.maxCapacityLiter || 25);
+                              const pct = max > 0 ? (vol / max) * 100 : 0;
+                              return (
+                                <div key={b.id} className="border-b last:border-0 pb-1 mb-1">
+                                  <span className="font-bold text-primary">{b.category?.name === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({b.kode})</span>
+                                  <br />
+                                  Kapasitas: {pct.toFixed(1)}% terisi ({vol}L / {max}L)
+                                  <br />
+                                  RT/RW: {b.rtRw || "-"}
+                                  <br />
+                                  Status: {b.status}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </React.Fragment>
                   );
                 })}
 
