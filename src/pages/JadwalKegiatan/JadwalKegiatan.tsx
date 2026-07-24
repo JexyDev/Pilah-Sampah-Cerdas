@@ -1,4 +1,4 @@
-import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, Calendar, MapPin, X } from "lucide-react";
+import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, Calendar, MapPin, X, Trash2 } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -89,6 +89,20 @@ const JadwalKegiatan: React.FC = () => {
       setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "" });
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menambahkan jadwal";
+      toast.error(errMsg);
+    }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("Apakah Anda yakin ingin menghapus jadwal ini?")) return;
+    
+    try {
+      await api.delete(`/schedules/${id}`);
+      toast.success("Jadwal berhasil dihapus");
+      fetchSchedules();
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menghapus jadwal";
       toast.error(errMsg);
     }
   };
@@ -327,6 +341,17 @@ const JadwalKegiatan: React.FC = () => {
                     className="p-3 border border-outline-variant/50 rounded-lg bg-surface-container-lowest hover:border-primary transition-colors cursor-pointer group relative overflow-hidden"
                   >
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`}></div>
+                    
+                    {user?.peran === "SUPER_ADMIN" && (
+                      <button
+                        onClick={(e) => handleDelete(schedule.id, e)}
+                        className="absolute right-2 top-2 p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                        title="Hapus Jadwal"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+
                     <div className="flex justify-between items-start mb-2 pl-2">
                       <span
                         className={`${badge} text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold`}
@@ -338,7 +363,7 @@ const JadwalKegiatan: React.FC = () => {
                         {schedule.time || safeFormatTime(schedule.date)}
                       </span>
                     </div>
-                    <h4 className="text-[14px] font-bold text-on-surface mb-1 pl-2">
+                    <h4 className="text-[14px] font-bold text-on-surface mb-1 pl-2 pr-6">
                       {schedule.title || "(tanpa judul)"}
                     </h4>
                     <p className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1 pl-2 mb-1">
