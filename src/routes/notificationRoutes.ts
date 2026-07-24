@@ -196,6 +196,38 @@ router.put("/read-all", authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/v1/notifications/:id/read
+router.put("/:id/read", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.userId;
+    await prisma.notification.updateMany({
+      where: { id, userId },
+      data: { isRead: true },
+    });
+    res.status(200).json({ status: "success", message: "Notifikasi berhasil ditandai dibaca" });
+  } catch (error) {
+    console.error("Mark Single Notification Read Error:", error);
+    res.status(500).json({ status: "error", message: "Gagal menandai notifikasi" });
+  }
+});
+
+// POST /api/v1/notifications/device-token
+router.post("/device-token", authMiddleware, async (req, res) => {
+  try {
+    const { token } = req.body;
+    const userId = req.user!.userId;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { fcmToken: token },
+    });
+    res.status(200).json({ status: "success", message: "Device token berhasil disimpan" });
+  } catch (error) {
+    console.error("Register Device Token Error:", error);
+    res.status(500).json({ status: "error", message: "Gagal menyimpan device token" });
+  }
+});
+
 // DELETE /api/v1/notifications/all
 router.delete("/all", authMiddleware, async (req, res) => {
   try {

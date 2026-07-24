@@ -736,7 +736,7 @@ export class BinService {
       return {
         id: bin.id,
         qrCode: bin.qrCode,
-        category: bin.category.name,
+        category: bin.category?.name || "ORGANIK",
         currentVolumeLiter: currentVol,
         maxCapacityLiter: maxVol,
         kapasitas,
@@ -751,6 +751,10 @@ export class BinService {
                 : "Normal",
         householdName,
         realStatus,
+        isActive: realStatus === "ACTIVE_BOUND",
+        latitude: bin.latitude ? Number(bin.latitude) : null,
+        longitude: bin.longitude ? Number(bin.longitude) : null,
+        kelurahan: (bin as any).kelurahan?.name || "",
       };
     });
   }
