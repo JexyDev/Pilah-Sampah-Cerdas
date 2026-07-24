@@ -97,6 +97,8 @@ function runBuildAndSeed() {
     cd /var/www/pilah-sampah-cerdas/backend && \
     npm install && \
     npx prisma generate && \
+    echo "Running db push to sync schema..." && \
+    npx prisma db push --accept-data-loss && \
     npx tsc && \
     echo "Stopping backend pm2..." && \
     (echo 'Makerdotindo2026' | sudo -S pm2 stop psc-backend || true) && \
@@ -128,7 +130,7 @@ function runBuildAndSeed() {
 function buildFrontend() {
   console.log("Building frontend on VPS...");
   const frontendCmd = `
-    cd /var/www/pilah-sampah-cerdas/frontend/frontend && \
+    cd /var/www/pilah-sampah-cerdas/frontend && \
     npm install && \
     npm run build
   `;
