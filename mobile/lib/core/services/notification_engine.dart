@@ -89,27 +89,23 @@ class NotificationEngine {
 
       // Notifikasi Pagi: 07:00
       await _flutterLocalNotificationsPlugin.zonedSchedule(
-        1,
-        'Waktunya Buang Sampah! 🚛',
-        'Petugas akan segera tiba untuk penjemputan pagi (06:00 - 08:00).',
-        _nextInstanceOfTime(7, 0),
-        platformDetails,
+        id: 1,
+        title: 'Waktunya Buang Sampah! 🚛',
+        body: 'Petugas akan segera tiba untuk penjemputan pagi (06:00 - 08:00).',
+        scheduledDate: _nextInstanceOfTime(7, 0),
+        notificationDetails: platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
       // Notifikasi Sore: 16:00
       await _flutterLocalNotificationsPlugin.zonedSchedule(
-        2,
-        'Waktunya Buang Sampah! 🚛',
-        'Petugas akan segera tiba untuk penjemputan sore (16:00 - 18:00).',
-        _nextInstanceOfTime(16, 0),
-        platformDetails,
+        id: 2,
+        title: 'Waktunya Buang Sampah! 🚛',
+        body: 'Petugas akan segera tiba untuk penjemputan sore (16:00 - 18:00).',
+        scheduledDate: _nextInstanceOfTime(16, 0),
+        notificationDetails: platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
       
@@ -145,10 +141,10 @@ class NotificationEngine {
       );
 
       await _flutterLocalNotificationsPlugin.show(
-        3, // ID untuk notif point
-        'Setor Sampah Berhasil! 🎉',
-        'Hebat! Anda mendapatkan tambahan +$points poin.',
-        platformDetails,
+        id: 3, // ID untuk notif point
+        title: 'Setor Sampah Berhasil! 🎉',
+        body: 'Hebat! Anda mendapatkan tambahan +$points poin.',
+        notificationDetails: platformDetails,
       );
     } catch (e) {
       debugPrint('[NotificationEngine] Failed to show point notification: $e');
