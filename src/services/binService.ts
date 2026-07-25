@@ -511,7 +511,7 @@ export class BinService {
       for (const qrCode of codes) {
         const bin = await tx.bin.findUnique({
           where: { qrCode },
-          include: { category: true },
+          include: { category: true, qrBatch: true },
         });
         if (!bin) {
           throw new Error(`BIN_NOT_FOUND: ${qrCode}`);
@@ -550,7 +550,7 @@ export class BinService {
         const updatedBin = await tx.bin.update({
           where: { id: bin.id },
           data: {
-            status: "PENDING_APPROVAL",
+            status: "ACTIVE_BOUND",
             userId: user.id,
             rtRwId: user.rtRwId ?? household.rtRwId,
             latitude: data.latitude ?? household.latitude,
@@ -566,12 +566,33 @@ export class BinService {
           },
         });
 
+        // Points bonus
+        await tx.pointHistory.create({
+          data: {
+            userId: user.id,
+            points: 10,
+            description: `Aktivasi Bin ${bin.qrCode}`,
+            kategori: "PARTISIPASI_STREAK",
+          },
+        });
+
+        if (bin.qrBatch?.assignedPicUserId) {
+          await tx.pointHistory.create({
+            data: {
+              userId: bin.qrBatch.assignedPicUserId,
+              points: 10,
+              description: `Warga aktivasi bin ${bin.qrCode}`,
+              kategori: "PARTISIPASI_STREAK",
+            },
+          });
+        }
+
         await tx.auditTrail.create({
           data: {
             action: "WARGA_REGISTER_BIN",
             userId: user.id,
             oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
-            newValue: { qrCode: bin.qrCode, status: "PENDING_APPROVAL" } as any,
+            newValue: { qrCode: bin.qrCode, status: "ACTIVE_BOUND" } as any,
           },
         });
         updatedBins.push(updatedBin);

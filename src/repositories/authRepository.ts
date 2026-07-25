@@ -269,12 +269,21 @@ export class AuthRepository {
           const updatedBin = await tx.bin.update({
             where: { id: bin.id },
             data: {
-              status: "PENDING_APPROVAL",
+              status: "ACTIVE_BOUND",
               userId: user.id,
               rtRwId: user.rtRwId ?? householdData.rtRwId,
               latitude: householdData.latitude,
               longitude: householdData.longitude,
             },
+          });
+          
+          await tx.pointHistory.create({
+            data: {
+              userId: user.id,
+              points: 10,
+              description: `Aktivasi Bin ${bin.qrCode}`,
+              kategori: "PARTISIPASI_STREAK",
+            }
           });
 
           await tx.auditTrail.create({

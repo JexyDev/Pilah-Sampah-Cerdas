@@ -181,7 +181,7 @@ export class KknService {
       await tx.bin.updateMany({
         where: { id: { in: [binOrg.id, binIno.id] } },
         data: {
-          status: "PENDING_APPROVAL",
+          status: "ACTIVE_BOUND",
           userId: newWarga.id,
           registeredByStudentId: kknUserId,
           rtRwId: data.rtRwId,
@@ -199,6 +199,24 @@ export class KknService {
         ],
       });
 
+      // 4.5. Bonus Points for activation
+      await tx.pointHistory.createMany({
+        data: [
+          {
+            userId: newWarga.id,
+            points: 10,
+            description: "Aktivasi Bin dari KKN",
+            kategori: "PARTISIPASI_STREAK",
+          },
+          {
+            userId: kknUserId,
+            points: 10,
+            description: `Membantu pendaftaran warga baru ${newWarga.phone}`,
+            kategori: "PARTISIPASI_STREAK",
+          }
+        ]
+      });
+
       // 5. Audit log activation request with Mahasiswa GPS location
       await tx.auditTrail.create({
         data: {
@@ -207,7 +225,7 @@ export class KknService {
           oldValue: { qrCodes: [binOrg.qrCode, binIno.qrCode] } as any,
           newValue: {
             qrCodes: [binOrg.qrCode, binIno.qrCode],
-            status: "PENDING_APPROVAL",
+            status: "ACTIVE_BOUND",
             ownerUserId: newWarga.id,
             kknLocation: { latitude: data.latitude, longitude: data.longitude },
           } as any,
