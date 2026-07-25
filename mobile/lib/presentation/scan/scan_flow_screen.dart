@@ -563,6 +563,9 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                         backgroundColor: AppColors.dangerRed,
                       ),
                     );
+                    setState(() {
+                      _qrScanAttempt++;
+                    });
                     return;
                   } else if (!isOrganicAI && isScanOrganik) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -571,6 +574,9 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                         backgroundColor: AppColors.dangerRed,
                       ),
                     );
+                    setState(() {
+                      _qrScanAttempt++;
+                    });
                     return;
                   }
 

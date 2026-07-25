@@ -22,10 +22,10 @@ class QrScannerWidget extends StatefulWidget {
   final Color? overlayColor;
 
   @override
-  State<QrScannerWidget> createState() => _QrScannerWidgetState();
+  State<QrScannerWidget> createState() => QrScannerWidgetState();
 }
 
-class _QrScannerWidgetState extends State<QrScannerWidget>
+class QrScannerWidgetState extends State<QrScannerWidget>
     with WidgetsBindingObserver {
   MobileScannerController? _controller;
   bool _scanned = false;
@@ -81,12 +81,25 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
     final String? code = capture.barcodes.firstOrNull?.rawValue;
     if (code != null && code.isNotEmpty) {
       setState(() => _scanned = true);
-      _controller?.stop();
+      
+      // Delay for visual feedback (QR Terdeteksi)
       await Future.delayed(const Duration(milliseconds: 1000));
-      if (mounted) {
-        widget.onQrDetected(code);
-      }
+      
+      if (!mounted) return;
+      
+      // Call callback and check if we need to reset
+      widget.onQrDetected(code);
     }
+  }
+  
+  // Method to reset scanner externally
+  void resetScanner() {
+    if (!mounted) return;
+    setState(() {
+      _scanned = false;
+      _state = _QrState.ready;
+    });
+    // Controller will automatically resume when MobileScanner is rebuilt
   }
 
   @override
