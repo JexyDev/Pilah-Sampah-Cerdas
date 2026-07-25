@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../core/services/notification_engine.dart' as import_engine;
+
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../domain/entities/bin_entity.dart';
@@ -126,6 +129,9 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
           next.scanResult != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            // Trigger local notification untuk Poin
+            import_engine.NotificationEngine().showPointsNotification(next.scanResult!.pointsAwarded);
+
             ref.invalidate(wasteLogsProvider);
             ref.invalidate(totalPointsProvider);
             ref.invalidate(pointHistoryProvider);

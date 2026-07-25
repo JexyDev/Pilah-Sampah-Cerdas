@@ -12,6 +12,7 @@ import 'presentation/providers/bin_provider.dart';
 import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/waste_log_provider.dart';
 import 'core/services/local_notification_service.dart';
+import 'core/services/notification_engine.dart';
 
 /// Global navigator key — digunakan oleh Dio Interceptor untuk
 /// force-navigate ke Login saat sesi habis (refresh token expired).
@@ -51,15 +52,6 @@ void main() async {
     ]);
   }
 
-  // Status bar transparan — hanya relevan di mobile
-  if (PlatformUtils.isMobile) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
-  }
 
   // ── Firebase Cloud Messaging Setup ─────────────────────────────────────────
   // CATATAN: Memerlukan konfigurasi Firebase project terlebih dahulu:
@@ -80,7 +72,8 @@ void main() async {
   // Inisialisasi Local Notification & Jadwalkan Reminders
   try {
     await LocalNotificationService.instance.init(navigatorKey);
-    await LocalNotificationService.instance.scheduleDailyReminders();
+    // Background fixed schedule notification engine (New Requirement)
+    await NotificationEngine().init();
   } catch (e) {
     debugPrint('[LocalNotif] Setup failed: $e');
   }
