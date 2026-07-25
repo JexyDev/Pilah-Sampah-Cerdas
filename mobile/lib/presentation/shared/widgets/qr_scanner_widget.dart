@@ -17,7 +17,7 @@ class QrScannerWidget extends StatefulWidget {
     this.overlayColor,
   });
 
-  final void Function(String qrCode) onQrDetected;
+  final Future<bool> Function(String qrCode) onQrDetected;
   final String? hint;
   final Color? overlayColor;
 
@@ -72,6 +72,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     _controller = MobileScannerController(
       facing: CameraFacing.back,
       autoStart: true,
+      detectionTimeoutMs: 2000,
     );
     if (mounted) setState(() => _state = _QrState.ready);
   }
@@ -88,7 +89,14 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       if (!mounted) return;
       
       // Call callback and check if we need to reset
-      widget.onQrDetected(code);
+      final bool success = await widget.onQrDetected(code);
+      if (!success && mounted) {
+        // Cooldown sebelum bisa scan lagi
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted) {
+          setState(() => _scanned = false);
+        }
+      }
     }
   }
   
@@ -394,16 +402,16 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                     ),
                   ),
                   textCapitalization: TextCapitalization.characters,
-                  onSubmitted: (v) {
-                    if (v.trim().isNotEmpty) widget.onQrDetected(v.trim());
+                  onSubmitted: (v) async {
+                    if (v.trim().isNotEmpty) await widget.onQrDetected(v.trim());
                   },
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final v = textCtrl.text.trim();
-                  if (v.isNotEmpty) widget.onQrDetected(v);
+                  if (v.isNotEmpty) await widget.onQrDetected(v);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,

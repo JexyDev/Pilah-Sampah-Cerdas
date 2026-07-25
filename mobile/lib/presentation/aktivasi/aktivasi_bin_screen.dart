@@ -25,7 +25,6 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
   String _qrAnorganik = '';
   bool _bothBinsDetected = false;
   bool _localLoading = false;
-  int _attempt = 0;
 
   bool _argsLoaded = false;
   bool _hasOrganic = false;
@@ -109,8 +108,10 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
     return true;
   }
 
-  void _onQrDetected(String qr) {
-    if (_bothBinsDetected) return;
+  Future<bool> _onQrDetected(String qr) async {
+    if (_bothBinsDetected) return false;
+
+    bool success = true;
 
     setState(() {
       final detected = qr.trim();
@@ -125,13 +126,15 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
       } else if (_step == 2) {
         if (_qrOrganik.isNotEmpty && detected.toUpperCase() == _qrOrganik.toUpperCase()) {
           _showErrorSnackBar('QR Code ini sudah di-scan untuk Bin Organik.');
-          _attempt++;
-          return;
+          success = false;
+        } else {
+          _qrAnorganik = detected;
+          _bothBinsDetected = true; // Kedua/satu tong berhasil di-scan
         }
-        _qrAnorganik = detected;
-        _bothBinsDetected = true; // Kedua/satu tong berhasil di-scan
       }
     });
+    
+    return success;
   }
 
   void _showErrorSnackBar(String message) {
@@ -326,7 +329,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                         hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
                         overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
-                        key: ValueKey('scanner_step_${_step}_$_attempt'), // Rekreasi widget saat step ganti atau error
+                        key: ValueKey('scanner_step_$_step'), // Rekreasi widget saat step ganti
                       ),
                     ),
                   ),

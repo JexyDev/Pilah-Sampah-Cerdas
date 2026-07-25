@@ -37,9 +37,6 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
   double _compressedKB = 0;
   String _capturedImagePath = ''; // path foto yang diambil kamera
 
-  // Counter untuk mereset QR Scanner jika terjadi error
-  int _qrScanAttempt = 0;
-
   @override
   void initState() {
     super.initState();
@@ -103,15 +100,11 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
     final state = ref.watch(scanFlowProvider);
     final bool isOnline = ref.watch(isOnlineProvider);
 
+    // Listen untuk notifikasi error / redirect
     ref.listen<ScanFlowState>(scanFlowProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
         _showErrorDialog(context, next.errorCode!, next.errorMessage);
         ref.read(scanFlowProvider.notifier).clearError();
-        if (mounted) {
-          setState(() {
-            _qrScanAttempt++;
-          });
-        }
       }
       // Saat AI berhasil (step 1→2), tampilkan bottom sheet konfirmasi AI dulu.
       // QR Scanner baru aktif setelah user tap "Lanjut" di sheet.
@@ -543,13 +536,12 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: QrScannerWidget(
-                key: ValueKey(_qrScanAttempt),
                 hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
-                onQrDetected: (qrCode) {
+                onQrDetected: (qrCode) async {
                   // Guard: skip jika sudah loading atau sudah sukses
                   final s = ref.read(scanFlowProvider);
-                  if (s.isLoading || s.scanResult != null) return;
+                  if (s.isLoading || s.scanResult != null) return false;
                   
                   // Local validation: pastikan QR sesuai jenis AI
                   final isOrganicAI = s.aiResult?.detectedType == WasteType.organic;
@@ -563,10 +555,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                         backgroundColor: AppColors.dangerRed,
                       ),
                     );
-                    setState(() {
-                      _qrScanAttempt++;
-                    });
-                    return;
+                    return false;
                   } else if (!isOrganicAI && isScanOrganik) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -574,10 +563,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                         backgroundColor: AppColors.dangerRed,
                       ),
                     );
-                    setState(() {
-                      _qrScanAttempt++;
-                    });
-                    return;
+                    return false;
                   }
 
                   ref
@@ -587,6 +573,7 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                         userLat: _userLat ?? 0.0,
                         userLng: _userLng ?? 0.0,
                       );
+                  return true;
                 },
               ),
             ),
