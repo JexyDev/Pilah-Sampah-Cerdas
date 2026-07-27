@@ -34,7 +34,7 @@ const router = Router();
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "PETUGAS_RESIDU"]),
   userController.getAll
 );
 
