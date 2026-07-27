@@ -428,7 +428,7 @@ const JadwalKegiatan: React.FC = () => {
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`}></div>
                     
                     {user?.peran === "SUPER_ADMIN" && (
-                      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute right-2 bottom-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => handleEdit(schedule, e)}
                           className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
@@ -577,7 +577,7 @@ const JadwalKegiatan: React.FC = () => {
                       step="0.00000001"
                       value={formData.latitude}
                       onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
                       placeholder="Contoh: -6.8915"
                     />
                   </div>
@@ -588,20 +588,20 @@ const JadwalKegiatan: React.FC = () => {
                       step="0.00000001"
                       value={formData.longitude}
                       onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
                       placeholder="Contoh: 107.6107"
                     />
                   </div>
-                  <div className="w-[100px] flex flex-col gap-1.5">
-                    <label className="text-[12px] font-bold text-on-surface-variant">Radius (m)</label>
-                    <input
-                      type="number"
-                      value={formData.radius}
-                      onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
-                      placeholder="100"
-                    />
-                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-bold text-on-surface-variant">Radius Absensi (meter)</label>
+                  <input
+                    type="number"
+                    value={formData.radius}
+                    onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
+                    className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
+                    placeholder="Contoh: 100"
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[12px] font-bold text-on-surface-variant">

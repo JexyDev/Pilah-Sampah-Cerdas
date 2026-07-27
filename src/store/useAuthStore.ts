@@ -71,9 +71,9 @@ const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string 
 const getWilayahByRole = (role: string): string => {
   switch (role) {
     case "SUPER_ADMIN":
-      return "Sistem Pusat";
+      return "Kecamatan Coblong";
     case "ADMIN_DLH":
-      return "Dinas Lingkungan Hidup";
+      return "Kecamatan Coblong";
     case "CAMAT":
       return "Kecamatan Coblong";
     case "LURAH":
@@ -94,7 +94,13 @@ const getWilayahByRole = (role: string): string => {
 const getInitialUser = (): User | null => {
   try {
     const stored = localStorage.getItem("psc_user");
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    const user = JSON.parse(stored);
+    if (user && (user.wilayah === "Sistem Pusat" || user.wilayah === "Dinas Lingkungan Hidup")) {
+      user.wilayah = "Kecamatan Coblong";
+      localStorage.setItem("psc_user", JSON.stringify(user));
+    }
+    return user;
   } catch {
     return null;
   }

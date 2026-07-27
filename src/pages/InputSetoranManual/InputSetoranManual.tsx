@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Upload, Send, Loader2 } from "lucide-react";
+import { Upload, Send, Loader2, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 
 const InputSetoranManual: React.FC = () => {
-  const [rtRwList, setRtRwList] = useState<any[]>([]);
+  const [wargaList, setWargaList] = useState<any[]>([]);
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
-  const [rtRwId, setRtRwId] = useState("");
+  const [wargaId, setWargaId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showWargaSuggestions, setShowWargaSuggestions] = useState(false);
+  const [kategoriId, setKategoriId] = useState("");
   const [beratKg, setBeratKg] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -22,14 +26,24 @@ const InputSetoranManual: React.FC = () => {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      // Ambil daftar RT/RW
-      const resAreas = await api.get("/bins/areas");
-      if (resAreas.data?.success) {
-        setRtRwList(resAreas.data.data);
+      // Ambil daftar warga
+      const resWarga = await api.get("/users", { params: { roleName: "WARGA" } });
+      if (resWarga.data?.success) {
+        setWargaList(resWarga.data.data);
+      } else if (Array.isArray(resWarga.data)) {
+        setWargaList(resWarga.data);
+      }
+
+      // Ambil daftar kategori
+      const resCats = await api.get("/categories");
+      if (resCats.data?.success) {
+        setCategoriesList(resCats.data.data);
+      } else if (Array.isArray(resCats.data)) {
+        setCategoriesList(resCats.data);
       }
     } catch (err) {
       console.error("Gagal memuat data awal", err);
-      toast.error("Gagal memuat daftar warga atau kategori.");
+      toast.error("Gagal memuat data formulir.");
     } finally {
       setIsLoading(false);
     }
@@ -45,7 +59,7 @@ const InputSetoranManual: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rtRwId || !beratKg || !photo) {
+    if (!wargaId || !beratKg || !kategoriId || !photo) {
       toast.error("Mohon lengkapi semua field wajib dan foto bukti.");
       return;
     }
@@ -53,22 +67,22 @@ const InputSetoranManual: React.FC = () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("rtRwId", rtRwId);
+      formData.append("wargaId", wargaId);
       formData.append("beratKg", beratKg);
+      formData.append("kategoriId", kategoriId);
       formData.append("image", photo);
 
-      const res = await api.post("/transactions/residu", formData, {
+      const res = await api.post("/transactions/manual", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (res.data?.success) {
         toast.success(res.data.message || "Setoran manual berhasil dicatat!");
-        if (res.data.data?.discrepancyStatus === "PENDING_REVIEW") {
-          toast.success("Catatan: Status masuk ke PENDING REVIEW karena diskrepansi AI.");
-        }
         
         // Reset form
-        setRtRwId("");
+        setWargaId("");
+        setSearchQuery("");
+        setKategoriId("");
         setBeratKg("");
         setPhoto(null);
         setPhotoPreview(null);
@@ -80,6 +94,27 @@ const InputSetoranManual: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Autocomplete filtering
+  const filteredWarga = searchQuery
+    ? wargaList.filter(
+        (w) =>
+          w.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (w.nik && w.nik.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (w.phone && w.phone.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : wargaList;
+
+  // Real-time calculation of estimated points
+  const selectedCat = categoriesList.find((c) => c.id === kategoriId);
+  const selectedCatName = selectedCat?.name?.toLowerCase() || "";
+  let multiplier = 0.0;
+  if (selectedCatName === "organik") {
+    multiplier = 0.4;
+  } else if (selectedCatName === "anorganik" || selectedCatName === "non-organik" || selectedCatName.includes("anorganik")) {
+    multiplier = 0.2;
+  }
+  const estimatedPoints = Number(beratKg) > 0 ? Number(beratKg) * multiplier : 0;
 
   if (isLoading) {
     return (
@@ -95,34 +130,89 @@ const InputSetoranManual: React.FC = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-extrabold text-on-surface">Input Setoran Manual</h2>
         <p className="text-sm text-on-surface-variant mt-1">
-          Gunakan form ini untuk mencatat setoran residu agregat per wilayah (Khusus Petugas Residu).
+          Gunakan form ini untuk mencatat setoran sampah warga secara manual.
         </p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Warga Selection */}
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Wilayah RT/RW *</label>
-            <select
-              value={rtRwId}
-              onChange={(e) => setRtRwId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
-              required
-            >
-              <option value="">-- Pilih Wilayah --</option>
-              {rtRwList.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.name} - {area.kelurahan?.name}
-                </option>
-              ))}
-            </select>
+          
+          {/* Warga Selection Searchable Autocomplete */}
+          <div className="relative">
+            <label className="block text-sm font-bold text-slate-700 mb-2">Nama Warga / NKK *</label>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setShowWargaSuggestions(true)}
+                onBlur={() => {
+                  setTimeout(() => setShowWargaSuggestions(false), 200);
+                }}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setWargaId("");
+                  setShowWargaSuggestions(true);
+                }}
+                placeholder="Cari Nama Warga, Nomor HP, atau NKK..."
+                className="w-full bg-slate-50 border border-slate-200 pl-11 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                required
+              />
+            </div>
+            
+            {showWargaSuggestions && filteredWarga.length > 0 && (
+              <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-2 flex flex-col gap-1">
+                {filteredWarga.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => {
+                      setWargaId(w.id);
+                      setSearchQuery(`${w.name} (${w.phone || w.nik || 'Warga'})`);
+                      setShowWargaSuggestions(false);
+                    }}
+                    className="text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-slate-50 text-slate-700 flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="font-bold">{w.name}</p>
+                      <p className="text-[10px] text-slate-500">{w.phone || w.nik || "-"}</p>
+                    </div>
+                    {wargaId === w.id && (
+                      <span className="text-primary font-bold">Terpilih</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {showWargaSuggestions && filteredWarga.length === 0 && (
+              <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-4 text-center text-xs text-slate-500">
+                Tidak ada warga ditemukan
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Kategori Sampah */}
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Kategori Sampah *</label>
+              <select
+                value={kategoriId}
+                onChange={(e) => setKategoriId(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                required
+              >
+                <option value="">-- Pilih Kategori --</option>
+                {categoriesList.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name} (Poin Dasar: {cat.pointsPerKg}/Kg)
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Berat Kg */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Berat Agregat (Kg) *</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Berat Setoran (Kg) *</label>
               <input
                 type="number"
                 step="0.01"
@@ -133,6 +223,16 @@ const InputSetoranManual: React.FC = () => {
                 className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                 required
               />
+              
+              {/* Real-time points estimation */}
+              {kategoriId && Number(beratKg) > 0 && (
+                <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-600">Estimasi Poin:</span>
+                  <span className="text-sm font-black text-primary">
+                    +{estimatedPoints.toFixed(1)} Poin
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -140,7 +240,7 @@ const InputSetoranManual: React.FC = () => {
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Foto Bukti (Wajib) *</label>
             <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
-              Foto ini akan dicek silang oleh sistem AI. Jika klasifikasi manual Anda berbeda dengan hasil AI (&gt;90% akurasi), status akan menjadi PENDING REVIEW.
+              Silakan unggah foto bukti setoran sampah untuk disimpan di dalam log audit.
             </p>
 
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl hover:border-primary transition-colors bg-slate-50 cursor-pointer relative overflow-hidden group">
