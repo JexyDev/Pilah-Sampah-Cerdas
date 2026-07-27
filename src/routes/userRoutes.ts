@@ -98,4 +98,25 @@ router.put(
   userController.updateUser
 );
 
+/**
+ * @swagger
+ * /api/v1/users/{id}/onboarding-status:
+ *   get:
+ *     summary: Get user onboarding status
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get(
+  "/:id/onboarding-status",
+  authMiddleware,
+  userController.getOnboardingStatus
+);
+
 export default router;

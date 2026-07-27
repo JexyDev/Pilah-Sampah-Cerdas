@@ -186,7 +186,7 @@ export class AiService {
   /**
    * Resolve discrepancy by Admin DLH
    */
-  async resolveDiscrepancy(wasteLogId: string, finalClassification: string, adminUserId: string) {
+  async resolveDiscrepancy(wasteLogId: string, finalClassification: string, adminUserId: string, finalWeight?: number) {
     return prisma.$transaction(async (tx) => {
       const log = await tx.wasteLog.findUnique({
         where: { id: wasteLogId },
@@ -204,57 +204,63 @@ export class AiService {
       }
 
       // Update discrepancy status to RESOLVED
+      const dataToUpdate: any = {
+        discrepancyStatus: "RESOLVED",
+        petugasClassification: finalClassification,
+      };
+
+      if (finalWeight !== undefined) {
+        dataToUpdate.actualWeightPetugas = finalWeight;
+      }
+
       const updated = await tx.wasteLog.update({
         where: { id: wasteLogId },
-        data: {
-          discrepancyStatus: "RESOLVED",
-        },
+        data: dataToUpdate,
       });
 
-      // Recalculate and adjust points if final classification differs from original Warga/AI classification
-      if (log.aiClassification !== finalClassification) {
-        // Find category multiplier
-        const isOrganic = finalClassification === "ORGANIC";
-        const multiplierKey = isOrganic
-          ? "organic_point_multiplier"
-          : "nonorganic_point_multiplier";
-        const multiplierVal = await configService.getConfig(multiplierKey);
-        const multiplier = multiplierVal ? Number(multiplierVal) : isOrganic ? 2.0 : 1.5;
+      // Recalculate and adjust points if final classification or weight differs
+      const weightToUse = finalWeight !== undefined ? finalWeight : Number(log.weightKg);
+      
+      const isOrganic = finalClassification === "ORGANIC";
+      const multiplierKey = isOrganic
+        ? "organic_point_multiplier"
+        : "nonorganic_point_multiplier";
+      const multiplierVal = await configService.getConfig(multiplierKey);
+      const multiplier = multiplierVal ? Number(multiplierVal) : isOrganic ? 2.0 : 1.5;
 
-        const newPoints = Math.round(Number(log.weightKg) * (isOrganic ? 100 : 50) * multiplier);
+      const newPoints = Math.round(weightToUse * (isOrganic ? 100 : 50) * multiplier);
 
-        // Original points awarded (simplified calculation)
-        const oldIsOrganic = log.aiClassification === "ORGANIC";
-        const oldMultiplierKey = oldIsOrganic
-          ? "organic_point_multiplier"
-          : "nonorganic_point_multiplier";
-        const oldMultiplierVal = await configService.getConfig(oldMultiplierKey);
-        const oldMultiplier = oldMultiplierVal
-          ? Number(oldMultiplierVal)
-          : oldIsOrganic
-            ? 2.0
-            : 1.5;
-        const oldPoints = Math.round(
-          Number(log.weightKg) * (oldIsOrganic ? 100 : 50) * oldMultiplier
-        );
+      // Original points awarded (simplified calculation)
+      const oldIsOrganic = log.aiClassification === "ORGANIC";
+      const oldMultiplierKey = oldIsOrganic
+        ? "organic_point_multiplier"
+        : "nonorganic_point_multiplier";
+      const oldMultiplierVal = await configService.getConfig(oldMultiplierKey);
+      const oldMultiplier = oldMultiplierVal
+        ? Number(oldMultiplierVal)
+        : oldIsOrganic
+          ? 2.0
+          : 1.5;
+      const oldPoints = Math.round(
+        Number(log.weightKg) * (oldIsOrganic ? 100 : 50) * oldMultiplier
+      );
 
-        const diff = newPoints - oldPoints;
+      const diff = newPoints - oldPoints;
 
-        if (diff !== 0) {
-          // Adjust Warga points
-          await tx.user.update({
-            where: { id: log.household.userId },
-            data: {
-              pointHistory: {
-                create: {
-                  points: diff,
-                  description: `Penyesuaian klasifikasi akhir audit oleh Admin untuk setoran ${log.id}`,
-                  kategori: "REDUKSI_TONASE",
-                },
+      if (diff !== 0) {
+        // Adjust Warga points
+        await tx.user.update({
+          where: { id: log.household.userId },
+          data: {
+            pointHistory: {
+              create: {
+                points: diff,
+                description: `Penyesuaian klasifikasi akhir audit oleh Admin untuk setoran ${log.id}`,
+                kategori: "REDUKSI_TONASE",
               },
             },
-          });
-        }
+          },
+        });
       }
 
       // Log Audit Trail
@@ -337,11 +343,31 @@ export class AiService {
     };
   }
 
-  async getPendingDiscrepancies() {
+  async getDiscrepancies(status?: string, startDate?: string, endDate?: string) {
+    const whereClause: any = {
+      discrepancyStatus: { not: "NONE" },
+    };
+
+    if (status && status !== "Semua") {
+      whereClause.discrepancyStatus = status;
+    } else if (!status) {
+      whereClause.discrepancyStatus = "PENDING_REVIEW";
+    }
+
+    if (startDate || endDate) {
+      whereClause.createdAt = {};
+      if (startDate) {
+        whereClause.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = end;
+      }
+    }
+
     return prisma.wasteLog.findMany({
-      where: {
-        discrepancyStatus: "PENDING_REVIEW",
-      },
+      where: whereClause,
       include: {
         household: {
           include: {

@@ -114,6 +114,8 @@ model RtRwArea {
   handovers   KknHandoverHistory[]
   facilities  Facility[]
   residuLogs  ResiduLog[]
+  latitude    Decimal?     @db.Decimal(11, 8)
+  longitude   Decimal?     @db.Decimal(11, 8)
 
   @@unique([kelurahanId, name])
   @@map("wilayah_rt_rw")

@@ -56,68 +56,35 @@ export class BinRepository {
       orderBy: { name: "asc" },
     });
 
-    // Group by RW number extracted from name (e.g. "RT 01 / RW 05" → RW 05)
-    const rwMap = new Map<
-      string,
-      {
-        rw: string;
-        kelurahan: string;
-        rtNames: Set<string>;
-        titikCount: number;
-        totalHouseholds: number;
-        activeHouseholds: number;
-      }
-    >();
-
-    for (const area of rtRwAreas) {
-      const rwMatch = area.name.match(/RW\s*(\d+)/i);
-      const rtMatch = area.name.match(/RT\s*(\d+)/i);
-      const rwKey = rwMatch ? `RW ${rwMatch[1].padStart(2, "0")}` : area.name;
-
-      let activeHouseholds = 0;
-      for (const hh of area.households) {
-        const count = await prisma.wasteLog.count({
-          where: { householdId: hh.id },
-        });
-        if (count > 0) {
-          activeHouseholds++;
+    return Promise.all(
+      rtRwAreas.map(async (area) => {
+        let activeHouseholds = 0;
+        for (const hh of area.households) {
+          const count = await prisma.wasteLog.count({
+            where: { householdId: hh.id },
+          });
+          if (count > 0) {
+            activeHouseholds++;
+          }
         }
-      }
 
-      if (!rwMap.has(rwKey)) {
-        rwMap.set(rwKey, {
-          rw: rwKey,
+        const patuh =
+          area.households.length > 0
+            ? Math.round((activeHouseholds / area.households.length) * 100)
+            : 0;
+
+        return {
+          id: area.id,
+          rw: area.name,
           kelurahan: area.kelurahan.name,
-          rtNames: new Set(),
-          titikCount: 0,
-          totalHouseholds: 0,
-          activeHouseholds: 0,
-        });
-      }
-
-      const entry = rwMap.get(rwKey)!;
-      if (rtMatch) {
-        entry.rtNames.add(`RT ${rtMatch[1].padStart(2, "0")}`);
-      }
-      entry.titikCount += area.bins.length;
-      entry.totalHouseholds += area.households.length;
-      entry.activeHouseholds += activeHouseholds;
-    }
-
-    return Array.from(rwMap.values()).map((entry, idx) => {
-      const patuh =
-        entry.totalHouseholds > 0
-          ? Math.round((entry.activeHouseholds / entry.totalHouseholds) * 100)
-          : 75; // realistic fallback for newly created RWs
-      return {
-        id: idx + 1,
-        rw: entry.rw,
-        kelurahan: entry.kelurahan,
-        rtCount: entry.rtNames.size,
-        titikCount: entry.titikCount,
-        patuh,
-      };
-    });
+          rtCount: 1,
+          titikCount: area.bins.length,
+          patuh,
+          latitude: area.latitude ? Number(area.latitude) : null,
+          longitude: area.longitude ? Number(area.longitude) : null,
+        };
+      })
+    );
   }
 
   /**
@@ -297,14 +264,48 @@ export class BinRepository {
     });
   }
 
-  async createArea(name: string, kelurahanId: string) {
+  async createArea(name: string, kelurahanId: string, latitude?: number, longitude?: number) {
     return prisma.rtRwArea.create({
       data: {
         name,
         kelurahanId,
+        latitude,
+        longitude,
       },
       include: { kelurahan: true },
     });
+  }
+
+  async updateArea(id: number, name: string, kelurahanId: string, latitude?: number, longitude?: number) {
+    return prisma.rtRwArea.update({
+      where: { id },
+      data: {
+        name,
+        kelurahanId,
+        latitude,
+        longitude,
+      },
+      include: { kelurahan: true },
+    });
+  }
+
+  async deleteArea(id: number) {
+    return prisma.rtRwArea.delete({
+      where: { id },
+    });
+  }
+
+  async countAreaRelations(id: number) {
+    const area = await prisma.rtRwArea.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { users: true, bins: true, households: true, facilities: true },
+        },
+      },
+    });
+    if (!area) return 0;
+    return area._count.users + area._count.bins + area._count.households + area._count.facilities;
   }
 
   async findRtRwById(id: number) {

@@ -325,6 +325,34 @@ export class UserService {
 
     await userRepository.delete(id);
   }
+
+  async getOnboardingStatus(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { households: true },
+    });
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    const bins = await prisma.bin.findMany({
+      where: {
+        OR: [{ userId }, { binOwnerships: { some: { userId } } }],
+        status: "ACTIVE_BOUND",
+      },
+      include: { category: true },
+    });
+
+    const hasOrganik = bins.some((b) => b.category?.name === "ORGANIC");
+    const hasNonOrganik = bins.some((b) => b.category?.name === "NON_ORGANIC");
+    const onboardingComplete = hasOrganik && hasNonOrganik;
+
+    return {
+      hasOrganik,
+      hasNonOrganik,
+      onboardingComplete,
+    };
+  }
 }
 
 export const userService = new UserService();

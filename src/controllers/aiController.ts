@@ -167,7 +167,7 @@ export class AiController {
   async resolveDiscrepancy(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { finalClassification } = req.body;
+      const { finalClassification, finalWeight } = req.body;
       if (!finalClassification) {
         res.status(400).json({
           success: false,
@@ -177,7 +177,7 @@ export class AiController {
         return;
       }
       const adminUserId = req.user!.userId;
-      const log = await aiService.resolveDiscrepancy(id, finalClassification, adminUserId);
+      const log = await aiService.resolveDiscrepancy(id, finalClassification, adminUserId, finalWeight);
       res
         .status(200)
         .json({ success: true, message: "Discrepancy laporan berhasil diselesaikan", data: log });
@@ -251,12 +251,17 @@ export class AiController {
     }
   }
 
-  async getPendingDiscrepancies(req: Request, res: Response): Promise<void> {
+  async getDiscrepancies(req: Request, res: Response): Promise<void> {
     try {
-      const data = await aiService.getPendingDiscrepancies();
+      const { status, startDate, endDate } = req.query;
+      const data = await aiService.getDiscrepancies(
+        status as string | undefined,
+        startDate as string | undefined,
+        endDate as string | undefined
+      );
       res.status(200).json({ success: true, data });
     } catch (error: any) {
-      console.error("[AiController] getPendingDiscrepancies error:", error);
+      console.error("[AiController] getDiscrepancies error:", error);
       res
         .status(500)
         .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });

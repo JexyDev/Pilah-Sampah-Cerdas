@@ -162,4 +162,26 @@ export const userController = {
       }
     }
   },
+
+  getOnboardingStatus: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const status = await userService.getOnboardingStatus(id);
+      res.status(200).json({
+        success: true,
+        data: status,
+      });
+    } catch (error: any) {
+      console.error("Error in getOnboardingStatus:", error);
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal mengambil status onboarding",
+        });
+      }
+    }
+  },
 };
