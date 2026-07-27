@@ -40,7 +40,6 @@ export const MasterQrManager: React.FC = () => {
 
   // Approvals states
   const [activeTab, setActiveTab] = useState<"qrs" | "pending_bins" | "pending_petugas">("qrs");
-  const [pendingBins, setPendingBins] = useState<any[]>([]);
   const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
   const [rejectBinId, setRejectBinId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -55,7 +54,7 @@ export const MasterQrManager: React.FC = () => {
 
   const fetchQrData = async () => {
     try {
-      const [qrsRes, inactiveRes, pendingBinsRes, pendingPetugasRes] = await Promise.all([
+      const [qrsRes, inactiveRes, _pendingBinsRes, pendingPetugasRes] = await Promise.all([
         api.get("/super-admin/bins/qr-master", {
           params: { search: searchQuery || undefined, status: statusFilter || undefined },
         }),
@@ -64,8 +63,7 @@ export const MasterQrManager: React.FC = () => {
         api.get("/super-admin/approvals/petugas"),
       ]);
       if (qrsRes.data.success) setQrs(qrsRes.data.data);
-      if (inactiveRes.data.success) setInactiveBins(inactiveRes.data.data);
-      if (pendingBinsRes.data.success) setPendingBins(pendingBinsRes.data.data);
+      if (inactiveRes.data.success) setInactiveBins(inactiveRes.data.data || []);
       if (pendingPetugasRes.data.success) setPendingPetugas(pendingPetugasRes.data.data);
     } catch (e) {
       console.error("Gagal mengambil data QR & Persetujuan:", e);
@@ -134,17 +132,7 @@ export const MasterQrManager: React.FC = () => {
     }
   };
 
-  const approveBin = async (id: string) => {
-    try {
-      await api.put(`/super-admin/approvals/bins/${id}/approve`);
-      toast.success("QR Bin berhasil disetujui! Warga & Mahasiswa mendapat bonus poin.");
-      fetchQrData();
-    } catch (error) {
-      console.error("Failed to approve bin", error);
-      toast.error("Gagal menyetujui QR Bin");
-    }
-  };
-
+  
   const rejectBin = async () => {
     if (!rejectBinId || !rejectReason) return;
     try {
