@@ -247,8 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
         <div className="mt-3 text-[9px] text-on-surface-variant/65 text-center">
-          © 2026 PT Makerindo. Developed by Jeremy Darrell & Muhammad
-          Habil Putrawan.
+          © 2026 PT Makerindo.
         </div>
       </div>
     </aside>
