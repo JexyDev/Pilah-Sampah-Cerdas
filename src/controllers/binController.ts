@@ -226,7 +226,7 @@ export class BinController {
       } else if (error.message === "LOCATION_OUT_OF_RANGE") {
         res.status(400).json({
           error: "LOCATION_OUT_OF_RANGE",
-          message: "Lokasi Anda terlalu jauh dari tong sampah fisik (> 10m).",
+          message: "Lokasi Anda terlalu jauh dari tong sampah fisik (> 50m).",
           distanceMeters: error.distanceMeters,
         });
       } else if (error.message === "BIN_TYPE_MISMATCH") {
@@ -259,6 +259,15 @@ export class BinController {
     } catch (error: any) {
       console.error("[BinController] registerWargaBin error:", error);
 
+      if (error.message.startsWith("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:")) {
+        const missingCat = error.message.split(":")[1];
+        res.status(400).json({
+          success: false,
+          error: "ONBOARDING_INCOMPLETE_WRONG_CATEGORY",
+          message: `Anda belum menyelesaikan aktivasi awal. Selesaikan aktivasi tong ${missingCat === "ORGANIC" ? "Non-Organik" : "Organik"} Anda terlebih dahulu.`,
+        });
+        return;
+      }
       if (error.message.startsWith("BIN_CATEGORY_DUPLICATE:")) {
         const cat = error.message.split(":")[1];
         res.status(400).json({

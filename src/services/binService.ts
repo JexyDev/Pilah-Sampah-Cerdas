@@ -118,7 +118,7 @@ export class BinService {
       }
     }
 
-    // 2. Validate Geofencing (< 10m) if coordinates are provided
+    // 2. Validate Geofencing (< 50m) if coordinates are provided
     if (
       userLat !== undefined &&
       userLng !== undefined &&
@@ -132,7 +132,12 @@ export class BinService {
         Number(bin.longitude)
       );
 
-      if (distance > 10) {
+      const maxRadius =
+        process.env.NODE_ENV === "development" && process.env.ALLOW_GEOFENCE_BYPASS === "true"
+          ? 1000000
+          : 50;
+
+      if (distance > maxRadius) {
         const error = new Error("LOCATION_OUT_OF_RANGE");
         (error as any).distanceMeters = parseFloat(distance.toFixed(2));
         throw error;
@@ -533,31 +538,36 @@ export class BinService {
         }
 
         if (bin.categoryId) {
-          // Check for duplicate in the same request payload
+          // 1. Get user's current bins to check onboarding status
+          const currentBins = await tx.bin.findMany({
+            where: {
+              OR: [{ userId: user.id }, { binOwnerships: { some: { userId: user.id } } }],
+              status: "ACTIVE_BOUND",
+            },
+            include: { category: true },
+          });
+
+          const hasOrganik = currentBins.some((b) => b.category?.name === "ORGANIC");
+          const hasNonOrganik = currentBins.some((b) => b.category?.name === "NON_ORGANIC");
+          const onboardingComplete = hasOrganik && hasNonOrganik;
+
+          // Check duplicate category in the request payload itself
           if (requestedCategoryIds.has(bin.categoryId)) {
             throw new Error("BIN_CATEGORY_DUPLICATE_IN_REQUEST");
           }
           requestedCategoryIds.add(bin.categoryId);
 
-          // Check for existing bin of the same category owned by user
-          // DISABLED BYPASS: Allow multiple bins of the same category per user
-          // const existingOwnership = await tx.binOwnership.findFirst({
-          //   where: {
-          //     userId: user.id,
-          //     bin: {
-          //       categoryId: bin.categoryId,
-          //       status: {
-          //         notIn: ["BROKEN", "INACTIVE"],
-          //       },
-          //     },
-          //   },
-          //   include: { bin: { include: { category: true } } },
-          // });
-
-          // if (existingOwnership) {
-          //   const catName = existingOwnership.bin.category?.name || "kategori ini";
-          //   throw new Error(`BIN_CATEGORY_DUPLICATE:${catName}`);
-          // }
+          // 2. Enforce onboarding rules
+          if (!onboardingComplete) {
+            const catName = bin.category?.name || "";
+            if (catName === "ORGANIC" && hasOrganik) {
+              throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:ORGANIC");
+            }
+            if (catName === "NON_ORGANIC" && hasNonOrganik) {
+              throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:NON_ORGANIC");
+            }
+          }
+          // If onboardingComplete is true, we allow any bin category without limits
         }
 
         const updatedBin = await tx.bin.update({
