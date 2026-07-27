@@ -1381,7 +1381,7 @@ const Dashboard: React.FC = () => {
         // Memetakan data riil dari backend ke UI
         setStats({
           totalPengguna: {
-            value: kpi.totalWarga ?? 0,
+            value: kpi.totalUsers ?? kpi.totalWarga ?? 0,
             trend: "+0",
             trendLabel: "Bulan ini",
             trendUp: true,

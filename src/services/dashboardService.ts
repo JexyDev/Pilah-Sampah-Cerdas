@@ -18,7 +18,6 @@ export const dashboardService = {
       wilayah !== "Sistem Pusat" &&
       wilayah !== "Area KKN Dago" &&
       wilayah !== "Dinas Lingkungan Hidup";
-
     // 1. Total Warga Aktif
     const totalWarga = await prisma.user.count({
       where: {
@@ -29,6 +28,15 @@ export const dashboardService = {
           ? [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }]
           : undefined,
       },
+    });
+
+    // Total Users
+    const totalUsers = await prisma.user.count({
+      where: isFiltered
+        ? {
+            OR: [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }]
+          }
+        : undefined,
     });
 
     // 2. Sampah Terkumpul (Kg)
@@ -178,6 +186,7 @@ export const dashboardService = {
 
     return {
       totalWarga,
+      totalUsers,
       totalSampahKg,
       averageAiAccuracy,
       alertTongPenuh: fullBinsCount,
