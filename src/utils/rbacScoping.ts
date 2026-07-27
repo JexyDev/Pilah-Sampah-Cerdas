@@ -122,6 +122,16 @@ export async function getScopingFilters(user: {
     }
   }
 
+  // 4b. PETUGAS_RESIDU can see WARGA users for manual deposits
+  if (role === "PETUGAS_RESIDU") {
+    return {
+      userFilter: { role: { name: "WARGA" } },
+      binFilter: {},
+      householdFilter: {},
+      wasteLogFilter: {},
+    };
+  }
+
   // 5. WARGA sees only their own data
   if (role === "WARGA") {
     return {

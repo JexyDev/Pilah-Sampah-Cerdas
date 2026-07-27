@@ -467,14 +467,27 @@ const ManajemenTempatSampah: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 font-medium text-on-surface">{bin.wargaName || "-"}</td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
+                    <div className="flex flex-col gap-1.5 min-w-[120px]">
+                      <div className="flex justify-between items-center text-[12px] font-bold">
+                        <span className={
+                          bin.kapasitas > 90 ? "text-red-600" :
+                          bin.kapasitas >= 50 ? "text-orange-500" :
+                          "text-emerald-600"
+                        }>
+                          {bin.kapasitas > 90 ? "Kritis" : bin.kapasitas >= 50 ? "Waspada" : "Aman"}
+                        </span>
+                        <span className="text-slate-600">{bin.kapasitas}%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner border border-slate-200/50">
                         <div
-                          className={`h-full ${bin.kapasitas > 80 ? "bg-error" : bin.kapasitas > 50 ? "bg-orange-500" : "bg-primary"}`}
-                          style={{ width: `${bin.kapasitas}%` }}
+                          className={`h-full rounded-full transition-all duration-500 ease-out ${
+                            bin.kapasitas > 90 ? "bg-gradient-to-r from-red-500 to-red-600" :
+                            bin.kapasitas >= 50 ? "bg-gradient-to-r from-orange-400 to-orange-500" :
+                            "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                          }`}
+                          style={{ width: `${Math.min(bin.kapasitas, 100)}%` }}
                         ></div>
                       </div>
-                      <span className="text-[12px] font-bold w-8 text-right">{bin.kapasitas}%</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">

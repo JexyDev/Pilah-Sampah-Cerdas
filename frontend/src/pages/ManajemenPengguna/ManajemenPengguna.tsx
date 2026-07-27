@@ -1,4 +1,4 @@
-import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Edit, Trash2, X } from "lucide-react";
+import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Edit, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -43,6 +43,14 @@ const ManajemenPengguna: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -73,6 +81,7 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1); // Reset page on filter change
     fetchUsers();
   }, [searchQuery, selectedRole, selectedStatus, selectedRw, selectedRt]);
 
@@ -169,17 +178,33 @@ const ManajemenPengguna: React.FC = () => {
     }
   };
 
-  const handleDelete = async (user: any) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus akun ${user.name}?`)) {
-      try {
-        await api.delete(`/users/${user.id}`);
-        toast.success("Pengguna berhasil dihapus!");
-        fetchUsers();
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Gagal menghapus pengguna");
-      }
+  const handleDeleteClick = (user: any) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await api.delete(`/users/${userToDelete.id}`);
+      toast.success("Pengguna berhasil dihapus!");
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Gagal menghapus pengguna");
     }
   };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setUserToDelete(null);
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(users.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedUsers = users.slice(startIndex, startIndex + rowsPerPage);
 
   const handleExportCSV = () => {
     if (users.length === 0) {
@@ -372,8 +397,8 @@ const ManajemenPengguna: React.FC = () => {
                     {error}
                   </td>
                 </tr>
-              ) : users.length > 0 ? (
-                users.map((user) => (
+              ) : paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
                   <tr
                     key={user.id}
                     className="border-b border-outline-variant/30 hover:bg-surface-container-lowest/80 transition-colors duration-150"
@@ -452,7 +477,7 @@ const ManajemenPengguna: React.FC = () => {
                             <Edit size={18} />
                           </button>
                           <button
-                            onClick={() => handleDelete(user)}
+                            onClick={() => handleDeleteClick(user)}
                             className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
                             title="Hapus"
                           >
@@ -476,6 +501,53 @@ const ManajemenPengguna: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {users.length > 0 && !loading && !error && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/30 bg-white">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-on-surface-variant">Tampilkan</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-surface-container-low border border-outline-variant/50 rounded-md px-2 py-1 text-sm focus:border-primary focus:outline-none cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm text-on-surface-variant">data per halaman</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-on-surface-variant">
+                Menampilkan {startIndex + 1}-{Math.min(startIndex + rowsPerPage, users.length)} dari {users.length} data
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded-md hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={20} className="text-on-surface-variant" />
+                </button>
+                <div className="flex items-center px-2 text-sm font-medium text-on-surface">
+                  {currentPage} / {totalPages || 1}
+                </div>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="p-1 rounded-md hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={20} className="text-on-surface-variant" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Tambah/Edit */}
@@ -627,6 +699,35 @@ const ManajemenPengguna: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Hapus */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-on-surface mb-2">Hapus Pengguna</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Apakah Anda yakin ingin menghapus akun <strong>{userToDelete?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 px-4 py-2 rounded-lg font-medium border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 cursor-pointer transition-colors"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

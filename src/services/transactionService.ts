@@ -6,6 +6,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import { v4 as uuidv4 } from "uuid";
 const prisma = new PrismaClient();
 
 export class TransactionService {
@@ -168,7 +169,7 @@ export class TransactionService {
           weightKg: beratKg,
           volumeLiter,
           categoryId: category.id,
-          requestId: `REQ-${Date.now()}`,
+          requestId: uuidv4(),
           aiConfidence,
           aiClassification,
           actualWeightPetugas: beratKg,
