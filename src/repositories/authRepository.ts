@@ -276,14 +276,14 @@ export class AuthRepository {
               longitude: householdData.longitude,
             },
           });
-          
+
           await tx.pointHistory.create({
             data: {
               userId: user.id,
               points: 10,
               description: `Aktivasi Bin ${bin.qrCode}`,
               kategori: "PARTISIPASI_STREAK",
-            }
+            },
           });
 
           await tx.auditTrail.create({

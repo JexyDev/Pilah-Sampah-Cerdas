@@ -565,7 +565,7 @@ export class AuthService {
     const hashedPassword = await hashPassword(newPassword);
     await prisma.user.update({
       where: { email },
-      data: { password: hashedPassword }
+      data: { password: hashedPassword },
     });
   }
 }

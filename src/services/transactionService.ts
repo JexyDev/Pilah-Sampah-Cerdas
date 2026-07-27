@@ -136,7 +136,6 @@ export class TransactionService {
         category.name.toUpperCase().includes("ORGANIK") &&
         !category.name.toUpperCase().includes("ANORGANIK") &&
         !category.name.toUpperCase().includes("NON");
-      const types = ["ORGANIC", "NON_ORGANIC"];
 
       // We'll randomly generate AI confidence to simulate discrepancies
       // Or just always match the category if confidence < 90, but to allow PENDING_REVIEW, we'll randomize a bit

@@ -213,8 +213,8 @@ export class KknService {
             points: 10,
             description: `Membantu pendaftaran warga baru ${newWarga.phone}`,
             kategori: "PARTISIPASI_STREAK",
-          }
-        ]
+          },
+        ],
       });
 
       // 5. Audit log activation request with Mahasiswa GPS location

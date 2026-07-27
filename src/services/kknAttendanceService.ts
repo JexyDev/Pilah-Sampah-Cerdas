@@ -20,8 +20,7 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 
   const a =
     Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-    Math.cos(phi1) * Math.cos(phi2) *
-    Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
@@ -104,9 +103,17 @@ export class KknAttendanceService {
               longitude,
               method: "OTOMATIS",
             });
-            triggerResults.push({ scheduleId: schedule.id, status: "AUTO_ATTEND_SUCCESS", data: att });
+            triggerResults.push({
+              scheduleId: schedule.id,
+              status: "AUTO_ATTEND_SUCCESS",
+              data: att,
+            });
           } catch (err: any) {
-            triggerResults.push({ scheduleId: schedule.id, status: "AUTO_ATTEND_FAILED", error: err.message });
+            triggerResults.push({
+              scheduleId: schedule.id,
+              status: "AUTO_ATTEND_FAILED",
+              error: err.message,
+            });
           }
         }
       }
@@ -169,7 +176,9 @@ export class KknAttendanceService {
     // 2. Validate radius on backend
     const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
     if (distance > actLoc.radius) {
-      throw new Error(`OUT_OF_RADIUS: Jarak mahasiswa (${distance.toFixed(1)}m) melebihi batas radius (${actLoc.radius}m).`);
+      throw new Error(
+        `OUT_OF_RADIUS: Jarak mahasiswa (${distance.toFixed(1)}m) melebihi batas radius (${actLoc.radius}m).`
+      );
     }
 
     // 3. Create or update attendance record
@@ -250,7 +259,7 @@ export class KknAttendanceService {
     });
 
     // Deduplicate to only keep the latest location per student
-    const uniqueStudents = new Map<string, typeof locations[0]>();
+    const uniqueStudents = new Map<string, (typeof locations)[0]>();
     for (const loc of locations) {
       if (!uniqueStudents.has(loc.studentId)) {
         uniqueStudents.set(loc.studentId, loc);
@@ -302,7 +311,8 @@ export class KknAttendanceService {
           scheduleLoc.latitude,
           scheduleLoc.longitude
         );
-        currentStatus = dist <= scheduleLoc.radius ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
+        currentStatus =
+          dist <= scheduleLoc.radius ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
       }
 
       return {

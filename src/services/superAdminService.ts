@@ -512,8 +512,9 @@ export class SuperAdminService {
     });
   }
 
-  async approveBin(binId: string, adminUserId: string) {
-    const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
+  async approveBin(binId: string, _adminUserId: string) {
+    const { notificationIntegrationService: notificationService } =
+      await import("./notificationIntegrationService.js");
     return prisma.$transaction(async (tx) => {
       const bin = await tx.bin.findUnique({
         where: { id: binId },
@@ -554,10 +555,12 @@ export class SuperAdminService {
       }
 
       if (bin.user?.phone) {
-        await notificationService.sendWhatsApp(
-          bin.user.phone,
-          `Pengajuan bin ${bin.qrCode} Anda telah disetujui oleh Administrator.`
-        ).catch(e => console.error("WA Error:", e));
+        await notificationService
+          .sendWhatsApp(
+            bin.user.phone,
+            `Pengajuan bin ${bin.qrCode} Anda telah disetujui oleh Administrator.`
+          )
+          .catch((e) => console.error("WA Error:", e));
       }
 
       return updatedBin;
@@ -565,7 +568,8 @@ export class SuperAdminService {
   }
 
   async rejectBin(binId: string, reason: string) {
-    const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
+    const { notificationIntegrationService: notificationService } =
+      await import("./notificationIntegrationService.js");
     const bin = await prisma.bin.update({
       where: { id: binId },
       data: { status: "PRINTED", userId: null },
@@ -573,10 +577,12 @@ export class SuperAdminService {
     });
 
     if (bin.user?.phone) {
-      await notificationService.sendWhatsApp(
-        bin.user.phone,
-        `Pengajuan bin ${bin.qrCode} ditolak oleh Administrator. Alasan: ${reason}`
-      ).catch(e => console.error("WA Error:", e));
+      await notificationService
+        .sendWhatsApp(
+          bin.user.phone,
+          `Pengajuan bin ${bin.qrCode} ditolak oleh Administrator. Alasan: ${reason}`
+        )
+        .catch((e) => console.error("WA Error:", e));
     }
     return bin;
   }
@@ -591,7 +597,8 @@ export class SuperAdminService {
   }
 
   async verifyPetugas(petugasId: string, action: "APPROVED" | "REJECTED") {
-    const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
+    const { notificationIntegrationService: notificationService } =
+      await import("./notificationIntegrationService.js");
     const petugas = await prisma.petugasResidu.update({
       where: { id: petugasId },
       data: { whitelistStatus: action },
@@ -599,10 +606,12 @@ export class SuperAdminService {
     });
 
     if (petugas.user?.phone && action === "APPROVED") {
-      await notificationService.sendWhatsApp(
-        petugas.user.phone,
-        `Akun Petugas Residu Anda telah diverifikasi oleh Administrator dan kini AKTIF.`
-      ).catch(e => console.error("WA Error:", e));
+      await notificationService
+        .sendWhatsApp(
+          petugas.user.phone,
+          `Akun Petugas Residu Anda telah diverifikasi oleh Administrator dan kini AKTIF.`
+        )
+        .catch((e) => console.error("WA Error:", e));
     }
     return petugas;
   }

@@ -13,17 +13,17 @@ const COMMANDS = `cd /var/www/pilah-sampah-cerdas/backend && git stash && git pu
 
 conn.on('ready', () => {
   console.log('Client :: ready');
-  conn.exec(COMMANDS, (err, stream) => {
+  conn.exec(COMMANDS, (err: any, stream: any) => {
     if (err) throw err;
-    stream.on('close', (code, signal) => {
+    stream.on('close', (code: any, signal: any) => {
       console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
       conn.end();
-    }).on('data', (data) => {
+    }).on('data', (data: any) => {
       process.stdout.write(data.toString());
-    }).stderr.on('data', (data) => {
+    }).stderr.on('data', (data: any) => {
       process.stderr.write(data.toString());
     });
   });
-}).on('error', (err) => {
+}).on('error', (err: any) => {
     console.error("SSH Error:", err);
 }).connect(config);
