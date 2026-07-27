@@ -428,7 +428,7 @@ const JadwalKegiatan: React.FC = () => {
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`}></div>
                     
                     {user?.peran === "SUPER_ADMIN" && (
-                      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute right-2 bottom-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => handleEdit(schedule, e)}
                           className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
