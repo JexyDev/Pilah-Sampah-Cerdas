@@ -82,6 +82,23 @@ export class IdeDaurUlangService {
       data: { statusApproval: "REJECTED", approvedBy: rejectedBy },
     });
   }
+
+  async updateIde(id: string, judul: string, material: string, foto: string | null) {
+    const data: any = { judul, material };
+    if (foto !== null) {
+      data.foto = foto;
+    }
+    return prisma.ideDaurUlang.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteIde(id: string) {
+    return prisma.ideDaurUlang.delete({
+      where: { id },
+    });
+  }
 }
 
 export const ideDaurUlangService = new IdeDaurUlangService();

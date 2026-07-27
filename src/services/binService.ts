@@ -428,7 +428,14 @@ export class BinService {
 
     const pointsPerKg = bin.category.pointsPerKg || 10;
     const conf = aiConfidence || 1.0;
-    const calculatedPoints = Math.round(conf * pointsPerKg * multiplier);
+    const maxPoints = Math.round(weightKg * pointsPerKg * multiplier);
+    
+    let calculatedPoints = 0;
+    if (conf >= 0.9) {
+      calculatedPoints = Math.round(maxPoints * (0.9 * conf));
+    } else {
+      calculatedPoints = -Math.round(maxPoints * (0.9 - conf));
+    }
 
     // 8. Record transaction (WasteLog, PointHistory, Notification)
     const requestId = uuidv4();

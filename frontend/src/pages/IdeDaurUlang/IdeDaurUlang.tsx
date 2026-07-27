@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Upload, Send, Loader2, CheckCircle, XCircle, Search, Filter } from "lucide-react";
+import { Upload, Send, Loader2, CheckCircle, XCircle, Search, Filter, Trash2, X, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -25,6 +25,7 @@ const IdeDaurUlang: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Form states
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [judul, setJudul] = useState("");
   const [material, setMaterial] = useState("");
   const [foto, setFoto] = useState<File | null>(null);
@@ -63,6 +64,10 @@ const IdeDaurUlang: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchInput]);
 
+  // Delete Modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!judul || !material) {
@@ -79,19 +84,52 @@ const IdeDaurUlang: React.FC = () => {
         formData.append("foto", foto);
       }
 
-      await api.post("/ide-daur-ulang", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (editingId) {
+        await api.put(`/ide-daur-ulang/${editingId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("Ide berhasil diperbarui!");
+      } else {
+        await api.post("/ide-daur-ulang", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("Ide berhasil dikirim dan menunggu persetujuan!");
+      }
 
-      toast.success("Ide berhasil dikirim dan menunggu persetujuan!");
+      setEditingId(null);
       setJudul("");
       setMaterial("");
       setFoto(null);
       fetchIdes();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengirim ide");
+      toast.error(err.response?.data?.message || "Gagal menyimpan ide");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (ide: IdeDaurUlang) => {
+    setEditingId(ide.id);
+    setJudul(ide.judul);
+    setMaterial(ide.material);
+    setFoto(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setDeletingId(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    try {
+      await api.delete(`/ide-daur-ulang/${deletingId}`);
+      toast.success("Ide berhasil dihapus");
+      setIsDeleteModalOpen(false);
+      fetchIdes();
+    } catch (err) {
+      toast.error("Gagal menghapus ide");
     }
   };
 
@@ -125,8 +163,9 @@ const IdeDaurUlang: React.FC = () => {
     return `${host}${path}`;
   };
 
-  const isWarga = user?.peran === "WARGA";
+  const canSubmit = user?.peran === "WARGA" || user?.peran === "SUPER_ADMIN" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
   const isRW = user?.peran === "RW" || user?.peran === "SUPER_ADMIN";
+  const isAdmin = user?.peran === "SUPER_ADMIN" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -136,10 +175,10 @@ const IdeDaurUlang: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Kolom Kiri: Form Submit (Hanya Warga) */}
-        {isWarga && (
+        {/* Kolom Kiri: Form Submit */}
+        {canSubmit && (
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Bagikan Ide Anda</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? "Edit Ide Daur Ulang" : "Bagikan Ide Anda"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Judul Ide</label>
@@ -186,20 +225,36 @@ const IdeDaurUlang: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50"
-              >
-                {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-                Kirim Ide
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50"
+                >
+                  {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                  {editingId ? "Simpan Perubahan" : "Kirim Ide"}
+                </button>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(null);
+                      setJudul("");
+                      setMaterial("");
+                      setFoto(null);
+                    }}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold transition text-sm"
+                  >
+                    Batal
+                  </button>
+                )}
+              </div>
             </form>
           </div>
         )}
 
         {/* Kolom Kanan: Feed List */}
-        <div className={isWarga ? "lg:col-span-2" : "lg:col-span-3"}>
+        <div className={canSubmit ? "lg:col-span-2" : "lg:col-span-3"}>
           
           {/* Search & Filter Bar */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4 items-center">
@@ -238,16 +293,35 @@ const IdeDaurUlang: React.FC = () => {
             ) : (
               <div className="space-y-6">
                 {ides.map((ide) => (
-                  <div key={ide.id} className="border border-gray-100 rounded-xl p-5 hover:bg-gray-50 transition">
+                  <div key={ide.id} className="border border-gray-100 rounded-xl p-5 hover:bg-gray-50 transition group">
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-bold text-gray-900 text-lg">{ide.judul}</h3>
                         <p className="text-xs text-gray-500">Oleh: {ide.user.name} ({ide.user.role.name}) • {new Date(ide.createdAt).toLocaleDateString()}</p>
                       </div>
-                      <div>
+                      <div className="flex items-center gap-2">
                         {ide.statusApproval === "APPROVED" && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Disetujui</span>}
                         {ide.statusApproval === "PENDING" && <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">Pending</span>}
                         {ide.statusApproval === "REJECTED" && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Ditolak</span>}
+
+                        {isAdmin && (
+                          <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleEdit(ide)}
+                              className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                              title="Edit Ide"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(ide.id)}
+                              className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors"
+                              title="Hapus Ide"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap"><span className="font-semibold text-gray-800">Material: </span>{ide.material}</p>
@@ -283,6 +357,40 @@ const IdeDaurUlang: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Hapus */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-error">Hapus Ide</h3>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-700">Apakah Anda yakin ingin menghapus konten ide daur ulang ini? File gambar terkait juga akan dihapus dari server.</p>
+            </div>
+            <div className="px-6 py-4 border-t border-outline-variant/30 flex justify-end gap-3 bg-gray-50">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-bold text-white bg-error rounded-lg hover:bg-error/90"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

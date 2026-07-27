@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Loader2, Trash2, Edit } from "lucide-react";
+import { Loader2, Trash2, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMasterDataStore } from "../../store/useMasterDataStore";
@@ -112,7 +112,7 @@ const MasterData: React.FC = () => {
                           title="Edit"
                           onClick={() => toast("Fitur Edit belum tersedia")}
                         >
-                          <Edit size={16} />
+                          <Pencil size={16} />
                         </button>
                         <button
                           className={`${styles.iconBtn} ${styles.danger}`}
@@ -162,7 +162,7 @@ const MasterData: React.FC = () => {
                           title="Edit"
                           onClick={() => toast("Fitur Edit belum tersedia")}
                         >
-                          <Edit size={16} />
+                          <Pencil size={16} />
                         </button>
                         <button
                           className={`${styles.iconBtn} ${styles.danger}`}
