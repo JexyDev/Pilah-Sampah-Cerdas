@@ -98,6 +98,18 @@ export class BinService {
       throw new Error("BIN_NOT_ACTIVE");
     }
 
+    // Check if the bin has been inactive for > 30 days
+    const lastLog = await prisma.wasteLog.findFirst({
+      where: { binId: bin.id },
+      orderBy: { createdAt: "desc" },
+    });
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const refDate = lastLog?.createdAt || bin.updatedAt;
+    if (refDate < thirtyDaysAgo) {
+      throw new Error("BIN_INACTIVE");
+    }
+
     // 2. Validate ownership (if bin is private to a user)
     if (bin.binOwnerships && bin.binOwnerships.length > 0) {
       const isOwner = bin.binOwnerships.some((o: any) => o.userId === userId);
@@ -516,7 +528,7 @@ export class BinService {
         if (!bin) {
           throw new Error(`BIN_NOT_FOUND: ${qrCode}`);
         }
-        if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
+        if (bin.status !== "PRINTED") {
           throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
         }
 
@@ -1121,7 +1133,8 @@ export class BinService {
     binId: string,
     userId: string,
     issueType: "EMPTY_REQUEST" | "BROKEN_REPORT",
-    _notes: string
+    _notes: string,
+    evidencePhotoUrl?: string
   ) {
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
@@ -1150,6 +1163,38 @@ export class BinService {
     });
 
     if (issueType === "EMPTY_REQUEST") {
+      // 1. Update bin volume to maxCapacityLiter (forces capacity to 100% full, showing red on map)
+      await prisma.bin.update({
+        where: { id: bin.id },
+        data: {
+          currentVolumeLiter: bin.maxCapacityLiter,
+        },
+      });
+
+      // 2. Find or create pending dispatch task for this bin
+      let task = await prisma.dispatchTask.findFirst({
+        where: {
+          binId: bin.id,
+          status: "PENDING",
+        },
+      });
+
+      if (!task) {
+        task = await prisma.dispatchTask.create({
+          data: {
+            binId: bin.id,
+            status: "PENDING",
+          },
+        });
+      }
+
+      // Broadcast alert via WebSocket if bin has coordinates
+      if (bin.latitude !== null && bin.longitude !== null) {
+        await websocketService
+          .broadcastDispatch(bin.id, bin.qrCode, Number(bin.latitude), Number(bin.longitude))
+          .catch(() => {});
+      }
+
       const title = "Permintaan Pengosongan Sampah";
       const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tong sampah ${bin.qrCode}.`;
 

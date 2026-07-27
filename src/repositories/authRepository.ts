@@ -224,7 +224,7 @@ export class AuthRepository {
 
         if (wargaSubtype === "UTAMA") {
           if (existingUtama) throw new Error("BIN_ALREADY_HAS_PRIMARY_OWNER");
-          if (bin.status !== "PRINTED" && bin.status !== "ASSIGNED_TO_PIC") {
+          if (bin.status !== "PRINTED") {
             throw new Error("BIN_NOT_AVAILABLE_FOR_ACTIVATION");
           }
         } else {

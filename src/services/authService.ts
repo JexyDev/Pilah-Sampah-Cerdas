@@ -17,9 +17,13 @@ export class AuthService {
   /**
    * Authenticate user with email and password, returning tokens if successful.
    */
-  async login(phone: string, password: string) {
-    // Phone is already normalized by controller (08xxx → +62xxx)
-    let user = await authRepository.findUserByPhone(phone);
+  async login(identifier: string, password: string) {
+    let user;
+    if (identifier.includes("@")) {
+      user = await authRepository.findUserByEmail(identifier);
+    } else {
+      user = await authRepository.findUserByPhone(identifier);
+    }
 
     if (!user) {
       throw new Error("USER_NOT_FOUND");
@@ -99,73 +103,7 @@ export class AuthService {
     await authRepository.deleteRefreshToken(token);
   }
 
-  async requestOtp(phone: string) {
-    const user = await authRepository.findUserByPhone(phone);
-    if (!user) {
-      throw new Error("USER_NOT_FOUND");
-    }
 
-    // Generate 6 digit random OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
-
-    await authRepository.createOtp(phone, otp, expiresAt);
-
-    await notificationIntegrationService
-      .sendWhatsApp(
-        phone,
-        `Kode OTP Anda untuk masuk ke TrashCare adalah: ${otp}. Kode berlaku selama 5 menit.`,
-        "OTP"
-      )
-      .catch((e) => console.error("WhatsApp OTP error:", e));
-
-    return {
-      message: "OTP sent via WhatsApp",
-      expiresIn: "5 minutes",
-    };
-  }
-
-  async verifyOtp(phone: string, otp: string) {
-    const user = await authRepository.findUserByPhone(phone);
-    if (!user) {
-      throw new Error("USER_NOT_FOUND");
-    }
-
-    const otpRecord = await authRepository.findOtp(phone, otp);
-    if (!otpRecord) {
-      throw new Error("INVALID_OTP");
-    }
-
-    await authRepository.markOtpUsed(otpRecord.id);
-
-    // Prepare payload
-    const payload = {
-      userId: user.id,
-      role: user.role.name,
-      rtRwId: user.rtRwId ?? undefined,
-    };
-
-    // Generate tokens
-    const accessToken = generateAccessToken(payload);
-    const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
-
-    // Save refresh token to DB
-    await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
-
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role.name,
-        phone: user.phone,
-        address: user.address,
-        fotoProfil: user.fotoProfil,
-      },
-    };
-  }
   /**
    * Update user profile
    */

@@ -9,7 +9,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { kknService } from "./kknService.js";
 import { residuService } from "./residuService.js";
-import { rwService } from "./rwService.js";
+import { authService } from "./authService.js";
 
 const prisma = new PrismaClient();
 
@@ -66,7 +66,7 @@ describe("Portals A & B Service Integration Tests", () => {
         categoryId: category!.id,
         maxCapacityLiter: 25.0,
         rtRwId: rtRwArea.id,
-        status: "ASSIGNED_TO_PIC",
+        status: "PRINTED",
         qrBatchId: qrBatch.id,
       },
     });
@@ -79,7 +79,7 @@ describe("Portals A & B Service Integration Tests", () => {
         categoryId: catIno!.id,
         maxCapacityLiter: 25.0,
         rtRwId: rtRwArea.id,
-        status: "ASSIGNED_TO_PIC",
+        status: "PRINTED",
         qrBatchId: qrBatch.id,
       },
     });
@@ -93,62 +93,43 @@ describe("Portals A & B Service Integration Tests", () => {
       expect(stats.stats.totalRegistered).toBeTypeOf("number");
     });
 
-    it("should reject bin registration if batch PIC mismatch", async () => {
-      // Create a bin with different PIC
-      const diffBin = await prisma.bin.create({
-        data: {
-          qrCode: `TS-DIFF-${Date.now()}`,
-          categoryId: testBin.categoryId,
-          rtRwId: rtRwArea.id,
-          status: "ASSIGNED_TO_PIC",
-        },
-      });
-
-      await expect(
-        kknService.registerWarga(kknUser.id, {
-          name: "Warga Test Mismatch",
-          email: `wargadiff-${Date.now()}@psc.id`,
-          phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
-          nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
-          address: "Jl. Dago Giri No. 12",
-          rtRwId: rtRwArea.id,
-          qrCodeOrganic: diffBin.qrCode,
-          qrCodeInorganic: diffBin.qrCode,
-        })
-      ).rejects.toThrow("BIN_BATCH_PIC_MISMATCH");
-    });
-
     it("should register citizen, bind bin, and reward points", async () => {
       const citizenEmail = `wargatest-${Date.now()}@psc.id`;
-      const result = await kknService.registerWarga(kknUser.id, {
-        name: "Warga Test KKN",
-        email: citizenEmail,
-        phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
-        nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
-        address: "Jl. Dago Giri No. 12",
-        rtRwId: rtRwArea.id,
-        qrCodeOrganic: testBin.qrCode,
-        qrCodeInorganic: testBin.qrCode.replace("ORG", "ANO"),
-      });
+      const result = await authService.registerWarga(
+        {
+          name: "Warga Test KKN",
+          email: citizenEmail,
+          phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
+          nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
+          password: "password123",
+          rtRwId: rtRwArea.id,
+          address: "Jl. Dago Giri No. 12",
+        },
+        {
+          address: "Jl. Dago Giri No. 12",
+          rtRwId: rtRwArea.id,
+          latitude: -6.88923,
+          longitude: 107.6105,
+        },
+        testBin.qrCode,
+        "UTAMA"
+      );
 
-      citizenUser = result.newWarga;
+      citizenUser = result.user;
 
-      expect(result).toHaveProperty("newWarga");
-      expect(result.newWarga.email).toBe(citizenEmail);
-
-      // Approve bin activation using rwService
-      await rwService.approveBin(testBin.id, rtRwArea.id);
+      expect(result).toHaveProperty("user");
+      expect(result.user.email).toBe(citizenEmail);
 
       // Verify bin is now active
       const updatedBin = await prisma.bin.findUnique({
         where: { id: testBin.id },
       });
       expect(updatedBin!.status).toBe("ACTIVE_BOUND");
-      expect(updatedBin!.userId).toBe(result.newWarga.id);
+      expect(updatedBin!.userId).toBe(result.user.id);
 
-      // Verify points recorded (+10 points for activation approved by RW)
+      // Verify points recorded (+10 points for activation)
       const wargaPoints = await prisma.pointHistory.findFirst({
-        where: { userId: result.newWarga.id },
+        where: { userId: result.user.id },
       });
       expect(wargaPoints!.points).toBe(10);
     });

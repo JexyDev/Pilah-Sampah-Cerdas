@@ -31,35 +31,7 @@ router.get("/dashboard", async (req, res, next) => {
   }
 });
 
-// BINS
-router.get("/bins/pending", async (req, res, next) => {
-  try {
-    const data = await rwService.getPendingBins(req.user!.rtRwId!);
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
 
-router.put("/bins/:id/approve", async (req, res, next) => {
-  try {
-    const data = await rwService.approveBin(req.params.id, req.user!.rtRwId!);
-    res.json({ message: "Bin berhasil diaktifkan", data });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put("/bins/:id/reject", async (req, res, next) => {
-  try {
-    const { reason } = req.body;
-    if (!reason) return res.status(400).json({ error: "Reason is required" });
-    const data = await rwService.rejectBin(req.params.id, reason, req.user!.rtRwId!);
-    res.json({ message: "Pengajuan bin ditolak", data });
-  } catch (error) {
-    next(error);
-  }
-});
 
 router.get("/bins/inactive", async (req, res, next) => {
   try {
