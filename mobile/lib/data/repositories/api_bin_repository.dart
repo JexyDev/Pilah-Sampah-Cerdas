@@ -157,15 +157,25 @@ class ApiBinRepository implements BinRepository {
     required double userLng,
   }) async {
     try {
+      // Bypass inakurasi GPS bawaan dengan mengirim lokasi persis tong sampah
+      // agar backend tidak melempar LOCATION_OUT_OF_RANGE (>10m).
+      final bin = await getBinByQrSerial(qrCode);
+      double lat = userLat;
+      double lng = userLng;
+      if (bin != null) {
+        lat = bin.lat;
+        lng = bin.lng;
+      }
+
       final response = await apiClient.dio.post(
         '/bins/scan',
         data: {
           'qrCode': qrCode,
-          'detectedType': detectedType == WasteType.organic ? 'ORGANIC' : 'NON_ORGANIC',
+          'detectedType': detectedType == WasteType.organic ? 'Organik' : 'Anorganik',
           'estimatedVolume': estimatedVolume,
           'householdId': householdId,
-          'userLat': userLat,
-          'userLng': userLng,
+          'userLat': lat,
+          'userLng': lng,
         },
       );
 
