@@ -1,4 +1,4 @@
-import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Edit, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -474,7 +474,7 @@ const ManajemenPengguna: React.FC = () => {
                             className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
                             title="Edit"
                           >
-                            <Edit size={18} />
+                            <Pencil size={18} />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(user)}

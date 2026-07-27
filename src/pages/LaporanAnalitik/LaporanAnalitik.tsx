@@ -48,6 +48,29 @@ const LaporanAnalitik: React.FC = () => {
     );
   }
 
+  const handleExportCSV = async () => {
+    try {
+      toast.loading("Menyiapkan CSV...", { id: "export" });
+      const response = await api.get("/dashboard/export-dataset", {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "waste_dataset.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Berhasil mengunduh CSV", { id: "export" });
+    } catch (error) {
+      toast.error("Gagal mengunduh CSV", { id: "export" });
+    }
+  };
+
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header & Actions */}
@@ -65,16 +88,22 @@ const LaporanAnalitik: React.FC = () => {
             </span>
             <span className="text-[14px] font-bold text-on-surface">Pusat</span>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold">
+          <button 
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold"
+          >
             <FileText size={20} />
             Export PDF
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold">
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold"
+          >
             <Grid size={20} />
             Export CSV
           </button>
           <button 
-            onClick={() => window.open('/api/v1/dashboard/export-dataset', '_blank')}
+            onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl transition-colors cursor-pointer text-[12px] font-bold shadow-md shadow-indigo-600/20"
           >
             <Download size={20} />

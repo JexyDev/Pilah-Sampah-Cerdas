@@ -1,4 +1,4 @@
-import { ChevronDown, Search, Loader2, MapPinPlus, X, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { ChevronDown, Search, Loader2, MapPinPlus, X, Trash2, AlertTriangle, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,7 +10,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
+import * as turf from "@turf/turf";
 import L from "leaflet";
 
 // Fix default Leaflet icon issue
@@ -88,6 +89,18 @@ const LocationPicker = ({ position, onChange }: { position: [number, number] | n
   return position ? <Marker position={position} /> : null;
 };
 
+const generateHexagon = (lat: number, lng: number, radius = 0.003) => {
+  const points: [number, number][] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i;
+    points.push([
+      lat + radius * Math.cos(angle),
+      lng + radius * Math.sin(angle) * 1.5,
+    ]);
+  }
+  return points;
+};
+
 const ManajemenLokasi: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
@@ -102,6 +115,10 @@ const ManajemenLokasi: React.FC = () => {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKelurahan, setSelectedKelurahan] = useState("Semua Kelurahan");
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   // Tambah Lokasi Modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -254,6 +271,13 @@ const ManajemenLokasi: React.FC = () => {
     return matchesSearch && matchesKelurahan;
   });
 
+  const paginatedLocations = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredLocations.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredLocations, currentPage]);
+  
+  const totalPages = Math.ceil(filteredLocations.length / itemsPerPage);
+
   const handleLocationClick = (loc: any) => {
     if (loc.latitude && loc.longitude) {
       setMapCenter([Number(loc.latitude), Number(loc.longitude)]);
@@ -279,23 +303,19 @@ const ManajemenLokasi: React.FC = () => {
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3">
             <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-              Legenda Peta
+              Kapasitas Tong / Zona
             </p>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Organik / Kompos</span>
+              <span className="text-[12px] font-semibold text-on-surface">&lt; 70% (Aman)</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.4)]"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Daur Ulang</span>
+              <div className="w-3 h-3 rounded-full bg-[#eab308] shadow-[0_0_8px_rgba(234,179,8,0.4)]"></div>
+              <span className="text-[12px] font-semibold text-on-surface">70% - 90% (Siaga)</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Residu / TPA</span>
-            </div>
-            <div className="flex items-center gap-3 border-t border-outline-variant/20 pt-2">
-              <div className="w-3 h-3 rounded-full bg-[#eab308] shadow-[0_0_8px_rgba(234,179,8,0.4)] animate-pulse"></div>
-              <span className="text-[12px] font-semibold text-on-surface">Flash Drop Challenge</span>
+              <span className="text-[12px] font-semibold text-on-surface">&gt; 90% (Penuh)</span>
             </div>
           </div>
         </div>
@@ -315,15 +335,107 @@ const ManajemenLokasi: React.FC = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {/* Zoom-dependent rendering: Zona (RW) vs Households */}
-            {mapZoom < 16 ? (
-              locations
-                .filter((g) => g.latitude && g.longitude)
-                .map((group, idx) => (
+            {(() => {
+              if (mapZoom >= 16) return null;
+              
+              const validLocations = locations.filter((g) => g.latitude && g.longitude);
+              if (validLocations.length === 0) return null;
+
+              // Setup Voronoi
+              let voronoiPolygons: any = null;
+              
+              // 1. Prepare points (with slight jitter to prevent collinear/identical point crashes in turf.voronoi)
+              const points = turf.featureCollection(
+                validLocations.map((g, i) => {
+                  const jitterLng = (Math.random() - 0.5) * 0.0001;
+                  const jitterLat = (Math.random() - 0.5) * 0.0001;
+                  return turf.point([g.longitude + jitterLng, g.latitude + jitterLat], { id: i });
+                })
+              );
+              
+              // 2. Add dummy points if less than 3 points
+              if (validLocations.length === 1) {
+                points.features.push(turf.point([validLocations[0].longitude + 0.05, validLocations[0].latitude + 0.05]));
+                points.features.push(turf.point([validLocations[0].longitude - 0.05, validLocations[0].latitude - 0.05]));
+              } else if (validLocations.length === 2) {
+                points.features.push(turf.point([validLocations[0].longitude + 0.05, validLocations[0].latitude + 0.05]));
+              }
+
+              // 3. Create expanded bbox
+              const bbox = turf.bbox(points);
+              const lngDiff = Math.max(Math.abs(bbox[2] - bbox[0]), 0.02);
+              const latDiff = Math.max(Math.abs(bbox[3] - bbox[1]), 0.02);
+              const expandedBbox = [
+                bbox[0] - lngDiff * 1.5, // minX
+                bbox[1] - latDiff * 1.5, // minY
+                bbox[2] + lngDiff * 1.5, // maxX
+                bbox[3] + latDiff * 1.5  // maxY
+              ] as [number, number, number, number];
+              
+              try {
+                voronoiPolygons = turf.voronoi(points, { bbox: expandedBbox });
+              } catch (e) {
+                console.error("Voronoi error:", e);
+              }
+
+              return validLocations.map((group, idx) => {
+                const rwBins = bins.filter((b) => b.rtRw === group.rw);
+                let maxPercentage = 0;
+                rwBins.forEach((bin) => {
+                  const vol = Number(bin.currentVolumeLiter || 0);
+                  const max = Number(bin.maxCapacityLiter || 25);
+                  const pct = max > 0 ? (vol / max) * 100 : 0;
+                  if (pct > maxPercentage) maxPercentage = pct;
+                });
+
+                let polygonColor = "#10B981"; // Aman < 70%
+                if (maxPercentage >= 90) polygonColor = "#ef4444"; // Penuh > 90%
+                else if (maxPercentage >= 70) polygonColor = "#eab308"; // Siaga 70-90%
+
+                // Get coordinates for Polygon
+                let positions: [number, number][] = [];
+                if (voronoiPolygons && voronoiPolygons.features) {
+                  // Find the polygon that contains our point
+                  const pt = turf.point([group.longitude, group.latitude]);
+                  const feature = voronoiPolygons.features.find((f: any) => {
+                     if (!f) return false;
+                     try {
+                       return turf.booleanPointInPolygon(pt, f);
+                     } catch(err) { return false; }
+                  });
+                  
+                  // If standard find fails, rely on index since turf voronoi usually preserves order for non-dummy points
+                  const matchedFeature = feature || voronoiPolygons.features[idx];
+                  
+                  if (matchedFeature && matchedFeature.geometry && matchedFeature.geometry.coordinates) {
+                     const coords = matchedFeature.geometry.coordinates[0];
+                     // GeoJSON is [lng, lat], Leaflet is [lat, lng]
+                     positions = coords.map((c: any) => [c[1], c[0]]);
+                  }
+                }
+                
+                // Fallback to hexagon if voronoi failed for this point
+                if (positions.length === 0) {
+                  positions = generateHexagon(group.latitude, group.longitude, 0.004);
+                }
+
+                return (
                   <React.Fragment key={`zone-frag-${idx}`}>
-                    <Circle
-                      center={[group.latitude, group.longitude]}
-                      radius={150}
-                      pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.05, weight: 1, dashArray: "4,4" }}
+                    <Polygon
+                      positions={positions}
+                      pathOptions={{
+                        color: polygonColor,
+                        fillColor: polygonColor,
+                        fillOpacity: 0.35,
+                        weight: 2,
+                        dashArray: "4",
+                      }}
+                      eventHandlers={{
+                        click: () => {
+                          setMapCenter([group.latitude, group.longitude]);
+                          setMapZoom(17);
+                        },
+                      }}
                     />
                     <Marker
                       position={[group.latitude, group.longitude]}
@@ -345,8 +457,10 @@ const ManajemenLokasi: React.FC = () => {
                       </Popup>
                     </Marker>
                   </React.Fragment>
-                ))
-            ) : (
+                );
+              });
+            })()}
+            {mapZoom >= 16 ? (
               <>
                 {/* Active Bins (Grouped by Household) */}
                 {householdGroups.map((group, idx) => {
@@ -439,7 +553,7 @@ const ManajemenLokasi: React.FC = () => {
                     </Marker>
                   ))}
               </>
-            )}
+            ) : null}
           </MapContainer>
         </div>
       </div>
@@ -473,8 +587,8 @@ const ManajemenLokasi: React.FC = () => {
               <div className="relative">
                 <select
                   value={selectedKelurahan}
-                  onChange={(e) => setSelectedKelurahan(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-2 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-on-surface-variant font-medium cursor-pointer"
+                  onChange={(e) => { setSelectedKelurahan(e.target.value); setCurrentPage(1); }}
+                  className="w-full pl-3 pr-8 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] appearance-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
                 >
                   <option value="Semua Kelurahan">Semua Kelurahan</option>
                   {kelurahans.map((k) => (
@@ -489,7 +603,7 @@ const ManajemenLokasi: React.FC = () => {
                 <Search className="absolute left-3 top-2 text-on-surface-variant" size={18} />
                 <input
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                   className="w-full pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
                   placeholder="Cari RW..."
                   type="text"
@@ -508,8 +622,8 @@ const ManajemenLokasi: React.FC = () => {
             </div>
           ) : error ? (
             <div className="p-8 text-center text-error font-medium">{error}</div>
-          ) : filteredLocations.length > 0 ? (
-            filteredLocations.map((loc) => (
+          ) : paginatedLocations.length > 0 ? (
+            paginatedLocations.map((loc) => (
               <div
                 key={loc.id || loc.rw}
                 onClick={() => handleLocationClick(loc)}
@@ -550,7 +664,7 @@ const ManajemenLokasi: React.FC = () => {
                         className="p-1.5 bg-surface-container hover:bg-primary/20 text-primary rounded-lg transition-colors"
                         title="Edit Lokasi"
                       >
-                        <Edit size={16} />
+                        <Pencil size={16} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteClick(e, loc.id)}
@@ -570,6 +684,29 @@ const ManajemenLokasi: React.FC = () => {
             </p>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className="px-3 py-1.5 bg-white border border-outline-variant/50 rounded text-[13px] font-bold disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <span className="text-[13px] text-on-surface-variant font-medium">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className="px-3 py-1.5 bg-white border border-outline-variant/50 rounded text-[13px] font-bold disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tambah Lokasi Modal */}
