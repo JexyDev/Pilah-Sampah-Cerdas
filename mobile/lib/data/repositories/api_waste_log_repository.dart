@@ -105,13 +105,13 @@ class ApiWasteLogRepository implements WasteLogRepository {
           final rank = userEntry['rank'];
           return '#$rank';
         }
-        return 'Belum ada rank';
+        return '-';
       }
-      return 'Belum ada rank';
+      return '-';
     } on DioException catch (_) {
-      return 'Belum ada rank';
+      return '-';
     } catch (_) {
-      return 'Belum ada rank';
+      return '-';
     }
   }
 
