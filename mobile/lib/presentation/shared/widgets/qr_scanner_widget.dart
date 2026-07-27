@@ -90,9 +90,14 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       
       // Call callback and check if we need to reset
       final bool success = await widget.onQrDetected(code);
-      if (!success && mounted) {
-        // Cooldown sebelum bisa scan lagi
-        await Future.delayed(const Duration(milliseconds: 1500));
+      if (mounted) {
+        if (!success) {
+          // Cooldown sebelum bisa scan lagi
+          await Future.delayed(const Duration(milliseconds: 1500));
+        } else {
+          // Jeda sebelum lanjut scan tong berikutnya
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
         if (mounted) {
           setState(() => _scanned = false);
         }
@@ -149,8 +154,82 @@ class QrScannerWidgetState extends State<QrScannerWidget>
             aspectRatio: 1.0,
             child: Stack(
               children: [
+                // MobileScanner selalu ada di widget tree agar stream tidak putus
+                MobileScanner(
+                  controller: _controller!,
+                  onDetect: _onDetect,
+                  errorBuilder: (ctx, error, child) {
+                    return Container(
+                      color: Colors.black,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.dangerRed,
+                              size: 36,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Error: ${error.errorDetails?.message ?? 'Kamera gagal'}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _state = _QrState.loading;
+                                  _scanned = false;
+                                });
+                                _requestPermissionAndStart();
+                              },
+                              child: const Text(
+                                'Coba Lagi',
+                                style: TextStyle(
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                // Overlay frame
+                CustomPaint(
+                  painter: _ScanOverlayPainter(color: frameColor),
+                  child: const SizedBox.expand(),
+                ),
+                // Flash button
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: _FlashButton(controller: _controller!),
+                ),
+                // Label
+                const Positioned(
+                  bottom: 14,
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    'Posisikan QR Code di dalam kotak',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                // Konfirmasi QR terdeteksi ditaruh di paling atas
                 if (_scanned)
-                  // Konfirmasi QR terdeteksi
                   Container(
                     color: Colors.black87,
                     child: const Center(
@@ -174,83 +253,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                         ],
                       ),
                     ),
-                  )
-                else ...[
-                  // MobileScanner
-                  MobileScanner(
-                    controller: _controller!,
-                    onDetect: _onDetect,
-                    errorBuilder: (ctx, error, child) {
-                      return Container(
-                        color: Colors.black,
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.error_outline_rounded,
-                                color: AppColors.dangerRed,
-                                size: 36,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Error: ${error.errorDetails?.message ?? 'Kamera gagal'}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 12),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _state = _QrState.loading;
-                                    _scanned = false;
-                                  });
-                                  _requestPermissionAndStart();
-                                },
-                                child: const Text(
-                                  'Coba Lagi',
-                                  style: TextStyle(
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
                   ),
-                  // Overlay frame
-                  CustomPaint(
-                    painter: _ScanOverlayPainter(color: frameColor),
-                    child: const SizedBox.expand(),
-                  ),
-                  // Flash button
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: _FlashButton(controller: _controller!),
-                  ),
-                  // Label
-                  const Positioned(
-                    bottom: 14,
-                    left: 0,
-                    right: 0,
-                    child: Text(
-                      'Posisikan QR Code di dalam kotak',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -403,7 +406,10 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                   ),
                   textCapitalization: TextCapitalization.characters,
                   onSubmitted: (v) async {
-                    if (v.trim().isNotEmpty) await widget.onQrDetected(v.trim());
+                    if (v.trim().isNotEmpty) {
+                      final success = await widget.onQrDetected(v.trim());
+                      if (success) textCtrl.clear();
+                    }
                   },
                 ),
               ),
@@ -411,7 +417,10 @@ class QrScannerWidgetState extends State<QrScannerWidget>
               ElevatedButton(
                 onPressed: () async {
                   final v = textCtrl.text.trim();
-                  if (v.isNotEmpty) await widget.onQrDetected(v);
+                  if (v.isNotEmpty) {
+                    final success = await widget.onQrDetected(v);
+                    if (success) textCtrl.clear();
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
