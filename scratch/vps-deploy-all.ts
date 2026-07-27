@@ -48,9 +48,9 @@ conn.on("ready", () => {
   `;
 
   console.log("Running git pull/reset on VPS...");
-  conn.exec(gitCmd, (err, stream) => {
+  conn.exec(gitCmd, (err: any, stream: any) => {
     if (err) throw err;
-    stream.on("close", (code) => {
+    stream.on("close", (code: any) => {
       console.log(`Git pull completed with code ${code}`);
       if (code !== 0) {
         conn.end();
@@ -67,7 +67,7 @@ conn.on("ready", () => {
 
 function uploadSeeds() {
   console.log("Uploading seed scripts to VPS...");
-  conn.sftp((err, sftp) => {
+  conn.sftp((err: any, sftp: any) => {
     if (err) throw err;
 
     // Create scratch dir if not exist
@@ -83,7 +83,7 @@ function uploadSeeds() {
         const file = SEED_FILES[completed];
         console.log(`Uploading ${path.basename(file.local)} -> ${file.remote}...`);
         const content = fs.readFileSync(file.local);
-        sftp.writeFile(file.remote, content, (writeErr) => {
+        sftp.writeFile(file.remote, content, (writeErr: any) => {
           if (writeErr) {
             console.error("Upload failed:", writeErr);
             conn.end();
@@ -122,9 +122,9 @@ function runBuildAndSeed() {
     echo 'Makerdotindo2026' | sudo -S pm2 start psc-backend
   `;
 
-  conn.exec(buildAndSeedCmd, (err, stream) => {
+  conn.exec(buildAndSeedCmd, (err: any, stream: any) => {
     if (err) throw err;
-    stream.on("close", (code) => {
+    stream.on("close", (code: any) => {
       console.log(`Build & Seed completed with exit code: ${code}`);
       
       // Now build the frontend
@@ -145,9 +145,9 @@ function buildFrontend() {
     npm run build
   `;
   
-  conn.exec(frontendCmd, (err, stream) => {
+  conn.exec(frontendCmd, (err: any, stream: any) => {
     if (err) throw err;
-    stream.on("close", (code) => {
+    stream.on("close", (code: any) => {
       console.log(`Frontend build completed with exit code: ${code}`);
       conn.end();
       if (code === 0) {

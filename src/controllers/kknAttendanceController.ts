@@ -14,8 +14,14 @@ export const kknAttendanceController = {
       const studentId = req.user!.userId;
       const { latitude, longitude, lat, lng } = req.body;
 
-      const finalLat = latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
-      const finalLng = longitude !== undefined ? parseFloat(longitude) : lng !== undefined ? parseFloat(lng) : null;
+      const finalLat =
+        latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
+      const finalLng =
+        longitude !== undefined
+          ? parseFloat(longitude)
+          : lng !== undefined
+            ? parseFloat(lng)
+            : null;
 
       if (finalLat === null || finalLng === null || isNaN(finalLat) || isNaN(finalLng)) {
         res.status(400).json({
@@ -26,7 +32,11 @@ export const kknAttendanceController = {
         return;
       }
 
-      const result = await kknAttendanceService.updateStudentLocation(studentId, finalLat, finalLng);
+      const result = await kknAttendanceService.updateStudentLocation(
+        studentId,
+        finalLat,
+        finalLng
+      );
       res.status(200).json({
         success: true,
         data: result,
@@ -75,8 +85,14 @@ export const kknAttendanceController = {
       const { id } = req.params;
       const { latitude, longitude, lat, lng, method } = req.body;
 
-      const finalLat = latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
-      const finalLng = longitude !== undefined ? parseFloat(longitude) : lng !== undefined ? parseFloat(lng) : null;
+      const finalLat =
+        latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
+      const finalLng =
+        longitude !== undefined
+          ? parseFloat(longitude)
+          : lng !== undefined
+            ? parseFloat(lng)
+            : null;
       const finalMethod = method || "MANUAL";
 
       if (!id) {
@@ -124,23 +140,17 @@ export const kknAttendanceController = {
       const isAlreadyAttended = error.message === "ALREADY_ATTENDED";
       const isNotFound = error.message === "SCHEDULE_NOT_FOUND";
 
-      const status = isOutOfRadius
-        ? 400
-        : isAlreadyAttended
-        ? 409
-        : isNotFound
-        ? 404
-        : 500;
+      const status = isOutOfRadius ? 400 : isAlreadyAttended ? 409 : isNotFound ? 404 : 500;
 
       res.status(status).json({
         success: false,
         error: isOutOfRadius
           ? "OUT_OF_RADIUS"
           : isAlreadyAttended
-          ? "ALREADY_ATTENDED"
-          : isNotFound
-          ? "NOT_FOUND"
-          : "INTERNAL_SERVER_ERROR",
+            ? "ALREADY_ATTENDED"
+            : isNotFound
+              ? "NOT_FOUND"
+              : "INTERNAL_SERVER_ERROR",
         message: error.message || "Gagal melakukan absensi kegiatan",
       });
     }

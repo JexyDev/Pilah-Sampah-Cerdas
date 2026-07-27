@@ -21,7 +21,8 @@ const gpsRateLimiter = (req: any, res: any, next: any) => {
   }
   const now = Date.now();
   const lastRequest = lastRequestMap.get(userId) || 0;
-  if (now - lastRequest < 15000) { // 15 seconds
+  if (now - lastRequest < 15000) {
+    // 15 seconds
     res.status(429).json({
       success: false,
       error: "TOO_MANY_REQUESTS",

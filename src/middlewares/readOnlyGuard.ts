@@ -58,9 +58,15 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
             const isQrBatchManagement =
               role === "ADMIN_DLH" &&
               (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") &&
-              (req.originalUrl.includes("/bins/generate-qr") || req.originalUrl.includes("/bins/qr-batch"));
+              (req.originalUrl.includes("/bins/generate-qr") ||
+                req.originalUrl.includes("/bins/qr-batch"));
 
-            if (!isResolveDiscrepancy && !isRegisterStaff && !isKknApproval && !isQrBatchManagement) {
+            if (
+              !isResolveDiscrepancy &&
+              !isRegisterStaff &&
+              !isKknApproval &&
+              !isQrBatchManagement
+            ) {
               res.status(403).json({
                 error: "FORBIDDEN",
                 message: `Role ${role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,

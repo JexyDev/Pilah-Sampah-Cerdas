@@ -23,7 +23,7 @@ class NotificationEngine {
     try {
       // Setup timezone
       tz.initializeTimeZones();
-      final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
+      final String currentTimeZone = (await FlutterTimezone.getLocalTimezone()).identifier;
       tz.setLocalLocation(tz.getLocation(currentTimeZone));
       
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -34,7 +34,7 @@ class NotificationEngine {
       );
 
       await _flutterLocalNotificationsPlugin.initialize(
-        initializationSettings,
+        settings: initializationSettings,
       );
 
       _isInitialized = true;
@@ -72,8 +72,8 @@ class NotificationEngine {
   Future<void> _scheduleFixedNotifications() async {
     try {
       // Hapus jadwal lama agar tidak dobel jika logic berubah
-      await _flutterLocalNotificationsPlugin.cancel(1);
-      await _flutterLocalNotificationsPlugin.cancel(2);
+      await _flutterLocalNotificationsPlugin.cancel(id: 1);
+      await _flutterLocalNotificationsPlugin.cancel(id: 2);
 
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'schedule_channel',

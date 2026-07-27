@@ -75,7 +75,7 @@ export class CronService {
     }
   }
 
-  public async evaluateShiftPenalty(shift: string) {
+  public async evaluateShiftPenalty(_shift: string) {
     try {
       const petugasList = await prisma.petugasResidu.findMany({
         where: { whitelistStatus: "APPROVED" },
@@ -274,16 +274,6 @@ export class CronService {
       });
 
       const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      const endOfToday = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        23,
-        59,
-        59,
-        999
-      );
 
       // Define window start/end hours
       const startHour = window === "MORNING" ? 6 : 16;

@@ -5,17 +5,17 @@ import path from "path";
 const conn = new Client();
 
 conn.on("ready", () => {
-  conn.sftp((err, sftp) => {
+  conn.sftp((err: any, sftp: any) => {
     if (err) throw err;
     const localFile = path.resolve("scratch/check-db-users.ts");
     const remoteFile = "/var/www/pilah-sampah-cerdas/backend/scratch/check-db-users.ts";
     
     console.log("Uploading check-db-users.ts...");
-    sftp.writeFile(remoteFile, fs.readFileSync(localFile), (writeErr) => {
+    sftp.writeFile(remoteFile, fs.readFileSync(localFile), (writeErr: any) => {
       if (writeErr) throw writeErr;
       
       console.log("Executing script on VPS...");
-      conn.exec("cd /var/www/pilah-sampah-cerdas/backend && npx tsx scratch/check-db-users.ts", (execErr, stream) => {
+      conn.exec("cd /var/www/pilah-sampah-cerdas/backend && npx tsx scratch/check-db-users.ts", (execErr: any, stream: any) => {
         if (execErr) throw execErr;
         stream.on("close", () => {
           conn.end();

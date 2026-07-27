@@ -6,7 +6,7 @@ export const adminMahasiswaController = {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const search = req.query.search as string || "";
+      const search = (req.query.search as string) || "";
 
       const result = await adminMahasiswaService.getAllMahasiswa(page, limit, search);
       res.status(200).json({ success: true, ...result });
@@ -25,12 +25,19 @@ export const adminMahasiswaController = {
       }
 
       const result = await adminMahasiswaService.createMahasiswa({
-        nama_lengkap, nim, universitas, no_telepon, area_tugas, status_aktif
+        nama_lengkap,
+        nim,
+        universitas,
+        no_telepon,
+        area_tugas,
+        status_aktif,
       });
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[AdminMahasiswa] create error:", error);
-      res.status(500).json({ success: false, message: error.message || "Failed to create mahasiswa" });
+      res
+        .status(500)
+        .json({ success: false, message: error.message || "Failed to create mahasiswa" });
     }
   },
 
@@ -42,7 +49,9 @@ export const adminMahasiswaController = {
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[AdminMahasiswa] update error:", error);
-      res.status(500).json({ success: false, message: error.message || "Failed to update mahasiswa" });
+      res
+        .status(500)
+        .json({ success: false, message: error.message || "Failed to update mahasiswa" });
     }
   },
 
@@ -53,7 +62,9 @@ export const adminMahasiswaController = {
       res.status(200).json({ success: true, message: "Mahasiswa berhasil dinonaktifkan" });
     } catch (error: any) {
       console.error("[AdminMahasiswa] delete error:", error);
-      res.status(500).json({ success: false, message: error.message || "Failed to delete mahasiswa" });
+      res
+        .status(500)
+        .json({ success: false, message: error.message || "Failed to delete mahasiswa" });
     }
-  }
+  },
 };

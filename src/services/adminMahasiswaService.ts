@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export const adminMahasiswaService = {
   getAllMahasiswa: async (page = 1, limit = 10, search = "") => {
     const skip = (page - 1) * limit;
-    
+
     const whereClause: any = {
       role: { name: "MAHASISWA_KKN" },
       status: "Aktif",
@@ -89,14 +89,17 @@ export const adminMahasiswaService = {
     });
   },
 
-  updateMahasiswa: async (id: string, data: {
-    nama_lengkap?: string;
-    nim?: string;
-    universitas?: string;
-    no_telepon?: string;
-    area_tugas?: number;
-    status_aktif?: string;
-  }) => {
+  updateMahasiswa: async (
+    id: string,
+    data: {
+      nama_lengkap?: string;
+      nim?: string;
+      universitas?: string;
+      no_telepon?: string;
+      area_tugas?: number;
+      status_aktif?: string;
+    }
+  ) => {
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
         where: { id },

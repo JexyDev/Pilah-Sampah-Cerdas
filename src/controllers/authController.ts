@@ -623,10 +623,12 @@ export class AuthController {
         kelurahan,
         latitude,
         longitude,
-        nama,
-        noWa,
+        nama: _nama,
+        noWa: _noWa,
         ...userData
       } = parsed.data;
+      void _nama;
+      void _noWa;
 
       // Resolve rtRwId from string if needed
       let resolvedRtRwId = rtRwId;

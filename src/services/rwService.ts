@@ -118,12 +118,15 @@ export const rwService = {
           select: { fcmToken: true },
         });
         if (pic?.fcmToken) {
-          const { notificationIntegrationService } = await import("./notificationIntegrationService.js");
-          await notificationIntegrationService.sendPushNotification(
-            pic.fcmToken,
-            "Poin Bertambah!",
-            `Registrasi ${bin.user.name} berhasil diaktivasi, kamu dapat +10 poin`
-          ).catch((e) => console.error("FCM Error in approveBin:", e));
+          const { notificationIntegrationService } =
+            await import("./notificationIntegrationService.js");
+          await notificationIntegrationService
+            .sendPushNotification(
+              pic.fcmToken,
+              "Poin Bertambah!",
+              `Registrasi ${bin.user.name} berhasil diaktivasi, kamu dapat +10 poin`
+            )
+            .catch((e) => console.error("FCM Error in approveBin:", e));
         }
       }
 

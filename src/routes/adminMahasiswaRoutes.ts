@@ -2,7 +2,6 @@ import { Router } from "express";
 import { adminMahasiswaController } from "../controllers/adminMahasiswaController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { readOnlyGuard } from "../middlewares/readOnlyGuard.js";
 
 const router = Router();
 

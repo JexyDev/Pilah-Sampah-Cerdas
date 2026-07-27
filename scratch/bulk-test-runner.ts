@@ -219,11 +219,11 @@ async function generateWargaViaPrisma(orgBins: any[], anoBins: any[]): Promise<a
     return existingWarga.map((w) => {
       const ownership = ownershipMap.get(w.id);
       return {
-        id: w.id, email: w.email, password: "password123",
+        id: w.id, email: w.email || "", password: "password123",
         lat: Number(w.households[0]?.latitude) || LAT_BASE,
         lng: Number(w.households[0]?.longitude) || LNG_BASE,
         householdId: w.households[0]?.id,
-        index: parseInt(w.email.match(/uji\.warga\.(\d+)/)?.[1] || "1"),
+        index: parseInt((w.email || "").match(/uji\.warga\.(\d+)/)?.[1] || "1"),
         orgBinId: ownership?.binId,
         orgQr: ownership?.bin?.qrCode,
       };

@@ -28,6 +28,7 @@ async function run() {
         password: passwordHash,
         roleId: roleWarga.id,
         nik: "3273012345678999",
+        phone: "+6282222222222",
         status: "Aktif",
       },
     });
@@ -49,7 +50,7 @@ async function run() {
         data: {
           userId: user1Id,
           address: "Jl. Owner 1",
-          rtRwId: bin.rtRwId,
+          rtRwId: bin.rtRwId ?? 1,
           latitude: -6.8895,
           longitude: 107.6108,
         },
@@ -63,7 +64,7 @@ async function run() {
         data: {
           userId: user2Id,
           address: "Jl. Non-Owner 2",
-          rtRwId: bin.rtRwId,
+          rtRwId: bin.rtRwId ?? 1,
           latitude: -6.8895,
           longitude: 107.6108,
         },
