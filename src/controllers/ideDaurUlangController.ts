@@ -68,6 +68,34 @@ export class IdeDaurUlangController {
       res.status(500).json({ success: false, message: "Gagal reject ide" });
     }
   }
+  async updateIde(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { judul, material } = req.body;
+      const foto = req.file ? `/uploads/${req.file.filename}` : null;
+
+      if (!judul || !material) {
+        return res.status(400).json({ success: false, message: "Judul dan material wajib diisi" });
+      }
+
+      const ide = await ideDaurUlangService.updateIde(id, judul, material, foto);
+      res.status(200).json({ success: true, data: ide });
+    } catch (error) {
+      console.error("[IdeDaurUlangController] updateIde error:", error);
+      res.status(500).json({ success: false, message: "Gagal update ide" });
+    }
+  }
+
+  async deleteIde(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await ideDaurUlangService.deleteIde(id);
+      res.status(200).json({ success: true, message: "Ide berhasil dihapus" });
+    } catch (error) {
+      console.error("[IdeDaurUlangController] deleteIde error:", error);
+      res.status(500).json({ success: false, message: "Gagal menghapus ide" });
+    }
+  }
 }
 
 export const ideDaurUlangController = new IdeDaurUlangController();

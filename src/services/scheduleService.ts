@@ -22,6 +22,9 @@ export const scheduleService = {
     time?: string;
     category: string;
     location?: string;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
   }) => {
     return prisma.schedule.create({
       data,
@@ -42,6 +45,9 @@ export const scheduleService = {
       time?: string;
       category?: string;
       location?: string;
+      latitude?: number;
+      longitude?: number;
+      radius?: number;
     }
   ) => {
     return prisma.schedule.update({

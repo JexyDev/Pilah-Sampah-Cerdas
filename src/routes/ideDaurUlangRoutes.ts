@@ -6,11 +6,11 @@ import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
-// Endpoint for Warga to submit ide
+// Endpoint for Warga and Admins to submit ide
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["WARGA"]),
+  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "RW"]),
   uploadAvatarMiddleware.single("foto"),
   ideDaurUlangController.submitIde.bind(ideDaurUlangController)
 );
@@ -44,6 +44,23 @@ router.put(
   authMiddleware,
   roleMiddleware(["RW", "SUPER_ADMIN"]),
   ideDaurUlangController.reject.bind(ideDaurUlangController)
+);
+
+// Endpoint for Admin to update ideas
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  uploadAvatarMiddleware.single("foto"),
+  ideDaurUlangController.updateIde.bind(ideDaurUlangController)
+);
+
+// Endpoint for Admin to delete ideas
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  ideDaurUlangController.deleteIde.bind(ideDaurUlangController)
 );
 
 export default router;
