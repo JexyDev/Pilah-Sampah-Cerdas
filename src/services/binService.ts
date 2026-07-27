@@ -528,23 +528,24 @@ export class BinService {
           requestedCategoryIds.add(bin.categoryId);
 
           // Check for existing bin of the same category owned by user
-          const existingOwnership = await tx.binOwnership.findFirst({
-            where: {
-              userId: user.id,
-              bin: {
-                categoryId: bin.categoryId,
-                status: {
-                  notIn: ["BROKEN", "INACTIVE"],
-                },
-              },
-            },
-            include: { bin: { include: { category: true } } },
-          });
+          // DISABLED BYPASS: Allow multiple bins of the same category per user
+          // const existingOwnership = await tx.binOwnership.findFirst({
+          //   where: {
+          //     userId: user.id,
+          //     bin: {
+          //       categoryId: bin.categoryId,
+          //       status: {
+          //         notIn: ["BROKEN", "INACTIVE"],
+          //       },
+          //     },
+          //   },
+          //   include: { bin: { include: { category: true } } },
+          // });
 
-          if (existingOwnership) {
-            const catName = existingOwnership.bin.category?.name || "kategori ini";
-            throw new Error(`BIN_CATEGORY_DUPLICATE:${catName}`);
-          }
+          // if (existingOwnership) {
+          //   const catName = existingOwnership.bin.category?.name || "kategori ini";
+          //   throw new Error(`BIN_CATEGORY_DUPLICATE:${catName}`);
+          // }
         }
 
         const updatedBin = await tx.bin.update({
