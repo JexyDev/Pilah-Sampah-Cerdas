@@ -1,4 +1,4 @@
-import { ChevronDown, Search, Loader2, MapPinPlus, X, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { ChevronDown, Search, Loader2, MapPinPlus, X, Trash2, AlertTriangle, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
+import * as turf from "@turf/turf";
 import L from "leaflet";
 
 // Fix default Leaflet icon issue
@@ -334,63 +335,132 @@ const ManajemenLokasi: React.FC = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {/* Zoom-dependent rendering: Zona (RW) vs Households */}
-            {mapZoom < 16 ? (
-              locations
-                .filter((g) => g.latitude && g.longitude)
-                .map((group, idx) => {
-                  const rwBins = bins.filter((b) => b.rtRw === group.rw);
-                  let maxPercentage = 0;
-                  rwBins.forEach((bin) => {
-                    const vol = Number(bin.currentVolumeLiter || 0);
-                    const max = Number(bin.maxCapacityLiter || 25);
-                    const pct = max > 0 ? (vol / max) * 100 : 0;
-                    if (pct > maxPercentage) maxPercentage = pct;
-                  });
+            {(() => {
+              if (mapZoom >= 16) return null;
+              
+              const validLocations = locations.filter((g) => g.latitude && g.longitude);
+              if (validLocations.length === 0) return null;
 
-                  let polygonColor = "#10B981"; // Aman < 70%
-                  if (maxPercentage >= 90) polygonColor = "#ef4444"; // Penuh > 90%
-                  else if (maxPercentage >= 70) polygonColor = "#eab308"; // Siaga 70-90%
-
-                  return (
-                    <React.Fragment key={`zone-frag-${idx}`}>
-                      <Polygon
-                        positions={generateHexagon(group.latitude, group.longitude, 0.004)}
-                        pathOptions={{
-                          color: polygonColor,
-                          fillColor: polygonColor,
-                          fillOpacity: 0.3,
-                          weight: 2,
-                        }}
-                        eventHandlers={{
-                          click: () => {
-                            setMapCenter([group.latitude, group.longitude]);
-                            setMapZoom(17);
-                          },
-                        }}
-                      />
-                      <Marker
-                        position={[group.latitude, group.longitude]}
-                        icon={createRwZonaIcon(group.rw, group.patuh)}
-                        eventHandlers={{
-                          click: () => {
-                            setMapCenter([group.latitude, group.longitude]);
-                            setMapZoom(17);
-                          },
-                        }}
-                      >
-                        <Popup>
-                          <div className="text-xs p-1 text-center">
-                            <strong className="text-sm font-bold block mb-1">Wilayah {group.rw}</strong>
-                            <p className="text-gray-600 mb-1">Tingkat Kepatuhan: <strong>{group.patuh}%</strong></p>
-                            <p className="text-gray-600 mb-2">{group.titikCount} Tempat Sampah</p>
-                            <p className="text-[10px] text-primary italic">Klik untuk zoom in ke tingkat rumah tangga</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    </React.Fragment>
-                  );
+              // Setup Voronoi
+              let voronoiPolygons: any = null;
+              
+              // 1. Prepare points (with slight jitter to prevent collinear/identical point crashes in turf.voronoi)
+              const points = turf.featureCollection(
+                validLocations.map((g, i) => {
+                  const jitterLng = (Math.random() - 0.5) * 0.0001;
+                  const jitterLat = (Math.random() - 0.5) * 0.0001;
+                  return turf.point([g.longitude + jitterLng, g.latitude + jitterLat], { id: i });
                 })
-            ) : (
+              );
+              
+              // 2. Add dummy points if less than 3 points
+              if (validLocations.length === 1) {
+                points.features.push(turf.point([validLocations[0].longitude + 0.05, validLocations[0].latitude + 0.05]));
+                points.features.push(turf.point([validLocations[0].longitude - 0.05, validLocations[0].latitude - 0.05]));
+              } else if (validLocations.length === 2) {
+                points.features.push(turf.point([validLocations[0].longitude + 0.05, validLocations[0].latitude + 0.05]));
+              }
+
+              // 3. Create expanded bbox
+              const bbox = turf.bbox(points);
+              const lngDiff = Math.max(Math.abs(bbox[2] - bbox[0]), 0.02);
+              const latDiff = Math.max(Math.abs(bbox[3] - bbox[1]), 0.02);
+              const expandedBbox = [
+                bbox[0] - lngDiff * 1.5, // minX
+                bbox[1] - latDiff * 1.5, // minY
+                bbox[2] + lngDiff * 1.5, // maxX
+                bbox[3] + latDiff * 1.5  // maxY
+              ] as [number, number, number, number];
+              
+              try {
+                voronoiPolygons = turf.voronoi(points, { bbox: expandedBbox });
+              } catch (e) {
+                console.error("Voronoi error:", e);
+              }
+
+              return validLocations.map((group, idx) => {
+                const rwBins = bins.filter((b) => b.rtRw === group.rw);
+                let maxPercentage = 0;
+                rwBins.forEach((bin) => {
+                  const vol = Number(bin.currentVolumeLiter || 0);
+                  const max = Number(bin.maxCapacityLiter || 25);
+                  const pct = max > 0 ? (vol / max) * 100 : 0;
+                  if (pct > maxPercentage) maxPercentage = pct;
+                });
+
+                let polygonColor = "#10B981"; // Aman < 70%
+                if (maxPercentage >= 90) polygonColor = "#ef4444"; // Penuh > 90%
+                else if (maxPercentage >= 70) polygonColor = "#eab308"; // Siaga 70-90%
+
+                // Get coordinates for Polygon
+                let positions: [number, number][] = [];
+                if (voronoiPolygons && voronoiPolygons.features) {
+                  // Find the polygon that contains our point
+                  const pt = turf.point([group.longitude, group.latitude]);
+                  const feature = voronoiPolygons.features.find((f: any) => {
+                     if (!f) return false;
+                     try {
+                       return turf.booleanPointInPolygon(pt, f);
+                     } catch(err) { return false; }
+                  });
+                  
+                  // If standard find fails, rely on index since turf voronoi usually preserves order for non-dummy points
+                  const matchedFeature = feature || voronoiPolygons.features[idx];
+                  
+                  if (matchedFeature && matchedFeature.geometry && matchedFeature.geometry.coordinates) {
+                     const coords = matchedFeature.geometry.coordinates[0];
+                     // GeoJSON is [lng, lat], Leaflet is [lat, lng]
+                     positions = coords.map((c: any) => [c[1], c[0]]);
+                  }
+                }
+                
+                // Fallback to hexagon if voronoi failed for this point
+                if (positions.length === 0) {
+                  positions = generateHexagon(group.latitude, group.longitude, 0.004);
+                }
+
+                return (
+                  <React.Fragment key={`zone-frag-${idx}`}>
+                    <Polygon
+                      positions={positions}
+                      pathOptions={{
+                        color: polygonColor,
+                        fillColor: polygonColor,
+                        fillOpacity: 0.35,
+                        weight: 2,
+                        dashArray: "4",
+                      }}
+                      eventHandlers={{
+                        click: () => {
+                          setMapCenter([group.latitude, group.longitude]);
+                          setMapZoom(17);
+                        },
+                      }}
+                    />
+                    <Marker
+                      position={[group.latitude, group.longitude]}
+                      icon={createRwZonaIcon(group.rw, group.patuh)}
+                      eventHandlers={{
+                        click: () => {
+                          setMapCenter([group.latitude, group.longitude]);
+                          setMapZoom(17);
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-xs p-1 text-center">
+                          <strong className="text-sm font-bold block mb-1">Wilayah {group.rw}</strong>
+                          <p className="text-gray-600 mb-1">Tingkat Kepatuhan: <strong>{group.patuh}%</strong></p>
+                          <p className="text-gray-600 mb-2">{group.titikCount} Tempat Sampah</p>
+                          <p className="text-[10px] text-primary italic">Klik untuk zoom in ke tingkat rumah tangga</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
+                );
+              });
+            })()}
+            {mapZoom >= 16 ? (
               <>
                 {/* Active Bins (Grouped by Household) */}
                 {householdGroups.map((group, idx) => {
@@ -483,7 +553,7 @@ const ManajemenLokasi: React.FC = () => {
                     </Marker>
                   ))}
               </>
-            )}
+            ) : null}
           </MapContainer>
         </div>
       </div>
@@ -594,7 +664,7 @@ const ManajemenLokasi: React.FC = () => {
                         className="p-1.5 bg-surface-container hover:bg-primary/20 text-primary rounded-lg transition-colors"
                         title="Edit Lokasi"
                       >
-                        <Edit size={16} />
+                        <Pencil size={16} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteClick(e, loc.id)}

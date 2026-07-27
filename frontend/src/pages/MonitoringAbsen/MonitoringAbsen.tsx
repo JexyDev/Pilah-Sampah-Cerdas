@@ -6,9 +6,9 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Polyline, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, RefreshCw, Plus, Edit, Trash2, X } from "lucide-react";
+import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, RefreshCw, Plus, Trash2, X, Pencil } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
@@ -101,6 +101,7 @@ interface ScheduleActivity {
   latitude?: string | number;
   longitude?: string | number;
   radius?: number;
+  polygon?: [number, number][];
 }
 
 // Component to dynamically set map center and zoom
@@ -114,36 +115,43 @@ const ChangeMapView: React.FC<{ center: [number, number]; zoom: number }> = ({ c
 
 // Map component for picking coordinates in Modal
 const LocationPickerMap: React.FC<{
-  position: [number, number] | null;
-  setPosition: (pos: [number, number]) => void;
+  points: [number, number][];
+  onChange: (points: [number, number][]) => void;
   radius: number;
-}> = ({ position, setPosition, radius }) => {
+}> = ({ points, onChange, radius }) => {
   const defaultCenter: [number, number] = [-6.8915, 107.6107];
-  
   const MapEvents = () => {
     useMapEvents({
       click(e) {
-        setPosition([e.latlng.lat, e.latlng.lng]);
+        onChange([...points, [e.latlng.lat, e.latlng.lng]]);
       },
     });
     return null;
   };
 
   return (
-    <MapContainer center={position || defaultCenter} zoom={15} className="w-full h-[300px] rounded-lg border border-outline-variant/50">
+    <MapContainer center={points.length > 0 ? points[0] : defaultCenter} zoom={15} className="w-full h-full">
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapEvents />
-      {position && (
+      {points.length === 1 && (
         <>
-          <Circle
-            center={position}
-            radius={radius}
-            pathOptions={{ color: "#006d37", fillColor: "#006d37", fillOpacity: 0.15 }}
-          />
-          <Marker position={position} icon={createActivityMarkerIcon()} />
+          <Marker position={points[0]} icon={createActivityMarkerIcon()} />
+          <Circle center={points[0]} radius={radius} pathOptions={{ color: "#006d37", fillColor: "#006d37", fillOpacity: 0.2 }} />
+        </>
+      )}
+      {points.length === 2 && (
+        <>
+          {points.map((p, i) => <Marker key={i} position={p} icon={createActivityMarkerIcon()} />)}
+          <Polyline positions={points} pathOptions={{ color: "#006d37", dashArray: "4,4" }} />
+        </>
+      )}
+      {points.length >= 3 && (
+        <>
+          {points.map((p, i) => <Marker key={i} position={p} icon={createActivityMarkerIcon()} />)}
+          <Polygon positions={points} pathOptions={{ color: "#10b981", fillColor: "#10b981", fillOpacity: 0.3 }} />
         </>
       )}
     </MapContainer>
@@ -163,9 +171,10 @@ const MonitoringAbsen: React.FC = () => {
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState(1);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [formData, setFormData] = useState<Partial<ScheduleActivity>>({ radius: 100 });
-  const [selectedPos, setSelectedPos] = useState<[number, number] | null>(null);
+  const [selectedPos, setSelectedPos] = useState<[number, number][]>([]);
 
   // Map settings
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8915, 107.6107]); // Coblong
@@ -321,7 +330,7 @@ const MonitoringAbsen: React.FC = () => {
   const handleOpenAddModal = () => {
     setModalMode("add");
     setFormData({ title: "", category: "", location: "", date: "", time: "", radius: 100 });
-    setSelectedPos(null);
+    setSelectedPos([]);
     setIsModalOpen(true);
   };
 
@@ -337,11 +346,14 @@ const MonitoringAbsen: React.FC = () => {
       time: schedule.time || "",
       radius: schedule.radius || 100,
     });
-    if (schedule.latitude && schedule.longitude) {
-      setSelectedPos([Number(schedule.latitude), Number(schedule.longitude)]);
+    if (schedule.polygon && schedule.polygon.length > 0) {
+      setSelectedPos(schedule.polygon);
+    } else if (schedule.latitude && schedule.longitude) {
+      setSelectedPos([[Number(schedule.latitude), Number(schedule.longitude)]]);
     } else {
-      setSelectedPos(null);
+      setSelectedPos([]);
     }
+    setModalStep(1);
     setIsModalOpen(true);
   };
 
@@ -371,8 +383,11 @@ const MonitoringAbsen: React.FC = () => {
 
     const payload = {
       ...formData,
-      latitude: selectedPos[0],
-      longitude: selectedPos[1],
+      category: "Monitoring",
+      date: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString(),
+      latitude: selectedPos.length === 1 ? selectedPos[0][0] : null,
+      longitude: selectedPos.length === 1 ? selectedPos[0][1] : null,
+      polygon: selectedPos.length >= 3 ? selectedPos : null,
     };
 
     try {
@@ -518,7 +533,7 @@ const MonitoringAbsen: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={(e) => handleOpenEditModal(e, schedule)} className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"><Edit size={14} /></button>
+                    <button onClick={(e) => handleOpenEditModal(e, schedule)} className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"><Pencil size={14} /></button>
                     <button onClick={(e) => handleDelete(e, schedule.id)} className="text-error hover:bg-error/10 p-1.5 rounded transition-colors"><Trash2 size={14} /></button>
                   </div>
                 </div>
@@ -559,118 +574,184 @@ const MonitoringAbsen: React.FC = () => {
 
       {/* Modal Add/Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
-              <h3 className="text-lg font-bold text-on-surface">{modalMode === "add" ? "Tambah Kegiatan KKN" : "Edit Kegiatan KKN"}</h3>
+        <div className="absolute inset-0 bg-on-surface/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg w-[480px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 max-h-[90vh]">
+            <div className="p-5 border-b border-outline-variant/30 flex justify-between items-start bg-surface-container-lowest shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-surface-container p-2 rounded-lg text-on-surface-variant">
+                  <MapPin size={20} />
+                </div>
+                <div>
+                  <h3 className="text-[18px] font-bold text-on-surface">{modalMode === "add" ? "Detail Zona Baru" : "Edit Zona"}</h3>
+                  <p className="text-[12px] text-on-surface-variant">
+                    {selectedPos.length >= 3 ? `Polygon • ${selectedPos.length} titik` : `Radius • 1 titik`}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer"
+                onClick={() => { setIsModalOpen(false); setFormData({ radius: 100 }); setSelectedPos([]); }}
               >
                 <X size={20} />
               </button>
             </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex flex-col gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-on-surface mb-1">Judul Kegiatan <span className="text-error">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full h-9 px-3 text-sm rounded-lg border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    placeholder="Contoh: Sosialisasi Warga"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-on-surface mb-1">Kategori <span className="text-error">*</span></label>
-                  <select
-                    required
-                    value={formData.category}
-                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full h-9 px-3 text-sm rounded-lg border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-white"
-                  >
-                    <option value="" disabled>Pilih Kategori...</option>
-                    <option value="SOSIALISASI">Sosialisasi</option>
-                    <option value="KERJA_BAKTI">Kerja Bakti</option>
-                    <option value="RAPAT">Rapat</option>
-                    <option value="LAINNYA">Lainnya</option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-on-surface mb-1">Tanggal <span className="text-error">*</span></label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full h-9 px-3 text-sm rounded-lg border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                  />
+            <div className="p-6 overflow-y-auto flex flex-col gap-4">
+              {modalStep === 1 ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[13px] text-on-surface-variant mb-2">
+                    Pilih area absensi untuk kegiatan ini:
+                  </p>
+                  <div className="h-[280px] rounded-lg overflow-hidden border border-outline-variant z-0 relative">
+                    <LocationPickerMap
+                      points={selectedPos}
+                      onChange={(pts) => setSelectedPos(pts)}
+                      radius={formData.radius || 100}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPos([])}
+                      className="absolute bottom-4 right-4 z-[999] bg-white border border-outline-variant shadow-md text-[11px] font-bold text-on-surface-variant px-3 py-1.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
+                    >
+                      Reset Titik
+                    </button>
+                  </div>
+                  {selectedPos.length === 1 && (
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Radius Absensi (m)</label>
+                      <input
+                        type="number"
+                        value={formData.radius}
+                        onChange={(e) => setFormData({ ...formData, radius: Number(e.target.value) })}
+                        className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
+                        placeholder="100"
+                      />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-on-surface mb-1">Jam</label>
-                  <input
-                    type="time"
-                    value={formData.time}
-                    onChange={e => setFormData({ ...formData, time: e.target.value })}
-                    className="w-full h-9 px-3 text-sm rounded-lg border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-on-surface mb-1">Nama Tempat/Lokasi</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={e => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full h-9 px-3 text-sm rounded-lg border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                  placeholder="Contoh: Balai RW 03"
-                />
-              </div>
-
-              <div className="border-t border-outline-variant/30 pt-4 mt-2">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold text-on-surface">Tentukan Titik Peta & Radius <span className="text-error">*</span></label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-on-surface-variant">Radius (meter):</span>
-                    <input 
-                      type="number"
-                      value={formData.radius}
-                      onChange={e => setFormData({ ...formData, radius: Number(e.target.value) })}
-                      className="w-20 h-7 px-2 text-xs text-center border rounded-md outline-none focus:border-primary"
-                      min="10"
-                      max="1000"
+              ) : (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                      Nama Kegiatan <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title || ""}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
+                      placeholder="Nama Kegiatan"
                     />
                   </div>
-                </div>
-                <p className="text-[10px] text-on-surface-variant mb-2 bg-surface-container-low p-2 rounded text-center">
-                  Klik pada peta untuk menempatkan marker lokasi absen.
-                </p>
-                <LocationPickerMap position={selectedPos} setPosition={setSelectedPos} radius={formData.radius || 100} />
-              </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                      Nama Lokasi <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.location || ""}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
+                      placeholder="Nama Lokasi"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                      Waktu Mulai <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.date ? formData.date.slice(0, 16) : ""}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
+                    />
+                  </div>
+                  
+                  {/* Mocked fields from screenshot to look good */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                      Batas Waktu Absen <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                      Status Zona <span className="text-error">*</span>
+                    </label>
+                    <select className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px] bg-white">
+                      <option>🟢 Aktif</option>
+                      <option>🔴 Tidak Aktif</option>
+                    </select>
+                  </div>
+                  
+                  <div className="mt-2">
+                    <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Rule Engine</h4>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[12px] font-semibold text-on-surface flex items-center gap-2">
+                          <span className="text-error">⛔</span> Jika Tidak Hadir
+                        </label>
+                        <select className="px-4 py-2 border border-outline-variant rounded-lg text-[13px] bg-white">
+                          <option>Pilih kegiatan...</option>
+                          <option>Potong Poin (-5)</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[12px] font-semibold text-on-surface flex items-center gap-2">
+                          <span className="text-error">⛔</span> Jika Terlambat
+                        </label>
+                        <select className="px-4 py-2 border border-outline-variant rounded-lg text-[13px] bg-white">
+                          <option>Pilih kegiatan...</option>
+                          <option>Potong Poin (-2)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
-              <div className="flex justify-end gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-bold shadow-sm transition-colors"
-                >
-                  {modalMode === "add" ? "Simpan Kegiatan" : "Update Kegiatan"}
-                </button>
-              </div>
-            </form>
+            <div className="p-5 border-t border-outline-variant/30 bg-surface-container-lowest flex justify-end gap-3 shrink-0">
+              {modalStep === 1 ? (
+                <>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer"
+                    onClick={() => { setIsModalOpen(false); setFormData({ radius: 100 }); setSelectedPos([]); }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-[14px] font-bold bg-[#0f172a] text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    disabled={selectedPos.length === 2 || selectedPos.length === 0}
+                    onClick={() => setModalStep(2)}
+                  >
+                    <MapPin size={16} /> Lanjut Isi Detail
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer"
+                    onClick={() => setModalStep(1)}
+                  >
+                    Kembali
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-[14px] font-bold bg-[#0f172a] text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
+                    onClick={handleSubmit}
+                  >
+                    <CheckCircle2 size={16} /> Buat Zona
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

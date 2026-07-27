@@ -1,5 +1,5 @@
 import { IconRenderer } from "../../components/common/IconRenderer";
-import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Edit, Bell, RefreshCw, Megaphone, Trash, AlertTriangle, Truck, Archive, Send } from "lucide-react";
+import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Bell, RefreshCw, Megaphone, AlertTriangle, Truck, Archive, Send, Pencil, Trash2 } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -508,7 +508,7 @@ const WargaDashboard: React.FC = () => {
               onClick={() => navigate("/pengaturan")}
               className="px-4 py-2 border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors text-[11px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
-              <Edit size={16} />
+              <Pencil size={16} />
               Edit Profil
             </button>
           </div>
@@ -575,7 +575,7 @@ const WargaDashboard: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
               <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <Trash className="text-primary" />
+                <Trash2 className="text-primary" />
                 Tong Sampah RT/RW Saya
               </h5>
               <div className="flex gap-2 items-center">

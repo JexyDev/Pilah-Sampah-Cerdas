@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle } from "lucide-react";
+import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -568,7 +568,7 @@ const ManajemenTempatSampah: React.FC = () => {
                           className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
                           title="Edit"
                         >
-                          <Edit size={18} />
+                          <Pencil size={18} />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(bin.kode)}

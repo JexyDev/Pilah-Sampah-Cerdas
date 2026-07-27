@@ -1,4 +1,4 @@
-import { Loader2, Plus, Edit, Trash2, X } from "lucide-react";
+import { Loader2, Plus, Trash2, X, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -177,7 +177,7 @@ const KategoriSampah: React.FC = () => {
                       className="w-9 h-9 rounded-lg hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer border border-outline-variant/50"
                       title="Edit"
                     >
-                      <Edit size={16} />
+                      <Pencil size={16} />
                     </button>
                     <button
                       onClick={() => handleDelete(cat.id)}

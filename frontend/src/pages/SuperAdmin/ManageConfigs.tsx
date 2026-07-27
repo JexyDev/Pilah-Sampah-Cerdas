@@ -1,4 +1,4 @@
-import { Edit, CheckCircle2, RefreshCw, AlertTriangle, Save } from "lucide-react";
+import { CheckCircle2, RefreshCw, AlertTriangle, Save, Pencil } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -167,7 +167,7 @@ export const ManageConfigs: React.FC = () => {
                         }}
                         className="text-primary hover:text-primary-dark font-semibold text-xs flex items-center gap-1 ml-auto"
                       >
-                        <Edit size={16} />
+                        <Pencil size={16} />
                         Ubah
                       </button>
                     </td>

@@ -1,5 +1,7 @@
 import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
+
 
 const prisma = new PrismaClient();
 
@@ -255,13 +257,23 @@ export class CronService {
           }
 
           // Always send notification
+          const title = "Penalti Absen Buang Sampah";
+          const msg = `Anda belum menyetor sampah selama ${absenceStreak} hari berturut-turut. Poin Anda berkurang -${penaltyAmount} hari ini. Ayo segera setor dan pilah sampah Anda!`;
           await prisma.notification.create({
             data: {
               userId: warga.id,
-              title: "Penalti Absen Buang Sampah",
-              message: `Anda belum menyetor sampah selama ${absenceStreak} hari berturut-turut. Poin Anda berkurang -${penaltyAmount} hari ini. Ayo segera setor dan pilah sampah Anda!`,
+              title: title,
+              message: msg,
             },
           });
+          
+          if (warga.fcmToken && absenceStreak >= 3) {
+            await notificationIntegrationService.sendPushNotification(
+              warga.fcmToken,
+              title,
+              msg
+            );
+          }
         }
       }
     } catch (error) {

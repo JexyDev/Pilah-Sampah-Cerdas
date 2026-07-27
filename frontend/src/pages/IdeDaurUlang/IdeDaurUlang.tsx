@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Upload, Send, Loader2, CheckCircle, XCircle, Search, Filter, Edit, Trash2, X } from "lucide-react";
+import { Upload, Send, Loader2, CheckCircle, XCircle, Search, Filter, Trash2, X, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -311,7 +311,7 @@ const IdeDaurUlang: React.FC = () => {
                               className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                               title="Edit Ide"
                             >
-                              <Edit size={16} />
+                              <Pencil size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(ide.id)}
