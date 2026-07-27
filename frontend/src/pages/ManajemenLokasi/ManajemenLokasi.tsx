@@ -1,4 +1,4 @@
-import { ChevronDown, Search, Loader2, MapPinPlus, X } from "lucide-react";
+import { ChevronDown, Search, Loader2, MapPinPlus, X, Edit, Trash2, AlertTriangle } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -79,6 +79,15 @@ const MapUpdater = ({ center, zoom }: { center: [number, number]; zoom: number }
   return null;
 };
 
+const LocationPicker = ({ position, onChange }: { position: [number, number] | null; onChange: (lat: number, lng: number) => void }) => {
+  useMapEvents({
+    click(e) {
+      onChange(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return position ? <Marker position={position} /> : null;
+};
+
 const ManajemenLokasi: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
@@ -96,9 +105,17 @@ const ManajemenLokasi: React.FC = () => {
 
   // Tambah Lokasi Modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"add" | "edit">("add");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [newAreaName, setNewAreaName] = useState("");
   const [newAreaKelurahanId, setNewAreaKelurahanId] = useState("");
+  const [areaLat, setAreaLat] = useState("");
+  const [areaLng, setAreaLng] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Delete Modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Map view reference
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8903, 107.611]);
@@ -141,17 +158,26 @@ const ManajemenLokasi: React.FC = () => {
       groups[key].count += 1;
     });
 
-    return Object.values(groups).map((g) => {
-      const locMatch = locations.find((l) => l.rw.toUpperCase() === g.rwName.toUpperCase());
-      const patuhScore = locMatch ? locMatch.patuh : 75;
-      return {
-        ...g,
-        latitude: g.latitude / g.count,
-        longitude: g.longitude / g.count,
-        totalBins: g.bins.length,
-        patuh: patuhScore,
-      };
-    });
+      return Object.values(groups).map((g) => {
+        const rwLocations = locations.filter((l) => {
+          const match = l.rw.match(/RW\s*\d+/i);
+          return match && match[0].toUpperCase() === g.rwName.toUpperCase();
+        });
+        
+        let patuhScore = 0;
+        if (rwLocations.length > 0) {
+          const totalPatuh = rwLocations.reduce((sum, l) => sum + l.patuh, 0);
+          patuhScore = Math.round(totalPatuh / rwLocations.length);
+        }
+
+        return {
+          ...g,
+          latitude: g.latitude / g.count,
+          longitude: g.longitude / g.count,
+          totalBins: g.bins.length,
+          patuh: patuhScore,
+        };
+      });
   }, [householdGroups, locations]);
 
   const fetchData = async () => {
@@ -183,8 +209,40 @@ const ManajemenLokasi: React.FC = () => {
     if (kelurahans.length > 0) {
       setNewAreaKelurahanId(kelurahans[0].id);
     }
+    setModalType("add");
     setNewAreaName("");
+    setAreaLat("");
+    setAreaLng("");
     setIsAddModalOpen(true);
+  };
+
+  const handleEdit = (e: React.MouseEvent, loc: any) => {
+    e.stopPropagation();
+    setModalType("edit");
+    setEditingId(loc.id);
+    setNewAreaName(loc.rw);
+    setNewAreaKelurahanId(kelurahans.find(k => k.name === loc.kelurahan)?.id || "");
+    setAreaLat(loc.latitude ? loc.latitude.toString() : "");
+    setAreaLng(loc.longitude ? loc.longitude.toString() : "");
+    setIsAddModalOpen(true);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setDeletingId(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    try {
+      await api.delete(`/bins/areas/${deletingId}`);
+      toast.success("Lokasi berhasil dihapus!");
+      setIsDeleteModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menghapus lokasi karena relasi aktif");
+    }
   };
 
   const handleSubmitArea = async (e: React.FormEvent) => {
@@ -195,18 +253,39 @@ const ManajemenLokasi: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      await api.post("/bins/areas", {
-        name: newAreaName,
-        kelurahanId: newAreaKelurahanId,
-      });
-      toast.success("Lokasi RT/RW baru berhasil ditambahkan!");
+      if (modalType === "add") {
+        await api.post("/bins/areas", {
+          name: newAreaName,
+          kelurahanId: newAreaKelurahanId,
+          latitude: areaLat ? Number(areaLat) : undefined,
+          longitude: areaLng ? Number(areaLng) : undefined,
+        });
+        toast.success("Lokasi RT/RW baru berhasil ditambahkan!");
+      } else {
+        await api.put(`/bins/areas/${editingId}`, {
+          name: newAreaName,
+          kelurahanId: newAreaKelurahanId,
+          latitude: areaLat ? Number(areaLat) : undefined,
+          longitude: areaLng ? Number(areaLng) : undefined,
+        });
+        toast.success("Lokasi RT/RW berhasil diperbarui!");
+      }
       setIsAddModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menambahkan lokasi");
+      toast.error(err.response?.data?.message || "Gagal menyimpan lokasi");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatRegionName = (name: string, kelurahanName: string) => {
+    const rtMatch = name.match(/RT\s*(\d+)/i);
+    const rwMatch = name.match(/RW\s*(\d+)/i);
+    if (rtMatch && rwMatch) {
+      return `RT: ${rtMatch[1]}, RW: ${rwMatch[1]}, Kec: Coblong`;
+    }
+    return `${name}, Kec: Coblong`;
   };
 
   const filteredLocations = locations.filter((loc) => {
@@ -217,15 +296,19 @@ const ManajemenLokasi: React.FC = () => {
   });
 
   const handleLocationClick = (loc: any) => {
-    // Attempt to find average coord from bins in this RW to fly to
-    const rwBins = bins.filter(b => b.rtRw === loc.rw && b.latitude && b.longitude);
-    if (rwBins.length > 0) {
-      const avgLat = rwBins.reduce((sum, b) => sum + Number(b.latitude), 0) / rwBins.length;
-      const avgLng = rwBins.reduce((sum, b) => sum + Number(b.longitude), 0) / rwBins.length;
-      setMapCenter([avgLat, avgLng]);
+    if (loc.latitude && loc.longitude) {
+      setMapCenter([Number(loc.latitude), Number(loc.longitude)]);
       setMapZoom(17);
     } else {
-      toast.error("Tidak ada koordinat terdaftar untuk RW ini");
+      const rwBins = bins.filter(b => b.rtRw === loc.rw && b.latitude && b.longitude);
+      if (rwBins.length > 0) {
+        const avgLat = rwBins.reduce((sum, b) => sum + Number(b.latitude), 0) / rwBins.length;
+        const avgLng = rwBins.reduce((sum, b) => sum + Number(b.longitude), 0) / rwBins.length;
+        setMapCenter([avgLat, avgLng]);
+        setMapZoom(17);
+      } else {
+        toast.error("Tidak ada koordinat terdaftar untuk lokasi ini");
+      }
     }
   };
 
@@ -274,10 +357,10 @@ const ManajemenLokasi: React.FC = () => {
             />
             {/* Zoom-dependent rendering: Zona (RW) vs Households */}
             {mapZoom < 16 ? (
-              rwGroups
-                .filter((g) => g.latitude && g.longitude && g.rwName !== "unknown")
+              locations
+                .filter((g) => g.latitude && g.longitude)
                 .map((group, idx) => (
-                  <React.Fragment key={`rw-zone-frag-${idx}`}>
+                  <React.Fragment key={`zone-frag-${idx}`}>
                     <Circle
                       center={[group.latitude, group.longitude]}
                       radius={150}
@@ -285,7 +368,7 @@ const ManajemenLokasi: React.FC = () => {
                     />
                     <Marker
                       position={[group.latitude, group.longitude]}
-                      icon={createRwZonaIcon(group.rwName, group.patuh)}
+                      icon={createRwZonaIcon(group.rw, group.patuh)}
                       eventHandlers={{
                         click: () => {
                           setMapCenter([group.latitude, group.longitude]);
@@ -295,9 +378,9 @@ const ManajemenLokasi: React.FC = () => {
                     >
                       <Popup>
                         <div className="text-xs p-1 text-center">
-                          <strong className="text-sm font-bold block mb-1">Zona {group.rwName}</strong>
+                          <strong className="text-sm font-bold block mb-1">Wilayah {group.rw}</strong>
                           <p className="text-gray-600 mb-1">Tingkat Kepatuhan: <strong>{group.patuh}%</strong></p>
-                          <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
+                          <p className="text-gray-600 mb-2">{group.titikCount} Tempat Sampah</p>
                           <p className="text-[10px] text-primary italic">Klik untuk zoom in ke tingkat rumah tangga</p>
                         </div>
                       </Popup>
@@ -479,7 +562,7 @@ const ManajemenLokasi: React.FC = () => {
                       {loc.rw.replace("RW ", "")}
                     </div>
                     <div>
-                      <h4 className="text-[16px] font-bold text-on-surface">{loc.rw}</h4>
+                      <h4 className="text-[14px] font-bold text-on-surface">{formatRegionName(loc.rw, loc.kelurahan)}</h4>
                       <p className="text-[11px] font-medium text-on-surface-variant">
                         {loc.rtCount} RT • {loc.titikCount} Titik Sampah
                       </p>
@@ -501,6 +584,24 @@ const ManajemenLokasi: React.FC = () => {
                       {loc.patuh}% Patuh
                     </span>
                   </div>
+                  {!isReadOnly && loc.id && (
+                    <div className="flex flex-col gap-2 ml-4">
+                      <button
+                        onClick={(e) => handleEdit(e, loc)}
+                        className="p-1.5 bg-surface-container hover:bg-primary/20 text-primary rounded-lg transition-colors"
+                        title="Edit Lokasi"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, loc.id)}
+                        className="p-1.5 bg-surface-container hover:bg-error/20 text-error rounded-lg transition-colors"
+                        title="Hapus Lokasi"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -514,10 +615,10 @@ const ManajemenLokasi: React.FC = () => {
 
       {/* Tambah Lokasi Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
-              <h3 className="text-xl font-bold text-on-surface">Tambah Lokasi Wilayah</h3>
+              <h3 className="text-xl font-bold text-on-surface">{modalType === "add" ? "Tambah Lokasi Wilayah" : "Edit Lokasi Wilayah"}</h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
@@ -525,7 +626,7 @@ const ManajemenLokasi: React.FC = () => {
                 <X />
               </button>
             </div>
-            <form onSubmit={handleSubmitArea} className="p-6 flex flex-col gap-4">
+            <form onSubmit={handleSubmitArea} className="p-6 flex flex-col gap-4 overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">
                   Nama Wilayah (RT/RW)
@@ -535,9 +636,12 @@ const ManajemenLokasi: React.FC = () => {
                   required
                   value={newAreaName}
                   onChange={(e) => setNewAreaName(e.target.value)}
-                  placeholder="Contoh: RT 02 RW 06"
+                  placeholder="Format baku: RT 01 RW 02"
                   className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
+                <p className="text-[10px] text-on-surface-variant mt-1 italic">
+                  Helper: Masukkan dengan format "RT 01 RW 02" untuk standardisasi data.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">Kelurahan</label>
@@ -554,6 +658,60 @@ const ManajemenLokasi: React.FC = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="block text-sm font-medium text-on-surface">Titik Lokasi (GPS)</label>
+                <div className="h-[200px] w-full rounded-xl overflow-hidden border border-outline-variant/50 relative z-0">
+                  <MapContainer
+                    center={
+                      areaLat && areaLng
+                        ? [Number(areaLat), Number(areaLng)]
+                        : [-6.8903, 107.611]
+                    }
+                    zoom={15}
+                    scrollWheelZoom={true}
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <MapUpdater 
+                      center={areaLat && areaLng ? [Number(areaLat), Number(areaLng)] : [-6.8903, 107.611]} 
+                      zoom={15} 
+                    />
+                    <LocationPicker 
+                      position={areaLat && areaLng ? [Number(areaLat), Number(areaLng)] : null} 
+                      onChange={(lat, lng) => {
+                        setAreaLat(lat.toString());
+                        setAreaLng(lng.toString());
+                      }} 
+                    />
+                  </MapContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <label className="block text-xs font-medium text-on-surface-variant mb-1">Latitude</label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      required
+                      value={areaLat}
+                      onChange={(e) => setAreaLat(e.target.value)}
+                      placeholder="-6.8895"
+                      className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-on-surface-variant mb-1">Longitude</label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      required
+                      value={areaLng}
+                      onChange={(e) => setAreaLng(e.target.value)}
+                      placeholder="107.6108"
+                      className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
+                    />
+                  </div>
+                </div>
               </div>
               <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-outline-variant/30">
                 <button
@@ -575,6 +733,35 @@ const ManajemenLokasi: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirm Delete */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all">
+            <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border-4 border-red-100">
+              <AlertTriangle size={26} />
+            </div>
+            <h3 className="text-xl font-bold text-on-surface mb-2">Hapus Lokasi?</h3>
+            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
+              Apakah Anda yakin ingin menghapus wilayah ini? Pastikan tidak ada data yang terkait.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm shadow-red-200 cursor-pointer transition-all"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

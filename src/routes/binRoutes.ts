@@ -109,6 +109,18 @@ router.post(
   roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
   binController.createArea
 );
+router.put(
+  "/areas/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.updateArea
+);
+router.delete(
+  "/areas/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.deleteArea
+);
 
 /**
  * @swagger

@@ -125,8 +125,8 @@ export class BinController {
 
   async createArea(req: Request, res: Response): Promise<void> {
     try {
-      const { name, kelurahanId } = req.body;
-      const newArea = await binService.createArea(name, kelurahanId);
+      const { name, kelurahanId, latitude, longitude } = req.body;
+      const newArea = await binService.createArea(name, kelurahanId, latitude ? Number(latitude) : undefined, longitude ? Number(longitude) : undefined);
       res.status(201).json({
         success: true,
         data: newArea,
@@ -134,6 +134,35 @@ export class BinController {
     } catch (error) {
       console.error("[BinController] createArea error:", error);
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Failed to create area" });
+    }
+  }
+
+  async updateArea(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, kelurahanId, latitude, longitude } = req.body;
+      const updatedArea = await binService.updateArea(Number(id), name, kelurahanId, latitude ? Number(latitude) : undefined, longitude ? Number(longitude) : undefined);
+      res.status(200).json({
+        success: true,
+        data: updatedArea,
+      });
+    } catch (error) {
+      console.error("[BinController] updateArea error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Failed to update area" });
+    }
+  }
+
+  async deleteArea(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      await binService.deleteArea(Number(id));
+      res.status(200).json({
+        success: true,
+        message: "Area deleted successfully",
+      });
+    } catch (error: any) {
+      console.error("[BinController] deleteArea error:", error);
+      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Failed to delete area" });
     }
   }
 

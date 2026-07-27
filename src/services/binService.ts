@@ -722,8 +722,20 @@ export class BinService {
     return binRepository.findKelurahans();
   }
 
-  async createArea(name: string, kelurahanId: string) {
-    return binRepository.createArea(name, kelurahanId);
+  async createArea(name: string, kelurahanId: string, latitude?: number, longitude?: number) {
+    return binRepository.createArea(name, kelurahanId, latitude, longitude);
+  }
+
+  async updateArea(id: number, name: string, kelurahanId: string, latitude?: number, longitude?: number) {
+    return binRepository.updateArea(id, name, kelurahanId, latitude, longitude);
+  }
+
+  async deleteArea(id: number) {
+    const relationCount = await binRepository.countAreaRelations(id);
+    if (relationCount > 0) {
+      throw new Error(`Lokasi tidak dapat dihapus karena memiliki ${relationCount} entitas terkait (Warga/Tempat Sampah).`);
+    }
+    return binRepository.deleteArea(id);
   }
 
   async getMyBins(userId: string) {

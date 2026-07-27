@@ -98,7 +98,7 @@ router.get(
   "/logs/discrepancies",
   authMiddleware,
   roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
-  aiController.getPendingDiscrepancies
+  aiController.getDiscrepancies
 );
 
 router.put(

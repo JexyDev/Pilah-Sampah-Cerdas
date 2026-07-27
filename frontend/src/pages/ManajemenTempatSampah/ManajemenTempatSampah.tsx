@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download, Search, Filter } from "lucide-react";
+import { Loader2, Check, X, History, Edit, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,7 +10,7 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 
 // Fix default Leaflet icon issue
@@ -44,6 +44,15 @@ const createHouseIcon = () => {
   });
 };
 
+const LocationPicker = ({ position, onChange }: { position: [number, number] | null; onChange: (lat: number, lng: number) => void }) => {
+  useMapEvents({
+    click(e) {
+      onChange(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return position ? <Marker position={position} /> : null;
+};
+
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
@@ -54,6 +63,10 @@ const ManajemenTempatSampah: React.FC = () => {
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBin, setSelectedBin] = useState<string | null>(null);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [binToDelete, setBinToDelete] = useState<string | null>(null);
 
   // Form Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -248,16 +261,22 @@ const ManajemenTempatSampah: React.FC = () => {
     }
   };
 
-  const handleDelete = async (binKode: string) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus tempat sampah dengan kode ${binKode}?`)) {
-      try {
-        await api.delete(`/bins/${binKode}`);
-        toast.success("Tempat sampah berhasil dihapus!");
-        fetchBins();
-        fetchHouseholds();
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Gagal menghapus tempat sampah");
-      }
+  const handleDeleteClick = (binKode: string) => {
+    setBinToDelete(binKode);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!binToDelete) return;
+    try {
+      await api.delete(`/bins/${binToDelete}`);
+      toast.success("Tempat sampah berhasil dihapus!");
+      setIsDeleteModalOpen(false);
+      setBinToDelete(null);
+      fetchBins();
+      fetchHouseholds();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Gagal menghapus tempat sampah");
     }
   };
 
@@ -411,6 +430,7 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
       </div>
 
+
       {/* Bin Table */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-x-auto">
         <table className="w-full text-left border-collapse">
@@ -551,7 +571,7 @@ const ManajemenTempatSampah: React.FC = () => {
                           <Edit size={18} />
                         </button>
                         <button
-                          onClick={() => handleDelete(bin.kode)}
+                          onClick={() => handleDeleteClick(bin.kode)}
                           className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
                           title="Hapus"
                         >
@@ -817,32 +837,51 @@ const ManajemenTempatSampah: React.FC = () => {
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-on-surface mb-1">Latitude</label>
-                  <input
-                    type="number"
-                    step="0.00000001"
-                    required
-                    value={formData.latitude}
-                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                    placeholder="-6.8895"
-                    className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
-                  />
+              <div className="flex flex-col gap-2">
+                <label className="block text-sm font-medium text-on-surface">Titik Lokasi (GPS)</label>
+                <div className="h-[200px] w-full rounded-xl overflow-hidden border border-outline-variant/50 relative z-0">
+                  <MapContainer
+                    center={
+                      formData.latitude && formData.longitude
+                        ? [Number(formData.latitude), Number(formData.longitude)]
+                        : [-6.8903, 107.611]
+                    }
+                    zoom={15}
+                    scrollWheelZoom={true}
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <LocationPicker 
+                      position={formData.latitude && formData.longitude ? [Number(formData.latitude), Number(formData.longitude)] : null} 
+                      onChange={(lat, lng) => setFormData({ ...formData, latitude: lat.toString(), longitude: lng.toString() })} 
+                    />
+                  </MapContainer>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-on-surface mb-1">
-                    Longitude
-                  </label>
-                  <input
-                    type="number"
-                    step="0.00000001"
-                    required
-                    value={formData.longitude}
-                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                    placeholder="107.6108"
-                    className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
-                  />
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <label className="block text-xs font-medium text-on-surface-variant mb-1">Latitude</label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      required
+                      value={formData.latitude}
+                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                      placeholder="-6.8895"
+                      className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-on-surface-variant mb-1">Longitude</label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      required
+                      value={formData.longitude}
+                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                      placeholder="107.6108"
+                      className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
+                    />
+                  </div>
                 </div>
               </div>
               <div>
@@ -879,6 +918,35 @@ const ManajemenTempatSampah: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirm Delete */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all">
+            <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border-4 border-red-100">
+              <AlertTriangle size={26} />
+            </div>
+            <h3 className="text-xl font-bold text-on-surface mb-2">Hapus Tempat Sampah?</h3>
+            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
+              Apakah Anda yakin ingin menghapus tempat sampah dengan kode <strong>{binToDelete}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm shadow-red-200 cursor-pointer transition-all"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}
