@@ -481,6 +481,7 @@ model Schedule {
   latitude  Decimal? @db.Decimal(11, 8)
   longitude Decimal? @db.Decimal(11, 8)
   radius    Int?     @default(100)
+  polygon   Json?
   createdAt DateTime @default(now()) @map("dibuat_pada")
   updatedAt DateTime @updatedAt @map("diperbarui_pada")
   attendances ActivityAttendance[]
