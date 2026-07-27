@@ -577,7 +577,7 @@ const JadwalKegiatan: React.FC = () => {
                       step="0.00000001"
                       value={formData.latitude}
                       onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
                       placeholder="Contoh: -6.8915"
                     />
                   </div>
@@ -588,20 +588,20 @@ const JadwalKegiatan: React.FC = () => {
                       step="0.00000001"
                       value={formData.longitude}
                       onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
+                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
                       placeholder="Contoh: 107.6107"
                     />
                   </div>
-                  <div className="w-[100px] flex flex-col gap-1.5">
-                    <label className="text-[12px] font-bold text-on-surface-variant">Radius (m)</label>
-                    <input
-                      type="number"
-                      value={formData.radius}
-                      onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px]"
-                      placeholder="100"
-                    />
-                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-bold text-on-surface-variant">Radius Absensi (meter)</label>
+                  <input
+                    type="number"
+                    value={formData.radius}
+                    onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
+                    className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
+                    placeholder="Contoh: 100"
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[12px] font-bold text-on-surface-variant">
