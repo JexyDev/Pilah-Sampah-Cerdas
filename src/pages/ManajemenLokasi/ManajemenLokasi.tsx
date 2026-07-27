@@ -137,48 +137,7 @@ const ManajemenLokasi: React.FC = () => {
   }, [bins]);
 
   // Group by RW (Zona)
-  const rwGroups = useMemo(() => {
-    const groups: Record<string, { bins: any[]; latitude: number; longitude: number; count: number; rwName: string }> = {};
-    householdGroups.forEach((hg) => {
-      const firstBin = hg.bins[0];
-      let rwName = "unknown";
-      if (firstBin && firstBin.rtRw) {
-        const nameStr = firstBin.rtRw;
-        const match = nameStr.match(/RW\s*\d+/i);
-        rwName = match ? match[0].toUpperCase() : nameStr;
-      }
-      
-      const key = rwName;
-      if (!groups[key]) {
-        groups[key] = { bins: [], latitude: 0, longitude: 0, count: 0, rwName };
-      }
-      groups[key].bins.push(...hg.bins);
-      groups[key].latitude += hg.latitude;
-      groups[key].longitude += hg.longitude;
-      groups[key].count += 1;
-    });
-
-      return Object.values(groups).map((g) => {
-        const rwLocations = locations.filter((l) => {
-          const match = l.rw.match(/RW\s*\d+/i);
-          return match && match[0].toUpperCase() === g.rwName.toUpperCase();
-        });
-        
-        let patuhScore = 0;
-        if (rwLocations.length > 0) {
-          const totalPatuh = rwLocations.reduce((sum, l) => sum + l.patuh, 0);
-          patuhScore = Math.round(totalPatuh / rwLocations.length);
-        }
-
-        return {
-          ...g,
-          latitude: g.latitude / g.count,
-          longitude: g.longitude / g.count,
-          totalBins: g.bins.length,
-          patuh: patuhScore,
-        };
-      });
-  }, [householdGroups, locations]);
+  
 
   const fetchData = async () => {
     try {
@@ -279,7 +238,7 @@ const ManajemenLokasi: React.FC = () => {
     }
   };
 
-  const formatRegionName = (name: string, kelurahanName: string) => {
+  const formatRegionName = (name: string) => {
     const rtMatch = name.match(/RT\s*(\d+)/i);
     const rwMatch = name.match(/RW\s*(\d+)/i);
     if (rtMatch && rwMatch) {
@@ -562,7 +521,7 @@ const ManajemenLokasi: React.FC = () => {
                       {loc.rw.replace("RW ", "")}
                     </div>
                     <div>
-                      <h4 className="text-[14px] font-bold text-on-surface">{formatRegionName(loc.rw, loc.kelurahan)}</h4>
+                      <h4 className="text-[14px] font-bold text-on-surface">{formatRegionName(loc.rw)}</h4>
                       <p className="text-[11px] font-medium text-on-surface-variant">
                         {loc.rtCount} RT • {loc.titikCount} Titik Sampah
                       </p>

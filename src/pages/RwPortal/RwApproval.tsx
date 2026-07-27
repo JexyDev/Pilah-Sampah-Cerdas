@@ -4,21 +4,19 @@ import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 
 export const RwApproval = () => {
-  const [pendingBins, setPendingBins] = useState<any[]>([]);
-  const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
+    const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
   const [inactiveBins, setInactiveBins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rejectReason, setRejectReason] = useState("");
-  const [rejectBinId, setRejectBinId] = useState<string | null>(null);
+
 
   const fetchData = async () => {
     try {
-      const [binsRes, petugasRes, inactiveRes] = await Promise.all([
+      const [_binsRes, petugasRes, inactiveRes] = await Promise.all([
         api.get("/rw/bins/pending"),
         api.get("/rw/petugas/pending"),
         api.get("/rw/bins/inactive")
       ]);
-      setPendingBins(binsRes.data);
+      //
       setPendingPetugas(petugasRes.data);
       setInactiveBins(inactiveRes.data);
     } catch (error) {
@@ -32,31 +30,8 @@ export const RwApproval = () => {
     fetchData();
   }, []);
 
-  const approveBin = async (id: string) => {
-    try {
-      await api.put(`/rw/bins/${id}/approve`);
-      toast.success("QR Bin berhasil disetujui! Poin ditambahkan.");
-      fetchData();
-    } catch (error) {
-      console.error("Failed to approve bin", error);
-      toast.error("Gagal menyetujui QR Bin");
-    }
-  };
-
-  const rejectBin = async () => {
-    if (!rejectBinId || !rejectReason) return;
-    try {
-      await api.put(`/rw/bins/${rejectBinId}/reject`, { reason: rejectReason });
-      toast.success("Pengajuan QR Bin telah ditolak");
-      setRejectBinId(null);
-      setRejectReason("");
-      fetchData();
-    } catch (error) {
-      console.error("Failed to reject bin", error);
-      toast.error("Gagal menolak pengajuan");
-    }
-  };
-
+  
+  
   const markBinBroken = async (id: string) => {
     if (confirm("Tandai bin ini rusak permanen?")) {
       try {
