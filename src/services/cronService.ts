@@ -34,6 +34,11 @@ export class CronService {
       this.checkWindowAbsence("EVENING");
     });
 
+    // Inactive bins synchronization daily at 01:00 AM
+    cron.schedule("0 1 * * *", () => {
+      this.syncInactiveBins();
+    });
+
     console.log("[CronService] Escalation cron jobs started.");
   }
 
@@ -362,6 +367,38 @@ export class CronService {
       }
     } catch (error) {
       console.error("[CronService] checkWindowAbsence error:", error);
+    }
+  }
+
+  public async syncInactiveBins() {
+    try {
+      console.log("[CronService] Running inactive bins sync...");
+      const bins = await prisma.bin.findMany({
+        where: {
+          status: "ACTIVE_BOUND",
+        },
+      });
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      for (const bin of bins) {
+        const lastLog = await prisma.wasteLog.findFirst({
+          where: { binId: bin.id },
+          orderBy: { createdAt: "desc" },
+        });
+
+        const refDate = lastLog?.createdAt || bin.updatedAt;
+        if (refDate < thirtyDaysAgo) {
+          await prisma.bin.update({
+            where: { id: bin.id },
+            data: { status: "INACTIVE" },
+          });
+          console.log(`[CronService] Bin ${bin.qrCode} set to INACTIVE due to 30 days of inactivity.`);
+        }
+      }
+    } catch (e) {
+      console.error("[CronService] syncInactiveBins error:", e);
     }
   }
 }

@@ -605,7 +605,7 @@ export class BinController {
     try {
       const { id } = req.params;
       const userId = req.user!.userId;
-      const { issueType, notes } = req.body;
+      const { issueType, notes, evidencePhotoUrl } = req.body;
       if (!issueType || !["EMPTY_REQUEST", "BROKEN_REPORT"].includes(issueType)) {
         res.status(400).json({
           success: false,
@@ -614,7 +614,7 @@ export class BinController {
         });
         return;
       }
-      const result = await binService.reportIssue(id, userId, issueType, notes || "");
+      const result = await binService.reportIssue(id, userId, issueType, notes || "", evidencePhotoUrl);
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] reportIssue error:", error);

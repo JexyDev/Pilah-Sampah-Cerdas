@@ -34,9 +34,7 @@ router.post("/bins/generate-qr", superAdminController.generateQrBatch);
 router.get("/audit-trail", superAdminController.getAuditTrail);
 router.get("/dashboard", superAdminController.getAggregatedDashboard);
 
-router.get("/approvals/bins", superAdminController.getPendingBins);
-router.put("/approvals/bins/:id/approve", superAdminController.approveBin);
-router.put("/approvals/bins/:id/reject", superAdminController.rejectBin);
+
 router.get("/approvals/petugas", superAdminController.getPendingPetugas);
 router.put("/approvals/petugas/:id/verify", superAdminController.verifyPetugas);
 

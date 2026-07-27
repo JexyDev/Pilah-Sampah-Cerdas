@@ -69,8 +69,7 @@ const router = Router();
  */
 router.post("/login", loginRateLimiter, authController.login);
 
-router.post("/request-otp", loginRateLimiter, authController.requestOtp);
-router.post("/verify-otp", loginRateLimiter, authController.verifyOtp);
+
 
 /**
  * @swagger

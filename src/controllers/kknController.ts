@@ -60,16 +60,7 @@ export class KknController {
     }
   }
 
-  async registerWarga(req: Request, res: Response) {
-    try {
-      const kknUserId = req.user!.userId;
-      const result = await kknService.registerWarga(kknUserId, req.body);
-      res.status(201).json({ success: true, data: result });
-    } catch (error: any) {
-      console.error("[KknController] registerWarga error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
+
 
   async getRegisteredWarga(req: Request, res: Response) {
     try {
@@ -119,17 +110,7 @@ export class KknController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
-  async claimQr(req: Request, res: Response) {
-    try {
-      const kknUserId = req.user!.userId;
-      const { qrCode, latitude, longitude } = req.body;
-      const data = await kknService.claimQr(kknUserId, qrCode, Number(latitude), Number(longitude));
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] claimQr error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
+
 
   async handover(req: Request, res: Response) {
     try {

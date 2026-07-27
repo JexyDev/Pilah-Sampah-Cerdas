@@ -26,38 +26,7 @@ router.get(
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getDashboardStats
 );
-router.post(
-  "/register-warga",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.registerWarga
-);
-router.get(
-  "/warga",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.getRegisteredWarga
-);
-router.get(
-  "/warga/:wargaId",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.getWargaDetail
-);
-router.get(
-  "/unregistered",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.getUnregisteredHouses
-);
-router.get(
-  "/activities",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.getActivityLog
-);
 
-router.post("/qr/claim", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.claimQr);
 router.post("/handover", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.handover);
 router.post(
   "/fasilitas/bantu-input",

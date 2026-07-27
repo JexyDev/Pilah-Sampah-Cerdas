@@ -9,6 +9,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { binService } from "./binService.js";
 import { binRepository } from "../repositories/binRepository.js";
 
+// Mock the qrGenerator
+vi.mock("../utils/qrGenerator.js", () => {
+  return {
+    generateNextQrCode: vi.fn().mockResolvedValue("QR-NEW"),
+  };
+});
+
 // Mock the binRepository
 vi.mock("../repositories/binRepository.js", () => {
   return {
