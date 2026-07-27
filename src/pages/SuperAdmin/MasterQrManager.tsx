@@ -252,16 +252,7 @@ export const MasterQrManager: React.FC = () => {
         >
           Semua QR & Bin ({qrs.length})
         </button>
-        <button
-          onClick={() => setActiveTab("pending_bins")}
-          className={`pb-3 text-sm font-semibold border-b-2 transition ${
-            activeTab === "pending_bins"
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Persetujuan Bin Warga ({pendingBins.length})
-        </button>
+
         <button
           onClick={() => setActiveTab("pending_petugas")}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
@@ -367,61 +358,7 @@ export const MasterQrManager: React.FC = () => {
         </div>
       )}
 
-      {activeTab === "pending_bins" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-            <h3 className="font-bold text-gray-800 text-sm">Persetujuan Aktivasi QR Bin Warga (Global)</h3>
-          </div>
-          <div className="p-4 overflow-x-auto">
-            {pendingBins.length === 0 ? (
-              <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan aktivasi QR Bin.</p>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-3">Warga & Lokasi</th>
-                    <th className="px-6 py-3">QR Code & Kategori</th>
-                    <th className="px-6 py-3">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 text-gray-700">
-                  {pendingBins.map((bin) => (
-                    <tr key={bin.id} className="hover:bg-slate-50/50 transition">
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-sm text-gray-900">{bin.user?.name}</p>
-                        <p className="text-xs text-gray-500">{bin.user?.address}</p>
-                        {bin.qrBatch?.assignedPic && (
-                          <p className="text-xs text-blue-600 mt-1">Pendamping: {bin.qrBatch.assignedPic.name}</p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-sm">{bin.qrCode}</p>
-                        <Badge status={bin.category?.name || "PRINTED"} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => approveBin(bin.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
-                          >
-                            Setujui
-                          </button>
-                          <button
-                            onClick={() => setRejectBinId(bin.id)}
-                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
-                          >
-                            Tolak
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {activeTab === "pending_petugas" && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

@@ -102,68 +102,7 @@ export const RwApproval = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Portal Approval RW</h1>
       
-      {/* Bin Approval */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-polish">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-800 text-sm">Persetujuan Aktivasi QR Bin Warga</h3>
-        </div>
-        <div className="p-4">
-          {pendingBins.length === 0 ? (
-            <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan aktivasi QR Bin.</p>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Warga & Lokasi</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">QR Code & Kategori</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {pendingBins.map((bin) => (
-                  <tr key={bin.id} className="hover:bg-slate-50/50 transition-colors duration-150">
-                    <td className="px-4 py-2">
-                      <p className="font-semibold text-sm">{bin.user?.name}</p>
-                      <p className="text-xs text-gray-500">{bin.user?.address}</p>
-                      {bin.qrBatch?.assignedPic && <p className="text-xs text-blue-600 mt-1">Pendamping: {bin.qrBatch.assignedPic.name}</p>}
-                    </td>
-                    <td className="px-4 py-2">
-                      <p className="font-semibold text-sm">{bin.qrCode}</p>
-                      <Badge status={bin.category?.name || "PRINTED"} />
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-2">
-                        <button onClick={() => approveBin(bin.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Setujui</button>
-                        <button onClick={() => setRejectBinId(bin.id)} className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Tolak</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
 
-      {rejectBinId && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 transition-all duration-300">
-          <div className="bg-white p-6 rounded-2xl w-96 shadow-xl border border-gray-100 scale-95 hover:scale-100 transition-all duration-300">
-            <h3 className="text-lg font-bold mb-2 text-gray-800">Tolak Pengajuan Bin</h3>
-            <p className="text-xs text-gray-500 mb-4">Berikan alasan mengapa pengajuan bin ini ditolak.</p>
-            <textarea 
-              value={rejectReason} 
-              onChange={e => setRejectReason(e.target.value)} 
-              className="w-full border border-gray-200 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-150 text-sm" 
-              placeholder="Alasan penolakan..."
-              rows={3}
-            />
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setRejectBinId(null)} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Batal</button>
-              <button onClick={rejectBin} className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-md">Kirim Penolakan</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Petugas Verification */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-polish">
