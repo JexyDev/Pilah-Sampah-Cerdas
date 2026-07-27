@@ -125,7 +125,7 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
         }
       } else if (_step == 2) {
         if (_qrOrganik.isNotEmpty && detected.toUpperCase() == _qrOrganik.toUpperCase()) {
-          _showErrorSnackBar('QR Code ini sudah di-scan untuk Bin Organik.');
+          // Abaikan secara diam-diam jika mendeteksi ulang barcode yang sama (transisi kamera lambat)
           success = false;
         } else {
           _qrAnorganik = detected;
@@ -329,7 +329,6 @@ class _AktivasiBinScreenState extends ConsumerState<AktivasiBinScreen> {
                         hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
                         overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
-                        key: ValueKey('scanner_step_$_step'), // Rekreasi widget saat step ganti
                       ),
                     ),
                   ),

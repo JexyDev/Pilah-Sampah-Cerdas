@@ -548,28 +548,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null) return false;
                   
-                  // Local validation: pastikan QR sesuai jenis AI
-                  final isOrganicAI = s.aiResult?.detectedType == WasteType.organic;
-                  final upperQr = qrCode.toUpperCase();
-                  final isScanOrganik = !upperQr.contains('NON') && !upperQr.contains('ANORG');
-                  
-                  if (isOrganicAI && !isScanOrganik) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Bin yang di-scan adalah Anorganik, sedangkan sampah Anda Organik.'),
-                        backgroundColor: AppColors.dangerRed,
-                      ),
-                    );
-                    return false;
-                  } else if (!isOrganicAI && isScanOrganik) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Bin yang di-scan adalah Organik, sedangkan sampah Anda Anorganik.'),
-                        backgroundColor: AppColors.dangerRed,
-                      ),
-                    );
-                    return false;
-                  }
+                  // Validasi jenis tong akan dilakukan dengan aman di sisi backend. 
+                  // Jika tidak cocok, backend melempar BIN_TYPE_MISMATCH dan ditangani dengan benar.
 
                   ref
                       .read(scanFlowProvider.notifier)
