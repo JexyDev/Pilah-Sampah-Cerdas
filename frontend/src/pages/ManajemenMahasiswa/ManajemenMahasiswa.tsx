@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
 import { toast } from "react-hot-toast";
-import { Loader2, Plus, X, Pencil, Trash2, Search, GraduationCap } from "lucide-react";
+import { Loader2, Plus, X, Pencil, Trash2, Search, GraduationCap, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
 
 const ManajemenMahasiswa: React.FC = () => {
@@ -20,6 +20,14 @@ const ManajemenMahasiswa: React.FC = () => {
     status_aktif: "Aktif",
   });
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+
   const fetchMahasiswas = async () => {
     setLoading(true);
     try {
@@ -33,6 +41,7 @@ const ManajemenMahasiswa: React.FC = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1); // reset to page 1 on search
     fetchMahasiswas();
   }, [searchTerm]);
 
@@ -77,16 +86,28 @@ const ManajemenMahasiswa: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menonaktifkan akun mahasiswa ini? Mereka tidak akan bisa login lagi.")) return;
+  const handleDeleteClick = (id: string) => {
+    setStudentToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!studentToDelete) return;
     try {
-      await api.delete(`/admin/mahasiswa/${id}`);
+      await api.delete(`/admin/mahasiswa/${studentToDelete}`);
       toast.success("Mahasiswa berhasil dinonaktifkan");
+      setIsDeleteModalOpen(false);
+      setStudentToDelete(null);
       fetchMahasiswas();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal menghapus mahasiswa");
     }
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(mahasiswas.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedMahasiswas = mahasiswas.slice(startIndex, startIndex + rowsPerPage);
 
   if (user?.peran !== "SUPER_ADMIN") {
     return <div className="p-8 text-center text-error">Akses Ditolak. Halaman ini khusus Super Admin.</div>;
@@ -151,7 +172,7 @@ const ManajemenMahasiswa: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="text-[14px] text-on-surface divide-y divide-outline-variant/30">
-                  {mahasiswas.map((mhs) => (
+                  {paginatedMahasiswas.map((mhs) => (
                     <tr key={mhs.id} className="hover:bg-surface-container-lowest/50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold">{mhs.name}</div>
@@ -176,7 +197,7 @@ const ManajemenMahasiswa: React.FC = () => {
                             <Pencil size={16} />
                           </button>
                           <button
-                            onClick={() => handleDelete(mhs.id)}
+                            onClick={() => handleDeleteClick(mhs.id)}
                             className="p-1.5 text-error hover:bg-error/10 rounded transition-colors"
                             title="Hapus"
                           >
@@ -195,6 +216,53 @@ const ManajemenMahasiswa: React.FC = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {mahasiswas.length > 0 && !loading && (
+            <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-outline-variant/30 mt-4 gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-on-surface-variant">Tampilkan</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-surface-container-low border border-outline-variant/50 rounded-md px-2 py-1 text-sm focus:border-primary focus:outline-none cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+                <span className="text-sm text-on-surface-variant">data</span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-on-surface-variant">
+                  {startIndex + 1}-{Math.min(startIndex + rowsPerPage, mahasiswas.length)} dari {mahasiswas.length}
+                </span>
+                <div className="flex gap-1 bg-surface-container-low rounded-lg p-1 border border-outline-variant/30">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-md hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={18} className="text-on-surface-variant" />
+                  </button>
+                  <div className="flex items-center px-3 text-sm font-bold text-on-surface">
+                    {currentPage} / {totalPages || 1}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="p-1.5 rounded-md hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={18} className="text-on-surface-variant" />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -275,6 +343,35 @@ const ManajemenMahasiswa: React.FC = () => {
                   onClick={handleSubmit}
                 >
                   {editId ? "Simpan Perubahan" : "Simpan Data"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Confirm Delete */}
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all">
+              <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border-4 border-red-100">
+                <AlertTriangle size={26} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Nonaktifkan Akun?</h3>
+              <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
+                Apakah Anda yakin ingin menonaktifkan akun mahasiswa ini? Mereka tidak akan bisa login lagi ke sistem.
+              </p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm shadow-red-200 cursor-pointer transition-all"
+                >
+                  Nonaktifkan
                 </button>
               </div>
             </div>
