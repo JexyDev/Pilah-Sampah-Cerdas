@@ -30,9 +30,9 @@ jobs:
           echo "Syncing backend branch..."
           git checkout -B backend origin/backend || git checkout -b backend
           
-          # Extract root from local-dev
+          # Extract backend from local-dev
           mkdir -p /tmp/local-backend
-          git archive origin/local-dev | tar -x -C /tmp/local-backend
+          git archive origin/local-dev apps/api/ | tar -x -C /tmp/local-backend --strip-components=2
           
           # Sync files (exclude .git and .github)
           rsync -a --delete --exclude='.git' --exclude='.github' /tmp/local-backend/ ./
@@ -52,7 +52,7 @@ jobs:
           
           # Extract frontend from local-dev
           mkdir -p /tmp/local-frontend
-          git archive origin/local-dev frontend/ | tar -x -C /tmp/local-frontend --strip-components=1
+          git archive origin/local-dev apps/web/ | tar -x -C /tmp/local-frontend --strip-components=2
           
           # Sync files
           rsync -a --delete --exclude='.git' --exclude='.github' --exclude='.env.production' /tmp/local-frontend/ ./
@@ -72,7 +72,7 @@ jobs:
           
           # Extract mobile from local-dev
           mkdir -p /tmp/local-mobile
-          git archive origin/local-dev mobile/ | tar -x -C /tmp/local-mobile --strip-components=1
+          git archive origin/local-dev apps/mobile/ | tar -x -C /tmp/local-mobile --strip-components=2
           
           # Sync files
           rsync -a --delete --exclude='.git' --exclude='.github' /tmp/local-mobile/ ./
