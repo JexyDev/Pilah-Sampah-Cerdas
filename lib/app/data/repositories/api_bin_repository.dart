@@ -36,6 +36,9 @@ class ApiBinRepository implements BinRepository {
       }
       return [];
     } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        return [];
+      }
       throw BinException(
         'NETWORK_ERROR',
         'Gagal memuat tong sampah: ${e.message}',
