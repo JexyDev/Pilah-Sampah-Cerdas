@@ -97,7 +97,7 @@ export class ResiduService {
     if (citizen.phone) {
       await notificationIntegrationService.sendWhatsApp(
         citizen.phone,
-        `Halo ${citizen.name}, petugas residu mendeteksi residu tercampur di tong sampah Anda (${data.type}). Mohon pastikan memilah sampah organik dan anorganik dengan benar. Poin Anda berkurang -${pointsToDeduct}.`
+        `Halo ${citizen.name}, petugas residu mendeteksi residu tercampur di tempat sampah Anda (${data.type}). Mohon pastikan memilah sampah organik dan anorganik dengan benar. Poin Anda berkurang -${pointsToDeduct}.`
       );
     }
 

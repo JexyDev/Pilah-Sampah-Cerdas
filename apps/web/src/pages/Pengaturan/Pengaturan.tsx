@@ -791,7 +791,7 @@ const Pengaturan: React.FC = () => {
               
               <div className="max-w-lg text-[14px] text-on-surface-variant leading-relaxed space-y-4">
                 <p>
-                  Platform IoT dan AI untuk mengotomatisasi pendataan, pemilahan, dan pemantauan kapasitas tong sampah secara real-time.
+                  Platform IoT dan AI untuk mengotomatisasi pendataan, pemilahan, dan pemantauan kapasitas tempat sampah secara real-time.
                 </p>
                 <p>
                   Dikembangkan untuk membantu petugas kebersihan RT/RW/Kelurahan dan warga mengelola sampah secara disiplin guna menaikkan efisiensi pemilahan sampah di permukiman.

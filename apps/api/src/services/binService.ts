@@ -203,10 +203,41 @@ export class BinService {
           });
 
           if (!existingTask) {
+            let assignedUserId = null;
+            let status = "PENDING";
+            if (targetBin.latitude && targetBin.longitude) {
+              const petugas = await prisma.user.findMany({
+                where: { role: { name: "PETUGAS_RESIDU" }, status: "ACTIVE" },
+                select: { id: true, petugasProfile: true }
+              });
+              let minDist = Infinity;
+              
+              const { getDistanceInMeters } = await import("../utils/geoUtils.js");
+              for (const p of petugas) {
+                const lat = p.petugasProfile?.latitude;
+                const lng = p.petugasProfile?.longitude;
+                if (lat && lng) {
+                  const dist = getDistanceInMeters(
+                    { lat: Number(targetBin.latitude), lng: Number(targetBin.longitude) },
+                    { lat: Number(lat), lng: Number(lng) }
+                  );
+                  if (dist < minDist) {
+                    minDist = dist;
+                    assignedUserId = p.id;
+                  }
+                }
+              }
+            }
+
+            if (assignedUserId) {
+              status = "CLAIMED";
+            }
+
             await prisma.dispatchTask.create({
               data: {
                 binId: targetBin.id,
-                status: "PENDING",
+                status: status as any,
+                claimedByUserId: assignedUserId
               },
             });
 
@@ -274,9 +305,8 @@ export class BinService {
           multiplier = multVal ? Number(multVal) : 1.0;
         }
 
-        const pointsPerKg = targetBin.category?.pointsPerKg || 10;
         const conf = det.confidence || 1.0;
-        const calculatedPoints = Math.round(conf * pointsPerKg * multiplier);
+        const calculatedPoints = Math.round(weightKg * conf * 0.9);
 
         const requestId = uuidv4();
         const result = await binRepository.recordScanTransaction(
@@ -1226,7 +1256,7 @@ export class BinService {
       }
 
       const title = "Permintaan Pengosongan Sampah";
-      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tong sampah ${bin.qrCode}.`;
+      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tempat sampah ${bin.qrCode}.`;
 
       for (const staff of staffList) {
         await prisma.notification

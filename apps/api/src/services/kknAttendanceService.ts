@@ -237,7 +237,20 @@ export class KknAttendanceService {
       });
 
       if (existing) {
-        throw new Error("ALREADY_ATTENDED");
+        if (existing.checkOutAt) {
+          throw new Error("ALREADY_ATTENDED_AND_CHECKED_OUT");
+        }
+        
+        // This is a checkout
+        const record = await tx.activityAttendance.update({
+          where: { id: existing.id },
+          data: {
+            checkOutAt: new Date(),
+            status: "LEPAS_RADIUS"
+          }
+        });
+        
+        return record;
       }
 
       const record = await tx.activityAttendance.create({
@@ -251,12 +264,12 @@ export class KknAttendanceService {
         },
       });
 
-      // Award +10 points to student
+      // Award +10 points to student on Check-In
       await tx.pointHistory.create({
         data: {
           userId: studentId,
           points: 10,
-          description: `Bonus kehadiran KKN: ${actLoc.title} (${method})`,
+          description: `Bonus kehadiran (Check-In) KKN: ${actLoc.title} (${method})`,
           kategori: "PARTISIPASI_STREAK",
           redeemable: false,
         },

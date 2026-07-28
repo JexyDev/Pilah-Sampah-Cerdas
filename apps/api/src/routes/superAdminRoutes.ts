@@ -31,7 +31,7 @@ router.post("/kkn/handover", superAdminController.handoverKkn);
 router.get("/kkn/handover-history", superAdminController.getKknHandoverHistory);
 router.get("/bins/qr-master", superAdminController.getQrMaster);
 router.post("/bins/generate-qr", superAdminController.generateQrBatch);
-router.get("/audit-trail", superAdminController.getAuditTrail);
+router.get("/audit-trail", roleMiddleware(["SUPER_ADMIN"]), superAdminController.getAuditTrail);
 router.get("/dashboard", superAdminController.getAggregatedDashboard);
 router.get("/approvals/bins", superAdminController.getPendingBins);
 router.put("/approvals/bins/:id/approve", superAdminController.approveBin);

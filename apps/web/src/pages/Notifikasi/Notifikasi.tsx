@@ -113,7 +113,7 @@ const NotificationModal = ({
             <div className="text-sm text-orange-800">
               <p className="font-semibold mb-1">Tindakan Review Diperlukan</p>
               <p>
-                Warga telah mengajukan pengosongan tong sampah. Tinjau pengajuan ini dan tentukan
+                Warga telah mengajukan pengosongan tempat sampah. Tinjau pengajuan ini dan tentukan
                 tindakan Anda.
               </p>
             </div>
@@ -175,7 +175,7 @@ const NotificationModal = ({
             <div className="text-sm text-red-800">
               <p className="font-semibold mb-1">Aksi Diperlukan</p>
               <p>
-                Tong sampah Anda telah mencapai kapasitas kritis. Silakan ambil foto bukti kondisi
+                tempat sampah Anda telah mencapai kapasitas kritis. Silakan ambil foto bukti kondisi
                 tong yang penuh untuk mengajukan pengosongan ke petugas RT/RW.
               </p>
             </div>
@@ -411,7 +411,7 @@ const Notifikasi: React.FC = () => {
 
       const binId = await getTargetBinId(selectedNotif.desc, selectedNotif.title);
       if (!binId) {
-        toast.error("Gagal mendeteksi id tong sampah");
+        toast.error("Gagal mendeteksi id tempat sampah");
         return;
       }
 

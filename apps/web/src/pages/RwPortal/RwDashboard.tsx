@@ -56,8 +56,8 @@ export const RwDashboard: React.FC = () => {
             <p className="text-slate-600">Minggu ini terdapat kenaikan sampah anorganik 15% di RT 02. Disarankan melakukan sosialisasi pemilahan plastik ulang.</p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-indigo-50 text-xs shadow-sm">
-            <span className="font-bold text-amber-600 block mb-1">Tong Sampah Hampir Penuh</span>
-            <p className="text-slate-600">Ada 3 tong sampah di area Anda yang mendekati kapasitas maksimal (80%). Petugas diinfokan untuk menjemput sore ini.</p>
+            <span className="font-bold text-amber-600 block mb-1">tempat sampah Hampir Penuh</span>
+            <p className="text-slate-600">Ada 3 tempat sampah di area Anda yang mendekati kapasitas maksimal (80%). Petugas diinfokan untuk menjemput sore ini.</p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-indigo-50 text-xs shadow-sm">
             <span className="font-bold text-emerald-600 block mb-1">Gamifikasi Partisipasi</span>

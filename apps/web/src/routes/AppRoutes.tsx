@@ -29,7 +29,8 @@ import LaporanAnalitik from "../pages/LaporanAnalitik/LaporanAnalitik";
 import Notifikasi from "../pages/Notifikasi/Notifikasi";
 import Pengaturan from "../pages/Pengaturan/Pengaturan";
 import SetorSampah from "../pages/SetorSampah/SetorSampah";
-import KknDashboard from "../pages/KknDashboard/KknDashboard";\nimport KknWargaMonitoring from "../pages/KknDashboard/KknWargaMonitoring";
+import KknDashboard from "../pages/KknDashboard/KknDashboard";
+import KknWargaMonitoring from "../pages/KknDashboard/KknWargaMonitoring";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import { useAuthStore } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
@@ -37,6 +38,10 @@ import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
 import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
 import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
 import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
+import AktivitasMonitoring from "../pages/SuperAdmin/AktivitasMonitoring";
+import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
+import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
+import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
 import { RwApproval } from "../pages/RwPortal/RwApproval";
 import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
@@ -112,7 +117,23 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="master-data"
+          path="monitoring-aktivitas"
+          element={
+            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_ADMIN"]}>
+              <AktivitasMonitoring />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="manajemen-pengangkutan"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "PETUGAS_RESIDU"]}>
+              <ManajemenPengangkutan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="master-qr"
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <MasterData />
@@ -169,6 +190,38 @@ const AppRoutes: React.FC = () => {
               allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]}
             >
               <ManajemenLokasi />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="manajemen-ekosistem-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+              <ManajemenEkosistemKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="pemanfaatan-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+              <PemanfaatanSampah />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="hasil-pemanfaatan"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+              <PlaceholderPage title="Hasil Pemanfaatan" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="setor-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["WARGA", "MAHASISWA_KKN"]}>
+              <SetorSampah />
             </ProtectedRoute>
           }
         />

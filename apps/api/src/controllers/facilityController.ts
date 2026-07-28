@@ -71,12 +71,14 @@ export class FacilityController {
         });
         return;
       }
+      const userId = (req as any).user?.userId;
       const log = await facilityService.recordProduction(
         id,
         Number(materialMasukKg),
         Number(outputKg),
         jenisOutput,
-        periode
+        periode,
+        userId
       );
       res.status(201).json({ success: true, message: "Pencatatan produksi berhasil", data: log });
     } catch (error: any) {

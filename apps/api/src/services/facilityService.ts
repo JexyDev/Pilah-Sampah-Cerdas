@@ -24,7 +24,7 @@ export const facilityService = {
     longitude?: number
   ) => {
     // Validate facility type
-    const validTypes = ["loseda", "bata_terawang", "rumah_maggot", "bank_sampah", "tps"];
+    const validTypes = ["loseda", "bata_terawang", "rumah_maggot", "bank_sampah", "tps", "buruan_sae", "poc"];
     if (!validTypes.includes(jenis)) {
       throw new Error("INVALID_FACILITY_TYPE");
     }
@@ -70,21 +70,40 @@ export const facilityService = {
     materialMasukKg: number,
     outputKg: number,
     jenisOutput: string,
-    periode: string
+    periode: string,
+    userId?: string
   ) => {
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId },
     });
     if (!facility) throw new Error("FACILITY_NOT_FOUND");
 
-    return prisma.facilityProductionLog.create({
-      data: {
-        facilityId,
-        materialMasukKg: Number(materialMasukKg),
-        outputKg: Number(outputKg),
-        jenisOutput,
-        periode,
-      },
+    return prisma.$transaction(async (tx) => {
+      const log = await tx.facilityProductionLog.create({
+        data: {
+          facilityId,
+          materialMasukKg: Number(materialMasukKg),
+          outputKg: Number(outputKg),
+          jenisOutput,
+          periode,
+        },
+      });
+
+      // Award gamification points: 1 Kg = 10 Poin default
+      if (userId && Number(outputKg) > 0) {
+        const points = Math.floor(Number(outputKg) * 10);
+        await tx.pointHistory.create({
+          data: {
+            userId,
+            points,
+            description: `Produksi ${jenisOutput} dari ${facility.nama} (${outputKg} Kg)`,
+            kategori: "PEMANFAATAN",
+            redeemable: true,
+          }
+        });
+      }
+
+      return log;
     });
   },
 

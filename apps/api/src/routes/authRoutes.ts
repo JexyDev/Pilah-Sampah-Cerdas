@@ -248,6 +248,20 @@ router.post(
   authController.registerRw
 );
 
+router.post(
+  "/register/rt",
+  authMiddleware,
+  roleMiddleware(["RW", "ADMIN_DLH"]),
+  authController.registerRt
+);
+
+router.post(
+  "/register/dpl",
+  authMiddleware,
+  roleMiddleware(["ADMIN_DLH"]),
+  authController.registerDpl
+);
+
 router.post("/register/petugas-residu", authController.registerPetugasResidu);
 
 router.post("/register/warga", authController.registerWarga);

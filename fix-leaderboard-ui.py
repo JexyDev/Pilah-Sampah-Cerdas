@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import re
+
+content = \"\"\"import React, { useEffect, useState } from "react";
 import { Loader2, Medal, TrendingUp, TrendingDown, Minus, BarChart2, Users, Search, ArrowUpDown, MapPin, GraduationCap } from "lucide-react";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { Badge } from "../../components/common/Badge";
 import { BarChartRace } from "../../components/BarChartRace";
 
-type LeaderboardTab = "citizens" | "kelurahan" | "rtrw" | "mahasiswa" | "pengangkut";
+type LeaderboardTab = "citizens" | "kelurahan" | "rtrw" | "mahasiswa";
 
 interface GenericItem {
   id: string;
@@ -16,7 +18,7 @@ interface GenericItem {
 }
 
 const Leaderboard: React.FC = () => {
-  const { users, rtRw, mahasiswa, pengangkut, isLoading, error, fetchLeaderboard } = useLeaderboardStore();
+  const { users, rtRw, mahasiswa, isLoading, error, fetchLeaderboard } = useLeaderboardStore();
   const [activeTab, setActiveTab] = useState<LeaderboardTab>("citizens");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"rank" | "name" | "points" | "subtitle">("rank");
@@ -91,18 +93,6 @@ const Leaderboard: React.FC = () => {
     nameHeader = "Nama Mahasiswa";
     subtitleHeader = "Asal Universitas";
     extraInfoHeader = "Wilayah Dampingan";
-  } else if (activeTab === "pengangkut") {
-    currentData = pengangkut.map((p, i) => ({
-      id: p.id,
-      rank: i + 1,
-      name: p.name,
-      subtitle: p.wilayah,
-      points: p.totalPoints
-    }));
-    pageTitle = "Leaderboard Petugas Pengangkut";
-    pageSubtitle = "Peringkat petugas berdasarkan total berat sampah yang diverifikasi (Kg)";
-    nameHeader = "Nama Petugas";
-    subtitleHeader = "Wilayah Tugas";
   }
 
   // Search
@@ -143,41 +133,25 @@ const Leaderboard: React.FC = () => {
       <div className="flex justify-center border-b border-slate-200 overflow-x-auto custom-scrollbar pb-1">
         <button
           onClick={() => setActiveTab("citizens")}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
-            activeTab === "citizens" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
+          className={\lex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all \\}
         >
           <Users size={16} /> Warga
         </button>
         <button
           onClick={() => setActiveTab("rtrw")}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
-            activeTab === "rtrw" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
+          className={\lex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all \\}
         >
           <MapPin size={16} /> RT/RW
         </button>
         <button
           onClick={() => setActiveTab("mahasiswa")}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
-            activeTab === "mahasiswa" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
+          className={\lex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all \\}
         >
           <GraduationCap size={16} /> Mahasiswa KKN
         </button>
         <button
-          onClick={() => setActiveTab("pengangkut")}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
-            activeTab === "pengangkut" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <TrendingUp size={16} /> Pengangkut
-        </button>
-        <button
           onClick={() => setActiveTab("kelurahan")}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
-            activeTab === "kelurahan" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
+          className={\lex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all \\}
         >
           <BarChart2 size={16} /> Persaingan Kelurahan
         </button>
@@ -204,14 +178,14 @@ const Leaderboard: React.FC = () => {
               const trendIcon = u.rank % 2 === 0 ? <TrendingUp className="text-emerald-500 w-4 h-4" /> : <Minus className="text-slate-400 w-4 h-4" />;
 
               return (
-                <div key={u.id} className={`w-full md:w-64 flex flex-col items-center justify-end relative order-${isFirst ? '2' : (isSecond ? '1' : '3')}`}>
+                <div key={u.id} className={\w-full md:w-64 flex flex-col items-center justify-end relative order-\\}>
                   <div className="absolute -top-12 z-10 flex flex-col items-center">
                     <Medal color={medalColor} size={48} className="drop-shadow-lg" />
                     <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded-full text-xs shadow-sm mt-[-10px]">
                       Peringkat {u.rank}
                     </span>
                   </div>
-                  <div className={`w-full rounded-t-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-lg flex flex-col justify-end ${heightClass}`}>
+                  <div className={\w-full rounded-t-2xl bg-gradient-to-t \ p-4 text-center shadow-lg flex flex-col justify-end \\}>
                     <h3 className="font-black text-white text-lg truncate drop-shadow-md">{u.name}</h3>
                     <p className="text-white/90 font-bold text-sm drop-shadow-sm">{u.points.toLocaleString()} Pts</p>
                     <div className="mt-2 bg-white/20 rounded-full px-2 py-1 flex items-center justify-center gap-1 w-fit mx-auto backdrop-blur-sm">
@@ -324,3 +298,9 @@ const Leaderboard: React.FC = () => {
 };
 
 export default Leaderboard;
+\"\"\"
+
+with open("apps/web/src/pages/Leaderboard/Leaderboard.tsx", "w", encoding="utf-8") as f:
+    f.write(content)
+
+print("Updated Leaderboard.tsx")

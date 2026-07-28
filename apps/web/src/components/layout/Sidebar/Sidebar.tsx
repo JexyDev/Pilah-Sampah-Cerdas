@@ -6,7 +6,41 @@
  */
 
 import React from "react";
-import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb, Info, GraduationCap } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Trash2, 
+  Users, 
+  Settings, 
+  MapPin, 
+  FileText, 
+  Menu, 
+  X, 
+  LogOut, 
+  ChevronRight, 
+  Map, 
+  Box, 
+  Activity, 
+  ShieldCheck, 
+  FilePlus, 
+  Sprout, 
+  LineChart, 
+  Trophy, 
+  Info, 
+  Bell, 
+  Sliders, 
+  QrCode, 
+  ClipboardCheck, 
+  Star, 
+  Lightbulb, 
+  Calendar, 
+  Tags,
+  Receipt,
+  ScanLine,
+  Truck,
+  Compass,
+  GraduationCap,
+  Archive
+} from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -125,6 +159,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
         )}
 
+        <SectionHeader label="Aktivitas Tata Kelola Sampah" />
+        <NavItem to="/setor-sampah" icon={ScanLine} label="Pemilahan Sampah" />
+        <NavItem to="/manajemen-pengangkutan" icon={Truck} label="Pengangkutan Sampah" />
+        <NavItem to="/pemanfaatan-sampah" icon={Sprout} label="Pemanfaatan Sampah" />
+        <NavItem to="/hasil-pemanfaatan" icon={Archive} label="Hasil Pemanfaatan" />
+
         <SectionHeader label="Manajemen Data" />
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
           <NavItem to="/manajemen-pengguna" icon={Users} label="Manajemen Pengguna" />
@@ -178,6 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
 
         <SectionHeader label="Edukasi & Gamifikasi" />
+        <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" />
         <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
         <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
         <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />

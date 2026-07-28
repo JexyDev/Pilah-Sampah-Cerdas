@@ -169,6 +169,7 @@ export const dashboardService = {
 
     let organikKg = 0;
     let anorganikKg = 0;
+    let residuKg = 0;
 
     wasteByCategory.forEach((log) => {
       const kg = Number(log.weightKg);
@@ -179,6 +180,8 @@ export const dashboardService = {
         !catName.includes("ANORGANIK")
       ) {
         organikKg += kg;
+      } else if (catName.includes("RESIDU")) {
+        residuKg += kg;
       } else {
         anorganikKg += kg;
       }
@@ -197,6 +200,7 @@ export const dashboardService = {
       komposisiSampah: {
         organikKg,
         anorganikKg,
+        residuKg,
       },
     };
   },
@@ -280,8 +284,19 @@ export const dashboardService = {
         },
       });
 
+      const residuLogs = await prisma.residuLog.findMany({
+        where: {
+          createdAt: {
+            gte: startOfWeek,
+            lte: endOfWeek,
+          },
+          rtRw: isFiltered ? { name: wilayah } : undefined,
+        },
+      });
+
       let organicWeight = 0;
       let inorganicWeight = 0;
+      let residuWeight = 0;
 
       logs.forEach((log) => {
         const kg = Number(log.weightKg);
@@ -297,7 +312,11 @@ export const dashboardService = {
         }
       });
 
-      const totalWeight = organicWeight + inorganicWeight;
+      residuLogs.forEach((l) => {
+        residuWeight += Number(l.beratKg);
+      });
+
+      const totalWeight = organicWeight + inorganicWeight + residuWeight;
 
       // Calculate week number of year
       const oneJan = new Date(endOfWeek.getFullYear(), 0, 1);
@@ -311,6 +330,7 @@ export const dashboardService = {
         weight: parseFloat(totalWeight.toFixed(1)),
         organic: parseFloat(organicWeight.toFixed(1)),
         inorganic: parseFloat(inorganicWeight.toFixed(1)),
+        residu: parseFloat(residuWeight.toFixed(1)),
       });
     }
 

@@ -94,7 +94,7 @@ const ResiduDashboard: React.FC = () => {
   const handleViolationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!violationForm.binQrCode) {
-      toast.error("ID/QR Code Tong Sampah wajib diisi!");
+      toast.error("ID/QR Code tempat sampah wajib diisi!");
       return;
     }
     if (!violationPhoto) {
@@ -501,7 +501,7 @@ const ResiduDashboard: React.FC = () => {
             <form onSubmit={handleViolationSubmit} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  ID / QR Code Tong Sampah *
+                  ID / QR Code tempat sampah *
                 </label>
                 <input
                   type="text"

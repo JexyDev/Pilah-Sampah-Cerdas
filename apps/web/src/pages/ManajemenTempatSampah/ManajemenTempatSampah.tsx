@@ -621,7 +621,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 >
                   <Popup>
                     <div className="text-[12px] space-y-1">
-                      <strong>Tong: {b.kode}</strong>
+                      <strong>Tempat Sampah: {b.kode}</strong>
                       <br />
                       Pemilik: {b.wargaName || "Publik/Umum"}
                       <br />

@@ -202,9 +202,14 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(users.length / rowsPerPage);
+  const sortedUsers = [...users].sort((a, b) => {
+    if (a.status === "PENDING" && b.status !== "PENDING") return -1;
+    if (a.status !== "PENDING" && b.status === "PENDING") return 1;
+    return 0;
+  });
+  const totalPages = Math.ceil(sortedUsers.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedUsers = users.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedUsers = sortedUsers.slice(startIndex, startIndex + rowsPerPage);
 
   const handleExportCSV = () => {
     if (users.length === 0) {

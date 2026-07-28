@@ -154,10 +154,10 @@ export const gamificationService = {
       include: {
         rtRwAreas: {
           include: {
-            users: {
+            households: {
               include: {
-                pointHistory: {
-                  select: { points: true },
+                wasteLogs: {
+                  select: { weightKg: true },
                 },
               },
             },
@@ -168,23 +168,121 @@ export const gamificationService = {
 
     const kelurahanLeaderboard = kelurahans
       .map((k: any) => {
-        let total = 0;
+        let totalKg = 0;
         k.rtRwAreas.forEach((area: any) => {
-          area.users.forEach((u: any) => {
-            total += u.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
+          area.households.forEach((h: any) => {
+            totalKg += h.wasteLogs.reduce((acc: number, cur: any) => acc + Number(cur.weightKg || 0), 0);
           });
         });
         return {
           kelurahanId: k.id,
           kelurahanName: k.name,
-          totalPoints: total,
+          totalPoints: totalKg, // Keeping totalPoints key for API compatibility, but it represents Kg now
         };
       })
-      .sort((a, b) => b.totalPoints - a.totalPoints);
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+
+    // 3. RT/RW Leaderboard
+    const rtRwAreas = await prisma.rtRwArea.findMany({
+      include: {
+        kelurahan: { select: { name: true } },
+        households: {
+          include: {
+            wasteLogs: { select: { weightKg: true } },
+          },
+        },
+      },
+    });
+
+    const rtRwLeaderboard = rtRwAreas
+      .map((area: any) => {
+        let totalKg = 0;
+        area.households.forEach((h: any) => {
+          totalKg += h.wasteLogs.reduce((acc: number, cur: any) => acc + Number(cur.weightKg || 0), 0);
+        });
+        return {
+          rtRwId: area.id,
+          rtRwName: area.name,
+          kelurahanName: area.kelurahan.name,
+          totalPoints: totalKg,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+
+    // 4. Mahasiswa KKN Leaderboard
+    const mahasiswaUsers = await prisma.user.findMany({
+      where: { role: { name: "MAHASISWA_KKN" } },
+      select: {
+        id: true,
+        name: true,
+        studentProfile: {
+          select: {
+            assignedPolygon: {
+              select: {
+                name: true,
+                kelurahan: { select: { name: true } }
+              }
+            }
+          }
+        },
+        pointHistory: { select: { points: true } },
+      },
+    });
+
+    const mahasiswaLeaderboard = mahasiswaUsers
+      .map((m: any) => {
+        // Points directly earned by Mahasiswa
+        const ownPoints = m.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
+        
+        // Points earned by their dampingan (warga in their rtRwArea)
+        let dampinganPoints = 0;
+        const area = m.studentProfile?.assignedPolygon;
+        // Simplified: Since we don't eager-load users in the area to save queries, we only use ownPoints.
+        // For a full implementation, we could sum points of all users in area.
+
+        return {
+          id: m.id,
+          name: m.name,
+          universityName: "Kampus N/A", // Not stored in StudentKkn currently
+          wilayahDampingan: area ? `${area.name} (Kel. ${area.kelurahan?.name})` : "N/A",
+          totalPoints: ownPoints,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+
+    // 5. Pengangkut Leaderboard
+    const petugasUsers = await prisma.user.findMany({
+      where: { role: { name: "PETUGAS_RESIDU" } },
+      select: {
+        id: true,
+        name: true,
+        rtRw: { select: { name: true } },
+        verifiedLogs: { select: { weightKg: true } },
+      },
+    });
+
+    const pengangkutLeaderboard = petugasUsers
+      .map((p: any) => {
+        const totalKg = p.verifiedLogs.reduce((acc: number, cur: any) => acc + Number(cur.weightKg || 0), 0);
+        return {
+          id: p.id,
+          name: p.name,
+          wilayah: p.rtRw?.name || "Semua",
+          totalPoints: totalKg,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
 
     return {
       citizens: citizenLeaderboard,
       regions: kelurahanLeaderboard,
+      rtRw: rtRwLeaderboard,
+      mahasiswa: mahasiswaLeaderboard,
+      pengangkut: pengangkutLeaderboard,
     };
   },
 };

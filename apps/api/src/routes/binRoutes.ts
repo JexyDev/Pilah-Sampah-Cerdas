@@ -268,6 +268,13 @@ router.put(
   binController.approveActivation
 );
 
+router.post(
+  "/activate",
+  authMiddleware,
+  roleMiddleware(["WARGA", "MAHASISWA_KKN"]),
+  binController.registerWargaBin
+);
+
 router.put(
   "/:id/reject-activation",
   authMiddleware,
