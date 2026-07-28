@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/values/app_assets.dart';
 import '../../core/values/app_colors.dart';
+import '../../core/values/app_config.dart';
 import '../../core/values/app_dimensions.dart';
 import '../../routes/app_routes.dart';
 import '../../data/models/bin_entity.dart';
@@ -18,7 +19,7 @@ import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
 import '../../core/utils/scan_guard.dart';
 
-/// Halaman beranda — sesuai desain:
+/// Halaman beranda Ã¢â‚¬â€ sesuai desain:
 /// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
 class BerandaView extends ConsumerWidget {
   const BerandaView({
@@ -49,7 +50,7 @@ class BerandaView extends ConsumerWidget {
         color: AppColors.primaryGreen,
         child: CustomScrollView(
           slivers: [
-            // ─── Header Biru ─────────────────────────────────────────────
+            // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Header Biru Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             SliverToBoxAdapter(
               child: _buildHeader(
                 context,
@@ -64,7 +65,7 @@ class BerandaView extends ConsumerWidget {
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // ─── Stats Card ──────────────────────────────────────
+                  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Stats Card Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   totalPointsAsync.when(
                     data: (total) => _buildStatsCard(context, total),
                     loading: () => const SkeletonLoading(
@@ -79,7 +80,7 @@ class BerandaView extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppDimensions.md),
 
-                  // ─── Aksi Cepat ──────────────────────────────────────
+                  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Aksi Cepat Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   const Text(
                     'Aksi Cepat',
                     style: TextStyle(
@@ -93,7 +94,79 @@ class BerandaView extends ConsumerWidget {
 
                   const SizedBox(height: AppDimensions.lg),
 
-                  // ─── Riwayat Terakhir ────────────────────────────────
+                  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Tong Sampah Anda Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Tong Sampah Anda',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
+                        child: const Text(
+                          'Kelola',
+                          style: TextStyle(
+                            color: AppColors.primaryGreen,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      return ref.watch(binsProvider).when(
+                        data: (bins) {
+                          if (bins.isEmpty) {
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'Belum ada tong terdaftar.',
+                                  style: TextStyle(color: AppColors.textSecondary),
+                                ),
+                              ),
+                            );
+                          }
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            child: Row(
+                              children: bins.map((bin) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 12),
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width * 0.42,
+                                    child: _BerandaBinCard(bin: bin),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                        loading: () => const SizedBox(
+                          height: 80,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (_, __) => const SizedBox.shrink(),
+                      );
+                    }
+                  ),
+
+                  const SizedBox(height: AppDimensions.lg),
+
+                  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Riwayat Terakhir Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -290,7 +363,7 @@ class BerandaView extends ConsumerWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            unreadCount > 99 ? '99+' : "$unreadCount",
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -309,7 +382,6 @@ class BerandaView extends ConsumerWidget {
       ),
     );
   }
-
   String _getGreeting() {
     final h = DateTime.now().hour;
     if (h < 11) return 'Selamat Pagi,';
@@ -520,7 +592,7 @@ class BerandaView extends ConsumerWidget {
     // Default: Warga
     return Row(
       children: [
-        // Scan Sampah — hijau/biru gradient
+        // Scan Sampah Ã¢â‚¬â€ hijau/biru gradient
         Expanded(
           child: GestureDetector(
             onTap: isOnline
@@ -566,7 +638,7 @@ class BerandaView extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 12),
-        // Minta Kosongkan Bin — outline merah/biru
+        // Minta Kosongkan Bin Ã¢â‚¬â€ outline merah/biru
         Expanded(
           child: GestureDetector(
             onTap: () => Navigator.of(context).pushNamed(AppRoutes.resetBin),
@@ -611,7 +683,7 @@ class BerandaView extends ConsumerWidget {
   }
 }
 
-// ─── Sub-widgets ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Sub-widgets Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class _StatItem extends StatelessWidget {
   const _StatItem({
@@ -801,5 +873,73 @@ class _RiwayatCard extends StatelessWidget {
     }
   }
 }
+
+class _BerandaBinCard extends StatelessWidget {
+  const _BerandaBinCard({required this.bin});
+  final BinEntity bin;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isOrganic = bin.binType == WasteType.organic;
+    final Color color = isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(Icons.delete_rounded, color: color, size: 24),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            bin.binType.displayName,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            bin.id,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 
