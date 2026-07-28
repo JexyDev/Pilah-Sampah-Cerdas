@@ -29,7 +29,7 @@ import LaporanAnalitik from "../pages/LaporanAnalitik/LaporanAnalitik";
 import Notifikasi from "../pages/Notifikasi/Notifikasi";
 import Pengaturan from "../pages/Pengaturan/Pengaturan";
 import SetorSampah from "../pages/SetorSampah/SetorSampah";
-import KknDashboard from "../pages/KknDashboard/KknDashboard";
+import KknDashboard from "../pages/KknDashboard/KknDashboard";\nimport KknWargaMonitoring from "../pages/KknDashboard/KknWargaMonitoring";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import { useAuthStore } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
@@ -323,7 +323,7 @@ const AppRoutes: React.FC = () => {
         <Route path="tentang" element={<TentangAplikasi />} />
         <Route path="*" element={<NotFound />} />
       </Route>
-    </Routes>
+      <Route path="/kkn/monitoring-warga" element={<KknWargaMonitoring />} />\n    </Routes>
   );
 };
 
