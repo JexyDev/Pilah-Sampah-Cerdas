@@ -1,1 +1,0 @@
-const fs = require('fs'); const file = 'c:/Users/USER/.gemini/antigravity-ide/scratch/pilahsampah-id/src/services/dashboardService.ts'; let content = fs.readFileSync(file, 'utf8'); content = content.replaceAll('ORGANIK', 'ORGANIC'); fs.writeFileSync(file, content);
