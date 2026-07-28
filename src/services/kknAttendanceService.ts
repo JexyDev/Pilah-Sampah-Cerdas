@@ -27,6 +27,49 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 }
 
 export class KknAttendanceService {
+  async pingLocation(userId: string, latitude: number, longitude: number) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId }
+    });
+    if (!student) throw new Error("STUDENT_NOT_FOUND");
+    
+    // Simpan lokasi
+    await prisma.studentLocation.create({
+      data: {
+        studentId: userId,
+        latitude,
+        longitude
+      }
+    });
+
+    // Cek durasi di zona
+    // (Implementasi durasi absen berdasarkan lokasi - Dummy for now as requested)
+    return { success: true, message: "Lokasi berhasil dilacak" };
+  }
+
+  async getWargaDampingan(userId: string) {
+    // Ambil warga yang di-register oleh mahasiswa ini
+    const bins = await prisma.bin.findMany({
+      where: { registeredByStudentId: userId },
+      include: {
+        user: {
+          include: { households: true }
+        },
+        wasteLogs: {
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        }
+      }
+    });
+
+    return bins.map(b => ({
+      binId: b.id,
+      wargaName: b.user?.name || "Unknown",
+      address: b.user?.households?.[0]?.address || "-",
+      recentLogs: b.wasteLogs
+    }));
+  }
+
   /**
    * Save student's current location and perform auto-cleanup of logs older than 24h.
    * If student is inside active activity radius, trigger auto-attendance.
