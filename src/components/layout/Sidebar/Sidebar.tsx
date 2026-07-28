@@ -39,7 +39,8 @@ import {
   Truck,
   Compass,
   GraduationCap,
-  Archive
+  Archive,
+  Shield
 } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
