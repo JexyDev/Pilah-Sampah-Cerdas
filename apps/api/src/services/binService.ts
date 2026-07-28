@@ -1121,7 +1121,7 @@ export class BinService {
     const citizenUserId = bin.userId;
 
     return prisma.$transaction(async (tx) => {
-      const newStatus = bin.qrBatchId ? "ASSIGNED_TO_PIC" : "PRINTED";
+      const newStatus = bin.qrBatchId ? "ACTIVE_BOUND" : "PRINTED";
       const updatedBin = await tx.bin.update({
         where: { id: bin.id },
         data: {
