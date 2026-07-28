@@ -13,28 +13,25 @@ build/
 # TypeScript build artifacts
 *.js.map
 *.d.ts
-
-# Backend dist is tracked — Railway compiles from source OR runs pre-compiled dist
-# Only ignore dist in non-backend directories
-frontend/dist/
+tsconfig.tsbuildinfo
 
 # Prisma generated client
-prisma/client/
+apps/api/prisma/client/
 
 # Flutter / Dart
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/build/
-mobile/android/app/debug/
-mobile/android/app/profile/
-mobile/android/app/release/
-mobile/ios/Runner/
-mobile/pubspec.lock
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/android/app/debug/
+apps/mobile/android/app/profile/
+apps/mobile/android/app/release/
+apps/mobile/ios/Runner/
+apps/mobile/pubspec.lock
 
 # Frontend build
-frontend/dist/
-frontend/node_modules/
+apps/web/dist/
+apps/web/node_modules/
 
 # IDE files
 .vscode/
@@ -53,6 +50,9 @@ npm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Uploads (user-generated content)
+apps/api/uploads/
 
 # Ngrok binary
 ngrok.exe
