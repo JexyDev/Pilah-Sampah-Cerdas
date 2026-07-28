@@ -12,6 +12,8 @@ import '../repositories/api_auth_repository.dart';
 import '../repositories/api_bin_repository.dart';
 import '../repositories/api_waste_log_repository.dart';
 import '../repositories/api_notification_repository.dart';
+import '../repositories/kkn_repository.dart';
+import '../repositories/api_kkn_repository.dart';
 
 final secureStorageProvider = Provider<SafeStorage>((ref) {
   return const SafeStorage();
@@ -52,3 +54,10 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
     apiClient: ref.read(apiClientProvider),
   );
 });
+
+final kknRepositoryProvider = Provider<KknRepository>((ref) {
+  return ApiKknRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+

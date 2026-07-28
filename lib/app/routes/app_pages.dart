@@ -14,6 +14,10 @@ import '../modules/petugas_residu/timbangan_residu_view.dart';
 import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/monitoring_warga/views/kkn_attendance_view.dart';
 import '../modules/monitoring_warga/views/monitoring_warga_view.dart';
+import '../modules/mahasiswa/views/mahasiswa_view.dart';
+import '../modules/mahasiswa/views/registrasi_warga_view.dart';
+import '../modules/mahasiswa/views/daftar_warga_view.dart';
+import '../modules/mahasiswa/views/detail_warga_view.dart';
 import 'app_routes.dart';
 
 /// Route generator terpusat.
@@ -52,6 +56,14 @@ class AppPages {
         return _buildRoute(const KknAttendanceView(), settings);
       case AppRoutes.monitoringWarga:
         return _buildRoute(const MonitoringWargaView(), settings);
+      case AppRoutes.mahasiswa:
+        return _buildRoute(const MahasiswaView(), settings);
+      case AppRoutes.registrasiWarga:
+        return _buildRoute(const RegistrasiWargaView(), settings);
+      case AppRoutes.daftarWarga:
+        return _buildRoute(const DaftarWargaView(), settings);
+      case AppRoutes.detailWarga:
+        return _buildRoute(const DetailWargaView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

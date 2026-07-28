@@ -17,4 +17,8 @@ class AppRoutes {
   static const String tentang = '/tentang';
   static const String kknAttendance = '/kkn-attendance';
   static const String monitoringWarga = '/monitoring-warga';
+  static const String mahasiswa = '/mahasiswa';
+  static const String registrasiWarga = '/registrasi-warga';
+  static const String daftarWarga = '/daftar-warga';
+  static const String detailWarga = '/detail-warga';
 }
