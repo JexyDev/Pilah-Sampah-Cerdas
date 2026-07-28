@@ -41,7 +41,7 @@ const MasterData: React.FC = () => {
         await deleteBin(id);
         toast.success(`Berhasil menghapus ${name}`);
       } catch (e: any) {
-        toast.error("Gagal menghapus tong sampah");
+        toast.error("Gagal menghapus tempat sampah");
       }
     }
   };
@@ -80,7 +80,7 @@ const MasterData: React.FC = () => {
           className={`${styles.tabBtn} ${activeTab === "bins" ? styles.active : ""}`}
           onClick={() => setActiveTab("bins")}
         >
-          Data Tong Sampah
+          Data tempat sampah
         </button>
       </div>
 

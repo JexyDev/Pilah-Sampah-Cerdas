@@ -242,16 +242,24 @@ const RekapSetoran: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-bold text-on-surface">{dep.berat} Kg</span>
-                        <span className="text-[12px] font-bold text-primary flex items-center gap-1">
-                          +{dep.poin} Poin
-                        </span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-on-surface text-lg">{dep.berat}</span>
+                        <span className="text-[12px] text-on-surface-variant font-medium">Kg</span>
+                      </div>
+                      <div className="mt-1 text-[12px] font-bold text-primary flex items-center gap-1">
+                        +{dep.poin} Poin
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div className="text-[13px] text-on-surface font-medium">
-                        {new Date(dep.waktu).toLocaleString()}
+                        {new Date(dep.waktu).toLocaleString('id-ID', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
                       </div>
                       <div className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5">
                         <MapPin size={14} />

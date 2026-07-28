@@ -1,20 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { api } from '../../utils/api';
-import MainLayout from '../../components/layout/MainLayout/MainLayout';
+import api from '../../utils/api';
 import styles from './KknDashboard.module.css'; // Assuming this exists
 
 export const KknWargaMonitoring: React.FC = () => {
   const [warga, setWarga] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get('/kkn/warga-dampingan').then(res => {
+    api.get('/kkn/warga-dampingan').then((res: any) => {
       setWarga(res.data);
-    }).catch(err => console.error(err));
+    }).catch((err: any) => console.error(err));
   }, []);
 
   return (
-    <MainLayout>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className={styles.container || 'p-4'}>
         <h2>Monitoring Warga Dampingan</h2>
         <p>Grafik dan data historis warga yang Anda bantu aktivasinya.</p>
@@ -35,7 +34,7 @@ export const KknWargaMonitoring: React.FC = () => {
           </div>
         )}
       </div>
-    </MainLayout>
+    </div>
   );
 };
 export default KknWargaMonitoring;

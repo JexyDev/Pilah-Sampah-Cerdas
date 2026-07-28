@@ -18,6 +18,10 @@ export interface LeaderboardUser {
 
 interface LeaderboardState {
   users: LeaderboardUser[];
+  regions: any[];
+  rtRw: any[];
+  mahasiswa: any[];
+  pengangkut: any[];
   isLoading: boolean;
   error: string | null;
   fetchLeaderboard: () => Promise<void>;
@@ -27,23 +31,33 @@ import api from "../services/api";
 
 export const useLeaderboardStore = create<LeaderboardState>((set) => ({
   users: [],
+  regions: [],
+  rtRw: [],
+  mahasiswa: [],
+  pengangkut: [],
   isLoading: false,
   error: null,
   fetchLeaderboard: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get("/points/leaderboard");
+      const response = await api.get("/gamification/leaderboard");
+      const { citizens, regions, rtRw, mahasiswa, pengangkut } = response.data.data;
+
       // format response to LeaderboardUser
-      const users: LeaderboardUser[] = response.data.data.map((u: any, index: number) => ({
-        id: u.userId,
+      const users: LeaderboardUser[] = citizens.map((u: any, index: number) => ({
+        id: u.id,
         rank: index + 1,
-        name: u.user?.name || "Unknown",
+        name: u.name || "Unknown",
         points: u.totalPoints,
-        wilayah: typeof u.user?.rtRw === 'string' ? u.user.rtRw : (u.user?.rtRw?.name || u.user?.wilayah || "-"),
+        wilayah: u.wilayah || "-",
       }));
 
       set({
         users,
+        regions: regions || [],
+        rtRw: rtRw || [],
+        mahasiswa: mahasiswa || [],
+        pengangkut: pengangkut || [],
         isLoading: false,
       });
     } catch (err: any) {
