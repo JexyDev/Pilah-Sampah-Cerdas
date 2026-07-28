@@ -124,7 +124,7 @@ export class TransactionService {
       const bin = await tx.bin.findFirst({
         where: { userId: wargaId, status: "ACTIVE_BOUND" },
       });
-      if (!bin) throw new Error("Warga belum memiliki tong sampah aktif");
+      if (!bin) throw new Error("Warga belum memiliki tempat sampah aktif");
 
       const category = await tx.wasteCategory.findUnique({
         where: { id: kategoriId },

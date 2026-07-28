@@ -5,6 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
+
 import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
@@ -366,15 +367,27 @@ export class AuthService {
       if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
     }
 
+    const role = await authRepository.findRoleByName("WARGA");
+    if (!role) throw new Error("ROLE_NOT_FOUND");
+
+    let finalStatus = "PENDING";
+
     const user = await authRepository.registerWargaTx(
       {
         ...userData,
         password: hashedPassword,
+        status: finalStatus,
       },
       householdData,
       qrCode,
       wargaSubtype
     );
+
+    if (userData.rtRwId) {
+      import("./polygonService.js").then(({ polygonService }) => {
+        polygonService.regenerateRtRwPolygon(userData.rtRwId).catch(console.error);
+      });
+    }
 
     const accessToken = generateAccessToken({
       userId: user.id,
@@ -472,6 +485,36 @@ export class AuthService {
       roleId: role.id,
     });
   }
+
+  async registerDpl(userData: any) {
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(userData.password);
+
+    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+
+    let role = await authRepository.findRoleByName("DPL");
+    if (!role) {
+      // Create role DPL if not exists for demo purposes
+      role = await prisma.role.create({ data: { name: "DPL" } });
+    }
+
+    const { universityId, ...userBaseData } = userData;
+
+    return prisma.user.create({
+      data: {
+        ...userBaseData,
+        password: hashedPassword,
+        roleId: role.id,
+        dosenPembimbing: {
+          create: {
+            universityId: universityId
+          }
+        }
+      }
+    });
+  }
+
 
   /**
    * Get KKN pending list

@@ -296,6 +296,8 @@ enum FacilityType {
   rumah_maggot
   bank_sampah
   tps
+  buruan_sae
+  poc
 }
 
 model Facility {
@@ -595,6 +597,7 @@ model ActivityAttendance {
   method      String   @map("metode") // "OTOMATIS" / "MANUAL"
   latitude    Decimal  @db.Decimal(11, 8) @map("latitude")
   longitude   Decimal  @db.Decimal(11, 8) @map("longitude")
+  checkOutAt  DateTime? @map("waktu_checkout")
   status      String   @default("DALAM_RADIUS") @map("status") // "DALAM_RADIUS", "LEPAS_RADIUS"
 
   @@unique([studentId, scheduleId])

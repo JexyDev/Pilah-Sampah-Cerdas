@@ -20,10 +20,10 @@ export const transactionController = {
         rtRw: d.bin?.rtRw?.name || `RT/RW ${d.bin?.rtRwId}`,
         jenis: d.category?.name || d.categoryId,
         berat: Number(d.weightKg),
-        poin: Math.floor(Number(d.weightKg) * (d.category?.pointsPerKg || 10)),
+        poin: Math.round(Number(d.weightKg) * Number(d.aiConfidence || 1.0) * 0.9),
         waktu: d.createdAt,
         status: "Selesai",
-        lokasi: `Tong: ${d.bin?.qrCode}`,
+        lokasi: `Tempat Sampah: ${d.bin?.qrCode}`,
       }));
 
       res.status(200).json({ success: true, data: mappedDeposits });
@@ -43,10 +43,10 @@ export const transactionController = {
         jenis: d.category?.name || d.categoryId,
         berat: Number(d.weightKg),
         volume: `${Number(d.volumeLiter).toFixed(1)}L`,
-        poin: Math.floor(Number(d.weightKg) * (d.category?.pointsPerKg || 10)),
+        poin: Math.round(Number(d.weightKg) * Number(d.aiConfidence || 1.0) * 0.9),
         waktu: d.createdAt,
         status: "Selesai",
-        lokasi: `Tong: ${d.bin?.qrCode}`,
+        lokasi: `Tempat Sampah: ${d.bin?.qrCode}`,
       }));
 
       res.status(200).json({ success: true, data: mappedDeposits });

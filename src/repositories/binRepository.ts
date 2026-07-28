@@ -245,8 +245,8 @@ export class BinRepository {
     return prisma.notification.create({
       data: {
         userId,
-        title: "Tong Sampah Penuh!",
-        message: `Tong sampah ${qrCode} hampir meluap. Kapasitas maksimum terlampaui.`,
+        title: "tempat sampah Penuh!",
+        message: `tempat sampah ${qrCode} hampir meluap. Kapasitas maksimum terlampaui.`,
       },
     });
   }
