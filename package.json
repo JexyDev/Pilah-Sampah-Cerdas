@@ -8,6 +8,7 @@
   "scripts": {
     "dev:api": "cd apps/api && npm run dev",
     "dev:web": "cd apps/web && npm run dev",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
     "build:api": "cd apps/api && npm run build",
     "build:web": "cd apps/web && npm run build",
     "build:all": "npm run build:api && npm run build:web",
@@ -17,5 +18,8 @@
     "prisma:generate": "cd apps/api && npx prisma generate",
     "prisma:migrate": "cd apps/api && npx prisma migrate dev",
     "test:api": "cd apps/api && npx vitest run"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4"
   }
 }

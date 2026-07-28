@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            cd ~/pilah-sampah-cerdas
+            cd ~/Pilah-Sampah-Cerdas
             git fetch origin main
             git reset --hard origin/main
 
