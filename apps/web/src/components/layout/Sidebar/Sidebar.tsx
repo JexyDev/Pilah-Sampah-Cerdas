@@ -6,7 +6,36 @@
  */
 
 import React from "react";
-import { LogOut, LayoutDashboard, ScanLine, Compass, Shield, Users, ClipboardCheck, Trash2, MapPin, ShieldCheck, Sprout, Calendar, Tags, Receipt, Star, LineChart, Bell, Settings, Sliders, QrCode, FileText, FilePlus, Lightbulb, Info, GraduationCap } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Trash2, 
+  Users, 
+  Settings, 
+  MapPin, 
+  FileText, 
+  LogOut, 
+  ShieldCheck, 
+  FilePlus, 
+  Sprout, 
+  LineChart, 
+  Trophy, 
+  Info, 
+  Bell, 
+  Sliders, 
+  QrCode, 
+  ClipboardCheck, 
+  Star, 
+  Lightbulb, 
+  Calendar, 
+  Tags,
+  Receipt,
+  ScanLine,
+  Truck,
+  Compass,
+  GraduationCap,
+  Archive,
+  Shield
+} from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -117,13 +146,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/residu-portal" icon={Shield} label="Portal Pengawasan" />
         )}
 
-        {hasAccess(["RW"]) && (
+        {hasAccess(["RW", "RT"]) && (
           <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
         )}
 
-        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]) && (
+        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]) && (
           <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
         )}
+
+        <SectionHeader label="Aktivitas Tata Kelola Sampah" />
+        <NavItem to="/setor-sampah" icon={ScanLine} label="Pemilahan Sampah" />
+        <NavItem to="/manajemen-pengangkutan" icon={Truck} label="Pengangkutan Sampah" />
+        <NavItem to="/pemanfaatan-sampah" icon={Sprout} label="Pemanfaatan Sampah" />
+        <NavItem to="/hasil-pemanfaatan" icon={Archive} label="Hasil Pemanfaatan" />
 
         <SectionHeader label="Manajemen Data" />
         {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
@@ -140,17 +175,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && (
           <NavItem to="/manajemen-tempat-sampah" icon={Trash2} label="Manajemen Tempat Sampah" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/manajemen-lokasi" icon={MapPin} label="Manajemen Lokasi" />
         )}
 
-        {hasAccess(["RW"]) && (
+        {hasAccess(["RW", "RT"]) && (
           <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
         )}
 
@@ -159,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/monitoring-absen" icon={Compass} label="Monitoring Absen KKN" />
         )}
 
@@ -169,15 +205,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />
         )}
 
         <SectionHeader label="Edukasi & Gamifikasi" />
+        <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" />
         <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
         <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
         <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
@@ -193,6 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
           "WARGA",

@@ -123,7 +123,7 @@ export const RwApproval = () => {
         </div>
         <div className="p-4">
           {inactiveBins.length === 0 ? (
-            <p className="text-gray-500 text-sm p-4 text-center">Tidak ada tong sampah yang inaktif di wilayah ini.</p>
+            <p className="text-gray-500 text-sm p-4 text-center">Tidak ada tempat sampah yang inaktif di wilayah ini.</p>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
               <thead>

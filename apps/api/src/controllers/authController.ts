@@ -29,8 +29,6 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token diperlukan"),
 });
 
-
-
 const updateProfileSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   email: z.union([z.string().email("Format email tidak valid"), z.literal("")]).optional(),
@@ -180,8 +178,6 @@ export class AuthController {
       }
     }
   }
-
-
 
   /**
    * Handle Token Refresh
@@ -496,6 +492,66 @@ export class AuthController {
         return;
       }
       const user = await authService.registerStaff(rwParsed.data, "RW");
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  async registerRt(req: Request, res: Response): Promise<void> {
+    try {
+      const rwParsed = z
+        .object({
+          name: z.string().min(1),
+          email: z.string().email(),
+          password: z.string().min(6),
+          nik: z.string().optional(),
+          phone: z.string().min(1),
+          address: z.string().optional(),
+          rtRwId: z.number().int(),
+        })
+        .safeParse(req.body);
+
+      if (!rwParsed.success) {
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: rwParsed.error.format() });
+        return;
+      }
+      const user = await authService.registerStaff(rwParsed.data, "RT");
+      res
+        .status(201)
+        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  async registerDpl(req: Request, res: Response): Promise<void> {
+    try {
+      const dplParsed = z
+        .object({
+          name: z.string().min(1),
+          email: z.string().email(),
+          password: z.string().min(6),
+          phone: z.string().min(1),
+          universityId: z.string().uuid(),
+        })
+        .safeParse(req.body);
+
+      if (!dplParsed.success) {
+        res
+          .status(400)
+          .json({ success: false, code: "VALIDATION_ERROR", details: dplParsed.error.format() });
+        return;
+      }
+      const user = await authService.registerDpl(dplParsed.data);
       res
         .status(201)
         .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });

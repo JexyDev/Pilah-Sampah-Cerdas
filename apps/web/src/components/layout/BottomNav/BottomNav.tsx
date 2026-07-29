@@ -15,7 +15,7 @@ const BottomNav: React.FC = () => {
     { path: "/", label: "Beranda", icon: <LayoutDashboard size={24} /> },
     { path: "/monitoring", label: "Monitor", icon: <Map size={24} /> },
     { path: "/master-data", label: "Data", icon: <Database size={24} /> },
-    { path: "/warga-tong", label: "Warga", icon: <Users size={24} /> },
+    { path: "/warga-tempat-sampah", label: "Warga", icon: <Users size={24} /> },
     { path: "/lainnya", label: "Lainnya", icon: <Menu size={24} /> },
   ];
 

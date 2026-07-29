@@ -2,7 +2,6 @@ import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
-
 const prisma = new PrismaClient();
 
 export class CronService {
@@ -39,6 +38,11 @@ export class CronService {
     // Inactive bins synchronization daily at 01:00 AM
     cron.schedule("0 1 * * *", () => {
       this.syncInactiveBins();
+    });
+
+    // Check Mahasiswa Geofence every 2 hours
+    cron.schedule("0 */2 * * *", () => {
+      this.checkMahasiswaGeofence();
     });
 
     console.log("[CronService] Escalation cron jobs started.");
@@ -89,9 +93,9 @@ export class CronService {
       });
 
       for (const petugas of petugasList) {
-        const count = await prisma.residuLog.count({
+        const count = await prisma.setoranManual.count({
           where: {
-            petugasId: petugas.userId,
+            petugasResiduId: petugas.userId,
           },
         });
 
@@ -213,9 +217,9 @@ export class CronService {
           endOfCheckDay.setDate(endOfCheckDay.getDate() - dayOffset);
           endOfCheckDay.setHours(23, 59, 59, 999);
 
-          const hasSubmittedOnDay = await prisma.wasteLog.findFirst({
+          const hasSubmittedOnDay = await prisma.setoranOtomatis.findFirst({
             where: {
-              household: { userId: warga.id },
+              wargaId: warga.id,
               createdAt: {
                 gte: startOfCheckDay,
                 lte: endOfCheckDay,
@@ -266,13 +270,9 @@ export class CronService {
               message: msg,
             },
           });
-          
+
           if (warga.fcmToken && absenceStreak >= 3) {
-            await notificationIntegrationService.sendPushNotification(
-              warga.fcmToken,
-              title,
-              msg
-            );
+            await notificationIntegrationService.sendPushNotification(warga.fcmToken, title, msg);
           }
         }
       }
@@ -334,9 +334,9 @@ export class CronService {
         }
 
         // Check if warga submitted any waste log within this window today
-        const hasSubmitted = await prisma.wasteLog.findFirst({
+        const hasSubmitted = await prisma.setoranOtomatis.findFirst({
           where: {
-            household: { userId: warga.id },
+            wargaId: warga.id,
             createdAt: {
               gte: windowStart,
               lte: windowEnd,
@@ -394,9 +394,12 @@ export class CronService {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+      const twentyNineDaysAgo = new Date();
+      twentyNineDaysAgo.setDate(twentyNineDaysAgo.getDate() - 29);
+
       for (const bin of bins) {
-        const lastLog = await prisma.wasteLog.findFirst({
-          where: { binId: bin.id },
+        const lastLog = await prisma.setoranOtomatis.findFirst({
+          where: { qrTempatSampahId: bin.id },
           orderBy: { createdAt: "desc" },
         });
 
@@ -406,11 +409,91 @@ export class CronService {
             where: { id: bin.id },
             data: { status: "INACTIVE" },
           });
-          console.log(`[CronService] Bin ${bin.qrCode} set to INACTIVE due to 30 days of inactivity.`);
+          console.log(
+            `[CronService] Bin ${bin.qrCode} set to INACTIVE due to 30 days of inactivity.`
+          );
+        } else if (refDate >= thirtyDaysAgo && refDate < twentyNineDaysAgo) {
+          // Warning 24 jam sebelum kadaluarsa
+          if (bin.userId) {
+            await prisma.notification.create({
+              data: {
+                userId: bin.userId,
+                title: "Peringatan Masa Aktif Tempat Sampah",
+                message: `Tempat sampah Anda (QR: ${bin.qrCode}) akan kadaluarsa dalam 24 jam karena tidak ada aktivitas. Segera setor sampah untuk memperpanjang masa aktif.`,
+              },
+            });
+            console.log(`[CronService] Sent 24h expiration warning for Bin ${bin.qrCode}.`);
+          }
         }
       }
     } catch (e) {
       console.error("[CronService] syncInactiveBins error:", e);
+    }
+  }
+
+  public async checkMahasiswaGeofence() {
+    try {
+      console.log("[CronService] Running KKN geofence check...");
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+      // Find all active attendances for MAHASISWA_KKN today
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const activeAttendances = await prisma.activityAttendance.findMany({
+        where: {
+          status: "DALAM_RADIUS",
+          attendedAt: { gte: todayStart },
+          student: { role: { name: "MAHASISWA_KKN" } },
+        },
+        include: {
+          schedule: true,
+        },
+      });
+
+      const { calculateDistance } = await import("./kknAttendanceService.js");
+
+      for (const att of activeAttendances) {
+        if (!att.schedule) continue;
+
+        const radius = att.schedule.radius ? Number(att.schedule.radius) : 100;
+        const centerLat = att.schedule.latitude ? Number(att.schedule.latitude) : -6.8915;
+        const centerLng = att.schedule.longitude ? Number(att.schedule.longitude) : 107.6107;
+
+        // Get location logs for the last 2 hours
+        const logs = await prisma.studentLocation.findMany({
+          where: {
+            studentId: att.studentId,
+            recordedAt: { gte: twoHoursAgo },
+          },
+        });
+
+        if (logs.length === 0) continue;
+
+        let anyInside = false;
+        for (const log of logs) {
+          const dist = calculateDistance(
+            Number(log.latitude),
+            Number(log.longitude),
+            centerLat,
+            centerLng
+          );
+          if (dist <= radius) {
+            anyInside = true;
+            break;
+          }
+        }
+
+        if (!anyInside) {
+          await prisma.activityAttendance.update({
+            where: { id: att.id },
+            data: { status: "LEPAS_RADIUS" },
+          });
+          console.log(`[CronService] Attendance ${att.id} batal due to geofence rule.`);
+        }
+      }
+    } catch (error) {
+      console.error("[CronService] checkMahasiswaGeofence error:", error);
     }
   }
 }

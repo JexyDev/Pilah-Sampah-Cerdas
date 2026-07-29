@@ -14,6 +14,7 @@ export type UserRole =
   | "CAMAT"
   | "LURAH"
   | "RW"
+  | "RT"
   | "PETUGAS_RESIDU"
   | "WARGA"
   | "MAHASISWA_KKN";
@@ -30,6 +31,7 @@ export interface User {
   fotoProfil?: string;
   phone?: string;
   address?: string;
+  rtRwId?: number;
 }
 
 interface AuthState {
@@ -57,6 +59,8 @@ const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string 
       return { avatarBg: "bg-pink-100", avatarColor: "text-pink-700" };
     case "RW":
       return { avatarBg: "bg-teal-100", avatarColor: "text-teal-700" };
+    case "RT":
+      return { avatarBg: "bg-cyan-100", avatarColor: "text-cyan-700" };
     case "PETUGAS_RESIDU":
       return { avatarBg: "bg-orange-100", avatarColor: "text-orange-700" };
     case "WARGA":
@@ -80,6 +84,8 @@ const getWilayahByRole = (role: string): string => {
       return "Kelurahan Dago";
     case "RW":
       return "RW 06 Dago";
+    case "RT":
+      return "RT 04 / RW 06 Dago";
     case "PETUGAS_RESIDU":
       return "RT 02 / RW 06";
     case "WARGA":
@@ -144,6 +150,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
         address: backendUser.address,
+        rtRwId: backendUser.rtRwId,
         ...avatarConfig,
       };
 
@@ -198,6 +205,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
         address: backendUser.address,
+        rtRwId: backendUser.rtRwId,
         ...avatarConfig,
       };
 

@@ -103,7 +103,6 @@ export class AuthService {
     await authRepository.deleteRefreshToken(token);
   }
 
-
   /**
    * Update user profile
    */
@@ -149,9 +148,9 @@ export class AuthService {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const hasSubmittedToday = await prisma.wasteLog.findFirst({
+    const hasSubmittedToday = await prisma.setoranOtomatis.findFirst({
       where: {
-        household: { userId },
+        wargaId: userId,
         createdAt: { gte: startOfToday, lte: endOfToday },
       },
     });
@@ -168,9 +167,9 @@ export class AuthService {
       endOfYesterday.setDate(endOfYesterday.getDate() - 1);
       endOfYesterday.setHours(23, 59, 59, 999);
 
-      const hasSubmittedYesterday = await prisma.wasteLog.findFirst({
+      const hasSubmittedYesterday = await prisma.setoranOtomatis.findFirst({
         where: {
-          household: { userId },
+          wargaId: userId,
           createdAt: { gte: startOfYesterday, lte: endOfYesterday },
         },
       });
@@ -192,9 +191,9 @@ export class AuthService {
       checkDateEnd.setDate(checkDateEnd.getDate() - i);
       checkDateEnd.setHours(23, 59, 59, 999);
 
-      const logOnDay = await prisma.wasteLog.findFirst({
+      const logOnDay = await prisma.setoranOtomatis.findFirst({
         where: {
-          household: { userId },
+          wargaId: userId,
           createdAt: { gte: checkDateStart, lte: checkDateEnd },
         },
       });
@@ -366,15 +365,27 @@ export class AuthService {
       if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
     }
 
+    const role = await authRepository.findRoleByName("WARGA");
+    if (!role) throw new Error("ROLE_NOT_FOUND");
+
+    let finalStatus = "PENDING";
+
     const user = await authRepository.registerWargaTx(
       {
         ...userData,
         password: hashedPassword,
+        status: finalStatus,
       },
       householdData,
       qrCode,
       wargaSubtype
     );
+
+    if (userData.rtRwId) {
+      import("./polygonService.js").then(({ polygonService }) => {
+        polygonService.regenerateRtRwPolygon(userData.rtRwId).catch(console.error);
+      });
+    }
 
     const accessToken = generateAccessToken({
       userId: user.id,
@@ -439,6 +450,23 @@ export class AuthService {
       if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
     }
 
+    if (userData.rtRwId) {
+      const existingPetugas = await prisma.user.findFirst({
+        where: {
+          rtRwId: userData.rtRwId,
+          role: { name: "PETUGAS_RESIDU" },
+        },
+        include: {
+          rtRw: true,
+        },
+      });
+
+      if (existingPetugas) {
+        const rwName = existingPetugas.rtRw?.name || `RW ID ${userData.rtRwId}`;
+        throw new Error(`Pendaftaran Ditolak: ${rwName} sudah memiliki Petugas Residu aktif.`);
+      }
+    }
+
     return authRepository.registerPetugasResiduTx(
       {
         ...userData,
@@ -470,6 +498,35 @@ export class AuthService {
       ...userData,
       password: hashedPassword,
       roleId: role.id,
+    });
+  }
+
+  async registerDpl(userData: any) {
+    const { hashPassword } = await import("../utils/hashUtils.js");
+    const hashedPassword = await hashPassword(userData.password);
+
+    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+
+    let role = await authRepository.findRoleByName("DPL");
+    if (!role) {
+      // Create role DPL if not exists for demo purposes
+      role = await prisma.role.create({ data: { name: "DPL" } });
+    }
+
+    const { universityId, ...userBaseData } = userData;
+
+    return prisma.user.create({
+      data: {
+        ...userBaseData,
+        password: hashedPassword,
+        roleId: role.id,
+        dosenPembimbing: {
+          create: {
+            universityId: universityId,
+          },
+        },
+      },
     });
   }
 

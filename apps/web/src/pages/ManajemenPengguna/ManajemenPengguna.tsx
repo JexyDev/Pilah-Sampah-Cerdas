@@ -202,9 +202,14 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(users.length / rowsPerPage);
+  const sortedUsers = [...users].sort((a, b) => {
+    if (a.status === "PENDING" && b.status !== "PENDING") return -1;
+    if (a.status !== "PENDING" && b.status === "PENDING") return 1;
+    return 0;
+  });
+  const totalPages = Math.ceil(sortedUsers.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedUsers = users.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedUsers = sortedUsers.slice(startIndex, startIndex + rowsPerPage);
 
   const handleExportCSV = () => {
     if (users.length === 0) {
@@ -218,7 +223,7 @@ const ManajemenPengguna: React.FC = () => {
       "No. Telfon",
       "Peran",
       "Wilayah",
-      "Setoran (kg)",
+      "Setoran (Kg)",
       "Status",
       "Tanggal Terdaftar",
     ];
@@ -369,7 +374,7 @@ const ManajemenPengguna: React.FC = () => {
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Peran</th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Wilayah</th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-right">
-                  Setoran (kg)
+                  Setoran (Kg)
                 </th>
                 <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center">
                   Status
@@ -450,7 +455,7 @@ const ManajemenPengguna: React.FC = () => {
                       {user.wilayah}
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-on-surface-variant">
-                      {user.setoran} kg
+                      {user.setoran}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-outline-variant/30 bg-surface-container-lowest">

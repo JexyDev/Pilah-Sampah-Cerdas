@@ -51,6 +51,7 @@ export class BinController {
         const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
 
         return {
+          id: bin.id,
           kode: bin.qrCode,
           lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
           rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
@@ -126,7 +127,12 @@ export class BinController {
   async createArea(req: Request, res: Response): Promise<void> {
     try {
       const { name, kelurahanId, latitude, longitude } = req.body;
-      const newArea = await binService.createArea(name, kelurahanId, latitude ? Number(latitude) : undefined, longitude ? Number(longitude) : undefined);
+      const newArea = await binService.createArea(
+        name,
+        kelurahanId,
+        latitude ? Number(latitude) : undefined,
+        longitude ? Number(longitude) : undefined
+      );
       res.status(201).json({
         success: true,
         data: newArea,
@@ -141,7 +147,13 @@ export class BinController {
     try {
       const { id } = req.params;
       const { name, kelurahanId, latitude, longitude } = req.body;
-      const updatedArea = await binService.updateArea(Number(id), name, kelurahanId, latitude ? Number(latitude) : undefined, longitude ? Number(longitude) : undefined);
+      const updatedArea = await binService.updateArea(
+        Number(id),
+        name,
+        kelurahanId,
+        latitude ? Number(latitude) : undefined,
+        longitude ? Number(longitude) : undefined
+      );
       res.status(200).json({
         success: true,
         data: updatedArea,
@@ -162,7 +174,9 @@ export class BinController {
       });
     } catch (error: any) {
       console.error("[BinController] deleteArea error:", error);
-      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Failed to delete area" });
+      res
+        .status(400)
+        .json({ error: "BAD_REQUEST", message: error.message || "Failed to delete area" });
     }
   }
 
@@ -212,7 +226,7 @@ export class BinController {
       if (error.message === "BIN_NOT_FOUND") {
         res
           .status(404)
-          .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code Tong Sampah tidak ditemukan" });
+          .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code tempat sampah tidak ditemukan" });
       } else if (error.message === "BIN_NOT_ACTIVE" || error.message === "NO_ACTIVE_BINS") {
         res.status(400).json({
           error: "BIN_NOT_ACTIVE",
@@ -221,12 +235,12 @@ export class BinController {
       } else if (error.message === "BIN_NOT_OWNED") {
         res.status(403).json({
           error: "BIN_NOT_OWNED",
-          message: "Tong sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
+          message: "tempat sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
         });
       } else if (error.message === "LOCATION_OUT_OF_RANGE") {
         res.status(400).json({
           error: "LOCATION_OUT_OF_RANGE",
-          message: "Lokasi Anda terlalu jauh dari tong sampah fisik (> 50m).",
+          message: "Lokasi Anda terlalu jauh dari tempat sampah fisik (> 50m).",
           distanceMeters: error.distanceMeters,
         });
       } else if (error.message === "BIN_TYPE_MISMATCH") {
@@ -244,7 +258,7 @@ export class BinController {
         console.error("Bin Scan Error:", error);
         res.status(500).json({
           error: "INTERNAL_SERVER_ERROR",
-          message: "Gagal memproses pemindaian tong sampah",
+          message: "Gagal memproses pemindaian tempat sampah",
         });
       }
     }
@@ -252,8 +266,10 @@ export class BinController {
 
   async registerWargaBin(req: Request, res: Response) {
     try {
-      const userId = req.user!.userId;
       const data = req.body;
+      const role = req.user!.role;
+      const userId = role === "MAHASISWA_KKN" && data.wargaId ? data.wargaId : req.user!.userId;
+
       const result = await binService.registerWargaBin(userId, data);
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
@@ -273,7 +289,7 @@ export class BinController {
         res.status(400).json({
           success: false,
           error: "BIN_CATEGORY_DUPLICATE",
-          message: `Tong sampah ${cat} sudah terdaftar untuk Anda.`,
+          message: `tempat sampah ${cat} sudah terdaftar untuk Anda.`,
         });
         return;
       }
@@ -305,11 +321,12 @@ export class BinController {
       if (error.message === "BIN_NOT_FOUND") {
         res
           .status(404)
-          .json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
+          .json({ error: "RESOURCE_NOT_FOUND", message: "tempat sampah tidak ditemukan" });
       } else {
-        res
-          .status(500)
-          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status tong sampah" });
+        res.status(500).json({
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal mengambil status tempat sampah",
+        });
       }
     }
   }
@@ -323,17 +340,17 @@ export class BinController {
       await binService.emptyBin(id as string);
       res.status(200).json({
         success: true,
-        message: "Kapasitas tong sampah berhasil dikosongkan ke 0 Liter.",
+        message: "Kapasitas tempat sampah berhasil dikosongkan ke 0 Liter.",
       });
     } catch (error: any) {
       if (error.message === "BIN_NOT_FOUND") {
         res
           .status(404)
-          .json({ error: "RESOURCE_NOT_FOUND", message: "Tong sampah tidak ditemukan" });
+          .json({ error: "RESOURCE_NOT_FOUND", message: "tempat sampah tidak ditemukan" });
       } else {
         res
           .status(500)
-          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengosongkan tong sampah" });
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengosongkan tempat sampah" });
       }
     }
   }
@@ -364,7 +381,7 @@ export class BinController {
       console.error("[BinController] createBin error:", error);
       res
         .status(500)
-        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat tong sampah" });
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat tempat sampah" });
     }
   }
 
@@ -380,7 +397,7 @@ export class BinController {
       console.error("[BinController] updateBin error:", error);
       res
         .status(500)
-        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memperbarui tong sampah" });
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memperbarui tempat sampah" });
     }
   }
 
@@ -391,12 +408,12 @@ export class BinController {
     try {
       const { id } = req.params;
       await binService.deleteBin(id);
-      res.status(200).json({ success: true, message: "Tong sampah berhasil dihapus" });
+      res.status(200).json({ success: true, message: "tempat sampah berhasil dihapus" });
     } catch (error) {
       console.error("[BinController] deleteBin error:", error);
       res
         .status(500)
-        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tong sampah" });
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tempat sampah" });
     }
   }
 
@@ -412,7 +429,7 @@ export class BinController {
       console.error("[BinController] getMyBins error:", error);
       res.status(500).json({
         error: "INTERNAL_SERVER_ERROR",
-        message: "Gagal mengambil data status tong sampah Anda",
+        message: "Gagal mengambil data status tempat sampah Anda",
       });
     }
   }
@@ -652,7 +669,13 @@ export class BinController {
         });
         return;
       }
-      const result = await binService.reportIssue(id, userId, issueType, notes || "", evidencePhotoUrl);
+      const result = await binService.reportIssue(
+        id,
+        userId,
+        issueType,
+        notes || "",
+        evidencePhotoUrl
+      );
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] reportIssue error:", error);

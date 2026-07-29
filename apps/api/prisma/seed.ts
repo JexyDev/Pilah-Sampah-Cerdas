@@ -34,14 +34,16 @@ async function main() {
   await prisma.dispatchTask.deleteMany({});
   await prisma.violation.deleteMany({});
   await prisma.kknHandoverHistory.deleteMany({});
-  await prisma.residuLog.deleteMany({});
+  await prisma.setoranManual.deleteMany({});
+  await prisma.pemanfaatan.deleteMany({});
   await prisma.auditTrail.deleteMany({});
   await prisma.socialFeed.deleteMany({});
   await prisma.binOwnership.deleteMany({});
-  await prisma.wasteLog.deleteMany({});
+  await prisma.setoranOtomatis.deleteMany({});
   await prisma.bin.deleteMany({});
   await prisma.household.deleteMany({});
   await prisma.studentKkn.deleteMany({});
+  await prisma.kelompokKkn.deleteMany({});
   await prisma.petugasResidu.deleteMany({});
   await prisma.qrBatch.deleteMany({});
   await prisma.user.deleteMany({});

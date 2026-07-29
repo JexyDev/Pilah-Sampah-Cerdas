@@ -94,7 +94,7 @@ const ResiduDashboard: React.FC = () => {
   const handleViolationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!violationForm.binQrCode) {
-      toast.error("ID/QR Code Tong Sampah wajib diisi!");
+      toast.error("ID/QR Code tempat sampah wajib diisi!");
       return;
     }
     if (!violationPhoto) {
@@ -381,7 +381,7 @@ const ResiduDashboard: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
             <h3 className="font-extrabold text-lg flex items-center gap-1.5">
               <BarChart2 className="text-primary w-5 h-5" />
-              Volume Residu Agregat Mingguan (kg)
+              Volume Residu Agregat Mingguan (Kg)
             </h3>
             <div className="flex items-end gap-3 h-48 pt-4">
               {analytics?.trend.map((t: any) => (
@@ -501,7 +501,7 @@ const ResiduDashboard: React.FC = () => {
             <form onSubmit={handleViolationSubmit} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  ID / QR Code Tong Sampah *
+                  ID / QR Code tempat sampah *
                 </label>
                 <input
                   type="text"

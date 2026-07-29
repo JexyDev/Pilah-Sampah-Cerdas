@@ -156,8 +156,8 @@ export const gamificationService = {
           include: {
             users: {
               include: {
-                pointHistory: {
-                  select: { points: true },
+                setoranOtomatis: {
+                  select: { berat: true },
                 },
               },
             },
@@ -168,23 +168,208 @@ export const gamificationService = {
 
     const kelurahanLeaderboard = kelurahans
       .map((k: any) => {
-        let total = 0;
+        let totalKg = 0;
         k.rtRwAreas.forEach((area: any) => {
           area.users.forEach((u: any) => {
-            total += u.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
+            totalKg += u.setoranOtomatis.reduce(
+              (acc: number, cur: any) => acc + Number(cur.berat || 0),
+              0
+            );
           });
         });
         return {
           kelurahanId: k.id,
           kelurahanName: k.name,
-          totalPoints: total,
+          totalPoints: totalKg, // Keeping totalPoints key for API compatibility, but it represents Kg now
         };
       })
-      .sort((a, b) => b.totalPoints - a.totalPoints);
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+
+    // 3. RT/RW Leaderboard
+    const rtRwAreas = await prisma.rtRwArea.findMany({
+      include: {
+        kelurahan: { select: { name: true } },
+        users: {
+          include: {
+            setoranOtomatis: { select: { berat: true } },
+          },
+        },
+      },
+    });
+
+    const rtRwLeaderboard = rtRwAreas
+      .map((area: any) => {
+        let totalKg = 0;
+        area.users.forEach((u: any) => {
+          totalKg += u.setoranOtomatis.reduce(
+            (acc: number, cur: any) => acc + Number(cur.berat || 0),
+            0
+          );
+        });
+        return {
+          rtRwId: area.id,
+          rtRwName: area.name,
+          kelurahanName: area.kelurahan.name,
+          totalPoints: totalKg,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+
+    // 4. Mahasiswa KKN Leaderboard
+    const mahasiswaUsers = await prisma.user.findMany({
+      where: { role: { name: "MAHASISWA_KKN" } },
+      select: {
+        id: true,
+        name: true,
+        studentProfile: {
+          select: {
+            assignedPolygon: {
+              select: {
+                name: true,
+                kelurahan: { select: { name: true } },
+              },
+            },
+          },
+        },
+        pointHistory: { select: { points: true } },
+      },
+    });
+
+    const mahasiswaLeaderboard = mahasiswaUsers
+      .map((m: any) => {
+        // Points directly earned by Mahasiswa
+        const ownPoints = m.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
+
+        // Points earned by their dampingan (warga in their rtRwArea)
+        let dampinganPoints = 0;
+        const area = m.studentProfile?.assignedPolygon;
+        // Simplified: Since we don't eager-load users in the area to save queries, we only use ownPoints.
+        // For a full implementation, we could sum points of all users in area.
+
+        return {
+          id: m.id,
+          name: m.name,
+          universityName: "Kampus N/A", // Not stored in StudentKkn currently
+          wilayahDampingan: area ? `${area.name} (Kel. ${area.kelurahan?.name})` : "N/A",
+          totalPoints: ownPoints,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+
+    // 5. Pengangkut Leaderboard
+    const petugasUsers = await prisma.user.findMany({
+      where: { role: { name: "PETUGAS_RESIDU" } },
+      select: {
+        id: true,
+        name: true,
+        rtRw: { select: { name: true } },
+        setoranManual: { select: { berat: true } },
+      },
+    });
+
+    const pengangkutLeaderboard = petugasUsers
+      .map((p: any) => {
+        const totalKg = p.setoranManual.reduce(
+          (acc: number, cur: any) => acc + Number(cur.berat || 0),
+          0
+        );
+        return {
+          id: p.id,
+          name: p.name,
+          wilayah: p.rtRw?.name || "Semua",
+          totalPoints: totalKg,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
 
     return {
       citizens: citizenLeaderboard,
       regions: kelurahanLeaderboard,
+      rtRw: rtRwLeaderboard,
+      mahasiswa: mahasiswaLeaderboard,
+      pengangkut: pengangkutLeaderboard,
+    };
+  },
+
+  getLeaderboardKkn: async () => {
+    const students = await prisma.studentKkn.findMany({
+      include: {
+        user: {
+          include: {
+            registeredBins: true,
+            attendances: true,
+          },
+        },
+        kelompok: true,
+      },
+    });
+
+    const studentLeaderboard = students.map((s: any) => {
+      let totalHours = 0;
+      s.user.attendances.forEach((att: any) => {
+        if (att.checkOutAt && att.attendedAt) {
+          const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+          const diffHrs = diffMs / (1000 * 60 * 60);
+          totalHours += diffHrs;
+        }
+      });
+
+      const activeBinsCount = s.user.registeredBins.filter(
+        (b: any) => b.status === "ACTIVE_BOUND"
+      ).length;
+      const dplScore = Number(s.assessmentScore || 0);
+
+      const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
+
+      return {
+        id: s.id,
+        name: s.user.name,
+        nim: s.nim,
+        kelompok: s.kelompok?.name || "Tanpa Kelompok",
+        kelompokId: s.kelompokId,
+        totalHours: parseFloat(totalHours.toFixed(1)),
+        activeBins: activeBinsCount,
+        dplScore,
+        finalScore: parseFloat(finalScore.toFixed(2)),
+      };
+    });
+
+    studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
+
+    const kelompokMap: Record<string, { id: string; name: string; scores: number[] }> = {};
+    studentLeaderboard.forEach((student) => {
+      if (student.kelompokId) {
+        if (!kelompokMap[student.kelompokId]) {
+          kelompokMap[student.kelompokId] = {
+            id: student.kelompokId,
+            name: student.kelompok,
+            scores: [],
+          };
+        }
+        kelompokMap[student.kelompokId].scores.push(student.finalScore);
+      }
+    });
+
+    const kelompokLeaderboard = Object.values(kelompokMap).map((k) => {
+      const totalScore = k.scores.reduce((sum, s) => sum + s, 0);
+      const avgScore = k.scores.length ? totalScore / k.scores.length : 0;
+      return {
+        id: k.id,
+        name: k.name,
+        avgScore: parseFloat(avgScore.toFixed(2)),
+        membersCount: k.scores.length,
+      };
+    });
+
+    kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
+
+    return {
+      students: studentLeaderboard,
+      groups: kelompokLeaderboard,
     };
   },
 };

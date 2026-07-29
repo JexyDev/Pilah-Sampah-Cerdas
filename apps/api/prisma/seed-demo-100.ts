@@ -247,38 +247,34 @@ async function main() {
     if (binStatus === BinStatus.ACTIVE_BOUND) {
       // 1. Organik Setoran
       const weightO = getRandomWeight();
-      const volO = getRandomVolume();
-      const reqIdO = uuidv4();
-      await prisma.wasteLog.create({
+      await prisma.setoranOtomatis.create({
         data: {
-          householdId: household.id,
-          binId: binOrg.id,
-          weightKg: weightO,
-          volumeLiter: volO,
-          categoryId: catO.id,
-          requestId: reqIdO,
-          aiConfidence: 0.94,
-          aiClassification: "Organik",
-          discrepancyStatus: "NONE",
+          wargaId: user.id,
+          fotoSampahUrl: "https://picsum.photos/400/300",
+          hasilKlasifikasiAi: "organik",
+          confidenceAi: 0.94,
+          berat: weightO,
+          unit: "Kg",
+          poin: Math.round(weightO * 0.94 * 0.9),
+          qrTempatSampahId: binOrg.id,
+          lokasiGps: `${household.latitude},${household.longitude}`,
           createdAt: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000)
         }
       });
 
       // 2. Anorganik Setoran
       const weightA = getRandomWeight();
-      const volA = getRandomVolume();
-      const reqIdA = uuidv4();
-      await prisma.wasteLog.create({
+      await prisma.setoranOtomatis.create({
         data: {
-          householdId: household.id,
-          binId: binAno.id,
-          weightKg: weightA,
-          volumeLiter: volA,
-          categoryId: catA.id,
-          requestId: reqIdA,
-          aiConfidence: 0.96,
-          aiClassification: "Anorganik",
-          discrepancyStatus: "NONE",
+          wargaId: user.id,
+          fotoSampahUrl: "https://picsum.photos/400/300",
+          hasilKlasifikasiAi: "anorganik",
+          confidenceAi: 0.96,
+          berat: weightA,
+          unit: "Kg",
+          poin: Math.round(weightA * 0.96 * 0.9),
+          qrTempatSampahId: binAno.id,
+          lokasiGps: `${household.latitude},${household.longitude}`,
           createdAt: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000)
         }
       });

@@ -177,7 +177,12 @@ export class AiController {
         return;
       }
       const adminUserId = req.user!.userId;
-      const log = await aiService.resolveDiscrepancy(id, finalClassification, adminUserId, finalWeight);
+      const log = await aiService.resolveDiscrepancy(
+        id,
+        finalClassification,
+        adminUserId,
+        finalWeight
+      );
       res
         .status(200)
         .json({ success: true, message: "Discrepancy laporan berhasil diselesaikan", data: log });
@@ -209,16 +214,16 @@ export class AiController {
   async getCo2eStats(req: Request, res: Response): Promise<void> {
     try {
       const prismaClient = new (await import("@prisma/client")).PrismaClient();
-      const organicLogs = await prismaClient.wasteLog.findMany({
+      const organicLogs = await prismaClient.setoranOtomatis.findMany({
         where: {
-          category: { name: "ORGANIC" },
+          hasilKlasifikasiAi: "organik",
         },
         select: {
-          weightKg: true,
+          berat: true,
         },
       });
 
-      const totalWeight = organicLogs.reduce((acc, l) => acc + Number(l.weightKg), 0);
+      const totalWeight = organicLogs.reduce((acc: number, l: any) => acc + Number(l.berat), 0);
       const co2eAvoided = await aiService.calculateCo2eAvoided(totalWeight);
 
       res.status(200).json({

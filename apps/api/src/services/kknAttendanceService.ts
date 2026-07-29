@@ -27,6 +27,49 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 }
 
 export class KknAttendanceService {
+  async pingLocation(userId: string, latitude: number, longitude: number) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+    });
+    if (!student) throw new Error("STUDENT_NOT_FOUND");
+
+    // Simpan lokasi
+    await prisma.studentLocation.create({
+      data: {
+        studentId: userId,
+        latitude,
+        longitude,
+      },
+    });
+
+    // Cek durasi di zona
+    // (Implementasi durasi absen berdasarkan lokasi - Dummy for now as requested)
+    return { success: true, message: "Lokasi berhasil dilacak" };
+  }
+
+  async getWargaDampingan(userId: string) {
+    // Ambil warga yang di-register oleh mahasiswa ini
+    const bins = await prisma.bin.findMany({
+      where: { registeredByStudentId: userId },
+      include: {
+        user: {
+          include: { households: true },
+        },
+        setoranOtomatis: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+      },
+    });
+
+    return bins.map((b: any) => ({
+      binId: b.id,
+      wargaName: b.user?.name || "Unknown",
+      address: b.user?.households?.[0]?.address || "-",
+      recentLogs: b.setoranOtomatis,
+    }));
+  }
+
   /**
    * Save student's current location and perform auto-cleanup of logs older than 24h.
    * If student is inside active activity radius, trigger auto-attendance.
@@ -194,7 +237,20 @@ export class KknAttendanceService {
       });
 
       if (existing) {
-        throw new Error("ALREADY_ATTENDED");
+        if (existing.checkOutAt) {
+          throw new Error("ALREADY_ATTENDED_AND_CHECKED_OUT");
+        }
+
+        // This is a checkout
+        const record = await tx.activityAttendance.update({
+          where: { id: existing.id },
+          data: {
+            checkOutAt: new Date(),
+            status: "LEPAS_RADIUS",
+          },
+        });
+
+        return record;
       }
 
       const record = await tx.activityAttendance.create({
@@ -208,12 +264,12 @@ export class KknAttendanceService {
         },
       });
 
-      // Award +10 points to student
+      // Award +10 points to student on Check-In
       await tx.pointHistory.create({
         data: {
           userId: studentId,
           points: 10,
-          description: `Bonus kehadiran KKN: ${actLoc.title} (${method})`,
+          description: `Bonus kehadiran (Check-In) KKN: ${actLoc.title} (${method})`,
           kategori: "PARTISIPASI_STREAK",
           redeemable: false,
         },

@@ -90,9 +90,9 @@ describe("UserService", () => {
           households: [
             {
               rtRw: null,
-              wasteLogs: [{ weightKg: 2.5 }, { weightKg: 1.5 }],
             },
           ],
+          setoranOtomatis: [{ berat: 2.5 }, { berat: 1.5 }],
           pointHistory: [{ points: 100 }, { points: 50 }],
           createdAt: new Date("2026-07-18T00:00:00Z"),
         },

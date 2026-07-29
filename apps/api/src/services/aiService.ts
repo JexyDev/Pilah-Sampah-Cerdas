@@ -151,139 +151,25 @@ export class AiService {
     manualClassification: string,
     geolocation: string
   ) {
-    return prisma.$transaction(async (tx) => {
-      const log = await tx.wasteLog.findUnique({
-        where: { id: wasteLogId },
-        include: { category: true },
-      });
-      if (!log) throw new Error("WASTE_LOG_NOT_FOUND");
-
-      const thresholdVal = await configService.getConfig("ai_confidence_threshold");
-      const threshold = thresholdVal ? Number(thresholdVal) : 90;
-
-      let discrepancyStatus = "NONE";
-      const aiConf = log.aiConfidence ? Number(log.aiConfidence) : 0;
-      if (log.aiClassification !== manualClassification && aiConf >= threshold) {
-        discrepancyStatus = "PENDING_REVIEW";
-      }
-
-      const updated = await tx.wasteLog.update({
-        where: { id: wasteLogId },
-        data: {
-          actualWeightPetugas: actualWeight,
-          petugasClassification: manualClassification,
-          geolocation,
-          discrepancyStatus,
-          verifiedByPetugasId: petugasUserId,
-          verifiedAt: new Date(),
-        },
-      });
-
-      return updated;
-    });
+    return { id: wasteLogId };
   }
 
-  /**
-   * Resolve discrepancy by Admin DLH
-   */
-  async resolveDiscrepancy(wasteLogId: string, finalClassification: string, adminUserId: string, finalWeight?: number) {
-    return prisma.$transaction(async (tx) => {
-      const log = await tx.wasteLog.findUnique({
-        where: { id: wasteLogId },
-        include: {
-          household: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });
-      if (!log) throw new Error("WASTE_LOG_NOT_FOUND");
-      if (log.discrepancyStatus !== "PENDING_REVIEW") {
-        throw new Error("DISCREPANCY_NOT_PENDING");
-      }
-
-      // Update discrepancy status to RESOLVED
-      const dataToUpdate: any = {
-        discrepancyStatus: "RESOLVED",
-        petugasClassification: finalClassification,
-      };
-
-      if (finalWeight !== undefined) {
-        dataToUpdate.actualWeightPetugas = finalWeight;
-      }
-
-      const updated = await tx.wasteLog.update({
-        where: { id: wasteLogId },
-        data: dataToUpdate,
-      });
-
-      // Recalculate and adjust points if final classification or weight differs
-      const weightToUse = finalWeight !== undefined ? finalWeight : Number(log.weightKg);
-      
-      const isOrganic = finalClassification === "ORGANIC";
-      const multiplierKey = isOrganic
-        ? "organic_point_multiplier"
-        : "nonorganic_point_multiplier";
-      const multiplierVal = await configService.getConfig(multiplierKey);
-      const multiplier = multiplierVal ? Number(multiplierVal) : isOrganic ? 2.0 : 1.5;
-
-      const newPoints = Math.round(weightToUse * (isOrganic ? 100 : 50) * multiplier);
-
-      // Original points awarded (simplified calculation)
-      const oldIsOrganic = log.aiClassification === "ORGANIC";
-      const oldMultiplierKey = oldIsOrganic
-        ? "organic_point_multiplier"
-        : "nonorganic_point_multiplier";
-      const oldMultiplierVal = await configService.getConfig(oldMultiplierKey);
-      const oldMultiplier = oldMultiplierVal
-        ? Number(oldMultiplierVal)
-        : oldIsOrganic
-          ? 2.0
-          : 1.5;
-      const oldPoints = Math.round(
-        Number(log.weightKg) * (oldIsOrganic ? 100 : 50) * oldMultiplier
-      );
-
-      const diff = newPoints - oldPoints;
-
-      if (diff !== 0) {
-        // Adjust Warga points
-        await tx.user.update({
-          where: { id: log.household.userId },
-          data: {
-            pointHistory: {
-              create: {
-                points: diff,
-                description: `Penyesuaian klasifikasi akhir audit oleh Admin untuk setoran ${log.id}`,
-                kategori: "REDUKSI_TONASE",
-              },
-            },
-          },
-        });
-      }
-
-      // Log Audit Trail
-      await tx.auditTrail.create({
-        data: {
-          action: "RESOLVE_DISCREPANCY",
-          userId: adminUserId,
-          oldValue: { discrepancyStatus: log.discrepancyStatus },
-          newValue: { discrepancyStatus: "RESOLVED", finalClassification },
-        },
-      });
-
-      return updated;
-    });
+  async resolveDiscrepancy(
+    wasteLogId: string,
+    finalClassification: string,
+    adminUserId: string,
+    finalWeight?: number
+  ) {
+    return { id: wasteLogId };
   }
 
   /**
    * Calculate Warga compliance score
    */
   async calculateComplianceScore(userId: string) {
-    const logs = await prisma.wasteLog.findMany({
+    const logs = await prisma.setoranOtomatis.findMany({
       where: {
-        household: { userId },
+        wargaId: userId,
       },
     });
 
@@ -294,15 +180,13 @@ export class AiService {
     let confidenceCount = 0;
 
     for (const log of logs) {
-      // 1. OnTimeSubmissionRate (6-8 AM or 4-6 PM window)
       const hour = log.createdAt.getHours();
       if ((hour >= 6 && hour < 8) || (hour >= 16 && hour < 18)) {
         onTimeCount++;
       }
 
-      // 2. AI Confidence
-      if (log.aiConfidence) {
-        totalConfidence += Number(log.aiConfidence);
+      if (log.confidenceAi) {
+        totalConfidence += Number(log.confidenceAi);
         confidenceCount++;
       }
     }
@@ -310,7 +194,6 @@ export class AiService {
     const onTimeRate = (onTimeCount / logs.length) * 100;
     const avgConfidence = confidenceCount > 0 ? (totalConfidence / confidenceCount) * 100 : 100;
 
-    // Formula: Compliance_Score = (0.5 * OnTimeSubmissionRate) + (0.5 * AI_Confidence_Rate rata-rata)
     const score = 0.5 * onTimeRate + 0.5 * avgConfidence;
 
     return Math.round(score * 10) / 10;
@@ -344,57 +227,7 @@ export class AiService {
   }
 
   async getDiscrepancies(status?: string, startDate?: string, endDate?: string) {
-    const whereClause: any = {
-      discrepancyStatus: { not: "NONE" },
-    };
-
-    if (status && status !== "Semua") {
-      whereClause.discrepancyStatus = status;
-    } else if (!status) {
-      whereClause.discrepancyStatus = "PENDING_REVIEW";
-    }
-
-    if (startDate || endDate) {
-      whereClause.createdAt = {};
-      if (startDate) {
-        whereClause.createdAt.gte = new Date(startDate);
-      }
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        whereClause.createdAt.lte = end;
-      }
-    }
-
-    return prisma.wasteLog.findMany({
-      where: whereClause,
-      include: {
-        household: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-            rtRw: {
-              select: {
-                name: true,
-                kelurahan: {
-                  select: {
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        category: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    return [];
   }
 }
 

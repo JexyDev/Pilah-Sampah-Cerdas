@@ -102,7 +102,7 @@ const WargaDashboard: React.FC = () => {
       setEditCapPhoto(null);
       fetchMyBins();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengubah kapasitas tong sampah");
+      toast.error(err.response?.data?.message || "Gagal mengubah kapasitas tempat sampah");
     } finally {
       setIsUpdatingCap(false);
     }
@@ -143,7 +143,7 @@ const WargaDashboard: React.FC = () => {
         setMyBins(res.data.data);
       }
     } catch (err) {
-      console.error("Gagal memuat kapasitas tong sampah", err);
+      console.error("Gagal memuat kapasitas tempat sampah", err);
     } finally {
       setIsLoadingBins(false);
     }
@@ -576,7 +576,7 @@ const WargaDashboard: React.FC = () => {
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
               <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
                 <Trash2 className="text-primary" />
-                Tong Sampah RT/RW Saya
+                tempat sampah RT/RW Saya
               </h5>
               <div className="flex gap-2 items-center">
                 <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -593,7 +593,7 @@ const WargaDashboard: React.FC = () => {
             ) : myBins.length === 0 ? (
               <div className="text-center py-6 text-on-surface-variant/75 text-xs">
                 <AlertTriangle className="text-slate-300 block mb-1" size={32} />
-                Tidak ada tong sampah terdaftar di RT/RW Anda.
+                Tidak ada tempat sampah terdaftar di RT/RW Anda.
               </div>
             ) : (
               <div className="space-y-4">
@@ -729,7 +729,7 @@ const WargaDashboard: React.FC = () => {
                         })}
                       </p>
                       <p className="text-[12px] font-bold text-on-surface mt-0.5">
-                        {item.jenis === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({item.berat} Kg)
+                        {item.jenis === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} <span className="font-extrabold">{item.berat}</span> <span className="font-normal text-[10px]">Kg</span>
                       </p>
                       <p className="text-[10px] text-on-surface-variant mt-0.5">
                         {item.lokasi} • {item.volume}
@@ -1196,7 +1196,7 @@ const WargaDashboard: React.FC = () => {
                         <tr className="bg-slate-100 text-on-surface-variant border-b border-outline-variant/40">
                           <th className="p-3 font-bold">Tanggal</th>
                           <th className="p-3 font-bold">Kategori</th>
-                          <th className="p-3 font-bold">Berat</th>
+                          <th className="p-3 font-bold">Berat (Kg)</th>
                           <th className="p-3 font-bold">Estimasi Vol</th>
                           <th className="p-3 font-bold">Poin</th>
                           <th className="p-3 font-bold">Titik Tong</th>
@@ -1223,11 +1223,11 @@ const WargaDashboard: React.FC = () => {
                                 {log.jenis === "ORGANIC" ? "Organik" : "Anorganik"}
                               </span>
                             </td>
-                            <td className="p-3 font-bold">{log.berat} Kg</td>
+                            <td className="p-3 font-bold">{log.berat}</td>
                             <td className="p-3 font-medium text-slate-500">{log.volume}</td>
                             <td className="p-3 font-extrabold text-primary">+{log.poin} Pts</td>
                             <td className="p-3 font-mono font-bold text-slate-600">
-                              {log.lokasi.replace("Tong: ", "")}
+                              {log.lokasi.replace("Tempat Sampah: ", "")}
                             </td>
                           </tr>
                         ))}
@@ -1340,7 +1340,14 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"kkn" | "warga" | "petugas">("kkn");
   const [monitoringSearch, setMonitoringSearch] = useState("");
   const [monitoringSort, setMonitoringSort] = useState<"asc" | "desc">("asc");
+  const [monitoringPage, setMonitoringPage] = useState(1);
+  const monitoringItemsPerPage = 5;
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
+  const [timeFilter, setTimeFilter] = useState("semua"); // harian, mingguan, bulanan, tahunan, semua
+
+  useEffect(() => {
+    setMonitoringPage(1);
+  }, [activeTab, monitoringSearch]);
 
   // Dynamic features states
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -1364,7 +1371,7 @@ const Dashboard: React.FC = () => {
       try {
         setError("");
         const response = await api.get("/dashboard/kpi", {
-          params: { wilayah: user?.wilayah },
+          params: { wilayah: user?.wilayah, period: timeFilter },
         });
         const kpi = response.data?.data ?? response.data;
         if (!kpi) {
@@ -1374,16 +1381,18 @@ const Dashboard: React.FC = () => {
         // Menghitung persentase
         const organikKg = Number(kpi.komposisiSampah?.organikKg ?? 0);
         const anorganikKg = Number(kpi.komposisiSampah?.anorganikKg ?? 0);
-        const totalBerat = organikKg + anorganikKg;
+        const residuKg = Number(kpi.komposisiSampah?.residuKg ?? 0);
+        const totalBerat = organikKg + anorganikKg + residuKg;
         const pctOrganik = totalBerat > 0 ? Math.round((organikKg / totalBerat) * 100) : 0;
-        const pctAnorganik = totalBerat > 0 ? 100 - pctOrganik : 0;
+        const pctAnorganik = totalBerat > 0 ? Math.round((anorganikKg / totalBerat) * 100) : 0;
+        const pctResidu = totalBerat > 0 ? 100 - pctOrganik - pctAnorganik : 0;
 
         // Memetakan data riil dari backend ke UI
         setStats({
           totalPengguna: {
-            value: kpi.totalUsers ?? kpi.totalWarga ?? 0,
+            value: kpi.totalUsers ?? 0,
             trend: "+0",
-            trendLabel: "Bulan ini",
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
           tempatSampahAktif: {
@@ -1395,12 +1404,12 @@ const Dashboard: React.FC = () => {
           lokasiTerdaftar: {
             value: kpi.lokasiTerdaftar ?? 0,
             trend: "+0",
-            trendLabel: "Bulan ini",
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
           setoranHariIni: {
             value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(1)} Kg`,
-            trend: "Hari ini",
+            trend: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
             trendLabel: "",
             trendUp: true,
           },
@@ -1410,15 +1419,22 @@ const Dashboard: React.FC = () => {
                 ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(1)}K`
                 : Number(kpi.totalPoin ?? 0).toLocaleString(),
             trend: "+0",
-            trendLabel: "Bulan ini",
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
-          jadwalMingguIni: { value: 8, trend: "2", trendLabel: "Selesai", trendUp: true },
+          jadwalMingguIni: { 
+            value: kpi.jadwalSelesai ?? 0, 
+            trend: `${kpi.jadwalTotal ?? 0}`, 
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`, 
+            trendUp: true 
+          },
           komposisiSampah: {
             organik: { berat: `${organikKg.toFixed(1)} Kg`, persentase: `${pctOrganik}%` },
             anorganik: { berat: `${anorganikKg.toFixed(1)} Kg`, persentase: `${pctAnorganik}%` },
+            residu: { berat: `${residuKg.toFixed(1)} Kg`, persentase: `${pctResidu}%` },
             pctOrganik,
             pctAnorganik,
+            pctResidu,
           },
         });
 
@@ -1447,7 +1463,8 @@ const Dashboard: React.FC = () => {
             });
           }
           setAllBins(Array.isArray(binsData) ? binsData : []);
-          setRecentBins(Array.isArray(binsData) ? binsData.slice(0, 3) : []);
+          const realBins = Array.isArray(binsData) ? binsData.filter((b: any) => !(b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST")) : [];
+          setRecentBins(realBins.slice(0, 5));
         } else {
           setAllBins([]);
           setRecentBins([]);
@@ -1484,7 +1501,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, [user, weeks]);
+  }, [user, weeks, timeFilter]);
 
   if (loading) {
     return (
@@ -1530,7 +1547,7 @@ const Dashboard: React.FC = () => {
 
   // Scaling factors for Trend SVG
   const maxWeightTrend = Math.max(
-    ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.weight || 0)),
+    ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.residu || 0, d.weight || 0)),
     10
   );
   const trendPoints = trendData.map((d, i) => {
@@ -1538,7 +1555,8 @@ const Dashboard: React.FC = () => {
     const x = trendData.length > 1 ? 60 + (i / (trendData.length - 1)) * 620 : 350;
     const yOrganic = 170 - ((d.organic || 0) / maxWeightTrend) * 140;
     const yInorganic = 170 - ((d.inorganic || 0) / maxWeightTrend) * 140;
-    return { x, yOrganic, yInorganic, label: d.label, organic: d.organic, inorganic: d.inorganic };
+    const yResidu = 170 - ((d.residu || 0) / maxWeightTrend) * 140;
+    return { x, yOrganic, yInorganic, yResidu, label: d.label, organic: d.organic, inorganic: d.inorganic, residu: d.residu };
   });
 
   const trendOrganicPath = trendPoints
@@ -1546,6 +1564,9 @@ const Dashboard: React.FC = () => {
     .join(" ");
   const trendInorganicPath = trendPoints
     .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.yInorganic}`)
+    .join(" ");
+  const trendResiduPath = trendPoints
+    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.yResidu}`)
     .join(" ");
 
   const trendOrganicAreaPath =
@@ -1555,6 +1576,10 @@ const Dashboard: React.FC = () => {
   const trendInorganicAreaPath =
     trendPoints.length > 0
       ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
+      : "";
+  const trendResiduAreaPath =
+    trendPoints.length > 0
+      ? `${trendResiduPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
       : "";
 
   // QR Bin Lifecycle Count
@@ -1616,17 +1641,51 @@ const Dashboard: React.FC = () => {
     return result;
   };
 
-  kknStudents = applySearchAndSort(kknStudents);
-  wargaList = applySearchAndSort(wargaList);
-  petugasList = applySearchAndSort(petugasList);
+  const totalMonitoringKkn = kknStudents.length;
+  const totalMonitoringWarga = wargaList.length;
+  const totalMonitoringPetugas = petugasList.length;
+
+  kknStudents = applySearchAndSort(kknStudents).slice(
+    (monitoringPage - 1) * monitoringItemsPerPage,
+    monitoringPage * monitoringItemsPerPage
+  );
+  wargaList = applySearchAndSort(wargaList).slice(
+    (monitoringPage - 1) * monitoringItemsPerPage,
+    monitoringPage * monitoringItemsPerPage
+  );
+  petugasList = applySearchAndSort(petugasList).slice(
+    (monitoringPage - 1) * monitoringItemsPerPage,
+    monitoringPage * monitoringItemsPerPage
+  );
+
+  const getActiveTotalPages = () => {
+    if (activeTab === "kkn") return Math.ceil(totalMonitoringKkn / monitoringItemsPerPage);
+    if (activeTab === "warga") return Math.ceil(totalMonitoringWarga / monitoringItemsPerPage);
+    return Math.ceil(totalMonitoringPetugas / monitoringItemsPerPage);
+  };
 
 
-  if (user?.peran === "RW") {
+  if (user?.peran === "RW" || user?.peran === "RT") {
     return <RwDashboard />;
   }
 
   return (
     <div className="space-y-gutter pb-12 text-on-surface">
+      {/* === Time Filter === */}
+      <div className="flex justify-end mb-4">
+        <select
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+          className="bg-white border border-outline-variant/30 text-[12px] font-bold text-on-surface px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="semua">Semua Waktu</option>
+          <option value="harian">Harian (Hari Ini)</option>
+          <option value="mingguan">Mingguan (Minggu Ini)</option>
+          <option value="bulanan">Bulanan (Bulan Ini)</option>
+          <option value="tahunan">Tahunan (Tahun Ini)</option>
+        </select>
+      </div>
+
       {/* === KPI Section (6 Cards) === */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-gutter">
         <KpiCard
@@ -1666,7 +1725,13 @@ const Dashboard: React.FC = () => {
           iconName="shopping_bag"
           iconBg="bg-amber-100"
           iconColor="text-amber-600"
-          label="Setoran Hari Ini"
+          label={
+            timeFilter === "harian" ? "Setoran Hari Ini" :
+            timeFilter === "mingguan" ? "Setoran Minggu Ini" :
+            timeFilter === "bulanan" ? "Setoran Bulan Ini" :
+            timeFilter === "tahunan" ? "Setoran Tahun Ini" :
+            "Total Setoran"
+          }
           value={stats?.setoranHariIni?.value}
           trend={stats?.setoranHariIni?.trend}
           trendLabel={stats?.setoranHariIni?.trendLabel}
@@ -1684,10 +1749,16 @@ const Dashboard: React.FC = () => {
           linkTo="/poin-warga"
         />
         <KpiCard
-          iconName="calendar_month"
-          iconBg="bg-emerald-100"
-          iconColor="text-emerald-600"
-          label="Jadwal Minggu Ini"
+          iconName="event_available"
+          iconBg="bg-teal-100"
+          iconColor="text-teal-600"
+          label={
+            timeFilter === "harian" ? "Jadwal Hari Ini" :
+            timeFilter === "mingguan" ? "Jadwal Minggu Ini" :
+            timeFilter === "bulanan" ? "Jadwal Bulan Ini" :
+            timeFilter === "tahunan" ? "Jadwal Tahun Ini" :
+            "Total Jadwal"
+          }
           value={stats?.jadwalMingguIni?.value}
           trend={stats?.jadwalMingguIni?.trend}
           trendLabel={stats?.jadwalMingguIni?.trendLabel}
@@ -1710,7 +1781,10 @@ const Dashboard: React.FC = () => {
                   <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span> Organik
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Anorganik
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span> Anorganik
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></span> Residu
                 </span>
               </div>
             </div>
@@ -1733,8 +1807,12 @@ const Dashboard: React.FC = () => {
                     <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="inorgGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#eab308" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#eab308" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="residuGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
                   </linearGradient>
                 </defs>
 
@@ -1760,6 +1838,7 @@ const Dashboard: React.FC = () => {
                 <line x1="60" y1="30" x2="60" y2="170" stroke="#cbd5e1" strokeWidth="1" />
                 <path d={trendOrganicAreaPath} fill="url(#orgGrad)" />
                 <path d={trendInorganicAreaPath} fill="url(#inorgGrad)" />
+                <path d={trendResiduAreaPath} fill="url(#residuGrad)" />
 
                 <path
                   d={trendOrganicPath}
@@ -1772,7 +1851,15 @@ const Dashboard: React.FC = () => {
                 <path
                   d={trendInorganicPath}
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="#eab308"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={trendResiduPath}
+                  fill="none"
+                  stroke="#ef4444"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -1781,7 +1868,8 @@ const Dashboard: React.FC = () => {
                 {trendPoints.map((p, i) => (
                   <g key={i}>
                     <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="white" strokeWidth="1.5" />
-                    <circle cx={p.x} cy={p.yInorganic} r="4" fill="#3b82f6" stroke="white" strokeWidth="1.5" />
+                    <circle cx={p.x} cy={p.yInorganic} r="4" fill="#eab308" stroke="white" strokeWidth="1.5" />
+                    <circle cx={p.x} cy={p.yResidu} r="4" fill="#ef4444" stroke="white" strokeWidth="1.5" />
                     <text x={p.x} y="190" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold">
                       {p.label}
                     </text>
@@ -1803,17 +1891,44 @@ const Dashboard: React.FC = () => {
             <div className="w-32 h-32 relative flex items-center justify-center">
               <svg className="w-32 h-32 transform -rotate-90">
                 <circle cx="64" cy="64" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="50"
-                  fill="transparent"
-                  stroke="#10b981"
-                  strokeWidth="12"
-                  strokeDasharray={`${2 * Math.PI * 50}`}
-                  strokeDashoffset={`${2 * Math.PI * 50 * (1 - (stats?.komposisiSampah?.pctOrganik ?? 0) / 100)}`}
-                  strokeLinecap="round"
-                />
+                {(() => {
+                  const c = 2 * Math.PI * 50;
+                  const pctOrg = stats?.komposisiSampah?.pctOrganik ?? 0;
+                  // If there's no Anorganik or Residu yet in stats from backend, default to 0
+                  // We should try parsing the pct string if they exist, or using raw numbers if passed
+                  const pctAnorg = stats?.komposisiSampah?.pctAnorganik ?? 0;
+                  const pctResidu = stats?.komposisiSampah?.pctResidu ?? 0;
+                  
+                  const valOrg = (pctOrg / 100) * c;
+                  const valAnorg = (pctAnorg / 100) * c;
+                  const valResidu = (pctResidu / 100) * c;
+                  
+                  return (
+                    <>
+                      {/* Organik */}
+                      {pctOrg > 0 && (
+                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#10b981" strokeWidth="12"
+                          strokeDasharray={`${valOrg} ${c}`}
+                          strokeDashoffset={0}
+                        />
+                      )}
+                      {/* Anorganik */}
+                      {pctAnorg > 0 && (
+                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#eab308" strokeWidth="12"
+                          strokeDasharray={`${valAnorg} ${c}`}
+                          strokeDashoffset={-valOrg}
+                        />
+                      )}
+                      {/* Residu */}
+                      {pctResidu > 0 && (
+                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#ef4444" strokeWidth="12"
+                          strokeDasharray={`${valResidu} ${c}`}
+                          strokeDashoffset={-(valOrg + valAnorg)}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
               </svg>
               <div className="absolute text-center">
                 <span className="block text-[22px] font-bold text-on-surface leading-none">
@@ -1831,16 +1946,25 @@ const Dashboard: React.FC = () => {
                   <span className="text-on-surface">Organik</span>
                 </div>
                 <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.organik?.persentase})
+                  {stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.pctOrganik ?? 0}%)
                 </span>
               </div>
               <div className="flex justify-between items-center text-[12px]">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
                   <span className="text-on-surface">Anorganik</span>
                 </div>
                 <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.anorganik?.persentase})
+                  {stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.pctAnorganik ?? 0}%)
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-[12px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                  <span className="text-on-surface">Residu</span>
+                </div>
+                <span className="text-on-surface font-bold text-red-600">
+                  {stats?.komposisiSampah?.residu?.berat || "0 Kg"} ({stats?.komposisiSampah?.pctResidu ?? 0}%)
                 </span>
               </div>
             </div>
@@ -1886,6 +2010,9 @@ const Dashboard: React.FC = () => {
                     bin.kapasitas ||
                     (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
                   );
+                  const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
+                  const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
+
                   return (
                     <tr key={bin.id || bin.kode || i} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150">
                       <td className="py-3">
@@ -1893,10 +2020,8 @@ const Dashboard: React.FC = () => {
                           <span className="font-bold">
                             {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
                           </span>
-                          <span className={`text-[10px] ${(bin.category?.name || bin.categoryId) === "ORGANIK" ? "text-primary" : "text-secondary"} flex items-center gap-1`}>
-                            <span className="material-symbols-outlined text-[14px]">
-                              {(bin.category?.name || bin.categoryId) === "ORGANIK" ? "eco" : "recycling"}
-                            </span>{" "}
+                          <span className={`text-[10px] ${isOrganik ? "text-green-600" : "text-yellow-600"} flex items-center gap-1`}>
+                            {isOrganik ? <Leaf size={14} /> : <Recycle size={14} />}
                             {bin.category?.name || bin.categoryId || "UMUM"}
                           </span>
                         </div>
@@ -1974,7 +2099,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* === Bottom Grid: Operational Hub & Life Cycle Bins === */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
         {/* Poin Warga Top 5 */}
         <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
           <div className="flex justify-between items-center mb-6">
@@ -2031,6 +2156,37 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Sebaran Pengguna (New 3rd Column) */}
+        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-bold text-[18px] text-on-surface">Sebaran Pengguna</h4>
+            <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold border border-indigo-200">
+              Total: {allUsers.length}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: "Warga", count: allUsers.filter((u) => u.role === "WARGA").length, color: "bg-primary" },
+              { label: "Mahasiswa KKN", count: allUsers.filter((u) => u.role === "MAHASISWA_KKN").length, color: "bg-blue-500" },
+              { label: "Petugas Residu", count: allUsers.filter((u) => u.role === "PETUGAS_RESIDU").length, color: "bg-rose-500" },
+              { label: "RW / Lurah / Admin", count: allUsers.filter((u) => ["RW", "LURAH", "ADMIN_DLH", "SUPER_ADMIN", "CAMAT"].includes(u.role)).length, color: "bg-amber-500" },
+            ].map((state) => {
+              const pct = allUsers.length > 0 ? (state.count / allUsers.length) * 100 : 0;
+              return (
+                <div key={state.label} className="space-y-1">
+                  <div className="flex justify-between text-[11px] font-medium text-on-surface">
+                    <span>{state.label}</span>
+                    <span className="font-bold">{state.count} ({pct.toFixed(0)}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div className={`${state.color} h-full rounded-full transition-all duration-300`} style={{ width: `${pct}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -2204,6 +2360,31 @@ const Dashboard: React.FC = () => {
             </table>
           )}
         </div>
+
+        {/* Pagination UI */}
+        {getActiveTotalPages() > 1 && (
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-outline-variant/20">
+            <span className="text-[11px] text-slate-500 font-medium">
+              Halaman {monitoringPage} dari {getActiveTotalPages()}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={monitoringPage === 1}
+                onClick={() => setMonitoringPage((prev) => Math.max(1, prev - 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+              >
+                Sebelumnya
+              </button>
+              <button
+                disabled={monitoringPage === getActiveTotalPages()}
+                onClick={() => setMonitoringPage((prev) => Math.min(getActiveTotalPages(), prev + 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* === Footer === */}
@@ -2252,7 +2433,7 @@ const Dashboard: React.FC = () => {
                       <div>
                         <h4 className="font-bold text-sm text-on-surface">{loc.rw} ({loc.kelurahan})</h4>
                         <p className="text-[10px] text-on-surface-variant">
-                          {loc.rtCount} RT • {loc.titikCount} Titik Tong Sampah
+                          {loc.rtCount} RT • {loc.titikCount} Titik tempat sampah
                         </p>
                       </div>
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${loc.patuh >= 85 ? "bg-green-100 text-green-700" : loc.patuh >= 60 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>

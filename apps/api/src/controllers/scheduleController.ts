@@ -24,7 +24,8 @@ export const scheduleController = {
 
   createSchedule: async (req: Request, res: Response) => {
     try {
-      const { title, date, time, category, location, latitude, longitude, radius, polygon } = req.body;
+      const { title, date, time, category, location, latitude, longitude, radius, polygon } =
+        req.body;
       if (!title || !date || !category) {
         res.status(400).json({
           success: false,
@@ -82,7 +83,8 @@ export const scheduleController = {
   updateSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, date, time, category, location, latitude, longitude, radius, polygon } = req.body;
+      const { title, date, time, category, location, latitude, longitude, radius, polygon } =
+        req.body;
       let parsedDate;
       if (date) {
         parsedDate = new Date(date);

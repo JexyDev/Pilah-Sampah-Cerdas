@@ -15,6 +15,8 @@ interface AuditTrail {
   userId: string | null;
   user: { name: string; email: string; role: { name: string } } | null;
   timestamp: string;
+  referenceId?: string;
+  referenceType?: string;
   oldValue: any;
   newValue: any;
 }
@@ -57,8 +59,8 @@ export const AuditTrailList: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Audit Trail Transaksi</h1>
-          <p className="text-sm text-gray-500 mt-1">Jejak audit seluruh perubahan data, aksi mutasi, dan transaksi penting dalam sistem.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Aktivitas Pemilahan Sampah (Log Mentah)</h1>
+          <p className="text-sm text-gray-500 mt-1">Jejak audit (immutable) seluruh perubahan data, aksi mutasi, dan transaksi penting dalam sistem.</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -86,6 +88,7 @@ export const AuditTrailList: React.FC = () => {
                 <tr>
                   <th className="px-6 py-3">Timestamp</th>
                   <th className="px-6 py-3">Aksi</th>
+                  <th className="px-6 py-3">Referensi</th>
                   <th className="px-6 py-3">Pengguna</th>
                   <th className="px-6 py-3 text-right">Detail</th>
                 </tr>
@@ -107,6 +110,10 @@ export const AuditTrailList: React.FC = () => {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary uppercase font-mono">
                           {l.action}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs font-semibold text-gray-700">{l.referenceType || "-"}</div>
+                        <div className="text-[10px] text-gray-400 font-mono">{l.referenceId || "-"}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-gray-900">{l.user ? l.user.name : "System"}</div>

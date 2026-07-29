@@ -165,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const triggerCallOfficer = () => {
     toast.success(
-      'Menghubungi Ketua RT/RW (WhatsApp simulasi): "Halo Pak RT, saya ingin melaporkan tong sampah dekat rumah penuh..."'
+      'Menghubungi Ketua RT/RW (WhatsApp simulasi): "Halo Pak RT, saya ingin melaporkan tempat sampah dekat rumah penuh..."'
     );
     setShowApps(false);
   };

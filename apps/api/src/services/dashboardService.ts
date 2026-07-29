@@ -11,84 +11,111 @@ import { redisService } from "./redisService.js";
 const prisma = new PrismaClient();
 
 export const dashboardService = {
-  getKpi: async (wilayah?: string) => {
+  getKpi: async (wilayah?: string, period?: string) => {
     const isFiltered =
       wilayah &&
       wilayah !== "Kecamatan Coblong" &&
       wilayah !== "Sistem Pusat" &&
       wilayah !== "Area KKN Dago" &&
       wilayah !== "Dinas Lingkungan Hidup";
+
+    let dateFilter: any = undefined;
+    const now = new Date();
+    if (period === "harian") {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      dateFilter = { gte: start, lte: end };
+    } else if (period === "mingguan") {
+      const start = new Date(now);
+      const day = start.getDay();
+      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+      start.setDate(diff);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      dateFilter = { gte: start, lte: end };
+    } else if (period === "bulanan") {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      dateFilter = { gte: start, lte: end };
+    } else if (period === "tahunan") {
+      const start = new Date(now.getFullYear(), 0, 1);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      dateFilter = { gte: start, lte: end };
+    }
     // 1. Total Warga Aktif
+    const wargaWhere: any = { role: { name: "WARGA" } };
+    if (isFiltered)
+      wargaWhere.OR = [
+        { rtRw: { name: wilayah } },
+        { households: { some: { rtRw: { name: wilayah } } } },
+      ];
+    if (dateFilter) wargaWhere.createdAt = dateFilter;
+
     const totalWarga = await prisma.user.count({
-      where: {
-        role: {
-          name: "WARGA",
-        },
-        OR: isFiltered
-          ? [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }]
-          : undefined,
-      },
+      where: wargaWhere,
     });
 
     // Total Users
+    const usersWhere: any = {};
+    if (isFiltered)
+      usersWhere.OR = [
+        { rtRw: { name: wilayah } },
+        { households: { some: { rtRw: { name: wilayah } } } },
+      ];
+    if (dateFilter) usersWhere.createdAt = dateFilter;
+
     const totalUsers = await prisma.user.count({
-      where: isFiltered
-        ? {
-            OR: [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }]
-          }
-        : undefined,
+      where: usersWhere,
     });
 
     // 2. Sampah Terkumpul (Kg)
-    const wasteLogs = await prisma.wasteLog.aggregate({
-      where: isFiltered
-        ? {
-            household: {
-              rtRw: { name: wilayah },
-            },
-          }
-        : undefined,
+    const wasteLogsWhere: any = {};
+    if (isFiltered) wasteLogsWhere.warga = { rtRw: { name: wilayah } };
+    if (dateFilter) wasteLogsWhere.createdAt = dateFilter;
+
+    const wasteLogs = await prisma.setoranOtomatis.aggregate({
+      where: wasteLogsWhere,
       _sum: {
-        weightKg: true,
+        berat: true,
       },
     });
-    const totalSampahKg = wasteLogs._sum.weightKg ? Number(wasteLogs._sum.weightKg) : 0;
+    const totalSampahKg = wasteLogs._sum.berat ? Number(wasteLogs._sum.berat) : 0;
 
     // 3. Rata-rata Akurasi AI (Simulated using % of SUCCESS)
+    const aiWhere: any = {};
+    if (isFiltered)
+      aiWhere.user = {
+        OR: [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }],
+      };
+    if (dateFilter) aiWhere.createdAt = dateFilter;
+
     const totalAiLogs = await prisma.aiRequestLog.count({
-      where: isFiltered
-        ? {
-            user: {
-              OR: [
-                { rtRw: { name: wilayah } },
-                { households: { some: { rtRw: { name: wilayah } } } },
-              ],
-            },
-          }
-        : undefined,
+      where: aiWhere,
     });
+    const successAiWhere: any = { resultStatus: "SUCCESS" };
+    if (isFiltered)
+      successAiWhere.user = {
+        OR: [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }],
+      };
+    if (dateFilter) successAiWhere.createdAt = dateFilter;
+
     const successAiLogs = await prisma.aiRequestLog.count({
-      where: {
-        resultStatus: "SUCCESS",
-        user: isFiltered
-          ? {
-              OR: [
-                { rtRw: { name: wilayah } },
-                { households: { some: { rtRw: { name: wilayah } } } },
-              ],
-            }
-          : undefined,
-      },
+      where: successAiWhere,
     });
     const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
 
     // 4. Peringatan Tong Penuh (volume > 90% of maxCapacity)
+    const binsWhere: any = {};
+    if (isFiltered) binsWhere.rtRw = { name: wilayah };
+    if (dateFilter) binsWhere.createdAt = dateFilter;
+
     const bins = await prisma.bin.findMany({
-      where: isFiltered
-        ? {
-            rtRw: { name: wilayah },
-          }
-        : undefined,
+      where: binsWhere,
       select: {
         currentVolumeLiter: true,
         maxCapacityLiter: true,
@@ -101,52 +128,39 @@ export const dashboardService = {
 
     // 5. Tempat Sampah Aktif
     const tempatSampahAktif = await prisma.bin.count({
-      where: isFiltered
-        ? {
-            rtRw: { name: wilayah },
-          }
-        : undefined,
+      where: binsWhere,
     });
 
     // 6. Lokasi Terdaftar (RT/RW)
-    const lokasiTerdaftar = isFiltered
-      ? await prisma.rtRwArea.count({ where: { name: wilayah } })
-      : await prisma.rtRwArea.count();
+    const lokasiWhere: any = {};
+    if (isFiltered) lokasiWhere.name = wilayah;
+    if (dateFilter) lokasiWhere.createdAt = dateFilter;
 
-    // 7. Setoran Hari Ini (Kg)
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const wasteLogsToday = await prisma.wasteLog.aggregate({
-      where: {
-        createdAt: {
-          gte: startOfToday,
-        },
-        household: isFiltered
-          ? {
-              rtRw: { name: wilayah },
-            }
-          : undefined,
-      },
+    const lokasiTerdaftar = await prisma.rtRwArea.count({ where: lokasiWhere });
+
+    // 7. Setoran Hari Ini (Kg) (Using dateFilter)
+    const setoranHariIniWhere: any = {};
+    if (isFiltered) setoranHariIniWhere.warga = { rtRw: { name: wilayah } };
+    if (dateFilter) setoranHariIniWhere.createdAt = dateFilter;
+
+    const wasteLogsToday = await prisma.setoranOtomatis.aggregate({
+      where: setoranHariIniWhere,
       _sum: {
-        weightKg: true,
+        berat: true,
       },
     });
-    const setoranHariIniKg = wasteLogsToday._sum.weightKg
-      ? Number(wasteLogsToday._sum.weightKg)
-      : 0;
+    const setoranHariIniKg = wasteLogsToday._sum.berat ? Number(wasteLogsToday._sum.berat) : 0;
 
     // 8. Total Poin Warga
+    const pointsWhere: any = {};
+    if (isFiltered)
+      pointsWhere.user = {
+        OR: [{ rtRw: { name: wilayah } }, { households: { some: { rtRw: { name: wilayah } } } }],
+      };
+    if (dateFilter) pointsWhere.createdAt = dateFilter;
+
     const pointHistory = await prisma.pointHistory.aggregate({
-      where: isFiltered
-        ? {
-            user: {
-              OR: [
-                { rtRw: { name: wilayah } },
-                { households: { some: { rtRw: { name: wilayah } } } },
-              ],
-            },
-          }
-        : undefined,
+      where: pointsWhere,
       _sum: {
         points: true,
       },
@@ -154,34 +168,45 @@ export const dashboardService = {
     const totalPoin = pointHistory._sum.points ? Number(pointHistory._sum.points) : 0;
 
     // 9. Komposisi Sampah (Organik vs Anorganik)
-    const wasteByCategory = await prisma.wasteLog.findMany({
-      where: isFiltered
-        ? {
-            household: {
-              rtRw: { name: wilayah },
-            },
-          }
-        : undefined,
-      include: {
-        category: true,
-      },
+    const catWhere: any = {};
+    if (isFiltered) catWhere.warga = { rtRw: { name: wilayah } };
+    if (dateFilter) catWhere.createdAt = dateFilter;
+
+    const wasteByCategory = await prisma.setoranOtomatis.findMany({
+      where: catWhere,
+    });
+
+    const residuWhere: any = {};
+    if (isFiltered) residuWhere.rw = { name: wilayah };
+    if (dateFilter) residuWhere.createdAt = dateFilter;
+
+    const residuLogs = await prisma.setoranManual.findMany({
+      where: residuWhere,
     });
 
     let organikKg = 0;
     let anorganikKg = 0;
+    let residuKg = 0;
 
-    wasteByCategory.forEach((log) => {
-      const kg = Number(log.weightKg);
-      const catName = log.category.name.toUpperCase();
-      if (
-        (catName.includes("ORGANIC") || catName.includes("ORGANIK")) &&
-        !catName.includes("NON") &&
-        !catName.includes("ANORGANIK")
-      ) {
+    wasteByCategory.forEach((log: any) => {
+      const kg = Number(log.berat);
+      if (log.hasilKlasifikasiAi === "organik") {
         organikKg += kg;
       } else {
         anorganikKg += kg;
       }
+    });
+
+    residuLogs.forEach((log: any) => {
+      residuKg += Number(log.berat);
+    });
+
+    // 10. Jadwal Tugas
+    const jadwalWhere: any = {};
+    if (dateFilter) jadwalWhere.createdAt = dateFilter;
+    const jadwalTotal = await prisma.dispatchTask.count({ where: jadwalWhere });
+    const jadwalSelesai = await prisma.dispatchTask.count({
+      where: { ...jadwalWhere, status: "COMPLETED" },
     });
 
     return {
@@ -197,7 +222,10 @@ export const dashboardService = {
       komposisiSampah: {
         organikKg,
         anorganikKg,
+        residuKg,
       },
+      jadwalTotal,
+      jadwalSelesai,
     };
   },
 
@@ -208,10 +236,10 @@ export const dashboardService = {
       wilayah !== "Sistem Pusat" &&
       wilayah !== "Area KKN Dago" &&
       wilayah !== "Dinas Lingkungan Hidup";
-    const transactions = await prisma.wasteLog.findMany({
+    const transactions = await prisma.setoranOtomatis.findMany({
       where: isFiltered
         ? {
-            household: {
+            warga: {
               rtRw: { name: wilayah },
             },
           }
@@ -221,31 +249,21 @@ export const dashboardService = {
         createdAt: "desc",
       },
       include: {
-        household: {
-          include: {
-            user: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-        category: {
+        warga: {
           select: {
             name: true,
-            pointsPerKg: true,
           },
         },
       },
     });
 
-    return transactions.map((trx) => ({
+    return transactions.map((trx: any) => ({
       id: trx.id,
-      nama: trx.household.user.name,
+      nama: trx.warga.name,
       waktu: trx.createdAt,
-      tipe: trx.category.name,
-      volume: `${Number(trx.volumeLiter).toFixed(1)}L`,
-      poin: `+${Math.floor(Number(trx.weightKg) * trx.category.pointsPerKg)}`,
+      tipe: trx.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+      volume: "-",
+      poin: `+${trx.poin}`,
     }));
   },
 
@@ -263,43 +281,49 @@ export const dashboardService = {
       const endOfWeek = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
       const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      const logs = await prisma.wasteLog.findMany({
+      const logs = await prisma.setoranOtomatis.findMany({
         where: {
           createdAt: {
             gte: startOfWeek,
             lte: endOfWeek,
           },
-          household: isFiltered
+          warga: isFiltered
             ? {
                 rtRw: { name: wilayah },
               }
             : undefined,
         },
-        include: {
-          category: true,
+      });
+
+      const residuLogs = await prisma.setoranManual.findMany({
+        where: {
+          createdAt: {
+            gte: startOfWeek,
+            lte: endOfWeek,
+          },
+          rw: isFiltered ? { name: wilayah } : undefined,
         },
       });
 
       let organicWeight = 0;
       let inorganicWeight = 0;
+      let residuWeight = 0;
 
-      logs.forEach((log) => {
-        const kg = Number(log.weightKg);
-        const name = log.category.name.toUpperCase();
-        if (
-          (name.includes("ORGANIC") || name.includes("ORGANIK")) &&
-          !name.includes("NON") &&
-          !name.includes("ANORGANIK")
-        ) {
+      logs.forEach((log: any) => {
+        const kg = Number(log.berat);
+        if (log.hasilKlasifikasiAi === "organik") {
           organicWeight += kg;
         } else {
           inorganicWeight += kg;
         }
       });
 
-      const totalWeight = organicWeight + inorganicWeight;
+      residuLogs.forEach((l: any) => {
+        residuWeight += Number(l.berat);
+      });
 
-      // Calculate week number of year
+      const totalWeight = organicWeight + inorganicWeight + residuWeight;
+
       const oneJan = new Date(endOfWeek.getFullYear(), 0, 1);
       const numberOfDays = Math.floor(
         (endOfWeek.getTime() - oneJan.getTime()) / (24 * 60 * 60 * 1000)
@@ -311,6 +335,7 @@ export const dashboardService = {
         weight: parseFloat(totalWeight.toFixed(1)),
         organic: parseFloat(organicWeight.toFixed(1)),
         inorganic: parseFloat(inorganicWeight.toFixed(1)),
+        residu: parseFloat(residuWeight.toFixed(1)),
       });
     }
 
@@ -329,34 +354,21 @@ export const dashboardService = {
     const saldo = poin * 100;
 
     // 2. Get Total Organik and Anorganik
-    // Get Household id for the user
-    const household = await prisma.household.findFirst({
-      where: { userId },
-    });
-
     let organikKg = 0;
     let anorganikKg = 0;
 
-    if (household) {
-      const wasteLogs = await prisma.wasteLog.findMany({
-        where: { householdId: household.id },
-        include: { category: true },
-      });
+    const wasteLogs = await prisma.setoranOtomatis.findMany({
+      where: { wargaId: userId },
+    });
 
-      wasteLogs.forEach((log) => {
-        const kg = Number(log.weightKg);
-        const name = log.category.name.toUpperCase();
-        if (
-          (name.includes("ORGANIC") || name.includes("ORGANIK")) &&
-          !name.includes("NON") &&
-          !name.includes("ANORGANIK")
-        ) {
-          organikKg += kg;
-        } else {
-          anorganikKg += kg;
-        }
-      });
-    }
+    wasteLogs.forEach((log: any) => {
+      const kg = Number(log.berat);
+      if (log.hasilKlasifikasiAi === "organik") {
+        organikKg += kg;
+      } else {
+        anorganikKg += kg;
+      }
+    });
 
     const quotaRemaining = await redisService.getRemainingQuota(userId);
 

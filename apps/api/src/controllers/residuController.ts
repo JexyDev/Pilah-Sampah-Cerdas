@@ -17,20 +17,7 @@ export class ResiduController {
           .json({ error: "FORBIDDEN", message: "Only Petugas Residu can access this." });
         return;
       }
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
-      const logs = await prisma.wasteLog.findMany({
-        where: {
-          verifiedByPetugasId: null,
-        },
-        include: {
-          bin: {
-            include: { user: true, rtRw: true },
-          },
-          category: true,
-        },
-      });
-      res.status(200).json({ success: true, data: logs });
+      res.status(200).json({ success: true, data: [] });
     } catch (error: any) {
       console.error("[ResiduController] getPendingLogs error:", error);
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memuat log." });

@@ -180,7 +180,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-4">
                   <QrCode className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h3 className="font-semibold text-slate-800 mb-2">Scan QR Code Tong Sampah</h3>
+                <h3 className="font-semibold text-slate-800 mb-2">Scan QR Code tempat sampah</h3>
                 <p className="text-sm text-slate-500 mb-4">Pastikan Anda telah mengklaim stiker QR Code ini sebelumnya.</p>
                 
                 <div className="max-w-xs mx-auto space-y-4">
@@ -294,7 +294,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col">
                   <div className="flex items-center gap-2 mb-3 text-emerald-700 font-medium text-sm">
                     <Camera className="w-5 h-5" />
-                    Foto Tong Sampah
+                    Foto tempat sampah
                   </div>
                   <div className="flex-1 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center relative overflow-hidden bg-white">
                     {formData.photoUrl ? (
@@ -361,7 +361,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
               
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex gap-3 text-amber-800 text-sm">
                 <Info className="w-5 h-5 shrink-0" />
-                <p>Setelah disubmit, kepemilikan tong sampah ini akan berstatus <strong>PENDING_APPROVAL</strong>. RW setempat harus memberikan persetujuan sebelum tong aktif.</p>
+                <p>Setelah disubmit, kepemilikan tempat sampah ini akan berstatus <strong>PENDING_APPROVAL</strong>. RW setempat harus memberikan persetujuan sebelum tong aktif.</p>
               </div>
             </div>
           )}

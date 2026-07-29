@@ -273,7 +273,7 @@ export default function SetorSampah() {
       const response = await api.post("/bins/scan", payload);
       setTransactionData(response.data.data);
       setStep("SUCCESS");
-      toast.success("Pintu tong sampah berhasil terbuka!");
+      toast.success("Pintu tempat sampah berhasil terbuka!");
     } catch (error: any) {
       console.error("Transaction failed:", error);
       const msg =
@@ -321,10 +321,10 @@ export default function SetorSampah() {
             <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100 shadow-sm animate-pulse">
               <Camera size={38} className="text-green-600" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 mb-2">Ambil Foto & Scan Tong</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-2">Ambil Foto & Scan Tempat Sampah</h2>
             <p className="text-xs text-slate-500 max-w-xs leading-relaxed mb-8">
               Pilah sampah Anda secara cerdas. Pindai foto sampah Anda dengan AI, lalu scan QR pada
-              tong sampah fisik untuk membuka pintu tong.
+              tempat sampah fisik untuk membuka pintu tempat sampah.
             </p>
 
             <div className="w-full space-y-3">
@@ -623,7 +623,7 @@ export default function SetorSampah() {
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md shadow-green-600/10 flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wider"
               >
                 <QrCode size={16} />
-                Scan QR Tong Sampah
+                Scan QR tempat sampah
               </button>
 
               <button
@@ -640,9 +640,9 @@ export default function SetorSampah() {
         {step === "SCAN_QR" && (
           <div className="flex flex-col flex-grow items-center justify-between">
             <div className="text-center space-y-1 w-full">
-              <h3 className="text-base font-bold text-slate-800">Scan QR Code Tong</h3>
+              <h3 className="text-base font-bold text-slate-800">Scan QR Code Tempat Sampah</h3>
               <p className="text-[11px] text-slate-500">
-                Arahkan kamera perangkat Anda pada QR Code yang tertempel di tong sampah.
+                Arahkan kamera perangkat Anda pada QR Code yang tertempel di tempat sampah.
               </p>
             </div>
 
@@ -665,14 +665,14 @@ export default function SetorSampah() {
                 </label>
                 <div className="flex gap-2">
                   <select
-                    className="flex-1 text-xs border border-slate-200 rounded-lg p-2 bg-white font-medium"
+                     className="flex-1 text-xs border border-slate-200 rounded-lg p-2 bg-white font-medium"
                     value={selectedSimulatedBin}
                     onChange={(e) => setSelectedSimulatedBin(e.target.value)}
                   >
-                    <option value="">-- Pilih Tong Sampah RT Anda --</option>
+                    <option value="">-- Pilih tempat sampah RT Anda --</option>
                     {availableBins.map((bin) => (
                       <option key={bin.id} value={bin.qrCode}>
-                        Tong {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
+                        Tempat Sampah {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
                       </option>
                     ))}
                   </select>
@@ -699,7 +699,7 @@ export default function SetorSampah() {
                         <div className="flex gap-1.5 items-center text-[9px] text-red-600 font-bold p-1 bg-red-50 border border-red-100 rounded">
                           <AlertTriangle size={12} />
                           <span>
-                            Peringatan: Tipe tong ({binType}) dan sampah ({trashType}) tidak cocok!
+                            Peringatan: Tipe tempat sampah ({binType}) dan sampah ({trashType}) tidak cocok!
                           </span>
                         </div>
                       );
@@ -741,7 +741,7 @@ export default function SetorSampah() {
               </div>
               <h2 className="text-lg font-extrabold text-slate-800">Setoran Sampah Berhasil!</h2>
               <p className="text-xs text-slate-500 leading-relaxed mt-1 max-w-xs">
-                Pintu tong sampah fisik telah terbuka. Silakan masukkan sampah Anda.
+                Pintu tempat sampah fisik telah terbuka. Silakan masukkan sampah Anda.
               </p>
             </div>
 
