@@ -202,8 +202,8 @@ async function main() {
   }
 
   // Admin / General
-  await createUser('Super Admin', '081200999999', 'Super Admin');
-  await createUser('Admin Coblong', '081200999998', 'Admin Kecamatan');
+  await createUser('Super Admin', '081200999999', 'SUPER_ADMIN');
+  await createUser('Admin Coblong', '081200999998', 'ADMIN_KECAMATAN');
 
   console.log(`✅ Memproses ${allWarga.length} warga untuk koordinat dan setoran...`);
   let binCounter = 0;
