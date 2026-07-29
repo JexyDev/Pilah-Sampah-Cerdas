@@ -7,6 +7,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
+import { isPointInPolygon } from "../utils/geoUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -115,17 +116,21 @@ export class KknAttendanceService {
 
     const triggerResults = [];
     for (const schedule of activeSchedules) {
-      if (!schedule.latitude || !schedule.longitude) continue;
+      let isInside = false;
+      if (schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3) {
+        const polyPoints = (schedule.polygon as any[]).map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+        isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+      } else if (schedule.latitude && schedule.longitude) {
+        const dist = calculateDistance(
+          latitude,
+          longitude,
+          Number(schedule.latitude),
+          Number(schedule.longitude)
+        );
+        isInside = dist <= (schedule.radius || 100);
+      }
 
-      const dist = calculateDistance(
-        latitude,
-        longitude,
-        Number(schedule.latitude),
-        Number(schedule.longitude)
-      );
-
-      const radius = schedule.radius || 100;
-      if (dist <= radius) {
+      if (isInside) {
         // Check if already attended
         const existingAttendance = await prisma.activityAttendance.findUnique({
           where: {
@@ -195,6 +200,7 @@ export class KknAttendanceService {
       latitude: schedule.latitude ? Number(schedule.latitude) : defaultLat,
       longitude: schedule.longitude ? Number(schedule.longitude) : defaultLng,
       radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+      polygon: schedule.polygon,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
     };
   }
@@ -217,10 +223,18 @@ export class KknAttendanceService {
     const actLoc = await this.getActivityLocation(scheduleId);
 
     // 2. Validate radius on backend
-    const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
-    if (distance > actLoc.radius) {
+    let isInside = false;
+    if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
+      const polyPoints = (actLoc.polygon as any[]).map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+      isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+    } else {
+      const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
+      isInside = distance <= actLoc.radius;
+    }
+
+    if (!isInside) {
       throw new Error(
-        `OUT_OF_RADIUS: Jarak mahasiswa (${distance.toFixed(1)}m) melebihi batas radius (${actLoc.radius}m).`
+        `OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`
       );
     }
 
@@ -361,14 +375,23 @@ export class KknAttendanceService {
       const latestLoc = locMap.get(att.studentId);
       let currentStatus = "TIDAK_TERDETEKSI"; // GPS off/expired
       if (latestLoc) {
-        const dist = calculateDistance(
-          Number(latestLoc.latitude),
-          Number(latestLoc.longitude),
-          scheduleLoc.latitude,
-          scheduleLoc.longitude
-        );
-        currentStatus =
-          dist <= scheduleLoc.radius ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
+        let isInside = false;
+        if (scheduleLoc.polygon && Array.isArray(scheduleLoc.polygon) && scheduleLoc.polygon.length >= 3) {
+          const polyPoints = (scheduleLoc.polygon as any[]).map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+          isInside = isPointInPolygon(
+            { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
+            polyPoints
+          );
+        } else {
+          const dist = calculateDistance(
+            Number(latestLoc.latitude),
+            Number(latestLoc.longitude),
+            scheduleLoc.latitude,
+            scheduleLoc.longitude
+          );
+          isInside = dist <= scheduleLoc.radius;
+        }
+        currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
       }
 
       return {
