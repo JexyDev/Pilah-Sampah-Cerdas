@@ -33,7 +33,7 @@ const ManajemenPengguna: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
+
     password: "",
     roleName: "WARGA",
     phone: "",
@@ -116,7 +116,7 @@ const ManajemenPengguna: React.FC = () => {
     setModalType("add");
     setFormData({
       name: "",
-      email: "",
+
       password: "",
       roleName: "WARGA",
       phone: "",
@@ -137,7 +137,7 @@ const ManajemenPengguna: React.FC = () => {
     }
     setFormData({
       name: user.name,
-      email: user.email,
+
       password: "",
       roleName: user.role || "WARGA",
       phone: user.phone || "",
@@ -219,7 +219,7 @@ const ManajemenPengguna: React.FC = () => {
 
     const headers = [
       "Nama Lengkap",
-      "Email",
+
       "No. Telfon",
       "Peran",
       "Wilayah",
@@ -230,7 +230,7 @@ const ManajemenPengguna: React.FC = () => {
 
     const csvData = users.map((u) => [
       u.name,
-      u.email,
+
       u.phone || "-",
       u.role,
       u.wilayah,
@@ -599,16 +599,7 @@ const ManajemenPengguna: React.FC = () => {
                   placeholder="081234567890"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm"
-                />
-              </div>
+
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">
                   Password{" "}

@@ -20,14 +20,12 @@ model Role {
 model User {
   id                 String               @id @default(uuid())
   name               String               @map("nama")
-  email              String?              @unique @map("surel")
   password           String               @map("kata_sandi")
   fcmToken           String?              @map("token_fcm")
   roleId             Int                  @map("id_peran")
   createdAt          DateTime             @default(now()) @map("dibuat_pada")
   updatedAt          DateTime             @updatedAt @map("diperbarui_pada")
   fotoProfil         String?              @map("foto_profil")
-  nik                String?              @unique
   rtRwId             Int?                 @map("id_rt_rw")
   status             String               @default("Aktif")
   address            String?              @map("alamat")

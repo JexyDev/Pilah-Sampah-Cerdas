@@ -15,7 +15,7 @@ const Login: React.FC = () => {
   const { login, isLoading: isStoreLoading } = useAuthStore();
 
   // Login State
-  const [identifier, setIdentifier] = useState(""); // Email, NIK, or Phone
+  const [identifier, setIdentifier] = useState(""); // Phone
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   

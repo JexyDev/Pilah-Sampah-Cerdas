@@ -18,12 +18,7 @@ export class AuthService {
    * Authenticate user with email and password, returning tokens if successful.
    */
   async login(identifier: string, password: string) {
-    let user;
-    if (identifier.includes("@")) {
-      user = await authRepository.findUserByEmail(identifier);
-    } else {
-      user = await authRepository.findUserByPhone(identifier);
-    }
+    let user = await authRepository.findUserByPhone(identifier);
 
     if (!user) {
       throw new Error("USER_NOT_FOUND");
@@ -58,7 +53,6 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email,
         role: user.role.name,
         phone: user.phone,
         address: user.address,
@@ -109,7 +103,6 @@ export class AuthService {
   async updateProfile(
     userId: string,
     name?: string,
-    email?: string,
     phone?: string,
     address?: string,
     fotoProfil?: string
@@ -119,16 +112,10 @@ export class AuthService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (email && email !== user.email) {
-      const existingUser = await authRepository.findUserByEmail(email);
-      if (existingUser) {
-        throw new Error("EMAIL_ALREADY_IN_USE");
-      }
-    }
+    
 
     const updatedUser = await authRepository.updateUser(userId, {
       name,
-      email,
       phone,
       address,
       fotoProfil,
@@ -247,7 +234,6 @@ export class AuthService {
     return {
       id: user.id,
       name: user.name,
-      email: user.email,
       role: user.role.name,
       phone: user.phone,
       address: user.address,
@@ -353,17 +339,9 @@ export class AuthService {
     const existingUserByPhone = await authRepository.findUserByPhone(userData.phone);
     if (existingUserByPhone) throw new Error("PHONE_ALREADY_IN_USE");
 
-    // Check duplicate email
-    if (userData.email) {
-      const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
-      if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
-    }
+    
 
-    // Check duplicate NIK
-    if (userData.nik) {
-      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
-      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
-    }
+    
 
     const role = await authRepository.findRoleByName("WARGA");
     if (!role) throw new Error("ROLE_NOT_FOUND");
@@ -400,7 +378,6 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email,
         phone: user.phone,
         role: "WARGA",
         rtRwId: user.rtRwId,
@@ -418,13 +395,9 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
-    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
-    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+    
 
-    if (userData.nik) {
-      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
-      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
-    }
+    
 
     return authRepository.registerKknTx(
       {
@@ -442,13 +415,9 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
-    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
-    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+    
 
-    if (userData.nik) {
-      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
-      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
-    }
+    
 
     if (userData.rtRwId) {
       const existingPetugas = await prisma.user.findFirst({
@@ -483,13 +452,9 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
-    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
-    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+    
 
-    if (userData.nik) {
-      const existingUserByNik = await authRepository.findUserByNik(userData.nik);
-      if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
-    }
+    
 
     const role = await authRepository.findRoleByName(roleName);
     if (!role) throw new Error("ROLE_NOT_FOUND");
@@ -505,8 +470,7 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
-    const existingUserByEmail = await authRepository.findUserByEmail(userData.email);
-    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_IN_USE");
+    
 
     let role = await authRepository.findRoleByName("DPL");
     if (!role) {

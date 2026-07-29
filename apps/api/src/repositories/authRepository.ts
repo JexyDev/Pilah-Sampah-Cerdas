@@ -29,39 +29,7 @@ function isDatabaseConnectionError(error: any): boolean {
 }
 
 export class AuthRepository {
-  /**
-   * Find a user by email, including their role details.
-   */
-  async findUserByEmail(email: string): Promise<(User & { role: Role }) | null> {
-    try {
-      return await prisma.user.findUnique({
-        where: { email },
-        include: { role: true },
-      });
-    } catch (error: any) {
-      if (isDatabaseConnectionError(error)) {
-        throw new DatabaseUnavailableError();
-      }
-      throw error;
-    }
-  }
 
-  /**
-   * Find a user by NIK, including their role details.
-   */
-  async findUserByNik(nik: string): Promise<(User & { role: Role }) | null> {
-    try {
-      return await prisma.user.findUnique({
-        where: { nik },
-        include: { role: true },
-      });
-    } catch (error: any) {
-      if (isDatabaseConnectionError(error)) {
-        throw new DatabaseUnavailableError();
-      }
-      throw error;
-    }
-  }
 
   async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
     try {
@@ -163,7 +131,7 @@ export class AuthRepository {
    */
   async updateUser(
     id: string,
-    data: { name?: string; email?: string; phone?: string; address?: string; fotoProfil?: string }
+    data: { name?: string; phone?: string; address?: string; fotoProfil?: string }
   ): Promise<User> {
     return prisma.user.update({
       where: { id },

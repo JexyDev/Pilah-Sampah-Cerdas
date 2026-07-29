@@ -13,8 +13,7 @@ import { binRepository } from "../repositories/binRepository.js";
 vi.mock("../repositories/authRepository.js", () => {
   return {
     authRepository: {
-      findUserByEmail: vi.fn(),
-      findUserByNik: vi.fn(),
+
       findUserByPhone: vi.fn(),
       registerWargaTx: vi.fn(),
       createRefreshToken: vi.fn(),
@@ -42,8 +41,7 @@ describe("AuthService - registerWarga security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(authRepository.findUserByPhone).mockResolvedValue(null);
-    vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
-    vi.mocked(authRepository.findUserByNik).mockResolvedValue(null);
+
     vi.mocked(authRepository.findRoleByName).mockResolvedValue({ id: 1, name: "WARGA" } as any);
   });
 
@@ -68,7 +66,7 @@ describe("AuthService - registerWarga security", () => {
 
     await expect(
       authService.registerWarga(
-        { email: "warga@psc.id", password: "password123", name: "Warga" },
+        { phone: "081234567890", password: "password123", name: "Warga" },
         {},
         qrCode,
         wargaSubtype,
@@ -95,11 +93,11 @@ describe("AuthService - registerWarga security", () => {
 
     vi.mocked(binRepository.findByQrCode).mockResolvedValue(mockBin as any);
     vi.mocked(binRepository.findQrBatchById).mockResolvedValue(mockBatch as any);
-    vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
+
     vi.mocked(authRepository.registerWargaTx).mockResolvedValue({ id: "warga-1" } as any);
 
     const result = await authService.registerWarga(
-      { email: "warga@psc.id", password: "password123", name: "Warga" },
+      { phone: "081234567890", password: "password123", name: "Warga" },
       {},
       qrCode,
       wargaSubtype,
@@ -116,7 +114,7 @@ describe("AuthService - registerWarga security", () => {
       user: {
         id: "warga-1",
         name: undefined,
-        email: undefined,
+
         phone: undefined,
         role: "WARGA",
         rtRwId: undefined,

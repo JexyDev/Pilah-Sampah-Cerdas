@@ -99,9 +99,9 @@ describe("Portals A & B Service Integration Tests", () => {
       const result = await authService.registerWarga(
         {
           name: "Warga Test KKN",
-          email: citizenEmail,
+
           phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
-          nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
+
           password: "password123",
           rtRwId: rtRwArea.id,
           address: "Jl. Dago Giri No. 12",
@@ -119,7 +119,7 @@ describe("Portals A & B Service Integration Tests", () => {
       citizenUser = result.user;
 
       expect(result).toHaveProperty("user");
-      expect(result.user.email).toBe(citizenEmail);
+
 
       // Verify bin is now active
       const updatedBin = await prisma.bin.findUnique({
