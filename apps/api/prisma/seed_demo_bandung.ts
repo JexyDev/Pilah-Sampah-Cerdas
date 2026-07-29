@@ -101,6 +101,32 @@ async function main() {
     });
   };
 
+  const adminSeeds = [
+    { phone: "+628111111111", email: "superadmin@psc.id", name: "Super Admin TrashCare", role: "Super Admin", nik: "3273010000000001", rtRwId: null },
+    { phone: "+628111111112", email: "admin@psc.id", name: "Admin DLH Bandung", role: "Admin Kelurahan", nik: "3273010000000002", rtRwId: null },
+    { phone: "+628111111113", email: "camat@psc.id", name: "Camat Coblong", role: "Admin Kecamatan", nik: "3273010000000003", rtRwId: null },
+    { phone: "+628111111114", email: "lurah@psc.id", name: "Lurah Dago", role: "Admin Kelurahan", nik: "3273010000000004", rtRwId: null },
+    { phone: "+628111111115", email: "rw@psc.id", name: "Asep RW 01", role: "RW", nik: "3273010000000005", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null },
+    { phone: "+628111111116", email: "rt@psc.id", name: "Bambang RT 01", role: "RT", nik: "3273010000000006", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null }
+  ];
+
+  for (const admin of adminSeeds) {
+    await prisma.user.upsert({
+      where: { phone: admin.phone },
+      update: {},
+      create: {
+        name: admin.name,
+        phone: admin.phone,
+        email: admin.email,
+        password: passwordHash,
+        roleId: roleMap.get(admin.role)!,
+        address: 'Jl. Balai Kota',
+        status: 'Aktif',
+        rtRwId: admin.rtRwId
+      }
+    });
+  }
+
   const normalNames = [
     'Asep Sunandar', 'Budi Santoso', 'Cecep Hidayat', 'Dadang Suherman', 'Entis Sutisna',
     'Fajar Sidiq', 'Gilang Ramadhan', 'Hendra Setiawan', 'Iwan Fals', 'Jajang Nurjaman',
