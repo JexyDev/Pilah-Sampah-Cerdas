@@ -23,8 +23,8 @@ async function main() {
 
   // 1. Setup Roles
   const roles = [
-    'Warga', 'RT', 'RW', 'Petugas Residu', 'Pengangkut', 
-    'Mahasiswa', 'DPL', 'Admin Kelurahan', 'Admin Kecamatan', 'Super Admin'
+    'WARGA', 'RT', 'RW', 'PETUGAS_RESIDU', 'PENGANGKUT', 
+    'MAHASISWA_KKN', 'DPL', 'ADMIN_KELURAH', 'ADMIN_KECAMATAN', 'SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH'
   ];
   const roleMap = new Map<string, number>();
   for (const r of roles) {
@@ -102,10 +102,10 @@ async function main() {
   };
 
   const adminSeeds = [
-    { phone: "+628111111111", email: "superadmin@psc.id", name: "Super Admin TrashCare", role: "Super Admin", nik: "3273010000000001", rtRwId: null },
-    { phone: "+628111111112", email: "admin@psc.id", name: "Admin DLH Bandung", role: "Admin Kelurahan", nik: "3273010000000002", rtRwId: null },
-    { phone: "+628111111113", email: "camat@psc.id", name: "Camat Coblong", role: "Admin Kecamatan", nik: "3273010000000003", rtRwId: null },
-    { phone: "+628111111114", email: "lurah@psc.id", name: "Lurah Dago", role: "Admin Kelurahan", nik: "3273010000000004", rtRwId: null },
+    { phone: "+628111111111", email: "superadmin@psc.id", name: "Super Admin TrashCare", role: "SUPER_ADMIN", nik: "3273010000000001", rtRwId: null },
+    { phone: "+628111111112", email: "admin@psc.id", name: "Admin DLH Bandung", role: "ADMIN_DLH", nik: "3273010000000002", rtRwId: null },
+    { phone: "+628111111113", email: "camat@psc.id", name: "Camat Coblong", role: "CAMAT", nik: "3273010000000003", rtRwId: null },
+    { phone: "+628111111114", email: "lurah@psc.id", name: "Lurah Dago", role: "LURAH", nik: "3273010000000004", rtRwId: null },
     { phone: "+628111111115", email: "rw@psc.id", name: "Asep RW 01", role: "RW", nik: "3273010000000005", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null },
     { phone: "+628111111116", email: "rt@psc.id", name: "Bambang RT 01", role: "RT", nik: "3273010000000006", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null }
   ];
@@ -158,14 +158,14 @@ async function main() {
         phoneCounter++;
         const currentName = normalNames[nameIdx % normalNames.length];
         nameIdx++;
-        const w = await createUser(currentName, `081200${phoneCounter}`, 'Warga', rtRw.id);
+        const w = await createUser(currentName, `081200${phoneCounter}`, 'WARGA', rtRw.id);
         allWarga.push({ user: w, rtRw });
     }
     
     phoneCounter++;
     const currentPetugas = petugasNames[petugasIdx % petugasNames.length];
     petugasIdx++;
-    const p = await createUser(currentPetugas, `081200${phoneCounter}`, 'Petugas Residu', rtRw.id);
+    const p = await createUser(currentPetugas, `081200${phoneCounter}`, 'PETUGAS_RESIDU', rtRw.id);
     await prisma.petugasResidu.create({
         data: {
             userId: p.id,
@@ -181,7 +181,7 @@ async function main() {
         phoneCounter++;
         const currentMhs = mhsNames[mhsIdx % mhsNames.length];
         mhsIdx++;
-        const mhs = await createUser(currentMhs, `081200${phoneCounter}`, 'Mahasiswa', rtRw.id);
+        const mhs = await createUser(currentMhs, `081200${phoneCounter}`, 'MAHASISWA_KKN', rtRw.id);
         const kkn = await prisma.studentKkn.upsert({
             where: { nim: `NIM${phoneCounter}` },
             update: {},
