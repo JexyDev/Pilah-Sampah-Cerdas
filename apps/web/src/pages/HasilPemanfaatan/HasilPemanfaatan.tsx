@@ -250,17 +250,17 @@ export const HasilPemanfaatan: React.FC = () => {
                   const val = programTotals[progName];
                   const heightPercent = (val / maxVal) * 100;
                   return (
-                    <div key={progName} className="flex flex-col items-center group relative w-24">
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-all duration-150 bg-gray-800 text-white text-[10px] font-bold py-1.5 px-2.5 rounded-lg shadow-md whitespace-nowrap z-10">
-                        {val.toFixed(1)} Kg
-                      </div>
-
+                    <div key={progName} className="flex flex-col justify-end items-center relative w-24 h-full">
                       {/* Bar */}
                       <div
-                        className="w-10 bg-gradient-to-t from-primary to-emerald-400 rounded-t-xl hover:opacity-95 transition-all duration-300 shadow-sm shadow-primary/10 cursor-pointer"
+                        className="group w-10 relative bg-gradient-to-t from-primary to-emerald-400 rounded-t-xl hover:opacity-95 transition-all duration-300 shadow-sm shadow-primary/10 cursor-pointer flex justify-center"
                         style={{ height: `${heightPercent}%`, minHeight: "4px" }}
-                      />
+                      >
+                        {/* Tooltip on hover */}
+                        <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-all duration-150 bg-gray-800 text-white text-[10px] font-bold py-1.5 px-2.5 rounded-lg shadow-md whitespace-nowrap z-10 pointer-events-none">
+                          {val.toFixed(1)} Kg
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
