@@ -72,18 +72,23 @@ export class KknAttendanceService {
   }
 
   /**
-   * Save student's current location and perform auto-cleanup of logs older than 24h.
+   * Save student's current locations in batch and perform auto-cleanup of logs older than 24h.
    * If student is inside active activity radius, trigger auto-attendance.
    */
-  async updateStudentLocation(studentId: string, latitude: number, longitude: number) {
-    // 1. Save new location
-    const location = await prisma.studentLocation.create({
-      data: {
-        studentId,
-        latitude,
-        longitude,
-      },
-    });
+  async updateStudentLocationsBatch(studentId: string, locations: { latitude: number; longitude: number; timestamp?: string }[]) {
+    const savedLocations = [];
+    for (const loc of locations) {
+      // 1. Save new location
+      const location = await prisma.studentLocation.create({
+        data: {
+          studentId,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          recordedAt: loc.timestamp ? new Date(loc.timestamp) : new Date(),
+        },
+      });
+      savedLocations.push(location);
+    }
 
     // 2. Cleanup older than 24 hours
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -96,7 +101,13 @@ export class KknAttendanceService {
       },
     });
 
-    // 3. Auto-attendance check:
+    // 3. Auto-attendance check using the latest location from batch
+    const latestLoc = savedLocations[savedLocations.length - 1];
+    if (!latestLoc) return { locations: [], autoAttendanceTriggered: [] };
+
+    const latitude = Number(latestLoc.latitude);
+    const longitude = Number(latestLoc.longitude);
+
     // Find active schedule for today (overlapping with date)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -168,7 +179,7 @@ export class KknAttendanceService {
     }
 
     return {
-      location,
+      locations: savedLocations,
       autoAttendanceTriggered: triggerResults,
     };
   }

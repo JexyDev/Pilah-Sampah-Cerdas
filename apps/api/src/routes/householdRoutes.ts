@@ -86,7 +86,7 @@ router.get("/me", authMiddleware, householdController.getMyHouseholds);
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"]),
   householdController.getAllHouseholds
 );
 

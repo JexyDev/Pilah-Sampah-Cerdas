@@ -106,13 +106,13 @@ export class KknController {
   async activateBin(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const { wargaId, binOrganikId, binAnorganikId } = req.body;
+      const { wargaId, binOrganikId, binAnorganikId, latitude, longitude } = req.body;
       
-      if (!wargaId || !binOrganikId || !binAnorganikId) {
-        return res.status(400).json({ success: false, message: "Missing required fields" });
+      if (!wargaId || !binOrganikId || !binAnorganikId || latitude == null || longitude == null) {
+        return res.status(400).json({ success: false, message: "Missing required fields (wargaId, binOrganikId, binAnorganikId, latitude, longitude)" });
       }
 
-      await kknService.activateWargaBin(wargaId, binOrganikId, binAnorganikId, kknUserId);
+      await kknService.activateWargaBin(wargaId, binOrganikId, binAnorganikId, latitude, longitude, kknUserId);
       res.status(200).json({ success: true, message: "Bin activated successfully" });
     } catch (error: any) {
       console.error("[KknController] activateBin error:", error);
