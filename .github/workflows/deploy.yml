@@ -24,8 +24,8 @@ jobs:
             cd apps/api
             npm install
             npm run build
-            npx prisma db push --accept-data-loss
-            npx tsx prisma/seed_demo_bandung.ts
+            npx prisma db push --force-reset --accept-data-loss
+            npx prisma db seed
             cd ../..
 
             # Frontend
