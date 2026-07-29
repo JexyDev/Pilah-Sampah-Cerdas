@@ -372,7 +372,7 @@ const MonitoringAbsen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.date || !formData.category) {
+    if (!formData.title || !formData.date) {
       toast.error("Harap isi semua field wajib");
       return;
     }
