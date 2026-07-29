@@ -19,7 +19,10 @@ export class SuperAdminService {
     }
 
     // Find latest waste log
-    const latestLog = bin.wasteLogs && bin.wasteLogs.length > 0 ? bin.wasteLogs[0].createdAt : null;
+    const latestLog =
+      bin.setoranOtomatis && bin.setoranOtomatis.length > 0
+        ? bin.setoranOtomatis[0].createdAt
+        : null;
 
     // Find latest approved reactivation request
     const approvedResets = bin.binResetRequests
@@ -54,7 +57,7 @@ export class SuperAdminService {
       include: {
         user: true,
         rtRw: { include: { kelurahan: true } },
-        wasteLogs: {
+        setoranOtomatis: {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
@@ -64,10 +67,11 @@ export class SuperAdminService {
       },
     });
 
-    const inactiveBins = bins.filter((b) => this.getBinDynamicStatus(b) === "INACTIVE");
+    const inactiveBins = bins.filter((b: any) => this.getBinDynamicStatus(b) === "INACTIVE");
 
-    return inactiveBins.map((b) => {
-      const lastLog = b.wasteLogs && b.wasteLogs.length > 0 ? b.wasteLogs[0].createdAt : null;
+    return inactiveBins.map((b: any) => {
+      const lastLog =
+        b.setoranOtomatis && b.setoranOtomatis.length > 0 ? b.setoranOtomatis[0].createdAt : null;
       const latestRequest =
         b.binResetRequests && b.binResetRequests.length > 0 ? b.binResetRequests[0] : null;
 
@@ -238,6 +242,7 @@ export class SuperAdminService {
         rtRw: { include: { kelurahan: true } },
         qrBatch: true,
         user: true,
+        category: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -370,59 +375,59 @@ export class SuperAdminService {
    */
   async getAggregatedDashboard() {
     // 1. komposisi sampah (3 garis tren)
-    const logs = await prisma.wasteLog.findMany({
-      include: { category: true },
+    const logs = await prisma.setoranOtomatis.findMany({
       orderBy: { createdAt: "desc" },
     });
 
-    // Group by category and week/month
+    const residuLogs = await prisma.setoranManual.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
     const weeklyData: any = {};
-    logs.forEach((l) => {
+    logs.forEach((l: any) => {
       const week = `W${Math.ceil(l.createdAt.getDate() / 7)}`;
       const key = `${l.createdAt.getFullYear()}-${l.createdAt.getMonth() + 1}-${week}`;
       if (!weeklyData[key]) {
         weeklyData[key] = { organic: 0, nonOrganic: 0, B3: 0, residu: 0 };
       }
-      const weight = Number(l.weightKg);
-      if (l.category.name === "ORGANIC") {
+      const weight = Number(l.berat);
+      if (l.hasilKlasifikasiAi === "organik") {
         weeklyData[key].organic += weight;
-      } else if (l.category.name === "NON_ORGANIC") {
+      } else {
         weeklyData[key].nonOrganic += weight;
-      } else if (l.category.name === "B3") {
-        weeklyData[key].B3 += weight;
       }
-      if (l.actualWeightPetugas) {
-        weeklyData[key].residu += Number(l.actualWeightPetugas);
+    });
+
+    residuLogs.forEach((l: any) => {
+      const week = `W${Math.ceil(l.createdAt.getDate() / 7)}`;
+      const key = `${l.createdAt.getFullYear()}-${l.createdAt.getMonth() + 1}-${week}`;
+      if (!weeklyData[key]) {
+        weeklyData[key] = { organic: 0, nonOrganic: 0, B3: 0, residu: 0 };
       }
+      weeklyData[key].residu += Number(l.berat);
     });
 
     // 2. Heatmap kepatuhan: median per wilayah
     const users = await prisma.user.findMany({
       where: { role: { name: "WARGA" } },
       include: {
-        households: {
-          include: {
-            rtRw: { include: { kelurahan: true } },
-            wasteLogs: true,
-          },
-        },
+        rtRw: { include: { kelurahan: true } },
+        setoranOtomatis: true,
       },
     });
 
-    // Calculate compliance score for each citizen
     const regionScores: any = {};
-    users.forEach((u) => {
-      if (u.households.length === 0) return;
-      const h = u.households[0];
-      const rtRwName = `${h.rtRw.name} (Kel. ${h.rtRw.kelurahan.name})`;
+    users.forEach((u: any) => {
+      if (!u.rtRw) return;
+      const rtRwName = `${u.rtRw.name} (Kel. ${u.rtRw.kelurahan.name})`;
 
-      const totalLogs = h.wasteLogs.length;
+      const totalLogs = u.setoranOtomatis.length;
       if (totalLogs === 0) return;
 
-      // Mock calculation for demo purposes: OnTimeSubmissionRate = 0.8, Avg AI Confidence = 0.95
       const onTimeRate = 0.85;
       const rawAvgConf =
-        h.wasteLogs.reduce((sum, l) => sum + Number(l.aiConfidence || 0), 0) / totalLogs;
+        u.setoranOtomatis.reduce((sum: number, l: any) => sum + Number(l.confidenceAi || 0), 0) /
+        totalLogs;
       const avgConfidence = rawAvgConf > 1 ? rawAvgConf / 100 : rawAvgConf;
       const score = 0.5 * onTimeRate + 0.5 * avgConfidence;
 
@@ -450,12 +455,14 @@ export class SuperAdminService {
 
     // 4. Agregasi Berat Sampah per Kelurahan (Median)
     const kelurahanWeights: Record<string, number[]> = {};
-    users.forEach((u) => {
-      if (u.households.length === 0) return;
-      const h = u.households[0];
-      const kelurahanName = h.rtRw.kelurahan.name;
+    users.forEach((u: any) => {
+      if (!u.rtRw) return;
+      const kelurahanName = u.rtRw.kelurahan.name;
 
-      const totalWeight = h.wasteLogs.reduce((sum, l) => sum + Number(l.weightKg), 0);
+      const totalWeight = u.setoranOtomatis.reduce(
+        (sum: number, l: any) => sum + Number(l.berat),
+        0
+      );
       if (totalWeight > 0) {
         if (!kelurahanWeights[kelurahanName]) {
           kelurahanWeights[kelurahanName] = [];

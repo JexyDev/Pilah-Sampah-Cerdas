@@ -27,7 +27,8 @@ describe("Portals A & B Service Integration Tests", () => {
     await prisma.pointHistory.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.violation.deleteMany({});
-    await prisma.wasteLog.deleteMany({});
+    await prisma.setoranOtomatis.deleteMany({});
+    await prisma.setoranManual.deleteMany({});
     await prisma.bin.deleteMany({});
     await prisma.household.deleteMany({});
     await prisma.user.deleteMany({ where: { role: { name: "WARGA" } } });
@@ -88,9 +89,9 @@ describe("Portals A & B Service Integration Tests", () => {
   describe("Portal A — KKN Service", () => {
     it("should fetch dashboard stats correctly", async () => {
       const stats = await kknService.getDashboardStats(kknUser.id);
-      expect(stats).toHaveProperty("studentKkn");
-      expect(stats).toHaveProperty("stats");
-      expect(stats.stats.totalRegistered).toBeTypeOf("number");
+      expect(stats).toHaveProperty("nim");
+      expect(stats).toHaveProperty("totalRegisteredBins");
+      expect(stats.totalRegisteredBins).toBeTypeOf("number");
     });
 
     it("should register citizen, bind bin, and reward points", async () => {

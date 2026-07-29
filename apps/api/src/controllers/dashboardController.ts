@@ -11,8 +11,8 @@ import { dashboardService } from "../services/dashboardService.js";
 export const dashboardController = {
   getKpi: async (req: Request, res: Response) => {
     try {
-      const { wilayah } = req.query;
-      const kpi = await dashboardService.getKpi(wilayah as string);
+      const { wilayah, period } = req.query;
+      const kpi = await dashboardService.getKpi(wilayah as string, period as string);
       res.status(200).json({
         success: true,
         data: kpi,

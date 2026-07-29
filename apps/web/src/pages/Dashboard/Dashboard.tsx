@@ -1196,7 +1196,7 @@ const WargaDashboard: React.FC = () => {
                         <tr className="bg-slate-100 text-on-surface-variant border-b border-outline-variant/40">
                           <th className="p-3 font-bold">Tanggal</th>
                           <th className="p-3 font-bold">Kategori</th>
-                          <th className="p-3 font-bold">Berat</th>
+                          <th className="p-3 font-bold">Berat (Kg)</th>
                           <th className="p-3 font-bold">Estimasi Vol</th>
                           <th className="p-3 font-bold">Poin</th>
                           <th className="p-3 font-bold">Titik Tong</th>
@@ -1223,7 +1223,7 @@ const WargaDashboard: React.FC = () => {
                                 {log.jenis === "ORGANIC" ? "Organik" : "Anorganik"}
                               </span>
                             </td>
-                            <td className="p-3 font-bold">{log.berat} Kg</td>
+                            <td className="p-3 font-bold">{log.berat}</td>
                             <td className="p-3 font-medium text-slate-500">{log.volume}</td>
                             <td className="p-3 font-extrabold text-primary">+{log.poin} Pts</td>
                             <td className="p-3 font-mono font-bold text-slate-600">
@@ -1340,7 +1340,14 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"kkn" | "warga" | "petugas">("kkn");
   const [monitoringSearch, setMonitoringSearch] = useState("");
   const [monitoringSort, setMonitoringSort] = useState<"asc" | "desc">("asc");
+  const [monitoringPage, setMonitoringPage] = useState(1);
+  const monitoringItemsPerPage = 5;
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
+  const [timeFilter, setTimeFilter] = useState("semua"); // harian, mingguan, bulanan, tahunan, semua
+
+  useEffect(() => {
+    setMonitoringPage(1);
+  }, [activeTab, monitoringSearch]);
 
   // Dynamic features states
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -1364,7 +1371,7 @@ const Dashboard: React.FC = () => {
       try {
         setError("");
         const response = await api.get("/dashboard/kpi", {
-          params: { wilayah: user?.wilayah },
+          params: { wilayah: user?.wilayah, period: timeFilter },
         });
         const kpi = response.data?.data ?? response.data;
         if (!kpi) {
@@ -1383,9 +1390,9 @@ const Dashboard: React.FC = () => {
         // Memetakan data riil dari backend ke UI
         setStats({
           totalPengguna: {
-            value: kpi.totalUsers ?? kpi.totalWarga ?? 0,
+            value: kpi.totalUsers ?? 0,
             trend: "+0",
-            trendLabel: "Bulan ini",
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
           tempatSampahAktif: {
@@ -1397,12 +1404,12 @@ const Dashboard: React.FC = () => {
           lokasiTerdaftar: {
             value: kpi.lokasiTerdaftar ?? 0,
             trend: "+0",
-            trendLabel: "Bulan ini",
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
           setoranHariIni: {
             value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(1)} Kg`,
-            trend: "Hari ini",
+            trend: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
             trendLabel: "",
             trendUp: true,
           },
@@ -1412,10 +1419,15 @@ const Dashboard: React.FC = () => {
                 ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(1)}K`
                 : Number(kpi.totalPoin ?? 0).toLocaleString(),
             trend: "+0",
-            trendLabel: "Bulan ini",
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
-          jadwalMingguIni: { value: 8, trend: "2", trendLabel: "Selesai", trendUp: true },
+          jadwalMingguIni: { 
+            value: kpi.jadwalSelesai ?? 0, 
+            trend: `${kpi.jadwalTotal ?? 0}`, 
+            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`, 
+            trendUp: true 
+          },
           komposisiSampah: {
             organik: { berat: `${organikKg.toFixed(1)} Kg`, persentase: `${pctOrganik}%` },
             anorganik: { berat: `${anorganikKg.toFixed(1)} Kg`, persentase: `${pctAnorganik}%` },
@@ -1489,7 +1501,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, [user, weeks]);
+  }, [user, weeks, timeFilter]);
 
   if (loading) {
     return (
@@ -1629,17 +1641,51 @@ const Dashboard: React.FC = () => {
     return result;
   };
 
-  kknStudents = applySearchAndSort(kknStudents);
-  wargaList = applySearchAndSort(wargaList);
-  petugasList = applySearchAndSort(petugasList);
+  const totalMonitoringKkn = kknStudents.length;
+  const totalMonitoringWarga = wargaList.length;
+  const totalMonitoringPetugas = petugasList.length;
+
+  kknStudents = applySearchAndSort(kknStudents).slice(
+    (monitoringPage - 1) * monitoringItemsPerPage,
+    monitoringPage * monitoringItemsPerPage
+  );
+  wargaList = applySearchAndSort(wargaList).slice(
+    (monitoringPage - 1) * monitoringItemsPerPage,
+    monitoringPage * monitoringItemsPerPage
+  );
+  petugasList = applySearchAndSort(petugasList).slice(
+    (monitoringPage - 1) * monitoringItemsPerPage,
+    monitoringPage * monitoringItemsPerPage
+  );
+
+  const getActiveTotalPages = () => {
+    if (activeTab === "kkn") return Math.ceil(totalMonitoringKkn / monitoringItemsPerPage);
+    if (activeTab === "warga") return Math.ceil(totalMonitoringWarga / monitoringItemsPerPage);
+    return Math.ceil(totalMonitoringPetugas / monitoringItemsPerPage);
+  };
 
 
-  if (user?.peran === "RW") {
+  if (user?.peran === "RW" || user?.peran === "RT") {
     return <RwDashboard />;
   }
 
   return (
     <div className="space-y-gutter pb-12 text-on-surface">
+      {/* === Time Filter === */}
+      <div className="flex justify-end mb-4">
+        <select
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+          className="bg-white border border-outline-variant/30 text-[12px] font-bold text-on-surface px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="semua">Semua Waktu</option>
+          <option value="harian">Harian (Hari Ini)</option>
+          <option value="mingguan">Mingguan (Minggu Ini)</option>
+          <option value="bulanan">Bulanan (Bulan Ini)</option>
+          <option value="tahunan">Tahunan (Tahun Ini)</option>
+        </select>
+      </div>
+
       {/* === KPI Section (6 Cards) === */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-gutter">
         <KpiCard
@@ -1679,7 +1725,13 @@ const Dashboard: React.FC = () => {
           iconName="shopping_bag"
           iconBg="bg-amber-100"
           iconColor="text-amber-600"
-          label="Setoran Hari Ini"
+          label={
+            timeFilter === "harian" ? "Setoran Hari Ini" :
+            timeFilter === "mingguan" ? "Setoran Minggu Ini" :
+            timeFilter === "bulanan" ? "Setoran Bulan Ini" :
+            timeFilter === "tahunan" ? "Setoran Tahun Ini" :
+            "Total Setoran"
+          }
           value={stats?.setoranHariIni?.value}
           trend={stats?.setoranHariIni?.trend}
           trendLabel={stats?.setoranHariIni?.trendLabel}
@@ -1697,10 +1749,16 @@ const Dashboard: React.FC = () => {
           linkTo="/poin-warga"
         />
         <KpiCard
-          iconName="calendar_month"
-          iconBg="bg-emerald-100"
-          iconColor="text-emerald-600"
-          label="Jadwal Minggu Ini"
+          iconName="event_available"
+          iconBg="bg-teal-100"
+          iconColor="text-teal-600"
+          label={
+            timeFilter === "harian" ? "Jadwal Hari Ini" :
+            timeFilter === "mingguan" ? "Jadwal Minggu Ini" :
+            timeFilter === "bulanan" ? "Jadwal Bulan Ini" :
+            timeFilter === "tahunan" ? "Jadwal Tahun Ini" :
+            "Total Jadwal"
+          }
           value={stats?.jadwalMingguIni?.value}
           trend={stats?.jadwalMingguIni?.trend}
           trendLabel={stats?.jadwalMingguIni?.trendLabel}
@@ -1833,17 +1891,44 @@ const Dashboard: React.FC = () => {
             <div className="w-32 h-32 relative flex items-center justify-center">
               <svg className="w-32 h-32 transform -rotate-90">
                 <circle cx="64" cy="64" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="50"
-                  fill="transparent"
-                  stroke="#10b981"
-                  strokeWidth="12"
-                  strokeDasharray={`${2 * Math.PI * 50}`}
-                  strokeDashoffset={`${2 * Math.PI * 50 * (1 - (stats?.komposisiSampah?.pctOrganik ?? 0) / 100)}`}
-                  strokeLinecap="round"
-                />
+                {(() => {
+                  const c = 2 * Math.PI * 50;
+                  const pctOrg = stats?.komposisiSampah?.pctOrganik ?? 0;
+                  // If there's no Anorganik or Residu yet in stats from backend, default to 0
+                  // We should try parsing the pct string if they exist, or using raw numbers if passed
+                  const pctAnorg = stats?.komposisiSampah?.pctAnorganik ?? 0;
+                  const pctResidu = stats?.komposisiSampah?.pctResidu ?? 0;
+                  
+                  const valOrg = (pctOrg / 100) * c;
+                  const valAnorg = (pctAnorg / 100) * c;
+                  const valResidu = (pctResidu / 100) * c;
+                  
+                  return (
+                    <>
+                      {/* Organik */}
+                      {pctOrg > 0 && (
+                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#10b981" strokeWidth="12"
+                          strokeDasharray={`${valOrg} ${c}`}
+                          strokeDashoffset={0}
+                        />
+                      )}
+                      {/* Anorganik */}
+                      {pctAnorg > 0 && (
+                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#eab308" strokeWidth="12"
+                          strokeDasharray={`${valAnorg} ${c}`}
+                          strokeDashoffset={-valOrg}
+                        />
+                      )}
+                      {/* Residu */}
+                      {pctResidu > 0 && (
+                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#ef4444" strokeWidth="12"
+                          strokeDasharray={`${valResidu} ${c}`}
+                          strokeDashoffset={-(valOrg + valAnorg)}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
               </svg>
               <div className="absolute text-center">
                 <span className="block text-[22px] font-bold text-on-surface leading-none">
@@ -1861,7 +1946,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-on-surface">Organik</span>
                 </div>
                 <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.organik?.persentase})
+                  {stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.pctOrganik ?? 0}%)
                 </span>
               </div>
               <div className="flex justify-between items-center text-[12px]">
@@ -1870,7 +1955,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-on-surface">Anorganik</span>
                 </div>
                 <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.anorganik?.persentase})
+                  {stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.pctAnorganik ?? 0}%)
                 </span>
               </div>
               <div className="flex justify-between items-center text-[12px]">
@@ -1879,7 +1964,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-on-surface">Residu</span>
                 </div>
                 <span className="text-on-surface font-bold text-red-600">
-                  {stats?.komposisiSampah?.residu?.berat || "0 Kg"} ({stats?.komposisiSampah?.residu?.persentase || "0%"})
+                  {stats?.komposisiSampah?.residu?.berat || "0 Kg"} ({stats?.komposisiSampah?.pctResidu ?? 0}%)
                 </span>
               </div>
             </div>
@@ -2275,6 +2360,31 @@ const Dashboard: React.FC = () => {
             </table>
           )}
         </div>
+
+        {/* Pagination UI */}
+        {getActiveTotalPages() > 1 && (
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-outline-variant/20">
+            <span className="text-[11px] text-slate-500 font-medium">
+              Halaman {monitoringPage} dari {getActiveTotalPages()}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={monitoringPage === 1}
+                onClick={() => setMonitoringPage((prev) => Math.max(1, prev - 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+              >
+                Sebelumnya
+              </button>
+              <button
+                disabled={monitoringPage === getActiveTotalPages()}
+                onClick={() => setMonitoringPage((prev) => Math.min(getActiveTotalPages(), prev + 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* === Footer === */}

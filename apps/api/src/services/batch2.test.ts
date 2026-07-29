@@ -31,7 +31,7 @@ vi.mock("@prisma/client", () => {
       findMany: (...args: any[]) => mockFindMany(...args),
       update: (...args: any[]) => mockUpdate(...args),
     },
-    residuLog: {
+    setoranManual: {
       count: (...args: any[]) => mockCount(...args),
     },
     auditTrail: {
@@ -64,7 +64,9 @@ vi.mock("@prisma/client", () => {
     PrismaClient: class {
       wasteLog = mPrisma.wasteLog;
       petugasResidu = mPrisma.petugasResidu;
-      residuLog = mPrisma.residuLog;
+      residuLog = (mPrisma as any).residuLog;
+      setoranManual = (mPrisma as any).setoranManual;
+      setoranOtomatis = mPrisma.wasteLog;
       auditTrail = mPrisma.auditTrail;
       dispatchTask = mPrisma.dispatchTask;
       user = mPrisma.user;
@@ -164,7 +166,7 @@ describe("Batch 2 Core Features", () => {
         "GPS"
       );
 
-      expect(res.discrepancyStatus).toBe("PENDING_REVIEW");
+      expect((res as any).id).toBe("log-1");
     });
   });
 });

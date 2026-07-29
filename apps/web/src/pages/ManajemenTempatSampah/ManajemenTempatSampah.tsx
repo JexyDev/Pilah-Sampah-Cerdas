@@ -695,7 +695,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     <tr className="border-b border-outline-variant/50 text-on-surface-variant text-[12px] font-bold uppercase tracking-wider">
                       <th className="py-3 px-4">Tanggal & Waktu</th>
                       <th className="py-3 px-4">Pengguna</th>
-                      <th className="py-3 px-4">Berat (kg)</th>
+                      <th className="py-3 px-4">Berat (Kg)</th>
                       <th className="py-3 px-4">Volume (L)</th>
                       <th className="py-3 px-4">Poin</th>
                       <th className="py-3 px-4">Jenis</th>

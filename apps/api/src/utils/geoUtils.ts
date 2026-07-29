@@ -16,11 +16,14 @@ export interface Point {
 export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   let isInside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].lat, yi = polygon[i].lng;
-    const xj = polygon[j].lat, yj = polygon[j].lng;
+    const xi = polygon[i].lat,
+      yi = polygon[i].lng;
+    const xj = polygon[j].lat,
+      yj = polygon[j].lng;
 
-    const intersect = ((yi > point.lng) !== (yj > point.lng))
-        && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
+    const intersect =
+      yi > point.lng !== yj > point.lng &&
+      point.lat < ((xj - xi) * (point.lng - yi)) / (yj - yi) + xi;
     if (intersect) isInside = !isInside;
   }
   return isInside;
@@ -38,8 +41,7 @@ export function getDistanceInMeters(p1: Point, p2: Point): number {
 
   const a =
     Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) *
-    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
@@ -51,8 +53,8 @@ export function getDistanceInMeters(p1: Point, p2: Point): number {
 export function convexHull(points: Point[]): Point[] {
   if (points.length <= 3) return points;
 
-  const sorted = [...points].sort((a, b) => a.lat === b.lat ? a.lng - b.lng : a.lat - b.lat);
-  
+  const sorted = [...points].sort((a, b) => (a.lat === b.lat ? a.lng - b.lng : a.lat - b.lat));
+
   const cross = (o: Point, a: Point, b: Point) => {
     return (a.lat - o.lat) * (b.lng - o.lng) - (a.lng - o.lng) * (b.lat - o.lat);
   };

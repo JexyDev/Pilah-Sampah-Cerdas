@@ -303,8 +303,6 @@ router.post(
   binController.registerWargaBin
 );
 
-router.post("/activate", authMiddleware, roleMiddleware(["WARGA"]), binController.registerWargaBin);
-
 router.post(
   "/reset",
   authMiddleware,

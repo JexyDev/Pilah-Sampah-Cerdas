@@ -146,11 +146,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/residu-portal" icon={Shield} label="Portal Pengawasan" />
         )}
 
-        {hasAccess(["RW"]) && (
+        {hasAccess(["RW", "RT"]) && (
           <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
         )}
 
-        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]) && (
+        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]) && (
           <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
         )}
 
@@ -175,17 +175,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && (
           <NavItem to="/manajemen-tempat-sampah" icon={Trash2} label="Manajemen Tempat Sampah" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/manajemen-lokasi" icon={MapPin} label="Manajemen Lokasi" />
         )}
 
-        {hasAccess(["RW"]) && (
+        {hasAccess(["RW", "RT"]) && (
           <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
         )}
 
@@ -194,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/monitoring-absen" icon={Compass} label="Monitoring Absen KKN" />
         )}
 
@@ -204,11 +205,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />
         )}
 
@@ -229,6 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
           "WARGA",

@@ -69,8 +69,6 @@ const router = Router();
  */
 router.post("/login", loginRateLimiter, authController.login);
 
-
-
 /**
  * @swagger
  * /api/v1/auth/refresh:

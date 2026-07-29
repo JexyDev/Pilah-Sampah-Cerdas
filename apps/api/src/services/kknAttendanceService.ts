@@ -29,17 +29,17 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 export class KknAttendanceService {
   async pingLocation(userId: string, latitude: number, longitude: number) {
     const student = await prisma.studentKkn.findUnique({
-      where: { userId }
+      where: { userId },
     });
     if (!student) throw new Error("STUDENT_NOT_FOUND");
-    
+
     // Simpan lokasi
     await prisma.studentLocation.create({
       data: {
         studentId: userId,
         latitude,
-        longitude
-      }
+        longitude,
+      },
     });
 
     // Cek durasi di zona
@@ -53,20 +53,20 @@ export class KknAttendanceService {
       where: { registeredByStudentId: userId },
       include: {
         user: {
-          include: { households: true }
+          include: { households: true },
         },
-        wasteLogs: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
-      }
+        setoranOtomatis: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+      },
     });
 
-    return bins.map(b => ({
+    return bins.map((b: any) => ({
       binId: b.id,
       wargaName: b.user?.name || "Unknown",
       address: b.user?.households?.[0]?.address || "-",
-      recentLogs: b.wasteLogs
+      recentLogs: b.setoranOtomatis,
     }));
   }
 
@@ -240,16 +240,16 @@ export class KknAttendanceService {
         if (existing.checkOutAt) {
           throw new Error("ALREADY_ATTENDED_AND_CHECKED_OUT");
         }
-        
+
         // This is a checkout
         const record = await tx.activityAttendance.update({
           where: { id: existing.id },
           data: {
             checkOutAt: new Date(),
-            status: "LEPAS_RADIUS"
-          }
+            status: "LEPAS_RADIUS",
+          },
         });
-        
+
         return record;
       }
 

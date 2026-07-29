@@ -99,8 +99,8 @@ export class BinService {
     }
 
     // Check if the bin has been inactive for > 30 days
-    const lastLog = await prisma.wasteLog.findFirst({
-      where: { binId: bin.id },
+    const lastLog = await prisma.setoranOtomatis.findFirst({
+      where: { qrTempatSampahId: bin.id },
       orderBy: { createdAt: "desc" },
     });
     const thirtyDaysAgo = new Date();
@@ -208,10 +208,10 @@ export class BinService {
             if (targetBin.latitude && targetBin.longitude) {
               const petugas = await prisma.user.findMany({
                 where: { role: { name: "PETUGAS_RESIDU" }, status: "ACTIVE" },
-                select: { id: true, petugasProfile: true }
+                select: { id: true, petugasProfile: true },
               });
               let minDist = Infinity;
-              
+
               const { getDistanceInMeters } = await import("../utils/geoUtils.js");
               for (const p of petugas) {
                 const lat = p.petugasProfile?.latitude;
@@ -237,7 +237,7 @@ export class BinService {
               data: {
                 binId: targetBin.id,
                 status: status as any,
-                claimedByUserId: assignedUserId
+                claimedByUserId: assignedUserId,
               },
             });
 
@@ -328,7 +328,7 @@ export class BinService {
         totalPointsAwarded += calculatedPoints;
 
         results.push({
-          wasteLogId: result.wasteLog.id,
+          wasteLogId: result.setoranOtomatis.id,
           category: targetBin.category?.name || "Umum",
           weightKg,
           volumeLiter: vol,
@@ -459,7 +459,7 @@ export class BinService {
     const pointsPerKg = bin.category.pointsPerKg || 10;
     const conf = aiConfidence || 1.0;
     const maxPoints = Math.round(weightKg * pointsPerKg * multiplier);
-    
+
     let calculatedPoints = 0;
     if (conf >= 0.9) {
       calculatedPoints = Math.round(maxPoints * (0.9 * conf));
@@ -499,7 +499,7 @@ export class BinService {
     }
 
     return {
-      wasteLogId: result.wasteLog.id,
+      wasteLogId: result.setoranOtomatis.id,
       weightKg,
       volumeLiter: estimatedVolume,
       pointsAwarded: calculatedPoints,
@@ -519,8 +519,8 @@ export class BinService {
 
     let realStatus = bin.status;
     if (realStatus === "ACTIVE_BOUND" || realStatus === "PENDING_APPROVAL") {
-      const lastLog = await prisma.wasteLog.findFirst({
-        where: { binId: bin.id },
+      const lastLog = await prisma.setoranOtomatis.findFirst({
+        where: { qrTempatSampahId: bin.id },
         orderBy: { createdAt: "desc" },
       });
 
@@ -774,14 +774,22 @@ export class BinService {
     return binRepository.createArea(name, kelurahanId, latitude, longitude);
   }
 
-  async updateArea(id: number, name: string, kelurahanId: string, latitude?: number, longitude?: number) {
+  async updateArea(
+    id: number,
+    name: string,
+    kelurahanId: string,
+    latitude?: number,
+    longitude?: number
+  ) {
     return binRepository.updateArea(id, name, kelurahanId, latitude, longitude);
   }
 
   async deleteArea(id: number) {
     const relationCount = await binRepository.countAreaRelations(id);
     if (relationCount > 0) {
-      throw new Error(`Lokasi tidak dapat dihapus karena memiliki ${relationCount} entitas terkait (Warga/Tempat Sampah).`);
+      throw new Error(
+        `Lokasi tidak dapat dihapus karena memiliki ${relationCount} entitas terkait (Warga/Tempat Sampah).`
+      );
     }
     return binRepository.deleteArea(id);
   }
@@ -791,19 +799,19 @@ export class BinService {
 
     // Fetch last waste log for these bins to determine 30-day inactivity
     const binIds = bins.map((b: any) => b.id);
-    const lastLogs = await prisma.wasteLog.groupBy({
-      by: ["binId"],
+    const lastLogs = await prisma.setoranOtomatis.groupBy({
+      by: ["qrTempatSampahId"],
       _max: {
         createdAt: true,
       },
       where: {
-        binId: { in: binIds },
+        qrTempatSampahId: { in: binIds },
       },
     });
 
     const lastLogMap = new Map();
-    lastLogs.forEach((log) => {
-      lastLogMap.set(log.binId, log._max.createdAt);
+    lastLogs.forEach((log: any) => {
+      lastLogMap.set(log.qrTempatSampahId, log._max.createdAt);
     });
 
     const thirtyDaysAgo = new Date();

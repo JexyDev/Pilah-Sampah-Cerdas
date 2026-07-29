@@ -5,7 +5,6 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
 import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
@@ -104,7 +103,6 @@ export class AuthService {
     await authRepository.deleteRefreshToken(token);
   }
 
-
   /**
    * Update user profile
    */
@@ -150,9 +148,9 @@ export class AuthService {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const hasSubmittedToday = await prisma.wasteLog.findFirst({
+    const hasSubmittedToday = await prisma.setoranOtomatis.findFirst({
       where: {
-        household: { userId },
+        wargaId: userId,
         createdAt: { gte: startOfToday, lte: endOfToday },
       },
     });
@@ -169,9 +167,9 @@ export class AuthService {
       endOfYesterday.setDate(endOfYesterday.getDate() - 1);
       endOfYesterday.setHours(23, 59, 59, 999);
 
-      const hasSubmittedYesterday = await prisma.wasteLog.findFirst({
+      const hasSubmittedYesterday = await prisma.setoranOtomatis.findFirst({
         where: {
-          household: { userId },
+          wargaId: userId,
           createdAt: { gte: startOfYesterday, lte: endOfYesterday },
         },
       });
@@ -193,9 +191,9 @@ export class AuthService {
       checkDateEnd.setDate(checkDateEnd.getDate() - i);
       checkDateEnd.setHours(23, 59, 59, 999);
 
-      const logOnDay = await prisma.wasteLog.findFirst({
+      const logOnDay = await prisma.setoranOtomatis.findFirst({
         where: {
-          household: { userId },
+          wargaId: userId,
           createdAt: { gte: checkDateStart, lte: checkDateEnd },
         },
       });
@@ -452,6 +450,23 @@ export class AuthService {
       if (existingUserByNik) throw new Error("NIK_ALREADY_IN_USE");
     }
 
+    if (userData.rtRwId) {
+      const existingPetugas = await prisma.user.findFirst({
+        where: {
+          rtRwId: userData.rtRwId,
+          role: { name: "PETUGAS_RESIDU" },
+        },
+        include: {
+          rtRw: true,
+        },
+      });
+
+      if (existingPetugas) {
+        const rwName = existingPetugas.rtRw?.name || `RW ID ${userData.rtRwId}`;
+        throw new Error(`Pendaftaran Ditolak: ${rwName} sudah memiliki Petugas Residu aktif.`);
+      }
+    }
+
     return authRepository.registerPetugasResiduTx(
       {
         ...userData,
@@ -508,13 +523,12 @@ export class AuthService {
         roleId: role.id,
         dosenPembimbing: {
           create: {
-            universityId: universityId
-          }
-        }
-      }
+            universityId: universityId,
+          },
+        },
+      },
     });
   }
-
 
   /**
    * Get KKN pending list

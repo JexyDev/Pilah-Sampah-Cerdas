@@ -72,26 +72,39 @@ router.get(
   kknAttendanceController.getAttendanceList
 );
 
-
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 
-router.post('/location-ping', authMiddleware, roleMiddleware(['MAHASISWA_KKN']), async (req, res) => {
-  try {
-    const { latitude, longitude } = req.body;
-    const result = await kknAttendanceServiceInstance.pingLocation(req.user!.userId, latitude, longitude);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+router.post(
+  "/location-ping",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  async (req, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+      const result = await kknAttendanceServiceInstance.pingLocation(
+        req.user!.userId,
+        latitude,
+        longitude
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   }
-});
+);
 
-router.get('/warga-dampingan', authMiddleware, roleMiddleware(['MAHASISWA_KKN', 'SUPER_ADMIN']), async (req, res) => {
-  try {
-    const result = await kknAttendanceServiceInstance.getWargaDampingan(req.user!.userId);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+router.get(
+  "/warga-dampingan",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN"]),
+  async (req, res) => {
+    try {
+      const result = await kknAttendanceServiceInstance.getWargaDampingan(req.user!.userId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   }
-});
+);
 export default router;

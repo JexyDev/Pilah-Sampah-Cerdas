@@ -174,7 +174,9 @@ export const userController = {
     } catch (error: any) {
       console.error("Error in getOnboardingStatus:", error);
       if (error.message === "USER_NOT_FOUND") {
-        res.status(404).json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
+        res
+          .status(404)
+          .json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
       } else {
         res.status(500).json({
           success: false,

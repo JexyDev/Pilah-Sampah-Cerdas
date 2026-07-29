@@ -46,26 +46,13 @@ export class KknService {
     const contributionPoints = pointsSum._sum.points || 0;
 
     return {
-      studentKkn: {
-        nim: student.nim,
-        jurusan: student.jurusan,
-        fakultas: student.fakultas,
-        whitelistStatus: student.whitelistStatus,
-        startDate: student.startDate,
-        endDate: student.endDate,
-        assignedArea: student.assignedPolygon?.name || "Belum ditentukan",
-      },
-      stats: {
-        totalRegistered,
-        maxLimit,
-        remainingQuota,
-        progressPct,
-        contributionPoints,
-      },
+      nim: student.nim,
+      jurusan: student.jurusan,
+      totalRegisteredBins: totalRegistered,
+      contributionPoints,
+      assignmentLimit: maxLimit,
     };
   }
-
-
 
   async getRegisteredWarga(kknUserId: string, filters: { rtRwId?: number; search?: string }) {
     // We get warga whose bins belong to batches assigned to this KKN PIC
@@ -84,6 +71,7 @@ export class KknService {
             rtRw: true,
             pointHistory: true,
             wargaViolations: true,
+            setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } }
           },
         },
       },
@@ -93,22 +81,21 @@ export class KknService {
       const u = b.user;
       if (!u) return null;
 
-      // Calculate simple compliance score: base 100, deduct for violations
-      const violationsCount = u.wargaViolations.length;
-      const complianceScore = Math.max(0, 100 - violationsCount * 15);
+      const recentLogs = u.setoranOtomatis.map((log: any) => ({
+        weightKg: Number(log.berat),
+        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+        isCorrect: true // Assuming AI overrides correctly for MVP or check logic if needed
+      }));
 
       return {
-        wargaId: u.id,
-        name: u.name,
-        email: u.email,
-        phone: u.phone,
+        binId: b.qrCode,
+        wargaName: u.name,
         address: u.address,
-        rtRw: u.rtRw?.name || "Belum diset",
+        isActivated: true,
+        recentLogs,
+        // for filters
         rtRwId: u.rtRwId,
-        binCode: b.qrCode,
-        binStatus: b.status,
-        complianceScore,
-        registeredAt: b.updatedAt,
+        binCode: b.qrCode
       };
     });
 
@@ -122,7 +109,7 @@ export class KknService {
     if (filters.search) {
       const s = filters.search.toLowerCase();
       result = result.filter(
-        (item) => item.name.toLowerCase().includes(s) || item.binCode.toLowerCase().includes(s)
+        (item) => item.wargaName.toLowerCase().includes(s) || item.binCode.toLowerCase().includes(s)
       );
     }
 
@@ -130,18 +117,14 @@ export class KknService {
   }
 
   async getWargaDetail(kknUserId: string, wargaId: string) {
-    const warga = await prisma.user.findUnique({
+    const warga = (await prisma.user.findUnique({
       where: { id: wargaId },
       include: {
         rtRw: true,
-        households: {
-          include: {
-            wasteLogs: {
-              take: 5,
-              orderBy: { createdAt: "desc" },
-              include: { category: true },
-            },
-          },
+        setoranOtomatis: {
+          take: 5,
+          orderBy: { createdAt: "desc" },
+          include: { bin: true },
         },
         binOwnerships: {
           include: {
@@ -151,7 +134,7 @@ export class KknService {
           },
         },
       },
-    });
+    })) as any;
 
     if (!warga) {
       throw new Error("WARGA_NOT_FOUND");
@@ -173,11 +156,11 @@ export class KknService {
 
     const defaultBin = warga.binOwnerships[0]?.bin;
     const recentLogs =
-      warga.households[0]?.wasteLogs.map((log) => ({
+      warga.setoranOtomatis.map((log: any) => ({
         id: log.id,
-        weightKg: Number(log.weightKg),
-        volumeLiter: Number(log.volumeLiter),
-        category: log.category.name,
+        weightKg: Number(log.berat),
+        volumeLiter: 0,
+        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
         createdAt: log.createdAt,
       })) || [];
 
@@ -199,24 +182,51 @@ export class KknService {
     };
   }
 
-  async getUnregisteredHouses(kknUserId: string) {
-    // Get assigned RT/RW polygon for this KKN student
-    const student = await prisma.studentKkn.findUnique({
-      where: { userId: kknUserId },
-      include: { assignedPolygon: true },
-    });
-
-    if (!student || !student.assignedPolygonId) {
-      return [];
+  async getWargaList(kknUserId: string, filters: { status?: string; kelurahan?: string; rtRwId?: number; search?: string }) {
+    const where: any = { role: { name: "WARGA" } };
+    
+    if (filters.status === "UNACTIVATED") {
+      where.binOwnerships = { none: {} };
+    }
+    if (filters.rtRwId) {
+      where.rtRwId = filters.rtRwId;
+    }
+    if (filters.search) {
+      where.name = { contains: filters.search, mode: "insensitive" };
     }
 
-    // Mock unregistered houses list for the checklist feature inside their assigned RT/RW
-    return [
-      { id: "house-1", address: "Dago Giri No. 12", status: "BELUM_TERDAFTAR" },
-      { id: "house-2", address: "Dago Giri No. 14A", status: "BELUM_TERDAFTAR" },
-      { id: "house-3", address: "Dago Giri No. 17", status: "BELUM_TERDAFTAR" },
-      { id: "house-4", address: "Dago Giri No. 22", status: "BELUM_TERDAFTAR" },
-    ];
+    const warga = await prisma.user.findMany({ where, select: { id: true, name: true, address: true } });
+    return warga.map((w: any) => ({ id: w.id, wargaId: w.id, nama: w.name, alamat: w.address }));
+  }
+
+  async activateWargaBin(wargaId: string, binOrganikId: string, binAnorganikId: string, kknUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const bins = await tx.bin.findMany({
+        where: { qrCode: { in: [binOrganikId, binAnorganikId] } }
+      });
+      
+      if (bins.length !== 2) throw new Error("Satu atau kedua Bin tidak ditemukan");
+      for (const bin of bins) {
+        if (!["PRINTED", "BELUM_DIGUNAKAN", "PENDING_APPROVAL"].includes(bin.status)) {
+          throw new Error(`Bin ${bin.qrCode} sudah terdaftar atau digunakan`);
+        }
+      }
+
+      await tx.bin.updateMany({
+        where: { qrCode: { in: [binOrganikId, binAnorganikId] } },
+        data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId }
+      });
+      
+      for (const bin of bins) {
+        await tx.binOwnership.create({
+          data: { userId: wargaId, binId: bin.id, type: "UTAMA" }
+        });
+      }
+
+      await tx.pointHistory.create({
+        data: { userId: kknUserId, points: 25, description: "Aktivasi Bin Warga" }
+      });
+    });
   }
 
   async getActivityLog(kknUserId: string) {
@@ -229,8 +239,6 @@ export class KknService {
       take: 10,
     });
   }
-
-
 
   async handover(fromKknUserId: string, toKknUserId: string, rtRwId: number, notes?: string) {
     return prisma.$transaction(async (tx) => {

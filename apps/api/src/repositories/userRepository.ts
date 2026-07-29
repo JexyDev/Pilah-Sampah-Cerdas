@@ -23,10 +23,10 @@ export class UserRepository {
             rtRw: {
               include: { kelurahan: true },
             },
-            wasteLogs: {
-              select: { weightKg: true },
-            },
           },
+        },
+        setoranOtomatis: {
+          select: { berat: true },
         },
         pointHistory: {
           select: { points: true },

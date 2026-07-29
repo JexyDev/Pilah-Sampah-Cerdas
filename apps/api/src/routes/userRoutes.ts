@@ -113,10 +113,6 @@ router.put(
  *         schema:
  *           type: string
  */
-router.get(
-  "/:id/onboarding-status",
-  authMiddleware,
-  userController.getOnboardingStatus
-);
+router.get("/:id/onboarding-status", authMiddleware, userController.getOnboardingStatus);
 
 export default router;

@@ -42,6 +42,7 @@ import AktivitasMonitoring from "../pages/SuperAdmin/AktivitasMonitoring";
 import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
 import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
 import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
+import HasilPemanfaatan from "../pages/HasilPemanfaatan/HasilPemanfaatan";
 import { RwApproval } from "../pages/RwPortal/RwApproval";
 import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
@@ -111,7 +112,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="monitoring-absen"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <MonitoringAbsen />
             </ProtectedRoute>
           }
@@ -141,7 +142,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="warga-tong"
+          path="warga-tempat-sampah"
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <MasterData />
@@ -175,6 +176,7 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
+                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
               ]}
@@ -187,7 +189,7 @@ const AppRoutes: React.FC = () => {
           path="manajemen-lokasi"
           element={
             <ProtectedRoute
-              allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]}
+              allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "MAHASISWA_KKN"]}
             >
               <ManajemenLokasi />
             </ProtectedRoute>
@@ -204,7 +206,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="pemanfaatan-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -212,15 +214,27 @@ const AppRoutes: React.FC = () => {
         <Route
           path="hasil-pemanfaatan"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
-              <PlaceholderPage title="Hasil Pemanfaatan" />
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
+              <HasilPemanfaatan />
             </ProtectedRoute>
           }
         />
         <Route
           path="setor-sampah"
           element={
-            <ProtectedRoute allowedRoles={["WARGA", "MAHASISWA_KKN"]}>
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_ADMIN",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "RT",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "WARGA",
+              ]}
+            >
               <SetorSampah />
             </ProtectedRoute>
           }
@@ -257,6 +271,7 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
+                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
               ]}
@@ -269,7 +284,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="laporan-analitik"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <LaporanAnalitik />
             </ProtectedRoute>
           }
@@ -285,6 +300,7 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
+                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "WARGA",
@@ -356,7 +372,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="rw/approval"
           element={
-            <ProtectedRoute allowedRoles={["RW"]}>
+            <ProtectedRoute allowedRoles={["RW", "RT"]}>
               <RwApproval />
             </ProtectedRoute>
           }
@@ -364,7 +380,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="rw/fasilitas"
           element={
-            <ProtectedRoute allowedRoles={["RW"]}>
+            <ProtectedRoute allowedRoles={["RW", "RT"]}>
               <RwFacilityInput />
             </ProtectedRoute>
           }

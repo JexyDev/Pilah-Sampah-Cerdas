@@ -7,17 +7,17 @@ const router = Router();
 // Semua route di sini dilindungi authMiddleware dan khusus untuk role RW
 router.use(authMiddleware);
 
-// Middleware khusus RW
+// Middleware khusus RW & RT
 router.use((req, res, next) => {
-  if (req.user?.role !== "RW") {
+  if (req.user?.role !== "RW" && req.user?.role !== "RT") {
     return res
       .status(403)
-      .json({ error: "FORBIDDEN", message: "Hanya RW yang dapat mengakses portal ini." });
+      .json({ error: "FORBIDDEN", message: "Hanya RW atau RT yang dapat mengakses portal ini." });
   }
   if (!req.user?.rtRwId) {
     return res
       .status(400)
-      .json({ error: "BAD_REQUEST", message: "Akun RW tidak memiliki wilayah yang valid." });
+      .json({ error: "BAD_REQUEST", message: "Akun RW/RT tidak memiliki wilayah yang valid." });
   }
   next();
 });

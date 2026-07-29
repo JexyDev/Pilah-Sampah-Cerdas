@@ -29,8 +29,6 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token diperlukan"),
 });
 
-
-
 const updateProfileSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   email: z.union([z.string().email("Format email tidak valid"), z.literal("")]).optional(),
@@ -180,8 +178,6 @@ export class AuthController {
       }
     }
   }
-
-
 
   /**
    * Handle Token Refresh

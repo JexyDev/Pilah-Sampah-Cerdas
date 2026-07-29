@@ -35,6 +35,8 @@ import ideDaurUlangRouter from "./routes/ideDaurUlangRoutes.js";
 import areaRouter from "./routes/areaRoutes.js";
 import adminMahasiswaRouter from "./routes/adminMahasiswaRoutes.js";
 import kknAttendanceRouter from "./routes/kknAttendanceRoutes.js";
+import pemanfaatanRouter from "./routes/pemanfaatanRoutes.js";
+import pengangkutanRouter from "./routes/pengangkutanRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
@@ -93,6 +95,8 @@ app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/areas", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
 app.use("/api/v1", kknAttendanceRouter);
+app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
+app.use("/api/v1/pengangkutan", pengangkutanRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {

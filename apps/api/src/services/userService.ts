@@ -59,7 +59,7 @@ export class UserService {
 
     const users = await userRepository.findMany(whereClause);
 
-    return users.map((u) => {
+    return users.map((u: any) => {
       let wilayah = "-";
       if (u.rtRw) {
         wilayah = `${u.rtRw.name} (Kel. ${u.rtRw.kelurahan.name})`;
@@ -68,13 +68,13 @@ export class UserService {
       }
 
       let totalSetoranKg = 0;
-      u.households.forEach((h) => {
-        h.wasteLogs.forEach((w) => {
-          totalSetoranKg += Number(w.weightKg);
+      if (u.setoranOtomatis) {
+        u.setoranOtomatis.forEach((s: any) => {
+          totalSetoranKg += Number(s.berat);
         });
-      });
+      }
 
-      const totalPoin = u.pointHistory.reduce((sum, p) => sum + p.points, 0);
+      const totalPoin = u.pointHistory.reduce((sum: number, p: any) => sum + p.points, 0);
 
       return {
         id: u.id,

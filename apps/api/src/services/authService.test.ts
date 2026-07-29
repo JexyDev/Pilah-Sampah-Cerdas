@@ -18,6 +18,7 @@ vi.mock("../repositories/authRepository.js", () => {
       findUserByPhone: vi.fn(),
       registerWargaTx: vi.fn(),
       createRefreshToken: vi.fn(),
+      findRoleByName: vi.fn(),
     },
   };
 });
@@ -43,6 +44,7 @@ describe("AuthService - registerWarga security", () => {
     vi.mocked(authRepository.findUserByPhone).mockResolvedValue(null);
     vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
     vi.mocked(authRepository.findUserByNik).mockResolvedValue(null);
+    vi.mocked(authRepository.findRoleByName).mockResolvedValue({ id: 1, name: "WARGA" } as any);
   });
 
   it("should throw PIC_MISMATCH when Mahasiswa KKN registers a bin assigned to another PIC", async () => {
