@@ -1931,12 +1931,42 @@ const Dashboard: React.FC = () => {
                 })()}
               </svg>
               <div className="absolute text-center">
-                <span className="block text-[22px] font-bold text-on-surface leading-none">
-                  {stats?.komposisiSampah?.pctOrganik ?? 0}%
-                </span>
-                <span className="text-[10px] text-on-surface-variant uppercase font-bold">
-                  Organik
-                </span>
+                {(() => {
+                  const org = stats?.komposisiSampah?.pctOrganik ?? 0;
+                  const anorg = stats?.komposisiSampah?.pctAnorganik ?? 0;
+                  const residu = stats?.komposisiSampah?.pctResidu ?? 0;
+                  
+                  let maxVal = org;
+                  let maxLabel = "Organik";
+                  let maxColor = "text-[#10b981]";
+                  
+                  if (anorg > maxVal) {
+                    maxVal = anorg;
+                    maxLabel = "Anorganik";
+                    maxColor = "text-[#eab308]";
+                  }
+                  if (residu > maxVal) {
+                    maxVal = residu;
+                    maxLabel = "Residu";
+                    maxColor = "text-[#ef4444]";
+                  }
+
+                  if (maxVal === 0 && org === 0 && anorg === 0 && residu === 0) {
+                    maxLabel = "Data Kosong";
+                    maxColor = "text-slate-400";
+                  }
+
+                  return (
+                    <>
+                      <span className={`block text-[22px] font-extrabold leading-none ${maxColor}`}>
+                        {maxVal}%
+                      </span>
+                      <span className="text-[10px] text-on-surface-variant uppercase font-bold mt-1 block">
+                        {maxLabel}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <div className="mt-4 w-full space-y-2">
