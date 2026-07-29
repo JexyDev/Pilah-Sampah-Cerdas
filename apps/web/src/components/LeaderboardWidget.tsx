@@ -34,7 +34,7 @@ const LeaderboardWidget: React.FC = () => {
   }
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
+    <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4 h-full">
       <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
         <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
           <Trophy className="text-yellow-500" />
