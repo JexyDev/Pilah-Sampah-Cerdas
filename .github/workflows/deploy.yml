@@ -22,8 +22,10 @@ jobs:
 
             # Backend
             cd apps/api
-            npm install --production
+            npm install
             npm run build
+            npx prisma db push --accept-data-loss
+            npx tsx prisma/seed_demo_bandung.ts
             cd ../..
 
             # Frontend
