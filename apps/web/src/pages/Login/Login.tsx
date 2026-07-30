@@ -190,8 +190,8 @@ const Login: React.FC = () => {
               { phone: "08111111115", label: "RW", bg: "bg-amber-50 text-amber-700 border-amber-200" },
               { phone: "08111111116", label: "RT", bg: "bg-cyan-50 text-cyan-700 border-cyan-200" },
               { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200" },
-              { phone: "08111111118", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
-              { phone: "082100000001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200" },
+              { phone: "0812001005", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
+              { phone: "0812001001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200" },
             ].map((acc) => (
               <button
                 key={acc.phone}
