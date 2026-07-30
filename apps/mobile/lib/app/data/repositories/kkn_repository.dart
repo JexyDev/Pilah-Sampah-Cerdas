@@ -18,6 +18,9 @@ abstract class KknRepository {
   /// Backend otomatis melakukan binding mahasiswa ↔ warga.
   Future<void> registerWarga(RegisterWargaRequest request);
 
+  /// Mengambil log aktivitas KKN mahasiswa (/kkn/activity-log).
+  Future<List<dynamic>> getActivityLog();
+
   /// Mengirim ping lokasi (latitude, longitude) ke backend.
   Future<void> sendLocationPing(double latitude, double longitude);
 }
