@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/values/app_assets.dart';
@@ -99,7 +99,7 @@ class BerandaView extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Tong Sampah Anda',
+                        'Tempat Sampah Anda',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -133,7 +133,7 @@ class BerandaView extends ConsumerWidget {
                               ),
                               child: const Center(
                                 child: Text(
-                                  'Belum ada tong terdaftar.',
+                                  'Belum ada tempat sampah terdaftar.',
                                   style: TextStyle(color: AppColors.textSecondary),
                                 ),
                               ),
@@ -480,7 +480,7 @@ class BerandaView extends ConsumerWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Aktivasi Bin',
+                      'Aktivasi Tempat Sampah',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -775,7 +775,7 @@ class _RiwayatCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icon tong
+          // Icon Tempat Sampah
           Container(
             width: 44,
             height: 44,

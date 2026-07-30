@@ -24,9 +24,12 @@ class KknDashboardData extends Equatable {
 
   factory KknDashboardData.fromJson(Map<String, dynamic> json) {
     final student = json['studentKkn'] as Map<String, dynamic>? ?? {};
+    final user = json['user'] as Map<String, dynamic>? ?? {};
+    final mhs = json['mahasiswa'] as Map<String, dynamic>? ?? {};
+    
     return KknDashboardData(
-      nim: student['nim']?.toString() ?? '',
-      jurusan: student['jurusan']?.toString() ?? '',
+      nim: student['nim']?.toString() ?? mhs['nim']?.toString() ?? user['nim']?.toString() ?? json['nim']?.toString() ?? '',
+      jurusan: student['jurusan']?.toString() ?? mhs['jurusan']?.toString() ?? user['jurusan']?.toString() ?? json['jurusan']?.toString() ?? '',
       totalRegisteredBins: (json['totalRegisteredBins'] as num?)?.toInt() ?? 0,
       assignmentLimit: (json['assignmentLimit'] as num?)?.toInt() ?? 0,
       remainingQuota: (json['remainingQuota'] as num?)?.toInt() ?? 0,
@@ -82,15 +85,25 @@ class WargaDampingan extends Equatable {
     required this.binId,
     required this.wargaName,
     required this.address,
+    this.kelurahan = '',
+    this.rtRw = '',
     required this.recentLogs,
     this.isActivated = true,
+    this.role = 'WARGA',
+    this.totalPoints = 0,
+    this.apiCorrectPercentage,
   });
 
   final String binId;
   final String wargaName;
   final String address;
+  final String kelurahan;
+  final String rtRw;
   final bool isActivated;
+  final String role;
   final List<WasteLogEntry> recentLogs;
+  final int totalPoints;
+  final double? apiCorrectPercentage;
 
   /// Total aktivitas pemilahan
   int get totalActivities => recentLogs.length;
@@ -103,7 +116,7 @@ class WargaDampingan extends Equatable {
 
   /// Persentase pemilahan benar (0–100)
   double get correctPercentage =>
-      totalActivities > 0 ? (correctCount / totalActivities) * 100 : 0.0;
+      apiCorrectPercentage ?? (totalActivities > 0 ? (correctCount / totalActivities) * 100 : 0.0);
 
   /// Persentase kesalahan (0–100)
   double get errorPercentage =>
@@ -111,6 +124,13 @@ class WargaDampingan extends Equatable {
 
   /// Apakah warga membutuhkan edukasi ulang (threshold > 30% kesalahan)
   bool get needsReeducation => errorPercentage > 30;
+
+  /// Tanggal terakhir warga aktif membuang sampah
+  DateTime? get lastActiveDate {
+    if (recentLogs.isEmpty) return null;
+    // Log biasanya sudah diurutkan dari backend (terbaru di atas)
+    return recentLogs.first.createdAt;
+  }
 
   factory WargaDampingan.fromJson(Map<String, dynamic> json) {
     final logs = (json['recentLogs'] as List<dynamic>?)
@@ -122,12 +142,19 @@ class WargaDampingan extends Equatable {
       binId: json['binId']?.toString() ?? '',
       wargaName: json['wargaName']?.toString() ?? '',
       address: json['address']?.toString() ?? '',
+      kelurahan: json['kelurahan']?.toString() ?? '',
+      rtRw: json['rtRw']?.toString() ?? '',
       recentLogs: logs,
+      isActivated: json['isActivated'] as bool? ?? (json['status']?.toString().toUpperCase() != 'UNACTIVATED'),
+      role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
+      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
+                   (logs.fold(0, (sum, log) => sum + (log.weightKg * 10).toInt())),
+      apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
     );
   }
 
   @override
-  List<Object?> get props => [binId, wargaName];
+  List<Object?> get props => [binId, wargaName, totalPoints];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -138,6 +165,7 @@ class RegisterWargaRequest {
     required this.phone,
     required this.password,
     this.name,
+    this.address,
     this.qrCode,
     this.rtRwId,
     this.rtRw,
@@ -154,6 +182,9 @@ class RegisterWargaRequest {
 
   /// Opsional: Nama lengkap warga
   final String? name;
+
+  /// Opsional: Alamat warga
+  final String? address;
 
   /// Opsional: QR Code tong sampah
   final String? qrCode;
@@ -179,6 +210,7 @@ class RegisterWargaRequest {
       'password': password,
     };
     if (name != null && name!.isNotEmpty) map['name'] = name;
+    if (address != null && address!.isNotEmpty) map['address'] = address;
     if (qrCode != null && qrCode!.isNotEmpty) map['qrCode'] = qrCode;
     if (rtRwId != null && rtRwId!.isNotEmpty) map['rtRwId'] = rtRwId;
     if (rtRw != null && rtRw!.isNotEmpty) map['rtRw'] = rtRw;

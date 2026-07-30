@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -56,21 +57,24 @@ class RegistrasiWargaNotifier extends StateNotifier<RegistrasiWargaState> {
         isSubmitting: false,
         isSuccess: true,
       );
-    } catch (e) {
+    } on DioException catch (e) {
       String message = 'Gagal mendaftarkan warga.';
-      final errString = e.toString();
-      if (errString.contains('409') || errString.contains('conflict')) {
+      if (e.response?.statusCode == 409) {
         message = 'Nomor HP sudah terdaftar.';
-      } else if (errString.contains('400')) {
+      } else if (e.response?.statusCode == 400) {
         message = 'Data tidak valid. Periksa kembali form Anda.';
-      } else if (errString.contains('SocketException') ||
-          errString.contains('timeout')) {
+      } else if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout || e.type == DioExceptionType.connectionError) {
         message = 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
       }
 
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: message,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'Gagal mendaftarkan warga. Terjadi kesalahan internal.',
       );
     }
   }

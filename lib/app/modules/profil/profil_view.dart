@@ -11,7 +11,7 @@ import '../scan/controllers/scan_controller.dart';
 import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
-/// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tong Saya, Keluar.
+/// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tempat Sampah Saya, Keluar.
 class ProfilView extends ConsumerStatefulWidget {
   const ProfilView({super.key});
 
@@ -218,12 +218,12 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
 
                   const SizedBox(height: 20),
 
-                  // ─── Tong Saya ──────────────────────────────────────
+                  // ─── Tempat Sampah Saya ──────────────────────────────────────
                   if (user?.role != UserRole.mahasiswaKkn) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _sectionLabel('TONG SAYA'),
+                        _sectionLabel('TEMPAT SAMPAH SAYA'),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -242,7 +242,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                bins.isEmpty ? 'Belum ada tong terdaftar.' : '${bins.length} Tong Terdaftar (Ketuk untuk kelola)',
+                                bins.isEmpty ? 'Belum ada tempat sampah terdaftar.' : '${bins.length} Tempat Sampah Terdaftar (Ketuk untuk kelola)',
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w600,
@@ -272,27 +272,27 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     child: Column(
                       children: [
                         if (user?.role != UserRole.mahasiswaKkn) ...[
-                          // Tambah Tong Baru
+                          // Tambah Tempat Sampah Baru
                           _MenuTile(
                             icon: Icons.qr_code_scanner_rounded,
                             iconColor: AppColors.primaryGreen,
                             iconBgColor: AppColors.primaryGreen.withValues(
                               alpha: 0.1,
                             ),
-                            label: 'Tambah Tong Baru',
+                            label: 'Tambah Tempat Sampah Baru',
                             onTap: () => Navigator.of(
                               context,
                             ).pushNamed(AppRoutes.ukurKapasitas),
                           ),
                           const Divider(height: 1, indent: 56),
-                          // Ajukan Pengosongan Tong
+                          // Ajukan Pengosongan Tempat Sampah
                           _MenuTile(
                             icon: Icons.restore_rounded,
                             iconColor: AppColors.warningOrange,
                             iconBgColor: AppColors.warningOrange.withValues(
                               alpha: 0.1,
                             ),
-                            label: 'Ajukan Pengosongan Tong',
+                            label: 'Ajukan Pengosongan Tempat Sampah',
                             onTap: () => Navigator.of(
                               context,
                             ).pushNamed(AppRoutes.resetBin),

@@ -102,7 +102,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    dashboard != null ? 'NIM: ${dashboard.nim}' : 'Mahasiswa KKN',
+                    dashboard != null && dashboard.nim.isNotEmpty ? 'NIM: ${dashboard.nim}' : 'Mahasiswa KKN',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -178,13 +178,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
       ),
       decoration: BoxDecoration(
         color: isOn
-            ? AppColors.success.withValues(alpha: 0.08)
-            : AppColors.warningOrange.withValues(alpha: 0.08),
+            ? AppColors.success.withValues(alpha: 0.1)
+            : AppColors.dangerRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(
           color: isOn
               ? AppColors.success.withValues(alpha: 0.3)
-              : AppColors.warningOrange.withValues(alpha: 0.3),
+              : AppColors.dangerRed.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -193,11 +193,11 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: isOn ? AppColors.success : AppColors.warningOrange,
+              color: isOn ? AppColors.success : AppColors.dangerRed,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: (isOn ? AppColors.success : AppColors.warningOrange)
+                  color: (isOn ? AppColors.success : AppColors.dangerRed)
                       .withValues(alpha: 0.4),
                   blurRadius: 6,
                 ),
@@ -210,19 +210,21 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOn ? 'Berada di Wilayah (Absen Aktif)' : 'Mencari Sinyal / Di Luar Wilayah',
+                  isOn ? 'Status: ABSEN AKTIF' : 'Status: NON-AKTIF',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isOn ? AppColors.successDark : AppColors.warningOrange,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Sistem absensi mendeteksi secara otomatis.',
-                  style: const TextStyle(
+                  isOn 
+                      ? 'Anda terdeteksi berada di dalam zona KKN.' 
+                      : 'Di luar wilayah KKN atau mencari sinyal GPS.',
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSecondary,
+                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
                   ),
                 ),
                 if (lastPing != null) ...[
@@ -240,8 +242,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             ),
           ),
           Icon(
-            isOn ? Icons.satellite_alt_rounded : Icons.location_off_rounded,
-            color: isOn ? AppColors.success : AppColors.warningOrange,
+            isOn ? Icons.my_location_rounded : Icons.location_off_rounded,
+            color: isOn ? AppColors.success : AppColors.dangerRed,
             size: 24,
           )
         ],
@@ -343,7 +345,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                   Navigator.pushNamed(
                     context, 
                     AppRoutes.monitoringWarga, 
-                    arguments: {'mode': 'aktivasi_bin'},
+                    arguments: 'aktivasi_bin',
                   );
                 },
               ),

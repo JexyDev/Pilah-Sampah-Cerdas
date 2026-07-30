@@ -20,4 +20,25 @@ abstract class KknRepository {
 
   /// Mengirim ping lokasi (latitude, longitude) ke backend.
   Future<void> sendLocationPing(double latitude, double longitude);
+
+  /// Mengambil daftar jadwal kegiatan KKN.
+  Future<List<dynamic>> getSchedules();
+
+  /// Mengambil target lokasi kegiatan KKN.
+  Future<Map<String, dynamic>> getTargetLocation(String scheduleId);
+
+  /// Mencatat absensi (radius KKN).
+  Future<bool> recordAttendance(String scheduleId, double latitude, double longitude, String method);
+
+  /// Mengambil daftar warga (untuk fitur aktivasi)
+  Future<List<dynamic>> getWargaForAktivasi({String? kelurahan, String? rtRw, String? search});
+
+  /// Mengaktivasi warga by scan (wargaId + qrCode)
+  Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude);
+
+  /// Mengaktivasi bin untuk warga
+  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId);
+
+  /// Mengambil riwayat aktivitas KKN
+  Future<List<dynamic>> getKknHistory();
 }

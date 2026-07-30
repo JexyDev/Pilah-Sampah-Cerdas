@@ -26,14 +26,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
 
   Future<void> _fetchSchedules() async {
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final res = await apiClient.dio.get('/schedules');
-      if (res.statusCode == 200) {
-        setState(() {
-          _schedules = res.data['data'] ?? [];
-          _isLoadingSchedules = false;
-        });
-      }
+      final repo = ref.read(kknRepositoryProvider);
+      final schedules = await repo.getSchedules();
+      setState(() {
+        _schedules = schedules;
+        _isLoadingSchedules = false;
+      });
     } catch (_) {
       setState(() {
         _isLoadingSchedules = false;

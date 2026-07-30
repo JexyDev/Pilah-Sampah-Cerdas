@@ -59,40 +59,17 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   Future<void> fetchWarga() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final apiClient = ref.read(apiClientProvider);
-      
-      final Map<String, dynamic> queryParams = {
-        'status': 'UNACTIVATED',
-      };
-      
-      if (state.selectedKelurahan != null && state.selectedKelurahan!.isNotEmpty) {
-        queryParams['kelurahan'] = state.selectedKelurahan;
-      }
-      if (state.selectedRtRw != null && state.selectedRtRw!.isNotEmpty) {
-        queryParams['rtRw'] = state.selectedRtRw;
-      }
-      if (state.searchQuery.isNotEmpty) {
-        queryParams['search'] = state.searchQuery;
-      }
-
-      final response = await apiClient.dio.get(
-        '/kkn/warga',
-        queryParameters: queryParams,
+      final repo = ref.read(kknRepositoryProvider);
+      final data = await repo.getWargaForAktivasi(
+        kelurahan: state.selectedKelurahan == 'Semua' ? null : state.selectedKelurahan,
+        rtRw: state.selectedRtRw == 'Semua' ? null : state.selectedRtRw,
+        search: state.searchQuery,
       );
-
-      if (response.statusCode == 200) {
-        final data = response.data['data'] as List<dynamic>? ?? [];
-        state = state.copyWith(isLoading: false, wargaList: data);
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: 'Gagal memuat data warga.',
-        );
-      }
+      state = state.copyWith(isLoading: false, wargaList: data);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Terjadi kesalahan saat memuat data warga.',
+        errorMessage: 'Error: $e',
       );
     }
   }
@@ -118,18 +95,10 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
         }
       }
 
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.dio.post(
-        '/kkn/warga/activate-by-scan',
-        data: {
-          'wargaId': wargaId,
-          'qrCode': qrCode,
-          'latitude': lat,
-          'longitude': lng,
-        },
-      );
+      final repo = ref.read(kknRepositoryProvider);
+      final isSuccess = await repo.activateWargaByScan(wargaId, qrCode, lat, lng);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (isSuccess) {
         await fetchWarga(); // Refresh list after success
         return true;
       } else {
@@ -151,17 +120,10 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.dio.post(
-        '/kkn/warga/activate-bin',
-        data: {
-          'wargaId': wargaId,
-          'binOrganikId': binOrganikId,
-          'binAnorganikId': binAnorganikId,
-        },
-      );
+      final repo = ref.read(kknRepositoryProvider);
+      final isSuccess = await repo.activateBin(wargaId, binOrganikId, binAnorganikId);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (isSuccess) {
         await fetchWarga(); // Refresh list after success
         return true;
       } else {

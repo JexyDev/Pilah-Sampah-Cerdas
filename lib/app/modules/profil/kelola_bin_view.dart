@@ -16,7 +16,7 @@ class KelolaBinView extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Kelola Tong Sampah',
+          'Kelola Tempat Sampah',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -30,12 +30,6 @@ class KelolaBinView extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: AppColors.primaryGreen),
-            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
-          ),
-        ],
       ),
       backgroundColor: AppColors.backgroundCanvas,
       body: binsAsync.when(
@@ -48,16 +42,8 @@ class KelolaBinView extends ConsumerWidget {
                   const Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
                   const SizedBox(height: 16),
                   const Text(
-                    'Belum ada tong terdaftar.',
+                    'Belum ada tempat sampah terdaftar.',
                     style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                    ),
-                    child: const Text('Tambah Tong Baru'),
                   ),
                 ],
               ),
@@ -77,6 +63,27 @@ class KelolaBinView extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Tambah Tempat Sampah Baru',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -107,7 +114,7 @@ class _BinCardLarge extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Bin Organik (Hijau)' : 'Bin Anorganik (Kuning)',
+                  isOrganic ? 'Tempat Sampah Organik' : 'Tempat Sampah Anorganik',
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.w700,

@@ -12,7 +12,7 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/weight_text.dart';
 
-/// Halaman pengajuan pengosongan tong.
+/// Halaman pengajuan pengosongan tempat sampah.
 /// Sesuai prd.md §3.1 dan ui_ux_flow.md §3: failed_scan_step_1.png
 class ResetBinView extends ConsumerStatefulWidget {
   const ResetBinView({super.key});
@@ -30,11 +30,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       case 'BIN_NOT_CRITICAL':
         return AppStrings.binNotCritical;
       case 'RESOURCE_NOT_FOUND':
-        return 'Tong tidak ditemukan.';
+        return 'Tempat sampah tidak ditemukan.';
       case 'DUPLICATE_REQUEST':
-        return 'Sudah ada pengajuan pengosongan aktif untuk tong ini. Tunggu sampai diproses petugas.';
+        return 'Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini. Tunggu sampai diproses petugas.';
       case 'BIN_NOT_OWNED':
-        return 'Tong ini bukan milik Anda.';
+        return 'Tempat sampah ini bukan milik Anda.';
       case 'VALIDATION_ERROR':
         return message ?? 'Foto bukti wajib diunggah.';
       default:
@@ -81,7 +81,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         );
         ref.read(resetBinProvider.notifier).reset();
       }
-      // AUTO-REFRESH: setelah pengajuan berhasil, refresh data tong & notifikasi
+      // AUTO-REFRESH: setelah pengajuan berhasil, refresh data tempat sampah & notifikasi
       if (next.isSuccess && !next.isLoading) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -119,7 +119,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
 
     return binsAsync.when(
       data: (bins) {
-        // Tampilkan semua tong milik user (maks 25kg)
+        // Tampilkan semua tempat sampah milik user (maks 25kg)
         return _buildForm(bins, userId);
       },
       loading: () => const AppLoading(),
@@ -143,7 +143,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             ),
             const SizedBox(height: AppDimensions.md),
             Text(
-              'Anda belum memiliki tong terdaftar.',
+              'Anda belum memiliki tempat sampah terdaftar.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -157,7 +157,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Status Tong Sampah', style: Theme.of(context).textTheme.headlineSmall),
+        Text('Status Tempat Sampah', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: AppDimensions.sm),
         Expanded(
           child: ListView.separated(
@@ -194,7 +194,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                             const SizedBox(width: AppDimensions.sm),
                             Expanded(
                               child: Text(
-                                'Tong ${bin.binType.displayName}',
+                                'Tempat Sampah ${bin.binType.displayName}',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),

@@ -49,6 +49,7 @@ class _RegistrasiWargaViewState extends ConsumerState<RegistrasiWargaView> {
       phone: _phoneCtrl.text.trim(),
       password: _passwordCtrl.text,
       name: _nameCtrl.text.trim(),
+      address: _alamatCtrl.text.trim().isNotEmpty ? _alamatCtrl.text.trim() : null,
       rtRw: rtRw.length > 1 ? rtRw : null,
       kelurahan: _kelurahanCtrl.text.trim().isNotEmpty
           ? _kelurahanCtrl.text.trim()

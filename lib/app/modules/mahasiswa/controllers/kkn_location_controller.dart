@@ -127,11 +127,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<void> _fetchTargetLocation() async {
     if (_currentTargetScheduleId == null) return;
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final res = await apiClient.dio.get('/kegiatan/$_currentTargetScheduleId/lokasi');
-      if (res.statusCode == 200 && res.data['success'] == true) {
-        state = state.copyWith(activeActivity: res.data['data']);
-      }
+      final repo = ref.read(kknRepositoryProvider);
+      final locationData = await repo.getTargetLocation(_currentTargetScheduleId!);
+      state = state.copyWith(activeActivity: locationData);
     } catch (e) {
       state = state.copyWith(error: 'Gagal memuat target lokasi kegiatan.');
     }
@@ -152,12 +150,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     // Send update to backend
     try {
-      final apiClient = ref.read(apiClientProvider);
-      await apiClient.dio.post('/mahasiswa/lokasi', data: {
-        'latitude': pos.latitude,
-        'longitude': pos.longitude,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
+      final repo = ref.read(kknRepositoryProvider);
+      await repo.sendLocationPing(pos.latitude, pos.longitude);
     } catch (_) {
       // Fail silently for background GPS updates
     }
@@ -193,14 +187,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
 
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final res = await apiClient.dio.post('/kegiatan/$_currentTargetScheduleId/absen', data: {
-        'latitude': pos.latitude,
-        'longitude': pos.longitude,
-        'method': method,
-      });
+      final repo = ref.read(kknRepositoryProvider);
+      final isSuccess = await repo.recordAttendance(_currentTargetScheduleId!, pos.latitude, pos.longitude, method);
 
-      if (res.statusCode == 200) {
+      if (isSuccess) {
         state = state.copyWith(
           isSuccessAttendance: true,
           attendanceTime: DateTime.now().toLocal().toString().split('.')[0],

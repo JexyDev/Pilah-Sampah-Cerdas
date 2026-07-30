@@ -96,7 +96,7 @@ class NotifikasiView extends ConsumerWidget {
             if (list.isEmpty) {
               return const EmptyState(
                 icon: Icons.notifications_off_outlined,
-                message: 'Belum ada notifikasi.\nNotifikasi poin, tong penuh, dan pengajuan\nakan muncul di sini.',
+                message: 'Belum ada notifikasi.\nNotifikasi poin, tempat sampah penuh, dan pengajuan\nakan muncul di sini.',
               );
             }
             return ListView.separated(

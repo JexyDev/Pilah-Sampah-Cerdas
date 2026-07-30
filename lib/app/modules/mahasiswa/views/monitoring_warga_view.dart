@@ -18,9 +18,6 @@ class MonitoringWargaView extends ConsumerStatefulWidget {
 class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   // Filters
   final _searchController = TextEditingController();
-  final List<String> _kelurahanList = ['Semua', 'Kel. Sukamaju', 'Kel. Sukamantri', 'Kel. Sukasari'];
-  final List<String> _rtRwList = ['Semua', 'RT 01 / RW 05', 'RT 02 / RW 05'];
-  
   String _selectedKelurahan = 'Semua';
   String _selectedRtRw = 'Semua';
 
@@ -40,6 +37,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
   List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode) {
     return allWarga.where((w) {
+      if (w.role != 'WARGA') return false; // Hanya tampilkan role warga
+      if (isAktivasiBinMode && w.isActivated) return false; // Sembunyikan warga yang sudah aktif di mode Aktivasi
+
       if (_searchController.text.isNotEmpty) {
         if (!w.wargaName.toLowerCase().contains(_searchController.text.toLowerCase()) &&
             !w.binId.toLowerCase().contains(_searchController.text.toLowerCase())) {
@@ -47,10 +47,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         }
       }
       if (_selectedKelurahan != 'Semua') {
-        if (!w.address.contains(_selectedKelurahan)) return false;
+        final matches = w.kelurahan == _selectedKelurahan || w.address.contains(_selectedKelurahan);
+        if (!matches) return false;
       }
       if (_selectedRtRw != 'Semua') {
-        if (!w.address.contains(_selectedRtRw)) return false;
+        final matches = w.rtRw == _selectedRtRw || w.address.contains(_selectedRtRw);
+        if (!matches) return false;
       }
       return true;
     }).toList();
@@ -74,9 +76,39 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // For aktivasi mode, we need to watch the aktivasi controller too
     final aktivasiState = isAktivasiBinMode ? ref.watch(aktivasiWargaProvider) : null;
 
-    final filteredWarga = isAktivasiBinMode 
+    final allWargaList = isAktivasiBinMode 
         ? _getFilteredWargaAktivasi(aktivasiState?.wargaList ?? [])
-        : _getFilteredWarga(state.wargaList, isAktivasiBinMode);
+        : state.wargaList;
+
+    final kelurahans = allWargaList
+        .where((w) => w.role == 'WARGA' && w.kelurahan.isNotEmpty)
+        .map((w) => w.kelurahan)
+        .toSet()
+        .toList();
+    kelurahans.sort();
+    final kelurahanList = <String>['Semua', ...kelurahans];
+
+    // Check if current selected is valid
+    if (!kelurahanList.contains(_selectedKelurahan)) {
+      _selectedKelurahan = 'Semua';
+    }
+
+    // Generate rtrw list dynamically based on selected kelurahan
+    final rtrws = allWargaList
+        .where((w) => w.role == 'WARGA' && w.rtRw.isNotEmpty && 
+                     (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
+        .map((w) => w.rtRw)
+        .toSet()
+        .toList();
+    rtrws.sort();
+    final rtRwList = <String>['Semua', ...rtrws];
+
+    // Check if current selected rtRw is valid
+    if (!rtRwList.contains(_selectedRtRw)) {
+      _selectedRtRw = 'Semua';
+    }
+
+    final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -95,12 +127,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }
         },
         color: AppColors.primaryGreen,
-        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode),
+        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList),
       ),
     );
   }
 
-  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode) {
+  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList) {
     final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
     final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
@@ -169,19 +201,14 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                     child: DropdownButtonFormField<String>(
                                       value: _selectedKelurahan,
                                       decoration: const InputDecoration(labelText: 'Kelurahan', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                                      items: _kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
+                                      items: kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
                                       onChanged: (val) {
                                         if (val != null) {
                                           setState(() {
                                             _selectedKelurahan = val;
+                                            _selectedRtRw = 'Semua'; // Reset rt/rw saat kelurahan berubah
                                           });
-                                          if (isAktivasiBinMode) {
-                                            ref.read(aktivasiWargaProvider.notifier).setFilter(
-                                              kelurahan: val == 'Semua' ? '' : val,
-                                              rtRw: _selectedRtRw == 'Semua' ? '' : _selectedRtRw,
-                                              search: _searchController.text,
-                                            );
-                                          }
+                                          // Filter is applied locally, no need to trigger backend API.
                                         }
                                       },
                                     ),
@@ -191,17 +218,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                     child: DropdownButtonFormField<String>(
                                       value: _selectedRtRw,
                                       decoration: const InputDecoration(labelText: 'RT/RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                                      items: _rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
+                                      items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
                                       onChanged: (val) {
                                         if (val != null) {
                                           setState(() => _selectedRtRw = val);
-                                          if (isAktivasiBinMode) {
-                                            ref.read(aktivasiWargaProvider.notifier).setFilter(
-                                              kelurahan: _selectedKelurahan == 'Semua' ? '' : _selectedKelurahan,
-                                              rtRw: val == 'Semua' ? '' : val,
-                                              search: _searchController.text,
-                                            );
-                                          }
+                                          // Filter is applied locally, no need to trigger backend API.
                                         }
                                       },
                                     ),
@@ -214,8 +235,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
                         // Card Grafik Sumbu X Y
                         if (!isAktivasiBinMode) ...[
-                          _buildChartCard(state.wargaList),
+                          _buildChartCard(filteredWarga),
                           const SizedBox(height: AppDimensions.md),
+                          _buildLeaderboard(context, filteredWarga),
                         ],
                           // Daftar Warga
                           Text(
@@ -224,10 +246,15 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           ),
                           const SizedBox(height: AppDimensions.sm),
                           if (filteredWarga.isEmpty)
-                            const Card(
+                            Card(
                               child: Padding(
-                                padding: EdgeInsets.all(24.0),
-                                child: Text('Belum ada warga dampingan yang diaktivasi.', textAlign: TextAlign.center),
+                                padding: const EdgeInsets.all(24.0),
+                                child: Text(
+                                  isAktivasiBinMode 
+                                      ? 'Tidak ada warga yang memerlukan aktivasi.' 
+                                      : 'Belum ada warga dampingan terdaftar.', 
+                                  textAlign: TextAlign.center
+                                ),
                               ),
                             )
                           else
@@ -267,7 +294,35 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                                   children: [
                                                     Text(warga.wargaName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                                     const SizedBox(height: 4),
+                                                    if (warga.kelurahan.isNotEmpty || warga.rtRw.isNotEmpty) ...[
+                                                      Text('${warga.rtRw}, ${warga.kelurahan}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryBlue)),
+                                                      const SizedBox(height: 2),
+                                                    ],
                                                     Text(warga.address, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                                    const SizedBox(height: 8),
+                                                    // Metrik Keaktifan
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.monetization_on, size: 14, color: Colors.amber),
+                                                        const SizedBox(width: 4),
+                                                        Text('${warga.totalPoints} Poin', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                                        const SizedBox(width: 12),
+                                                        const Icon(Icons.analytics, size: 14, color: AppColors.primaryBlue),
+                                                        const SizedBox(width: 4),
+                                                        Text('${warga.correctPercentage.toStringAsFixed(0)}% Benar', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.access_time, size: 14, color: AppColors.textHint),
+                                                        const SizedBox(width: 4),
+                                                        Text(warga.lastActiveDate != null 
+                                                          ? 'Terakhir: ${warga.lastActiveDate!.day}/${warga.lastActiveDate!.month}/${warga.lastActiveDate!.year}' 
+                                                          : 'Belum ada aktivitas', 
+                                                          style: const TextStyle(fontSize: 11, color: AppColors.textHint)),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -354,12 +409,15 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   }
 
   Widget _buildChartCard(List<WargaDampingan> wargaList) {
-    // Ambil top 5 warga dampingan untuk visualisasi grafik X Y yang bersih
-    final chartData = wargaList.map((e) {
+    // Ambil top 5 warga dampingan berdasarkan poin tertinggi untuk sinkron dengan list
+    final sortedWarga = List<WargaDampingan>.from(wargaList)
+      ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
+
+    final chartData = sortedWarga.take(5).map((e) {
       final String firstName = e.wargaName.split(' ').first;
       final double score = e.correctPercentage;
       return _ChartDataPoint(firstName, score);
-    }).toList().take(5).toList();
+    }).toList();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -395,6 +453,96 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       ),
     );
   }
+
+  Widget _buildLeaderboard(BuildContext context, List<WargaDampingan> wargaList) {
+    if (wargaList.isEmpty) return const SizedBox();
+
+    // Sort by totalPoints descending, take top 3
+    final sortedWarga = List<WargaDampingan>.from(wargaList)
+      ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
+    final top3 = sortedWarga.take(3).toList();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppDimensions.md),
+      padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.leaderboard_rounded, color: AppColors.primaryBlue),
+              SizedBox(width: 8),
+              Text(
+                'Top 3 Warga Paling Aktif',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...top3.asMap().entries.map((entry) {
+            final index = entry.key;
+            final w = entry.value;
+            final isFirst = index == 0;
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.detailWarga,
+                  arguments: w,
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8.0, top: 4.0, left: 4.0, right: 4.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                    backgroundColor: isFirst ? Colors.amber : AppColors.textHint,
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      w.wargaName,
+                      style: TextStyle(
+                        fontWeight: isFirst ? FontWeight.bold : FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${w.totalPoints} Poin',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    ),
+  );
+}
 }
 
 class _ChartDataPoint {

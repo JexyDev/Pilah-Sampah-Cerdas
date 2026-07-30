@@ -11,9 +11,9 @@ import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../../data/services/notification_engine.dart' as import_engine;
 import '../../riwayat/controllers/riwayat_controller.dart';
 
-/// Aktivasi Tong Sampah — sesuai desain:
+/// Aktivasi Tempat Sampah — sesuai desain:
 /// AppBar biru, QrScannerWidget (kamera native / input manual),
-/// bottom sheet "Tong Terdeteksi!" dengan info card + tombol biru.
+/// bottom sheet "Tempat Sampah Terdeteksi!" dengan info card + tombol biru.
 class AktivasiBinView extends ConsumerStatefulWidget {
   const AktivasiBinView({super.key});
 
@@ -69,7 +69,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Text('GPS Tidak Aktif'),
-            content: const Text('Silakan aktifkan GPS/Layanan Lokasi pada perangkat Anda untuk mencatat titik posisi tong sampah.'),
+            content: const Text('Silakan aktifkan GPS/Layanan Lokasi pada perangkat Anda untuk mencatat titik posisi tempat sampah.'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -99,7 +99,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       if (mounted && showDialogs) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tong sampah.'),
+            content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
             backgroundColor: AppColors.dangerRed,
           ),
         );
@@ -127,7 +127,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         }
       } else if (_step == 2) {
         if (_qrOrganik.isNotEmpty && detected.toUpperCase() == _qrOrganik.toUpperCase()) {
-          _showErrorSnackBar('Harap scan barcode pada tong Anorganik!');
+          _showErrorSnackBar('Harap scan barcode pada tempat sampah Anorganik!');
           success = false;
         } else {
           _qrAnorganik = detected;
@@ -212,11 +212,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String _mapError(String code, String? msg) {
     switch (code) {
       case 'ALREADY_ACTIVATED':
-        return 'Tong ini sudah aktif dan terdaftar.';
+        return 'Tempat sampah ini sudah aktif dan terdaftar.';
       case 'BIN_NOT_FOUND':
         return 'QR Serial tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
-        return msg ?? 'Kategori tong sudah terdaftar untuk warga ini.';
+        return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
       default:
         return msg ?? 'Terjadi kesalahan. Silakan coba lagi.';
     }
@@ -252,7 +252,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     });
 
     if (aktivasiState.isLoading || _localLoading) {
-      final loadingMessage = _localLoading ? 'Mencari lokasi GPS tong...' : 'Mengaktivasi tong...';
+      final loadingMessage = _localLoading ? 'Mencari lokasi GPS tempat sampah...' : 'Mengaktivasi tempat sampah...';
       return Scaffold(body: AppLoading(message: loadingMessage));
     }
 
@@ -273,7 +273,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Aktivasi Tong Sampah',
+          'Aktivasi Tempat Sampah',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -302,7 +302,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Tong Berhasil Di-scan',
+                            'Tempat Sampah Berhasil Di-scan',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -391,8 +391,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         const SizedBox(height: 10),
         Text(
           _step == 1
-              ? 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tong Sampah Organik Anda'
-              : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tong Sampah Anorganik Anda',
+              ? 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda'
+              : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda',
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -402,7 +402,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         ),
         const SizedBox(height: 4),
         const Text(
-          'atau masukkan ID tong secara manual di atas',
+          'atau masukkan ID tempat sampah secara manual di atas',
           style: TextStyle(fontSize: 12, color: AppColors.textHint),
         ),
         if (_step == 2 && !_hasOrganic) ...[
@@ -452,7 +452,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             ),
             const SizedBox(width: 8),
             const Text(
-              'Tong Siap Diaktivasi!',
+              'Tempat Sampah Siap Diaktivasi!',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -506,7 +506,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             onPressed: _onAktivasi,
             icon: const Icon(Icons.sensors_rounded, size: 18),
             label: const Text(
-              'AKTIVASI TONG',
+              'AKTIVASI TEMPAT SAMPAH',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -526,7 +526,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         const SizedBox(height: 10),
         const Center(
           child: Text(
-            'Gunakan kedua tong ini untuk mengumpulkan poin\nsampah rumah tangga Anda.',
+            'Gunakan kedua tempat sampah ini untuk mengumpulkan poin\nsampah rumah tangga Anda.',
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -593,7 +593,7 @@ class _SuccessScreen extends StatelessWidget {
           onPressed: onBack,
         ),
         title: const Text(
-          'Aktivasi Tong Sampah',
+          'Aktivasi Tempat Sampah',
           style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
@@ -619,7 +619,7 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Kedua Tong Berhasil Diaktivasi!',
+                'Kedua Tempat Sampah Berhasil Diaktivasi!',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -629,7 +629,7 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Kedua tong sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
                 style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),

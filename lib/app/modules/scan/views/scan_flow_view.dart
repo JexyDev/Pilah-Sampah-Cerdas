@@ -475,7 +475,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 SizedBox(width: 48),
                 Expanded(
                   child: Text(
-                    'Scan QR Tong Sampah',
+                    'Scan QR Tempat Sampah',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -506,7 +506,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 child: Text(
                   'Sampah: ${result.detectedType.displayName} '
                   '(${(result.volumeEstimate * (isOrganic ? 0.4 : 0.2)).toStringAsFixed(1)} kg) '
-                  '— Arahkan ke tong ${result.detectedType.displayName.toUpperCase()}',
+                  '— Arahkan ke tempat sampah ${result.detectedType.displayName.toUpperCase()}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -549,7 +549,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
                   
-                  // Validasi jenis tong akan dilakukan dengan aman di sisi backend. 
+                  // Validasi jenis tempat sampah akan dilakukan dengan aman di sisi backend. 
                   // Jika tidak cocok, backend melempar BIN_TYPE_MISMATCH dan ditangani dengan benar.
 
                   ref
@@ -608,7 +608,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Arahkan kamera ke QR Code pada tong sampah '
+                'Arahkan kamera ke QR Code pada tempat sampah '
                 'untuk memverifikasi lokasi pembuangan Anda.',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
@@ -622,7 +622,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   }
 
   Widget _buildProgressBar(int active) {
-    const steps = ['Identifikasi', 'Verifikasi Tong', 'Selesai'];
+    const steps = ['Identifikasi', 'Verifikasi Lokasi', 'Selesai'];
 
     return Row(
       children: List.generate(steps.length * 2 - 1, (i) {
@@ -781,7 +781,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Kapasitas tong
+                // Kapasitas tempat sampah
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -795,7 +795,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Total Maks Tong',
+                            'Total Maks Tempat Sampah',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -946,7 +946,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       // Jika terjadi kesalahan saat scan QR (Step 2)
       final state = ref.read(scanFlowProvider);
       if (state.currentStep == 2 || state.aiResult != null) {
-        _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tong sampah.', isQrError: true);
+        _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tempat sampah.', isQrError: true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -958,11 +958,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     }
   }
 
-  /// Dialog BIN_TYPE_MISMATCH — "Tidak Sesuai!" dengan info sampah vs tong
+  /// Dialog BIN_TYPE_MISMATCH — "Tidak Sesuai!" dengan info sampah vs tempat sampah
   void _showMismatchDialog(BuildContext context) {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
-    // Tong yang salah = kebalikan dari yang terdeteksi
+    // Tempat sampah yang salah = kebalikan dari yang terdeteksi
     final String tongName = aiResult?.detectedType == WasteType.organic
         ? 'Non-Organik'
         : 'Organik';
@@ -1117,7 +1117,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'REKOMENDASI TONG',
+                            'REKOMENDASI TEMPAT SAMPAH',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -1125,7 +1125,7 @@ class _AiSuccessSheet extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Bin ${result.detectedType.displayName}',
+                            'Tempat Sampah ${result.detectedType.displayName}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -1265,7 +1265,7 @@ class _AiSuccessSheet extends StatelessWidget {
               },
               icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
               label: const Text(
-                'LANJUT SCAN TONG SAMPAH',
+                'LANJUT SCAN TEMPAT SAMPAH',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
@@ -1356,7 +1356,7 @@ class _MismatchDialog extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 16),
-            // SAMPAH vs TONG
+            // SAMPAH vs TEMPAT SAMPAH
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1409,7 +1409,7 @@ class _MismatchDialog extends StatelessWidget {
                         child: Column(
                           children: [
                             const Text(
-                              'TONG',
+                              'TEMPAT SAMPAH',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,
@@ -1449,7 +1449,7 @@ class _MismatchDialog extends StatelessWidget {
                       SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          'Jenis sampah tidak cocok dengan kategori tong yang dipilih. Harap masukkan sampah ke tempat yang sesuai.',
+                          'Jenis sampah tidak cocok dengan kategori tempat sampah yang dipilih. Harap masukkan sampah ke tempat yang sesuai.',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.dangerRed,
@@ -1465,7 +1465,7 @@ class _MismatchDialog extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onScanUlang,
               icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text('SCAN ULANG TONG YANG BENAR'),
+              label: const Text('SCAN ULANG TEMPAT SAMPAH YANG BENAR'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warningOrange,
               ),
