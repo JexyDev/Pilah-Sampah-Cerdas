@@ -65,6 +65,32 @@ interface PetugasItem {
   peran: string;
 }
 
+interface BinResetRequest {
+  id: string;
+  binId: string;
+  userId: string;
+  evidencePhotoUrl: string;
+  status: "PENDING" | "ON_PROGRESS" | "APPROVED" | "COMPLETED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
+  bin: {
+    id: string;
+    qrCode: string;
+    rtRw?: {
+      id: number;
+      name: string;
+      kelurahan?: {
+        name: string;
+      };
+    } | null;
+  };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export const ManajemenPengangkutan: React.FC = () => {
   const { user } = useAuthStore();
   const [tasks, setTasks] = useState<DispatchTask[]>([]);
@@ -72,6 +98,14 @@ export const ManajemenPengangkutan: React.FC = () => {
   const [areas, setAreas] = useState<AreaItem[]>([]);
   const [bins, setBins] = useState<BinItem[]>([]);
   const [petugasList, setPetugasList] = useState<PetugasItem[]>([]);
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<"tasks" | "requests">("tasks");
+
+  // Requests States
+  const [requests, setRequests] = useState<BinResetRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [evidenceModalUrl, setEvidenceModalUrl] = useState<string | null>(null);
 
   // Filter States
   const [statusFilter, setStatusFilter] = useState("");
@@ -107,6 +141,48 @@ export const ManajemenPengangkutan: React.FC = () => {
     }
   };
 
+  const fetchRequests = async () => {
+    try {
+      setLoadingRequests(true);
+      const res = await api.get(`/bins/reset-requests`);
+      if (res.data && res.data.success) {
+        setRequests(res.data.data);
+      }
+    } catch (err: any) {
+      toast.error("Gagal memuat pengajuan pengosongan");
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleUpdateRequestStatus = async (id: string, status: "ON_PROGRESS" | "REJECTED") => {
+    if (isReadOnly) {
+      toast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
+      return;
+    }
+    try {
+      await api.put(`/bins/reset-request/${id}/review`, { status });
+      toast.success(status === "ON_PROGRESS" ? "Petugas ditugaskan!" : "Pengajuan ditolak.");
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal mengubah status pengajuan");
+    }
+  };
+
+  const handleApproveRequest = async (id: string) => {
+    if (isReadOnly) {
+      toast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
+      return;
+    }
+    try {
+      await api.put(`/bins/reset/${id}/approve`);
+      toast.success("Pengosongan selesai! Kapasitas tong kembali ke 0%.");
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menyelesaikan pengosongan");
+    }
+  };
+
   const fetchFiltersAndData = async () => {
     try {
       // 1. Fetch RW Areas
@@ -131,8 +207,12 @@ export const ManajemenPengangkutan: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, [statusFilter, rwFilter]);
+    if (activeTab === "tasks") {
+      fetchTasks();
+    } else {
+      fetchRequests();
+    }
+  }, [statusFilter, rwFilter, activeTab]);
 
   useEffect(() => {
     fetchFiltersAndData();
@@ -227,6 +307,22 @@ export const ManajemenPengangkutan: React.FC = () => {
     );
   };
 
+  const getRequestStatusBadge = (status: BinResetRequest["status"]) => {
+    const configs = {
+      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-100", label: "Pending" },
+      ON_PROGRESS: { bg: "bg-blue-50 text-blue-700 border-blue-100", label: "Dalam Perjalanan" },
+      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Selesai" },
+      APPROVED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Disetujui" },
+      REJECTED: { bg: "bg-rose-50 text-rose-700 border-rose-100", label: "Ditolak" }
+    };
+    const c = configs[status] || { bg: "bg-gray-50 text-gray-700 border-gray-100", label: status };
+    return (
+      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${c.bg}`}>
+        {c.label}
+      </span>
+    );
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -237,7 +333,7 @@ export const ManajemenPengangkutan: React.FC = () => {
           </p>
         </div>
 
-        {!isReadOnly && !isPetugas && (
+        {activeTab === "tasks" && !isReadOnly && !isPetugas && (
           <button
             onClick={openAddModal}
             className="bg-primary hover:bg-primary/95 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-primary/20 transition-all duration-200 flex items-center gap-2 cursor-pointer"
@@ -248,152 +344,282 @@ export const ManajemenPengangkutan: React.FC = () => {
         )}
       </div>
 
-      {/* Filter Section */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-          <Truck size={14} />
-          <span>Filter Status & Wilayah:</span>
-        </div>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[150px]"
+      {/* Tabs */}
+      <div className="flex gap-6 border-b border-gray-100 pb-px">
+        <button
+          onClick={() => setActiveTab("tasks")}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === "tasks" ? "border-primary text-primary" : "border-transparent text-gray-400 hover:text-gray-600"
+          }`}
         >
-          <option value="">Semua Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="CLAIMED">Diklaim</option>
-          <option value="COMPLETED">Selesai</option>
-          <option value="ESCALATED">Eskalasi</option>
-        </select>
-
-        {!(user?.peran === "RW" || user?.peran === "RT") && (
-          <select
-            value={rwFilter}
-            onChange={(e) => setRwFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[200px]"
-          >
-            <option value="">Semua RW</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name} (Kel. {a.kelurahan?.name})
-              </option>
-            ))}
-          </select>
-        )}
+          Tugas Pengangkutan
+        </button>
+        <button
+          onClick={() => setActiveTab("requests")}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === "requests" ? "border-primary text-primary" : "border-transparent text-gray-400 hover:text-gray-600"
+          }`}
+        >
+          Permintaan Pengosongan Warga
+        </button>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-gray-800">Daftar Penugasan Pengangkutan</h2>
-        </div>
+      {activeTab === "tasks" ? (
+        <>
+          {/* Filter Section */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+              <Truck size={14} />
+              <span>Filter Status & Wilayah:</span>
+            </div>
 
-        {loading ? (
-          <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="text-xs">Memuat tugas...</p>
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
-            <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm font-medium">Belum ada tugas pengangkutan sampah.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
-              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3.5">ID Tugas</th>
-                  <th className="px-6 py-3.5">Tempat Sampah</th>
-                  <th className="px-6 py-3.5">Wilayah RW</th>
-                  <th className="px-6 py-3.5">Petugas Penjemput</th>
-                  <th className="px-6 py-3.5 text-center">Status</th>
-                  <th className="px-6 py-3.5">Tanggal Tugas</th>
-                  <th className="px-6 py-3.5 text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {tasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-gray-700 align-middle">
-                      {task.id.slice(0, 8).toUpperCase()}
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <div className="font-bold text-gray-800">{task.bin.qrCode}</div>
-                      <div className="text-[10px] text-gray-400 font-mono">ID: {task.binId}</div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 align-middle">
-                      {task.bin.rtRw?.name || "-"} (Kel. {task.bin.rtRw?.kelurahan?.name || "-"})
-                    </td>
-                    <td className="px-6 py-4 align-middle font-medium text-gray-700">
-                      {task.claimedByUser ? (
-                        <div className="flex items-center gap-1.5">
-                          <UserCheck className="w-4 h-4 text-primary" />
-                          <span>{task.claimedByUser.name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400 font-bold italic">Belum Diklaim</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center align-middle">
-                      {getStatusBadge(task.status)}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 align-middle whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={13} />
-                        <span>
-                          {new Date(task.createdAt).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
-                      <div className="inline-flex gap-2 justify-center">
-                        {isPetugas && task.status === "PENDING" && (
-                          <button
-                            onClick={() => handleClaim(task.id)}
-                            className="bg-primary hover:bg-primary/95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1"
-                          >
-                            <CheckCircle size={13} />
-                            Klaim
-                          </button>
-                        )}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[150px]"
+            >
+              <option value="">Semua Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="CLAIMED">Diklaim</option>
+              <option value="COMPLETED">Selesai</option>
+              <option value="ESCALATED">Eskalasi</option>
+            </select>
 
-                        {!isReadOnly && !isPetugas && (
-                          <>
-                            <button
-                              onClick={() => openEditModal(task)}
-                              className="p-2 bg-slate-100 hover:bg-primary/20 text-primary rounded-lg transition-colors cursor-pointer"
-                              title="Edit"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(task.id)}
-                              className="p-2 bg-slate-100 hover:bg-error/20 text-error rounded-lg transition-colors cursor-pointer"
-                              title="Hapus/Batalkan"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </>
-                        )}
-
-                        {isReadOnly && (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+            {!(user?.peran === "RW" || user?.peran === "RT") && (
+              <select
+                value={rwFilter}
+                onChange={(e) => setRwFilter(e.target.value)}
+                className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[200px]"
+              >
+                <option value="">Semua RW</option>
+                {areas.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} (Kel. {a.kelurahan?.name})
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Table Section */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Daftar Penugasan Pengangkutan</h2>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-xs">Memuat tugas...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
+                <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm font-medium">Belum ada tugas pengangkutan sampah.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
+                  <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-3.5">ID Tugas</th>
+                      <th className="px-6 py-3.5">Tempat Sampah</th>
+                      <th className="px-6 py-3.5">Wilayah RW</th>
+                      <th className="px-6 py-3.5">Petugas Penjemput</th>
+                      <th className="px-6 py-3.5 text-center">Status</th>
+                      <th className="px-6 py-3.5">Tanggal Tugas</th>
+                      <th className="px-6 py-3.5 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {tasks.map((task) => (
+                      <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-4 font-mono font-bold text-gray-700 align-middle">
+                          {task.id.slice(0, 8).toUpperCase()}
+                        </td>
+                        <td className="px-6 py-4 align-middle">
+                          <div className="font-bold text-gray-800">{task.bin.qrCode}</div>
+                          <div className="text-[10px] text-gray-400 font-mono">ID: {task.binId}</div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 align-middle">
+                          {task.bin.rtRw?.name || "-"} (Kel. {task.bin.rtRw?.kelurahan?.name || "-"})
+                        </td>
+                        <td className="px-6 py-4 align-middle font-medium text-gray-700">
+                          {task.claimedByUser ? (
+                            <div className="flex items-center gap-1.5">
+                              <UserCheck className="w-4 h-4 text-primary" />
+                              <span>{task.claimedByUser.name}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 font-bold italic">Belum Diklaim</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center align-middle">
+                          {getStatusBadge(task.status)}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 align-middle whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <Calendar size={13} />
+                            <span>
+                              {new Date(task.createdAt).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
+                          <div className="inline-flex gap-2 justify-center">
+                            {isPetugas && task.status === "PENDING" && (
+                              <button
+                                onClick={() => handleClaim(task.id)}
+                                className="bg-primary hover:bg-primary/95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1"
+                              >
+                                <CheckCircle size={13} />
+                                Klaim
+                              </button>
+                            )}
+
+                            {!isReadOnly && !isPetugas && (
+                              <>
+                                <button
+                                  onClick={() => openEditModal(task)}
+                                  className="p-2 bg-slate-100 hover:bg-primary/20 text-primary rounded-lg transition-colors cursor-pointer"
+                                  title="Edit"
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(task.id)}
+                                  className="p-2 bg-slate-100 hover:bg-error/20 text-error rounded-lg transition-colors cursor-pointer"
+                                  title="Hapus/Batalkan"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </>
+                            )}
+
+                            {isReadOnly && (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Requests Section */
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-gray-800">Daftar Pengajuan Pengosongan Tong Warga</h2>
+          </div>
+
+          {loadingRequests ? (
+            <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <p className="text-xs">Memuat pengajuan...</p>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
+              <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm font-medium">Belum ada pengajuan pengosongan tong dari warga.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
+                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-3.5">Nama Warga</th>
+                    <th className="px-6 py-3.5">Alamat / RT / RW</th>
+                    <th className="px-6 py-3.5">Tanggal Request</th>
+                    <th className="px-6 py-3.5 text-center">Status</th>
+                    <th className="px-6 py-3.5 text-center">Foto Bukti</th>
+                    <th className="px-6 py-3.5 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {requests.map((req) => (
+                    <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4 align-middle">
+                        <div className="font-bold text-gray-800">{req.user.name}</div>
+                        <div className="text-[10px] text-gray-400">{req.user.email}</div>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-gray-600">
+                        {req.bin.rtRw?.name || "Wilayah Umum"} {req.bin.rtRw?.kelurahan?.name ? `(Kel. ${req.bin.rtRw.kelurahan.name})` : ""}
+                      </td>
+                      <td className="px-6 py-4 align-middle text-gray-500 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <Calendar size={13} />
+                          <span>
+                            {new Date(req.createdAt).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center align-middle">
+                        {getRequestStatusBadge(req.status)}
+                      </td>
+                      <td className="px-6 py-4 text-center align-middle">
+                        <button
+                          onClick={() => setEvidenceModalUrl(req.evidencePhotoUrl)}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                        >
+                          Lihat Foto
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
+                        <div className="inline-flex gap-2 justify-center">
+                          {req.status === "PENDING" && (
+                            <>
+                              <button
+                                onClick={() => handleUpdateRequestStatus(req.id, "ON_PROGRESS")}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                              >
+                                Terima & Tugaskan
+                              </button>
+                              <button
+                                onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
+                                className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                              >
+                                Tolak
+                              </button>
+                            </>
+                          )}
+                          {req.status === "ON_PROGRESS" && (
+                            <button
+                              onClick={() => handleApproveRequest(req.id)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                            >
+                              Tandai Selesai
+                            </button>
+                          )}
+                          {(req.status === "COMPLETED" || req.status === "APPROVED") && (
+                            <span className="text-xs text-emerald-600 font-bold">Selesai</span>
+                          )}
+                          {req.status === "REJECTED" && (
+                            <span className="text-xs text-rose-600 font-bold">Ditolak</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modal Dialog */}
       {isModalOpen && (
@@ -488,6 +714,44 @@ export const ManajemenPengangkutan: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Evidence Modal */}
+      {evidenceModalUrl && (
+        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">Foto Bukti Tong Penuh</h3>
+              <button
+                onClick={() => setEvidenceModalUrl(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold cursor-pointer text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 flex justify-center bg-gray-50">
+              <img
+                src={evidenceModalUrl}
+                alt="Foto Bukti"
+                className="max-h-[400px] w-auto rounded-xl object-contain border border-gray-200 shadow-sm"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.startsWith("http")) {
+                    target.src = api.defaults.baseURL + target.src;
+                  }
+                }}
+              />
+            </div>
+            <div className="p-5 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setEvidenceModalUrl(null)}
+                className="bg-primary hover:bg-primary/95 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -864,6 +864,32 @@ export class BinService {
    * Create bin reset request and notify area petugas
    */
   async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+    // 1. check if bin exists in DB
+    const bin = await prisma.bin.findUnique({
+      where: { id: binId },
+      include: { binOwnerships: true }
+    });
+    if (!bin) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+
+    // 2. check if owned by user
+    const isOwner = bin.userId === userId || bin.binOwnerships.some((o: any) => o.userId === userId);
+    if (!isOwner) {
+      throw new Error("BIN_NOT_OWNED");
+    }
+
+    // 3. check if duplicate pending request
+    const existing = await prisma.binResetRequest.findFirst({
+      where: {
+        binId,
+        status: "PENDING"
+      }
+    });
+    if (existing) {
+      throw new Error("DUPLICATE_REQUEST");
+    }
+
     const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
 
     // Notify all Petugas/Admin
@@ -891,17 +917,61 @@ export class BinService {
   }
 
   /**
-   * Review (approve/reject) reset request
+   * List reset requests with area-scoping
    */
-  async reviewResetRequest(id: string, status: "APPROVED" | "REJECTED", reviewedById: string) {
+  async listResetRequests(
+    currentUser?: { userId: string; role: string },
+    filters?: { status?: string }
+  ) {
+    let whereClause: any = {};
+    if (currentUser) {
+      const { getScopingFilters } = await import("../utils/rbacScoping.js");
+      const scoping = await getScopingFilters(currentUser);
+      if (scoping.binFilter) {
+        whereClause.bin = scoping.binFilter;
+      }
+    }
+
+    if (filters && filters.status) {
+      whereClause.status = filters.status;
+    }
+
+    return prisma.binResetRequest.findMany({
+      where: whereClause,
+      include: {
+        bin: {
+          include: {
+            rtRw: {
+              include: {
+                kelurahan: true,
+              },
+            },
+          },
+        },
+        user: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  /**
+   * Review (approve/reject/in-progress) reset request
+   */
+  async reviewResetRequest(
+    id: string,
+    status: "APPROVED" | "REJECTED" | "COMPLETED" | "ON_PROGRESS",
+    reviewedById: string
+  ) {
     const request = await binRepository.findResetRequestById(id);
     if (!request) {
       throw new Error("REQUEST_NOT_FOUND");
     }
 
-    const updated = await binRepository.updateResetRequestStatus(id, status, reviewedById);
+    const updated = await binRepository.updateResetRequestStatus(id, status as any, reviewedById);
 
-    if (status === "APPROVED") {
+    if (status === "APPROVED" || status === "COMPLETED") {
       // Reset Bin volume
       await binRepository.updateVolume(request.binId, 0.0);
 
@@ -913,13 +983,22 @@ export class BinService {
           `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong ${request.bin.qrCode} menjadi 0%.`
         )
         .catch(() => {});
-    } else {
+    } else if (status === "REJECTED") {
       // Notify Warga
       await binRepository
         .createNotification(
           request.userId,
           "Pengajuan Ditolak",
-          `Pengajuan pengosongan tong ${request.bin.qrCode} ditolak oleh petugas.`
+          `Foto bukti pengosongan tong ${request.bin.qrCode} Anda ditolak oleh petugas. Silakan ajukan kembali.`
+        )
+        .catch(() => {});
+    } else if (status === "ON_PROGRESS") {
+      // Notify Warga
+      await binRepository
+        .createNotification(
+          request.userId,
+          "Pengangkutan Sedang Berlangsung",
+          `Petugas sedang menuju lokasi Anda untuk mengosongkan tong ${request.bin.qrCode}.`
         )
         .catch(() => {});
     }
@@ -930,7 +1009,7 @@ export class BinService {
         data: {
           action: "REVIEW_RESET_REQUEST",
           userId: reviewedById,
-          oldValue: { status: "PENDING", request: id },
+          oldValue: { status: request.status, request: id },
           newValue: { status, binId: request.binId },
         },
       })

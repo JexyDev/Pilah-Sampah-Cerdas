@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Loader2, Medal, TrendingUp, BarChart2, Users, Search, ArrowUpDown, MapPin, GraduationCap } from "lucide-react";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { Badge } from "../../components/common/Badge";
@@ -36,12 +37,46 @@ const Leaderboard: React.FC = () => {
     fetchLeaderboardKkn,
   } = useLeaderboardStore();
 
-  const [system, setSystem] = useState<SystemType>("system1");
-  const [s1Tab, setS1Tab] = useState<System1Tab>("citizens");
-  const [s2Tab, setS2Tab] = useState<System2Tab>("students");
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const systemParam = searchParams.get("system") as SystemType;
+  const tabParam = searchParams.get("tab");
+
+  const [system, setSystem] = useState<SystemType>(() => {
+    if (systemParam === "system1" || systemParam === "system2") return systemParam;
+    return "system1";
+  });
+  const [s1Tab, setS1Tab] = useState<System1Tab>(() => {
+    if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan"].includes(tabParam || "")) {
+      return tabParam as System1Tab;
+    }
+    return "citizens";
+  });
+  const [s2Tab, setS2Tab] = useState<System2Tab>(() => {
+    if (systemParam === "system2" && ["students", "groups"].includes(tabParam || "")) {
+      return tabParam as System2Tab;
+    }
+    return "students";
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"rank" | "name" | "points" | "subtitle">("rank");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const systemParam = searchParams.get("system") as SystemType;
+    const tabParam = searchParams.get("tab");
+
+    if (systemParam === "system1" || systemParam === "system2") {
+      setSystem(systemParam);
+      if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan"].includes(tabParam || "")) {
+        setS1Tab(tabParam as System1Tab);
+      } else if (systemParam === "system2" && ["students", "groups"].includes(tabParam || "")) {
+        setS2Tab(tabParam as System2Tab);
+      }
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (system === "system1") {

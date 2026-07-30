@@ -457,9 +457,17 @@ export class BinController {
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] createResetRequest error:", error);
-      res
-        .status(500)
-        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+      if (error.message === "RESOURCE_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+      } else if (error.message === "BIN_NOT_OWNED") {
+        res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
+      } else if (error.message === "DUPLICATE_REQUEST") {
+        res.status(400).json({ error: "DUPLICATE_REQUEST", message: "Sudah ada pengajuan pengosongan aktif untuk tong ini" });
+      } else {
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+      }
     }
   }
 
@@ -484,6 +492,26 @@ export class BinController {
   }
 
   /**
+   * List all reset requests (Admin/RW/Lurah)
+   */
+  async listResetRequests(req: Request, res: Response): Promise<void> {
+    try {
+      const currentUser = req.user;
+      const { status } = req.query;
+      const result = await binService.listResetRequests(
+        currentUser,
+        status ? { status: String(status) } : undefined
+      );
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error("[BinController] listResetRequests error:", error);
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil daftar pengajuan" });
+    }
+  }
+
+  /**
    * Review bin reset request (Petugas/Admin)
    */
   async reviewResetRequest(req: Request, res: Response): Promise<void> {
@@ -492,10 +520,15 @@ export class BinController {
       const { id } = req.params;
       const { status } = req.body;
 
-      if (status !== "APPROVED" && status !== "REJECTED") {
+      if (
+        status !== "APPROVED" &&
+        status !== "REJECTED" &&
+        status !== "COMPLETED" &&
+        status !== "ON_PROGRESS"
+      ) {
         res
           .status(400)
-          .json({ error: "BAD_REQUEST", message: "status harus APPROVED atau REJECTED" });
+          .json({ error: "BAD_REQUEST", message: "status tidak valid" });
         return;
       }
 
@@ -509,6 +542,28 @@ export class BinController {
         res
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses pengajuan" });
+      }
+    }
+  }
+
+  /**
+   * Approve bin reset request instantly (sets status to COMPLETED and resets volume)
+   */
+  async approveResetRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const reviewedById = req.user!.userId;
+      const { id } = req.params;
+
+      const result = await binService.reviewResetRequest(id, "COMPLETED", reviewedById);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] approveResetRequest error:", error);
+      if (error.message === "REQUEST_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Pengajuan tidak ditemukan" });
+      } else {
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menyetujui pengajuan" });
       }
     }
   }
@@ -754,14 +809,34 @@ export class BinController {
         res.status(400).json({ error: "BAD_REQUEST", message: "binId wajib diisi" });
         return;
       }
-      const evidencePhotoUrl = `/uploads/${req.file.filename}`;
+      const host = req.get("host");
+      const protocol = req.protocol;
+      const evidencePhotoUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
       const result = await binService.createResetRequest(binId, userId, evidencePhotoUrl);
-      res.status(201).json({ success: true, data: result });
+      res.status(201).json({
+        success: true,
+        data: {
+          id: result.id,
+          binId: result.binId,
+          userId: result.userId,
+          status: result.status,
+          evidencePhotoUrl: result.evidencePhotoUrl,
+          createdAt: result.createdAt,
+        },
+      });
     } catch (error: any) {
       console.error("[BinController] createResetRequestMobile error:", error);
-      res
-        .status(500)
-        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+      if (error.message === "RESOURCE_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+      } else if (error.message === "BIN_NOT_OWNED") {
+        res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
+      } else if (error.message === "DUPLICATE_REQUEST") {
+        res.status(400).json({ error: "DUPLICATE_REQUEST", message: "Sudah ada pengajuan pengosongan aktif untuk tong ini" });
+      } else {
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+      }
     }
   }
 }

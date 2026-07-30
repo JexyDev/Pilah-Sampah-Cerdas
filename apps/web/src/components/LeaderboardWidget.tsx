@@ -335,6 +335,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={wargaList}
             maxPoints={wargaList[0]?.points || 12350}
+            linkTo="/leaderboard?system=system1&tab=citizens"
           />
 
           {/* 2. Top 10 Petugas Residu */}
@@ -345,6 +346,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#ef4444"
             items={petugasList}
             maxPoints={petugasList[0]?.points || 8620}
+            linkTo="/leaderboard?system=system1&tab=pengangkut"
           />
 
           {/* 3. Top 10 RW */}
@@ -355,6 +357,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={rwList}
             maxPoints={rwList[0]?.points || 24560}
+            linkTo="/leaderboard?system=system1&tab=rtrw"
           />
 
           {/* 4. Top 10 Kelurahan */}
@@ -365,6 +368,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#3b82f6"
             items={kelurahanList}
             maxPoints={kelurahanList[0]?.points || 56230}
+            linkTo="/leaderboard?system=system1&tab=kelurahan"
           />
         </div>
       </div>
@@ -394,6 +398,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={mahasiswaList}
             maxPoints={mahasiswaList[0]?.points || 7820}
+            linkTo="/leaderboard?system=system2&tab=students"
           />
 
           {/* 2. Top 10 Kelompok Mahasiswa */}
@@ -404,6 +409,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={kelompokList}
             maxPoints={kelompokList[0]?.points || 29680}
+            linkTo="/leaderboard?system=system2&tab=groups"
           />
 
           {/* 3. Top 10 Dosen Pendamping Lapangan (DPL) */}
@@ -414,6 +420,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={dplList}
             maxPoints={dplList[0]?.points || 9420}
+            linkTo="/leaderboard?system=system2&tab=students"
           />
         </div>
       </div>

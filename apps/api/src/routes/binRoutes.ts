@@ -318,4 +318,18 @@ router.post(
   binController.createResetRequestMobile
 );
 
+router.get(
+  "/reset-requests",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  binController.listResetRequests
+);
+
+router.put(
+  "/reset/:id/approve",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  binController.approveResetRequest
+);
+
 export default router;
