@@ -44,6 +44,16 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<List<dynamic>> getActivityLog() async {
+    final response = await apiClient.dio.get('/kkn/activity-log');
+    if (response.statusCode == 200) {
+      return response.data['data'] as List<dynamic>? ?? [];
+    } else {
+      throw Exception('Gagal memuat log aktivitas KKN');
+    }
+  }
+
+  @override
   Future<void> sendLocationPing(double latitude, double longitude) async {
     await apiClient.dio.post(
       '/kkn/location-ping',

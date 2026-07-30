@@ -1,0 +1,45 @@
+import 'package:equatable/equatable.dart';
+
+/// Entitas notifikasi — sesuai response GET /api/v1/notifications.
+class NotificationEntity extends Equatable {
+  const NotificationEntity({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.desc,
+    required this.isRead,
+    required this.time,
+    required this.icon,
+  });
+
+  final String id;
+
+  /// Tipe notifikasi: POIN_BERTAMBAH, TONG_PENUH, PENGAJUAN_PENGOSONGAN,
+  /// PENGAJUAN_DISETUJUI, PENGAJUAN_DITOLAK, INFO
+  final String type;
+
+  final String title;
+  final String desc;
+  final bool isRead;
+
+  /// Waktu relatif sudah diformat backend: "2 jam lalu", "Baru saja", dll.
+  final String time;
+
+  /// Nama icon Material (star, warning, delete_sweep, check_circle, info).
+  final String icon;
+
+  NotificationEntity copyWith({bool? isRead}) {
+    return NotificationEntity(
+      id: id,
+      type: type,
+      title: title,
+      desc: desc,
+      isRead: isRead ?? this.isRead,
+      time: time,
+      icon: icon,
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, isRead];
+}
