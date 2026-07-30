@@ -232,7 +232,6 @@ export const LeaderboardWidget: React.FC = () => {
 
   const fetchLiveLeaderboards = async () => {
     try {
-      setIsLoading(true);
       const res = await api.get("/gamification/leaderboard");
       if (res.data?.success && res.data.data) {
         const d = res.data.data;

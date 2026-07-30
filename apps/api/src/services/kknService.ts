@@ -329,7 +329,9 @@ export class KknService {
 
         for (const mCode of missing) {
           const isOrg = mCode.toLowerCase().includes("organik") || mCode.toLowerCase().includes("org");
-          let category = await tx.wasteCategory.findFirst({ where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" } });
+          let category = await tx.wasteCategory.findFirst({
+            where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
+          });
           if (!category) category = await tx.wasteCategory.findFirst();
 
           const newBin = await tx.bin.create({
