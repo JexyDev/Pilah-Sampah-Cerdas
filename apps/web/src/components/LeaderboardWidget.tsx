@@ -308,18 +308,6 @@ export const LeaderboardWidget: React.FC = () => {
     }
   };
 
-  const mergeWithDefaults = (live: LeaderboardItem[], fallback: LeaderboardItem[]): LeaderboardItem[] => {
-    if (live.length >= 10) return live.slice(0, 10);
-    const combined = [...live];
-    fallback.slice(live.length).forEach((fbItem, idx) => {
-      combined.push({
-        ...fbItem,
-        rank: live.length + idx + 1,
-      });
-    });
-    return combined;
-  };
-
   return (
     <div className="space-y-6 w-full">
       {/* GRUP 1 — Top 10 Warga & Wilayah */}
