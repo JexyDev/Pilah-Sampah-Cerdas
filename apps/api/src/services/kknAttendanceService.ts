@@ -75,7 +75,10 @@ export class KknAttendanceService {
    * Save student's current locations in batch and perform auto-cleanup of logs older than 24h.
    * If student is inside active activity radius, trigger auto-attendance.
    */
-  async updateStudentLocationsBatch(studentId: string, locations: { latitude: number; longitude: number; timestamp?: string }[]) {
+  async updateStudentLocationsBatch(
+    studentId: string,
+    locations: { latitude: number; longitude: number; timestamp?: string }[]
+  ) {
     const savedLocations = [];
     for (const loc of locations) {
       // 1. Save new location
@@ -129,7 +132,10 @@ export class KknAttendanceService {
     for (const schedule of activeSchedules) {
       let isInside = false;
       if (schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3) {
-        const polyPoints = (schedule.polygon as any[]).map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+        const polyPoints = (schedule.polygon as any[]).map((p) => ({
+          lat: Number(p[0]),
+          lng: Number(p[1]),
+        }));
         isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
       } else if (schedule.latitude && schedule.longitude) {
         const dist = calculateDistance(
@@ -236,7 +242,10 @@ export class KknAttendanceService {
     // 2. Validate radius on backend
     let isInside = false;
     if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
-      const polyPoints = (actLoc.polygon as any[]).map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+      const polyPoints = (actLoc.polygon as any[]).map((p) => ({
+        lat: Number(p[0]),
+        lng: Number(p[1]),
+      }));
       isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
     } else {
       const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
@@ -244,9 +253,7 @@ export class KknAttendanceService {
     }
 
     if (!isInside) {
-      throw new Error(
-        `OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`
-      );
+      throw new Error(`OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`);
     }
 
     // 3. Create or update attendance record
@@ -387,8 +394,15 @@ export class KknAttendanceService {
       let currentStatus = "TIDAK_TERDETEKSI"; // GPS off/expired
       if (latestLoc) {
         let isInside = false;
-        if (scheduleLoc.polygon && Array.isArray(scheduleLoc.polygon) && scheduleLoc.polygon.length >= 3) {
-          const polyPoints = (scheduleLoc.polygon as any[]).map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+        if (
+          scheduleLoc.polygon &&
+          Array.isArray(scheduleLoc.polygon) &&
+          scheduleLoc.polygon.length >= 3
+        ) {
+          const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
+            lat: Number(p[0]),
+            lng: Number(p[1]),
+          }));
           isInside = isPointInPolygon(
             { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
             polyPoints

@@ -280,5 +280,4 @@ router.patch(
   authController.approveKkn
 );
 
-
 export default router;

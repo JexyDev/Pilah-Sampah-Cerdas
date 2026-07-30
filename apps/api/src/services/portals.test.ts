@@ -120,7 +120,6 @@ describe("Portals A & B Service Integration Tests", () => {
 
       expect(result).toHaveProperty("user");
 
-
       // Verify bin is now active
       const updatedBin = await prisma.bin.findUnique({
         where: { id: testBin.id },

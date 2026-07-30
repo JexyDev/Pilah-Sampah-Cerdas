@@ -112,8 +112,6 @@ export class AuthService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    
-
     const updatedUser = await authRepository.updateUser(userId, {
       name,
       phone,
@@ -339,10 +337,6 @@ export class AuthService {
     const existingUserByPhone = await authRepository.findUserByPhone(userData.phone);
     if (existingUserByPhone) throw new Error("PHONE_ALREADY_IN_USE");
 
-    
-
-    
-
     const role = await authRepository.findRoleByName("WARGA");
     if (!role) throw new Error("ROLE_NOT_FOUND");
 
@@ -395,10 +389,6 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
-    
-
-    
-
     return authRepository.registerKknTx(
       {
         ...userData,
@@ -414,10 +404,6 @@ export class AuthService {
   async registerPetugasResidu(userData: any, petugasData: any) {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
-
-    
-
-    
 
     if (userData.rtRwId) {
       const existingPetugas = await prisma.user.findFirst({
@@ -452,10 +438,6 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
 
-    
-
-    
-
     const role = await authRepository.findRoleByName(roleName);
     if (!role) throw new Error("ROLE_NOT_FOUND");
 
@@ -469,8 +451,6 @@ export class AuthService {
   async registerDpl(userData: any) {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(userData.password);
-
-    
 
     let role = await authRepository.findRoleByName("DPL");
     if (!role) {

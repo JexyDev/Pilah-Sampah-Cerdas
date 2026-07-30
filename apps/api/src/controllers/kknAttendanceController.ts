@@ -17,18 +17,35 @@ export const kknAttendanceController = {
       if (!locations || !Array.isArray(locations)) {
         // Fallback to single ping
         const { latitude, longitude, lat, lng, timestamp } = req.body;
-        const finalLat = latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
-        const finalLng = longitude !== undefined ? parseFloat(longitude) : lng !== undefined ? parseFloat(lng) : null;
+        const finalLat =
+          latitude !== undefined
+            ? parseFloat(latitude)
+            : lat !== undefined
+              ? parseFloat(lat)
+              : null;
+        const finalLng =
+          longitude !== undefined
+            ? parseFloat(longitude)
+            : lng !== undefined
+              ? parseFloat(lng)
+              : null;
 
         if (finalLat === null || finalLng === null || isNaN(finalLat) || isNaN(finalLng)) {
           res.status(400).json({
             success: false,
             error: "VALIDATION_ERROR",
-            message: "Payload locations (array) atau koordinat latitude dan longitude yang valid diperlukan",
+            message:
+              "Payload locations (array) atau koordinat latitude dan longitude yang valid diperlukan",
           });
           return;
         }
-        locations = [{ latitude: finalLat, longitude: finalLng, timestamp: timestamp || new Date().toISOString() }];
+        locations = [
+          {
+            latitude: finalLat,
+            longitude: finalLng,
+            timestamp: timestamp || new Date().toISOString(),
+          },
+        ];
       }
 
       const result = await kknAttendanceService.updateStudentLocationsBatch(studentId, locations);

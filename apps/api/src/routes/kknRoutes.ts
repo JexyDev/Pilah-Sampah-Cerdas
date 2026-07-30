@@ -37,12 +37,7 @@ router.get(
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getRegisteredWarga
 );
-router.get(
-  "/warga",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.getWargaList
-);
+router.get("/warga", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.getWargaList);
 router.post(
   "/warga/activate-by-scan",
   authMiddleware,

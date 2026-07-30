@@ -71,7 +71,7 @@ export class KknService {
             rtRw: true,
             pointHistory: true,
             wargaViolations: true,
-            setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } }
+            setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
           },
         },
       },
@@ -84,7 +84,7 @@ export class KknService {
       const recentLogs = u.setoranOtomatis.map((log: any) => ({
         weightKg: Number(log.berat),
         category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        isCorrect: true // Assuming AI overrides correctly for MVP or check logic if needed
+        isCorrect: true, // Assuming AI overrides correctly for MVP or check logic if needed
       }));
 
       return {
@@ -95,7 +95,7 @@ export class KknService {
         recentLogs,
         // for filters
         rtRwId: u.rtRwId,
-        binCode: b.qrCode
+        binCode: b.qrCode,
       };
     });
 
@@ -182,82 +182,101 @@ export class KknService {
     };
   }
 
-  async getWargaList(kknUserId: string, filters: { status?: string; kelurahan?: string; rtRwId?: number; search?: string }) {
+  async getWargaList(
+    kknUserId: string,
+    filters: { status?: string; kelurahan?: string; rtRwId?: number; search?: string }
+  ) {
     const where: any = { role: { name: "WARGA" } };
-    
+
     if (filters.status === "UNACTIVATED") {
       where.binOwnerships = { none: {} };
     } else if (filters.status === "ACTIVATED") {
       where.binOwnerships = { some: { bin: { status: "ACTIVE_BOUND" } } };
     }
-    
+
     if (filters.kelurahan || filters.rtRwId) {
       where.households = { some: {} };
       if (filters.rtRwId) where.households.some.rtRwId = filters.rtRwId;
-      if (filters.kelurahan) where.households.some.rtRw = { kelurahan: { name: filters.kelurahan } };
+      if (filters.kelurahan)
+        where.households.some.rtRw = { kelurahan: { name: filters.kelurahan } };
     }
 
     if (filters.search) {
       where.name = { contains: filters.search, mode: "insensitive" };
     }
 
-    const warga = await prisma.user.findMany({ 
-      where, 
-      include: { 
+    const warga = await prisma.user.findMany({
+      where,
+      include: {
         households: { include: { rtRw: { include: { kelurahan: true } } } },
-        binOwnerships: { include: { bin: true } }
-      } 
+        binOwnerships: { include: { bin: true } },
+      },
     });
 
     return warga.map((w: any) => {
       const household = w.households?.[0];
-      return { 
-        id: w.id, 
-        name: w.name, 
+      return {
+        id: w.id,
+        name: w.name,
         address: household?.address || w.address,
         kelurahan: household?.rtRw?.kelurahan?.name || null,
         rtRw: household?.rtRw?.name || null,
-        isActivated: w.binOwnerships?.some((bo: any) => bo.bin?.status === "ACTIVE_BOUND") || false
+        isActivated: w.binOwnerships?.some((bo: any) => bo.bin?.status === "ACTIVE_BOUND") || false,
       };
     });
   }
 
-  async activateWargaBin(wargaId: string, binOrganikId: string, binAnorganikId: string, latitude: number, longitude: number, kknUserId: string) {
+  async activateWargaBin(
+    wargaId: string,
+    binOrganikId: string,
+    binAnorganikId: string,
+    latitude: number,
+    longitude: number,
+    kknUserId: string
+  ) {
     return prisma.$transaction(async (tx) => {
       const bins = await tx.bin.findMany({
-        where: { qrCode: { in: [binOrganikId, binAnorganikId] } }
+        where: { qrCode: { in: [binOrganikId, binAnorganikId] } },
       });
-      
+
       if (bins.length !== 2) throw new Error("Satu atau kedua Bin tidak ditemukan");
       for (const bin of bins) {
-        if (!["PRINTED", "BELUM_DIGUNAKAN", "PENDING_APPROVAL", "ASSIGNED_TO_PIC"].includes(bin.status)) {
+        if (
+          !["PRINTED", "BELUM_DIGUNAKAN", "PENDING_APPROVAL", "ASSIGNED_TO_PIC"].includes(
+            bin.status
+          )
+        ) {
           throw new Error(`Bin ${bin.qrCode} sudah terdaftar atau digunakan`);
         }
       }
 
       await tx.bin.updateMany({
         where: { qrCode: { in: [binOrganikId, binAnorganikId] } },
-        data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId }
+        data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId },
       });
 
       // Update Household coordinates
       await tx.household.updateMany({
         where: { userId: wargaId },
-        data: { latitude, longitude }
+        data: { latitude, longitude },
       });
-      
+
       for (const bin of bins) {
         await tx.binOwnership.create({
-          data: { userId: wargaId, binId: bin.id, type: "UTAMA" }
+          data: { userId: wargaId, binId: bin.id, type: "UTAMA" },
         });
       }
 
       // Bonus atomik +10 Warga, +10 Mahasiswa
       await tx.pointHistory.create({
-        data: { userId: kknUserId, points: 10, description: "Aktivasi Bin Warga (Organik & Anorganik)" }
+        data: {
+          userId: kknUserId,
+          points: 10,
+          description: "Aktivasi Bin Warga (Organik & Anorganik)",
+        },
       });
       await tx.pointHistory.create({
-        data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tong Sampah" }
+        data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tong Sampah" },
       });
     });
   }

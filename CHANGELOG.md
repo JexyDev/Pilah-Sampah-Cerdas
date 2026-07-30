@@ -1,22 +1,31 @@
-﻿# Catatan Perubahan (Changelog) — Pilah Sampah Cerdas
+# Catatan Perubahan (Changelog) — Trashcare
 
-Semua perubahan penting pada proyek **Pilah Sampah Cerdas** akan dicatat di dalam file ini berdasarkan standar Angular commit convention.
+Semua perubahan penting pada proyek **Trashcare** dicatat di sini berdasarkan format [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+---
+
+## [Unreleased]
+
+### Added
+- **Mahasiswa KKN** — Presensi & Tracking Poligon: Endpoint presensi berbasis durasi 2 jam & area poligon kegiatan KKN (`apps/api/src/routes/adminMahasiswaRoutes.ts`).
+- **Warga** — Setoran AI & Poin: Logika 1 Kg = 10 Poin, notifikasi peringatan aktivasi 24 jam, serta scan QR Tempat Sampah.
+- **Petugas Residu** — Setoran Manual: Autocomplete pencarian warga dan perhitungan kalkulasi poin real-time saat penimbangan manual.
+- **RW** — Management Lokasi & Pemanfaatan: Visualisasi peta Voronoi lokasi dan CRUD data Pemanfaatan (Buruan Sae, Rumah Maggot, POC).
+- **Admin Kelurahan/Kecamatan/Super Admin** — Monitoring Dashboard: Grafik komposisi sampah dominan dan perbaikan layout leaderboard.
+
+### Changed
+- **Sistem Akun (Semua Role)** — Refactor registrasi: Penghapusan field NIK dan Email di seluruh modul user & backend API.
+- **Super Admin & Admin Coblong** — Standardisasi nama role menjadi UPPERCASE pada script seed database (`seed_demo_bandung.ts`).
+
+### Fixed
+- **Camat & Mahasiswa KKN** — Perbaikan guard permission endpoint panggil pendaftaran & ping presensi.
+- **Warga** — Bypass `BIN_CATEGORY_DUPLICATE` untuk mengizinkan 2 Tempat Sampah (1 Organik & 1 Anorganik) per rumah tangga.
+- **RW & Warga** — Perbaikan overlap visual pada komponen Leaderboard Dashboard Web.
+- **Mahasiswa KKN** — Perbaikan algoritma deteksi titik dalam poligon geofencing presensi.
 
 ---
 
 ## [0.1.0-alpha] — 2026-07-10
 ### Added
-*   Inisialisasi Monorepo untuk 3 branch utama: `backend` (default), `frontend`, dan `mobile`.
-*   Dokumen spesifikasi dasar yang lengkap di folder `docs/` (6 file markdown terpusat):
-    *   `prd.md` (Product Requirement Document)
-    *   `srs.md` (Software Requirement Specification)
-    *   `sdd.md` (Software Design Document, 12 Tabel PostgreSQL & Prisma ORM)
-    *   `ui_ux_flow.md` (Panduan visual Poppins & Light Mode)
-    *   `task_breakdown.md` (Milestones Sprint 1 & pembagian tugas)
-    *   `commit_message_id.md` (Standar pesan commit tim IT)
-*   Aset visual UI Mobile dari ekspor Stitch AI di `/mobile/assets/stitch_ui` sebagai acuan developer Flutter.
-*   File `docker-compose.yml` di folder `/backend` untuk otomatisasi PostgreSQL (GIS) & Redis secara lokal.
-*   File panduan awal `README.md` pada masing-masing folder `/backend`, `/frontend`, dan `/mobile`.
-*   Workflow otomatisasi GitHub Actions CI (`backend-ci.yml`, `frontend-ci.yml`, `mobile-ci.yml`) untuk verifikasi syntax kode.
-*   File `.github/pull_request_template.md` untuk standardisasi pengajuan perubahan kode tim.
-*   Konfigurasi `.gitattributes` untuk manajemen line endings pada sistem operasi Windows.
+- Inisialisasi Monorepo untuk `backend`, `frontend`, dan `mobile`.
+- Dokumen spesifikasi teknis dan panduan arsitektur di folder `docs/`.

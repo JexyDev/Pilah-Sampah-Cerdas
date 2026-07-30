@@ -29,8 +29,6 @@ function isDatabaseConnectionError(error: any): boolean {
 }
 
 export class AuthRepository {
-
-
   async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
     try {
       return (await prisma.user.findFirst({

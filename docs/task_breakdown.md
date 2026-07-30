@@ -1,99 +1,54 @@
-# Task Breakdown & MoM Implementation — Pilah Sampah Cerdas
+# Task Breakdown & Trello Sync — Trashcare
 
-## 1. Rangkuman MoM (Kamis, 09 Juli 2026)
-
-### 1.1 Penamaan Proyek & Monorepo
-*   **Nama Resmi Proyek:** "Pilah Sampah Cerdas" (Repository: `pilah-sampah-cerdas`).
-*   **Struktur Repositori:** Monorepo dengan default branch `backend`. Ditambah 2 branch independen: `frontend` dan `mobile`.
-
-### 1.2 Target Pengguna (5 Role RBAC)
-1.  **Admin Kecamatan Coblong:** Hak akses penuh CRUD Master Data dan review seluruh Kecamatan Coblong.
-2.  **Petugas Kelurahan:** CRUD data RT/RW, data warga, dan tong sampah dalam cakupan kelurahan binaan.
-3.  **Petugas RW:** CRUD terbatas dan pemantauan data warga/tong di lingkup RW.
-4.  **Petugas RT:** Pemantauan warga, review & verifikasi pengosongan tong warga di lingkup RT.
-5.  **Warga (Aplikasi Mobile):** Penyetoran sampah terpilah (Organik/Anorganik), pendaftaran tong (Aktivasi), dan pengajuan pengosongan tong penuh.
-
----
-
-## 2. Pembagian Tugas & Branching Strategy
-
-Untuk pengembangan IDE yang rapi, tim akan membuka satu root folder bernama **"pilah-sampah-cerdas"**. 
-
-Setiap branch hanya berisi kode relevan dan folder `docs/` yang disinkronkan:
-
-| Branch Name | Codebase Folder | Docs Folder | Yang Dihapus di Branch Ini (Tidak Boleh Di-push) |
-|---|---|---|---|
-| **`backend`** | `/backend`, `/prisma` | `/docs` | `/frontend`, `/mobile` |
-| **`frontend`** | `/frontend` | `/docs` | `/backend`, `/mobile`, `/prisma`, `/src` |
-| **`mobile`** | `/mobile` | `/docs` | `/backend`, `/frontend`, `/prisma`, `/src` |
-
----
-
-## 3. Milestones Sprint 1
-1.  **Setup Database Schema (BE):** Migrasi database PostgreSQL (13 tabel: roles, users, refresh_tokens, kelurahan, rt_rw_areas, households, bins, waste_categories, waste_logs, ai_request_logs, point_history, notifications, bin_reset_requests) dan setup Prisma ORM.
-2.  **Setup Web Shell (FE):** Dashboard berbasis react dengan framework Vite. Setup halaman Master Data & Live Monitoring.
-3.  **Setup Mobile Shell (Mobile):** Project Flutter minimalis dengan menyertakan assets acuan `/mobile/assets/stitch_ui`.
-4.  **Integrasi AI Mock (BE):** API deteksi sampah mock sukses, timeout, dan unreadable.
-
----
-
-## 4. Trello / Task Board (Sprint 1)
-
-### ✅ DONE
-# Task Breakdown & MoM Implementation — Pilah Sampah Cerdas
-
-## 1. Rangkuman MoM (Kamis, 09 Juli 2026)
+## 1. Rangkuman MoM & Spesifikasi Final (27 Juli 2026)
 
 ### 1.1 Penamaan Proyek & Monorepo
-*   **Nama Resmi Proyek:** "Pilah Sampah Cerdas" (Repository: `pilah-sampah-cerdas`).
-*   **Struktur Repositori:** Monorepo dengan default branch `backend`. Ditambah 2 branch independen: `frontend` dan `mobile`.
+*   **Nama Resmi Proyek:** "Trashcare — Sistem Pemilahan Sampah Cerdas Kecamatan Coblong".
+*   **Struktur Repositori:** Monorepo murni (`apps/backend`, `apps/frontend`, `apps/mobile`, `packages/shared-types`).
 
-### 1.2 Target Pengguna (5 Role RBAC)
-1.  **Admin Kecamatan Coblong:** Hak akses penuh CRUD Master Data dan review seluruh Kecamatan Coblong.
-2.  **Petugas Kelurahan:** CRUD data RT/RW, data warga, dan tong sampah dalam cakupan kelurahan binaan.
-3.  **Petugas RW:** CRUD terbatas dan pemantauan data warga/tong di lingkup RW.
-4.  **Petugas RT:** Pemantauan warga, review & verifikasi pengosongan tong warga di lingkup RT.
-5.  **Warga (Aplikasi Mobile):** Penyetoran sampah terpilah (Organik/Anorganik), pendaftaran tong (Aktivasi), dan pengajuan pengosongan tong penuh.
-
----
-
-## 2. Pembagian Tugas & Branching Strategy
-
-Untuk pengembangan IDE yang rapi, tim akan membuka satu root folder bernama **"pilah-sampah-cerdas"**. 
-
-Setiap branch hanya berisi kode relevan dan folder `docs/` yang disinkronkan:
-
-| Branch Name | Codebase Folder | Docs Folder | Yang Dihapus di Branch Ini (Tidak Boleh Di-push) |
-|---|---|---|---|
-| **`backend`** | `/backend`, `/prisma` | `/docs` | `/frontend`, `/mobile` |
-| **`frontend`** | `/frontend` | `/docs` | `/backend`, `/mobile`, `/prisma`, `/src` |
-| **`mobile`** | `/mobile` | `/docs` | `/backend`, `/frontend`, `/prisma`, `/src` |
+### 1.2 Target Pengguna (10 Role RBAC)
+1.  **Warga:** Registrasi (Auto-accept GPS vs RT/RW), Aktivasi Tempat Sampah 30 hari, Setoran AI + Scan QR, Monitoring Poin & Leaderboard.
+2.  **RT:** Akses monitoring warga & data wilayah RT.
+3.  **RW:** Approval aktivasi Tempat Sampah (+10 Poin atomik), CRUD Pemanfaatan Sampah (Buruan Sae, Maggot, POC), Monitoring Poligon RW.
+4.  **Petugas Residu:** Timbangan manual Kg, Setoran via-RW / mandiri, Monitoring Notifikasi Marker Merah.
+5.  **Pengangkut:** Penugasan otomatis area poligon terdekat, update status armada pengangkutan.
+6.  **Mahasiswa KKN:** Pendaftaran NIM, pendampingan warga gaptek, Presensi Poligon GPS (2 jam akumulasi).
+7.  **DPL:** Pemantauan durasi presensi mahasiswa & penilaian performa KKN.
+8.  **Admin Kelurahan:** Monitoring visual dashboard (Read-Only), drill-down zoom RT/RW.
+9.  **Admin Kecamatan:** Monitoring visual se-Kecamatan (Read-Only), evaluasi diskrepansi AI (`PENDING_REVIEW`).
+10. **Super Admin:** Akses penuh data mentah & log immutable Aktivitas Pemilahan Sampah.
 
 ---
 
-## 3. Milestones Sprint 1
-1.  **Setup Database Schema (BE):** Migrasi database PostgreSQL (13 tabel: roles, users, refresh_tokens, kelurahan, rt_rw_areas, households, bins, waste_categories, waste_logs, ai_request_logs, point_history, notifications, bin_reset_requests) dan setup Prisma ORM.
-2.  **Setup Web Shell (FE):** Dashboard berbasis react dengan framework Vite. Setup halaman Master Data & Live Monitoring.
-3.  **Setup Mobile Shell (Mobile):** Project Flutter minimalis dengan menyertakan assets acuan `/mobile/assets/stitch_ui`.
-4.  **Integrasi AI Mock (BE):** API deteksi sampah mock sukses, timeout, dan unreadable.
+## 2. Struktur Trello Board ("PT Markerindo Project Pengolahan Sampah Kecamatan")
 
----
+### 🟢 DONE (89 Cards)
+- [x] Setup Monorepo, CI/CD Actions, Database Schema & Seeding Data Bandung
+- [x] Backend Clean Architecture & Express API Scaffolding
+- [x] RBAC & JWT Authentication (Auth WA OTP Warga & Email/Password Role Lain)
+- [x] Core Use Case: Setoran AI, Scan QR Bin, Timbangan Residu, Presensi KKN, Pemanfaatan RW
+- [x] Dashboard Analytics (Dominant Category Chart, Pemanfaatan Bar Chart, Fix Overlapping Leaderboard)
 
-## 4. Trello / Task Board (Sprint 1)
+### ⏳ IN PROGRESS (5 Cards)
+- [ ] **[Fullstack]** Sinkronisasi Sistem Terpadu (BE - FE - Mobile)
+- [ ] **[Mobile]** Mobile Tes Fitur (End-to-End Flow Warga & Mahasiswa)
+- [ ] **[FE Web]** Frontend Tes Fitur (Dashboard Monitoring & Management Data)
+- [ ] **[QA]** Trial & Error Manual & Penyelarasan Skenario Demo
+- [ ] **[Docs]** 📂 Pilah Sampah Cerdas — Project Overview & Synchronization
 
-### ✅ DONE
-- [x] **[Mobile]** Merapikan struktur direktori (menggabungkan `mobile_app` ke `mobile`).
-- [x] **[Mobile & BE]** Singkronisasi koneksi: Memperbarui IP Config Mobile (`172.16.0.2` & `127.0.0.1`) agar Mobile berhasil nge-ping BE.
-- [x] **[BE]** Memastikan server backend berjalan (tidak crash/idle) dan port 3000 terekspos untuk aplikasi Mobile.
-- [x] **[Mobile]** Perbaikan `InlineCameraWidget`: Menghapus limitasi Web sehingga kamera laptop bisa dipakai untuk simulasi fitur Scan QR dan Foto Sampah (AI).
-- [x] **[Mobile]** Perbaikan kompatibilitas: Mengganti tipe penyimpanan `dart:io File` ke `image_picker XFile` agar tidak crash saat mengambil foto di browser Chrome.
+### 📋 BACKLOG / TASK (19 Cards & Catatan Terbuka)
 
-### ⏳ IN PROGRESS
-- [ ] **[Mobile & BE & FE]** Sinkronisasi Sistem Terpadu (BE-FE-Mobile) <!-- id: 6a55b8ed150557caf34fd600 -->
-- [ ] **[Mobile]** Tes Fitur Mobile <!-- id: 6a55b8ee6a9ca7f03b634e93 -->
-- [ ] **[FE]** Tes Fitur Frontend <!-- id: 6a55b8ef3f47248b3459b8dc -->
-- [ ] **[QA]** Trial & Error Manual <!-- id: 6a55b8f000ee8c65f4c3ce42 -->
+#### 🔴 Butuh Klarifikasi (Top Backlog)
+1. **[Catatan Terbuka] — Pengangkut:** Rumus final ranking leaderboard pengangkut.
+2. **[Catatan Terbuka] — RW:** Field schema spesifik CRUD Pemanfaatan (Buruan Sae, Maggot, POC).
+3. **[Catatan Terbuka] — Monitoring:** Trigger detail kondisi Tempat Sampah bermasalah/rusak.
+4. **[Catatan Terbuka] — GIS:** Skala gradasi warna pekat poligon wilayah berdasarkan akumulasi Kg.
+5. **[Catatan Terbuka] — Backend:** Spesifikasi contract interface AI Vendor.
 
-### 📝 TODO
-- [ ] **[Mobile]** Menyiapkan panduan *build* APK/IPA jika aplikasi sudah lolos seluruh tahap Trial & Error.
-- [ ] **[BE]** Menyesuaikan *Mock AI* agar mengembalikan jenis sampah secara dinamis berdasarkan input gambar Warga.
+#### 🟡 Task MVP & Bug Tracker
+- [ ] `🔴 [BUG-001] Missing Backend Geofencing Validation`
+- [ ] `🟡 [BUG-002] AI API Contract Schema Mismatch`
+- [ ] `🟡 [BUG-003] Incorrect Point Reward Calculation Formula`
+- [ ] `🟡 [BUG-004] Missing "Tong Penuh" Notification Event Trigger`
+- [ ] `🟢 [BUG-005] Missing Live Monitoring Geospatial Endpoint`
+- [ ] `🔴 [BUG-006] Security: Missing Route Authentication and Rate Limiting`

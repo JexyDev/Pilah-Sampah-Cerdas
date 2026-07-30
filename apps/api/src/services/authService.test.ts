@@ -13,7 +13,6 @@ import { binRepository } from "../repositories/binRepository.js";
 vi.mock("../repositories/authRepository.js", () => {
   return {
     authRepository: {
-
       findUserByPhone: vi.fn(),
       registerWargaTx: vi.fn(),
       createRefreshToken: vi.fn(),
