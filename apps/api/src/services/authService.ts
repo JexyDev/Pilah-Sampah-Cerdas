@@ -91,10 +91,30 @@ export class AuthService {
   }
 
   /**
-   * Invalidate a refresh token (Logout).
+   * Invalidate a refresh token (Logout) and clear GPS locations.
    */
   async logout(token: string) {
-    await authRepository.deleteRefreshToken(token);
+    if (token) {
+      const record = await prisma.refreshToken.findUnique({
+        where: { token },
+        select: { userId: true },
+      });
+      if (record?.userId) {
+        await prisma.studentLocation.deleteMany({
+          where: { studentId: record.userId },
+        });
+      }
+      await authRepository.deleteRefreshToken(token);
+    }
+  }
+
+  async logoutUserById(userId: string) {
+    await prisma.studentLocation.deleteMany({
+      where: { studentId: userId },
+    });
+    await prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
   }
 
   /**

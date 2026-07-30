@@ -222,9 +222,13 @@ export class AuthController {
   async logout(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
+      const userId = req.user?.userId;
 
       if (refreshToken) {
         await authService.logout(refreshToken);
+      }
+      if (userId) {
+        await authService.logoutUserById(userId);
       }
 
       // Clear cookie

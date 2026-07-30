@@ -334,7 +334,17 @@ export class KknAttendanceService {
    * Get all student locations recorded in the last 24 hours.
    */
   async getActiveStudentsLocations() {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+    // Get active logged-in user IDs from RefreshToken
+    const activeSessions = await prisma.refreshToken.findMany({
+      where: {
+        expiresAt: { gte: new Date() },
+      },
+      select: { userId: true },
+    });
+    const loggedInUserIds = new Set(activeSessions.map((s) => s.userId));
+
     // Group by student to get the latest position of each active student
     const locations = await prisma.studentLocation.findMany({
       where: {
@@ -365,15 +375,16 @@ export class KknAttendanceService {
     // Deduplicate to only keep the latest location per student
     const uniqueStudents = new Map<string, (typeof locations)[0]>();
     for (const loc of locations) {
-      if (!uniqueStudents.has(loc.studentId)) {
+      if (!uniqueStudents.has(loc.studentId) && (loggedInUserIds.size === 0 || loggedInUserIds.has(loc.studentId))) {
         uniqueStudents.set(loc.studentId, loc);
       }
     }
 
-    // Include registered Mahasiswa KKN who haven't sent a location ping in last 24h
+    // Include registered Mahasiswa KKN who have active sessions
     const allMahasiswa = await prisma.user.findMany({
       where: {
         role: { name: "MAHASISWA_KKN" },
+        ...(loggedInUserIds.size > 0 ? { id: { in: Array.from(loggedInUserIds) } } : {}),
       },
       select: {
         id: true,
