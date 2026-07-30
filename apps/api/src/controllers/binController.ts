@@ -50,13 +50,17 @@ export class BinController {
         const maxVol = Number(bin.maxCapacityLiter);
         const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
 
+        const isInactive7Days = bin.updatedAt
+          ? Date.now() - new Date(bin.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
+          : false;
+
         return {
           id: bin.id,
           kode: bin.qrCode,
           lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
           rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
           kapasitas,
-          status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+          status: bin.status === "BROKEN" ? "Rusak" : kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
           lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
           categoryId: bin.categoryId || null,
           rtRwId: bin.rtRwId || null,
@@ -69,6 +73,7 @@ export class BinController {
           kknName: bin.qrBatch?.assignedPic?.name || "-",
           userId: bin.userId || null,
           realStatus: bin.status,
+          needsInspection: isInactive7Days && bin.status === "ACTIVE_BOUND",
         };
       });
 

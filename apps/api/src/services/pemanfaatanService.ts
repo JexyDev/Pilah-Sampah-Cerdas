@@ -21,6 +21,13 @@ export class PemanfaatanService {
     unitHasil: string;
     fotoDokumentasiUrl: string;
     tanggalPencatatan: Date;
+    jenisKomoditas?: string;
+    luasLahanM2?: number;
+    volumePupukDipakaiKg?: number;
+    bibitTelurGram?: number;
+    hasilKasgotKg?: number;
+    volumeBioaktivatorLiter?: number;
+    masaFermentasiHari?: number;
   }) {
     return prisma.pemanfaatan.create({
       data: {
@@ -65,6 +72,13 @@ export class PemanfaatanService {
       unitHasil?: string;
       fotoDokumentasiUrl?: string;
       tanggalPencatatan?: Date;
+      jenisKomoditas?: string;
+      luasLahanM2?: number;
+      volumePupukDipakaiKg?: number;
+      bibitTelurGram?: number;
+      hasilKasgotKg?: number;
+      volumeBioaktivatorLiter?: number;
+      masaFermentasiHari?: number;
     }
   ) {
     const item = await prisma.pemanfaatan.findUnique({ where: { id } });

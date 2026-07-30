@@ -22,6 +22,13 @@ export class PemanfaatanController {
         unitHasil,
         fotoDokumentasiUrl,
         tanggalPencatatan,
+        jenisKomoditas,
+        luasLahanM2,
+        volumePupukDipakaiKg,
+        bibitTelurGram,
+        hasilKasgotKg,
+        volumeBioaktivatorLiter,
+        masaFermentasiHari,
       } = req.body;
 
       if (
@@ -53,6 +60,13 @@ export class PemanfaatanController {
         unitHasil,
         fotoDokumentasiUrl,
         tanggalPencatatan: new Date(tanggalPencatatan),
+        jenisKomoditas,
+        luasLahanM2: luasLahanM2 ? parseFloat(luasLahanM2) : undefined,
+        volumePupukDipakaiKg: volumePupukDipakaiKg ? parseFloat(volumePupukDipakaiKg) : undefined,
+        bibitTelurGram: bibitTelurGram ? parseFloat(bibitTelurGram) : undefined,
+        hasilKasgotKg: hasilKasgotKg ? parseFloat(hasilKasgotKg) : undefined,
+        volumeBioaktivatorLiter: volumeBioaktivatorLiter ? parseFloat(volumeBioaktivatorLiter) : undefined,
+        masaFermentasiHari: masaFermentasiHari ? parseInt(masaFermentasiHari, 10) : undefined,
       });
 
       res.status(201).json({ success: true, data: result });

@@ -350,15 +350,33 @@ export class SuperAdminService {
   }
 
   /**
-   * Get Audit Trail logs
+   * Get Audit Trail logs with Date Range, Action, User & Search filters
    */
-  async getAuditTrail(filters?: { action?: string; userId?: string }) {
+  async getAuditTrail(filters?: { action?: string; userId?: string; startDate?: string; endDate?: string; search?: string }) {
     const where: any = {};
     if (filters?.action) {
       where.action = filters.action;
     }
     if (filters?.userId) {
       where.userId = filters.userId;
+    }
+    if (filters?.startDate || filters?.endDate) {
+      where.timestamp = {};
+      if (filters.startDate) {
+        where.timestamp.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        where.timestamp.lte = end;
+      }
+    }
+    if (filters?.search) {
+      where.OR = [
+        { action: { contains: filters.search, mode: "insensitive" } },
+        { user: { name: { contains: filters.search, mode: "insensitive" } } },
+        { user: { email: { contains: filters.search, mode: "insensitive" } } },
+      ];
     }
 
     return prisma.auditTrail.findMany({

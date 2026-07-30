@@ -602,6 +602,13 @@ model Pemanfaatan {
   unitHasil            String   @map("unit_hasil")
   fotoDokumentasiUrl   String   @map("foto_dokumentasi_url")
   tanggalPencatatan    DateTime @map("tanggal_pencatatan")
+  jenisKomoditas       String?  @map("jenis_komoditas")
+  luasLahanM2          Decimal? @map("luas_lahan_m2") @db.Decimal(8, 2)
+  volumePupukDipakaiKg Decimal? @map("volume_pupuk_dipakai_kg") @db.Decimal(10, 2)
+  bibitTelurGram       Decimal? @map("bibit_telur_gram") @db.Decimal(8, 2)
+  hasilKasgotKg        Decimal? @map("hasil_kasgot_kg") @db.Decimal(10, 2)
+  volumeBioaktivatorLiter Decimal? @map("volume_bioaktivator_liter") @db.Decimal(8, 2)
+  masaFermentasiHari   Int?     @map("masa_fermentasi_hari")
   createdAt            DateTime @default(now()) @map("dibuat_pada")
   rw                   RtRwArea @relation(fields: [rwId], references: [id], onDelete: Cascade)
 

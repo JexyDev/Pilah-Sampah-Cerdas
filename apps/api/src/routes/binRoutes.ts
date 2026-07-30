@@ -289,6 +289,13 @@ router.post(
   binController.reportIssue
 );
 
+router.post(
+  "/:id/report-damage",
+  authMiddleware,
+  roleMiddleware(["WARGA", "RT", "RW", "PETUGAS_RESIDU"]),
+  binController.reportIssue
+);
+
 router.put(
   "/:id/capacity",
   authMiddleware,

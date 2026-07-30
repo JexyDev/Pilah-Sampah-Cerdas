@@ -259,28 +259,65 @@ export const gamificationService = {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, 10);
 
-    // 5. Pengangkut Leaderboard
+    // 5. Pengangkut Leaderboard (Opsi D: Composite Formula — Kuantitas + SLA Kecepatan + Akurasi)
     const petugasUsers = await prisma.user.findMany({
-      where: { role: { name: "PETUGAS_RESIDU" } },
+      where: {
+        OR: [
+          { role: { name: "PETUGAS_RESIDU" } },
+          { role: { name: "PENGANGKUT" } },
+          { claimedTasks: { some: {} } },
+        ],
+      },
       select: {
         id: true,
         name: true,
         rtRw: { select: { name: true } },
         setoranManual: { select: { berat: true } },
+        claimedTasks: {
+          select: {
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
 
     const pengangkutLeaderboard = petugasUsers
       .map((p: any) => {
+        const completedTasks = p.claimedTasks.filter((t: any) => t.status === "COMPLETED");
+        const totalCompleted = completedTasks.length;
+        const totalClaimed = p.claimedTasks.length;
+
+        // SLA Responsivitas (menit)
+        let totalDurationMinutes = 0;
+        completedTasks.forEach((t: any) => {
+          const duration = (new Date(t.updatedAt).getTime() - new Date(t.createdAt).getTime()) / (1000 * 60);
+          totalDurationMinutes += Math.max(1, duration);
+        });
+        const avgSlaMinutes = totalCompleted > 0 ? totalDurationMinutes / totalCompleted : 0;
+        const slaScore = totalCompleted > 0 ? Math.max(0, 100 - avgSlaMinutes) : 0;
+
+        // Akurasi/Tingkat keberhasilan penjemputan tanpa batal/escalated
+        const successRate = totalClaimed > 0 ? totalCompleted / totalClaimed : 1;
+
+        // Opsi D: Skor Komposit seimbang & minim error
+        const compositeScore = (0.5 * totalCompleted) + (0.3 * slaScore) + (0.2 * successRate * 100);
+
         const totalKg = p.setoranManual.reduce(
           (acc: number, cur: any) => acc + Number(cur.berat || 0),
           0
         );
+
         return {
           id: p.id,
           name: p.name,
-          wilayah: p.rtRw?.name || "Semua",
-          totalPoints: totalKg,
+          wilayah: p.rtRw?.name || "Semua Area",
+          totalCompleted,
+          avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(1)),
+          successRatePercent: parseFloat((successRate * 100).toFixed(1)),
+          totalPoints: parseFloat(compositeScore.toFixed(1)),
+          totalKgHandled: totalKg,
         };
       })
       .sort((a, b) => b.totalPoints - a.totalPoints)

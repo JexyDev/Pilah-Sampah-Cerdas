@@ -1,4 +1,4 @@
-import { MapPin, ChevronDown, Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu } from "lucide-react";
+import { MapPin, ChevronDown, Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu, Sun, Moon } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useThemeStore } from "../../../store/useThemeStore";
 import api from "../../../services/api";
 
 interface HeaderProps {
@@ -20,6 +21,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, updateWilayah } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
+  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   const getProfilePhotoUrl = (path?: string) => {
     if (!path) return null;
@@ -353,6 +356,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
             )}
           </div>
+
+          {/* Dark / Light Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all cursor-pointer shadow-2xs border border-outline-variant/30"
+            title={theme === "light" ? "Beralih ke Dark Mode" : "Beralih ke Light Mode"}
+          >
+            {theme === "light" ? <Moon size={18} className="text-slate-700" /> : <Sun size={18} className="text-amber-400" />}
+          </button>
         </div>
 
         {/* Profile Avatar Clickable Dropdown */}
@@ -397,7 +409,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 Profil & Pengaturan
               </button>
               <button
-                onClick={handleLogout}
+                onClick={() => {
+                  setShowProfile(false);
+                  setShowLogoutModal(true);
+                }}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-error hover:bg-red-50 transition-all text-left border-t border-outline-variant/20 mt-1 cursor-pointer"
               >
                 <LogOut size={18} />
@@ -546,6 +561,39 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             >
               Saya Paham
             </button>
+          </div>
+        </div>
+      )}
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-100 text-center space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto font-bold text-lg">
+              !
+            </div>
+            <div>
+              <h3 className="font-extrabold text-lg text-gray-900">Konfirmasi Keluar</h3>
+              <p className="text-xs text-gray-500 mt-1">Apakah Anda yakin ingin keluar dari aplikasi TrashCare?</p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  logout();
+                  toast.success("Berhasil keluar sistem");
+                  navigate("/login");
+                }}
+                className="flex-1 py-2.5 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition shadow-sm cursor-pointer"
+              >
+                Ya, Keluar
+              </button>
+            </div>
           </div>
         </div>
       )}

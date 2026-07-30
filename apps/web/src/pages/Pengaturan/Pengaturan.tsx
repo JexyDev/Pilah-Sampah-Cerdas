@@ -1,4 +1,4 @@
-import { Loader2, Camera, AlertTriangle, Brush, Router, RefreshCw, Info, Key, Copy, RefreshCcw, Webhook, Save } from "lucide-react";
+import { Loader2, Camera, AlertTriangle, Brush, Router, RefreshCw, Info, Key, Copy, RefreshCcw, Webhook, Save, Sun, Moon } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,6 +10,7 @@ import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 import { APP_CONFIG } from "../../constants/config";
 
@@ -18,6 +19,7 @@ const Pengaturan: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const { user: storeUser, updateUser: updateStoreUser } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
 
   // Profile State
   const [profileData, setProfileData] = useState({
@@ -583,6 +585,36 @@ const Pengaturan: React.FC = () => {
                     {isSavingPassword ? "Menyimpan..." : "Perbarui Sandi"}
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Preferensi Tampilan (Category 14) */}
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <h3 className="text-[20px] font-bold text-on-surface mb-2">Preferensi Tampilan</h3>
+              <p className="text-xs text-on-surface-variant mb-6">Sesuaikan tema tampilan antarmuka aplikasi TrashCare.</p>
+              
+              <div className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    {theme === "dark" ? <Moon size={20} /> : <Sun size={20} />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-on-surface">Mode Tampilan Aplikasi</h4>
+                    <p className="text-xs text-on-surface-variant">Saat ini menggunakan mode <span className="font-bold uppercase">{theme}</span></p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={toggleTheme}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer ${
+                    theme === "dark"
+                      ? "bg-amber-400 text-slate-900 hover:bg-amber-500"
+                      : "bg-slate-800 text-white hover:bg-slate-900"
+                  }`}
+                >
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                  {theme === "dark" ? "Aktifkan Light Mode" : "Aktifkan Dark Mode"}
+                </button>
               </div>
             </div>
           </div>
