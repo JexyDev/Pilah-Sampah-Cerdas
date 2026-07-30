@@ -62,23 +62,23 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
         </Link>
       </div>
 
-      {/* Item List evenly distributed */}
-      <div className="my-2.5 flex-1 flex flex-col justify-between space-y-1">
+      {/* Item List */}
+      <div className="my-2.5 flex-1 flex flex-col justify-start space-y-1.5 min-h-[220px]">
         {displayItems.map((item) => {
           const pct = Math.min(100, Math.max(14, (item.points / (maxPoints || 1)) * 100));
           return (
             <div
               key={`${item.rank}-${item.name}`}
-              className="flex items-center gap-2 text-[11px] group hover:bg-slate-50/80 px-1.5 py-1 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-[11px] group hover:bg-slate-50/80 px-1 py-0.5 rounded-lg transition-all"
             >
               {/* Rank */}
-              <span className="w-4 text-center font-bold text-slate-400 shrink-0 text-[10px] group-hover:text-emerald-600">
+              <span className="w-3.5 text-center font-bold text-slate-400 shrink-0 text-[10px] group-hover:text-emerald-600">
                 {item.rank}
               </span>
 
               {/* Name & Subtitle */}
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-slate-800 truncate text-[11px] leading-tight group-hover:text-emerald-700">
+              <div className="flex-1 min-w-0 pr-1">
+                <p className="font-bold text-slate-800 truncate text-[11px] leading-tight group-hover:text-emerald-700" title={item.name}>
                   {item.name}
                 </p>
                 {item.subtitle && (
@@ -89,7 +89,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               </div>
 
               {/* Bar Indicator */}
-              <div className="w-14 shrink-0 flex items-center justify-end">
+              <div className="w-10 shrink-0 flex items-center justify-end">
                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500 opacity-85 group-hover:opacity-100 shadow-xs"
@@ -99,7 +99,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               </div>
 
               {/* Points */}
-              <span className="w-14 text-right font-extrabold text-slate-700 text-[11px] shrink-0 font-mono">
+              <span className="w-12 text-right font-extrabold text-slate-700 text-[11px] shrink-0 font-mono">
                 {item.points.toLocaleString("id-ID")}
               </span>
             </div>
