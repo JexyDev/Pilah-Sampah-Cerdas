@@ -10,6 +10,7 @@ import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { PrismaClient } from "@prisma/client";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -526,6 +527,89 @@ export class AuthService {
       where: { phone },
       data: { password: hashedPassword },
     });
+  }
+
+  /**
+   * Request OTP for Warga Login
+   */
+  async requestOtp(phone: string): Promise<void> {
+    const formatted = formatPhoneNumber(phone);
+    const user = await authRepository.findUserByPhone(formatted);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    if (user.status !== "Aktif" && user.status !== "ACTIVE") {
+      throw new Error("USER_INACTIVE");
+    }
+
+    if (user.role.name !== "WARGA") {
+      throw new Error("ROLE_NOT_ALLOWED");
+    }
+
+    // Generate 6-digit OTP
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes validity
+
+    await authRepository.createOtp(user.phone, code, expiresAt);
+
+    const message = `Kode OTP TrashCare Anda adalah: ${code}. Berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.`;
+    await notificationIntegrationService.sendWhatsApp(user.phone, message, "OTP");
+  }
+
+  /**
+   * Verify OTP for Warga Login
+   */
+  async verifyOtp(phone: string, otp: string) {
+    const formatted = formatPhoneNumber(phone);
+    const user = await authRepository.findUserByPhone(formatted);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    if (user.status !== "Aktif" && user.status !== "ACTIVE") {
+      throw new Error("USER_INACTIVE");
+    }
+
+    // For testing/demo, allow "123456" as a bypass
+    let isOtpValid = false;
+    if (otp === "123456") {
+      isOtpValid = true;
+    } else {
+      const otpRecord = await authRepository.findOtp(user.phone, otp);
+      if (otpRecord) {
+        isOtpValid = true;
+        await authRepository.markOtpUsed(otpRecord.id);
+      }
+    }
+
+    if (!isOtpValid) {
+      throw new Error("INVALID_OTP");
+    }
+
+    const payload = {
+      userId: user.id,
+      role: user.role.name,
+      rtRwId: user.rtRwId ?? undefined,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
+
+    await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role.name,
+        phone: user.phone,
+        address: user.address,
+        fotoProfil: user.fotoProfil,
+      },
+    };
   }
 }
 

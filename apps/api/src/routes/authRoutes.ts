@@ -68,6 +68,8 @@ const router = Router();
  *         description: Unauthorized (Invalid credentials)
  */
 router.post("/login", loginRateLimiter, authController.login);
+router.post("/request-otp", loginRateLimiter, authController.requestOtp);
+router.post("/verify-otp", loginRateLimiter, authController.verifyOtp);
 
 /**
  * @swagger
