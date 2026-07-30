@@ -488,22 +488,22 @@ export class AuthService {
     return authRepository.updateKknWhitelistStatus(userId, status, adminUserId);
   }
 
-  async forgotPassword(email: string): Promise<string> {
-    const user = await prisma.user.findUnique({ where: { email } });
+  async forgotPassword(phone: string): Promise<string> {
+    const user = await prisma.user.findUnique({ where: { phone } });
     if (!user) throw new Error("EMAIL_NOT_FOUND");
     return "123456";
   }
 
-  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+  async resetPassword(phone: string, token: string, newPassword: string): Promise<void> {
     if (token !== "123456") {
       throw new Error("INVALID_TOKEN");
     }
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { phone } });
     if (!user) throw new Error("USER_NOT_FOUND");
 
     const hashedPassword = await hashPassword(newPassword);
     await prisma.user.update({
-      where: { email },
+      where: { phone },
       data: { password: hashedPassword },
     });
   }

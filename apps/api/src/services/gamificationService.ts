@@ -36,7 +36,7 @@ export const gamificationService = {
           select: {
             id: true,
             name: true,
-            email: true,
+            phone: true,
             rtRw: true,
           },
         },

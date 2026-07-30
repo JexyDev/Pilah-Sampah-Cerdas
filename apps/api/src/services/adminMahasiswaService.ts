@@ -59,11 +59,9 @@ export const adminMahasiswaService = {
         data: {
           name: data.nama_lengkap,
           phone: data.no_telepon,
-          email,
           password: passwordHash,
           roleId: role.id,
           status: data.status_aktif || "Aktif",
-          nik,
           rtRwId: data.area_tugas || null,
         },
       });

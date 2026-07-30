@@ -268,8 +268,7 @@ export class AuthController {
           user: {
             id: updatedUser.id,
             name: updatedUser.name,
-            email: updatedUser.email,
-            phone: (updatedUser as any).phone,
+            phone: updatedUser.phone,
             address: (updatedUser as any).address,
             fotoProfil: (updatedUser as any).fotoProfil,
           },

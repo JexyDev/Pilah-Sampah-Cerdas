@@ -184,7 +184,7 @@ export class UserService {
     return {
       id: newUser.id,
       name: newUser.name,
-      email: newUser.email,
+      phone: newUser.phone,
       role: (newUser as any).role.name,
     };
   }
@@ -291,7 +291,7 @@ export class UserService {
     return {
       id: updatedUser.id,
       name: updatedUser.name,
-      email: updatedUser.email,
+      phone: updatedUser.phone,
       role: updatedUser.role.name,
     };
   }

@@ -350,7 +350,6 @@ export class KknAttendanceService {
           select: {
             id: true,
             name: true,
-            email: true,
             phone: true,
             studentProfile: {
               select: {
@@ -379,7 +378,6 @@ export class KknAttendanceService {
       select: {
         id: true,
         name: true,
-        email: true,
         phone: true,
         createdAt: true,
         studentProfile: {
@@ -438,7 +436,7 @@ export class KknAttendanceService {
           student: {
             id: mhs.id,
             name: mhs.name,
-            email: mhs.email,
+            email: mhs.phone,
             phone: mhs.phone,
             studentProfile: mhs.studentProfile
               ? {
@@ -465,7 +463,6 @@ export class KknAttendanceService {
           select: {
             id: true,
             name: true,
-            email: true,
             phone: true,
             studentProfile: {
               select: {
@@ -529,7 +526,6 @@ export class KknAttendanceService {
       select: {
         id: true,
         name: true,
-        email: true,
         phone: true,
         studentProfile: {
           select: {
