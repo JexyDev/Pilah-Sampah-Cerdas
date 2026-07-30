@@ -1,0 +1,101 @@
+import 'package:flutter/material.dart';
+import '../../presentation/splash/splash_screen.dart';
+import '../../presentation/auth/login_screen.dart';
+import '../../presentation/auth/register_screen.dart';
+import '../../presentation/auth/forgot_password_screen.dart';
+import '../../presentation/main/main_shell.dart';
+import '../../presentation/scan/scan_flow_screen.dart';
+import '../../presentation/aktivasi/aktivasi_bin_screen.dart';
+import '../../presentation/aktivasi/ukur_kapasitas_screen.dart';
+import '../../presentation/reset/reset_bin_screen.dart';
+import '../../presentation/notifikasi/notifikasi_screen.dart';
+import '../../presentation/petugas/timbangan_residu_screen.dart';
+import '../../presentation/tentang/tentang_aplikasi_screen.dart';
+import '../../presentation/kkn/kkn_attendance_screen.dart';
+
+/// Nama-nama route terpusat agar tidak ada magic string di widget.
+class AppRoutes {
+  AppRoutes._();
+
+  static const String splash = '/';
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
+  static const String main = '/main';
+  static const String scan = '/scan';
+  static const String aktivasiBin = '/aktivasi-bin';
+  static const String ukurKapasitas = '/ukur-kapasitas';
+  static const String resetBin = '/reset-bin';
+  static const String notifikasi = '/notifikasi';
+  static const String timbanganResidu = '/timbangan-residu';
+  static const String tentang = '/tentang';
+  static const String kknAttendance = '/kkn-attendance';
+}
+
+/// Route generator terpusat.
+class AppRouter {
+  AppRouter._();
+
+  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.splash:
+        return _buildRoute(const SplashScreen(), settings);
+      case AppRoutes.login:
+        return _buildRoute(const LoginScreen(), settings);
+      case AppRoutes.register:
+        return _buildRoute(const RegisterScreen(), settings);
+      case AppRoutes.forgotPassword:
+        return _buildRoute(const ForgotPasswordScreen(), settings);
+      case AppRoutes.main:
+        return _buildRoute(const MainShell(), settings);
+      case AppRoutes.scan:
+        return _buildRoute(const ScanFlowScreen(), settings);
+      case AppRoutes.aktivasiBin:
+        return _buildRoute(const AktivasiBinScreen(), settings);
+      case AppRoutes.ukurKapasitas:
+        return _buildRoute(const UkurKapasitasScreen(), settings);
+      case AppRoutes.resetBin:
+        return _buildRoute(const ResetBinScreen(), settings);
+      case AppRoutes.notifikasi:
+        return _buildRoute(const NotifikasiScreen(), settings);
+      case AppRoutes.timbanganResidu:
+        return _buildRoute(const TimbanganResiduScreen(), settings);
+      case AppRoutes.tentang:
+        return _buildRoute(const TentangAplikasiScreen(), settings);
+      case AppRoutes.kknAttendance:
+        return _buildRoute(const KknAttendanceScreen(), settings);
+      default:
+        return _buildRoute(const _NotFoundScreen(), settings);
+    }
+  }
+
+  static PageRouteBuilder<dynamic> _buildRoute(
+    Widget page,
+    RouteSettings settings,
+  ) {
+    return PageRouteBuilder(
+      settings: settings,
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+      transitionDuration: const Duration(milliseconds: 200),
+    );
+  }
+}
+
+class _NotFoundScreen extends StatelessWidget {
+  const _NotFoundScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Text(
+          'Halaman tidak ditemukan.',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      ),
+    );
+  }
+}
