@@ -88,14 +88,31 @@ async function main() {
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('password123', salt);
 
+  const formatPhoneNumber = (phone: string): string => {
+    if (!phone) return "";
+    let cleaned = phone.trim().replace(/[\s-]/g, "");
+    if (cleaned.startsWith("0")) {
+      cleaned = "+62" + cleaned.slice(1);
+    } else if (cleaned.startsWith("62")) {
+      cleaned = "+" + cleaned;
+    } else if (!cleaned.startsWith("+62") && cleaned.startsWith("8")) {
+      cleaned = "+62" + cleaned;
+    }
+    return cleaned;
+  };
+
   const createUser = async (name: string, phone: string, roleName: string, rtRwId?: number) => {
+    const formattedPhone = formatPhoneNumber(phone);
     return prisma.user.upsert({
-      where: { phone },
+      where: { phone: formattedPhone },
       update: { rtRwId },
       create: {
-        name, phone, password: passwordHash,
+        name,
+        phone: formattedPhone,
+        password: passwordHash,
         roleId: roleMap.get(roleName)!,
-        rtRwId, address: rtRwId ? `Jl. ${name} No. ${Math.floor(Math.random()*100)}` : 'Jl. Pemda',
+        rtRwId,
+        address: rtRwId ? `Jl. ${name} No. ${Math.floor(Math.random()*100)}` : 'Jl. Pemda',
         status: 'Aktif',
       }
     });

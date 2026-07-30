@@ -28,11 +28,23 @@ function isDatabaseConnectionError(error: any): boolean {
   return false;
 }
 
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
+
 export class AuthRepository {
   async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
     try {
+      const formatted = formatPhoneNumber(phone);
+      const raw = phone.trim();
+      const alt = raw.startsWith("0") ? "+62" + raw.slice(1) : raw.startsWith("+62") ? "0" + raw.slice(3) : raw;
+
       return (await prisma.user.findFirst({
-        where: { phone },
+        where: {
+          OR: [
+            { phone: formatted },
+            { phone: raw },
+            { phone: alt },
+          ],
+        },
         include: { role: true },
       })) as (User & { role: Role }) | null;
     } catch (error: any) {
@@ -205,9 +217,11 @@ export class AuthRepository {
       const role = await tx.role.findUnique({ where: { name: "WARGA" } });
       if (!role) throw new Error("ROLE_NOT_FOUND");
 
+      const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
           ...userData,
+          phone: formattedPhone,
           roleId: role.id,
           wargaSubtype: wargaSubtype || "UTAMA",
         },

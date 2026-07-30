@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -58,7 +59,7 @@ export const adminMahasiswaService = {
       const user = await tx.user.create({
         data: {
           name: data.nama_lengkap,
-          phone: data.no_telepon,
+          phone: formatPhoneNumber(data.no_telepon),
           password: passwordHash,
           roleId: role.id,
           status: data.status_aktif || "Aktif",
