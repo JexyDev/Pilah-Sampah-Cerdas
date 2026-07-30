@@ -147,10 +147,13 @@ export class SuperAdminController {
 
   async getAuditTrail(req: Request, res: Response): Promise<void> {
     try {
-      const { action, userId } = req.query;
+      const { action, userId, startDate, endDate, search } = req.query;
       const data = await superAdminService.getAuditTrail({
         action: action as string,
         userId: userId as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+        search: search as string,
       });
       res.status(200).json({ success: true, data });
     } catch (error: any) {

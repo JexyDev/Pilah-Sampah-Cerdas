@@ -12,31 +12,43 @@ export const kknAttendanceController = {
   updateLocation: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentId = req.user!.userId;
-      const { latitude, longitude, lat, lng } = req.body;
+      let locations = req.body.locations;
 
-      const finalLat =
-        latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
-      const finalLng =
-        longitude !== undefined
-          ? parseFloat(longitude)
-          : lng !== undefined
-            ? parseFloat(lng)
-            : null;
+      if (!locations || !Array.isArray(locations)) {
+        // Fallback to single ping
+        const { latitude, longitude, lat, lng, timestamp } = req.body;
+        const finalLat =
+          latitude !== undefined
+            ? parseFloat(latitude)
+            : lat !== undefined
+              ? parseFloat(lat)
+              : null;
+        const finalLng =
+          longitude !== undefined
+            ? parseFloat(longitude)
+            : lng !== undefined
+              ? parseFloat(lng)
+              : null;
 
-      if (finalLat === null || finalLng === null || isNaN(finalLat) || isNaN(finalLng)) {
-        res.status(400).json({
-          success: false,
-          error: "VALIDATION_ERROR",
-          message: "Koordinat latitude dan longitude tidak valid atau kosong",
-        });
-        return;
+        if (finalLat === null || finalLng === null || isNaN(finalLat) || isNaN(finalLng)) {
+          res.status(400).json({
+            success: false,
+            error: "VALIDATION_ERROR",
+            message:
+              "Payload locations (array) atau koordinat latitude dan longitude yang valid diperlukan",
+          });
+          return;
+        }
+        locations = [
+          {
+            latitude: finalLat,
+            longitude: finalLng,
+            timestamp: timestamp || new Date().toISOString(),
+          },
+        ];
       }
 
-      const result = await kknAttendanceService.updateStudentLocation(
-        studentId,
-        finalLat,
-        finalLng
-      );
+      const result = await kknAttendanceService.updateStudentLocationsBatch(studentId, locations);
       res.status(200).json({
         success: true,
         data: result,

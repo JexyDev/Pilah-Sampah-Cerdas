@@ -62,7 +62,6 @@ router.post(
 router.post(
   "/upload",
   authMiddleware,
-  roleMiddleware(["WARGA"]),
   uploadAvatarMiddleware.single("image"),
   aiController.uploadWastePhoto
 );

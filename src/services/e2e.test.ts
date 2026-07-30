@@ -87,6 +87,19 @@ describe("E2E & Security Validation for All 8 Roles", () => {
       },
     ];
 
+    const testPhones = userSeeds.map((u) => u.phone);
+    const usersToDelete = await prisma.user.findMany({
+      where: { phone: { in: testPhones } },
+      select: { id: true },
+    });
+    const userIds = usersToDelete.map((u) => u.id);
+    await prisma.refreshToken.deleteMany({
+      where: { userId: { in: userIds } },
+    });
+    await prisma.user.deleteMany({
+      where: { phone: { in: testPhones } },
+    });
+
     for (const u of userSeeds) {
       await prisma.user.upsert({
         where: { phone: u.phone },

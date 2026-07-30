@@ -7,6 +7,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
+import { isPointInPolygon } from "../utils/geoUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -28,22 +29,39 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 
 export class KknAttendanceService {
   async pingLocation(userId: string, latitude: number, longitude: number) {
-    const student = await prisma.studentKkn.findUnique({
-      where: { userId }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
     });
-    if (!student) throw new Error("STUDENT_NOT_FOUND");
-    
+    if (!user) throw new Error("USER_NOT_FOUND");
+
+    let student = await prisma.studentKkn.findUnique({
+      where: { userId },
+    });
+
+    if (!student && user.role?.name === "MAHASISWA_KKN") {
+      student = await prisma.studentKkn.create({
+        data: {
+          userId,
+          nim: `3273${Date.now().toString().slice(-6)}`,
+          jurusan: "Teknik Lingkungan",
+          fakultas: "Fakultas Teknik",
+          noWa: user.phone || "08123456789",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
     // Simpan lokasi
     await prisma.studentLocation.create({
       data: {
         studentId: userId,
         latitude,
-        longitude
-      }
+        longitude,
+      },
     });
 
-    // Cek durasi di zona
-    // (Implementasi durasi absen berdasarkan lokasi - Dummy for now as requested)
     return { success: true, message: "Lokasi berhasil dilacak" };
   }
 
@@ -53,36 +71,44 @@ export class KknAttendanceService {
       where: { registeredByStudentId: userId },
       include: {
         user: {
-          include: { households: true }
+          include: { households: true },
         },
-        wasteLogs: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
-      }
+        setoranOtomatis: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+      },
     });
 
-    return bins.map(b => ({
+    return bins.map((b: any) => ({
       binId: b.id,
       wargaName: b.user?.name || "Unknown",
       address: b.user?.households?.[0]?.address || "-",
-      recentLogs: b.wasteLogs
+      recentLogs: b.setoranOtomatis,
     }));
   }
 
   /**
-   * Save student's current location and perform auto-cleanup of logs older than 24h.
+   * Save student's current locations in batch and perform auto-cleanup of logs older than 24h.
    * If student is inside active activity radius, trigger auto-attendance.
    */
-  async updateStudentLocation(studentId: string, latitude: number, longitude: number) {
-    // 1. Save new location
-    const location = await prisma.studentLocation.create({
-      data: {
-        studentId,
-        latitude,
-        longitude,
-      },
-    });
+  async updateStudentLocationsBatch(
+    studentId: string,
+    locations: { latitude: number; longitude: number; timestamp?: string }[]
+  ) {
+    const savedLocations = [];
+    for (const loc of locations) {
+      // 1. Save new location
+      const location = await prisma.studentLocation.create({
+        data: {
+          studentId,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          recordedAt: loc.timestamp ? new Date(loc.timestamp) : new Date(),
+        },
+      });
+      savedLocations.push(location);
+    }
 
     // 2. Cleanup older than 24 hours
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -95,7 +121,13 @@ export class KknAttendanceService {
       },
     });
 
-    // 3. Auto-attendance check:
+    // 3. Auto-attendance check using the latest location from batch
+    const latestLoc = savedLocations[savedLocations.length - 1];
+    if (!latestLoc) return { locations: [], autoAttendanceTriggered: [] };
+
+    const latitude = Number(latestLoc.latitude);
+    const longitude = Number(latestLoc.longitude);
+
     // Find active schedule for today (overlapping with date)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -115,17 +147,24 @@ export class KknAttendanceService {
 
     const triggerResults = [];
     for (const schedule of activeSchedules) {
-      if (!schedule.latitude || !schedule.longitude) continue;
+      let isInside = false;
+      if (schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3) {
+        const polyPoints = (schedule.polygon as any[]).map((p) => ({
+          lat: Number(p[0]),
+          lng: Number(p[1]),
+        }));
+        isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+      } else if (schedule.latitude && schedule.longitude) {
+        const dist = calculateDistance(
+          latitude,
+          longitude,
+          Number(schedule.latitude),
+          Number(schedule.longitude)
+        );
+        isInside = dist <= (schedule.radius || 100);
+      }
 
-      const dist = calculateDistance(
-        latitude,
-        longitude,
-        Number(schedule.latitude),
-        Number(schedule.longitude)
-      );
-
-      const radius = schedule.radius || 100;
-      if (dist <= radius) {
+      if (isInside) {
         // Check if already attended
         const existingAttendance = await prisma.activityAttendance.findUnique({
           where: {
@@ -163,7 +202,7 @@ export class KknAttendanceService {
     }
 
     return {
-      location,
+      locations: savedLocations,
       autoAttendanceTriggered: triggerResults,
     };
   }
@@ -195,6 +234,7 @@ export class KknAttendanceService {
       latitude: schedule.latitude ? Number(schedule.latitude) : defaultLat,
       longitude: schedule.longitude ? Number(schedule.longitude) : defaultLng,
       radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+      polygon: schedule.polygon,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
     };
   }
@@ -217,11 +257,20 @@ export class KknAttendanceService {
     const actLoc = await this.getActivityLocation(scheduleId);
 
     // 2. Validate radius on backend
-    const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
-    if (distance > actLoc.radius) {
-      throw new Error(
-        `OUT_OF_RADIUS: Jarak mahasiswa (${distance.toFixed(1)}m) melebihi batas radius (${actLoc.radius}m).`
-      );
+    let isInside = false;
+    if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
+      const polyPoints = (actLoc.polygon as any[]).map((p) => ({
+        lat: Number(p[0]),
+        lng: Number(p[1]),
+      }));
+      isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+    } else {
+      const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
+      isInside = distance <= actLoc.radius;
+    }
+
+    if (!isInside) {
+      throw new Error(`OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`);
     }
 
     // 3. Create or update attendance record
@@ -240,16 +289,16 @@ export class KknAttendanceService {
         if (existing.checkOutAt) {
           throw new Error("ALREADY_ATTENDED_AND_CHECKED_OUT");
         }
-        
+
         // This is a checkout
         const record = await tx.activityAttendance.update({
           where: { id: existing.id },
           data: {
             checkOutAt: new Date(),
-            status: "LEPAS_RADIUS"
-          }
+            status: "LEPAS_RADIUS",
+          },
         });
-        
+
         return record;
       }
 
@@ -285,7 +334,17 @@ export class KknAttendanceService {
    * Get all student locations recorded in the last 24 hours.
    */
   async getActiveStudentsLocations() {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+    // Get active logged-in user IDs from RefreshToken
+    const activeSessions = await prisma.refreshToken.findMany({
+      where: {
+        expiresAt: { gte: new Date() },
+      },
+      select: { userId: true },
+    });
+    const loggedInUserIds = new Set(activeSessions.map((s) => s.userId));
+
     // Group by student to get the latest position of each active student
     const locations = await prisma.studentLocation.findMany({
       where: {
@@ -301,7 +360,6 @@ export class KknAttendanceService {
           select: {
             id: true,
             name: true,
-            email: true,
             phone: true,
             studentProfile: {
               select: {
@@ -317,8 +375,88 @@ export class KknAttendanceService {
     // Deduplicate to only keep the latest location per student
     const uniqueStudents = new Map<string, (typeof locations)[0]>();
     for (const loc of locations) {
-      if (!uniqueStudents.has(loc.studentId)) {
+      if (!uniqueStudents.has(loc.studentId) && (loggedInUserIds.size === 0 || loggedInUserIds.has(loc.studentId))) {
         uniqueStudents.set(loc.studentId, loc);
+      }
+    }
+
+    // Include registered Mahasiswa KKN who have active sessions
+    const allMahasiswa = await prisma.user.findMany({
+      where: {
+        role: { name: "MAHASISWA_KKN" },
+        ...(loggedInUserIds.size > 0 ? { id: { in: Array.from(loggedInUserIds) } } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        createdAt: true,
+        studentProfile: {
+          select: {
+            nim: true,
+            jurusan: true,
+            assignedPolygon: {
+              select: {
+                name: true,
+                latitude: true,
+                longitude: true,
+              },
+            },
+          },
+        },
+        attendances: {
+          orderBy: { attendedAt: "desc" },
+          take: 1,
+          select: {
+            latitude: true,
+            longitude: true,
+            attendedAt: true,
+          },
+        },
+      },
+    });
+
+    for (const mhs of allMahasiswa) {
+      if (!uniqueStudents.has(mhs.id)) {
+        let lat = -6.8915;
+        let lng = 107.6107;
+        let recAt = mhs.createdAt;
+
+        if (mhs.attendances.length > 0 && mhs.attendances[0].latitude && mhs.attendances[0].longitude) {
+          lat = Number(mhs.attendances[0].latitude);
+          lng = Number(mhs.attendances[0].longitude);
+          recAt = mhs.attendances[0].attendedAt;
+        } else if (
+          mhs.studentProfile?.assignedPolygon?.latitude &&
+          mhs.studentProfile?.assignedPolygon?.longitude
+        ) {
+          lat = Number(mhs.studentProfile.assignedPolygon.latitude);
+          lng = Number(mhs.studentProfile.assignedPolygon.longitude);
+        } else {
+          const charSum = mhs.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+          lat = -6.8915 + ((charSum % 30) - 15) * 0.0003;
+          lng = 107.6107 + ((charSum % 25) - 12) * 0.0003;
+        }
+
+        uniqueStudents.set(mhs.id, {
+          id: `fallback-${mhs.id}`,
+          studentId: mhs.id,
+          latitude: lat as any,
+          longitude: lng as any,
+          recordedAt: recAt,
+          student: {
+            id: mhs.id,
+            name: mhs.name,
+            email: mhs.phone,
+            phone: mhs.phone,
+            studentProfile: mhs.studentProfile
+              ? {
+                  nim: mhs.studentProfile.nim,
+                  jurusan: mhs.studentProfile.jurusan,
+                }
+              : undefined,
+          },
+        } as any);
       }
     }
 
@@ -336,6 +474,7 @@ export class KknAttendanceService {
           select: {
             id: true,
             name: true,
+            phone: true,
             studentProfile: {
               select: {
                 nim: true,
@@ -350,25 +489,39 @@ export class KknAttendanceService {
       },
     });
 
-    // We can also fetch their current status (whether they are still in radius)
-    // by comparing with their latest recorded location
+    const attendedStudentIds = new Set(list.map((a) => a.studentId));
     const locations = await this.getActiveStudentsLocations();
     const locMap = new Map(locations.map((l) => [l.studentId, l]));
-
     const scheduleLoc = await this.getActivityLocation(scheduleId);
 
-    return list.map((att) => {
+    const attendedList = list.map((att) => {
       const latestLoc = locMap.get(att.studentId);
-      let currentStatus = "TIDAK_TERDETEKSI"; // GPS off/expired
+      let currentStatus = "TERCATAT_ABSEN";
       if (latestLoc) {
-        const dist = calculateDistance(
-          Number(latestLoc.latitude),
-          Number(latestLoc.longitude),
-          scheduleLoc.latitude,
-          scheduleLoc.longitude
-        );
-        currentStatus =
-          dist <= scheduleLoc.radius ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
+        let isInside = false;
+        if (
+          scheduleLoc.polygon &&
+          Array.isArray(scheduleLoc.polygon) &&
+          scheduleLoc.polygon.length >= 3
+        ) {
+          const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
+            lat: Number(p[0]),
+            lng: Number(p[1]),
+          }));
+          isInside = isPointInPolygon(
+            { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
+            polyPoints
+          );
+        } else {
+          const dist = calculateDistance(
+            Number(latestLoc.latitude),
+            Number(latestLoc.longitude),
+            scheduleLoc.latitude,
+            scheduleLoc.longitude
+          );
+          isInside = dist <= scheduleLoc.radius;
+        }
+        currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
       }
 
       return {
@@ -376,6 +529,71 @@ export class KknAttendanceService {
         currentStatus,
       };
     });
+
+    const allStudents = await prisma.user.findMany({
+      where: {
+        role: { name: "MAHASISWA_KKN" },
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        studentProfile: {
+          select: {
+            nim: true,
+            jurusan: true,
+          },
+        },
+      },
+    });
+
+    const unAttendedList = allStudents
+      .filter((s) => !attendedStudentIds.has(s.id))
+      .map((s) => {
+        const latestLoc = locMap.get(s.id);
+        let currentStatus = "BELUM_ABSEN";
+        if (latestLoc) {
+          let isInside = false;
+          if (
+            scheduleLoc.polygon &&
+            Array.isArray(scheduleLoc.polygon) &&
+            scheduleLoc.polygon.length >= 3
+          ) {
+            const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
+              lat: Number(p[0]),
+              lng: Number(p[1]),
+            }));
+            isInside = isPointInPolygon(
+              { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
+              polyPoints
+            );
+          } else {
+            const dist = calculateDistance(
+              Number(latestLoc.latitude),
+              Number(latestLoc.longitude),
+              scheduleLoc.latitude,
+              scheduleLoc.longitude
+            );
+            isInside = dist <= scheduleLoc.radius;
+          }
+          currentStatus = isInside ? "DI_LOKASI_BELUM_ABSEN" : "BELUM_ABSEN";
+        }
+
+        return {
+          id: `unattended-${s.id}`,
+          studentId: s.id,
+          scheduleId,
+          attendedAt: null,
+          method: "-",
+          latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
+          longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
+          status: "BELUM_ABSEN",
+          currentStatus,
+          student: s,
+        };
+      });
+
+    return [...attendedList, ...unAttendedList];
   }
 }
 

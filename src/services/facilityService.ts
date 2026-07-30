@@ -24,7 +24,15 @@ export const facilityService = {
     longitude?: number
   ) => {
     // Validate facility type
-    const validTypes = ["loseda", "bata_terawang", "rumah_maggot", "bank_sampah", "tps", "buruan_sae", "poc"];
+    const validTypes = [
+      "loseda",
+      "bata_terawang",
+      "rumah_maggot",
+      "bank_sampah",
+      "tps",
+      "buruan_sae",
+      "poc",
+    ];
     if (!validTypes.includes(jenis)) {
       throw new Error("INVALID_FACILITY_TYPE");
     }
@@ -99,7 +107,7 @@ export const facilityService = {
             description: `Produksi ${jenisOutput} dari ${facility.nama} (${outputKg} Kg)`,
             kategori: "PEMANFAATAN",
             redeemable: true,
-          }
+          },
         });
       }
 

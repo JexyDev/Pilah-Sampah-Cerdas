@@ -60,8 +60,6 @@ export class KknController {
     }
   }
 
-
-
   async getRegisteredWarga(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
@@ -89,14 +87,77 @@ export class KknController {
     }
   }
 
-  async getUnregisteredHouses(req: Request, res: Response) {
+  async getWargaList(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const data = await kknService.getUnregisteredHouses(kknUserId);
+      const status = req.query.status as string;
+      const kelurahan = req.query.kelurahan as string;
+      const rtRwId = req.query.rtRw ? parseInt(req.query.rtRw as string, 10) : undefined;
+      const search = req.query.search as string;
+
+      const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rtRwId, search });
       res.status(200).json({ success: true, data });
     } catch (error: any) {
-      console.error("[KknController] getUnregisteredHouses error:", error);
+      console.error("[KknController] getWargaList error:", error);
       res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async activateByScan(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const { wargaId, qrCode, latitude, longitude } = req.body;
+
+      if (!wargaId || !qrCode) {
+        return res.status(400).json({
+          success: false,
+          message: "Field wargaId dan qrCode wajib diisi",
+        });
+      }
+
+      const data = await kknService.activateByScan(
+        wargaId,
+        qrCode,
+        latitude != null ? Number(latitude) : undefined,
+        longitude != null ? Number(longitude) : undefined,
+        kknUserId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Aktivasi warga via scan QR berhasil",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] activateByScan error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async activateBin(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const { wargaId, binOrganikId, binAnorganikId, latitude, longitude } = req.body;
+
+      if (!wargaId || !binOrganikId || !binAnorganikId) {
+        return res.status(400).json({
+          success: false,
+          message: "Field wargaId, binOrganikId, dan binAnorganikId wajib diisi",
+        });
+      }
+
+      await kknService.activateWargaBin(
+        wargaId,
+        binOrganikId,
+        binAnorganikId,
+        latitude != null ? Number(latitude) : undefined,
+        longitude != null ? Number(longitude) : undefined,
+        kknUserId
+      );
+      res.status(200).json({ success: true, message: "Aktivasi bin warga berhasil disatukan" });
+    } catch (error: any) {
+      console.error("[KknController] activateBin error:", error);
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 
@@ -110,7 +171,6 @@ export class KknController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
-
 
   async handover(req: Request, res: Response) {
     try {

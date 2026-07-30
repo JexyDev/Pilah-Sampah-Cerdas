@@ -20,7 +20,7 @@ export const systemService = {
           select: {
             id: true,
             name: true,
-            email: true,
+            phone: true,
             role: { select: { name: true } },
           },
         },

@@ -74,12 +74,12 @@ export const userController = {
 
   createUser: async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, email, password, roleName } = req.body;
-      if (!name || !email || !password || !roleName) {
+      const { name, phone, password, roleName } = req.body;
+      if (!name || !phone || !password || !roleName) {
         res.status(400).json({
           success: false,
           error: "VALIDATION_ERROR",
-          message: "name, email, password, dan roleName wajib diisi",
+          message: "name, phone, password, dan roleName wajib diisi",
         });
         return;
       }
@@ -174,7 +174,9 @@ export const userController = {
     } catch (error: any) {
       console.error("Error in getOnboardingStatus:", error);
       if (error.message === "USER_NOT_FOUND") {
-        res.status(404).json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
+        res
+          .status(404)
+          .json({ success: false, error: "NOT_FOUND", message: "Pengguna tidak ditemukan" });
       } else {
         res.status(500).json({
           success: false,

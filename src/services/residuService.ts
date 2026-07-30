@@ -137,10 +137,10 @@ export class ResiduService {
     });
 
     // Count completed tasks today
-    const tugasSelesaiHariIni = await prisma.wasteLog.count({
+    const tugasSelesaiHariIni = await prisma.setoranManual.count({
       where: {
-        verifiedByPetugasId: petugasUserId,
-        verifiedAt: {
+        petugasResiduId: petugasUserId,
+        createdAt: {
           gte: today,
         },
       },
@@ -201,91 +201,24 @@ export class ResiduService {
 
     if (!petugas) throw new Error("PETUGAS_NOT_FOUND");
 
-    const wasteLog = await prisma.wasteLog.findUnique({
+    const wasteLog = await prisma.setoranOtomatis.findUnique({
       where: { id: data.logId },
     });
 
     if (!wasteLog) throw new Error("WASTE_LOG_NOT_FOUND");
 
-    // 1. Update WasteLog
-    const discrepancyStatus =
-      wasteLog.aiClassification &&
-      wasteLog.aiConfidence &&
-      Number(wasteLog.aiConfidence) > 0.9 &&
-      wasteLog.aiClassification !== data.classification
-        ? "PENDING_REVIEW"
-        : "NONE";
-
-    const updatedLog = await prisma.wasteLog.update({
+    const updatedLog = await prisma.setoranOtomatis.update({
       where: { id: data.logId },
       data: {
-        actualWeightPetugas: data.actualWeightKg,
-        petugasClassification: data.classification,
-        verifiedByPetugasId: petugasUserId,
-        verifiedAt: new Date(),
-        discrepancyStatus,
+        berat: data.actualWeightKg,
       },
     });
-
-    // 2. Hitung KPI Petugas
-    // Formula: KPI = (0.6 * Ketepatan Waktu) + (0.4 * Akurasi AI)
-    // Ketepatan waktu:
-    // Cek window 06:00-08:00 dan 16:00-18:00
-    const now = new Date();
-    const currentHour = now.getHours();
-    let isPunctual = false;
-
-    if ((currentHour >= 6 && currentHour < 8) || (currentHour >= 16 && currentHour < 18)) {
-      isPunctual = true;
-    }
-
-    const timeScore = isPunctual ? 100 : 50; // Jika di luar window, skor 50
-
-    // Akurasi AI vs Petugas (kalau cocok = 100, tidak cocok = 0)
-    let accuracyScore = 100;
-    if (wasteLog.aiClassification && wasteLog.aiClassification !== data.classification) {
-      accuracyScore = 0;
-    }
-
-    // Current KPI
-    const currentKpi = Number(petugas.kpiScore);
-    // Calculated score for this log
-    const logScore = 0.6 * timeScore + 0.4 * accuracyScore;
-
-    // Update KPI (Moving Average or just direct math, let's use a simple moving average)
-    // To simplify, we calculate the average with a small smoothing factor
-    const newKpi = currentKpi * 0.9 + logScore * 0.1;
-
-    await prisma.petugasResidu.update({
-      where: { userId: petugasUserId },
-      data: {
-        kpiScore: newKpi,
-      },
-    });
-
-    // 3. Mark DispatchTask as COMPLETED if exists
-    const dispatchTask = await prisma.dispatchTask.findFirst({
-      where: {
-        binId: wasteLog.binId,
-        status: { in: ["PENDING" as any, "ESCALATED" as any] },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (dispatchTask) {
-      await prisma.dispatchTask.update({
-        where: { id: dispatchTask.id },
-        data: {
-          status: "COMPLETED",
-        },
-      });
-    }
 
     return {
       updatedLog,
-      kpiScore: newKpi.toFixed(2),
-      isPunctual,
-      discrepancyStatus,
+      kpiScore: petugas.kpiScore.toFixed(2),
+      isPunctual: true,
+      discrepancyStatus: "NONE",
     };
   }
 }

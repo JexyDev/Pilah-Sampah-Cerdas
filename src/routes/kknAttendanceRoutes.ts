@@ -12,7 +12,7 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-// In-memory rate limiting for GPS updates (1 request per 15s per student)
+// In-memory rate limiting for GPS updates (1 request per 3s per student)
 const lastRequestMap = new Map<string, number>();
 const gpsRateLimiter = (req: any, res: any, next: any) => {
   const userId = req.user?.userId;
@@ -21,12 +21,12 @@ const gpsRateLimiter = (req: any, res: any, next: any) => {
   }
   const now = Date.now();
   const lastRequest = lastRequestMap.get(userId) || 0;
-  if (now - lastRequest < 15000) {
-    // 15 seconds
+  if (now - lastRequest < 3000) {
+    // 3 seconds
     res.status(429).json({
       success: false,
       error: "TOO_MANY_REQUESTS",
-      message: "Update lokasi terlalu cepat. Harap tunggu 15 detik.",
+      message: "Update lokasi terlalu cepat. Harap tunggu 3 detik.",
     });
     return;
   }
@@ -72,26 +72,39 @@ router.get(
   kknAttendanceController.getAttendanceList
 );
 
-
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 
-router.post('/location-ping', authMiddleware, roleMiddleware(['MAHASISWA_KKN']), async (req, res) => {
-  try {
-    const { latitude, longitude } = req.body;
-    const result = await kknAttendanceServiceInstance.pingLocation(req.user!.userId, latitude, longitude);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+router.post(
+  "/location-ping",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  async (req, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+      const result = await kknAttendanceServiceInstance.pingLocation(
+        req.user!.userId,
+        latitude,
+        longitude
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   }
-});
+);
 
-router.get('/warga-dampingan', authMiddleware, roleMiddleware(['MAHASISWA_KKN', 'SUPER_ADMIN']), async (req, res) => {
-  try {
-    const result = await kknAttendanceServiceInstance.getWargaDampingan(req.user!.userId);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+router.get(
+  "/warga-dampingan",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN"]),
+  async (req, res) => {
+    try {
+      const result = await kknAttendanceServiceInstance.getWargaDampingan(req.user!.userId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   }
-});
+);
 export default router;

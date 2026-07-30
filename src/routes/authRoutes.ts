@@ -69,8 +69,6 @@ const router = Router();
  */
 router.post("/login", loginRateLimiter, authController.login);
 
-
-
 /**
  * @swagger
  * /api/v1/auth/refresh:
@@ -281,8 +279,5 @@ router.patch(
   roleMiddleware(["ADMIN_DLH"]),
   authController.approveKkn
 );
-
-router.post("/forgot-password", authController.forgotPassword);
-router.post("/reset-password", authController.resetPassword);
 
 export default router;

@@ -34,7 +34,7 @@ const router = Router();
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"]),
   userController.getAll
 );
 
@@ -113,10 +113,6 @@ router.put(
  *         schema:
  *           type: string
  */
-router.get(
-  "/:id/onboarding-status",
-  authMiddleware,
-  userController.getOnboardingStatus
-);
+router.get("/:id/onboarding-status", authMiddleware, userController.getOnboardingStatus);
 
 export default router;

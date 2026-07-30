@@ -50,12 +50,17 @@ export class BinController {
         const maxVol = Number(bin.maxCapacityLiter);
         const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
 
+        const isInactive7Days = bin.updatedAt
+          ? Date.now() - new Date(bin.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
+          : false;
+
         return {
+          id: bin.id,
           kode: bin.qrCode,
           lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
           rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
           kapasitas,
-          status: kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+          status: bin.status === "BROKEN" ? "Rusak" : kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
           lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
           categoryId: bin.categoryId || null,
           rtRwId: bin.rtRwId || null,
@@ -68,6 +73,7 @@ export class BinController {
           kknName: bin.qrBatch?.assignedPic?.name || "-",
           userId: bin.userId || null,
           realStatus: bin.status,
+          needsInspection: isInactive7Days && bin.status === "ACTIVE_BOUND",
         };
       });
 
@@ -126,7 +132,12 @@ export class BinController {
   async createArea(req: Request, res: Response): Promise<void> {
     try {
       const { name, kelurahanId, latitude, longitude } = req.body;
-      const newArea = await binService.createArea(name, kelurahanId, latitude ? Number(latitude) : undefined, longitude ? Number(longitude) : undefined);
+      const newArea = await binService.createArea(
+        name,
+        kelurahanId,
+        latitude ? Number(latitude) : undefined,
+        longitude ? Number(longitude) : undefined
+      );
       res.status(201).json({
         success: true,
         data: newArea,
@@ -141,7 +152,13 @@ export class BinController {
     try {
       const { id } = req.params;
       const { name, kelurahanId, latitude, longitude } = req.body;
-      const updatedArea = await binService.updateArea(Number(id), name, kelurahanId, latitude ? Number(latitude) : undefined, longitude ? Number(longitude) : undefined);
+      const updatedArea = await binService.updateArea(
+        Number(id),
+        name,
+        kelurahanId,
+        latitude ? Number(latitude) : undefined,
+        longitude ? Number(longitude) : undefined
+      );
       res.status(200).json({
         success: true,
         data: updatedArea,
@@ -162,7 +179,9 @@ export class BinController {
       });
     } catch (error: any) {
       console.error("[BinController] deleteArea error:", error);
-      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Failed to delete area" });
+      res
+        .status(400)
+        .json({ error: "BAD_REQUEST", message: error.message || "Failed to delete area" });
     }
   }
 
@@ -254,8 +273,8 @@ export class BinController {
     try {
       const data = req.body;
       const role = req.user!.role;
-      const userId = (role === "MAHASISWA_KKN" && data.wargaId) ? data.wargaId : req.user!.userId;
-      
+      const userId = role === "MAHASISWA_KKN" && data.wargaId ? data.wargaId : req.user!.userId;
+
       const result = await binService.registerWargaBin(userId, data);
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
@@ -309,9 +328,10 @@ export class BinController {
           .status(404)
           .json({ error: "RESOURCE_NOT_FOUND", message: "tempat sampah tidak ditemukan" });
       } else {
-        res
-          .status(500)
-          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status tempat sampah" });
+        res.status(500).json({
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal mengambil status tempat sampah",
+        });
       }
     }
   }
@@ -654,7 +674,13 @@ export class BinController {
         });
         return;
       }
-      const result = await binService.reportIssue(id, userId, issueType, notes || "", evidencePhotoUrl);
+      const result = await binService.reportIssue(
+        id,
+        userId,
+        issueType,
+        notes || "",
+        evidencePhotoUrl
+      );
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] reportIssue error:", error);

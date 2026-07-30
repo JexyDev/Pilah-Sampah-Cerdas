@@ -36,7 +36,7 @@ export const gamificationService = {
           select: {
             id: true,
             name: true,
-            email: true,
+            phone: true,
             rtRw: true,
           },
         },
@@ -154,10 +154,10 @@ export const gamificationService = {
       include: {
         rtRwAreas: {
           include: {
-            households: {
+            users: {
               include: {
-                wasteLogs: {
-                  select: { weightKg: true },
+                setoranOtomatis: {
+                  select: { berat: true },
                 },
               },
             },
@@ -170,8 +170,11 @@ export const gamificationService = {
       .map((k: any) => {
         let totalKg = 0;
         k.rtRwAreas.forEach((area: any) => {
-          area.households.forEach((h: any) => {
-            totalKg += h.wasteLogs.reduce((acc: number, cur: any) => acc + Number(cur.weightKg || 0), 0);
+          area.users.forEach((u: any) => {
+            totalKg += u.setoranOtomatis.reduce(
+              (acc: number, cur: any) => acc + Number(cur.berat || 0),
+              0
+            );
           });
         });
         return {
@@ -187,9 +190,9 @@ export const gamificationService = {
     const rtRwAreas = await prisma.rtRwArea.findMany({
       include: {
         kelurahan: { select: { name: true } },
-        households: {
+        users: {
           include: {
-            wasteLogs: { select: { weightKg: true } },
+            setoranOtomatis: { select: { berat: true } },
           },
         },
       },
@@ -198,8 +201,11 @@ export const gamificationService = {
     const rtRwLeaderboard = rtRwAreas
       .map((area: any) => {
         let totalKg = 0;
-        area.households.forEach((h: any) => {
-          totalKg += h.wasteLogs.reduce((acc: number, cur: any) => acc + Number(cur.weightKg || 0), 0);
+        area.users.forEach((u: any) => {
+          totalKg += u.setoranOtomatis.reduce(
+            (acc: number, cur: any) => acc + Number(cur.berat || 0),
+            0
+          );
         });
         return {
           rtRwId: area.id,
@@ -222,10 +228,10 @@ export const gamificationService = {
             assignedPolygon: {
               select: {
                 name: true,
-                kelurahan: { select: { name: true } }
-              }
-            }
-          }
+                kelurahan: { select: { name: true } },
+              },
+            },
+          },
         },
         pointHistory: { select: { points: true } },
       },
@@ -235,7 +241,7 @@ export const gamificationService = {
       .map((m: any) => {
         // Points directly earned by Mahasiswa
         const ownPoints = m.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
-        
+
         // Points earned by their dampingan (warga in their rtRwArea)
         let dampinganPoints = 0;
         const area = m.studentProfile?.assignedPolygon;
@@ -253,25 +259,65 @@ export const gamificationService = {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, 10);
 
-    // 5. Pengangkut Leaderboard
+    // 5. Pengangkut Leaderboard (Opsi D: Composite Formula — Kuantitas + SLA Kecepatan + Akurasi)
     const petugasUsers = await prisma.user.findMany({
-      where: { role: { name: "PETUGAS_RESIDU" } },
+      where: {
+        OR: [
+          { role: { name: "PETUGAS_RESIDU" } },
+          { role: { name: "PENGANGKUT" } },
+          { claimedTasks: { some: {} } },
+        ],
+      },
       select: {
         id: true,
         name: true,
         rtRw: { select: { name: true } },
-        verifiedLogs: { select: { weightKg: true } },
+        setoranManual: { select: { berat: true } },
+        claimedTasks: {
+          select: {
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
 
     const pengangkutLeaderboard = petugasUsers
       .map((p: any) => {
-        const totalKg = p.verifiedLogs.reduce((acc: number, cur: any) => acc + Number(cur.weightKg || 0), 0);
+        const completedTasks = p.claimedTasks.filter((t: any) => t.status === "COMPLETED");
+        const totalCompleted = completedTasks.length;
+        const totalClaimed = p.claimedTasks.length;
+
+        // SLA Responsivitas (menit)
+        let totalDurationMinutes = 0;
+        completedTasks.forEach((t: any) => {
+          const duration = (new Date(t.updatedAt).getTime() - new Date(t.createdAt).getTime()) / (1000 * 60);
+          totalDurationMinutes += Math.max(1, duration);
+        });
+        const avgSlaMinutes = totalCompleted > 0 ? totalDurationMinutes / totalCompleted : 0;
+        const slaScore = totalCompleted > 0 ? Math.max(0, 100 - avgSlaMinutes) : 0;
+
+        // Akurasi/Tingkat keberhasilan penjemputan tanpa batal/escalated
+        const successRate = totalClaimed > 0 ? totalCompleted / totalClaimed : 1;
+
+        // Opsi D: Skor Komposit seimbang & minim error
+        const compositeScore = (0.5 * totalCompleted) + (0.3 * slaScore) + (0.2 * successRate * 100);
+
+        const totalKg = p.setoranManual.reduce(
+          (acc: number, cur: any) => acc + Number(cur.berat || 0),
+          0
+        );
+
         return {
           id: p.id,
           name: p.name,
-          wilayah: p.rtRw?.name || "Semua",
-          totalPoints: totalKg,
+          wilayah: p.rtRw?.name || "Semua Area",
+          totalCompleted,
+          avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(1)),
+          successRatePercent: parseFloat((successRate * 100).toFixed(1)),
+          totalPoints: parseFloat(compositeScore.toFixed(1)),
+          totalKgHandled: totalKg,
         };
       })
       .sort((a, b) => b.totalPoints - a.totalPoints)
@@ -283,6 +329,143 @@ export const gamificationService = {
       rtRw: rtRwLeaderboard,
       mahasiswa: mahasiswaLeaderboard,
       pengangkut: pengangkutLeaderboard,
+    };
+  },
+
+  getLeaderboardKkn: async () => {
+    const students = await prisma.studentKkn.findMany({
+      include: {
+        user: {
+          include: {
+            registeredBins: true,
+            attendances: true,
+          },
+        },
+        kelompok: true,
+      },
+    });
+
+    const studentLeaderboard = students.map((s: any) => {
+      let totalHours = 0;
+      s.user.attendances.forEach((att: any) => {
+        if (att.checkOutAt && att.attendedAt) {
+          const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+          const diffHrs = diffMs / (1000 * 60 * 60);
+          totalHours += diffHrs;
+        }
+      });
+
+      const activeBinsCount = s.user.registeredBins.filter(
+        (b: any) => b.status === "ACTIVE_BOUND"
+      ).length;
+      const dplScore = Number(s.assessmentScore || 0);
+
+      const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
+
+      return {
+        id: s.id,
+        name: s.user.name,
+        nim: s.nim,
+        kelompok: s.kelompok?.name || "Tanpa Kelompok",
+        kelompokId: s.kelompokId,
+        totalHours: parseFloat(totalHours.toFixed(1)),
+        activeBins: activeBinsCount,
+        dplScore,
+        finalScore: parseFloat(finalScore.toFixed(2)),
+      };
+    });
+
+    studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
+
+    const kelompokMap: Record<string, { id: string; name: string; scores: number[] }> = {};
+    studentLeaderboard.forEach((student) => {
+      if (student.kelompokId) {
+        if (!kelompokMap[student.kelompokId]) {
+          kelompokMap[student.kelompokId] = {
+            id: student.kelompokId,
+            name: student.kelompok,
+            scores: [],
+          };
+        }
+        kelompokMap[student.kelompokId].scores.push(student.finalScore);
+      }
+    });
+
+    const kelompokLeaderboard = Object.values(kelompokMap).map((k) => {
+      const totalScore = k.scores.reduce((sum, s) => sum + s, 0);
+      const avgScore = k.scores.length ? totalScore / k.scores.length : 0;
+      return {
+        id: k.id,
+        name: k.name,
+        avgScore: parseFloat(avgScore.toFixed(2)),
+        membersCount: k.scores.length,
+      };
+    });
+
+    kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
+
+    // 3. DPL (Dosen Pembimbing Lapangan) Leaderboard
+    const dplUsers = await prisma.user.findMany({
+      where: { role: { name: "DPL" } },
+      select: {
+        id: true,
+        name: true,
+        dplKelompok: {
+          select: {
+            id: true,
+            name: true,
+            students: {
+              select: {
+                id: true,
+                assessmentScore: true,
+                user: {
+                  select: {
+                    registeredBins: { select: { status: true } },
+                    attendances: { select: { attendedAt: true, checkOutAt: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const dplLeaderboard = dplUsers
+      .map((d: any) => {
+        let totalScoreSum = 0;
+        let totalStudentCount = 0;
+        d.dplKelompok.forEach((kel: any) => {
+          kel.students.forEach((s: any) => {
+            totalStudentCount++;
+            let totalHours = 0;
+            s.user.attendances.forEach((att: any) => {
+              if (att.checkOutAt && att.attendedAt) {
+                const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+                totalHours += diffMs / (1000 * 60 * 60);
+              }
+            });
+            const activeBins = s.user.registeredBins.filter((b: any) => b.status === "ACTIVE_BOUND").length;
+            const score = totalHours * 0.4 + activeBins * 0.3 + Number(s.assessmentScore || 0) * 0.3;
+            totalScoreSum += score;
+          });
+        });
+
+        const avgDplScore = totalStudentCount > 0 ? totalScoreSum / totalStudentCount : 0;
+        return {
+          id: d.id,
+          name: d.name,
+          points: parseFloat(avgDplScore.toFixed(2)),
+          totalGroups: d.dplKelompok.length,
+          totalStudents: totalStudentCount,
+        };
+      })
+      .sort((a: any, b: any) => b.points - a.points);
+
+    return {
+      students: studentLeaderboard,
+      groups: kelompokLeaderboard,
+      dpl: dplLeaderboard,
     };
   },
 };

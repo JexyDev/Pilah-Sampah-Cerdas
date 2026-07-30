@@ -16,11 +16,11 @@ export const transactionController = {
 
       const mappedDeposits = deposits.map((d: any) => ({
         id: d.id,
-        warga: d.household?.user?.name || "Unknown",
-        rtRw: d.bin?.rtRw?.name || `RT/RW ${d.bin?.rtRwId}`,
-        jenis: d.category?.name || d.categoryId,
-        berat: Number(d.weightKg),
-        poin: Math.round(Number(d.weightKg) * Number(d.aiConfidence || 1.0) * 0.9),
+        warga: d.warga?.name || "Unknown",
+        rtRw: d.warga?.rtRw?.name || "Unknown",
+        jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+        berat: Number(d.berat),
+        poin: Number(d.poin),
         waktu: d.createdAt,
         status: "Selesai",
         lokasi: `Tempat Sampah: ${d.bin?.qrCode}`,
@@ -40,10 +40,10 @@ export const transactionController = {
 
       const mappedDeposits = deposits.map((d: any) => ({
         id: d.id,
-        jenis: d.category?.name || d.categoryId,
-        berat: Number(d.weightKg),
-        volume: `${Number(d.volumeLiter).toFixed(1)}L`,
-        poin: Math.round(Number(d.weightKg) * Number(d.aiConfidence || 1.0) * 0.9),
+        jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+        berat: Number(d.berat),
+        volume: "-",
+        poin: Number(d.poin),
         waktu: d.createdAt,
         status: "Selesai",
         lokasi: `Tempat Sampah: ${d.bin?.qrCode}`,
@@ -58,34 +58,46 @@ export const transactionController = {
 
   createManualDeposit: async (req: Request, res: Response) => {
     try {
-      const petugasId = req.user!.userId;
-      const { wargaId, beratKg, kategoriId, overridePoin } = req.body;
+      const user = req.user!;
+      const { petugasResiduId, diinputOleh, berat, lokasiGps, rwId } = req.body;
       const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
-      if (!wargaId || !beratKg || !kategoriId) {
-        res.status(400).json({ success: false, message: "Data tidak lengkap" });
+      if (!berat) {
+        res.status(400).json({ success: false, message: "Berat wajib diisi" });
         return;
       }
 
       if (!photoPath) {
-        res.status(400).json({ success: false, message: "Foto bukti wajib diunggah" });
+        res.status(400).json({ success: false, message: "Foto bukti residu wajib diunggah" });
         return;
       }
 
-      const overridePoinVal = overridePoin ? parseInt(overridePoin, 10) : null;
+      let finalPetugasId = petugasResiduId;
+      let finalDiinputOleh = diinputOleh || "mandiri";
+
+      if (user.role === "PETUGAS_RESIDU") {
+        finalPetugasId = user.userId;
+        finalDiinputOleh = "mandiri";
+      } else if (user.role === "RW") {
+        finalDiinputOleh = "rw";
+        if (!finalPetugasId) {
+          res.status(400).json({ success: false, message: "Petugas Residu wajib dipilih" });
+          return;
+        }
+      }
 
       const result = await transactionService.createManualDeposit(
-        petugasId,
-        wargaId,
-        parseFloat(beratKg),
-        kategoriId,
+        finalPetugasId,
+        finalDiinputOleh,
+        parseFloat(berat),
         photoPath,
-        overridePoinVal
+        lokasiGps || null,
+        rwId ? parseInt(rwId, 10) : undefined
       );
 
       res.status(201).json({
         success: true,
-        message: "Setoran manual berhasil dicatat",
+        message: "Setoran manual residu berhasil dicatat",
         data: result,
       });
     } catch (error: any) {
@@ -94,39 +106,20 @@ export const transactionController = {
     }
   },
 
-  createResiduDeposit: async (req: any, res: any) => {
+  getManualDeposits: async (req: Request, res: Response) => {
     try {
-      const petugasId = req.user!.userId;
-      const { rtRwId, beratKg } = req.body;
-      const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
-
-      if (!rtRwId || !beratKg) {
-        res.status(400).json({ success: false, message: "Data tidak lengkap" });
-        return;
+      const user = req.user!;
+      let rwId: number | undefined;
+      if (user.role === "RW" && user.rtRwId) {
+        rwId = user.rtRwId;
       }
-
-      if (!photoPath) {
-        res.status(400).json({ success: false, message: "Foto bukti wajib diunggah" });
-        return;
-      }
-
-      const result = await transactionService.createResiduDeposit(
-        petugasId,
-        parseInt(rtRwId, 10),
-        parseFloat(beratKg),
-        photoPath
-      );
-
-      res.status(201).json({
-        success: true,
-        message: "Setoran residu agregat berhasil dicatat",
-        data: result,
-      });
+      const deposits = await transactionService.getManualDeposits(rwId);
+      res.status(200).json({ success: true, data: deposits });
     } catch (error: any) {
-      console.error("[TransactionController] createResiduDeposit error:", error);
+      console.error("[TransactionController] getManualDeposits error:", error);
       res
         .status(500)
-        .json({ success: false, message: error.message || "Gagal mencatat setoran residu" });
+        .json({ success: false, message: error.message || "Gagal mengambil data setoran manual" });
     }
   },
 
@@ -138,7 +131,22 @@ export const transactionController = {
         res.status(404).json({ success: false, message: "Setoran tidak ditemukan" });
         return;
       }
-      res.status(200).json({ success: true, data: deposit });
+      const mappedDeposit = {
+        id: deposit.id,
+        warga: deposit.warga?.name || "Unknown",
+        phone: deposit.warga?.phone || "",
+        rtRw: deposit.bin?.rtRw?.name || "",
+        jenis: deposit.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+        berat: Number(deposit.berat),
+        poin: Number(deposit.poin),
+        waktu: deposit.createdAt,
+        status: "Selesai",
+        lokasi: `Tempat Sampah: ${deposit.bin?.qrCode}`,
+        confidence: Number(deposit.confidenceAi),
+        gps: deposit.lokasiGps,
+        fotoUrl: deposit.fotoSampahUrl,
+      };
+      res.status(200).json({ success: true, data: mappedDeposit });
     } catch (error) {
       console.error("[TransactionController] getDepositDetails error:", error);
       res.status(500).json({ success: false, message: "Gagal mengambil detail setoran" });

@@ -289,6 +289,13 @@ router.post(
   binController.reportIssue
 );
 
+router.post(
+  "/:id/report-damage",
+  authMiddleware,
+  roleMiddleware(["WARGA", "RT", "RW", "PETUGAS_RESIDU"]),
+  binController.reportIssue
+);
+
 router.put(
   "/:id/capacity",
   authMiddleware,
@@ -302,8 +309,6 @@ router.post(
   roleMiddleware(["WARGA"]),
   binController.registerWargaBin
 );
-
-router.post("/activate", authMiddleware, roleMiddleware(["WARGA"]), binController.registerWargaBin);
 
 router.post(
   "/reset",

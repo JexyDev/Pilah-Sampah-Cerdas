@@ -30,8 +30,8 @@ export class UserService {
     if (search) {
       whereClause.OR = [
         { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { nik: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
+        { address: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -59,7 +59,7 @@ export class UserService {
 
     const users = await userRepository.findMany(whereClause);
 
-    return users.map((u) => {
+    return users.map((u: any) => {
       let wilayah = "-";
       if (u.rtRw) {
         wilayah = `${u.rtRw.name} (Kel. ${u.rtRw.kelurahan.name})`;
@@ -68,21 +68,21 @@ export class UserService {
       }
 
       let totalSetoranKg = 0;
-      u.households.forEach((h) => {
-        h.wasteLogs.forEach((w) => {
-          totalSetoranKg += Number(w.weightKg);
+      if (u.setoranOtomatis) {
+        u.setoranOtomatis.forEach((s: any) => {
+          totalSetoranKg += Number(s.berat);
         });
-      });
+      }
 
-      const totalPoin = u.pointHistory.reduce((sum, p) => sum + p.points, 0);
+      const totalPoin = u.pointHistory.reduce((sum: number, p: any) => sum + p.points, 0);
 
       return {
         id: u.id,
         name: u.name,
-        email: u.email,
-        role: u.role.name,
-        nik: u.nik ?? "-",
+        email: u.phone,
         phone: u.phone,
+        role: u.role.name,
+        nik: "-",
         status: u.status,
         wilayah,
         setoran: parseFloat(totalSetoranKg.toFixed(1)),
@@ -106,7 +106,7 @@ export class UserService {
   }
 
   async createUser(data: any, currentUser?: { userId: string; role: string }) {
-    const { name, email, password, phone, roleName, nik, status, rtRwId, studentProfile } = data;
+    const { name, password, phone, roleName, status, rtRwId, studentProfile } = data;
 
     if (!phone) {
       throw new Error("PHONE_REQUIRED");
@@ -124,18 +124,6 @@ export class UserService {
     const role = await userRepository.findRoleByName(roleName);
     if (!role) {
       throw new Error("ROLE_NOT_FOUND");
-    }
-
-    const existing = await userRepository.findByEmail(email);
-    if (existing) {
-      throw new Error("EMAIL_CONFLICT");
-    }
-
-    if (nik) {
-      const existingNik = await userRepository.findByNik(nik);
-      if (existingNik) {
-        throw new Error("NIK_CONFLICT");
-      }
     }
 
     if (roleName === "PETUGAS_RESIDU" && rtRwId) {
@@ -163,11 +151,9 @@ export class UserService {
       const u = await tx.user.create({
         data: {
           name,
-          email,
           password: passwordHash,
           phone,
           roleId: role.id,
-          nik: nik || null,
           status: status || "Aktif",
           rtRwId: rtRwId ? parseInt(rtRwId) : null,
         },
@@ -198,7 +184,7 @@ export class UserService {
     return {
       id: newUser.id,
       name: newUser.name,
-      email: newUser.email,
+      phone: newUser.phone,
       role: (newUser as any).role.name,
     };
   }
@@ -251,12 +237,9 @@ export class UserService {
       }
     }
 
-    const updateData: any = { name, email, roleId };
+    const updateData: any = { name, roleId };
     if (password) {
       updateData.password = await hashPassword(password);
-    }
-    if (nik !== undefined) {
-      updateData.nik = nik || null;
     }
     if (status !== undefined) {
       updateData.status = status;
@@ -308,7 +291,7 @@ export class UserService {
     return {
       id: updatedUser.id,
       name: updatedUser.name,
-      email: updatedUser.email,
+      phone: updatedUser.phone,
       role: updatedUser.role.name,
     };
   }

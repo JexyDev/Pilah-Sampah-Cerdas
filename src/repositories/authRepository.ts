@@ -28,45 +28,23 @@ function isDatabaseConnectionError(error: any): boolean {
   return false;
 }
 
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
+
 export class AuthRepository {
-  /**
-   * Find a user by email, including their role details.
-   */
-  async findUserByEmail(email: string): Promise<(User & { role: Role }) | null> {
-    try {
-      return await prisma.user.findUnique({
-        where: { email },
-        include: { role: true },
-      });
-    } catch (error: any) {
-      if (isDatabaseConnectionError(error)) {
-        throw new DatabaseUnavailableError();
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Find a user by NIK, including their role details.
-   */
-  async findUserByNik(nik: string): Promise<(User & { role: Role }) | null> {
-    try {
-      return await prisma.user.findUnique({
-        where: { nik },
-        include: { role: true },
-      });
-    } catch (error: any) {
-      if (isDatabaseConnectionError(error)) {
-        throw new DatabaseUnavailableError();
-      }
-      throw error;
-    }
-  }
-
   async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
     try {
+      const formatted = formatPhoneNumber(phone);
+      const raw = phone.trim();
+      const alt = raw.startsWith("0") ? "+62" + raw.slice(1) : raw.startsWith("+62") ? "0" + raw.slice(3) : raw;
+
       return (await prisma.user.findFirst({
-        where: { phone },
+        where: {
+          OR: [
+            { phone: formatted },
+            { phone: raw },
+            { phone: alt },
+          ],
+        },
         include: { role: true },
       })) as (User & { role: Role }) | null;
     } catch (error: any) {
@@ -163,7 +141,7 @@ export class AuthRepository {
    */
   async updateUser(
     id: string,
-    data: { name?: string; email?: string; phone?: string; address?: string; fotoProfil?: string }
+    data: { name?: string; phone?: string; address?: string; fotoProfil?: string }
   ): Promise<User> {
     return prisma.user.update({
       where: { id },
@@ -239,9 +217,11 @@ export class AuthRepository {
       const role = await tx.role.findUnique({ where: { name: "WARGA" } });
       if (!role) throw new Error("ROLE_NOT_FOUND");
 
+      const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
           ...userData,
+          phone: formattedPhone,
           roleId: role.id,
           wargaSubtype: wargaSubtype || "UTAMA",
         },
@@ -313,7 +293,7 @@ export class AuthRepository {
         data: {
           ...userData,
           roleId: role.id,
-          status: "Pending", // KKN is pending whitelist by Admin DLH
+          status: "Aktif",
         },
       });
 
@@ -321,6 +301,7 @@ export class AuthRepository {
         data: {
           ...kknData,
           userId: user.id,
+          whitelistStatus: "APPROVED",
         },
       });
 

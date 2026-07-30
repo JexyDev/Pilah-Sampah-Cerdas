@@ -27,7 +27,8 @@ describe("Portals A & B Service Integration Tests", () => {
     await prisma.pointHistory.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.violation.deleteMany({});
-    await prisma.wasteLog.deleteMany({});
+    await prisma.setoranOtomatis.deleteMany({});
+    await prisma.setoranManual.deleteMany({});
     await prisma.bin.deleteMany({});
     await prisma.household.deleteMany({});
     await prisma.user.deleteMany({ where: { role: { name: "WARGA" } } });
@@ -88,9 +89,9 @@ describe("Portals A & B Service Integration Tests", () => {
   describe("Portal A — KKN Service", () => {
     it("should fetch dashboard stats correctly", async () => {
       const stats = await kknService.getDashboardStats(kknUser.id);
-      expect(stats).toHaveProperty("studentKkn");
-      expect(stats).toHaveProperty("stats");
-      expect(stats.stats.totalRegistered).toBeTypeOf("number");
+      expect(stats).toHaveProperty("nim");
+      expect(stats).toHaveProperty("totalRegisteredBins");
+      expect(stats.totalRegisteredBins).toBeTypeOf("number");
     });
 
     it("should register citizen, bind bin, and reward points", async () => {
@@ -98,9 +99,9 @@ describe("Portals A & B Service Integration Tests", () => {
       const result = await authService.registerWarga(
         {
           name: "Warga Test KKN",
-          email: citizenEmail,
+
           phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
-          nik: Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString(),
+
           password: "password123",
           rtRwId: rtRwArea.id,
           address: "Jl. Dago Giri No. 12",
@@ -118,7 +119,6 @@ describe("Portals A & B Service Integration Tests", () => {
       citizenUser = result.user;
 
       expect(result).toHaveProperty("user");
-      expect(result.user.email).toBe(citizenEmail);
 
       // Verify bin is now active
       const updatedBin = await prisma.bin.findUnique({

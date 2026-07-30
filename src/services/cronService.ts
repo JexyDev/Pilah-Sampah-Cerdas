@@ -2,7 +2,6 @@ import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
-
 const prisma = new PrismaClient();
 
 export class CronService {
@@ -94,9 +93,9 @@ export class CronService {
       });
 
       for (const petugas of petugasList) {
-        const count = await prisma.residuLog.count({
+        const count = await prisma.setoranManual.count({
           where: {
-            petugasId: petugas.userId,
+            petugasResiduId: petugas.userId,
           },
         });
 
@@ -218,9 +217,9 @@ export class CronService {
           endOfCheckDay.setDate(endOfCheckDay.getDate() - dayOffset);
           endOfCheckDay.setHours(23, 59, 59, 999);
 
-          const hasSubmittedOnDay = await prisma.wasteLog.findFirst({
+          const hasSubmittedOnDay = await prisma.setoranOtomatis.findFirst({
             where: {
-              household: { userId: warga.id },
+              wargaId: warga.id,
               createdAt: {
                 gte: startOfCheckDay,
                 lte: endOfCheckDay,
@@ -271,13 +270,9 @@ export class CronService {
               message: msg,
             },
           });
-          
+
           if (warga.fcmToken && absenceStreak >= 3) {
-            await notificationIntegrationService.sendPushNotification(
-              warga.fcmToken,
-              title,
-              msg
-            );
+            await notificationIntegrationService.sendPushNotification(warga.fcmToken, title, msg);
           }
         }
       }
@@ -339,9 +334,9 @@ export class CronService {
         }
 
         // Check if warga submitted any waste log within this window today
-        const hasSubmitted = await prisma.wasteLog.findFirst({
+        const hasSubmitted = await prisma.setoranOtomatis.findFirst({
           where: {
-            household: { userId: warga.id },
+            wargaId: warga.id,
             createdAt: {
               gte: windowStart,
               lte: windowEnd,
@@ -403,8 +398,8 @@ export class CronService {
       twentyNineDaysAgo.setDate(twentyNineDaysAgo.getDate() - 29);
 
       for (const bin of bins) {
-        const lastLog = await prisma.wasteLog.findFirst({
-          where: { binId: bin.id },
+        const lastLog = await prisma.setoranOtomatis.findFirst({
+          where: { qrTempatSampahId: bin.id },
           orderBy: { createdAt: "desc" },
         });
 
@@ -414,7 +409,9 @@ export class CronService {
             where: { id: bin.id },
             data: { status: "INACTIVE" },
           });
-          console.log(`[CronService] Bin ${bin.qrCode} set to INACTIVE due to 30 days of inactivity.`);
+          console.log(
+            `[CronService] Bin ${bin.qrCode} set to INACTIVE due to 30 days of inactivity.`
+          );
         } else if (refDate >= thirtyDaysAgo && refDate < twentyNineDaysAgo) {
           // Warning 24 jam sebelum kadaluarsa
           if (bin.userId) {
@@ -447,11 +444,11 @@ export class CronService {
         where: {
           status: "DALAM_RADIUS",
           attendedAt: { gte: todayStart },
-          student: { role: { name: "MAHASISWA_KKN" } }
+          student: { role: { name: "MAHASISWA_KKN" } },
         },
         include: {
-          schedule: true
-        }
+          schedule: true,
+        },
       });
 
       const { calculateDistance } = await import("./kknAttendanceService.js");
@@ -467,15 +464,20 @@ export class CronService {
         const logs = await prisma.studentLocation.findMany({
           where: {
             studentId: att.studentId,
-            recordedAt: { gte: twoHoursAgo }
-          }
+            recordedAt: { gte: twoHoursAgo },
+          },
         });
 
         if (logs.length === 0) continue;
 
         let anyInside = false;
         for (const log of logs) {
-          const dist = calculateDistance(Number(log.latitude), Number(log.longitude), centerLat, centerLng);
+          const dist = calculateDistance(
+            Number(log.latitude),
+            Number(log.longitude),
+            centerLat,
+            centerLng
+          );
           if (dist <= radius) {
             anyInside = true;
             break;
@@ -485,7 +487,7 @@ export class CronService {
         if (!anyInside) {
           await prisma.activityAttendance.update({
             where: { id: att.id },
-            data: { status: "LEPAS_RADIUS" }
+            data: { status: "LEPAS_RADIUS" },
           });
           console.log(`[CronService] Attendance ${att.id} batal due to geofence rule.`);
         }

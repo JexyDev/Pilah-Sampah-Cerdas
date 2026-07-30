@@ -5,7 +5,14 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient, Bin, WasteLog, PointHistory, Notification, BinStatus } from "@prisma/client";
+import {
+  PrismaClient,
+  Bin,
+  SetoranOtomatis,
+  PointHistory,
+  Notification,
+  BinStatus,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -60,8 +67,8 @@ export class BinRepository {
       rtRwAreas.map(async (area) => {
         let activeHouseholds = 0;
         for (const hh of area.households) {
-          const count = await prisma.wasteLog.count({
-            where: { householdId: hh.id },
+          const count = await prisma.setoranOtomatis.count({
+            where: { wargaId: hh.userId },
           });
           if (count > 0) {
             activeHouseholds++;
@@ -125,19 +132,26 @@ export class BinRepository {
     categoryName: string,
     aiConfidence?: number,
     evidencePhotoUrl?: string
-  ): Promise<{ wasteLog: WasteLog; points: PointHistory; notification: Notification }> {
+  ): Promise<{
+    setoranOtomatis: SetoranOtomatis;
+    points: PointHistory;
+    notification: Notification;
+  }> {
     return prisma.$transaction(async (tx) => {
-      // 1. Create Waste Log
-      const wasteLog = await tx.wasteLog.create({
+      // 1. Create SetoranOtomatis Log
+      const setoranOtomatis = await tx.setoranOtomatis.create({
         data: {
-          householdId,
-          binId,
-          weightKg,
-          volumeLiter,
-          categoryId,
-          requestId,
-          aiConfidence,
-          evidencePhotoUrl,
+          wargaId: userId,
+          fotoSampahUrl: evidencePhotoUrl || "https://picsum.photos/400/300",
+          hasilKlasifikasiAi: categoryName.toLowerCase().includes("organik")
+            ? "organik"
+            : "anorganik",
+          confidenceAi: aiConfidence || 0.95,
+          berat: weightKg,
+          unit: "Kg",
+          poin: pointsAwarded,
+          qrTempatSampahId: binId,
+          lokasiGps: null,
         },
       });
 
@@ -187,9 +201,9 @@ export class BinRepository {
           checkDateEnd.setDate(checkDateEnd.getDate() - i);
           checkDateEnd.setHours(23, 59, 59, 999);
 
-          const logOnDay = await tx.wasteLog.findFirst({
+          const logOnDay = await tx.setoranOtomatis.findFirst({
             where: {
-              household: { userId },
+              wargaId: userId,
               createdAt: {
                 gte: checkDateStart,
                 lte: checkDateEnd,
@@ -234,7 +248,7 @@ export class BinRepository {
         }
       }
 
-      return { wasteLog, points, notification };
+      return { setoranOtomatis, points, notification };
     });
   }
 
@@ -276,7 +290,13 @@ export class BinRepository {
     });
   }
 
-  async updateArea(id: number, name: string, kelurahanId: string, latitude?: number, longitude?: number) {
+  async updateArea(
+    id: number,
+    name: string,
+    kelurahanId: string,
+    latitude?: number,
+    longitude?: number
+  ) {
     return prisma.rtRwArea.update({
       where: { id },
       data: {

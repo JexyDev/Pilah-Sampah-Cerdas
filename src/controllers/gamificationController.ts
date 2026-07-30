@@ -83,6 +83,17 @@ export class GamificationController {
         .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  async getLeaderboardKkn(req: Request, res: Response): Promise<void> {
+    try {
+      const leaderboard = await gamificationService.getLeaderboardKkn();
+      res.status(200).json({ success: true, data: leaderboard });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
 }
 
 export const gamificationController = new GamificationController();

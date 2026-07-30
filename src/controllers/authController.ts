@@ -21,7 +21,7 @@ function normalizePhone(phone: string): string {
 
 // Validation Schemas
 const loginSchema = z.object({
-  phone: z.string().min(1, "Nomor HP atau Email diperlukan"),
+  phone: z.string().min(1, "Nomor HP diperlukan"),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
@@ -29,11 +29,8 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token diperlukan"),
 });
 
-
-
 const updateProfileSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
-  email: z.union([z.string().email("Format email tidak valid"), z.literal("")]).optional(),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   fotoProfil: z.string().optional().nullable(),
@@ -46,9 +43,7 @@ const updatePasswordSchema = z.object({
 
 const registerStaffSchema = z.object({
   name: z.string().min(1, "Nama diperlukan"),
-  email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  nik: z.string().optional(),
   phone: z.string().min(1, "No. Telfon diperlukan"),
   address: z.string().optional(),
 });
@@ -56,9 +51,7 @@ const registerStaffSchema = z.object({
 const registerWargaSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   nama: z.string().min(1).optional(), // alias for name (mobile compat)
-  email: z.union([z.string().email("Format email tidak valid"), z.literal("")]).optional(),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  nik: z.string().optional(),
   phone: z.string().min(1, "No. Telfon diperlukan"),
   noWa: z.string().optional(), // alias for phone whatsapp
   address: z.string().optional(),
@@ -181,8 +174,6 @@ export class AuthController {
     }
   }
 
-
-
   /**
    * Handle Token Refresh
    */
@@ -231,9 +222,13 @@ export class AuthController {
   async logout(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
+      const userId = req.user?.userId;
 
       if (refreshToken) {
         await authService.logout(refreshToken);
+      }
+      if (userId) {
+        await authService.logoutUserById(userId);
       }
 
       // Clear cookie
@@ -261,12 +256,11 @@ export class AuthController {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { name, email, phone, address, fotoProfil } = parsed.data;
+      const { name, phone, address, fotoProfil } = parsed.data;
 
       const updatedUser = await authService.updateProfile(
         req.user.userId,
         name,
-        email,
         phone ?? undefined,
         address ?? undefined,
         fotoProfil ?? undefined
@@ -278,8 +272,7 @@ export class AuthController {
           user: {
             id: updatedUser.id,
             name: updatedUser.name,
-            email: updatedUser.email,
-            phone: (updatedUser as any).phone,
+            phone: updatedUser.phone,
             address: (updatedUser as any).address,
             fotoProfil: (updatedUser as any).fotoProfil,
           },
@@ -376,14 +369,7 @@ export class AuthController {
       }
 
       const filePath = `/uploads/${req.file.filename}`;
-      await authService.updateProfile(
-        req.user.userId,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        filePath
-      );
+      await authService.updateProfile(req.user.userId, undefined, undefined, undefined, filePath);
 
       res.status(200).json({
         success: true,
@@ -416,9 +402,7 @@ export class AuthController {
         return;
       }
       const user = await authService.registerStaff(parsed.data, "ADMIN_DLH");
-      res
-        .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ success: true, data: { id: user.id, name: user.name } });
     } catch (error: any) {
       res
         .status(400)
@@ -439,9 +423,7 @@ export class AuthController {
         return;
       }
       const user = await authService.registerStaff(parsed.data, "CAMAT");
-      res
-        .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ success: true, data: { id: user.id, name: user.name } });
     } catch (error: any) {
       res
         .status(400)
@@ -462,9 +444,7 @@ export class AuthController {
         return;
       }
       const user = await authService.registerStaff(parsed.data, "LURAH");
-      res
-        .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ success: true, data: { id: user.id, name: user.name } });
     } catch (error: any) {
       res
         .status(400)
@@ -480,9 +460,7 @@ export class AuthController {
       const rwParsed = z
         .object({
           name: z.string().min(1),
-          email: z.string().email(),
           password: z.string().min(6),
-          nik: z.string().optional(),
           phone: z.string().min(1),
           address: z.string().optional(),
           rtRwId: z.number().int(),
@@ -496,9 +474,7 @@ export class AuthController {
         return;
       }
       const user = await authService.registerStaff(rwParsed.data, "RW");
-      res
-        .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ success: true, data: { id: user.id, name: user.name } });
     } catch (error: any) {
       res
         .status(400)
@@ -511,9 +487,7 @@ export class AuthController {
       const rwParsed = z
         .object({
           name: z.string().min(1),
-          email: z.string().email(),
           password: z.string().min(6),
-          nik: z.string().optional(),
           phone: z.string().min(1),
           address: z.string().optional(),
           rtRwId: z.number().int(),
@@ -527,9 +501,7 @@ export class AuthController {
         return;
       }
       const user = await authService.registerStaff(rwParsed.data, "RT");
-      res
-        .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ success: true, data: { id: user.id, name: user.name } });
     } catch (error: any) {
       res
         .status(400)
@@ -542,7 +514,6 @@ export class AuthController {
       const dplParsed = z
         .object({
           name: z.string().min(1),
-          email: z.string().email(),
           password: z.string().min(6),
           phone: z.string().min(1),
           universityId: z.string().uuid(),
@@ -556,9 +527,7 @@ export class AuthController {
         return;
       }
       const user = await authService.registerDpl(dplParsed.data);
-      res
-        .status(201)
-        .json({ success: true, data: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ success: true, data: { id: user.id, name: user.name } });
     } catch (error: any) {
       res
         .status(400)
@@ -612,11 +581,6 @@ export class AuthController {
         longitude: longitude || 0,
       };
 
-      // Generate dummy email from phone if not provided
-      if (!userData.email) {
-        userData.email = userData.phone.replace("+", "") + "@pilahsampah.id";
-      }
-
       let token = "";
       if (req.cookies && req.cookies.accessToken) {
         token = req.cookies.accessToken;
@@ -663,10 +627,6 @@ export class AuthController {
       if (req.body?.phone) req.body.phone = normalizePhone(req.body.phone);
       if (req.body?.noWa) req.body.noWa = normalizePhone(req.body.noWa);
       if (!req.body?.name && req.body?.nama) req.body.name = req.body.nama;
-      // Generate dummy email from phone if not provided
-      if (!req.body?.email && req.body?.phone) {
-        req.body.email = normalizePhone(req.body.phone).replace("+", "") + "@pilahsampah.id";
-      }
 
       const parsed = registerKknSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -708,9 +668,6 @@ export class AuthController {
       if (req.body?.phone) req.body.phone = normalizePhone(req.body.phone);
       if (req.body?.noWa) req.body.noWa = normalizePhone(req.body.noWa);
       if (!req.body?.name && req.body?.nama) req.body.name = req.body.nama;
-      if (!req.body?.email && req.body?.phone) {
-        req.body.email = normalizePhone(req.body.phone).replace("+", "") + "@pilahsampah.id";
-      }
 
       const parsed = registerPetugasSchema.safeParse(req.body);
       if (!parsed.success) {

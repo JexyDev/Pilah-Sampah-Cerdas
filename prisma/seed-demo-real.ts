@@ -20,14 +20,16 @@ async function main() {
   await prisma.dispatchTask.deleteMany({});
   await prisma.violation.deleteMany({});
   await prisma.kknHandoverHistory.deleteMany({});
-  await prisma.residuLog.deleteMany({});
+  await prisma.setoranManual.deleteMany({});
+  await prisma.pemanfaatan.deleteMany({});
   await prisma.auditTrail.deleteMany({});
   await prisma.socialFeed.deleteMany({});
   await prisma.binOwnership.deleteMany({});
-  await prisma.wasteLog.deleteMany({});
+  await prisma.setoranOtomatis.deleteMany({});
   await prisma.bin.deleteMany({});
   await prisma.household.deleteMany({});
   await prisma.studentKkn.deleteMany({});
+  await prisma.kelompokKkn.deleteMany({});
   await prisma.petugasResidu.deleteMany({});
   await prisma.qrBatch.deleteMany({});
   await prisma.user.deleteMany({});
@@ -347,17 +349,17 @@ async function main() {
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
 
-    await prisma.wasteLog.create({
+    await prisma.setoranOtomatis.create({
       data: {
-        householdId: w.household.id,
-        binId: bin.id,
-        weightKg: weight,
-        volumeLiter: volume,
-        categoryId: cat.id,
-        requestId: reqId,
-        aiConfidence: parseFloat((0.85 + Math.random() * 0.13).toFixed(2)),
-        aiClassification: isOrganic ? "Organik" : "Anorganik",
-        discrepancyStatus: "NONE",
+        wargaId: w.user.id,
+        fotoSampahUrl: "https://picsum.photos/400/300",
+        hasilKlasifikasiAi: isOrganic ? "organik" : "anorganik",
+        confidenceAi: parseFloat((0.85 + Math.random() * 0.13).toFixed(2)),
+        berat: weight,
+        unit: "Kg",
+        poin: Math.round(weight * 0.9 * 0.9), // Rough approximation
+        qrTempatSampahId: bin.id,
+        lokasiGps: `${w.household.latitude},${w.household.longitude}`,
         createdAt: date
       }
     });
@@ -394,22 +396,18 @@ async function main() {
     // Update the waste log verified by petugas
     const weightActual = parseFloat((10.0 + Math.random() * 15.0).toFixed(1)); // 10 - 25 kg timbangan industri
     const reqId = uuidv4();
-    await prisma.wasteLog.create({
+    await prisma.setoranOtomatis.create({
       data: {
-        householdId: w.household.id,
-        binId: bin.id,
-        weightKg: weightActual,
-        volumeLiter: 15.0,
-        categoryId: catO.id,
-        requestId: reqId,
-        aiConfidence: 0.95,
-        aiClassification: "Organik",
-        discrepancyStatus: "NONE",
-        verifiedByPetugasId: petugas.id,
-        verifiedAt: new Date(),
-        actualWeightPetugas: weightActual,
-        petugasClassification: "Organik",
-        evidencePhotoUrl: "https://picsum.photos/400/300"
+        wargaId: w.user.id,
+        fotoSampahUrl: "https://picsum.photos/400/300",
+        hasilKlasifikasiAi: "organik",
+        confidenceAi: 0.95,
+        berat: weightActual,
+        unit: "Kg",
+        poin: Math.round(weightActual * 0.95 * 0.9),
+        qrTempatSampahId: bin.id,
+        lokasiGps: `${w.household.latitude},${w.household.longitude}`,
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
       }
     });
   }
