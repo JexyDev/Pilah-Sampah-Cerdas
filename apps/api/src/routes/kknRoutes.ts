@@ -42,6 +42,12 @@ router.post(
   "/warga/activate-by-scan",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.activateByScan
+);
+router.post(
+  "/warga/activate-bin",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
   kknController.activateBin
 );
 router.get(

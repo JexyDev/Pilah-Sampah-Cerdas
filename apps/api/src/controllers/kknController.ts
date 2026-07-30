@@ -96,10 +96,41 @@ export class KknController {
       const search = req.query.search as string;
 
       const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rtRwId, search });
-      res.status(200).json(data);
+      res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaList error:", error);
       res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async activateByScan(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const { wargaId, qrCode, latitude, longitude } = req.body;
+
+      if (!wargaId || !qrCode) {
+        return res.status(400).json({
+          success: false,
+          message: "Field wargaId dan qrCode wajib diisi",
+        });
+      }
+
+      const data = await kknService.activateByScan(
+        wargaId,
+        qrCode,
+        latitude != null ? Number(latitude) : undefined,
+        longitude != null ? Number(longitude) : undefined,
+        kknUserId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Aktivasi warga via scan QR berhasil",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] activateByScan error:", error);
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 
@@ -108,11 +139,10 @@ export class KknController {
       const kknUserId = req.user!.userId;
       const { wargaId, binOrganikId, binAnorganikId, latitude, longitude } = req.body;
 
-      if (!wargaId || !binOrganikId || !binAnorganikId || latitude == null || longitude == null) {
+      if (!wargaId || !binOrganikId || !binAnorganikId) {
         return res.status(400).json({
           success: false,
-          message:
-            "Missing required fields (wargaId, binOrganikId, binAnorganikId, latitude, longitude)",
+          message: "Field wargaId, binOrganikId, dan binAnorganikId wajib diisi",
         });
       }
 
@@ -120,11 +150,11 @@ export class KknController {
         wargaId,
         binOrganikId,
         binAnorganikId,
-        latitude,
-        longitude,
+        latitude != null ? Number(latitude) : undefined,
+        longitude != null ? Number(longitude) : undefined,
         kknUserId
       );
-      res.status(200).json({ success: true, message: "Bin activated successfully" });
+      res.status(200).json({ success: true, message: "Aktivasi bin warga berhasil disatukan" });
     } catch (error: any) {
       console.error("[KknController] activateBin error:", error);
       res.status(400).json({ success: false, message: error.message });

@@ -210,19 +210,97 @@ export class KknService {
       include: {
         households: { include: { rtRw: { include: { kelurahan: true } } } },
         binOwnerships: { include: { bin: true } },
+        setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
       },
     });
 
     return warga.map((w: any) => {
       const household = w.households?.[0];
+      const primaryOwnership = w.binOwnerships?.[0];
+      const recentLogs = w.setoranOtomatis.map((log: any) => ({
+        weightKg: Number(log.berat),
+        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+        isCorrect: true,
+      }));
+
       return {
+        binId: primaryOwnership?.bin?.qrCode || null,
+        wargaId: w.id,
         id: w.id,
+        wargaName: w.name,
         name: w.name,
-        address: household?.address || w.address,
+        phone: w.phone,
+        address: household?.address || w.address || "-",
         kelurahan: household?.rtRw?.kelurahan?.name || null,
         rtRw: household?.rtRw?.name || null,
         isActivated: w.binOwnerships?.some((bo: any) => bo.bin?.status === "ACTIVE_BOUND") || false,
+        recentLogs,
       };
+    });
+  }
+
+  async activateByScan(
+    wargaId: string,
+    qrCode: string,
+    latitude?: number,
+    longitude?: number,
+    kknUserId?: string
+  ) {
+    return prisma.$transaction(async (tx) => {
+      let bin = await tx.bin.findUnique({ where: { qrCode } });
+
+      if (!bin) {
+        let category = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
+        if (!category) category = await tx.wasteCategory.findFirst();
+
+        bin = await tx.bin.create({
+          data: {
+            qrCode,
+            status: "ACTIVE_BOUND",
+            categoryId: category?.id,
+            userId: wargaId,
+            registeredByStudentId: kknUserId,
+          },
+        });
+      } else {
+        await tx.bin.update({
+          where: { id: bin.id },
+          data: {
+            userId: wargaId,
+            status: "ACTIVE_BOUND",
+            registeredByStudentId: kknUserId,
+          },
+        });
+      }
+
+      const existingOwnership = await tx.binOwnership.findFirst({
+        where: { binId: bin.id, userId: wargaId },
+      });
+
+      if (!existingOwnership) {
+        await tx.binOwnership.create({
+          data: { userId: wargaId, binId: bin.id, type: "UTAMA" },
+        });
+      }
+
+      if (latitude != null && longitude != null) {
+        await tx.household.updateMany({
+          where: { userId: wargaId },
+          data: { latitude, longitude },
+        });
+      }
+
+      if (kknUserId) {
+        await tx.pointHistory.create({
+          data: {
+            userId: kknUserId,
+            points: 10,
+            description: `Aktivasi QR ${qrCode} Warga via Scan`,
+          },
+        });
+      }
+
+      return bin;
     });
   }
 
@@ -230,51 +308,74 @@ export class KknService {
     wargaId: string,
     binOrganikId: string,
     binAnorganikId: string,
-    latitude: number,
-    longitude: number,
-    kknUserId: string
+    latitude?: number,
+    longitude?: number,
+    kknUserId?: string
   ) {
     return prisma.$transaction(async (tx) => {
       const bins = await tx.bin.findMany({
-        where: { qrCode: { in: [binOrganikId, binAnorganikId] } },
+        where: {
+          OR: [
+            { qrCode: { in: [binOrganikId, binAnorganikId] } },
+            { id: { in: [binOrganikId, binAnorganikId] } },
+          ],
+        },
       });
 
-      if (bins.length !== 2) throw new Error("Satu atau kedua Bin tidak ditemukan");
-      for (const bin of bins) {
-        if (
-          !["PRINTED", "BELUM_DIGUNAKAN", "PENDING_APPROVAL", "ASSIGNED_TO_PIC"].includes(
-            bin.status
-          )
-        ) {
-          throw new Error(`Bin ${bin.qrCode} sudah terdaftar atau digunakan`);
+      if (bins.length < 2) {
+        const found = bins.map((b) => b.qrCode).concat(bins.map((b) => b.id));
+        const missing = [binOrganikId, binAnorganikId].filter((x) => !found.includes(x));
+
+        for (const mCode of missing) {
+          const isOrg = mCode.toLowerCase().includes("organik") || mCode.toLowerCase().includes("org");
+          let category = await tx.wasteCategory.findFirst({ where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" } });
+          if (!category) category = await tx.wasteCategory.findFirst();
+
+          const newBin = await tx.bin.create({
+            data: {
+              qrCode: mCode.startsWith("TS-") ? mCode : `TS-${mCode}`,
+              status: "ACTIVE_BOUND",
+              categoryId: category?.id,
+              userId: wargaId,
+              registeredByStudentId: kknUserId,
+            },
+          });
+          bins.push(newBin);
         }
       }
 
-      await tx.bin.updateMany({
-        where: { qrCode: { in: [binOrganikId, binAnorganikId] } },
-        data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId },
-      });
-
-      // Update Household coordinates
-      await tx.household.updateMany({
-        where: { userId: wargaId },
-        data: { latitude, longitude },
-      });
-
       for (const bin of bins) {
-        await tx.binOwnership.create({
-          data: { userId: wargaId, binId: bin.id, type: "UTAMA" },
+        await tx.bin.update({
+          where: { id: bin.id },
+          data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId },
+        });
+
+        const existingOwnership = await tx.binOwnership.findFirst({
+          where: { binId: bin.id, userId: wargaId },
+        });
+        if (!existingOwnership) {
+          await tx.binOwnership.create({
+            data: { userId: wargaId, binId: bin.id, type: "UTAMA" },
+          });
+        }
+      }
+
+      if (latitude != null && longitude != null) {
+        await tx.household.updateMany({
+          where: { userId: wargaId },
+          data: { latitude, longitude },
         });
       }
 
-      // Bonus atomik +10 Warga, +10 Mahasiswa
-      await tx.pointHistory.create({
-        data: {
-          userId: kknUserId,
-          points: 10,
-          description: "Aktivasi Bin Warga (Organik & Anorganik)",
-        },
-      });
+      if (kknUserId) {
+        await tx.pointHistory.create({
+          data: {
+            userId: kknUserId,
+            points: 10,
+            description: "Aktivasi Bin Warga (Organik & Anorganik)",
+          },
+        });
+      }
       await tx.pointHistory.create({
         data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tong Sampah" },
       });
