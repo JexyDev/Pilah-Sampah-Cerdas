@@ -185,6 +185,9 @@ const MonitoringAbsen: React.FC = () => {
       const res = await api.get("/schedules");
       const list = res.data.data || [];
       setSchedules(list);
+      if (list.length > 0 && !selectedScheduleId) {
+        setSelectedScheduleId(list[0].id);
+      }
     } catch (err: any) {
       toast.error("Gagal memuat jadwal kegiatan");
     } finally {
@@ -192,22 +195,25 @@ const MonitoringAbsen: React.FC = () => {
     }
   };
 
-  const fetchAttendanceAndLocations = async (scheduleId: string) => {
-    if (!scheduleId) return;
+  const fetchAttendanceAndLocations = async (scheduleId?: string) => {
     setRefreshing(true);
     try {
-      const attRes = await api.get(`/kegiatan/${scheduleId}/absen`);
-      setAttendance(attRes.data.data || []);
+      if (scheduleId) {
+        const attRes = await api.get(`/kegiatan/${scheduleId}/absen`);
+        setAttendance(attRes.data.data || []);
+      }
       const locRes = await api.get("/mahasiswa/lokasi-aktif");
       setStudentLocations(locRes.data.data || []);
       
-      const schedule = schedules.find(s => s.id === scheduleId);
-      if (schedule && schedule.latitude && schedule.longitude) {
-        const lat = Number(schedule.latitude);
-        const lng = Number(schedule.longitude);
-        if (!isNaN(lat) && !isNaN(lng)) {
-          setMapCenter([lat, lng]);
-          setMapZoom(17);
+      if (scheduleId) {
+        const schedule = schedules.find(s => s.id === scheduleId);
+        if (schedule && schedule.latitude && schedule.longitude) {
+          const lat = Number(schedule.latitude);
+          const lng = Number(schedule.longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setMapCenter([lat, lng]);
+            setMapZoom(17);
+          }
         }
       }
     } catch (err: any) {
@@ -219,6 +225,7 @@ const MonitoringAbsen: React.FC = () => {
 
   useEffect(() => {
     fetchSchedules();
+    fetchAttendanceAndLocations();
   }, []);
 
   useEffect(() => {

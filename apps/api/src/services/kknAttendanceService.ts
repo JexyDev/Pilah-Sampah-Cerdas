@@ -465,6 +465,8 @@ export class KknAttendanceService {
           select: {
             id: true,
             name: true,
+            email: true,
+            phone: true,
             studentProfile: {
               select: {
                 nim: true,
@@ -479,16 +481,14 @@ export class KknAttendanceService {
       },
     });
 
-    // We can also fetch their current status (whether they are still in radius)
-    // by comparing with their latest recorded location
+    const attendedStudentIds = new Set(list.map((a) => a.studentId));
     const locations = await this.getActiveStudentsLocations();
     const locMap = new Map(locations.map((l) => [l.studentId, l]));
-
     const scheduleLoc = await this.getActivityLocation(scheduleId);
 
-    return list.map((att) => {
+    const attendedList = list.map((att) => {
       const latestLoc = locMap.get(att.studentId);
-      let currentStatus = "TIDAK_TERDETEKSI"; // GPS off/expired
+      let currentStatus = "TERCATAT_ABSEN";
       if (latestLoc) {
         let isInside = false;
         if (
@@ -521,6 +521,72 @@ export class KknAttendanceService {
         currentStatus,
       };
     });
+
+    const allStudents = await prisma.user.findMany({
+      where: {
+        role: { name: "MAHASISWA_KKN" },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        studentProfile: {
+          select: {
+            nim: true,
+            jurusan: true,
+          },
+        },
+      },
+    });
+
+    const unAttendedList = allStudents
+      .filter((s) => !attendedStudentIds.has(s.id))
+      .map((s) => {
+        const latestLoc = locMap.get(s.id);
+        let currentStatus = "BELUM_ABSEN";
+        if (latestLoc) {
+          let isInside = false;
+          if (
+            scheduleLoc.polygon &&
+            Array.isArray(scheduleLoc.polygon) &&
+            scheduleLoc.polygon.length >= 3
+          ) {
+            const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
+              lat: Number(p[0]),
+              lng: Number(p[1]),
+            }));
+            isInside = isPointInPolygon(
+              { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
+              polyPoints
+            );
+          } else {
+            const dist = calculateDistance(
+              Number(latestLoc.latitude),
+              Number(latestLoc.longitude),
+              scheduleLoc.latitude,
+              scheduleLoc.longitude
+            );
+            isInside = dist <= scheduleLoc.radius;
+          }
+          currentStatus = isInside ? "DI_LOKASI_BELUM_ABSEN" : "BELUM_ABSEN";
+        }
+
+        return {
+          id: `unattended-${s.id}`,
+          studentId: s.id,
+          scheduleId,
+          attendedAt: null,
+          method: "-",
+          latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
+          longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
+          status: "BELUM_ABSEN",
+          currentStatus,
+          student: s,
+        };
+      });
+
+    return [...attendedList, ...unAttendedList];
   }
 }
 
