@@ -7,7 +7,6 @@
 
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
-import { hashPassword } from "../utils/hashUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -49,6 +48,8 @@ export class KknService {
       nim: student.nim,
       jurusan: student.jurusan,
       totalRegisteredBins: totalRegistered,
+      remainingQuota,
+      progressPct,
       contributionPoints,
       assignmentLimit: maxLimit,
     };

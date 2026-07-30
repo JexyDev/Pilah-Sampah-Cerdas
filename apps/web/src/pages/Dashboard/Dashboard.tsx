@@ -1885,7 +1885,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Komposisi Sampah */}
-        <div className="lg:col-span-3 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 flex flex-col justify-between card-polish">
+        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 flex flex-col justify-between card-polish">
           <h4 className="font-bold text-[18px] text-on-surface mb-2">Komposisi Sampah</h4>
           <div className="flex-1 flex flex-col items-center justify-center relative">
             <div className="w-32 h-32 relative flex items-center justify-center">
@@ -2006,11 +2006,11 @@ const Dashboard: React.FC = () => {
             Lihat Detail Komposisi
           </button>
         </div>
+      </div>
 
-        {/* Bar Chart Race / Leaderboard */}
-        <div className="lg:col-span-3 h-[340px]">
-          <LeaderboardWidget />
-        </div>
+      {/* === Monitoring Leaderboard Section (Grup 1 & Grup 2) === */}
+      <div className="w-full">
+        <LeaderboardWidget />
       </div>
 
       {/* === Central Operational Lists & Activity === */}
