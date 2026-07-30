@@ -279,7 +279,7 @@ export class AuthRepository {
         data: {
           ...userData,
           roleId: role.id,
-          status: "Pending", // KKN is pending whitelist by Admin DLH
+          status: "Aktif",
         },
       });
 
@@ -287,6 +287,7 @@ export class AuthRepository {
         data: {
           ...kknData,
           userId: user.id,
+          whitelistStatus: "APPROVED",
         },
       });
 
