@@ -47,16 +47,14 @@ export class UserRepository {
     });
   }
 
-  async findByEmail(email: string) {
+  async findByPhone(phone: string) {
     return prisma.user.findUnique({
-      where: { email },
+      where: { phone },
     });
   }
 
-  async findByNik(nik: string) {
-    return prisma.user.findUnique({
-      where: { nik },
-    });
+  async findByEmail(_email: string) {
+    return null;
   }
 
   async findRoleByName(name: string) {
