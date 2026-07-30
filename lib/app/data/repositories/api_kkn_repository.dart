@@ -11,27 +11,23 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<KknDashboardData> getDashboard() async {
     final response = await apiClient.dio.get('/kkn/dashboard');
-    final data = response.data;
-    // Response bisa langsung object atau di-wrap dalam { data: ... }
-    final payload = data is Map<String, dynamic> && data.containsKey('data')
-        ? data['data'] as Map<String, dynamic>
-        : data as Map<String, dynamic>;
-    return KknDashboardData.fromJson(payload);
+    if (response.statusCode == 200) {
+      final data = response.data['data'] as Map<String, dynamic>? ?? {};
+      return KknDashboardData.fromJson(data);
+    } else {
+      throw Exception('Gagal memuat data dashboard KKN');
+    }
   }
 
   @override
   Future<List<WargaDampingan>> getWargaDampingan() async {
     final response = await apiClient.dio.get('/kkn/warga-dampingan');
-    final data = response.data;
-    // Response bisa berupa List langsung atau { data: [...] }
-    final List<dynamic> list = data is List
-        ? data
-        : (data is Map<String, dynamic> && data.containsKey('data'))
-            ? data['data'] as List<dynamic>
-            : [];
-    return list
-        .map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>))
-        .toList();
+    if (response.statusCode == 200) {
+      final data = response.data['data'] as List<dynamic>? ?? [];
+      return data.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
+    } else {
+      throw Exception('Gagal memuat daftar warga dampingan');
+    }
   }
 
   @override

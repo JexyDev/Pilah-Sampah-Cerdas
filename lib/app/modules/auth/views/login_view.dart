@@ -89,6 +89,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
       String errorText = 'Nomor telepon atau password salah. Coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
+      } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
+        errorText = 'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
+      } else if (authState.errorCode == 'SERVER_ERROR' || authState.errorCode == 'INTERNAL_SERVER_ERROR') {
+        errorText = 'Server sedang mengalami gangguan sementara, silakan coba beberapa saat lagi.';
       }
       _showToast(errorText);
       _passwordController.clear();

@@ -23,7 +23,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-      // Auto-start location tracking saat masuk dashboard
       ref.read(locationPingControllerProvider.notifier).startTracking();
     });
   }
@@ -51,8 +50,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             _buildSummaryCards(state),
-                            const SizedBox(height: AppDimensions.md),
-                            _buildProgressSection(state),
                             const SizedBox(height: AppDimensions.md),
                             _buildLocationStatus(locationState),
                             if (state.wargaNeedReeducation.isNotEmpty) ...[
@@ -153,15 +150,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         const SizedBox(width: AppDimensions.sm),
         Expanded(
           child: _SummaryCard(
-            icon: Icons.assignment_rounded,
-            label: 'Sisa Kuota',
-            value: '${d?.remainingQuota ?? 0}',
-            color: AppColors.warningOrange,
-          ),
-        ),
-        const SizedBox(width: AppDimensions.sm),
-        Expanded(
-          child: _SummaryCard(
             icon: Icons.stars_rounded,
             label: 'Poin',
             value: '${d?.contributionPoints ?? 0}',
@@ -172,152 +160,90 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Progress Section
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  Widget _buildProgressSection(MahasiswaState state) {
-    final progress = state.dashboard?.progressPercentage ?? 0;
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Progres Penugasan',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                '${progress.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: progress >= 75
-                      ? AppColors.success
-                      : progress >= 50
-                          ? AppColors.warningOrange
-                          : AppColors.primaryGreen,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-            child: LinearProgressIndicator(
-              value: progress / 100,
-              minHeight: 10,
-              backgroundColor: AppColors.border,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                progress >= 75
-                    ? AppColors.success
-                    : progress >= 50
-                        ? AppColors.warningOrange
-                        : AppColors.primaryGreen,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppDimensions.xs),
-          Text(
-            '${state.dashboard?.totalRegisteredBins ?? 0} dari ${state.dashboard?.assignmentLimit ?? 0} target',
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Location Status Widget
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildLocationStatus(LocationPingState locationState) {
+    // In actual implementation, isOn could represent if the student is currently
+    // within the KKN geofence radius.
     final isOn = locationState.isTracking;
     final lastPing = locationState.lastPingTime;
 
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.md,
-        vertical: 12,
+        vertical: 16,
       ),
       decoration: BoxDecoration(
         color: isOn
             ? AppColors.success.withValues(alpha: 0.08)
-            : AppColors.dangerRed.withValues(alpha: 0.08),
+            : AppColors.warningOrange.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(
           color: isOn
               ? AppColors.success.withValues(alpha: 0.3)
-              : AppColors.dangerRed.withValues(alpha: 0.3),
+              : AppColors.warningOrange.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
           Container(
-            width: 10,
-            height: 10,
+            width: 12,
+            height: 12,
             decoration: BoxDecoration(
-              color: isOn ? AppColors.success : AppColors.dangerRed,
+              color: isOn ? AppColors.success : AppColors.warningOrange,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: (isOn ? AppColors.success : AppColors.dangerRed)
+                  color: (isOn ? AppColors.success : AppColors.warningOrange)
                       .withValues(alpha: 0.4),
                   blurRadius: 6,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOn ? 'Tracking Lokasi Aktif' : 'Tracking Lokasi Nonaktif',
+                  isOn ? 'Berada di Wilayah (Absen Aktif)' : 'Mencari Sinyal / Di Luar Wilayah',
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
+                    fontWeight: FontWeight.w700,
+                    color: isOn ? AppColors.successDark : AppColors.warningOrange,
                   ),
                 ),
-                if (lastPing != null)
+                const SizedBox(height: 2),
+                Text(
+                  'Sistem absensi mendeteksi secara otomatis.',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (lastPing != null) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    'Terakhir: ${DateFormat('HH:mm:ss').format(lastPing)}',
+                    'Terakhir terdeteksi: ${DateFormat('HH:mm').format(lastPing)}',
                     style: const TextStyle(
                       fontSize: 11,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textHint,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
+                ]
               ],
             ),
           ),
           Icon(
-            Icons.location_on_rounded,
-            color: isOn ? AppColors.success : AppColors.dangerRed,
-            size: 20,
-          ),
+            isOn ? Icons.satellite_alt_rounded : Icons.location_off_rounded,
+            color: isOn ? AppColors.success : AppColors.warningOrange,
+            size: 24,
+          )
         ],
       ),
     );
@@ -403,24 +329,35 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildQuickActions() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.person_add_alt_1_rounded,
-            label: 'Registrasi Warga',
-            color: AppColors.primaryGreen,
-            onTap: () => Navigator.pushNamed(context, AppRoutes.registrasiWarga),
-          ),
-        ),
-        const SizedBox(width: AppDimensions.sm),
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.groups_rounded,
-            label: 'Lihat Semua Warga',
-            color: AppColors.primaryBlueDark,
-            onTap: () => Navigator.pushNamed(context, AppRoutes.daftarWarga),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'Aktivasi Bin',
+                color: AppColors.warningOrange,
+                onTap: () {
+                  // Arahkan ke Monitoring Warga dengan mode "Aktivasi Bin"
+                  Navigator.pushNamed(
+                    context, 
+                    AppRoutes.monitoringWarga, 
+                    arguments: {'mode': 'aktivasi_bin'},
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: AppDimensions.sm),
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.groups_rounded,
+                label: 'Lihat Semua Warga',
+                color: AppColors.primaryBlueDark,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.daftarWarga),
+              ),
+            ),
+          ],
         ),
       ],
     );

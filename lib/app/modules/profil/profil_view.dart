@@ -8,6 +8,7 @@ import '../../data/models/bin_entity.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../core/values/app_config.dart';
 import '../scan/controllers/scan_controller.dart';
+import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
 /// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tong Saya, Keluar.
@@ -138,7 +139,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    user != null ? 'Keluarga ${user.name}' : 'Keluarga Warga',
+                    user != null 
+                        ? (user.role == UserRole.mahasiswaKkn ? user.name : 'Keluarga ${user.name}') 
+                        : 'Keluarga Warga',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
@@ -174,7 +177,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ─── Data Rumah Tangga ──────────────────────────────
-                  _sectionLabel('DATA RUMAH TANGGA'),
+                  _sectionLabel(user?.role == UserRole.mahasiswaKkn ? 'DATA MAHASISWA KKN' : 'DATA RUMAH TANGGA'),
                   const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
@@ -185,7 +188,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       children: [
                         _InfoTile(
                           Icons.person_outline_rounded,
-                          'Kepala Keluarga',
+                          user?.role == UserRole.mahasiswaKkn ? 'Nama Lengkap' : 'Kepala Keluarga',
                           user?.name ?? '-',
                           bold: true,
                         ),
@@ -216,10 +219,11 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   const SizedBox(height: 20),
 
                   // ─── Tong Saya ──────────────────────────────────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _sectionLabel('TONG SAYA'),
+                  if (user?.role != UserRole.mahasiswaKkn) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _sectionLabel('TONG SAYA'),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -256,8 +260,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
-
                   const SizedBox(height: 28),
+                  ],
 
                   // ─── Menu Actions ───────────────────────────────────
                   Container(
@@ -267,32 +271,34 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                     child: Column(
                       children: [
-                        // Tambah Tong Baru
-                        _MenuTile(
-                          icon: Icons.qr_code_scanner_rounded,
-                          iconColor: AppColors.primaryGreen,
-                          iconBgColor: AppColors.primaryGreen.withValues(
-                            alpha: 0.1,
+                        if (user?.role != UserRole.mahasiswaKkn) ...[
+                          // Tambah Tong Baru
+                          _MenuTile(
+                            icon: Icons.qr_code_scanner_rounded,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Tambah Tong Baru',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.ukurKapasitas),
                           ),
-                          label: 'Tambah Tong Baru',
-                          onTap: () => Navigator.of(
-                            context,
-                          ).pushNamed(AppRoutes.ukurKapasitas),
-                        ),
-                        const Divider(height: 1, indent: 56),
-                        // Ajukan Pengosongan Tong
-                        _MenuTile(
-                          icon: Icons.restore_rounded,
-                          iconColor: AppColors.warningOrange,
-                          iconBgColor: AppColors.warningOrange.withValues(
-                            alpha: 0.1,
+                          const Divider(height: 1, indent: 56),
+                          // Ajukan Pengosongan Tong
+                          _MenuTile(
+                            icon: Icons.restore_rounded,
+                            iconColor: AppColors.warningOrange,
+                            iconBgColor: AppColors.warningOrange.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Ajukan Pengosongan Tong',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.resetBin),
                           ),
-                          label: 'Ajukan Pengosongan Tong',
-                          onTap: () => Navigator.of(
-                            context,
-                          ).pushNamed(AppRoutes.resetBin),
-                        ),
-                        const Divider(height: 1, indent: 56),
+                          const Divider(height: 1, indent: 56),
+                        ],
                         // Tentang Aplikasi
                         _MenuTile(
                           icon: Icons.info_outline_rounded,

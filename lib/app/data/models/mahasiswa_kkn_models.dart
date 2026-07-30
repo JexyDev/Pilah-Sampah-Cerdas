@@ -83,11 +83,13 @@ class WargaDampingan extends Equatable {
     required this.wargaName,
     required this.address,
     required this.recentLogs,
+    this.isActivated = true,
   });
 
   final String binId;
   final String wargaName;
   final String address;
+  final bool isActivated;
   final List<WasteLogEntry> recentLogs;
 
   /// Total aktivitas pemilahan

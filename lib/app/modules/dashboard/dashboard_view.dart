@@ -10,8 +10,10 @@ import '../beranda/beranda_view.dart';
 import '../riwayat/views/riwayat_view.dart';
 import '../poin/poin_view.dart';
 import '../profil/profil_view.dart';
-import '../monitoring_warga/views/monitoring_warga_view.dart';
+import '../mahasiswa/views/monitoring_warga_view.dart';
+import '../mahasiswa/views/riwayat_kkn_view.dart';
 import '../auth/controllers/auth_controller.dart';
+import '../mahasiswa/views/mahasiswa_view.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
 
@@ -28,8 +30,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   int _selectedIndex = 0;
 
   List<Widget> _getScreens(UserRole role) => [
-    BerandaView(onNavigateToHistory: () => _onTabTap(1)),
-    const RiwayatView(),
+    role == UserRole.mahasiswaKkn 
+        ? const MahasiswaView() 
+        : BerandaView(onNavigateToHistory: () => _onTabTap(1)),
+    role == UserRole.mahasiswaKkn 
+        ? const RiwayatKknView() 
+        : const RiwayatView(),
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn ? const MonitoringWargaView() : const PoinView(),
     const ProfilView(),

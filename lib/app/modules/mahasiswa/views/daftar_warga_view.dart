@@ -155,17 +155,6 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                 ),
               ],
             ),
-      // FAB untuk registrasi warga baru
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.registrasiWarga),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.person_add_rounded, size: 20),
-        label: const Text(
-          'Tambah Warga',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
     );
   }
 }

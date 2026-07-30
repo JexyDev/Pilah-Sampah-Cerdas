@@ -75,10 +75,38 @@ class ApiAuthRepository implements AuthRepository {
           'Format nomor telepon atau password tidak valid',
         );
       }
+      final message = e.response?.data?['message']?.toString();
+      
       if (status == 401) {
+        if (message != null && message.toLowerCase().contains('approve')) {
+          throw AuthException(
+            'UNAPPROVED_ACCOUNT',
+            message,
+          );
+        }
         throw const AuthException(
           'INVALID_CREDENTIALS',
           'Nomor telepon atau password salah',
+        );
+      }
+      
+      if (status == 403) {
+        throw AuthException(
+          'UNAPPROVED_ACCOUNT',
+          message ?? 'Akun Anda sedang menunggu persetujuan (approval) dari pihak Admin. Silakan coba login kembali nanti.',
+        );
+      }
+      
+      if (status != null && status >= 500) {
+        if (message != null && (message.toLowerCase().contains('approve') || message.toLowerCase().contains('izin') || message.toLowerCase().contains('tunggu') || message.toLowerCase().contains('setuju'))) {
+          throw AuthException(
+            'UNAPPROVED_ACCOUNT',
+            message,
+          );
+        }
+        throw AuthException(
+          'SERVER_ERROR',
+          message ?? 'Server sedang mengalami gangguan (Error $status). Silakan coba lagi nanti.',
         );
       }
       throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
@@ -334,6 +362,9 @@ class ApiAuthRepository implements AuthRepository {
   /// GET /api/v1/households/me → ambil householdId + rtRw + kelurahan
   /// dari household pertama milik user.
   Future<UserEntity> _fetchAndAttachHousehold(UserEntity user) async {
+    // Household ID khusus untuk role Warga. Hindari memanggil endpoint ini untuk role lain agar tidak terkena 401/403.
+    if (user.role != UserRole.warga) return user;
+    
     try {
       final response = await apiClient.dio.get('/households/me');
       if (response.statusCode == 200) {

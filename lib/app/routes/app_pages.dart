@@ -7,13 +7,14 @@ import '../modules/dashboard/dashboard_view.dart';
 import '../modules/scan/views/scan_flow_view.dart';
 import '../modules/aktivasi/views/aktivasi_bin_view.dart';
 import '../modules/aktivasi/views/ukur_kapasitas_view.dart';
+import '../modules/mahasiswa/views/aktivasi_warga_view.dart';
 import '../modules/profil/kelola_bin_view.dart';
 import '../modules/auth/views/reset_bin_view.dart';
 import '../modules/notifikasi/views/notifikasi_view.dart';
 import '../modules/petugas_residu/timbangan_residu_view.dart';
 import '../modules/tentang/tentang_aplikasi_view.dart';
-import '../modules/monitoring_warga/views/kkn_attendance_view.dart';
-import '../modules/monitoring_warga/views/monitoring_warga_view.dart';
+import '../modules/mahasiswa/views/kkn_attendance_view.dart';
+import '../modules/mahasiswa/views/monitoring_warga_view.dart';
 import '../modules/mahasiswa/views/mahasiswa_view.dart';
 import '../modules/mahasiswa/views/registrasi_warga_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
@@ -64,6 +65,8 @@ class AppPages {
         return _buildRoute(const DaftarWargaView(), settings);
       case AppRoutes.detailWarga:
         return _buildRoute(const DetailWargaView(), settings);
+      case AppRoutes.aktivasiWarga:
+        return _buildRoute(const AktivasiWargaView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

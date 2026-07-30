@@ -21,4 +21,5 @@ class AppRoutes {
   static const String registrasiWarga = '/registrasi-warga';
   static const String daftarWarga = '/daftar-warga';
   static const String detailWarga = '/detail-warga';
+  static const String aktivasiWarga = '/aktivasi-warga';
 }

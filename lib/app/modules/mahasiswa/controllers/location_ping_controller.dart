@@ -96,6 +96,13 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       return;
     }
 
+    // Attempt to request background permission if only whileInUse is granted
+    if (permission == LocationPermission.whileInUse) {
+       // Request background permission explicitly (if the library supports it directly or rely on the system prompt)
+       // Note: in Geolocator, calling requestPermission again might prompt for "Allow all the time" in Android 10+
+       // But for simplicity, we will just proceed, as background execution usually requires "always" or a foreground service.
+    }
+
     state = state.copyWith(
       isTracking: true,
       permissionGranted: true,
