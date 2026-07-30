@@ -360,7 +360,7 @@ export class AuthService {
     const role = await authRepository.findRoleByName("WARGA");
     if (!role) throw new Error("ROLE_NOT_FOUND");
 
-    let finalStatus = "PENDING";
+    let finalStatus = "Aktif";
 
     const user = await authRepository.registerWargaTx(
       {
