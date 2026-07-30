@@ -328,7 +328,9 @@ export class KknService {
         const missing = [binOrganikId, binAnorganikId].filter((x) => !found.includes(x));
 
         for (const mCode of missing) {
-          const isOrg = mCode.toLowerCase().includes("organik") || mCode.toLowerCase().includes("org");
+          const lower = mCode.toLowerCase();
+          const isAnorg = lower.includes("anorganik") || lower.includes("anorg");
+          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org"));
           let category = await tx.wasteCategory.findFirst({
             where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
           });
