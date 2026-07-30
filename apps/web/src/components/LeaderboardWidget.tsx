@@ -242,7 +242,7 @@ export const LeaderboardWidget: React.FC = () => {
             subtitle: c.wilayah || "Sekeloa",
             points: c.totalPoints || 0,
           }));
-          setWargaList(mergeWithDefaults(apiWarga, defaultWarga));
+          setWargaList(apiWarga);
         }
         if (d.pengangkut && d.pengangkut.length > 0) {
           const apiPetugas = d.pengangkut.map((p: any, i: number) => ({
@@ -251,7 +251,7 @@ export const LeaderboardWidget: React.FC = () => {
             subtitle: p.wilayah || "Sekeloa",
             points: p.totalPoints || 0,
           }));
-          setPetugasList(mergeWithDefaults(apiPetugas, defaultPetugas));
+          setPetugasList(apiPetugas);
         }
         if (d.rtRw && d.rtRw.length > 0) {
           const apiRw = d.rtRw.map((r: any, i: number) => ({
@@ -260,7 +260,7 @@ export const LeaderboardWidget: React.FC = () => {
             subtitle: `Kel. ${r.kelurahanName || "Sekeloa"}`,
             points: r.totalPoints || 0,
           }));
-          setRwList(mergeWithDefaults(apiRw, defaultRw));
+          setRwList(apiRw);
         }
         if (d.regions && d.regions.length > 0) {
           const apiKel = d.regions.map((k: any, i: number) => ({
@@ -268,7 +268,7 @@ export const LeaderboardWidget: React.FC = () => {
             name: `Kelurahan ${k.kelurahanName}`,
             points: k.totalPoints || 0,
           }));
-          setKelurahanList(mergeWithDefaults(apiKel, defaultKelurahan));
+          setKelurahanList(apiKel);
         }
       }
 
@@ -280,30 +280,31 @@ export const LeaderboardWidget: React.FC = () => {
             rank: i + 1,
             name: s.name,
             subtitle: s.kelompok ? `Kelompok ${s.kelompok}` : "Kel. Sekeloa",
-            points: Math.round(s.finalScore * 100),
+            points: s.finalScore || 0,
           }));
-          setMahasiswaList(mergeWithDefaults(apiMhs, defaultMahasiswa));
+          setMahasiswaList(apiMhs);
         }
         if (d.groups && d.groups.length > 0) {
           const apiGrp = d.groups.map((g: any, i: number) => ({
             rank: i + 1,
             name: g.name,
             subtitle: "Kel. Sekeloa",
-            points: Math.round(g.avgScore * 100),
+            points: g.avgScore || 0,
           }));
-          setKelompokList(mergeWithDefaults(apiGrp, defaultKelompok));
+          setKelompokList(apiGrp);
         }
         if (d.dpl && d.dpl.length > 0) {
           const apiDpl = d.dpl.map((dp: any, i: number) => ({
             rank: i + 1,
             name: dp.name,
+            subtitle: `DPL (${dp.totalGroups || 0} Kelompok)`,
             points: dp.points || 0,
           }));
-          setDplList(mergeWithDefaults(apiDpl, defaultDpl));
+          setDplList(apiDpl);
         }
       }
     } catch (e) {
-      console.warn("Using fallback leaderboard data for full layout view.");
+      console.warn("Error fetching live leaderboard from API:", e);
     }
   };
 

@@ -404,9 +404,68 @@ export const gamificationService = {
 
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
+    // 3. DPL (Dosen Pembimbing Lapangan) Leaderboard
+    const dplUsers = await prisma.user.findMany({
+      where: { role: { name: "DPL" } },
+      select: {
+        id: true,
+        name: true,
+        dplKelompok: {
+          select: {
+            id: true,
+            name: true,
+            students: {
+              select: {
+                id: true,
+                assessmentScore: true,
+                user: {
+                  select: {
+                    registeredBins: { select: { status: true } },
+                    attendances: { select: { attendedAt: true, checkOutAt: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const dplLeaderboard = dplUsers
+      .map((d: any) => {
+        let totalScoreSum = 0;
+        let totalStudentCount = 0;
+        d.dplKelompok.forEach((kel: any) => {
+          kel.students.forEach((s: any) => {
+            totalStudentCount++;
+            let totalHours = 0;
+            s.user.attendances.forEach((att: any) => {
+              if (att.checkOutAt && att.attendedAt) {
+                const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+                totalHours += diffMs / (1000 * 60 * 60);
+              }
+            });
+            const activeBins = s.user.registeredBins.filter((b: any) => b.status === "ACTIVE_BOUND").length;
+            const score = totalHours * 0.4 + activeBins * 0.3 + Number(s.assessmentScore || 0) * 0.3;
+            totalScoreSum += score;
+          });
+        });
+
+        const avgDplScore = totalStudentCount > 0 ? totalScoreSum / totalStudentCount : 0;
+        return {
+          id: d.id,
+          name: d.name,
+          points: parseFloat(avgDplScore.toFixed(2)),
+          totalGroups: d.dplKelompok.length,
+          totalStudents: totalStudentCount,
+        };
+      })
+      .sort((a: any, b: any) => b.points - a.points);
+
     return {
       students: studentLeaderboard,
       groups: kelompokLeaderboard,
+      dpl: dplLeaderboard,
     };
   },
 };
