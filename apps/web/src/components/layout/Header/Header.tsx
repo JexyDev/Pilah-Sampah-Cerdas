@@ -585,9 +585,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               <button
                 onClick={() => {
                   setShowLogoutModal(false);
-                  logout();
-                  toast.success("Berhasil keluar sistem");
-                  navigate("/login");
+                  handleLogout();
                 }}
                 className="flex-1 py-2.5 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition shadow-sm cursor-pointer"
               >
