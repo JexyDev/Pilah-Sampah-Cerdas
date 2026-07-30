@@ -18,9 +18,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
     qrCodeOrganic: '',
     qrCodeInorganic: '',
     name: '',
-    email: '',
     phone: '',
-    nik: '',
     address: '',
     rtRwId: '',
     latitude: 0,
@@ -222,10 +220,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                   <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
                   <input type="text" name="name" required value={formData.name} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                  <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
-                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">No. WhatsApp</label>
                   <input type="text" name="phone" required value={formData.phone} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="+628..." />

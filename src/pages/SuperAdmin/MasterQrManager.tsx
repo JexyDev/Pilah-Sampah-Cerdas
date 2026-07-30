@@ -1,4 +1,4 @@
-import { QrCode, AlertTriangle, PlayCircle } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Printer } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -19,6 +19,7 @@ interface BinQr {
   rtRw: { name: string; kelurahan: { name: string } };
   user: { name: string; email: string } | null;
   qrBatch: { batchCode: string } | null;
+  category: { name: string } | null;
 }
 
 interface InactiveBin {
@@ -158,6 +159,173 @@ export const MasterQrManager: React.FC = () => {
     }
   };
 
+  const handlePrintAll = () => {
+    if (qrs.length === 0) {
+      toast.error("Tidak ada QR untuk dicetak");
+      return;
+    }
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Gagal membuka jendela cetak. Pastikan pop-up diizinkan.");
+      return;
+    }
+
+    const qrHtml = qrs
+      .map(
+        (q) => {
+          const isOrganik = q.category?.name?.toUpperCase() === "ORGANIK";
+          const colorTheme = isOrganik ? "#10b981" : "#3b82f6";
+          const labelBg = isOrganik ? "#ecfdf5" : "#eff6ff";
+
+          return `
+          <div class="qr-card" style="border-color: ${colorTheme};">
+            <div class="qr-header" style="background-color: ${colorTheme};">
+              TRASHCARE PSC
+            </div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+              q.qrCode
+            )}" />
+            <div class="qr-code" style="color: ${colorTheme};">${q.qrCode}</div>
+            <div class="qr-category" style="background-color: ${labelBg}; color: ${colorTheme};">
+              ${q.category?.name || "Semua Jenis"}
+            </div>
+            <div class="qr-details">
+              ${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "TrashCare Batch QR"}
+            </div>
+          </div>
+          `;
+        }
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>TrashCare - Master QR Codes</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 10mm;
+            }
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 15px;
+              padding: 0;
+              margin: 0;
+              box-sizing: border-box;
+            }
+            .qr-card {
+              border: 3px solid #ccc;
+              border-radius: 16px;
+              overflow: hidden;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              text-align: center;
+              page-break-inside: avoid;
+              background: #fff;
+              padding-bottom: 12px;
+              height: 270px;
+              box-sizing: border-box;
+            }
+            .qr-header {
+              width: 100%;
+              color: #fff;
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1.5px;
+              padding: 6px 0;
+              text-transform: uppercase;
+            }
+            .qr-card img {
+              width: 130px;
+              height: 130px;
+              margin-top: 10px;
+              margin-bottom: 6px;
+            }
+            .qr-code {
+              font-family: monospace;
+              font-weight: 800;
+              font-size: 13px;
+              letter-spacing: 1px;
+            }
+            .qr-category {
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              padding: 3px 12px;
+              border-radius: 9999px;
+              margin: 4px 0;
+              letter-spacing: 0.5px;
+            }
+            .qr-details {
+              font-size: 9px;
+              font-weight: 600;
+              color: #4b5563;
+              padding: 0 8px;
+            }
+          </style>
+        </head>
+        <body>
+          ${qrHtml}
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleExportCsv = () => {
+    if (qrs.length === 0) {
+      toast.error("Tidak ada data QR untuk diexport");
+      return;
+    }
+    const headers = ["Kode QR", "Status", "Kategori", "Batch Asal", "Wilayah", "Pemegang Warga", "Email Pemegang", "Tanggal Dibuat"];
+    const rows = qrs.map((q) => [
+      `"${q.qrCode}"`,
+      `"${q.status}"`,
+      `"${q.category?.name || "-"}"`,
+      `"${q.qrBatch?.batchCode || "-"}"`,
+      `"${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-"}"`,
+      `"${q.user?.name || "-"}"`,
+      `"${q.user?.email || "-"}"`,
+      `"${new Date(q.createdAt).toLocaleString("id-ID")}"`,
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Master_QR_Trashcare_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("File CSV Master QR berhasil didownload!");
+  };
+
+  const handleInactivateQr = async (qrCode: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menonaktifkan QR Code ${qrCode}?`)) return;
+    try {
+      const res = await api.put(`/bins/${qrCode}/broken`);
+      if (res.data.success) {
+        toast.success(`QR Code ${qrCode} berhasil dinonaktifkan (BROKEN)`);
+        fetchQrData();
+      }
+    } catch (e: any) {
+      console.error("Gagal menonaktifkan QR:", e);
+      toast.error(e.response?.data?.message || "Gagal menonaktifkan QR Code");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -174,13 +342,28 @@ export const MasterQrManager: React.FC = () => {
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Database Master QR & Bin</h1>
           <p className="text-sm text-gray-500 mt-1">Registrasi QR Batch baru, status pencetakan, dan manajemen reaktivasi bin tidak aktif.</p>
         </div>
-        <button
-          onClick={() => setShowGenerateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-semibold hover:bg-primary-dark transition"
-        >
-          <QrCode className="text-white" size={20} />
-          Generate QR Batch
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCsv}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm text-sm font-semibold transition"
+          >
+            Export ke CSV
+          </button>
+          <button
+            onClick={handlePrintAll}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow-sm text-sm font-semibold transition"
+          >
+            <Printer size={20} />
+            Cetak QR Batch
+          </button>
+          <button
+            onClick={() => setShowGenerateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-semibold hover:bg-primary-dark transition"
+          >
+            <QrCode className="text-white" size={20} />
+            Generate QR Batch
+          </button>
+        </div>
       </div>
 
       {/* Inactive Bins Section */}
@@ -292,12 +475,13 @@ export const MasterQrManager: React.FC = () => {
                   <th className="px-6 py-3">Batch Asal</th>
                   <th className="px-6 py-3">Wilayah Terdaftar</th>
                   <th className="px-6 py-3">Pemegang/Warga</th>
+                  <th className="px-6 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
                 {qrs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
                       Tidak ada QR Code ditemukan
                     </td>
                   </tr>
@@ -334,6 +518,18 @@ export const MasterQrManager: React.FC = () => {
                             </div>
                           ) : (
                             <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {q.status !== "BROKEN" && q.status !== "INACTIVE" ? (
+                            <button
+                              onClick={() => handleInactivateQr(q.qrCode)}
+                              className="px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition shadow-2xs"
+                            >
+                              Nonaktifkan
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400 font-semibold">Nonaktif</span>
                           )}
                         </td>
                       </tr>

@@ -2,10 +2,10 @@
  * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import { create } from "zustand";
+import api from "../services/api";
 
 export interface LeaderboardUser {
   id: string;
@@ -22,12 +22,13 @@ interface LeaderboardState {
   rtRw: any[];
   mahasiswa: any[];
   pengangkut: any[];
+  kknStudents: any[];
+  kknGroups: any[];
   isLoading: boolean;
   error: string | null;
   fetchLeaderboard: () => Promise<void>;
+  fetchLeaderboardKkn: () => Promise<void>;
 }
-
-import api from "../services/api";
 
 export const useLeaderboardStore = create<LeaderboardState>((set) => ({
   users: [],
@@ -35,6 +36,8 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
   rtRw: [],
   mahasiswa: [],
   pengangkut: [],
+  kknStudents: [],
+  kknGroups: [],
   isLoading: false,
   error: null,
   fetchLeaderboard: async () => {
@@ -43,7 +46,6 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
       const response = await api.get("/gamification/leaderboard");
       const { citizens, regions, rtRw, mahasiswa, pengangkut } = response.data.data;
 
-      // format response to LeaderboardUser
       const users: LeaderboardUser[] = citizens.map((u: any, index: number) => ({
         id: u.id,
         rank: index + 1,
@@ -63,6 +65,23 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
     } catch (err: any) {
       set({
         error: err?.response?.data?.message || err.message || "Gagal memuat leaderboard",
+        isLoading: false,
+      });
+    }
+  },
+  fetchLeaderboardKkn: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get("/gamification/leaderboard-kkn");
+      const { students, groups } = response.data.data;
+      set({
+        kknStudents: students || [],
+        kknGroups: groups || [],
+        isLoading: false,
+      });
+    } catch (err: any) {
+      set({
+        error: err?.response?.data?.message || err.message || "Gagal memuat leaderboard KKN",
         isLoading: false,
       });
     }

@@ -194,7 +194,7 @@ const RekapSetoran: React.FC = () => {
                   Kategori
                 </th>
                 <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Berat & Poin
+                  Berat (Kg) & Poin
                 </th>
                 <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
                   Waktu & Lokasi
@@ -244,7 +244,6 @@ const RekapSetoran: React.FC = () => {
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-on-surface text-lg">{dep.berat}</span>
-                        <span className="text-[12px] text-on-surface-variant font-medium">Kg</span>
                       </div>
                       <div className="mt-1 text-[12px] font-bold text-primary flex items-center gap-1">
                         +{dep.poin} Poin

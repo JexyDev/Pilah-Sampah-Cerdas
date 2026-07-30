@@ -84,6 +84,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = React.useState<boolean>(false);
 
   const getProfilePhotoUrl = (path?: string) => {
     if (!path) return null;
@@ -94,6 +95,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     toast.success("Berhasil keluar sistem");
     navigate("/login");
@@ -146,11 +151,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/residu-portal" icon={Shield} label="Portal Pengawasan" />
         )}
 
-        {hasAccess(["RW"]) && (
+        {hasAccess(["RW", "RT"]) && (
           <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
         )}
 
-        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]) && (
+        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]) && (
           <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
         )}
 
@@ -175,17 +180,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && (
           <NavItem to="/manajemen-tempat-sampah" icon={Trash2} label="Manajemen Tempat Sampah" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/manajemen-lokasi" icon={MapPin} label="Manajemen Lokasi" />
         )}
 
-        {hasAccess(["RW"]) && (
+        {hasAccess(["RW", "RT"]) && (
           <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
         )}
 
@@ -194,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
         )}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/monitoring-absen" icon={Compass} label="Monitoring Absen KKN" />
         )}
 
@@ -204,11 +210,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
         ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
 
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]) && (
+        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
           <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />
         )}
 
@@ -229,6 +236,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           "CAMAT",
           "LURAH",
           "RW",
+          "RT",
           "PETUGAS_RESIDU",
           "MAHASISWA_KKN",
           "WARGA",
@@ -287,6 +295,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
     </aside>
+
+    {showLogoutModal && (
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100]">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-100 text-center space-y-4 animate-in fade-in zoom-in duration-150">
+          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto font-bold text-lg">
+            !
+          </div>
+          <div>
+            <h3 className="font-extrabold text-lg text-gray-900">Konfirmasi Keluar</h3>
+            <p className="text-xs text-gray-500 mt-1">Apakah Anda yakin ingin keluar dari aplikasi TrashCare?</p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setShowLogoutModal(false)}
+              className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 transition cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              onClick={confirmLogout}
+              className="flex-1 py-2.5 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition shadow-sm cursor-pointer"
+            >
+              Ya, Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </>
 );
 };
