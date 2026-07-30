@@ -375,7 +375,10 @@ export class KknAttendanceService {
     // Deduplicate to only keep the latest location per student
     const uniqueStudents = new Map<string, (typeof locations)[0]>();
     for (const loc of locations) {
-      if (!uniqueStudents.has(loc.studentId) && (loggedInUserIds.size === 0 || loggedInUserIds.has(loc.studentId))) {
+      if (
+        !uniqueStudents.has(loc.studentId) &&
+        (loggedInUserIds.size === 0 || loggedInUserIds.has(loc.studentId))
+      ) {
         uniqueStudents.set(loc.studentId, loc);
       }
     }
@@ -422,7 +425,11 @@ export class KknAttendanceService {
         let lng = 107.6107;
         let recAt = mhs.createdAt;
 
-        if (mhs.attendances.length > 0 && mhs.attendances[0].latitude && mhs.attendances[0].longitude) {
+        if (
+          mhs.attendances.length > 0 &&
+          mhs.attendances[0].latitude &&
+          mhs.attendances[0].longitude
+        ) {
           lat = Number(mhs.attendances[0].latitude);
           lng = Number(mhs.attendances[0].longitude);
           recAt = mhs.attendances[0].attendedAt;
