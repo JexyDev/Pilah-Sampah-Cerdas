@@ -1,0 +1,87 @@
+name: mobile_app_sampah
+description: Aplikasi Mobile Warga - TrashCare (pilahsampah.id)
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  # sdd.md §12 menetapkan Dart 3.12.2 — dilonggarkan ke >=3.12.1 untuk kompatibilitas
+  # patch version lokal (3.12.1). Ganti ke >=3.12.2 saat SDK diupdate.
+  sdk: '>=3.12.1 <4.0.0'
+  flutter: '>=3.44.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # HTTP Client (dikunci per sdd.md §12 — sementara tidak dipakai, disiapkan untuk integrasi BE)
+  dio: ^5.8.0
+
+  # QR Scanner
+  mobile_scanner: ^6.0.10
+
+  # Camera — kamera inline di dalam app (tidak keluar ke sistem kamera)
+  camera: ^0.11.0+2
+
+  # Image Picker — untuk galeri dan fallback
+  image_picker: ^1.1.2
+
+  # GPS / Geolocation
+  geolocator: ^13.0.4
+
+  # Secure Token Storage
+  flutter_secure_storage: ^9.2.4
+
+  # Push Notification
+  firebase_messaging: ^15.2.5
+
+  # Connectivity Monitor
+  connectivity_plus: ^6.1.4
+
+  # Local Cache
+  shared_preferences: ^2.5.3
+
+  # Google Fonts (Poppins)
+  google_fonts: ^6.2.1
+
+  # Icons
+  flutter_svg: ^2.0.10+1
+
+  # Utility
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  equatable: ^2.0.7
+  permission_handler: ^12.0.3
+  flutter_local_notifications: ^22.1.0
+  timezone: ^0.11.1
+  flutter_timezone: ^5.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    # Logo aplikasi
+    - assets/logos.jpeg
+
+    # Stitch UI — screen reference assets
+    - assets/stitch_ui/aktivasi_bin.png/screen.png
+    - assets/stitch_ui/beranda.png/screen.png
+    - assets/stitch_ui/bin_mismatch.png/screen.png
+    - assets/stitch_ui/failed_scan_step_1.png/screen.png
+    - assets/stitch_ui/login.png_1/screen.png
+    - assets/stitch_ui/login.png_2/screen.png
+    - assets/stitch_ui/poin_saya.png/screen.png
+    - assets/stitch_ui/profil_rumah_tangga.png/screen.png
+    - assets/stitch_ui/riwayat_pemilahan.png/screen.png
+    - assets/stitch_ui/scan_barcode.png/screen.png
+    - assets/stitch_ui/scan_qr_bin.png/screen.png
+    - assets/stitch_ui/splash_screen_minimalist.png/screen.png
+    - assets/stitch_ui/success_final_step.png/screen.png
+    - assets/stitch_ui/success_scan_step_1.png/screen.png

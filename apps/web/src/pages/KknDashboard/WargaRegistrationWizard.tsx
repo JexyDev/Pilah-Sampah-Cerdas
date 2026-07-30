@@ -113,7 +113,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
         rtRwId: Number(formData.rtRwId),
         maxCapacityLiter
       });
-      toast.success("Registrasi Warga Berhasil! Menunggu Approval RW.", { duration: 5000 });
+      toast.success("Registrasi Warga Berhasil! Tempat sampah langsung aktif.", { duration: 5000 });
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.message || "Gagal mendaftarkan warga.");
@@ -356,7 +356,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
               
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex gap-3 text-amber-800 text-sm">
                 <Info className="w-5 h-5 shrink-0" />
-                <p>Setelah disubmit, kepemilikan tempat sampah ini akan berstatus <strong>PENDING_APPROVAL</strong>. RW setempat harus memberikan persetujuan sebelum tong aktif.</p>
+                <p>Setelah disubmit, tempat sampah warga akan <strong>langsung aktif</strong> (ACTIVE_BOUND) dan poin bonus partisipasi akan langsung ditambahkan.</p>
               </div>
             </div>
           )}
