@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constants/app_assets.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_dimensions.dart';
+import '../../core/values/app_assets.dart';
+import '../../core/values/app_colors.dart';
+import '../../core/values/app_dimensions.dart';
 import '../../core/utils/responsive_utils.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/main/main_shell.dart
 import '../providers/connectivity_provider.dart';
 import '../shared/widgets/offline_banner.dart';
 import '../beranda/beranda_screen.dart';
@@ -13,26 +14,51 @@ import '../profil/profil_screen.dart';
 import '../kkn/monitoring_warga_screen.dart';
 import '../providers/auth_provider.dart';
 import '../../domain/entities/user_entity.dart';
+========
+import '../shared/controllers/connectivity_controller.dart';
+import '../shared/widgets/offline_banner.dart';
+import '../beranda/beranda_view.dart';
+import '../riwayat/views/riwayat_view.dart';
+import '../poin/poin_view.dart';
+import '../profil/profil_view.dart';
+import '../mahasiswa/views/monitoring_warga_view.dart';
+import '../mahasiswa/views/riwayat_kkn_view.dart';
+import '../auth/controllers/auth_controller.dart';
+import '../mahasiswa/views/mahasiswa_view.dart';
+import '../../data/models/user_entity.dart';
+>>>>>>>> origin/mobile:lib/app/modules/dashboard/dashboard_view.dart
 import '../../core/utils/scan_guard.dart';
 
 /// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
-class MainShell extends ConsumerStatefulWidget {
-  const MainShell({super.key});
+class DashboardView extends ConsumerStatefulWidget {
+  const DashboardView({super.key});
 
   @override
-  ConsumerState<MainShell> createState() => _MainShellState();
+  ConsumerState<DashboardView> createState() => _DashboardViewState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _DashboardViewState extends ConsumerState<DashboardView> {
   int _selectedIndex = 0;
 
   List<Widget> _getScreens(UserRole role) => [
+<<<<<<<< HEAD:apps/mobile/lib/presentation/main/main_shell.dart
     BerandaScreen(onNavigateToHistory: () => _onTabTap(1)),
     const RiwayatScreen(),
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn ? const MonitoringWargaScreen() : const PoinScreen(),
     const ProfilScreen(),
+========
+    role == UserRole.mahasiswaKkn 
+        ? const MahasiswaView() 
+        : BerandaView(onNavigateToHistory: () => _onTabTap(1)),
+    role == UserRole.mahasiswaKkn 
+        ? const RiwayatKknView() 
+        : const RiwayatView(),
+    const SizedBox.shrink(),
+    role == UserRole.mahasiswaKkn ? const MonitoringWargaView() : const PoinView(),
+    const ProfilView(),
+>>>>>>>> origin/mobile:lib/app/modules/dashboard/dashboard_view.dart
   ];
 
   void _onTabTap(int index) {
@@ -279,3 +305,5 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 }
+
+

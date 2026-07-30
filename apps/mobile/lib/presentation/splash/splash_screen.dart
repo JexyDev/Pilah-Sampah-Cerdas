@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/splash/splash_screen.dart
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
@@ -10,12 +11,23 @@ import '../providers/auth_provider.dart';
 /// Menggunakan logo resmi dan Plus Jakarta Sans.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
+========
+import '../../core/values/app_assets.dart';
+import '../../core/values/app_colors.dart';
+import '../../routes/app_routes.dart';
+import '../auth/controllers/auth_controller.dart';
+
+/// Splash screen — white bg, animasi stagger smooth untuk mobile.
+/// Menggunakan logo resmi dan Plus Jakarta Sans.
+class SplashView extends ConsumerStatefulWidget {
+  const SplashView({super.key});
+>>>>>>>> origin/mobile:lib/app/modules/splash/splash_view.dart
 
   @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashView> createState() => _SplashViewState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen>
+class _SplashViewState extends ConsumerState<SplashView>
     with TickerProviderStateMixin {
   late AnimationController _titleController;
   late AnimationController _taglineController;
@@ -219,3 +231,5 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 }
+
+

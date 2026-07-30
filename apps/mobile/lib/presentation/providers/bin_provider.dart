@@ -1,10 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/providers/bin_provider.dart
 import '../../domain/entities/bin_entity.dart';
 import '../../domain/entities/ai_detection_entity.dart';
 import '../../domain/entities/bin_reset_entity.dart';
 import '../../domain/repositories/bin_repository.dart';
 import 'repository_providers.dart';
 import 'auth_provider.dart';
+========
+import '../../../data/models/bin_entity.dart';
+import '../../../data/models/ai_detection_entity.dart';
+import '../../../data/models/bin_reset_entity.dart';
+import '../../../data/repositories/bin_repository.dart';
+import '../../../data/providers/repository_providers.dart';
+import '../../../data/models/user_entity.dart';
+import '../../auth/controllers/auth_controller.dart';
+>>>>>>>> origin/mobile:lib/app/modules/scan/controllers/scan_controller.dart
 
 // ─── Bins Provider ────────────────────────────────────────────────────────────
 
@@ -16,6 +26,11 @@ final binsProvider = FutureProvider<List<BinEntity>>((ref) async {
   // Pastikan user sudah login sebelum fetch
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
+<<<<<<<< HEAD:apps/mobile/lib/presentation/providers/bin_provider.dart
+========
+  // Hanya role warga yang memiliki akses tong sampah pribadi
+  if (user.role != UserRole.warga) return [];
+>>>>>>>> origin/mobile:lib/app/modules/scan/controllers/scan_controller.dart
   return repo.getBinsByHousehold('');
 });
 

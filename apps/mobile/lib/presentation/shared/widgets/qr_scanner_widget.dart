@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 
 /// Widget QR Scanner terpusat — scan QR tong & aktivasi bin.
@@ -72,7 +73,11 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     _controller = MobileScannerController(
       facing: CameraFacing.back,
       autoStart: true,
+<<<<<<<< HEAD:apps/mobile/lib/presentation/shared/widgets/qr_scanner_widget.dart
       detectionTimeoutMs: 2000,
+========
+      detectionSpeed: DetectionSpeed.noDuplicates,
+>>>>>>>> origin/mobile:lib/app/modules/shared/widgets/qr_scanner_widget.dart
     );
     if (mounted) setState(() => _state = _QrState.ready);
   }
@@ -83,6 +88,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     if (code != null && code.isNotEmpty) {
       setState(() => _scanned = true);
       
+<<<<<<<< HEAD:apps/mobile/lib/presentation/shared/widgets/qr_scanner_widget.dart
       // Delay for visual feedback (QR Terdeteksi)
       await Future.delayed(const Duration(milliseconds: 1000));
       
@@ -101,6 +107,19 @@ class QrScannerWidgetState extends State<QrScannerWidget>
         if (mounted) {
           setState(() => _scanned = false);
         }
+========
+      // Feedback instan saat barcode terbaca
+      HapticFeedback.vibrate();
+      
+      if (!mounted) return;
+      
+      // Panggil callback
+      await widget.onQrDetected(code);
+      
+      // Reset state agar siap menscan ulang jika parent belum berpindah/unmount
+      if (mounted) {
+        setState(() => _scanned = false);
+>>>>>>>> origin/mobile:lib/app/modules/shared/widgets/qr_scanner_widget.dart
       }
     }
   }
@@ -544,3 +563,4 @@ class _ScanOverlayPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter _) => false;
 }
+

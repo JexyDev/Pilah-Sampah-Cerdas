@@ -4,7 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/shared/widgets/inline_camera_widget.dart
 import '../../../core/constants/app_colors.dart';
+========
+import '../../../core/values/app_colors.dart';
+>>>>>>>> origin/mobile:lib/app/modules/shared/widgets/inline_camera_widget.dart
 
 /// Kamera inline di dalam app — foto tanpa keluar ke kamera sistem.
 ///
@@ -591,3 +595,4 @@ class _ControlButton extends StatelessWidget {
     );
   }
 }
+

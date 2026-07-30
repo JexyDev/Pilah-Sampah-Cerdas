@@ -4,15 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'core/theme/app_theme.dart';
-import 'core/router/app_router.dart';
-import 'core/constants/app_strings.dart';
-import 'core/utils/platform_utils.dart';
-import 'presentation/providers/bin_provider.dart';
-import 'presentation/providers/notification_provider.dart';
-import 'presentation/providers/waste_log_provider.dart';
-import 'core/services/local_notification_service.dart';
-import 'core/services/notification_engine.dart';
+import 'app/core/theme/app_theme.dart';
+import 'app/routes/app_routes.dart';
+import 'app/routes/app_pages.dart';
+import 'app/core/values/app_strings.dart';
+import 'app/core/utils/platform_utils.dart';
+import 'app/modules/scan/controllers/scan_controller.dart';
+import 'app/modules/notifikasi/controllers/notifikasi_controller.dart';
+import 'app/modules/riwayat/controllers/riwayat_controller.dart';
+import 'app/data/services/local_notification_service.dart';
+import 'app/data/services/notification_engine.dart';
 
 /// Global navigator key — digunakan oleh Dio Interceptor untuk
 /// force-navigate ke Login saat sesi habis (refresh token expired).
@@ -29,9 +30,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Entry point aplikasi TrashCare — Mobile (Warga).
 ///
 /// Arsitektur: Clean Architecture + Riverpod
-/// - Presentation Layer: lib/presentation/
-/// - Domain Layer:       lib/domain/
-/// - Data Layer:         lib/data/
+/// - Presentation Layer: lib/app/modules/
+/// - Domain Layer:       lib/app/data/models/ & lib/app/data/repositories/
+/// - Data Layer:         lib/app/data/
 ///
 /// Platform support: Android, iOS, Web, Windows, macOS, Linux.
 void main() async {
@@ -148,7 +149,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
       // Routing terpusat
       initialRoute: AppRoutes.splash,
-      onGenerateRoute: AppRouter.onGenerateRoute,
+      onGenerateRoute: AppPages.onGenerateRoute,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/profil/profil_screen.dart
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/entities/bin_entity.dart';
@@ -19,6 +20,26 @@ class ProfilScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfilScreenState extends ConsumerState<ProfilScreen> {
+========
+import '../../core/values/app_colors.dart';
+import '../../routes/app_routes.dart';
+import '../../data/models/bin_entity.dart';
+import '../auth/controllers/auth_controller.dart';
+import '../../core/values/app_config.dart';
+import '../scan/controllers/scan_controller.dart';
+import '../../data/models/user_entity.dart';
+
+/// Halaman profil — sesuai desain:
+/// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tong Saya, Keluar.
+class ProfilView extends ConsumerStatefulWidget {
+  const ProfilView({super.key});
+
+  @override
+  ConsumerState<ProfilView> createState() => _ProfilViewState();
+}
+
+class _ProfilViewState extends ConsumerState<ProfilView> {
+>>>>>>>> origin/mobile:lib/app/modules/profil/profil_view.dart
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
@@ -141,7 +162,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    user != null ? 'Keluarga ${user.name}' : 'Keluarga Warga',
+                    user != null 
+                        ? (user.role == UserRole.mahasiswaKkn ? user.name : 'Keluarga ${user.name}') 
+                        : 'Keluarga Warga',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
@@ -177,7 +200,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ─── Data Rumah Tangga ──────────────────────────────
-                  _sectionLabel('DATA RUMAH TANGGA'),
+                  _sectionLabel(user?.role == UserRole.mahasiswaKkn ? 'DATA MAHASISWA KKN' : 'DATA RUMAH TANGGA'),
                   const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
@@ -188,7 +211,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                       children: [
                         _InfoTile(
                           Icons.person_outline_rounded,
-                          'Kepala Keluarga',
+                          user?.role == UserRole.mahasiswaKkn ? 'Nama Lengkap' : 'Kepala Keluarga',
                           user?.name ?? '-',
                           bold: true,
                         ),
@@ -219,6 +242,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                   const SizedBox(height: 20),
 
                   // ─── Tong Saya ──────────────────────────────────────
+<<<<<<<< HEAD:apps/mobile/lib/presentation/profil/profil_screen.dart
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -236,46 +260,51 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                             ),
                           ),
                         ),
+========
+                  if (user?.role != UserRole.mahasiswaKkn) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _sectionLabel('TONG SAYA'),
+>>>>>>>> origin/mobile:lib/app/modules/profil/profil_view.dart
                     ],
                   ),
                   const SizedBox(height: 8),
                   binsAsync.when(
-                    data: (bins) => bins.isEmpty
-                        ? Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Center(
+                    data: (bins) => GestureDetector(
+                      onTap: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline, color: AppColors.primaryGreen),
+                            const SizedBox(width: 12),
+                            Expanded(
                               child: Text(
-                                'Belum ada tong terdaftar.',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
+                                bins.isEmpty ? 'Belum ada tong terdaftar.' : '${bins.length} Tong Terdaftar (Ketuk untuk kelola)',
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                          )
-                        : Row(
-                            children: bins
-                                .map(
-                                  (bin) => Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(right: 4),
-                                      child: _BinCard(bin: bin),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
+                            const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+                          ],
+                        ),
+                      ),
+                    ),
                     loading: () => const SizedBox(
                       height: 60,
                       child: Center(child: CircularProgressIndicator()),
                     ),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
-
                   const SizedBox(height: 28),
+                  ],
 
                   // ─── Menu Actions ───────────────────────────────────
                   Container(
@@ -285,14 +314,20 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                     ),
                     child: Column(
                       children: [
+<<<<<<<< HEAD:apps/mobile/lib/presentation/profil/profil_screen.dart
                         // Aktivasi Tong Baru
                         if (!(hasOrganic && hasAnorganic))
+========
+                        if (user?.role != UserRole.mahasiswaKkn) ...[
+                          // Tambah Tong Baru
+>>>>>>>> origin/mobile:lib/app/modules/profil/profil_view.dart
                           _MenuTile(
                             icon: Icons.qr_code_scanner_rounded,
                             iconColor: AppColors.primaryGreen,
                             iconBgColor: AppColors.primaryGreen.withValues(
                               alpha: 0.1,
                             ),
+<<<<<<<< HEAD:apps/mobile/lib/presentation/profil/profil_screen.dart
                             label: 'Aktivasi Tong Baru',
                             onTap: () => Navigator.of(
                               context,
@@ -311,6 +346,39 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                           onTap: () => Navigator.of(
                             context,
                           ).pushNamed(AppRoutes.resetBin),
+========
+                            label: 'Tambah Tong Baru',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.ukurKapasitas),
+                          ),
+                          const Divider(height: 1, indent: 56),
+                          // Ajukan Pengosongan Tong
+                          _MenuTile(
+                            icon: Icons.restore_rounded,
+                            iconColor: AppColors.warningOrange,
+                            iconBgColor: AppColors.warningOrange.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Ajukan Pengosongan Tong',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.resetBin),
+                          ),
+                          const Divider(height: 1, indent: 56),
+                        ],
+                        // Tentang Aplikasi
+                        _MenuTile(
+                          icon: Icons.info_outline_rounded,
+                          iconColor: AppColors.primaryGreen,
+                          iconBgColor: AppColors.primaryGreen.withValues(
+                            alpha: 0.1,
+                          ),
+                          label: 'Tentang Aplikasi',
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.tentang),
+>>>>>>>> origin/mobile:lib/app/modules/profil/profil_view.dart
                         ),
                         const Divider(height: 1, indent: 56),
                         // Tentang Aplikasi
@@ -499,86 +567,6 @@ class _MenuTile extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _BinCard extends StatelessWidget {
-  const _BinCard({required this.bin});
-  final BinEntity bin;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isOrganic = bin.binType == WasteType.organic;
-    final Color color = isOrganic
-        ? AppColors.organicColor
-        : AppColors.nonOrganicColor;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: color, width: 3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.delete_rounded, color: color, size: 18),
-              const Spacer(),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: bin.isCritical
-                      ? AppColors.dangerRed
-                      : AppColors.primaryGreen,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            bin.binType.displayName,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-          Text(
-            bin.qrSerial.length > 12
-                ? bin.qrSerial.substring(0, 12)
-                : bin.qrSerial,
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Text(
-                'Status: ',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-              Text(
-                bin.isActive ? 'AKTIF' : 'NON-AKTIF',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: bin.isActive
-                      ? AppColors.primaryGreen
-                      : AppColors.dangerRed,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

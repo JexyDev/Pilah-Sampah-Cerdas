@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/scan/scan_flow_screen.dart
 import '../../core/services/notification_engine.dart' as import_engine;
 
 import '../../core/constants/app_colors.dart';
@@ -14,6 +15,21 @@ import '../providers/waste_log_provider.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/inline_camera_widget.dart';
 import '../shared/widgets/qr_scanner_widget.dart';
+========
+import '../../../data/services/notification_engine.dart' as import_engine;
+
+import '../../../core/values/app_colors.dart';
+import '../../../core/utils/platform_utils.dart';
+import '../../../data/models/bin_entity.dart';
+import '../../scan/controllers/scan_controller.dart';
+import '../../shared/controllers/connectivity_controller.dart';
+import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../../shared/widgets/weight_text.dart';
+import '../../riwayat/controllers/riwayat_controller.dart';
+import '../../shared/widgets/app_loading.dart';
+import '../../shared/widgets/inline_camera_widget.dart';
+import '../../shared/widgets/qr_scanner_widget.dart';
+>>>>>>>> origin/mobile:lib/app/modules/scan/views/scan_flow_view.dart
 
 /// Alur scan sampah — sesuai desain:
 /// Step 1: Kamera + bottom sheet "Pindai Sampah" + tombol "Deteksi Sampah"
@@ -21,14 +37,18 @@ import '../shared/widgets/qr_scanner_widget.dart';
 /// Step 3: Kamera QR + banner info + progress bar
 /// Step 4: Modal "Pencatatan Berhasil!"
 /// Error: Modal khusus per error code
-class ScanFlowScreen extends ConsumerStatefulWidget {
-  const ScanFlowScreen({super.key});
+class ScanFlowView extends ConsumerStatefulWidget {
+  const ScanFlowView({super.key});
 
   @override
-  ConsumerState<ScanFlowScreen> createState() => _ScanFlowScreenState();
+  ConsumerState<ScanFlowView> createState() => _ScanFlowViewState();
 }
 
+<<<<<<<< HEAD:apps/mobile/lib/presentation/scan/scan_flow_screen.dart
 class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
+========
+class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
+>>>>>>>> origin/mobile:lib/app/modules/scan/views/scan_flow_view.dart
   // GPS — diisi dari geolocator saat scan QR, fallback null (skip geofencing)
   double? _userLat;
   double? _userLng;
@@ -544,9 +564,15 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                 hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) async {
+<<<<<<<< HEAD:apps/mobile/lib/presentation/scan/scan_flow_screen.dart
                   // Guard: skip jika sudah loading atau sudah sukses
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null) return false;
+========
+                  // Guard: skip jika sudah loading, sukses, atau sedang ada error tampil
+                  final s = ref.read(scanFlowProvider);
+                  if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
+>>>>>>>> origin/mobile:lib/app/modules/scan/views/scan_flow_view.dart
                   
                   // Validasi jenis tong akan dilakukan dengan aman di sisi backend. 
                   // Jika tidak cocok, backend melempar BIN_TYPE_MISMATCH dan ditangani dengan benar.
@@ -766,8 +792,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              '${result.weightKg.toStringAsFixed(1)} kg',
+                            WeightText(
+                              result.weightKg,
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -800,8 +826,8 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Text(
-                            '${newVol.toStringAsFixed(1)} kg',
+                          WeightText(
+                            newVol,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -828,12 +854,24 @@ class _ScanFlowScreenState extends ConsumerState<ScanFlowScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Maks ${maxVol.toStringAsFixed(0)} kg',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textHint,
-                            ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Maks ',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                              WeightText(
+                                maxVol,
+                                fractionDigits: 0,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             '${(pct * 100).toStringAsFixed(0)}% Tercapai',
@@ -1142,7 +1180,19 @@ class _AiSuccessSheet extends StatelessWidget {
                       child: _buildDetailItem(
                         icon: Icons.scale_rounded,
                         label: 'EST. BERAT',
+<<<<<<<< HEAD:apps/mobile/lib/presentation/scan/scan_flow_screen.dart
                         value: '${result.displayWeightKg.toStringAsFixed(1)} kg',
+========
+                        valueWidget: WeightText(
+                          result.displayWeightKg,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        value: '',
+>>>>>>>> origin/mobile:lib/app/modules/scan/views/scan_flow_view.dart
                       ),
                     ),
                   ],
@@ -1261,7 +1311,11 @@ class _AiSuccessSheet extends StatelessWidget {
     );
   }
 
+<<<<<<<< HEAD:apps/mobile/lib/presentation/scan/scan_flow_screen.dart
   Widget _buildDetailItem({required IconData icon, required String label, required String value}) {
+========
+  Widget _buildDetailItem({required IconData icon, required String label, required String value, Widget? valueWidget}) {
+>>>>>>>> origin/mobile:lib/app/modules/scan/views/scan_flow_view.dart
     return Row(
       children: [
         Icon(icon, size: 16, color: AppColors.textSecondary),
@@ -1277,7 +1331,11 @@ class _AiSuccessSheet extends StatelessWidget {
                 color: AppColors.textHint,
               ),
             ),
+<<<<<<<< HEAD:apps/mobile/lib/presentation/scan/scan_flow_screen.dart
             Text(
+========
+            valueWidget ?? Text(
+>>>>>>>> origin/mobile:lib/app/modules/scan/views/scan_flow_view.dart
               value,
               style: const TextStyle(
                 fontSize: 14,

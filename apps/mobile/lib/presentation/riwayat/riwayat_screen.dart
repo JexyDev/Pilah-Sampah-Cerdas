@@ -1,23 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+<<<<<<<< HEAD:apps/mobile/lib/presentation/riwayat/riwayat_screen.dart
 import '../../core/constants/app_colors.dart';
 import '../../domain/entities/waste_log_entity.dart';
 import '../../domain/entities/bin_entity.dart';
 import '../providers/waste_log_provider.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
+========
+import '../../../core/values/app_colors.dart';
+import '../../../data/models/waste_log_entity.dart';
+import '../../../data/models/bin_entity.dart';
+import '../../riwayat/controllers/riwayat_controller.dart';
+import '../../shared/widgets/skeleton_loading.dart';
+import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/weight_text.dart';
+>>>>>>>> origin/mobile:lib/app/modules/riwayat/views/riwayat_view.dart
 
 /// Halaman riwayat pemilahan — sesuai desain:
 /// Filter tabs, summary kg organik+anorganik, list TERVALIDASI.
-class RiwayatScreen extends ConsumerStatefulWidget {
-  const RiwayatScreen({super.key});
+class RiwayatView extends ConsumerStatefulWidget {
+  const RiwayatView({super.key});
 
   @override
-  ConsumerState<RiwayatScreen> createState() => _RiwayatScreenState();
+  ConsumerState<RiwayatView> createState() => _RiwayatViewState();
 }
 
-class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
+class _RiwayatViewState extends ConsumerState<RiwayatView> {
   int _filterIndex = 0; // 0=Semua, 1=Minggu Ini, 2=Bulan Ini
 
   @override
@@ -159,7 +169,15 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
                 iconColor: AppColors.organicColor,
                 bgColor: AppColors.organicColor.withValues(alpha: 0.12),
                 label: 'Organik',
-                value: '${organicKg.toStringAsFixed(1)} kg',
+                valueWidget: WeightText(
+                  organicKg,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                value: '',
                 valueColor: AppColors.organicColor,
               ),
             ),
@@ -170,7 +188,15 @@ class _RiwayatScreenState extends ConsumerState<RiwayatScreen> {
                 iconColor: AppColors.nonOrganicColor,
                 bgColor: AppColors.nonOrganicColor.withValues(alpha: 0.12),
                 label: 'Anorganik',
-                value: '${nonOrganicKg.toStringAsFixed(1)} kg',
+                valueWidget: WeightText(
+                  nonOrganicKg,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                value: '',
                 valueColor: AppColors.nonOrganicColor,
               ),
             ),
@@ -240,6 +266,7 @@ class _SummaryCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.valueColor,
+    this.valueWidget,
   });
 
   final IconData icon;
@@ -248,6 +275,7 @@ class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
   final Color valueColor;
+  final Widget? valueWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -279,7 +307,7 @@ class _SummaryCard extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
-              Text(
+              valueWidget ?? Text(
                 value,
                 style: TextStyle(
                   fontSize: 15,
@@ -335,12 +363,17 @@ class _RiwayatItem extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  '${log.wasteType.displayName} • ${log.weightKg.toStringAsFixed(1)} kg',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '${log.wasteType.displayName} • ',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    WeightText(
+                      log.weightKg,
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
                 Row(
                   children: [
