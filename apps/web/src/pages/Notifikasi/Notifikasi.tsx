@@ -99,13 +99,14 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
     loadData();
   }, []);
 
+  const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
+
   const handleAccCollection = async (binId: string, wargaName: string) => {
     try {
       setActionLoadingId(binId);
-      await api.put(`/rw/bins/${binId}/approve`).catch(async () => {
-        await api.post(`/bins/reset-request`, {
-          binId,
-          evidencePhotoUrl: "system_schedule_acc",
+      await api.post(`/bins/${binId}/empty`).catch(async () => {
+        await api.put(`/rw/bins/${binId}/approve`).catch(async () => {
+          await api.put(`/bins/${binId}`, { currentVolumeLiter: 0 });
         });
       });
 
@@ -115,8 +116,24 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
         )
       );
       toast.success(`Penjemputan sampah ${wargaName} berhasil di-ACC & volume tong di-reset!`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal melakukan ACC penjemputan");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectCollection = async (binId: string, wargaName: string) => {
+    try {
+      setActionLoadingId(binId);
+      setBins((prev) =>
+        prev.map((b) =>
+          b.id === binId ? { ...b, isRejected: true } : b
+        )
+      );
+      toast.error(`Pengajuan penjemputan ${wargaName} ditolak.`);
     } catch (err) {
-      toast.error("Gagal melakukan ACC penjemputan");
+      toast.error("Gagal menolak penjemputan");
     } finally {
       setActionLoadingId(null);
     }
@@ -240,34 +257,159 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-gray-100">
+                <div className="flex items-center gap-1.5 flex-wrap w-full md:w-auto shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-gray-100">
                   {fullness === 0 ? (
                     <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-lg border border-emerald-200 flex items-center gap-1">
                       <CheckCircle size={14} /> Selesai Diangkut
                     </span>
+                  ) : bin.isRejected ? (
+                    <span className="px-3 py-1.5 bg-rose-50 text-rose-700 font-bold text-xs rounded-lg border border-rose-200">
+                      ✕ Ditolak
+                    </span>
                   ) : (
-                    <button
-                      disabled={actionLoadingId === bin.id}
-                      onClick={() => handleAccCollection(bin.id, ownerName)}
-                      className="w-full md:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      {actionLoadingId === bin.id ? (
-                        <>
+                    <>
+                      <button
+                        onClick={() => setSelectedBinForDetail(bin)}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                        title="Tinjau Detail Foto & Pengajuan"
+                      >
+                        <ShieldAlert size={14} className="text-amber-500" />
+                        <span>Detail</span>
+                      </button>
+                      <button
+                        disabled={actionLoadingId === bin.id}
+                        onClick={() => handleRejectCollection(bin.id, ownerName)}
+                        className="px-3 py-2 border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                        title="Tolak Pengajuan"
+                      >
+                        ✕ Tolak
+                      </button>
+                      <button
+                        disabled={actionLoadingId === bin.id}
+                        onClick={() => handleAccCollection(bin.id, ownerName)}
+                        className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center gap-1"
+                        title="ACC & Reset Kapasitas Tong"
+                      >
+                        {actionLoadingId === bin.id ? (
                           <Loader2 className="animate-spin" size={14} />
-                          <span>Memproses...</span>
-                        </>
-                      ) : (
-                        <>
+                        ) : (
                           <CheckCircle size={14} />
-                          <span>ACC & Reset Tong</span>
-                        </>
-                      )}
-                    </button>
+                        )}
+                        <span>✓ ACC</span>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Detail Review Modal for individual Bin */}
+      {selectedBinForDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-gray-800 text-lg">Detail Notifikasi</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-blue-100 text-blue-700">
+                  Tampilan Petugas
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedBinForDetail(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[75vh]">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-11 h-11 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <Trash2 size={22} />
+                </div>
+                <div>
+                  <h4 className="text-[16px] font-bold text-gray-800 leading-tight mb-1">
+                    Pengajuan Pengosongan Baru
+                  </h4>
+                  <p className="text-xs text-gray-500 font-medium">10 menit lalu</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                Warga ({selectedBinForDetail.resolvedOwner}) mengajukan pengosongan tong{" "}
+                {selectedBinForDetail.category?.name || "Organik"} ({selectedBinForDetail.qrCode || "BIN-124"}) di{" "}
+                {selectedBinForDetail.resolvedAddress}.
+              </p>
+
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex gap-3 mb-4">
+                <ShieldAlert className="text-orange-500 shrink-0 mt-0.5" size={20} />
+                <div className="text-xs text-orange-800">
+                  <p className="font-bold mb-0.5">Tindakan Review Diperlukan</p>
+                  <p className="leading-relaxed">
+                    Warga telah mengajukan pengosongan tempat sampah. Tinjau pengajuan ini dan tentukan tindakan Anda.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden mb-5">
+                <div className="p-3.5 border-b border-gray-200 bg-white">
+                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">
+                    DETAIL PENGAJUAN
+                  </p>
+                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                    Warga ({selectedBinForDetail.resolvedOwner}) mengajukan pengosongan tong{" "}
+                    {selectedBinForDetail.category?.name || "Organik"} ({selectedBinForDetail.qrCode || "BIN-124"}) di{" "}
+                    {selectedBinForDetail.resolvedAddress}.
+                  </p>
+                </div>
+                <div className="p-3.5 bg-gray-50 flex flex-col gap-2">
+                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">
+                    FOTO BUKTI DARI WARGA
+                  </p>
+                  {selectedBinForDetail.evidencePhotoUrl ? (
+                    <img
+                      src={
+                        selectedBinForDetail.evidencePhotoUrl.startsWith("/uploads")
+                          ? `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").replace("/api/v1", "")}${selectedBinForDetail.evidencePhotoUrl}`
+                          : selectedBinForDetail.evidencePhotoUrl
+                      }
+                      alt="Bukti tong penuh"
+                      className="w-full h-44 object-cover rounded-lg border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-full h-36 bg-gray-100 rounded-lg border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1.5">
+                      <ImageOff size={28} />
+                      <p className="text-xs text-gray-400">Foto bukti belum diunggah oleh warga</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    handleRejectCollection(selectedBinForDetail.id, selectedBinForDetail.resolvedOwner);
+                    setSelectedBinForDetail(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                >
+                  ✕ Tolak Pengajuan
+                </button>
+                <button
+                  onClick={() => {
+                    handleAccCollection(selectedBinForDetail.id, selectedBinForDetail.resolvedOwner);
+                    setSelectedBinForDetail(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
+                >
+                  ✓ Setujui & Reset Tong
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
