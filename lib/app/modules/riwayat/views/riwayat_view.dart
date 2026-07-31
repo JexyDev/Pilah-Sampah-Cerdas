@@ -33,21 +33,17 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       appBar: AppBar(title: const Text('Riwayat Pemilahan')),
       body: Column(
         children: [
-          // Filter Tabs
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _filterTab('Semua', 0),
-                  const SizedBox(width: 8),
-                  _filterTab('Organik', 1),
-                  const SizedBox(width: 8),
-                  _filterTab('Non-Organik', 2),
-                ],
-              ),
+          // Filter Tabs (Seamless canvas background)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+            child: Row(
+              children: [
+                _filterTab('Semua', 0),
+                const SizedBox(width: 8),
+                _filterTab('Organik', 1),
+                const SizedBox(width: 8),
+                _filterTab('Non-Organik', 2),
+              ],
             ),
           ),
 
@@ -138,11 +134,22 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     return GestureDetector(
       onTap: () => setState(() => _categoryFilterIndex = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? AppColors.primaryGreen : Colors.transparent,
+          color: active ? AppColors.primaryGreen : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: active ? null : Border.all(color: AppColors.border),
+          border: Border.all(
+            color: active ? AppColors.primaryGreen : AppColors.border,
+          ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
