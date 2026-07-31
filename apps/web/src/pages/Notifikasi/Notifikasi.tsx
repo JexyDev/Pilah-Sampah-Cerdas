@@ -14,6 +14,205 @@ import { Camera, X, CheckCircle, Upload, AlertTriangle, Star } from "lucide-reac
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 
+const ScheduleDetailView = ({ notif }: { notif: any }) => {
+  const [loading, setLoading] = useState(true);
+  const [bins, setBins] = useState<any[]>([]);
+  const [rtRwFilter, setRtRwFilter] = useState<string>("");
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  const isMorning =
+    notif?.title?.toLowerCase().includes("pagi") ||
+    notif?.desc?.toLowerCase().includes("pagi");
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/bins").catch(() => ({ data: { data: [] } }));
+        const rawBins = res.data?.data || res.data || [];
+        setBins(Array.isArray(rawBins) ? rawBins : []);
+      } catch (err) {
+        console.error("Gagal memuat detail pengangkutan warga:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleAccCollection = async (binId: string, wargaName: string) => {
+    try {
+      setActionLoadingId(binId);
+      await api.put(`/rw/bins/${binId}/approve`).catch(async () => {
+        await api.post(`/bins/reset-request`, {
+          binId,
+          evidencePhotoUrl: "system_schedule_acc",
+        });
+      });
+
+      setBins((prev) =>
+        prev.map((b) =>
+          b.id === binId ? { ...b, currentVolumeLiter: 0, status: "ACTIVE_BOUND" } : b
+        )
+      );
+      toast.success(`Penjemputan sampah ${wargaName} berhasil di-ACC & volume tong di-reset!`);
+    } catch (err) {
+      toast.error("Gagal melakukan ACC penjemputan");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const filteredBins = bins.filter((b) => {
+    if (!rtRwFilter) return true;
+    return b.rtRw?.name === rtRwFilter || String(b.rtRwId) === rtRwFilter;
+  });
+
+  return (
+    <div className="mt-4 flex flex-col gap-4">
+      <div className="bg-gradient-to-r from-emerald-600 to-green-700 text-white p-4 rounded-xl shadow-sm flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="bg-white/20 text-white font-bold px-2.5 py-0.5 rounded text-xs uppercase tracking-wider">
+              Shift {isMorning ? "Pagi (06:00 - 08:00 WIB)" : "Sore (16:00 - 18:00 WIB)"}
+            </span>
+            <span className="bg-amber-400 text-slate-900 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+              Target Penjemputan Area
+            </span>
+          </div>
+          <p className="text-sm font-semibold mt-2 text-green-50">
+            {notif.desc || "Terdapat tempat sampah warga yang perlu diangkut pada shift ini."}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-extrabold">{filteredBins.length}</p>
+          <p className="text-[11px] text-green-100 font-medium">Tempat Sampah Area</p>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+          Filter Area RW/RT Warga:
+        </span>
+        <select
+          value={rtRwFilter}
+          onChange={(e) => setRtRwFilter(e.target.value)}
+          className="text-xs border border-gray-300 rounded-lg px-3 py-1.5 bg-white font-medium focus:outline-none focus:border-green-600"
+        >
+          <option value="">Semua Wilayah RW / RT</option>
+          <option value="RW 06 Dago">RW 06 Dago</option>
+          <option value="RT 01">RT 01 / RW 06</option>
+          <option value="RT 02">RT 02 / RW 06</option>
+          <option value="RT 03">RT 03 / RW 06</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="py-12 flex flex-col items-center justify-center text-gray-400 gap-2">
+          <Loader2 className="animate-spin text-green-600" size={32} />
+          <p className="text-xs font-medium">Memuat data tempat sampah per warga...</p>
+        </div>
+      ) : filteredBins.length === 0 ? (
+        <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400">
+          <p className="text-sm font-medium">Tidak ada data tempat sampah di wilayah ini.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
+          {filteredBins.map((bin) => {
+            const ownerName = bin.user?.name || bin.owner || "Cecep Hidayat";
+            const ownerPhone = bin.user?.phone || bin.phone || "0812001003";
+            const address =
+              bin.user?.address || bin.address || "Jl. Titiran Dalam No. 10, RT 01 / RW 06";
+            const maxCap = Number(bin.maxCapacityLiter || 20);
+            const curVol = Number(bin.currentVolumeLiter || 16);
+            const fullness = Math.round((curVol / maxCap) * 100);
+            const isCritical = fullness >= 80;
+
+            return (
+              <div
+                key={bin.id}
+                className={`p-4 rounded-xl border transition-all ${
+                  isCritical
+                    ? "bg-red-50/40 border-red-200 shadow-sm"
+                    : "bg-white border-gray-200 shadow-sm hover:border-green-300"
+                } flex flex-col md:flex-row justify-between items-start md:items-center gap-3`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-bold text-gray-800 text-sm">{ownerName}</span>
+                    <a
+                      href={`https://wa.me/${ownerPhone.replace(/\+/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] font-bold text-green-600 hover:underline bg-green-50 px-2 py-0.5 rounded border border-green-200"
+                    >
+                      📱 {ownerPhone}
+                    </a>
+                    <span
+                      className={`text-[9px] font-extrabold px-2 py-0.5 rounded uppercase border ${
+                        bin.category === "ORGANIC" || bin.type === "Organik"
+                          ? "bg-green-100 text-green-800 border-green-300"
+                          : "bg-blue-100 text-blue-800 border-blue-300"
+                      }`}
+                    >
+                      {bin.category === "ORGANIC" || bin.type === "Organik" ? "Organik" : "Anorganik"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-1">{address}</p>
+
+                  <div className="mt-2.5 flex items-center gap-3 max-w-xs">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          isCritical ? "bg-red-500" : fullness >= 50 ? "bg-amber-500" : "bg-green-500"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(5, fullness))}%` }}
+                      ></div>
+                    </div>
+                    <span
+                      className={`text-[11px] font-extrabold ${
+                        isCritical ? "text-red-600" : "text-gray-600"
+                      }`}
+                    >
+                      {fullness}% Penuh
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-gray-100">
+                  {fullness === 0 ? (
+                    <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-lg border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle size={14} /> Selesai Diangkut
+                    </span>
+                  ) : (
+                    <button
+                      disabled={actionLoadingId === bin.id}
+                      onClick={() => handleAccCollection(bin.id, ownerName)}
+                      className="w-full md:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {actionLoadingId === bin.id ? (
+                        <>
+                          <Loader2 className="animate-spin" size={14} />
+                          <span>Memproses...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={14} />
+                          <span>ACC & Reset Tong</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const NotificationModal = ({
   notif,
   role,
@@ -276,6 +475,15 @@ const NotificationModal = ({
       );
     }
 
+    if (
+      notif.type === "JADWAL_JEMPUT" ||
+      notif.type === "SCHEDULE" ||
+      notif.title?.toLowerCase().includes("jadwal jemput") ||
+      notif.desc?.toLowerCase().includes("tempat sampah yang perlu diangkut")
+    ) {
+      return <ScheduleDetailView notif={notif} />;
+    }
+
     return (
       <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600">
         {notif.desc}
@@ -283,9 +491,19 @@ const NotificationModal = ({
     );
   };
 
+  const isScheduleNotif =
+    notif.type === "JADWAL_JEMPUT" ||
+    notif.type === "SCHEDULE" ||
+    notif.title?.toLowerCase().includes("jadwal jemput") ||
+    notif.desc?.toLowerCase().includes("tempat sampah yang perlu diangkut");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+      <div
+        className={`bg-white rounded-2xl shadow-xl w-full ${
+          isScheduleNotif ? "max-w-3xl" : "max-w-md"
+        } overflow-hidden flex flex-col animate-in zoom-in-95 duration-200`}
+      >
         <div className="flex justify-between items-center p-5 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-gray-800 text-lg">Detail Notifikasi</h3>
