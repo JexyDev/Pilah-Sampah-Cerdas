@@ -757,43 +757,39 @@ export const ManajemenPengangkutan: React.FC = () => {
                           </button>
                         </td>
                         <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
-                          <div className="inline-flex gap-2 justify-center">
+                          <div className="inline-flex gap-2 justify-center items-center">
                             <button
                               onClick={() => setSelectedRequestForReview(req)}
-                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                             >
                               <ShieldAlert size={14} />
-                              Tinjau Pengajuan
+                              {req.status === "PENDING" ? "Tinjau Pengajuan" : "Lihat Detail"}
                             </button>
+
                             {req.status === "PENDING" && (
                               <>
                                 <button
                                   onClick={() => handleUpdateRequestStatus(req.id, "ON_PROGRESS")}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                                 >
-                                  Terima & Tugaskan
+                                  Tugaskan
                                 </button>
                                 <button
                                   onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
-                                  className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
                                 >
                                   Tolak
                                 </button>
                               </>
                             )}
+
                             {req.status === "ON_PROGRESS" && (
                               <button
                                 onClick={() => handleApproveRequest(req.id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                               >
                                 Tandai Selesai
                               </button>
-                            )}
-                            {(req.status === "COMPLETED" || req.status === "APPROVED") && (
-                              <span className="text-xs text-emerald-600 font-bold">Selesai</span>
-                            )}
-                            {req.status === "REJECTED" && (
-                              <span className="text-xs text-rose-600 font-bold">Ditolak</span>
                             )}
                           </div>
                         </td>
