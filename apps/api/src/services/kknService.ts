@@ -535,10 +535,7 @@ export class KknService {
       let role = await tx.role.findFirst({ where: { name: "WARGA" } });
       let warga = await tx.user.findFirst({
         where: {
-          OR: [
-            { phone: data.phone || "non-existent-phone" },
-            { email: data.email || "non-existent-email" },
-          ],
+          phone: data.phone || "non-existent-phone",
         },
       });
 
@@ -547,7 +544,6 @@ export class KknService {
           data: {
             name: data.name || data.wargaName || "Warga Binaan KKN",
             phone: data.phone || `08${Math.floor(100000000 + Math.random() * 900000000)}`,
-            email: data.email || `warga_${Date.now()}@trashcare.id`,
             password: data.password || "password123",
             address: data.address || "-",
             rtRwId: data.rtRwId ? Number(data.rtRwId) : undefined,
