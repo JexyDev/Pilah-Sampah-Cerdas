@@ -357,37 +357,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   ],
                 ),
               ),
-              // RT/RW chip
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppColors.primaryGreen,
-                      size: 13,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      rtRw,
-                      style: const TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
               // ─── Bell icon with badge ───────────────────────────────
               GestureDetector(
                 onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
