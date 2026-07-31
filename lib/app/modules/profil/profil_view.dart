@@ -9,6 +9,7 @@ import '../auth/controllers/auth_controller.dart';
 import '../../core/values/app_config.dart';
 import '../scan/controllers/scan_controller.dart';
 import '../mahasiswa/controllers/mahasiswa_controller.dart';
+import '../mahasiswa/controllers/location_ping_controller.dart';
 import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
@@ -205,7 +206,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           bold: true,
                         ),
                         _divider(),
-                        if (user?.role != UserRole.warga) ...[
+                        if (user?.role != UserRole.warga && user?.role != UserRole.mahasiswaKkn) ...[
                           _InfoTile(
                             Icons.email_outlined,
                             'Email',
@@ -247,9 +248,12 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.location_on_outlined,
                             'Wilayah / Posko KKN',
-                            (user?.kelurahan != null && user!.kelurahan.isNotEmpty)
-                                ? 'Kel. ${user.kelurahan}'
-                                : 'Bojongsoang, Kab. Bandung',
+                            (ref.watch(locationPingControllerProvider).detectedZoneArea != null &&
+                                    ref.watch(locationPingControllerProvider).detectedZoneArea!.isNotEmpty)
+                                ? ref.watch(locationPingControllerProvider).detectedZoneArea!
+                                : (user?.kelurahan != null && user!.kelurahan.isNotEmpty
+                                    ? 'Kel. ${user.kelurahan}'
+                                    : 'Belum terdeteksi di zona KKN'),
                           ),
                           _divider(),
                         ] else ...[

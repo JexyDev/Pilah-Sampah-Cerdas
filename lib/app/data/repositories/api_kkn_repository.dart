@@ -54,14 +54,19 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<void> sendLocationPing(double latitude, double longitude) async {
-    await apiClient.dio.post(
+  Future<String?> sendLocationPing(double latitude, double longitude) async {
+    final response = await apiClient.dio.post(
       '/kkn/location-ping',
       data: {
         'latitude': latitude,
         'longitude': longitude,
       },
     );
+    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+      final data = response.data['data'] as Map<String, dynamic>?;
+      return data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString() ?? 'Zona KKN Kel. Bojongsoang';
+    }
+    return null;
   }
 
   @override

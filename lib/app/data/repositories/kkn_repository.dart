@@ -21,8 +21,8 @@ abstract class KknRepository {
   /// Mengambil log aktivitas KKN mahasiswa (/kkn/activity-log).
   Future<List<dynamic>> getActivityLog();
 
-  /// Mengirim ping lokasi (latitude, longitude) ke backend.
-  Future<void> sendLocationPing(double latitude, double longitude);
+  /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan nama posko/wilayah zona.
+  Future<String?> sendLocationPing(double latitude, double longitude);
 
   /// Mengambil daftar jadwal kegiatan KKN.
   Future<List<dynamic>> getSchedules();
