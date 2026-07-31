@@ -19,6 +19,7 @@ import {
   CheckCircle,
   ShieldAlert,
   ImageOff,
+  Search,
   X
 } from "lucide-react";
 
@@ -111,9 +112,14 @@ export const ManajemenPengangkutan: React.FC = () => {
   const [evidenceModalUrl, setEvidenceModalUrl] = useState<string | null>(null);
   const [selectedRequestForReview, setSelectedRequestForReview] = useState<BinResetRequest | null>(null);
 
-  // Filter States
+  // Filter & Search States
   const [statusFilter, setStatusFilter] = useState("");
   const [rwFilter, setRwFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -203,7 +209,16 @@ export const ManajemenPengangkutan: React.FC = () => {
       // 3. Fetch Petugas for dropdown
       const usersRes = await api.get("/users");
       if (usersRes.data && usersRes.data.success) {
-        setPetugasList(usersRes.data.data.filter((u: any) => u.peran === "PETUGAS_RESIDU"));
+        const officers = usersRes.data.data
+          .filter((u: any) =>
+            ["PETUGAS_RESIDU", "PENGANGKUT", "RW", "SUPER_ADMIN"].includes(u.peran || u.roleName)
+          )
+          .map((u: any) => ({
+            id: u.id,
+            name: `${u.name} (${u.phone || u.email || (u.peran || u.roleName)})`,
+            peran: u.peran || u.roleName || "PETUGAS_RESIDU",
+          }));
+        setPetugasList(officers);
       }
     } catch (e) {
       console.error("Gagal memuat data pembantu filter/modal", e);
@@ -327,6 +342,45 @@ export const ManajemenPengangkutan: React.FC = () => {
     );
   };
 
+  // Pending Requests count for notification badge
+  const pendingRequestsCount = requests.filter((r) => r.status === "PENDING").length;
+
+  // Filter Tasks by Search Query
+  const filteredTasks = tasks.filter((t) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const idMatch = t.id.toLowerCase().includes(q);
+    const qrMatch = t.bin.qrCode.toLowerCase().includes(q);
+    const rwMatch = (t.bin.rtRw?.name || "").toLowerCase().includes(q);
+    const officerMatch = (t.claimedByUser?.name || "").toLowerCase().includes(q);
+    return idMatch || qrMatch || rwMatch || officerMatch;
+  });
+
+  // Paginate Tasks
+  const totalTaskPages = Math.ceil(filteredTasks.length / itemsPerPage) || 1;
+  const paginatedTasks = filteredTasks.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Filter Requests by Search Query
+  const filteredRequests = requests.filter((r) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const userMatch = r.user.name.toLowerCase().includes(q) || r.user.email.toLowerCase().includes(q);
+    const qrMatch = r.bin.qrCode.toLowerCase().includes(q);
+    const areaMatch = (r.bin.rtRw?.name || "").toLowerCase().includes(q);
+    const statusMatch = r.status.toLowerCase().includes(q);
+    return userMatch || qrMatch || areaMatch || statusMatch;
+  });
+
+  // Paginate Requests
+  const totalRequestPages = Math.ceil(filteredRequests.length / itemsPerPage) || 1;
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -348,10 +402,13 @@ export const ManajemenPengangkutan: React.FC = () => {
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs with Badge */}
       <div className="flex gap-6 border-b border-gray-100 pb-px">
         <button
-          onClick={() => setActiveTab("tasks")}
+          onClick={() => {
+            setActiveTab("tasks");
+            setCurrentPage(1);
+          }}
           className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
             activeTab === "tasks" ? "border-primary text-primary" : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
@@ -359,56 +416,101 @@ export const ManajemenPengangkutan: React.FC = () => {
           Tugas Pengangkutan
         </button>
         <button
-          onClick={() => setActiveTab("requests")}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === "requests" ? "border-primary text-primary" : "border-transparent text-gray-400 hover:text-gray-600"
+          onClick={() => {
+            setActiveTab("requests");
+            setCurrentPage(1);
+          }}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === "requests" ? "border-primary text-primary font-bold" : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
-          Permintaan Pengosongan Warga
+          <span>Permintaan Pengosongan Warga</span>
+          {pendingRequestsCount > 0 && (
+            <span className="px-2 py-0.5 text-[11px] font-extrabold bg-rose-500 text-white rounded-full shadow-xs animate-pulse">
+              {pendingRequestsCount}
+            </span>
+          )}
         </button>
       </div>
 
       {activeTab === "tasks" ? (
         <>
-          {/* Filter Section */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-              <Truck size={14} />
-              <span>Filter Status & Wilayah:</span>
+          {/* Filter & Search Bar Section */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <Truck size={14} />
+                <span>Filter Status & Wilayah:</span>
+              </div>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[150px]"
+              >
+                <option value="">Semua Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="CLAIMED">Diklaim</option>
+                <option value="COMPLETED">Selesai</option>
+                <option value="ESCALATED">Eskalasi</option>
+              </select>
+
+              {!(user?.peran === "RW" || user?.peran === "RT") && (
+                <select
+                  value={rwFilter}
+                  onChange={(e) => {
+                    setRwFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[200px]"
+                >
+                  <option value="">Semua RW</option>
+                  {areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} (Kel. {a.kelurahan?.name})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[150px]"
-            >
-              <option value="">Semua Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="CLAIMED">Diklaim</option>
-              <option value="COMPLETED">Selesai</option>
-              <option value="ESCALATED">Eskalasi</option>
-            </select>
-
-            {!(user?.peran === "RW" || user?.peran === "RT") && (
-              <select
-                value={rwFilter}
-                onChange={(e) => setRwFilter(e.target.value)}
-                className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[200px]"
-              >
-                <option value="">Semua RW</option>
-                {areas.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} (Kel. {a.kelurahan?.name})
-                  </option>
-                ))}
-              </select>
-            )}
+            {/* Search Input */}
+            <div className="relative min-w-[260px] flex-1 max-w-md">
+              <input
+                type="text"
+                placeholder="Cari ID Tugas, Kode QR, RW, atau Petugas..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full rounded-xl border border-gray-200 pl-9 pr-8 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
+              />
+              <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Table Section */}
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="mb-4">
+            <div className="mb-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-800">Daftar Penugasan Pengangkutan</h2>
+              <span className="text-xs font-semibold text-gray-400">
+                Total: {filteredTasks.length} penugasan
+              </span>
             </div>
 
             {loading ? (
@@ -416,96 +518,282 @@ export const ManajemenPengangkutan: React.FC = () => {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 <p className="text-xs">Memuat tugas...</p>
               </div>
-            ) : tasks.length === 0 ? (
+            ) : filteredTasks.length === 0 ? (
               <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
                 <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm font-medium">Belum ada tugas pengangkutan sampah.</p>
+                <p className="text-sm font-medium">
+                  {searchQuery ? "Tidak ada tugas yang sesuai pencarian." : "Belum ada tugas pengangkutan sampah."}
+                </p>
               </div>
             ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
+                    <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      <tr>
+                        <th className="px-6 py-3.5">ID Tugas</th>
+                        <th className="px-6 py-3.5">Tempat Sampah</th>
+                        <th className="px-6 py-3.5">Wilayah RW</th>
+                        <th className="px-6 py-3.5">Petugas Penjemput</th>
+                        <th className="px-6 py-3.5 text-center">Status</th>
+                        <th className="px-6 py-3.5">Tanggal Tugas</th>
+                        <th className="px-6 py-3.5 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paginatedTasks.map((task) => (
+                        <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4 font-mono font-bold text-gray-700 align-middle">
+                            {task.id.slice(0, 8).toUpperCase()}
+                          </td>
+                          <td className="px-6 py-4 align-middle">
+                            <div className="font-bold text-gray-800">{task.bin.qrCode}</div>
+                            <div className="text-[10px] text-gray-400 font-mono">ID: {task.binId}</div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 align-middle">
+                            {task.bin.rtRw?.name || "-"} (Kel. {task.bin.rtRw?.kelurahan?.name || "-"})
+                          </td>
+                          <td className="px-6 py-4 align-middle font-medium text-gray-700">
+                            {task.claimedByUser ? (
+                              <div className="flex items-center gap-1.5">
+                                <UserCheck className="w-4 h-4 text-primary" />
+                                <span>{task.claimedByUser.name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400 font-bold italic">Belum Diklaim</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-center align-middle">
+                            {getStatusBadge(task.status)}
+                          </td>
+                          <td className="px-6 py-4 text-gray-500 align-middle whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <Calendar size={13} />
+                              <span>
+                                {new Date(task.createdAt).toLocaleDateString("id-ID", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
+                            <div className="inline-flex gap-2 justify-center">
+                              {isPetugas && task.status === "PENDING" && (
+                                <button
+                                  onClick={() => handleClaim(task.id)}
+                                  className="bg-primary hover:bg-primary/95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1"
+                                >
+                                  <CheckCircle size={13} />
+                                  Klaim
+                                </button>
+                              )}
+
+                              {!isReadOnly && !isPetugas && (
+                                <>
+                                  <button
+                                    onClick={() => openEditModal(task)}
+                                    className="p-2 bg-slate-100 hover:bg-primary/20 text-primary rounded-lg transition-colors cursor-pointer"
+                                    title="Edit"
+                                  >
+                                    <Pencil size={15} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(task.id)}
+                                    className="p-2 bg-slate-100 hover:bg-error/20 text-error rounded-lg transition-colors cursor-pointer"
+                                    title="Hapus/Batalkan"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                </>
+                              )}
+
+                              {isReadOnly && (
+                                <span className="text-xs text-gray-400">-</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {filteredTasks.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+                    <div>
+                      Menampilkan{" "}
+                      <span className="font-bold text-gray-800">
+                        {(currentPage - 1) * itemsPerPage + 1}
+                      </span>{" "}
+                      -{" "}
+                      <span className="font-bold text-gray-800">
+                        {Math.min(currentPage * itemsPerPage, filteredTasks.length)}
+                      </span>{" "}
+                      dari <span className="font-bold text-gray-800">{filteredTasks.length}</span> data
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        ‹ Sebelumnya
+                      </button>
+                      <span className="px-3 py-1.5 font-bold text-gray-700 bg-gray-100 rounded-lg">
+                        Halaman {currentPage} dari {totalTaskPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalTaskPages))}
+                        disabled={currentPage === totalTaskPages}
+                        className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Berikutnya ›
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Requests Section */
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">Daftar Pengajuan Pengosongan Tong Warga</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Permintaan pengosongan yang dikirim langsung dari gawai warga.</p>
+            </div>
+
+            {/* Search Input for Requests */}
+            <div className="relative min-w-[240px] max-w-xs">
+              <input
+                type="text"
+                placeholder="Cari Warga, Kode QR, atau Status..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full rounded-xl border border-gray-200 pl-9 pr-8 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
+              />
+              <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loadingRequests ? (
+            <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <p className="text-xs">Memuat pengajuan...</p>
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
+              <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm font-medium">
+                {searchQuery ? "Tidak ada pengajuan yang sesuai pencarian." : "Belum ada pengajuan pengosongan tong dari warga."}
+              </p>
+            </div>
+          ) : (
+            <>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
                   <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-3.5">ID Tugas</th>
-                      <th className="px-6 py-3.5">Tempat Sampah</th>
-                      <th className="px-6 py-3.5">Wilayah RW</th>
-                      <th className="px-6 py-3.5">Petugas Penjemput</th>
+                      <th className="px-6 py-3.5">Nama Warga</th>
+                      <th className="px-6 py-3.5">Alamat / RT / RW</th>
+                      <th className="px-6 py-3.5">Tanggal Request</th>
                       <th className="px-6 py-3.5 text-center">Status</th>
-                      <th className="px-6 py-3.5">Tanggal Tugas</th>
+                      <th className="px-6 py-3.5 text-center">Foto Bukti</th>
                       <th className="px-6 py-3.5 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {tasks.map((task) => (
-                      <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-gray-700 align-middle">
-                          {task.id.slice(0, 8).toUpperCase()}
-                        </td>
+                    {paginatedRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 align-middle">
-                          <div className="font-bold text-gray-800">{task.bin.qrCode}</div>
-                          <div className="text-[10px] text-gray-400 font-mono">ID: {task.binId}</div>
+                          <div className="font-bold text-gray-800">{req.user.name}</div>
+                          <div className="text-[10px] text-gray-400">{req.user.email}</div>
                         </td>
-                        <td className="px-6 py-4 text-gray-600 align-middle">
-                          {task.bin.rtRw?.name || "-"} (Kel. {task.bin.rtRw?.kelurahan?.name || "-"})
+                        <td className="px-6 py-4 align-middle text-gray-600">
+                          {req.bin.rtRw?.name || "Wilayah Umum"} {req.bin.rtRw?.kelurahan?.name ? `(Kel. ${req.bin.rtRw.kelurahan.name})` : ""}
                         </td>
-                        <td className="px-6 py-4 align-middle font-medium text-gray-700">
-                          {task.claimedByUser ? (
-                            <div className="flex items-center gap-1.5">
-                              <UserCheck className="w-4 h-4 text-primary" />
-                              <span>{task.claimedByUser.name}</span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400 font-bold italic">Belum Diklaim</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center align-middle">
-                          {getStatusBadge(task.status)}
-                        </td>
-                        <td className="px-6 py-4 text-gray-500 align-middle whitespace-nowrap">
+                        <td className="px-6 py-4 align-middle text-gray-500 whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             <Calendar size={13} />
                             <span>
-                              {new Date(task.createdAt).toLocaleDateString("id-ID", {
+                              {new Date(req.createdAt).toLocaleDateString("id-ID", {
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
                               })}
                             </span>
                           </div>
                         </td>
+                        <td className="px-6 py-4 text-center align-middle">
+                          {getRequestStatusBadge(req.status)}
+                        </td>
+                        <td className="px-6 py-4 text-center align-middle">
+                          <button
+                            onClick={() => setEvidenceModalUrl(req.evidencePhotoUrl)}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                          >
+                            Lihat Foto
+                          </button>
+                        </td>
                         <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
                           <div className="inline-flex gap-2 justify-center">
-                            {isPetugas && task.status === "PENDING" && (
-                              <button
-                                onClick={() => handleClaim(task.id)}
-                                className="bg-primary hover:bg-primary/95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1"
-                              >
-                                <CheckCircle size={13} />
-                                Klaim
-                              </button>
-                            )}
-
-                            {!isReadOnly && !isPetugas && (
+                            <button
+                              onClick={() => setSelectedRequestForReview(req)}
+                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                            >
+                              <ShieldAlert size={14} />
+                              Tinjau Pengajuan
+                            </button>
+                            {req.status === "PENDING" && (
                               <>
                                 <button
-                                  onClick={() => openEditModal(task)}
-                                  className="p-2 bg-slate-100 hover:bg-primary/20 text-primary rounded-lg transition-colors cursor-pointer"
-                                  title="Edit"
+                                  onClick={() => handleUpdateRequestStatus(req.id, "ON_PROGRESS")}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                                 >
-                                  <Pencil size={15} />
+                                  Terima & Tugaskan
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(task.id)}
-                                  className="p-2 bg-slate-100 hover:bg-error/20 text-error rounded-lg transition-colors cursor-pointer"
-                                  title="Hapus/Batalkan"
+                                  onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
+                                  className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                                 >
-                                  <Trash2 size={15} />
+                                  Tolak
                                 </button>
                               </>
                             )}
-
-                            {isReadOnly && (
-                              <span className="text-xs text-gray-400">-</span>
+                            {req.status === "ON_PROGRESS" && (
+                              <button
+                                onClick={() => handleApproveRequest(req.id)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                              >
+                                Tandai Selesai
+                              </button>
+                            )}
+                            {(req.status === "COMPLETED" || req.status === "APPROVED") && (
+                              <span className="text-xs text-emerald-600 font-bold">Selesai</span>
+                            )}
+                            {req.status === "REJECTED" && (
+                              <span className="text-xs text-rose-600 font-bold">Ditolak</span>
                             )}
                           </div>
                         </td>
@@ -514,120 +802,43 @@ export const ManajemenPengangkutan: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        </>
-      ) : (
-        /* Requests Section */
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-gray-800">Daftar Pengajuan Pengosongan Tong Warga</h2>
-          </div>
 
-          {loadingRequests ? (
-            <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <p className="text-xs">Memuat pengajuan...</p>
-            </div>
-          ) : requests.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
-              <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-medium">Belum ada pengajuan pengosongan tong dari warga.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
-                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-3.5">Nama Warga</th>
-                    <th className="px-6 py-3.5">Alamat / RT / RW</th>
-                    <th className="px-6 py-3.5">Tanggal Request</th>
-                    <th className="px-6 py-3.5 text-center">Status</th>
-                    <th className="px-6 py-3.5 text-center">Foto Bukti</th>
-                    <th className="px-6 py-3.5 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {requests.map((req) => (
-                    <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 align-middle">
-                        <div className="font-bold text-gray-800">{req.user.name}</div>
-                        <div className="text-[10px] text-gray-400">{req.user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 align-middle text-gray-600">
-                        {req.bin.rtRw?.name || "Wilayah Umum"} {req.bin.rtRw?.kelurahan?.name ? `(Kel. ${req.bin.rtRw.kelurahan.name})` : ""}
-                      </td>
-                      <td className="px-6 py-4 align-middle text-gray-500 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <Calendar size={13} />
-                          <span>
-                            {new Date(req.createdAt).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center align-middle">
-                        {getRequestStatusBadge(req.status)}
-                      </td>
-                      <td className="px-6 py-4 text-center align-middle">
-                        <button
-                          onClick={() => setEvidenceModalUrl(req.evidencePhotoUrl)}
-                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                        >
-                          Lihat Foto
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
-                        <div className="inline-flex gap-2 justify-center">
-                          <button
-                            onClick={() => setSelectedRequestForReview(req)}
-                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-                          >
-                            <ShieldAlert size={14} />
-                            Tinjau Pengajuan
-                          </button>
-                          {req.status === "PENDING" && (
-                            <>
-                              <button
-                                onClick={() => handleUpdateRequestStatus(req.id, "ON_PROGRESS")}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                              >
-                                Terima & Tugaskan
-                              </button>
-                              <button
-                                onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
-                                className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                              >
-                                Tolak
-                              </button>
-                            </>
-                          )}
-                          {req.status === "ON_PROGRESS" && (
-                            <button
-                              onClick={() => handleApproveRequest(req.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                            >
-                              Tandai Selesai
-                            </button>
-                          )}
-                          {(req.status === "COMPLETED" || req.status === "APPROVED") && (
-                            <span className="text-xs text-emerald-600 font-bold">Selesai</span>
-                          )}
-                          {req.status === "REJECTED" && (
-                            <span className="text-xs text-rose-600 font-bold">Ditolak</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              {/* Requests Pagination Controls */}
+              {filteredRequests.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+                  <div>
+                    Menampilkan{" "}
+                    <span className="font-bold text-gray-800">
+                      {(currentPage - 1) * itemsPerPage + 1}
+                    </span>{" "}
+                    -{" "}
+                    <span className="font-bold text-gray-800">
+                      {Math.min(currentPage * itemsPerPage, filteredRequests.length)}
+                    </span>{" "}
+                    dari <span className="font-bold text-gray-800">{filteredRequests.length}</span> data
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      ‹ Sebelumnya
+                    </button>
+                    <span className="px-3 py-1.5 font-bold text-gray-700 bg-gray-100 rounded-lg">
+                      Halaman {currentPage} dari {totalRequestPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalRequestPages))}
+                      disabled={currentPage === totalRequestPages}
+                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      Berikutnya ›
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
