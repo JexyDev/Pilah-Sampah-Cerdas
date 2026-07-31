@@ -26,9 +26,11 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   }
 
   List<WargaDampingan> _filteredList(List<WargaDampingan> list) {
-    if (_searchQuery.isEmpty) return list;
+    // 1. Khusus Daftar Warga Dampingan: Hanya tampilkan Warga yang SUDAH DIBANTU AKTIVASI
+    final activatedOnly = list.where((w) => w.isActivated == true).toList();
+    if (_searchQuery.isEmpty) return activatedOnly;
     final query = _searchQuery.toLowerCase();
-    return list
+    return activatedOnly
         .where((w) =>
             w.wargaName.toLowerCase().contains(query) ||
             w.address.toLowerCase().contains(query))
@@ -38,6 +40,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
+    final activatedOnlyList = state.wargaList.where((w) => w.isActivated == true).toList();
     final filtered = _filteredList(state.wargaList);
 
     return Scaffold(
@@ -47,7 +50,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Warga Dampingan (${state.wargaList.length})',
+          'Warga Dampingan (${activatedOnlyList.length})',
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
