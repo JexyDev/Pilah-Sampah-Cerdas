@@ -102,22 +102,25 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<List<dynamic>> getWargaForAktivasi({String? kelurahan, String? rtRw, String? search}) async {
-    final Map<String, dynamic> queryParams = {};
-    if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
-    if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
-    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+    try {
+      final Map<String, dynamic> queryParams = {};
+      if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
+      if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
-    final response = await apiClient.dio.get('/kkn/warga', queryParameters: queryParams);
-    
-    if (response.statusCode == 200) {
-      if (response.data is Map<String, dynamic>) {
-        return (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
-      } else {
-        // Jika server mengembalikan String (misal HTML 404 tapi status 200)
-        throw Exception("Server merespons dengan format yang tidak valid (Bukan JSON).");
+      final response = await apiClient.dio.get('/kkn/warga', queryParameters: queryParams);
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map<String, dynamic>) {
+          return (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+        } else if (response.data is List) {
+          return response.data as List<dynamic>;
+        }
       }
+      return [];
+    } catch (_) {
+      return [];
     }
-    throw Exception('Gagal memuat data warga');
   }
 
   @override

@@ -118,14 +118,83 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   }
 
                   if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Aktivasi 2 Tempat Sampah untuk $wargaName Berhasil!'),
-                        backgroundColor: AppColors.primaryGreen,
-                        duration: const Duration(seconds: 3),
+                    // Invalidate state agar Warga & Tempat Sampah langsung ter-update di Mahasiswa dan Warga
+                    ref.invalidate(mahasiswaControllerProvider);
+                    ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+                    ref.read(aktivasiWargaProvider.notifier).fetchWarga();
+
+                    // Tampilkan Success Modal Dialog Pop-up
+                    await showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (modalCtx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        contentPadding: const EdgeInsets.all(24),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.primaryGreen,
+                                size: 56,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Aktivasi Berhasil!',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Berhasil mengaktifkan tempat sampah milik $wargaName!\n\nWarga kini resmi terdaftar di daftar Warga Dampingan Anda.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(modalCtx);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: const Text(
+                                  'Selesai',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
-                    Navigator.pop(context);
+
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
                     return true;
                   } else if (mounted) {
                     final err = ref.read(aktivasiWargaProvider).errorMessage ?? 'Gagal mengaktivasi tempat sampah.';
