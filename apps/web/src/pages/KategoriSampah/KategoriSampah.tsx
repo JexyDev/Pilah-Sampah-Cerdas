@@ -93,15 +93,57 @@ const KategoriSampah: React.FC = () => {
     }
   };
 
-  const getCategoryIllustration = (name: string) => {
-    const nameLower = name.toLowerCase();
+  const getCategoryIllustration = (cat: any) => {
+    if (cat?.imageUrl) {
+      if (cat.imageUrl.startsWith("/uploads")) {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+        const host = baseUrl.replace("/api/v1", "");
+        return `${host}${cat.imageUrl}`;
+      }
+      return cat.imageUrl;
+    }
+
+    const nameLower = (cat?.name || "").toLowerCase();
+    
+    // Check ANORGANIK / NON first, because "anorganik" contains "organik"
+    if (
+      nameLower.includes("anorganik") ||
+      nameLower.includes("inorganic") ||
+      nameLower.includes("non")
+    ) {
+      return "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=600";
+    }
     if (nameLower.includes("organik") || nameLower.includes("organic")) {
-      return "https://images.unsplash.com/photo-1595278069441-2cf29f8db058?auto=format&fit=crop&q=80&w=400";
+      return "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=600";
     }
-    if (nameLower.includes("anorganik") || nameLower.includes("inorganic") || nameLower.includes("non")) {
-      return "https://images.unsplash.com/photo-1605600611281-9b1b702ec945?auto=format&fit=crop&q=80&w=400";
+    if (nameLower.includes("residu") || nameLower.includes("hazard") || nameLower.includes("b3")) {
+      return "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=600";
     }
-    return "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400";
+    return "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=600";
+  };
+
+  const handleImageError = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
+    name: string
+  ) => {
+    const nameLower = (name || "").toLowerCase();
+    let bgStart = "#10b981";
+    let bgEnd = "#059669";
+    let label = "🍃 ORGANIK";
+
+    if (nameLower.includes("anorganik") || nameLower.includes("non")) {
+      bgStart = "#3b82f6";
+      bgEnd = "#1d4ed8";
+      label = "🥤 ANORGANIK";
+    } else if (nameLower.includes("residu") || nameLower.includes("b3")) {
+      bgStart = "#ef4444";
+      bgEnd = "#b91c1c";
+      label = "⚠️ RESIDU / B3";
+    }
+
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" fill="url(#grad)"/><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${bgStart};stop-opacity:1" /><stop offset="100%" style="stop-color:${bgEnd};stop-opacity:1" /></linearGradient></defs><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="22" font-weight="bold">${label}</text></svg>`;
+
+    e.currentTarget.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
   };
 
   return (
@@ -149,8 +191,9 @@ const KategoriSampah: React.FC = () => {
               {/* Illustration Photo */}
               <div className="h-44 w-full relative overflow-hidden bg-slate-100">
                 <img
-                  src={getCategoryIllustration(cat.name)}
+                  src={getCategoryIllustration(cat)}
                   alt={cat.name}
+                  onError={(e) => handleImageError(e, cat.name)}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <span className="absolute top-3 right-3 bg-primary text-white font-bold text-xs px-2.5 py-1 rounded-full shadow">
