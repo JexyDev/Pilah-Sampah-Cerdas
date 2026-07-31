@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/values/app_colors.dart';
 import '../../data/models/bin_entity.dart';
+import '../../data/models/user_entity.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../data/providers/repository_providers.dart';
 
@@ -99,22 +100,45 @@ class _PetaMonitoringViewState extends ConsumerState<PetaMonitoringView> {
               const SizedBox(height: 10),
               Text('Kapasitas: ${(bin.capacityPercent * 100).toStringAsFixed(1)}%'),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Permintaan kosongkan tong ${bin.qrSerial} terkirim.'),
-                      backgroundColor: AppColors.primaryGreen,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  minimumSize: const Size(double.infinity, 50),
+              if (ref.watch(authProvider).user?.role == UserRole.petugasResidu) ...[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Permintaan kosongkan tong ${bin.qrSerial} terkirim.'),
+                        backgroundColor: AppColors.primaryGreen,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text('KOSONGKAN TONG'),
                 ),
-                child: const Text('KOSONGKAN TONG'),
-              )
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Mode Monitoring: Hanya Petugas Residu yang berhak melakukan reset tong.',
+                          style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         );

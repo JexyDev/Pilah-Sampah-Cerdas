@@ -472,46 +472,41 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     final role = user?.role ?? UserRole.warga;
 
     if (role == UserRole.mahasiswaKkn) {
-      // Mahasiswa KKN Quick Actions
+      // Mahasiswa KKN Quick Actions (Harmonized with Warga style)
       return Row(
         children: [
           Expanded(
             child: GestureDetector(
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryBlue, Color(0xFF2196F3)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppColors.primaryGreen,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     )
                   ],
                 ),
                 child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.sensors_rounded,
                       color: Colors.white,
-                      size: 30,
+                      size: 28,
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Aktivasi Tempat Sampah',
+                      'Aktivasi Sampah',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -523,39 +518,28 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             child: GestureDetector(
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.kknAttendance),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryGreen, Color(0xFF66BB6A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
+                  border: Border.all(color: AppColors.primaryGreen, width: 1.5),
                 ),
                 child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.location_on_rounded,
-                      color: Colors.white,
-                      size: 30,
+                      color: AppColors.primaryGreen,
+                      size: 28,
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Absen Radius',
+                      'Presensi KKN',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
+                        color: AppColors.primaryGreen,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
