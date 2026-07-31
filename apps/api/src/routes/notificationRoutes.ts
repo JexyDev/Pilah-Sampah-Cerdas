@@ -104,9 +104,12 @@ router.get("/", authMiddleware, async (req, res) => {
     ].includes(role);
 
     if (isAdminOrPetugas) {
-      // 1. Fetch real BinResetRequests from database
+      // 1. Fetch real PENDING BinResetRequests from database
       try {
         const requests = await prisma.binResetRequest.findMany({
+          where: {
+            status: "PENDING",
+          },
           include: {
             bin: {
               include: {

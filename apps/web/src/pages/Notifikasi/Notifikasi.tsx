@@ -854,6 +854,7 @@ const Notifikasi: React.FC = () => {
       try {
         await api.put(`/bins/reset-request/${requestId}/review`, { status: "APPROVED" });
         toast.success("Pengajuan disetujui! Kapasitas tong berhasil direset.");
+        setNotifications((prev) => prev.filter((n) => n.id !== selectedNotif.id));
         setSelectedNotif(null);
       } catch (err: any) {
         console.error(err);
@@ -861,6 +862,7 @@ const Notifikasi: React.FC = () => {
       }
     } else {
       toast.success("Pengajuan disetujui! Kapasitas tong berhasil direset.");
+      setNotifications((prev) => prev.filter((n) => n.id !== selectedNotif.id));
       setSelectedNotif(null);
     }
   };
@@ -874,6 +876,7 @@ const Notifikasi: React.FC = () => {
       try {
         await api.put(`/bins/reset-request/${requestId}/review`, { status: "REJECTED" });
         toast.error("Pengajuan ditolak.");
+        setNotifications((prev) => prev.filter((n) => n.id !== selectedNotif.id));
         setSelectedNotif(null);
       } catch (err: any) {
         console.error(err);
@@ -881,6 +884,7 @@ const Notifikasi: React.FC = () => {
       }
     } else {
       toast.error("Pengajuan ditolak.");
+      setNotifications((prev) => prev.filter((n) => n.id !== selectedNotif.id));
       setSelectedNotif(null);
     }
   };
