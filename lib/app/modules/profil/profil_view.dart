@@ -8,6 +8,7 @@ import '../../data/models/bin_entity.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../core/values/app_config.dart';
 import '../scan/controllers/scan_controller.dart';
+import '../mahasiswa/controllers/mahasiswa_controller.dart';
 import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
@@ -168,7 +169,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      user?.rtRw ?? 'RT 04 / RW 02',
+                      user?.role == UserRole.mahasiswaKkn
+                          ? 'Mahasiswa KKN'
+                          : (user?.rtRw ?? 'RT 04 / RW 02'),
                       style: const TextStyle(
                         color: AppColors.primaryGreen,
                         fontSize: 12,
@@ -223,22 +226,50 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           user?.role.displayName ?? '-',
                         ),
                         _divider(),
-                        _InfoTile(
-                          Icons.location_on_outlined,
-                          'Kelurahan',
-                          user?.kelurahan != null && user!.kelurahan.isNotEmpty
-                              ? 'Kel. ${user.kelurahan}'
-                              : 'Belum diatur',
-                        ),
-                        _divider(),
-                        _InfoTile(
-                          Icons.home_work_outlined,
-                          'RT / RW',
-                          user?.rtRw != null && user!.rtRw.isNotEmpty
-                              ? user.rtRw
-                              : 'Belum diatur',
-                        ),
-                        _divider(),
+                        if (user?.role == UserRole.mahasiswaKkn) ...[
+                          _InfoTile(
+                            Icons.school_outlined,
+                            'NIM / Universitas',
+                            (ref.watch(mahasiswaControllerProvider).dashboard?.nim.isNotEmpty == true)
+                                ? 'NIM: ${ref.watch(mahasiswaControllerProvider).dashboard!.nim}'
+                                : 'NIM: 136467959797',
+                            bold: true,
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.account_balance_outlined,
+                            'Jurusan / Prodi',
+                            (ref.watch(mahasiswaControllerProvider).dashboard?.jurusan.isNotEmpty == true)
+                                ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
+                                : 'Elektro',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.location_on_outlined,
+                            'Wilayah / Posko KKN',
+                            (user?.kelurahan != null && user!.kelurahan.isNotEmpty)
+                                ? 'Kel. ${user.kelurahan}'
+                                : 'Bojongsoang, Kab. Bandung',
+                          ),
+                          _divider(),
+                        ] else ...[
+                          _InfoTile(
+                            Icons.location_on_outlined,
+                            'Kelurahan',
+                            user?.kelurahan != null && user!.kelurahan.isNotEmpty
+                                ? 'Kel. ${user.kelurahan}'
+                                : 'Belum diatur',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.home_work_outlined,
+                            'RT / RW',
+                            user?.rtRw != null && user!.rtRw.isNotEmpty
+                                ? user.rtRw
+                                : 'Belum diatur',
+                          ),
+                          _divider(),
+                        ],
                         _InfoTile(
                           Icons.badge_outlined,
                           'ID Akun',

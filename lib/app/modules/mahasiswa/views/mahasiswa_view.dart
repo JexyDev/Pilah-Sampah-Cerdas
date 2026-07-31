@@ -168,7 +168,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   Widget _buildLocationStatus(LocationPingState locationState) {
     // In actual implementation, isOn could represent if the student is currently
     // within the KKN geofence radius.
-    final isOn = locationState.isTracking;
+    final bool isGpsOk = locationState.gpsEnabled && locationState.permissionGranted && locationState.errorMessage == null;
+    final bool isOn = locationState.isTracking && isGpsOk;
     final lastPing = locationState.lastPingTime;
 
     return Container(
@@ -210,7 +211,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOn ? 'Status: ABSEN AKTIF' : 'Status: NON-AKTIF',
+                  isOn ? 'Status: ABSEN AKTIF' : 'Status: DI LUAR ZONA KKN',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -221,7 +222,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 Text(
                   isOn 
                       ? 'Anda terdeteksi berada di dalam zona KKN.' 
-                      : 'Di luar wilayah KKN atau mencari sinyal GPS.',
+                      : 'Anda berada di luar radius lokasi KKN. Absen tidak terhitung.',
                   style: TextStyle(
                     fontSize: 11,
                     color: isOn ? AppColors.successDark : AppColors.dangerRed,
