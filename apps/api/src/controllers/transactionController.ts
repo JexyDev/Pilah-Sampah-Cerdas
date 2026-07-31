@@ -38,16 +38,30 @@ export const transactionController = {
       const userId = req.user!.userId;
       const deposits = await transactionService.getMyDeposits(userId);
 
-      const mappedDeposits = deposits.map((d: any) => ({
-        id: d.id,
-        jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        berat: Number(d.berat),
-        volume: "-",
-        poin: Number(d.poin),
-        waktu: d.createdAt,
-        status: "Selesai",
-        lokasi: `Tempat Sampah: ${d.bin?.qrCode}`,
-      }));
+      const mappedDeposits = deposits.map((d: any) => {
+        const poinVal = Number(d.poin || 0);
+        const areaName = d.bin?.rtRw?.name || "";
+        const kelName = d.bin?.rtRw?.kelurahan?.name || "";
+        const binCode = d.bin?.qrCode || "BIN";
+        const addr = d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
+
+        return {
+          id: d.id,
+          jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          berat: Number(d.berat || 0),
+          volume: Number(d.volumeEstimate || 0),
+          poin: poinVal,
+          pointsAwarded: poinVal,
+          waktu: d.createdAt,
+          createdAt: d.createdAt,
+          status: "Selesai",
+          lokasi: addr,
+          address: addr,
+          rtRw: areaName || null,
+          kelurahan: kelName || areaName || null,
+          binQrCode: binCode,
+        };
+      });
 
       res.status(200).json({ success: true, data: mappedDeposits });
     } catch (error) {

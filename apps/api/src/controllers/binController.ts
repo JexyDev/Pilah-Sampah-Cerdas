@@ -7,8 +7,11 @@
 
 import { Request, Response } from "express";
 import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
 import { binService } from "../services/binService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
+
+const prisma = new PrismaClient();
 
 const scanSchema = z.object({
   qrCode: z.string().min(1, "QR Code diperlukan"),
@@ -18,6 +21,7 @@ const scanSchema = z.object({
   userLat: z.number().min(-90).max(90),
   userLng: z.number().min(-180).max(180),
   aiConfidence: z.number().optional(),
+  confidence: z.number().optional(),
   evidencePhotoUrl: z.string().optional(),
   detections: z
     .array(
@@ -206,9 +210,12 @@ export class BinController {
         userLat,
         userLng,
         aiConfidence,
+        confidence,
         evidencePhotoUrl,
         detections,
       } = parsed.data as any;
+
+      const finalConfidence = confidence ?? aiConfidence;
 
       const result = await binService.processScan(
         qrCode,
@@ -218,7 +225,7 @@ export class BinController {
         estimatedVolume,
         userLat,
         userLng,
-        aiConfidence,
+        finalConfidence,
         evidencePhotoUrl,
         detections
       );
@@ -253,11 +260,13 @@ export class BinController {
           error: "BIN_TYPE_MISMATCH",
           message: `Tong tidak sesuai! Anda memasukkan sampah ke tong khusus ${error.binType}.`,
         });
-      } else if (error.message === "BIN_OVERFLOW") {
+      } else if (error.message === "BIN_OVERFLOW" || error.message === "BIN_FULL") {
         res.status(400).json({
-          error: "BIN_OVERFLOW",
+          success: false,
+          code: "BIN_FULL",
+          error: "BIN_FULL",
           message:
-            "Tong penuh! Penyimpanan ditolak karena sisa kapasitas tong tidak mencukupi (Kapasitas Maks: 25 Liter).",
+            "Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan. Silakan gunakan QR Tong Sampah milik Anda yang lain atau ajukan Pengosongan Tong.",
         });
       } else {
         console.error("Bin Scan Error:", error);
@@ -436,6 +445,36 @@ export class BinController {
         error: "INTERNAL_SERVER_ERROR",
         message: "Gagal mengambil data status tempat sampah Anda",
       });
+    }
+  }
+
+  /**
+   * Get reset request status for user (Mobile)
+   */
+  async getResetRequestStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const requests = await prisma.binResetRequest.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        include: { bin: true },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: requests.map((r: any) => ({
+          id: r.id,
+          binId: r.binId,
+          qrCode: r.bin.qrCode,
+          status: r.status,
+          evidencePhotoUrl: r.evidencePhotoUrl,
+          createdAt: r.createdAt,
+          resetRequestStatus: r.status,
+        })),
+      });
+    } catch (error) {
+      console.error("[BinController] getResetRequestStatus error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status pengajuan" });
     }
   }
 

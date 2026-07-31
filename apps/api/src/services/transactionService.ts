@@ -39,7 +39,11 @@ export class TransactionService {
       include: {
         bin: {
           include: {
-            rtRw: true,
+            rtRw: {
+              include: {
+                kelurahan: true,
+              },
+            },
           },
         },
       },

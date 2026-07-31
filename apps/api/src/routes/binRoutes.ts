@@ -212,6 +212,8 @@ router.post(
   binController.emptyBin
 );
 
+router.get("/reset-request/status", authMiddleware, binController.getResetRequestStatus);
+router.get("/reset/my-requests", authMiddleware, binController.getResetRequestStatus);
 router.post(
   "/reset-request",
   authMiddleware,

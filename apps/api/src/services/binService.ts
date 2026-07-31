@@ -182,9 +182,9 @@ export class BinService {
         const max = Number(targetBin.maxCapacityLiter);
         const vol = det.volumeEstimate;
 
-        if (current + vol > max) {
+        if (current >= max || current >= 25 || current + vol > max) {
           await binRepository.createOverflowNotification(userId, targetBin.qrCode).catch(() => {});
-          throw new Error("BIN_OVERFLOW");
+          throw new Error("BIN_FULL");
         }
 
         const newVolume = current + vol;
@@ -373,10 +373,10 @@ export class BinService {
     const current = Number(bin.currentVolumeLiter);
     const max = Number(bin.maxCapacityLiter);
 
-    if (current + estimatedVolume > max) {
+    if (current >= max || current >= 25 || current + estimatedVolume > max) {
       // Create user notification for overflow async
       await binRepository.createOverflowNotification(userId, bin.qrCode).catch(() => {});
-      throw new Error("BIN_OVERFLOW");
+      throw new Error("BIN_FULL");
     }
 
     // 5. Update Bin current volume
@@ -805,6 +805,21 @@ export class BinService {
       },
     });
 
+    const pendingRequests = await prisma.binResetRequest.findMany({
+      where: {
+        binId: { in: binIds },
+        status: "PENDING",
+      },
+      select: {
+        binId: true,
+        status: true,
+      },
+    });
+    const pendingMap = new Map();
+    pendingRequests.forEach((req) => {
+      pendingMap.set(req.binId, req.status);
+    });
+
     const lastLogMap = new Map();
     lastLogs.forEach((log: any) => {
       lastLogMap.set(log.qrTempatSampahId, log._max.createdAt);
@@ -830,6 +845,8 @@ export class BinService {
         }
       }
 
+      const resetRequestStatus = pendingMap.get(bin.id) || null;
+
       return {
         id: bin.id,
         qrCode: bin.qrCode,
@@ -842,13 +859,17 @@ export class BinService {
         status:
           realStatus === "TIDAK_AKTIF"
             ? "TIDAK AKTIF"
-            : kapasitas >= 80
-              ? "Penuh"
-              : kapasitas > 50
-                ? "Sedang"
-                : "Normal",
+            : resetRequestStatus === "PENDING"
+              ? "Pending Pengosongan"
+              : kapasitas >= 80
+                ? "Penuh"
+                : kapasitas > 50
+                  ? "Sedang"
+                  : "Normal",
         householdName,
         realStatus,
+        resetRequestStatus,
+        isPendingReset: resetRequestStatus === "PENDING",
         isActive: realStatus === "ACTIVE_BOUND",
         latitude: bin.latitude ? Number(bin.latitude) : null,
         longitude: bin.longitude ? Number(bin.longitude) : null,
