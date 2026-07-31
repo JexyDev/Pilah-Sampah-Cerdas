@@ -168,16 +168,23 @@ router.get("/", authMiddleware, async (req, res) => {
           iconColor: "text-emerald-600",
         };
 
-        // 3. User direct DB notifications
+        // 3. User direct DB notifications (filtering out duplicate reset request logs covered by reqNotifications)
         let userNotifs: any[] = [];
         if (userId) {
           try {
             const dbNotifs = await prisma.notification.findMany({
               where: { userId },
               orderBy: { createdAt: "desc" },
-              take: 10,
+              take: 20,
             });
-            userNotifs = dbNotifs.map(mapNotification);
+            userNotifs = dbNotifs
+              .map(mapNotification)
+              .filter(
+                (n: any) =>
+                  !n.title?.includes("Pengajuan Pengosongan") &&
+                  !n.desc?.includes("[REQ-") &&
+                  !n.desc?.includes("mengajukan pengosongan tong")
+              );
           } catch (e) {
             // ignore
           }
