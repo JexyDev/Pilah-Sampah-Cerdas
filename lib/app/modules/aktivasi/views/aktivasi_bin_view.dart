@@ -391,8 +391,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         const SizedBox(height: 10),
         Text(
           _step == 1
-              ? 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda'
-              : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda',
+              ? (_hasAnorganic 
+                  ? 'Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda' 
+                  : 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda')
+              : (_hasOrganic 
+                  ? 'Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda' 
+                  : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda'),
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -524,10 +528,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           ),
         ),
         const SizedBox(height: 10),
-        const Center(
+        Center(
           child: Text(
-            'Gunakan kedua tempat sampah ini untuk mengumpulkan poin\nsampah rumah tangga Anda.',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty)
+                ? 'Gunakan kedua tempat sampah ini untuk mengumpulkan poin\nsampah rumah tangga Anda.'
+                : 'Gunakan tempat sampah ini untuk mengumpulkan poin\nsampah rumah tangga Anda.',
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ),

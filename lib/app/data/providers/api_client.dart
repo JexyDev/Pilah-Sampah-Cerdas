@@ -178,12 +178,13 @@ class ApiClient {
     // Navigate ke Login dan hapus semua rute sebelumnya
     final navState = navigatorKey.currentState;
     if (navState != null && navState.mounted) {
+      // Hapus snackbar yang mungkin muncul sebelum logout agar tidak nyangkut/ngespam
+      ScaffoldMessenger.of(navState.context).clearSnackBars();
+      
       navState.pushNamedAndRemoveUntil(
         AppRoutes.login,
         (_) => false,
       );
-
-      // SnackBar dihapus agar tidak ngespam saat token expired
     }
   }
 

@@ -82,7 +82,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       arguments: {
         'orgCapacity': orgCap,
         'anorgCapacity': anorgCap,
-        'hasOrganic': !_activateOrganic,
+        'hasOrganic': !_activateOrganic, // Ini berarti kebalikan dari yang diaktifkan, artinya = true jika tidak dicentang (karena sudah punya)
         'hasAnorganic': !_activateAnorganic,
       },
     );

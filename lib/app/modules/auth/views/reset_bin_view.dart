@@ -11,6 +11,7 @@ import '../../scan/controllers/scan_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/weight_text.dart';
+import '../../../data/services/notification_engine.dart';
 
 /// Halaman pengajuan pengosongan tempat sampah.
 /// Sesuai prd.md §3.1 dan ui_ux_flow.md §3: failed_scan_step_1.png
@@ -64,6 +65,17 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        ref.read(resetBinProvider.notifier).checkActiveRequest(user.id);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final resetState = ref.watch(resetBinProvider);
     final binsAsync = ref.watch(binsProvider);
@@ -87,18 +99,36 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           if (mounted) {
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
+            NotificationEngine().showResetPendingNotification();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sedang mengajukan riset Tong Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                backgroundColor: AppColors.warningYellow,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 4),
+              ),
+            );
           }
         });
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(title: const Text(AppStrings.resetTitle)),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.md),
-          child: _buildBody(resetState, binsAsync, userId),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          ref.invalidate(binsProvider);
+          ref.invalidate(notificationsProvider);
+          ref.read(resetBinProvider.notifier).reset();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(title: const Text(AppStrings.resetTitle)),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.md),
+            child: _buildBody(resetState, binsAsync, userId),
+          ),
         ),
       ),
     );
@@ -113,13 +143,12 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       return const AppLoading(message: 'Mengirim pengajuan...');
     }
 
-    if (resetState.isSuccess) {
+    if (resetState.isSuccess && resetState.result != null) {
       return _buildSuccess(context, ref, resetState.result!);
     }
 
     return binsAsync.when(
       data: (bins) {
-        // Tampilkan semua tempat sampah milik user (maks 25kg)
         return _buildForm(bins, userId);
       },
       loading: () => const AppLoading(),
@@ -129,8 +158,9 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
 
   Widget _buildForm(
     List<BinEntity> bins,
-    String userId,
-  ) {
+    String userId, {
+    bool isPending = false,
+  }) {
     if (bins.isEmpty) {
       return Center(
         child: Column(
@@ -152,11 +182,47 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       );
     }
 
-    // _selectedBinId setup is no longer needed because all bins are submitted.
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (isPending) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.warningYellow.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time_rounded, color: AppColors.warningYellow, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Status: PENDING (Sedang Diproses)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.warningYellow,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pengajuan pengosongan Anda sedang dalam antrean petugas. Anda tidak dapat mengajukan ulang hingga pengosongan disetujui.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
         Text('Status Tempat Sampah', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: AppDimensions.sm),
         Expanded(
@@ -248,70 +314,91 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         const SizedBox(height: AppDimensions.md),
         
         // Upload Bukti
-        if (_evidencePhotoPath != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.image_rounded, color: AppColors.primaryGreen),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Foto terpilih (${_compressedKB.toStringAsFixed(0)} KB)',
-                    style: const TextStyle(color: AppColors.primaryGreen, fontSize: 13),
+        if (!isPending) ...[
+          if (_evidencePhotoPath != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.image_rounded, color: AppColors.primaryGreen),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Foto terpilih (${_compressedKB.toStringAsFixed(0)} KB)',
+                      style: const TextStyle(color: AppColors.primaryGreen, fontSize: 13),
+                    ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_rounded, size: 20, color: AppColors.primaryGreen),
+                    onPressed: _pickImage,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: const Text('Upload Foto Bukti (< 5MB)'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit_rounded, size: 20, color: AppColors.primaryGreen),
-                  onPressed: _pickImage,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          )
-        else
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _pickImage,
-              icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Upload Foto Bukti (< 5MB)'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-          ),
-          
-        const SizedBox(height: AppDimensions.lg),
+            
+          const SizedBox(height: AppDimensions.lg),
+        ],
         
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: (_evidencePhotoPath != null)
+            onPressed: isPending
                 ? () {
-                    final binIds = bins.map((b) => b.id).toList();
-                    ref.read(resetBinProvider.notifier).submitReset(
-                          binIds: binIds,
-                          userId: userId,
-                          evidencePhotoPath: _evidencePhotoPath!,
-                        );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Sedang mengajukan riset Tong Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                        backgroundColor: AppColors.warningYellow,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
                   }
-                : null,
+                : (_evidencePhotoPath != null)
+                    ? () {
+                        final binIds = bins.map((b) => b.id).toList();
+                        ref.read(resetBinProvider.notifier).submitReset(
+                              binIds: binIds,
+                              userId: userId,
+                              evidencePhotoPath: _evidencePhotoPath!,
+                            );
+                      }
+                    : null,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppColors.primaryGreen,
+              backgroundColor: isPending ? AppColors.warningYellow : AppColors.primaryGreen,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Ajukan Pengosongan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            child: Text(
+              isPending ? 'Sedang Mengajukan (PENDING)' : 'Ajukan Pengosongan',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: isPending ? Colors.white : null,
+              ),
+            ),
           ),
         ),
+        const SizedBox(height: AppDimensions.md),
       ],
     );
   }

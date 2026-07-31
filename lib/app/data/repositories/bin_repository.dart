@@ -25,6 +25,7 @@ abstract class BinRepository {
     required String userId,
     required WasteType detectedType,
     required double estimatedVolume,
+    double? confidence,
     required String householdId,
     required double userLat,
     required double userLng,
@@ -54,6 +55,9 @@ abstract class BinRepository {
     required String userId,
     required String evidencePhotoPath,
   });
+
+  /// Ambil active reset request dari local storage
+  Future<BinResetEntity?> getActiveResetRequest(String userId);
 
   /// Set kapasitas tong setelah aktivasi.
   Future<void> measureBin({

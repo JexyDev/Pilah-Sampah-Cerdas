@@ -219,6 +219,20 @@ class PoinView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (Navigator.canPop(context))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: InkWell(
+                onTap: () => Navigator.pop(context),
+                child: const Row(
+                  children: [
+                    Icon(Icons.arrow_back_rounded, size: 24, color: AppColors.textPrimary),
+                    SizedBox(width: 8),
+                    Text('Kembali', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -536,7 +550,9 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik',
+                  item.description.toLowerCase().contains('aktivasi')
+                      ? 'Aktivasi Bin Berhasil'
+                      : (isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik'),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,

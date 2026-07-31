@@ -176,4 +176,87 @@ class NotificationEngine {
       debugPrint('[NotificationEngine] Failed to show activation notification: $e');
     }
   }
+
+  Future<void> showPunishmentNotification(int points) async {
+    try {
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'punishment_channel',
+        'Penalti & Pengurangan Poin',
+        channelDescription: 'Notifikasi penalti karena tidak menyetor sampah',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        color: Color(0xFFEF4444), // Red color
+      );
+      const NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: 5, // ID untuk notif penalti/punishment
+        title: 'Penalti: Poin Berkurang! ⚠️',
+        body: 'Anda tidak melakukan setor sampah hari ini. Poin Anda berkurang -$points poin.',
+        notificationDetails: platformDetails,
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show punishment notification: $e');
+    }
+  }
+
+  Future<void> showResetPendingNotification() async {
+    try {
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'reset_channel',
+        'Pengajuan Pengosongan',
+        channelDescription: 'Notifikasi status pengajuan pengosongan tong',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        color: Color(0xFFEAB308), // Yellow color
+      );
+      const NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: 6,
+        title: 'Pengajuan Pengosongan Terkirim ⏳',
+        body: 'Pengajuan pengosongan tong sampah Anda sedang diproses oleh petugas.',
+        notificationDetails: platformDetails,
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show reset notification: $e');
+    }
+  }
+
+  Future<void> showGenericNotification({
+    required int id,
+    required String title,
+    required String body,
+    Color color = const Color(0xFF0284C7),
+  }) async {
+    try {
+      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'backend_channel',
+        'Notifikasi Sistem Backend',
+        channelDescription: 'Notifikasi resmi dari backend & atasan',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        color: color,
+      );
+      final NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: platformDetails,
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show generic notification: $e');
+    }
+  }
 }

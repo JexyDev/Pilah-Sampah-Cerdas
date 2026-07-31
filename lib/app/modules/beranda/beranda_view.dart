@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +22,7 @@ import '../../core/utils/scan_guard.dart';
 
 /// Halaman beranda Ã¢â‚¬â€ sesuai desain:
 /// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
-class BerandaView extends ConsumerWidget {
+class BerandaView extends ConsumerStatefulWidget {
   const BerandaView({
     super.key,
     this.onNavigateToHistory,
@@ -30,7 +31,14 @@ class BerandaView extends ConsumerWidget {
   final VoidCallback? onNavigateToHistory;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BerandaView> createState() => _BerandaViewState();
+}
+
+class _BerandaViewState extends ConsumerState<BerandaView> {
+  bool _hideFullBinAlert = false;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final totalPointsAsync = ref.watch(totalPointsProvider);
     final wasteLogsAsync = ref.watch(wasteLogsProvider);
@@ -54,8 +62,8 @@ class BerandaView extends ConsumerWidget {
             SliverToBoxAdapter(
               child: _buildHeader(
                 context,
-                user?.name ?? 'Warga',
-                user?.rtRw ?? 'RT 04 / RW 02',
+                ref,
+                user,
                 isOnline,
                 unreadCount,
               ),
@@ -179,7 +187,7 @@ class BerandaView extends ConsumerWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: onNavigateToHistory,
+                        onPressed: widget.onNavigateToHistory,
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
@@ -238,13 +246,44 @@ class BerandaView extends ConsumerWidget {
     );
   }
 
+  Widget _buildHeaderAvatarImage(String? fotoPath) {
+    if (fotoPath == null || fotoPath.isEmpty) {
+      return const Center(
+        child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28),
+      );
+    }
+    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
+      return Image.network(
+        fotoPath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+      );
+    }
+    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
+      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+      final file = File(cleanPath);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
+    }
+    return Image.network(
+      '${AppConfig.baseUrl}$fotoPath',
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+    );
+  }
+
   Widget _buildHeader(
     BuildContext context,
-    String name,
-    String rtRw,
+    WidgetRef ref,
+    UserEntity? user,
     bool isOnline,
     int unreadCount,
   ) {
+    final name = user?.name ?? 'Warga';
+    final rtRw = user?.rtRw ?? 'RT 04 / RW 02';
+    final roleName = user?.role.displayName ?? 'Warga';
+    final fotoUrl = user?.fotoProfil;
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -269,12 +308,7 @@ class BerandaView extends ConsumerWidget {
                   border: Border.all(color: AppColors.border),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  AppAssets.logo,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.person, color: AppColors.primaryGreen),
-                ),
+                child: _buildHeaderAvatarImage(fotoUrl),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -288,15 +322,37 @@ class BerandaView extends ConsumerWidget {
                         fontSize: 12,
                       ),
                     ),
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            name,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.warningYellow,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            roleName,
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -417,14 +473,14 @@ class BerandaView extends ConsumerWidget {
               _StatItem(
                 icon: Icons.star_border_rounded,
                 iconColor: AppColors.primaryBlue,
-                value: daily.toString(),
+                numericValue: daily,
                 label: 'Hari Ini',
               ),
               _VerticalDivider(),
               _StatItem(
                 icon: Icons.account_balance_wallet_outlined,
                 iconColor: AppColors.primaryGreen,
-                value: NumberFormat('#,###').format(totalPoints),
+                numericValue: totalPoints,
                 label: 'Total Points',
                 valueColor: AppColors.primaryGreen,
               ),
@@ -541,50 +597,101 @@ class BerandaView extends ConsumerWidget {
       );
     } else if (role == UserRole.petugasResidu) {
       // Petugas Residu Quick Action: Timbang Residu
-      return Row(
+      return Column(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.timbanganResidu),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE65100), Colors.orange],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.orange.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.scale_rounded,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Input Timbangan Residu',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.timbanganResidu),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE65100), Colors.orange],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
                     ),
-                  ],
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.scale_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Input Timbangan Residu',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
+          const SizedBox(height: 16),
+          // Ringkasan Tong Penuh (Dummy data for UI)
+          if (!_hideFullBinAlert)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.dangerRed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.dangerRed.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4.0),
+                    child: Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Peringatan Tong Penuh',
+                          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.dangerRed, fontSize: 14),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Ada 3 tong sampah yang mencapai kapasitas kritis dan perlu segera dikosongkan.',
+                          style: TextStyle(fontSize: 12, color: AppColors.dangerRed),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: AppColors.dangerRed, size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _hideFullBinAlert = true;
+                      });
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
         ],
       );
     }
@@ -689,7 +796,8 @@ class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
     required this.iconColor,
-    required this.value,
+    this.value = '',
+    this.numericValue,
     required this.label,
     this.valueColor,
   });
@@ -697,6 +805,7 @@ class _StatItem extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String value;
+  final int? numericValue;
   final String label;
   final Color? valueColor;
 
@@ -716,14 +825,31 @@ class _StatItem extends StatelessWidget {
               children: [
                 Icon(icon, color: iconColor, size: 26),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: valueColor ?? AppColors.textPrimary,
+                if (numericValue != null)
+                  TweenAnimationBuilder<int>(
+                    tween: IntTween(begin: 0, end: numericValue!),
+                    duration: const Duration(seconds: 2),
+                    curve: Curves.easeOut,
+                    builder: (context, val, child) {
+                      return Text(
+                        NumberFormat('#,###', 'id_ID').format(val),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: valueColor ?? AppColors.textPrimary,
+                        ),
+                      );
+                    },
+                  )
+                else
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: valueColor ?? AppColors.textPrimary,
+                    ),
                   ),
-                ),
                 Text(
                   label,
                   style: const TextStyle(
@@ -753,12 +879,21 @@ class _VerticalDivider extends StatelessWidget {
   }
 }
 
-class _RiwayatCard extends StatelessWidget {
+class _RiwayatCard extends ConsumerWidget {
   const _RiwayatCard({required this.log});
   final WasteLogEntity log;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final String userLocation = (user != null && user.rtRw.isNotEmpty)
+        ? '${user.rtRw}, Kel. ${user.kelurahan}'
+        : 'RT 04 / RW 02';
+
+    final String displayLocation = (log.kelurahan != null && log.kelurahan!.isNotEmpty && log.kelurahan != 'Lokasi tidak diketahui')
+        ? log.kelurahan!
+        : (log.binQrSerial != null && log.binQrSerial!.isNotEmpty ? log.binQrSerial! : userLocation);
+
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color bgColor = isOrganic
         ? AppColors.organicColor
@@ -805,6 +940,7 @@ class _RiwayatCard extends StatelessWidget {
                     color: AppColors.textSecondary,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     const Icon(
@@ -819,6 +955,24 @@ class _RiwayatCard extends StatelessWidget {
                         fontSize: 12,
                         color: AppColors.warningYellow,
                         fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.textSecondary,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 2),
+                    Flexible(
+                      child: Text(
+                        displayLocation,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -927,7 +1081,7 @@ class _BerandaBinCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            bin.id,
+            bin.qrSerial,
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,

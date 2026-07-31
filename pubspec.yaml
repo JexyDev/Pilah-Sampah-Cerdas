@@ -28,8 +28,10 @@ dependencies:
   # Image Picker — untuk galeri dan fallback
   image_picker: ^1.1.2
 
-  # GPS / Geolocation
+  # GPS / Geolocation / Maps
   geolocator: ^13.0.4
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
 
   # Secure Token Storage
   flutter_secure_storage: ^9.2.4

@@ -106,6 +106,15 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         // Selalu refresh daftar notifikasi saat ada push masuk
         ref.invalidate(notificationsProvider);
 
+        // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
+        if (message.notification != null) {
+          NotificationEngine().showGenericNotification(
+            id: message.messageId.hashCode,
+            title: message.notification!.title ?? 'Notifikasi Baru',
+            body: message.notification!.body ?? '',
+          );
+        }
+
         // Jika FCM membawa data payload event, invalidate provider terkait
         // agar data di Beranda, Riwayat, dan Poin langsung segar.
         final event = message.data['event'] as String?;
@@ -119,8 +128,47 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           ref.invalidate(binsProvider);
         }
       });
+
+      // Handle tap on notification when app is in background
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        debugPrint('[FCM Background Tap] Tapped notification: ${message.notification?.title}');
+        _handleNotificationRoute(message);
+      });
+
+      // Handle tap on notification when app is terminated
+      FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+        if (message != null) {
+          debugPrint('[FCM Terminated Tap] Tapped notification: ${message.notification?.title}');
+          // Kasih delay sedikit agar app selesai render dulu
+          Future.delayed(const Duration(seconds: 2), () {
+            _handleNotificationRoute(message);
+          });
+        }
+      });
     } catch (e) {
       debugPrint('[FCM Foreground Setup] Error: $e');
+    }
+  }
+
+  void _handleNotificationRoute(RemoteMessage message) {
+    final title = (message.notification?.title ?? '').toLowerCase();
+    final type = (message.data['event']?.toString() ?? '').toLowerCase();
+
+    if (title.contains('penuh') || 
+        title.contains('pengajuan') || 
+        title.contains('kritis') ||
+        title.contains('setuju') ||
+        title.contains('tolak') ||
+        type.contains('bin_emptied') ||
+        type.contains('reset')) {
+      navigatorKey.currentState?.pushNamed('/reset-bin');
+    } else if (title.contains('poin') || 
+               title.contains('berhasil') ||
+               title.contains('sukses') ||
+               title.contains('setor') ||
+               title.contains('sampah') ||
+               type.contains('transaction_success')) {
+      navigatorKey.currentState?.pushNamed('/poin');
     }
   }
 

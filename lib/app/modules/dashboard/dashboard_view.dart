@@ -16,6 +16,7 @@ import '../auth/controllers/auth_controller.dart';
 import '../mahasiswa/views/mahasiswa_view.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
+import 'peta_monitoring_view.dart';
 
 /// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
@@ -37,7 +38,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         ? const RiwayatKknView() 
         : const RiwayatView(),
     const SizedBox.shrink(),
-    role == UserRole.mahasiswaKkn ? const MonitoringWargaView() : const PoinView(),
+    role == UserRole.mahasiswaKkn 
+        ? const MonitoringWargaView() 
+        : (role == UserRole.petugasResidu ? const PetaMonitoringView() : const PoinView()),
     const ProfilView(),
   ];
 
@@ -51,6 +54,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    // Dengarkan perubahan status koneksi untuk notifikasi "Internet kembali pulih"
+    ref.listen<bool>(isOnlineProvider, (prev, next) {
+      if (prev == false && next == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Internet kembali pulih'),
+            backgroundColor: AppColors.primaryGreen,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+
     final bool isOnline = ref.watch(isOnlineProvider);
     final user = ref.watch(authProvider).user;
     final role = user?.role ?? UserRole.warga;
@@ -133,9 +149,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             const SizedBox(width: 60),
             _navItem(
               3,
-              role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : Icons.stars_rounded,
-              role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : Icons.stars_outlined,
-              role == UserRole.mahasiswaKkn ? 'Monitoring' : 'Poin',
+              role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
+              role == UserRole.petugasResidu ? Icons.map_rounded : Icons.stars_rounded,
+              role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
+              role == UserRole.petugasResidu ? Icons.map_outlined : Icons.stars_outlined,
+              role == UserRole.mahasiswaKkn ? 'Monitoring' : 
+              role == UserRole.petugasResidu ? 'Peta' : 'Poin',
             ),
             _navItem(
               4,
@@ -192,7 +211,14 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               children: [
                 _buildNavigationRail(isOnline, role),
                 const VerticalDivider(width: 1),
-                Expanded(child: screens[_selectedIndex]),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: screens[_selectedIndex],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -272,9 +298,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           label: Text('History'),
         ),
         NavigationRailDestination(
-          icon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : Icons.stars_outlined),
-          selectedIcon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : Icons.stars_rounded),
-          label: Text(role == UserRole.mahasiswaKkn ? 'Monitoring' : 'Poin'),
+          icon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
+                     role == UserRole.petugasResidu ? Icons.map_outlined : Icons.stars_outlined),
+          selectedIcon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
+                             role == UserRole.petugasResidu ? Icons.map_rounded : Icons.stars_rounded),
+          label: Text(role == UserRole.mahasiswaKkn ? 'Monitoring' : 
+                      role == UserRole.petugasResidu ? 'Peta' : 'Poin'),
         ),
         const NavigationRailDestination(
           icon: Icon(Icons.person_outline_rounded),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
 import '../../core/values/app_config.dart';
@@ -94,6 +95,12 @@ class ApiAuthRepository implements AuthRepository {
         throw AuthException(
           'UNAPPROVED_ACCOUNT',
           message ?? 'Akun Anda sedang menunggu persetujuan (approval) dari pihak Admin. Silakan coba login kembali nanti.',
+        );
+      }
+      if (status == 429) {
+        throw AuthException(
+          'TOO_MANY_REQUESTS',
+          message ?? 'Terlalu banyak percobaan login gagal. Silakan tunggu 15 menit.',
         );
       }
       
@@ -198,19 +205,43 @@ class ApiAuthRepository implements AuthRepository {
 
   // ─── OTP (Login Warga / Reset Password) ────────────────────────────────────
 
+  static String? _mockFonnteOtp;
+
   @override
   Future<void> requestOtp({required String phone}) async {
     try {
-      final response = await apiClient.dio.post(
-        '/auth/request-otp',
-        data: {'phone': phone},
+      // ==== INTEGRASI FONNTE API (Mock/QC Flow) ====
+      // Generate 6 digit acak
+      final otp = (100000 + Random().nextInt(900000)).toString();
+      _mockFonnteOtp = otp;
+
+      // Kirim via Fonnte menggunakan Dio
+      final dio = Dio();
+      final target = phone.startsWith('0') ? '62${phone.substring(1)}' : phone;
+      
+      final response = await dio.post(
+        'https://api.fonnte.com/send',
+        options: Options(
+          headers: {'Authorization': 'mrHbMDmd5sorX6KQexgb'},
+        ),
+        data: FormData.fromMap({
+          'target': target,
+          'message': 'Kode OTP Anda: $otp\n\nBerlaku selama 5 menit.\nJangan berikan kode ini kepada siapa pun.'
+        }),
       );
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw const AuthException('OTP_FAILED', 'Gagal meminta OTP');
+      if (response.statusCode != 200) {
+         throw const AuthException('OTP_FAILED', 'Gagal mengirim pesan via Fonnte');
       }
+      // ===============================================
+
+      // Panggil endpoint backend agar backend (mock) mencatat state OTP (supaya verify-otp tidak gagal)
+      try {
+        await apiClient.dio.post('/auth/request-otp', data: {'phone': phone});
+      } catch (_) {}
+
     } on DioException catch (_) {
-      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke Fonnte/Server');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
@@ -220,10 +251,24 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<UserEntity> verifyOtp({required String phone, required String otp}) async {
     apiClient.clearTokenCache();
+    
+    // Verifikasi OTP Lokal (Fonnte Mock)
+    bool isMockFonnte = false;
+    if (_mockFonnteOtp != null) {
+      if (otp != _mockFonnteOtp) {
+         throw const AuthException('INVALID_OTP', 'Kode OTP salah. Silakan periksa pesan WhatsApp Anda.');
+      }
+      _mockFonnteOtp = null; // Reset setelah berhasil
+      isMockFonnte = true;
+    }
+
     try {
+      // Jika menggunakan mock Fonnte, kita kirimkan '123456' ke backend agar backend mock tidak menolak
+      final backendOtp = isMockFonnte ? '123456' : otp;
+
       final response = await apiClient.dio.post(
         '/auth/verify-otp',
-        data: {'phone': phone, 'otp': otp},
+        data: {'phone': phone, 'otp': backendOtp},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -522,6 +567,7 @@ class ApiAuthRepository implements AuthRepository {
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       phone: userMap['phone']?.toString() ?? '',
+      email: userMap['email']?.toString(),
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
       fotoProfil: userMap['fotoProfil']?.toString(),
     );

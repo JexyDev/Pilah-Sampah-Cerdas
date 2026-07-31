@@ -4,6 +4,10 @@ import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
+import '../../../data/services/notification_engine.dart';
+
+final Set<String> _shownNotifIds = {};
+
 // ─── Notifications List Provider ──────────────────────────────────────────────
 
 /// Provider daftar notifikasi user yang login.
@@ -14,7 +18,21 @@ final notificationsProvider =
   // Pastikan user sudah login
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
-  return repo.getNotifications();
+  final list = await repo.getNotifications();
+
+  // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
+  for (final notif in list) {
+    if (!notif.isRead && !_shownNotifIds.contains(notif.id)) {
+      _shownNotifIds.add(notif.id);
+      NotificationEngine().showGenericNotification(
+        id: notif.id.hashCode,
+        title: notif.title,
+        body: notif.desc,
+      );
+    }
+  }
+
+  return list;
 });
 
 /// Provider jumlah notifikasi yang belum dibaca (badge count).

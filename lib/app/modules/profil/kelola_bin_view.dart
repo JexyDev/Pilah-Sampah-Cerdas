@@ -123,7 +123,7 @@ class _BinCardLarge extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'ID: ${bin.id}',
+                  'ID: ${bin.qrSerial}',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,

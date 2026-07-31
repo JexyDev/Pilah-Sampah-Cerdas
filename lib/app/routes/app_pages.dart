@@ -19,6 +19,8 @@ import '../modules/mahasiswa/views/mahasiswa_view.dart';
 import '../modules/mahasiswa/views/registrasi_warga_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
+import '../modules/profil/ganti_password_view.dart';
+import '../modules/poin/poin_view.dart';
 import 'app_routes.dart';
 
 /// Route generator terpusat.
@@ -47,6 +49,8 @@ class AppPages {
         return _buildRoute(const KelolaBinView(), settings);
       case AppRoutes.resetBin:
         return _buildRoute(const ResetBinView(), settings);
+      case AppRoutes.poin:
+        return _buildRoute(const Scaffold(body: PoinView()), settings);
       case AppRoutes.notifikasi:
         return _buildRoute(const NotifikasiView(), settings);
       case AppRoutes.timbanganResidu:
@@ -67,6 +71,8 @@ class AppPages {
         return _buildRoute(const DetailWargaView(), settings);
       case AppRoutes.aktivasiWarga:
         return _buildRoute(const AktivasiWargaView(), settings);
+      case AppRoutes.gantiPassword:
+        return _buildRoute(const GantiPasswordView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

@@ -12,6 +12,7 @@ class AppRoutes {
   static const String ukurKapasitas = '/ukur-kapasitas';
   static const String kelolaBin = '/kelola-bin';
   static const String resetBin = '/reset-bin';
+  static const String poin = '/poin';
   static const String notifikasi = '/notifikasi';
   static const String timbanganResidu = '/timbangan-residu';
   static const String tentang = '/tentang';
@@ -22,4 +23,5 @@ class AppRoutes {
   static const String daftarWarga = '/daftar-warga';
   static const String detailWarga = '/detail-warga';
   static const String aktivasiWarga = '/aktivasi-warga';
+  static const String gantiPassword = '/ganti-password';
 }

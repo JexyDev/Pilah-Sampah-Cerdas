@@ -14,11 +14,11 @@ class AppColors {
   // --- Primary Green (Now clean light blue for main brand) ---
   static const Color primaryGreen = Color(0xFF0EA5E9); // Bright Sky Blue
   static const Color primaryGreenLight = Color(0xFFF0F9FF); // Soft white-blue
-  static const Color organicColor = Color(0xFF0284C7); // Sky Blue for organic stats
+  static const Color organicColor = Color(0xFF10B981); // Green for organic
 
-  // --- Non-Organic (orange/amber/blue) ---
-  static const Color nonOrganicColor = Color(0xFF0369A1);
-  static const Color nonOrganicBg = Color(0xFFF0F9FF);
+  // --- Non-Organic (orange/amber/yellow) ---
+  static const Color nonOrganicColor = Color(0xFFF59E0B); // Yellow for non-organic
+  static const Color nonOrganicBg = Color(0xFFFEF3C7); // Light yellow
 
   // --- Semantic ---
   static const Color dangerRed = Color(0xFFEF4444); // Modern tailwind red

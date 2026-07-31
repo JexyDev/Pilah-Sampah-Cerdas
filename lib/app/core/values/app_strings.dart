@@ -63,7 +63,7 @@ class AppStrings {
       'Tong sudah penuh! Ajukan pengosongan tong.';
   static const String binTypeMismatch = 'Jenis sampah tidak sesuai tong ini.';
   static const String locationOutOfRange =
-      'Anda terlalu jauh dari tong sampah (> 10m).';
+      'Anda terlalu jauh dari tong sampah (> 500m).';
   static const String binNotCritical =
       'Tong belum penuh, reset belum diperlukan.';
 

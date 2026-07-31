@@ -41,6 +41,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       final success = await ref.read(authProvider.notifier).uploadAvatar(picked.path);
       if (mounted) {
         if (success) {
+          ref.read(authProvider.notifier).fetchProfile();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Foto profil berhasil diperbarui!'),
@@ -58,6 +59,35 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
         }
       }
     }
+  }
+
+  Widget _buildAvatarImage(String? fotoPath) {
+    if (fotoPath == null || fotoPath.isEmpty) {
+      return const Icon(
+        Icons.person_rounded,
+        color: AppColors.primaryGreen,
+        size: 48,
+      );
+    }
+    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
+      return Image.network(
+        fotoPath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
+      );
+    }
+    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
+      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+      final file = File(cleanPath);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
+    }
+    return Image.network(
+      '${AppConfig.baseUrl}$fotoPath',
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
+    );
   }
 
   @override
@@ -83,7 +113,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
               child: Column(
                 children: [
                   const SizedBox(height: 12),
-                  // Avatar rumah dalam lingkaran double
                   // Avatar dengan GestureDetector untuk upload foto
                   GestureDetector(
                     onTap: _pickImage,
@@ -97,29 +126,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.border, width: 3),
                             color: AppColors.backgroundCanvas,
-                            image: _profileImage != null
-                                ? DecorationImage(
-                                    image: FileImage(_profileImage!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty
-                                    ? DecorationImage(
-                                        image: NetworkImage(
-                                          user.fotoProfil!.startsWith('http')
-                                              ? user.fotoProfil!
-                                              : '${AppConfig.baseUrl}${user.fotoProfil}',
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null),
                           ),
-                          child: _profileImage == null && (user?.fotoProfil == null || user!.fotoProfil!.isEmpty)
-                              ? const Icon(
-                                  Icons.person_rounded,
-                                  color: AppColors.primaryGreen,
-                                  size: 48,
-                                )
-                              : null,
+                          clipBehavior: Clip.antiAlias,
+                          child: _buildAvatarImage(_profileImage?.path ?? user?.fotoProfil),
                         ),
                         Container(
                           width: 32,
@@ -193,24 +202,47 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           bold: true,
                         ),
                         _divider(),
+                        if (user?.role != UserRole.warga) ...[
+                          _InfoTile(
+                            Icons.email_outlined,
+                            'Email',
+                            user?.email != null && user!.email!.isNotEmpty ? user.email! : 'Belum diatur',
+                          ),
+                          _divider(),
+                        ],
+                        _InfoTile(
+                          Icons.phone_iphone_rounded,
+                          'No. Telepon',
+                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : 'Belum diatur',
+                          bold: true,
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.assignment_ind_outlined,
+                          'Peran',
+                          user?.role.displayName ?? '-',
+                        ),
+                        _divider(),
                         _InfoTile(
                           Icons.location_on_outlined,
-                          'Wilayah',
-                          user?.rtRw != null && user!.rtRw.isNotEmpty
-                              ? '${user.rtRw}, Kel. ${user.kelurahan}'
+                          'Kelurahan',
+                          user?.kelurahan != null && user!.kelurahan.isNotEmpty
+                              ? 'Kel. ${user.kelurahan}'
                               : 'Belum diatur',
                         ),
                         _divider(),
                         _InfoTile(
-                          Icons.phone_iphone_rounded,
-                          'No. Telepon',
-                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
+                          Icons.home_work_outlined,
+                          'RT / RW',
+                          user?.rtRw != null && user!.rtRw.isNotEmpty
+                              ? user.rtRw
+                              : 'Belum diatur',
                         ),
                         _divider(),
                         _InfoTile(
                           Icons.badge_outlined,
                           'ID Akun',
-                          user?.id.substring(0, 8).toUpperCase() ?? '-',
+                          user != null && user.id.length >= 8 ? user.id.substring(0, 8).toUpperCase() : (user?.id ?? '-'),
                         ),
                       ],
                     ),
@@ -311,7 +343,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             context,
                           ).pushNamed(AppRoutes.tentang),
                         ),
-                        const Divider(height: 1, indent: 56),
+
                         // Keluar
                         _MenuTile(
                           icon: Icons.logout_rounded,

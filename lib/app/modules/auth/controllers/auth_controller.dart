@@ -207,9 +207,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await _authRepository.uploadAvatar(imagePath);
-      // Fetch ulang profil untuk mendapatkan URL foto terbaru jika backend mengirimkannya (atau sekadar refresh info)
-      await fetchProfile();
-      state = state.copyWith(isLoading: false);
+      // Immediately update state user's fotoProfil so Profile & Dashboard top bar update live without logout
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(fotoProfil: imagePath),
+          isLoading: false,
+        );
+      } else {
+        await fetchProfile();
+        state = state.copyWith(isLoading: false);
+      }
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorCode: e.code);

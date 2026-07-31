@@ -13,6 +13,7 @@ class UserEntity extends Equatable {
     this.householdId,
     this.fcmToken,
     this.fotoProfil,
+    this.email,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class UserEntity extends Equatable {
   final String? householdId; // diisi setelah GET /households/me
   final String? fcmToken;
   final String? fotoProfil;
+  final String? email;
 
   UserEntity copyWith({
     String? id,
@@ -35,6 +37,7 @@ class UserEntity extends Equatable {
     String? householdId,
     String? fcmToken,
     String? fotoProfil,
+    String? email,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -46,6 +49,7 @@ class UserEntity extends Equatable {
       householdId: householdId ?? this.householdId,
       fcmToken: fcmToken ?? this.fcmToken,
       fotoProfil: fotoProfil ?? this.fotoProfil,
+      email: email ?? this.email,
     );
   }
 
