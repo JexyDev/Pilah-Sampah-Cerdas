@@ -125,7 +125,10 @@ const Login: React.FC = () => {
           setPassword(""); 
           setTimeout(() => passwordInputRef.current?.focus(), 50);
         } else if (storeErr === "USER_INACTIVE") {
-          showToast("Akun Anda belum disetujui atau sudah tidak aktif.", "warning");
+          showToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");
+        } else if (storeErr === "USER_PENDING_APPROVAL") {
+          showToast("Akun Anda belum disetujui oleh pengurus RW setempat. Silakan hubungi pengurus RW.", "warning");
+          setIdentifierError("Akun belum disetujui RW setempat");
         } else if (storeErr === "SERVICE_UNAVAILABLE") {
           showToast("Server sedang bermasalah, silakan coba lagi dalam beberapa saat", "server", handleSubmit);
         } else if (storeErr === "TOO_MANY_ATTEMPTS") {
@@ -183,15 +186,11 @@ const Login: React.FC = () => {
           </div>
           <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
             {[
-              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200" },
-              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-              { phone: "08111111113", label: "Camat", bg: "bg-purple-50 text-purple-700 border-purple-200" },
-              { phone: "08111111114", label: "Lurah", bg: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-              { phone: "08111111115", label: "RW", bg: "bg-amber-50 text-amber-700 border-amber-200" },
-              { phone: "08111111116", label: "RT", bg: "bg-cyan-50 text-cyan-700 border-cyan-200" },
-              { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200" },
+              { phone: "081200999999", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200" },
+              { phone: "081200999998", label: "Admin DLH / Camat", bg: "bg-blue-50 text-blue-700 border-blue-200" },
+              { phone: "0812001004", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200" },
               { phone: "0812001005", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
-              { phone: "0812001001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200" },
+              { phone: "0812001003", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200" },
             ].map((acc) => (
               <button
                 key={acc.phone}

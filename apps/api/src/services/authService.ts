@@ -25,6 +25,9 @@ export class AuthService {
     }
 
     if (user.status !== "Aktif" && user.status !== "ACTIVE") {
+      if (user.status === "PENDING_APPROVAL" || user.status === "Pending" || user.status === "DIPEGANG_MAHASISWA") {
+        throw new Error("USER_PENDING_APPROVAL");
+      }
       throw new Error("USER_INACTIVE");
     }
 

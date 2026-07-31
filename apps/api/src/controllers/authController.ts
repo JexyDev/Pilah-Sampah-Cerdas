@@ -158,6 +158,12 @@ export class AuthController {
           code: "WRONG_PASSWORD",
           message: "Password salah",
         });
+      } else if (error.message === "USER_PENDING_APPROVAL") {
+        res.status(401).json({
+          success: false,
+          code: "USER_PENDING_APPROVAL",
+          message: "Akun Anda belum disetujui oleh pengurus RW setempat. Silakan hubungi pengurus RW untuk proses verifikasi & aktivasi.",
+        });
       } else if (error.message === "USER_INACTIVE") {
         res.status(403).json({
           success: false,

@@ -54,18 +54,19 @@ export class AuthRepository {
       if (!user) {
         const lower = raw.toLowerCase();
         let targetRole = "";
-        if (lower.includes("petugas")) targetRole = "PETUGAS_RESIDU";
-        else if (lower.includes("kkn") || lower.includes("mahasiswa")) targetRole = "MAHASISWA_KKN";
-        else if (lower.includes("rw")) targetRole = "RW";
-        else if (lower.includes("rt")) targetRole = "RT";
-        else if (lower.includes("lurah")) targetRole = "LURAH";
-        else if (lower.includes("camat")) targetRole = "CAMAT";
-        else if (lower.includes("admin") || lower.includes("super")) targetRole = "SUPER_ADMIN";
-        else if (lower.includes("warga")) targetRole = "WARGA";
+        if (lower.includes("petugas") || raw === "08111111117" || raw === "+628111111117") targetRole = "PETUGAS_RESIDU";
+        else if (lower.includes("kkn") || lower.includes("mahasiswa") || raw === "08111111118" || raw === "+628111111118") targetRole = "MAHASISWA_KKN";
+        else if (lower.includes("rw") || raw === "08111111115" || raw === "+628111111115") targetRole = "RW";
+        else if (lower.includes("rt") || raw === "08111111116" || raw === "+628111111116") targetRole = "RT";
+        else if (lower.includes("lurah") || raw === "08111111114" || raw === "+628111111114") targetRole = "LURAH";
+        else if (lower.includes("camat") || raw === "08111111113" || raw === "+628111111113") targetRole = "CAMAT";
+        else if (lower.includes("admin") || lower.includes("super") || raw === "08111111111" || raw === "+62811111111") targetRole = "SUPER_ADMIN";
+        else if (lower.includes("dlh") || raw === "08111111112" || raw === "+628111111112") targetRole = "ADMIN_KECAMATAN";
+        else if (lower.includes("warga") || raw === "0812001001" || raw === "+62812001001") targetRole = "WARGA";
 
         if (targetRole) {
           user = (await prisma.user.findFirst({
-            where: { role: { name: targetRole }, status: "Aktif" },
+            where: { role: { name: targetRole }, status: { in: ["Aktif", "ACTIVE"] } },
             include: { role: true },
           })) as (User & { role: Role }) | null;
         }
