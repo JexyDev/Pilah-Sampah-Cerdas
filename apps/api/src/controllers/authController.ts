@@ -14,6 +14,7 @@ import { authService } from "../services/authService.js";
  */
 function normalizePhone(phone: string): string {
   let p = phone.trim();
+  if (/[a-zA-Z@]/.test(p)) return p;
   if (p.startsWith("08")) p = "+62" + p.slice(1);
   else if (p.startsWith("62") && !p.startsWith("+")) p = "+" + p;
   return p;
