@@ -909,21 +909,6 @@ export class BinService {
     }
 
     const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
-
-    // Notify all Petugas/Admin
-    const petugasList = request.bin.rtRwId
-      ? await binRepository.findPetugasForArea(request.bin.rtRwId)
-      : [];
-    for (const petugas of petugasList) {
-      await binRepository
-        .createNotification(
-          petugas.id,
-          "Pengajuan Pengosongan Baru",
-          `[REQ-${request.id}] Warga (${request.user.name}) mengajukan pengosongan tong ${request.bin.qrCode} di ${request.bin.rtRw?.name || "Wilayah Umum"}.`
-        )
-        .catch(() => {});
-    }
-
     return request;
   }
 

@@ -168,7 +168,7 @@ router.get("/", authMiddleware, async (req, res) => {
           iconColor: "text-emerald-600",
         };
 
-        // 3. User direct DB notifications (filtering out duplicate reset request logs covered by reqNotifications)
+        // 3. User direct DB notifications (strictly filter out duplicate reset request logs covered by reqNotifications)
         let userNotifs: any[] = [];
         if (userId) {
           try {
@@ -179,12 +179,16 @@ router.get("/", authMiddleware, async (req, res) => {
             });
             userNotifs = dbNotifs
               .map(mapNotification)
-              .filter(
-                (n: any) =>
-                  !n.title?.includes("Pengajuan Pengosongan") &&
-                  !n.desc?.includes("[REQ-") &&
-                  !n.desc?.includes("mengajukan pengosongan tong")
-              );
+              .filter((n: any) => {
+                const t = (n.title || "").toLowerCase();
+                const d = (n.desc || "").toLowerCase();
+                const isResetReq =
+                  t.includes("pengosongan") ||
+                  d.includes("pengosongan") ||
+                  d.includes("mengajukan") ||
+                  d.includes("[req-");
+                return !isResetReq;
+              });
           } catch (e) {
             // ignore
           }
