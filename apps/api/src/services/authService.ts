@@ -9,7 +9,6 @@ import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { PrismaClient } from "@prisma/client";
-import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 const prisma = new PrismaClient();
 
@@ -25,7 +24,11 @@ export class AuthService {
     }
 
     if (user.status !== "Aktif" && user.status !== "ACTIVE") {
-      if (user.status === "PENDING_APPROVAL" || user.status === "Pending" || user.status === "DIPEGANG_MAHASISWA") {
+      if (
+        user.status === "PENDING_APPROVAL" ||
+        user.status === "Pending" ||
+        user.status === "DIPEGANG_MAHASISWA"
+      ) {
         throw new Error("USER_PENDING_APPROVAL");
       }
       throw new Error("USER_INACTIVE");
