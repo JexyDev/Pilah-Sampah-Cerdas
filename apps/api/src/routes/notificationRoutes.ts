@@ -93,29 +93,113 @@ router.get("/", authMiddleware, async (req, res) => {
 
     let formattedNotifications: any[] = [];
 
-    // 1. Try to fetch notifications from DB where the target user's role matches OR userId matches
-    try {
-      const dbNotifications = await prisma.notification.findMany({
-        where: {
-          userId: userId, // Use userId instead of role to be more precise for the current user
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+    const isAdminOrPetugas = [
+      "SUPER_ADMIN",
+      "ADMIN_DLH",
+      "CAMAT",
+      "LURAH",
+      "RW",
+      "PETUGAS_RESIDU",
+      "MAHASISWA_KKN",
+    ].includes(role);
 
-      // 2. Map notifications to frontend structure
-      formattedNotifications = dbNotifications.map(mapNotification);
-    } catch (dbError) {
-      console.warn(
-        "Database connection failed for notifications, falling back to mock seeds:",
-        dbError
-      );
-    }
+    if (isAdminOrPetugas) {
+      // 1. Fetch real BinResetRequests from database
+      try {
+        const requests = await prisma.binResetRequest.findMany({
+          include: {
+            bin: {
+              include: {
+                rtRw: true,
+                category: true,
+              },
+            },
+            user: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 30,
+        });
 
-    // 3. Fallback: if database is empty or unreachable, provide seed notifications
-    if (formattedNotifications.length === 0) {
-      if (role === "WARGA") {
+        const reqNotifications = requests.map((r) => {
+          const now = new Date();
+          const diffMs = now.getTime() - new Date(r.createdAt).getTime();
+          const diffMins = Math.floor(diffMs / (1000 * 60));
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          let time = "Baru saja";
+          if (diffDays > 0) time = `${diffDays} hari lalu`;
+          else if (diffHours > 0) time = `${diffHours} jam lalu`;
+          else if (diffMins > 0) time = `${diffMins} menit lalu`;
+
+          const binCategory = r.bin?.category?.name || "Organik";
+          const binQr = r.bin?.qrCode || "BIN";
+          const area = r.bin?.rtRw?.name || "RT 01 / RW 04";
+
+          return {
+            id: `req-${r.id}`,
+            type: "PENGAJUAN_PENGOSONGAN",
+            title: "Pengajuan Pengosongan Baru",
+            desc: `Warga (${r.user?.name || "Warga"}) mengajukan pengosongan tong ${binCategory} (${binQr}) di ${area}. [REQ-${r.id}]`,
+            isRead: r.status !== "PENDING",
+            time,
+            icon: "delete_sweep",
+            iconBg: "bg-orange-100",
+            iconColor: "text-orange-500",
+          };
+        });
+
+        // 2. Active Shift Notification
+        const currentHour = (new Date().getUTCHours() + 7) % 24;
+        const isMorning = currentHour >= 6 && currentHour < 12;
+        const scheduleNotif = {
+          id: `sched-active-shift-${new Date().toISOString().slice(0, 10)}`,
+          type: "JADWAL_JEMPUT",
+          title: isMorning ? "Jadwal Jemput Pagi" : "Jadwal Jemput Sore",
+          desc: `Terdapat tempat sampah warga yang perlu diangkut pada shift ${
+            isMorning ? "Pagi (06:00 - 08:00 WIB)" : "Sore (16:00 - 18:00 WIB)"
+          }.`,
+          isRead: false,
+          time: "Shift Aktif Hari Ini",
+          icon: "local_shipping",
+          iconBg: "bg-emerald-100",
+          iconColor: "text-emerald-600",
+        };
+
+        // 3. User direct DB notifications
+        let userNotifs: any[] = [];
+        if (userId) {
+          try {
+            const dbNotifs = await prisma.notification.findMany({
+              where: { userId },
+              orderBy: { createdAt: "desc" },
+              take: 10,
+            });
+            userNotifs = dbNotifs.map(mapNotification);
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        formattedNotifications = [scheduleNotif, ...reqNotifications, ...userNotifs];
+      } catch (err) {
+        console.error("[NotificationRoute] Error fetching admin notifications:", err);
+      }
+    } else {
+      // Warga user notifications
+      if (userId) {
+        try {
+          const dbNotifs = await prisma.notification.findMany({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+          });
+          formattedNotifications = dbNotifs.map(mapNotification);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (formattedNotifications.length === 0) {
         formattedNotifications = [
           {
             id: "seed-notif-1",
@@ -138,31 +222,6 @@ router.get("/", authMiddleware, async (req, res) => {
             icon: "star",
             iconBg: "bg-yellow-100",
             iconColor: "text-yellow-500",
-          },
-          {
-            id: "seed-notif-3",
-            type: "INFO",
-            title: "Jadwal Pengangkutan",
-            desc: "Pengangkutan wilayah Anda dijadwalkan besok pagi pukul 08.00.",
-            isRead: true,
-            time: "2 hari lalu",
-            icon: "local_shipping",
-            iconBg: "bg-blue-100",
-            iconColor: "text-blue-500",
-          },
-        ];
-      } else {
-        formattedNotifications = [
-          {
-            id: "seed-notif-admin-1",
-            type: "TONG_PENUH",
-            title: "Pengajuan Pengosongan Baru",
-            desc: "Warga (Budi Antoro) mengajukan pengosongan tong Anorganik (BIN-124) di RT 01 / RW 04.",
-            isRead: false,
-            time: "10 menit lalu",
-            icon: "delete_sweep",
-            iconBg: "bg-orange-100",
-            iconColor: "text-orange-500",
           },
         ];
       }
