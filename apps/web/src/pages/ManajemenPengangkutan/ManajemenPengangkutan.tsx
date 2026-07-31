@@ -16,7 +16,10 @@ import {
   Truck, 
   UserCheck, 
   Calendar, 
-  CheckCircle
+  CheckCircle,
+  ShieldAlert,
+  ImageOff,
+  X
 } from "lucide-react";
 
 interface DispatchTask {
@@ -106,6 +109,7 @@ export const ManajemenPengangkutan: React.FC = () => {
   const [requests, setRequests] = useState<BinResetRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [evidenceModalUrl, setEvidenceModalUrl] = useState<string | null>(null);
+  const [selectedRequestForReview, setSelectedRequestForReview] = useState<BinResetRequest | null>(null);
 
   // Filter States
   const [statusFilter, setStatusFilter] = useState("");
@@ -580,6 +584,13 @@ export const ManajemenPengangkutan: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
                         <div className="inline-flex gap-2 justify-center">
+                          <button
+                            onClick={() => setSelectedRequestForReview(req)}
+                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                          >
+                            <ShieldAlert size={14} />
+                            Tinjau Pengajuan
+                          </button>
                           {req.status === "PENDING" && (
                             <>
                               <button
@@ -751,6 +762,118 @@ export const ManajemenPengangkutan: React.FC = () => {
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Review Request Detailed Modal */}
+      {selectedRequestForReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-gray-800 text-lg">Detail Notifikasi</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-blue-100 text-blue-700">
+                  Tampilan Petugas
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedRequestForReview(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[75vh]">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <Trash2 size={22} />
+                </div>
+                <div>
+                  <h4 className="text-[16px] font-bold text-gray-800 leading-tight mb-1">
+                    Pengajuan Pengosongan Baru
+                  </h4>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {new Date(selectedRequestForReview.createdAt).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{" "}
+                    lalu
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tong{" "}
+                {selectedRequestForReview.bin.qrCode} di{" "}
+                {selectedRequestForReview.bin.rtRw?.name || "RT 01 / RW 04"}.
+              </p>
+
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex gap-3 mb-4">
+                <ShieldAlert className="text-orange-500 shrink-0 mt-0.5" size={20} />
+                <div className="text-xs text-orange-800">
+                  <p className="font-bold mb-0.5">Tindakan Review Diperlukan</p>
+                  <p className="leading-relaxed">
+                    Warga telah mengajukan pengosongan tempat sampah. Tinjau pengajuan ini dan tentukan tindakan Anda.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden mb-5">
+                <div className="p-3.5 border-b border-gray-200 bg-white">
+                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">
+                    DETAIL PENGAJUAN
+                  </p>
+                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                    Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tong{" "}
+                    {selectedRequestForReview.bin.qrCode} di{" "}
+                    {selectedRequestForReview.bin.rtRw?.name || "RT 01 / RW 04"}.
+                  </p>
+                </div>
+                <div className="p-3.5 bg-gray-50 flex flex-col gap-2">
+                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">
+                    FOTO BUKTI DARI WARGA
+                  </p>
+                  {selectedRequestForReview.evidencePhotoUrl ? (
+                    <img
+                      src={
+                        selectedRequestForReview.evidencePhotoUrl.startsWith("/uploads")
+                          ? `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").replace("/api/v1", "")}${selectedRequestForReview.evidencePhotoUrl}`
+                          : selectedRequestForReview.evidencePhotoUrl
+                      }
+                      alt="Bukti tong penuh"
+                      className="w-full h-44 object-cover rounded-lg border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-full h-36 bg-gray-100 rounded-lg border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1.5">
+                      <ImageOff size={28} />
+                      <p className="text-xs text-gray-400">Foto bukti belum diunggah oleh warga</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    handleUpdateRequestStatus(selectedRequestForReview.id, "REJECTED");
+                    setSelectedRequestForReview(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                >
+                  ✕ Tolak Pengajuan
+                </button>
+                <button
+                  onClick={() => {
+                    handleApproveRequest(selectedRequestForReview.id);
+                    setSelectedRequestForReview(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
+                >
+                  ✓ Setujui & Reset Tong
+                </button>
+              </div>
             </div>
           </div>
         </div>
