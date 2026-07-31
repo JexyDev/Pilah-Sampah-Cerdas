@@ -18,6 +18,9 @@ import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
 import 'peta_monitoring_view.dart';
 
+import '../petugas_residu/views/petugas_residu_view.dart';
+import '../petugas_residu/views/riwayat_petugas_residu_view.dart';
+
 /// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
 class DashboardView extends ConsumerStatefulWidget {
@@ -33,10 +36,14 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   List<Widget> _getScreens(UserRole role) => [
     role == UserRole.mahasiswaKkn 
         ? const MahasiswaView() 
-        : BerandaView(onNavigateToHistory: () => _onTabTap(1)),
+        : (role == UserRole.petugasResidu 
+            ? const PetugasResiduView() 
+            : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
     role == UserRole.mahasiswaKkn 
         ? const RiwayatKknView() 
-        : const RiwayatView(),
+        : (role == UserRole.petugasResidu 
+            ? const RiwayatPetugasResiduView() 
+            : const RiwayatView()),
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn 
         ? const MonitoringWargaView() 

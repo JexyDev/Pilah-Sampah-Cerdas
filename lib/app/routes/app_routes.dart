@@ -24,4 +24,6 @@ class AppRoutes {
   static const String detailWarga = '/detail-warga';
   static const String aktivasiWarga = '/aktivasi-warga';
   static const String gantiPassword = '/ganti-password';
+  static const String laporPelanggaran = '/lapor-pelanggaran';
+  static const String riwayatPetugasResidu = '/riwayat-petugas-residu';
 }

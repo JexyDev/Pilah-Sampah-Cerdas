@@ -338,7 +338,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                     child: Column(
                       children: [
-                        if (user?.role != UserRole.mahasiswaKkn) ...[
+                        if (user?.role == UserRole.warga) ...[
                           // Tambah Tempat Sampah Baru
                           _MenuTile(
                             icon: Icons.qr_code_scanner_rounded,

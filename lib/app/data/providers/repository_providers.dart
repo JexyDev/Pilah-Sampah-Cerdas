@@ -14,6 +14,8 @@ import '../repositories/api_waste_log_repository.dart';
 import '../repositories/api_notification_repository.dart';
 import '../repositories/kkn_repository.dart';
 import '../repositories/api_kkn_repository.dart';
+import '../repositories/petugas_residu_repository.dart';
+import '../repositories/api_petugas_residu_repository.dart';
 
 final secureStorageProvider = Provider<SafeStorage>((ref) {
   return const SafeStorage();
@@ -57,6 +59,12 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 
 final kknRepositoryProvider = Provider<KknRepository>((ref) {
   return ApiKknRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final petugasResiduRepositoryProvider = Provider<PetugasResiduRepository>((ref) {
+  return ApiPetugasResiduRepository(
     apiClient: ref.read(apiClientProvider),
   );
 });

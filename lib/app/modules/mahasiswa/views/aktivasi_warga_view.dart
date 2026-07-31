@@ -5,6 +5,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/aktivasi_warga_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
 
 class AktivasiWargaView extends ConsumerStatefulWidget {
   const AktivasiWargaView({super.key});

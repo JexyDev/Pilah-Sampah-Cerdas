@@ -21,6 +21,8 @@ import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
 import '../modules/profil/ganti_password_view.dart';
 import '../modules/poin/poin_view.dart';
+import '../modules/petugas_residu/views/lapor_pelanggaran_view.dart';
+import '../modules/petugas_residu/views/riwayat_petugas_residu_view.dart';
 import 'app_routes.dart';
 
 /// Route generator terpusat.
@@ -73,6 +75,10 @@ class AppPages {
         return _buildRoute(const AktivasiWargaView(), settings);
       case AppRoutes.gantiPassword:
         return _buildRoute(const GantiPasswordView(), settings);
+      case AppRoutes.laporPelanggaran:
+        return _buildRoute(const LaporPelanggaranView(), settings);
+      case AppRoutes.riwayatPetugasResidu:
+        return _buildRoute(const RiwayatPetugasResiduView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }
