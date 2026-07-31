@@ -47,7 +47,6 @@ export class BinRepository {
           select: {
             id: true,
             name: true,
-            email: true,
             phone: true,
             address: true,
             households: {
