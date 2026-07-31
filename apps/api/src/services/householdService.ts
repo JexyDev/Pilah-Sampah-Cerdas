@@ -6,6 +6,9 @@
  */
 
 import { householdRepository } from "../repositories/householdRepository.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class HouseholdService {
   /**
@@ -59,6 +62,50 @@ export class HouseholdService {
    */
   async getAllHouseholds() {
     return householdRepository.findAll();
+  }
+
+  /**
+   * Get summary of user's full bins for Beranda Warga
+   */
+  async getBinsSummary(userId: string) {
+    const userBins = await prisma.bin.findMany({
+      where: {
+        OR: [{ userId }, { binOwnerships: { some: { userId } } }],
+        status: "ACTIVE_BOUND",
+      },
+      include: {
+        category: true,
+        rtRw: true,
+      },
+    });
+
+    const binsWithFlag = userBins.map((bin) => {
+      const current = Number(bin.currentVolumeLiter || 0);
+      const max = Number(bin.maxCapacityLiter || 1);
+      const percentage = max > 0 ? parseFloat(((current / max) * 100).toFixed(1)) : 0;
+      const isCritical = percentage >= 80;
+
+      return {
+        id: bin.id,
+        qrCode: bin.qrCode,
+        category: bin.category?.name || "Umum",
+        currentVolumeLiter: current,
+        maxCapacityLiter: max,
+        percentage,
+        isCritical,
+        status: bin.status,
+      };
+    });
+
+    const criticalBins = binsWithFlag.filter((b) => b.isCritical);
+
+    return {
+      totalBins: binsWithFlag.length,
+      fullBinsCount: criticalBins.length,
+      hasCriticalBins: criticalBins.length > 0,
+      criticalBins,
+      bins: binsWithFlag,
+    };
   }
 }
 

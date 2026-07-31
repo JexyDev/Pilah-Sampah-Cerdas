@@ -89,7 +89,7 @@ const KknDashboard: React.FC = () => {
       api
         .get("/kkn/warga", {
           params: {
-            rtRwId: area.id,
+            rtRw: area.id,
             search: filterSearch || undefined,
           },
         })
@@ -110,20 +110,24 @@ const KknDashboard: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      const [statsRes, wargaRes, housesRes, logsRes, areasRes] = await Promise.all([
+      const results = await Promise.allSettled([
         api.get("/kkn/dashboard"),
         api.get("/kkn/warga"),
-        api.get("/kkn/unregistered"),
-        api.get("/kkn/activities"),
+        api.get("/kkn/warga", { params: { status: "UNACTIVATED" } }),
+        api.get("/kkn/activity-log"),
         api.get("/bins/locations"),
       ]);
 
-      setStats(statsRes.data?.data);
-      setWargaList(wargaRes.data?.data || []);
-      setUnregisteredHouses(housesRes.data?.data || []);
-      setActivityLogs(logsRes.data?.data || []);
-      setRtRwAreas(areasRes.data?.data || []);
-      setRtRwAreas(areasRes.data?.data || []);
+      if (results[0].status === "fulfilled") setStats(results[0].value.data?.data);
+      if (results[1].status === "fulfilled") setWargaList(results[1].value.data?.data || []);
+      if (results[2].status === "fulfilled") setUnregisteredHouses(results[2].value.data?.data || []);
+      if (results[3].status === "fulfilled") setActivityLogs(results[3].value.data?.data || []);
+      if (results[4].status === "fulfilled") setRtRwAreas(results[4].value.data?.data || []);
+
+      // Log any failures without crashing
+      results.forEach((r, i) => {
+        if (r.status === "rejected") console.warn(`KKN fetch[${i}] failed:`, r.reason?.message);
+      });
     } catch (err: any) {
       console.error("Gagal memuat data portal KKN:", err);
       toast.error(err.response?.data?.message || "Gagal memuat data portal KKN");
@@ -136,7 +140,7 @@ const KknDashboard: React.FC = () => {
     try {
       const res = await api.get("/kkn/warga", {
         params: {
-          rtRwId: filterRtRw ? parseInt(filterRtRw, 10) : undefined,
+          rtRw: filterRtRw ? parseInt(filterRtRw, 10) : undefined,
           search: filterSearch || undefined,
         },
       });
@@ -182,16 +186,31 @@ const KknDashboard: React.FC = () => {
     } catch (_) {}
   });
 
-  const registrationTrendData = Object.keys(regTrendMap).map((date) => ({
-    tanggal: date,
-    warga: regTrendMap[date],
-  })).slice(-7);
+  const registrationTrendData = Object.keys(regTrendMap).length > 0 
+    ? Object.keys(regTrendMap).map((date) => ({
+        tanggal: date,
+        warga: regTrendMap[date],
+      })).slice(-7)
+    : [
+        { tanggal: "25 Jul", warga: 0 },
+        { tanggal: "26 Jul", warga: 0 },
+        { tanggal: "27 Jul", warga: 0 },
+        { tanggal: "28 Jul", warga: 0 },
+        { tanggal: "29 Jul", warga: 0 },
+        { tanggal: "30 Jul", warga: 0 },
+        { tanggal: "31 Jul", warga: 0 },
+      ];
 
   // 2. Process Compliance Data
-  const complianceData = wargaList.map((w) => ({
-    nama: w.name.split(" ")[0],
-    skor: w.complianceScore,
-  })).slice(0, 10);
+  const complianceData = wargaList.length > 0
+    ? wargaList.map((w) => ({
+        nama: (w.name || "Warga").split(" ")[0],
+        skor: w.complianceScore || 0,
+      })).slice(0, 10)
+    : [
+        { nama: "Warga 1", skor: 0 },
+        { nama: "Warga 2", skor: 0 },
+      ];
 
   return (
     <div className="space-y-6 pb-12">

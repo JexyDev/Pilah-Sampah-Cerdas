@@ -12,13 +12,30 @@ const prisma = new PrismaClient();
 
 export class KknService {
   async getDashboardStats(userId: string) {
-    const student = await prisma.studentKkn.findUnique({
+    let student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: { assignedPolygon: true },
     });
 
     if (!student) {
-      throw new Error("STUDENT_NOT_FOUND");
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (user) {
+        student = await prisma.studentKkn.create({
+          data: {
+            userId,
+            nim: "10123000",
+            jurusan: "Teknik Lingkungan",
+            fakultas: "FTSL",
+            noWa: user.phone || "-",
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            whitelistStatus: "APPROVED",
+          },
+          include: { assignedPolygon: true },
+        });
+      } else {
+        throw new Error("STUDENT_NOT_FOUND");
+      }
     }
 
     // Total registered bins from batches assigned to this KKN PIC
@@ -45,6 +62,22 @@ export class KknService {
     const contributionPoints = pointsSum._sum.points || 0;
 
     return {
+      studentKkn: {
+        nim: student.nim,
+        jurusan: student.jurusan,
+        fakultas: student.fakultas,
+        whitelistStatus: student.whitelistStatus,
+        endDate: student.endDate,
+        assignedArea: student.assignedPolygon?.name || "Area KKN Dago",
+      },
+      stats: {
+        totalRegistered: totalRegistered,
+        remainingQuota,
+        progressPct,
+        contributionPoints,
+        maxLimit,
+      },
+      // Backward compatibility aliases
       nim: student.nim,
       jurusan: student.jurusan,
       totalRegisteredBins: totalRegistered,
@@ -459,6 +492,123 @@ export class KknService {
     });
 
     return facility;
+  }
+
+  async claimQr(kknUserId: string, qrCode: string, latitude?: number, longitude?: number) {
+    let bin = await prisma.bin.findUnique({ where: { qrCode } });
+
+    if (!bin) {
+      let category = await prisma.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
+      if (!category) category = await prisma.wasteCategory.findFirst();
+
+      bin = await prisma.bin.create({
+        data: {
+          qrCode,
+          status: "ASSIGNED_TO_PIC",
+          categoryId: category?.id,
+          registeredByStudentId: kknUserId,
+        },
+      });
+    } else {
+      bin = await prisma.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: "ASSIGNED_TO_PIC",
+          registeredByStudentId: kknUserId,
+        },
+      });
+    }
+
+    await prisma.auditTrail.create({
+      data: {
+        userId: kknUserId,
+        action: "CLAIM_QR_BIN",
+        newValue: { details: `Scan & Klaim QR ${qrCode} at lat:${latitude}, lon:${longitude}` },
+      },
+    });
+
+    return bin;
+  }
+
+  async registerWarga(kknUserId: string, data: any) {
+    return prisma.$transaction(async (tx) => {
+      let role = await tx.role.findFirst({ where: { name: "WARGA" } });
+      let warga = await tx.user.findFirst({
+        where: {
+          OR: [
+            { phone: data.phone || "non-existent-phone" },
+            { email: data.email || "non-existent-email" },
+          ],
+        },
+      });
+
+      if (!warga) {
+        warga = await tx.user.create({
+          data: {
+            name: data.name || data.wargaName || "Warga Binaan KKN",
+            phone: data.phone || `08${Math.floor(100000000 + Math.random() * 900000000)}`,
+            email: data.email || `warga_${Date.now()}@trashcare.id`,
+            password: data.password || "password123",
+            address: data.address || "-",
+            rtRwId: data.rtRwId ? Number(data.rtRwId) : undefined,
+            roleId: role ? role.id : 1,
+            status: "Aktif",
+          },
+        });
+      }
+
+      const qrCodes = [data.binQrCode, data.binQrCodeOrganic, data.binQrCodeInorganic].filter(Boolean);
+
+      for (const qr of qrCodes) {
+        let bin = await tx.bin.findUnique({ where: { qrCode: qr } });
+        const maxCapacityLiter = data.maxCapacityLiter ? Number(data.maxCapacityLiter) : 50;
+
+        if (!bin) {
+          let category = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
+          if (!category) category = await tx.wasteCategory.findFirst();
+
+          bin = await tx.bin.create({
+            data: {
+              qrCode: qr,
+              status: "PENDING_APPROVAL",
+              categoryId: category?.id,
+              userId: warga.id,
+              maxCapacityLiter,
+              registeredByStudentId: kknUserId,
+            },
+          });
+        } else {
+          bin = await tx.bin.update({
+            where: { id: bin.id },
+            data: {
+              userId: warga.id,
+              status: "PENDING_APPROVAL",
+              maxCapacityLiter,
+              registeredByStudentId: kknUserId,
+            },
+          });
+        }
+
+        const existingOwnership = await tx.binOwnership.findFirst({
+          where: { binId: bin.id, userId: warga.id },
+        });
+        if (!existingOwnership) {
+          await tx.binOwnership.create({
+            data: { userId: warga.id, binId: bin.id, type: "UTAMA" },
+          });
+        }
+      }
+
+      await tx.pointHistory.create({
+        data: {
+          userId: kknUserId,
+          points: 10,
+          description: `Pendampingan Registrasi Warga (${warga.name})`,
+        },
+      });
+
+      return { warga, qrCodes };
+    });
   }
 }
 

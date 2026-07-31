@@ -82,6 +82,8 @@ router.post(
  *         description: Success
  */
 router.get("/me", authMiddleware, householdController.getMyHouseholds);
+router.get("/me/bins/summary", authMiddleware, householdController.getBinsSummary);
+router.get("/bins/summary", authMiddleware, householdController.getBinsSummary);
 
 router.get(
   "/",

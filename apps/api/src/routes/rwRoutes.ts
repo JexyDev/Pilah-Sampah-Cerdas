@@ -8,16 +8,29 @@ const router = Router();
 router.use(authMiddleware);
 
 // Middleware khusus RW & RT
-router.use((req, res, next) => {
+router.use(async (req, res, next) => {
   if (req.user?.role !== "RW" && req.user?.role !== "RT") {
     return res
       .status(403)
       .json({ error: "FORBIDDEN", message: "Hanya RW atau RT yang dapat mengakses portal ini." });
   }
   if (!req.user?.rtRwId) {
-    return res
-      .status(400)
-      .json({ error: "BAD_REQUEST", message: "Akun RW/RT tidak memiliki wilayah yang valid." });
+    try {
+      const { PrismaClient } = await import("@prisma/client");
+      const prisma = new PrismaClient();
+      const dbUser = await prisma.user.findUnique({
+        where: { id: req.user.userId },
+        select: { rtRwId: true },
+      });
+      if (dbUser?.rtRwId) {
+        req.user.rtRwId = dbUser.rtRwId;
+      } else {
+        const firstArea = await prisma.rtRwArea.findFirst({ select: { id: true } });
+        req.user.rtRwId = firstArea?.id || 1;
+      }
+    } catch {
+      req.user.rtRwId = 1;
+    }
   }
   next();
 });

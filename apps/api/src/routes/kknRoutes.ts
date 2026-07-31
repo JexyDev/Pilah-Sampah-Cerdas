@@ -77,4 +77,18 @@ router.post(
   kknAttendanceController.updateLocation
 );
 
+router.post(
+  "/qr/claim",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.claimQr
+);
+
+router.post(
+  "/register-warga",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.registerWarga
+);
+
 export default router;

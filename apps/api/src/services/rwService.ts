@@ -155,36 +155,53 @@ export const rwService = {
     return bin;
   },
 
-  getPendingPetugas: async (rtRwId: number) => {
+  getPendingPetugas: async (_rtRwId: number) => {
     return prisma.petugasResidu.findMany({
       where: {
-        whitelistStatus: "PENDING",
-        user: { rtRwId },
+        OR: [
+          { whitelistStatus: "PENDING" },
+          { user: { status: "Pending" } },
+        ],
       },
       include: { user: true },
     });
   },
 
-  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rtRwId: number) => {
-    const petugasCheck = await prisma.petugasResidu.findUnique({
+  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", _rtRwId: number) => {
+    let petugasCheck = await prisma.petugasResidu.findUnique({
       where: { id: petugasId },
       include: { user: true },
     });
-    if (!petugasCheck || petugasCheck.user.rtRwId !== rtRwId) {
-      throw new Error("Petugas is not in your RW area");
+    if (!petugasCheck) {
+      petugasCheck = await prisma.petugasResidu.findFirst({
+        where: { userId: petugasId },
+        include: { user: true },
+      });
+    }
+    if (!petugasCheck) {
+      throw new Error("Petugas not found");
     }
 
     const petugas = await prisma.petugasResidu.update({
-      where: { id: petugasId },
+      where: { id: petugasCheck.id },
       data: { whitelistStatus: action },
       include: { user: true },
     });
 
+    if (action === "APPROVED") {
+      await prisma.user.update({
+        where: { id: petugas.userId },
+        data: { status: "Aktif" },
+      });
+    }
+
     if (petugas.user?.phone && action === "APPROVED") {
-      await notificationService.sendWhatsApp(
-        petugas.user.phone,
-        `Akun Petugas Residu Anda telah diverifikasi oleh RW dan kini AKTIF.`
-      );
+      await notificationService
+        .sendWhatsApp(
+          petugas.user.phone,
+          `Akun Petugas Residu Anda telah diverifikasi oleh RW dan kini AKTIF.`
+        )
+        .catch((e) => console.error("WhatsApp notification error:", e));
     }
     return petugas;
   },

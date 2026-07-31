@@ -17,8 +17,8 @@ export const RwApproval = () => {
         api.get("/rw/bins/inactive")
       ]);
       //
-      setPendingPetugas(petugasRes.data);
-      setInactiveBins(inactiveRes.data);
+      setPendingPetugas(petugasRes.data?.data || petugasRes.data || []);
+      setInactiveBins(inactiveRes.data?.data || inactiveRes.data || []);
     } catch (error) {
       console.error("Failed to fetch RW approval data", error);
       toast.error("Gagal memuat data persetujuan");
@@ -92,24 +92,36 @@ export const RwApproval = () => {
               <thead>
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama & Kontak</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {pendingPetugas.map((petugas) => (
-                  <tr key={petugas.id} className="hover:bg-slate-50/50 transition-colors duration-150">
-                    <td className="px-4 py-2">
-                      <p className="font-semibold text-sm">{petugas.nama}</p>
-                      <p className="text-xs text-gray-500">{petugas.noWa}</p>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-2">
-                        <button onClick={() => verifyPetugas(petugas.id, "APPROVED")} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Setujui</button>
-                        <button onClick={() => verifyPetugas(petugas.id, "REJECTED")} className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Tolak</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {pendingPetugas.map((petugas) => {
+                  const targetId = petugas.id || petugas.userId;
+                  const isApproved = petugas.whitelistStatus === "APPROVED" || petugas.user?.status === "Aktif";
+                  return (
+                    <tr key={targetId} className="hover:bg-slate-50/50 transition-colors duration-150">
+                      <td className="px-4 py-2">
+                        <p className="font-semibold text-sm">{petugas.nama || petugas.user?.name || "Petugas Residu"}</p>
+                        <p className="text-xs text-gray-500">{petugas.noWa || petugas.user?.phone || "-"}</p>
+                      </td>
+                      <td className="px-4 py-2">
+                        {isApproved ? (
+                          <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 text-emerald-800">AKTIF</span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-100 text-amber-800">MENUNGGU ACC</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex gap-2">
+                          <button onClick={() => verifyPetugas(targetId, "APPROVED")} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Setujui</button>
+                          <button onClick={() => verifyPetugas(targetId, "REJECTED")} className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Tolak</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

@@ -17,10 +17,24 @@ const prisma = new PrismaClient();
 
 const verifiedPetugasGuard = async (req: any, res: any, next: any) => {
   if (req.user?.role === "PETUGAS_RESIDU") {
-    const profile = await prisma.petugasResidu.findUnique({
-      where: { userId: req.user.userId },
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: { petugasProfile: true },
     });
-    if (!profile || profile.whitelistStatus !== "APPROVED") {
+
+    if (!user) {
+      return res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Akun Petugas Residu tidak ditemukan.",
+      });
+    }
+
+    const isApproved =
+      user.status === "Aktif" ||
+      user.status === "ACTIVE" ||
+      user.petugasProfile?.whitelistStatus === "APPROVED";
+
+    if (!isApproved) {
       return res.status(403).json({
         error: "FORBIDDEN",
         message: "Akun Petugas Residu Anda belum diverifikasi oleh RW.",

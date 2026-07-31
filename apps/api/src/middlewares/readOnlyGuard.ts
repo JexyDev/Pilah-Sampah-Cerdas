@@ -32,7 +32,7 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
         const decoded = verifyAccessToken(token);
         const role = decoded.role;
 
-        if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH" || role === "RT") {
+        if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
           const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
           if (writeMethods.includes(req.method)) {
             // Exception: ADMIN_DLH can resolve discrepancy

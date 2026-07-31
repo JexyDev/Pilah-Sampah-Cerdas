@@ -773,6 +773,82 @@ export class AuthController {
       }
     }
   }
+
+  /**
+   * Request OTP via WhatsApp (Fonnte)
+   */
+  async requestOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Nomor WhatsApp (phone) diperlukan",
+        });
+        return;
+      }
+
+      const result = await authService.requestOtp(phone);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[Request OTP Error]", error);
+      res.status(500).json({
+        success: false,
+        code: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal menggirimkan OTP",
+      });
+    }
+  }
+
+  /**
+   * Verify OTP code
+   */
+  async verifyOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone, otp } = req.body;
+      if (!phone || !otp) {
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Nomor HP dan kode OTP diperlukan",
+        });
+        return;
+      }
+
+      const result = await authService.verifyOtp(phone, otp);
+
+      if (result.accessToken) {
+        res.cookie("accessToken", result.accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 60 * 60 * 1000,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: result.message || "OTP berhasil diverifikasi",
+        data: result,
+      });
+    } catch (error: any) {
+      if (error.message === "INVALID_OTP") {
+        res.status(400).json({
+          success: false,
+          code: "INVALID_OTP",
+          message: "Kode OTP salah atau kedaluwarsa",
+        });
+      } else {
+        console.error("[Verify OTP Error]", error);
+        res.status(500).json({
+          success: false,
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message || "Gagal memverifikasi OTP",
+        });
+      }
+    }
+  }
 }
 
 export const authController = new AuthController();

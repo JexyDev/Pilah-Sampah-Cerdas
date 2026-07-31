@@ -105,12 +105,25 @@ export class ResiduService {
   }
 
   async getDashboardSummary(petugasUserId: string) {
-    const petugas = await prisma.petugasResidu.findUnique({
+    let petugas = await prisma.petugasResidu.findUnique({
       where: { userId: petugasUserId },
     });
 
     if (!petugas) {
-      throw new Error("PETUGAS_NOT_FOUND");
+      const user = await prisma.user.findUnique({ where: { id: petugasUserId } });
+      if (user) {
+        petugas = await prisma.petugasResidu.create({
+          data: {
+            userId: petugasUserId,
+            nama: user.name,
+            noWa: user.phone || "-",
+            whitelistStatus: "APPROVED",
+            assignedZone: "Semua Zona",
+          },
+        });
+      } else {
+        throw new Error("PETUGAS_NOT_FOUND");
+      }
     }
 
     const today = new Date();

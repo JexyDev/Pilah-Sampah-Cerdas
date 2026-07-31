@@ -305,8 +305,10 @@ export class BinService {
           multiplier = multVal ? Number(multVal) : 1.0;
         }
 
-        const conf = det.confidence || 1.0;
-        const calculatedPoints = Math.round(weightKg * conf * 0.9);
+        const rawConf = det.confidence ?? aiConfidence ?? 1.0;
+        const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
+        const rate = 100 * multiplier;
+        const calculatedPoints = Math.max(1, Math.round(vol * rate * confScale));
 
         const requestId = uuidv4();
         const result = await binRepository.recordScanTransaction(
@@ -319,7 +321,7 @@ export class BinService {
           userId,
           calculatedPoints,
           targetBin.category?.name || "Umum",
-          conf,
+          confScale,
           evidencePhotoUrl
         );
 
@@ -456,16 +458,10 @@ export class BinService {
       multiplier = multVal ? Number(multVal) : 1.0;
     }
 
-    const pointsPerKg = bin.category.pointsPerKg || 10;
-    const conf = aiConfidence || 1.0;
-    const maxPoints = Math.round(weightKg * pointsPerKg * multiplier);
-
-    let calculatedPoints = 0;
-    if (conf >= 0.9) {
-      calculatedPoints = Math.round(maxPoints * (0.9 * conf));
-    } else {
-      calculatedPoints = -Math.round(maxPoints * (0.9 - conf));
-    }
+    const rawConf = aiConfidence ?? 1.0;
+    const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
+    const rate = 100 * multiplier;
+    const calculatedPoints = Math.max(1, Math.round(estimatedVolume * rate * confScale));
 
     // 8. Record transaction (WasteLog, PointHistory, Notification)
     const requestId = uuidv4();
@@ -841,11 +837,12 @@ export class BinService {
         currentVolumeLiter: currentVol,
         maxCapacityLiter: maxVol,
         kapasitas,
+        isCritical: kapasitas >= 80,
         rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
         status:
           realStatus === "TIDAK_AKTIF"
             ? "TIDAK AKTIF"
-            : kapasitas > 80
+            : kapasitas >= 80
               ? "Penuh"
               : kapasitas > 50
                 ? "Sedang"

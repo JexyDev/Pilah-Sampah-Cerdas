@@ -194,6 +194,37 @@ export class KknController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async claimQr(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const { qrCode, latitude, longitude } = req.body;
+      if (!qrCode) {
+        return res.status(400).json({ success: false, message: "qrCode wajib diisi" });
+      }
+      const data = await kknService.claimQr(
+        kknUserId,
+        qrCode,
+        latitude != null ? Number(latitude) : undefined,
+        longitude != null ? Number(longitude) : undefined
+      );
+      res.status(200).json({ success: true, message: "QR berhasil diklaim", data });
+    } catch (error: any) {
+      console.error("[KknController] claimQr error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async registerWarga(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.registerWarga(kknUserId, req.body);
+      res.status(201).json({ success: true, message: "Registrasi Warga Berhasil", data });
+    } catch (error: any) {
+      console.error("[KknController] registerWarga error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();

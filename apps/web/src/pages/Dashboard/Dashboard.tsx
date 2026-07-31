@@ -1361,7 +1361,9 @@ const Dashboard: React.FC = () => {
     if (
       user?.peran === "WARGA" ||
       user?.peran === "MAHASISWA_KKN" ||
-      user?.peran === "PETUGAS_RESIDU"
+      user?.peran === "PETUGAS_RESIDU" ||
+      user?.peran === "RW" ||
+      user?.peran === "RT"
     ) {
       setLoading(false);
       return;
@@ -1535,6 +1537,11 @@ const Dashboard: React.FC = () => {
     return <WargaDashboard />;
   }
 
+  // Render RW/RT Dashboard
+  if (user?.peran === "RW" || user?.peran === "RT") {
+    return <RwDashboard />;
+  }
+
   // Render KKN Dashboard
   if (user?.peran === "MAHASISWA_KKN") {
     return <KknDashboard />;
@@ -1664,10 +1671,6 @@ const Dashboard: React.FC = () => {
     return Math.ceil(totalMonitoringPetugas / monitoringItemsPerPage);
   };
 
-
-  if (user?.peran === "RW" || user?.peran === "RT") {
-    return <RwDashboard />;
-  }
 
   return (
     <div className="space-y-gutter pb-12 text-on-surface">

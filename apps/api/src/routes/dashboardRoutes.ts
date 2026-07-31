@@ -86,13 +86,13 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
 router.get(
   "/analytics",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]),
   dashboardController.getAnalytics
 );
 router.get(
   "/export-dataset",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]),
   dashboardController.exportDataset
 );
 router.get("/regions", authMiddleware, dashboardController.getRegions);

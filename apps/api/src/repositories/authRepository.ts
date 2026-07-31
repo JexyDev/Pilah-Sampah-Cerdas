@@ -321,6 +321,7 @@ export class AuthRepository {
         data: {
           ...userData,
           roleId: role.id,
+          status: "Pending",
         },
       });
 
@@ -328,6 +329,7 @@ export class AuthRepository {
         data: {
           ...petugasData,
           userId: user.id,
+          whitelistStatus: "PENDING",
         },
       });
 
