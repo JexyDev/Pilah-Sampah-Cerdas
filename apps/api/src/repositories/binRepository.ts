@@ -38,13 +38,34 @@ export class BinRepository {
       where,
       include: {
         category: true,
-        rtRw: true,
-        user: true,
+        rtRw: {
+          include: {
+            kelurahan: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            households: {
+              select: {
+                id: true,
+                address: true,
+              },
+            },
+          },
+        },
         qrBatch: {
           include: {
             assignedPic: true,
           },
         },
+      },
+      orderBy: {
+        currentVolumeLiter: "desc",
       },
     });
   }
