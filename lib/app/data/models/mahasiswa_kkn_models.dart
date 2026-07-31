@@ -138,12 +138,18 @@ class WargaDampingan extends Equatable {
             .toList() ??
         [];
 
+    final String extractedBinId = json['binId']?.toString() ??
+        json['id']?.toString() ??
+        json['wargaId']?.toString() ??
+        json['userId']?.toString() ??
+        '';
+
     return WargaDampingan(
-      binId: json['binId']?.toString() ?? '',
-      wargaName: json['wargaName']?.toString() ?? '',
-      address: json['address']?.toString() ?? '',
+      binId: extractedBinId,
+      wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
+      address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
-      rtRw: json['rtRw']?.toString() ?? '',
+      rtRw: json['rtRw']?.toString() ?? json['rt_rw']?.toString() ?? '',
       recentLogs: logs,
       isActivated: json['isActivated'] as bool? ?? (json['status']?.toString().toUpperCase() != 'UNACTIVATED'),
       role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',

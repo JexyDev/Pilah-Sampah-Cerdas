@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
@@ -19,10 +18,20 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final warga = args?['warga'] as Map<String, dynamic>?;
-    final wargaId = warga?['id']?.toString() ?? '';
-    final wargaName = warga?['name']?.toString() ?? 'Warga';
+    final rawArgs = ModalRoute.of(context)?.settings.arguments;
+    String wargaId = '';
+    String wargaName = 'Warga';
+
+    if (rawArgs is Map<String, dynamic>) {
+      final wargaMap = rawArgs['warga'] as Map<String, dynamic>? ?? rawArgs;
+      wargaId = wargaMap['id']?.toString() ?? wargaMap['wargaId']?.toString() ?? wargaMap['binId']?.toString() ?? '';
+      wargaName = wargaMap['name']?.toString() ?? wargaMap['wargaName']?.toString() ?? 'Warga';
+    } else if (rawArgs is WargaDampingan) {
+      wargaId = rawArgs.binId.isNotEmpty ? rawArgs.binId : rawArgs.wargaName;
+      wargaName = rawArgs.wargaName;
+    } else if (rawArgs is String) {
+      wargaId = rawArgs;
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -85,20 +94,52 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   setState(() {
                     _binAnorganikId = qrCode;
                   });
-                  // Submit
-                  final success = await ref.read(aktivasiWargaProvider.notifier).activateBin(wargaId, _binOrganikId, _binAnorganikId);
+
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                    ),
+                  );
+
+                  // Submit bin activation
+                  final success = await ref.read(aktivasiWargaProvider.notifier).activateBin(
+                    wargaId,
+                    _binOrganikId,
+                    _binAnorganikId,
+                  );
+
+                  if (mounted) {
+                    Navigator.of(context, rootNavigator: true).pop(); // Close dialog
+                  }
+
                   if (success && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Aktivasi 2 Bin berhasil!')),
+                      SnackBar(
+                        content: Text('Aktivasi 2 Tempat Sampah untuk $wargaName Berhasil!'),
+                        backgroundColor: AppColors.primaryGreen,
+                        duration: const Duration(seconds: 3),
+                      ),
                     );
                     Navigator.pop(context);
+                    return true;
                   } else if (mounted) {
-                    // Retry step 2
+                    final err = ref.read(aktivasiWargaProvider).errorMessage ?? 'Gagal mengaktivasi tempat sampah.';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(err),
+                        backgroundColor: AppColors.dangerRed,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
                     setState(() {
                       _binAnorganikId = '';
                     });
+                    return false;
                   }
-                  return success;
+                  return false;
                 }
               },
             ),
