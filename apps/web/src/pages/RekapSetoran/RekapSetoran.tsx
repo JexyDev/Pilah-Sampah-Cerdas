@@ -187,19 +187,25 @@ const RekapSetoran: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant/30">
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
                   Warga
                 </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
                   Kategori
                 </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Berat (Kg) & Poin
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Berat (Kg)
                 </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Waktu & Lokasi
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Poin
                 </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider text-right">
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Waktu Setor
+                </th>
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Lokasi
+                </th>
+                <th className="py-3 px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider text-right">
                   Status
                 </th>
               </tr>
@@ -207,7 +213,7 @@ const RekapSetoran: React.FC = () => {
             <tbody className="text-[14px] text-on-surface">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
+                  <td colSpan={7} className="px-4 py-12 text-center text-on-surface-variant">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <Loader2 className="animate-spin text-primary" size={32} />
                       <p>Memuat data transaksi...</p>
@@ -216,41 +222,53 @@ const RekapSetoran: React.FC = () => {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-error font-medium">
+                  <td colSpan={7} className="px-4 py-8 text-center text-error font-medium">
                     {error}
                   </td>
                 </tr>
               ) : filteredDeposits.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-on-surface-variant">
+                  <td colSpan={7} className="px-4 py-8 text-center text-on-surface-variant">
                     Belum ada data setoran.
                   </td>
                 </tr>
               ) : (
-                filteredDeposits.map((dep) => (
-                  <tr
-                    key={dep.id}
-                    className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150"
-                  >
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-on-surface">{dep.warga}</div>
-                      <div className="text-[12px] text-on-surface-variant mt-0.5">{dep.rtRw}</div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide uppercase bg-surface-container-high text-on-surface-variant">
-                        {dep.jenis}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-on-surface text-lg">{dep.berat}</span>
-                      </div>
-                      <div className="mt-1 text-[12px] font-bold text-primary flex items-center gap-1">
+                filteredDeposits.map((dep) => {
+                  const formatRtRw = (raw?: string) => {
+                    if (!raw) return "-";
+                    const trimmed = raw.trim();
+                    if (trimmed.includes("/") && !trimmed.toLowerCase().includes("rt")) {
+                      const parts = trimmed.split("/");
+                      if (parts.length === 2) {
+                        return `RT ${parts[0].trim()} / RW ${parts[1].trim()}`;
+                      }
+                    }
+                    return trimmed.toLowerCase().startsWith("rt") ? trimmed : `RT/RW: ${trimmed}`;
+                  };
+
+                  return (
+                    <tr
+                      key={dep.id}
+                      className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150"
+                    >
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="font-bold text-on-surface">{dep.warga}</div>
+                        <div className="text-[12px] font-medium text-slate-500 mt-0.5">
+                          {formatRtRw(dep.rtRw)}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide uppercase bg-surface-container-high text-on-surface-variant">
+                          {dep.jenis}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-on-surface">
+                        {dep.berat} Kg
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-primary">
                         +{dep.poin} Poin
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="text-[13px] text-on-surface font-medium">
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap text-[13px] text-on-surface font-medium">
                         {new Date(dep.waktu).toLocaleString('id-ID', {
                           year: 'numeric',
                           month: '2-digit',
@@ -259,19 +277,21 @@ const RekapSetoran: React.FC = () => {
                           minute: '2-digit',
                           second: '2-digit'
                         })}
-                      </div>
-                      <div className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5">
-                        <MapPin size={14} />
-                        {dep.lokasi}
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase bg-green-100 text-green-700">
-                        {dep.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="py-3.5 px-4 text-[12px] text-on-surface-variant">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin size={14} className="text-slate-400 shrink-0" />
+                          <span>{dep.lokasi}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase bg-green-100 text-green-700">
+                          {dep.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
