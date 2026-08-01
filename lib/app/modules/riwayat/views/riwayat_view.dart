@@ -9,6 +9,9 @@ import '../../shared/widgets/skeleton_loading.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/weight_text.dart';
 
+import 'package:flutter/foundation.dart';
+import 'pemilahan_monitoring_dashboard_view.dart';
+
 /// Halaman riwayat pemilahan — sesuai desain:
 /// Filter tabs, summary kg organik+anorganik, list TERVALIDASI.
 class RiwayatView extends ConsumerStatefulWidget {
@@ -23,6 +26,10 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return const PemilahanMonitoringDashboardView();
+    }
+
     final logsAsync = ref.watch(wasteLogsProvider);
 
     return Scaffold(
