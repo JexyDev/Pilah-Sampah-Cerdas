@@ -1,6 +1,6 @@
 # UI/UX Specification & Flow — Pilah Sampah Cerdas
 
-## 1. Panduan Visual & Desain
+## 1. Panduan Visual & Desain System
 *   **Tema:** Light Mode Only. Tidak ada toggle dark/light mode.
 *   **Font Standard:** **Poppins** (semua platform — web dashboard & mobile Flutter). Import dari Google Fonts.
 *   **Hierarki Font:**
@@ -8,89 +8,60 @@
     *   Body: `Poppins Regular` (weight 400).
     *   Caption: `Poppins Medium` (weight 500).
 *   **Palet Warna:**
-    *   **Primary Green (Hijau Daun):** `#4CAF50` (Sampah organik, tombol konfirmasi utama, status patuh).
-    *   **Primary Blue (Biru Priangan):** `#0056A4` (Sampah non-organik, teknologi GIS).
-    *   **Peta GIS Engine:** Menggunakan library gratis **Leaflet.js** dan **OpenStreetMap** (OSM) sebagai penyedia basemap gratis untuk fase testing awal sistem.
-    *   **Danger Red (Merah Alarm):** `#EF4444` (Kapasitas tong kritis >90%, error, mismatch).
+    *   **Primary Green (Hijau Daun):** `#4CAF50` (Sampah organik, tempat sampah organik, tombol konfirmasi utama).
+    *   **Primary Blue (Biru Priangan):** `#0056A4` (Sampah anorganik, tempat sampah anorganik, teknologi GIS).
+    *   **Peta GIS Engine:** Menggunakan library gratis **Leaflet.js** dan **OpenStreetMap** (OSM).
+    *   **Danger Red (Merah Alarm):** `#EF4444` (Kapasitas tempat sampah kritis >90%, error, mismatch).
     *   **Warning Yellow (Kuning Transisi):** `#F59E0B` (Kapasitas sedang 70-90%).
-    *   **Background Canvas:** `#F9FAFB` (Abu-abu sangat terang).
+    *   **Background Canvas:** `#F9FAFB` (Abu-abu terang).
     *   **Card Background:** `#FFFFFF` (Putih bersih dengan shadow tipis).
 
 ---
 
-## 2. Struktur Halaman & Fitur Web Dashboard
+## 2. Struktur Halaman & Navigasi Web Dashboard (Superset)
 
-### 2.1 Sidebar & Topbar (Navigasi Global)
+### 2.1 Sidebar & Topbar (Navigasi Global per Role)
 *   **Sidebar (Kiri):**
-    *   Logo hijau daun bertuliskan `Pilah Sampah Cerdas` (Kecamatan Coblong).
-    *   Menu navigasi dengan ikon Lucide:
-        *   **Dashboard** (Ringkasan statistik utama KPI).
-        *   **Live Monitoring** (Peta geospatial real-time titik tong + batas RT/RW/Kelurahan).
-        *   **Master Data Dropdown** (User, Kelurahan, RT/RW, Rumah Tangga, Tong Sampah, Kategori Sampah, Jadwal Pengangkutan, Konfigurasi Poin).
-        *   **Peta Wilayah** (Visualisasi spasial GIS & analitik per RT).
-        *   **Data Warga & Tong** (Tabel detail status sensor warga).
-        *   **Leaderboard** (Papan peringkat kompetisi antar-RT).
-        *   **Evaluasi AI** (Log audit kuota dan akurasi model visi komputer).
-        *   **Notifikasi** (Log peringatan tong penuh & sistem).
+    *   Logo hijau daun `Pilah Sampah Cerdas`.
+    *   Menu navigasi (ikon Lucide):
+        *   **Dashboard Monitoring Warga** (Tampilan khusus Warga: Status 2 Tempat Sampah, Grafik Setoran, Leaderboard, Status Reset).
+        *   **Management Reset Tempat Sampah** *(Halaman Khusus RT & RW)*: Review foto bukti & approval/rejection reset tempat sampah warga wilayahnya.
+        *   **Live Monitoring Geospatial** (Peta real-time titik tempat sampah + batas wilayah RT/RW/Kelurahan).
+        *   **Master Data Dropdown** (User, Kelurahan, RT/RW, Rumah Tangga, Tempat Sampah, Kategori Sampah).
+        *   **Papan Peringkat (Leaderboard)** (Poin & akumulasi kg terpilah).
+
+> ⚠️ DEPRECATED (flow lama)
+> *Dahulu: Menu Tukar Poin / Catalog Reward aktif di Web/Mobile.*
+> *Digantikan: Menu Penukaran Reward berstatus `[COMING SOON]`. Poin hanya untuk statistik Akumulasi & Leaderboard.*
 
 ---
 
-## 3. Acuan Aset Visual UI Mobile (Flutter)
-Semua screen acuan desain terletak di branch `mobile` pada folder `/mobile/assets/stitch_ui/`:
-1.  `splash_screen_minimalist.png`: Layar awal pembuka aplikasi.
-2.  `login.png_1` & `login.png_2`: UI Autentikasi/masuk warga & petugas.
-3.  `beranda.png`: Dasbor utama warga (tombol foto organik/anorganik, total poin, log riwayat).
-4.  `scan_barcode.png` & `scan_qr_bin.png`: UI pemindaian QR Code di tong sampah fisik warga.
-5.  `riwayat_pemilahan.png`: Daftar riwayat pembuangan sampah lengkap dengan volume/liter.
-6.  `poin_saya.png`: Grafik & ledger riwayat perolehan poin dari penyetoran sampah terpilah.
-7.  `profil_rumah_tangga.png`: Data administratif KK, alamat, koordinat GIS geotag.
-8.  `aktivasi_bin.png`: Halaman scan QR untuk mengaktivasi/menghubungkan tong sampah baru dengan akun warga.
-9.  `bin_mismatch.png`: Penanganan error (peringatan tipe sampah tidak sesuai dengan peruntukan tong).
-10. `success_scan_step_1.png` & `success_final_step.png`: Alur sukses deteksi AI hingga transaksi berhasil dan poin bertambah.
+## 3. Acuan Aset Visual UI Mobile (Flutter — Thin-Client)
+Screen acuan desain pada branch `mobile` (`/mobile/assets/stitch_ui/`):
+1.  `splash_screen_minimalist.png`: Layar pembuka.
+2.  `login.png`: Autentikasi berbasis **Nomor Telepon** (Warga/Pengurus), **NIM** (KKN), **NIP** (DPL). Tanpa NIK.
+3.  `beranda.png`: Dasbor Warga menampilkan status 2 Tempat Sampah (Organik & Anorganik), total poin, dan riwayat.
+4.  `scan_qr_bin.png`: UI pemindaian QR Code pada tempat sampah fisik.
+5.  `riwayat_pemilahan.png`: Log penyetoran volume (L) & berat (Kg).
+6.  `poin_saya.png`: Ledger akumulasi poin & posisi Leaderboard.
+7.  `profil_rumah_tangga.png`: Data rumah tangga, alamat, & geotag presisi GPS rumah Warga.
+8.  `aktivasi_bin.png`: Halaman scan QR aktivasi 2 tempat sampah baru (didampingi Mahasiswa KKN).
+9.  `ajukan_reset.png`: Halaman khusus Warga foto bukti & kirim request reset tempat sampah penuh ke RT/RW setempat.
+10. `bin_mismatch.png`: Penanganan error jenis sampah AI tidak cocok dengan jenis tempat sampah.
 
 ---
 
 ## 4. Spesifikasi Responsif — Web Dashboard (Frontend)
 
-Seluruh halaman Web Dashboard **wajib responsif** menggunakan breakpoint standar CSS berikut:
-
 | Breakpoint | Lebar Layar | Perilaku Layout |
 |:---|:---|:---|
-| **Mobile (sm)** | ≥ 360px | Sidebar tersembunyi. Navigasi bergeser ke **Bottom Navigation Bar** (5 ikon utama). Konten 1 kolom penuh. |
-| **Tablet (md)** | ≥ 768px | Sidebar tampil sebagai **ikon saja** (collapsed). Konten 2 kolom. Peta Live Monitoring mengecil. |
-| **Desktop (lg)** | ≥ 1280px | Sidebar tampil **penuh** (ikon + teks menu). Konten multi-kolom. Tampilan standar utama. |
-| **Large Desktop (xl)** | ≥ 1536px | Layout lebar penuh. Panel statistik KPI melebar. Tabel data lebih banyak kolom terlihat. |
-
-### Ketentuan Tambahan Responsif FE:
-*   **Tabel Data:** Pada breakpoint Mobile dan Tablet, kolom tabel yang tidak esensial disembunyikan. Scroll horizontal diperbolehkan untuk tabel dengan data padat.
-*   **Peta Geospatial (Leaflet):** Tinggi peta menyesuaikan viewport secara dinamis (`height: calc(100vh - topbar_height)`).
-*   **Modal & Dialog:** Selalu tampil lebar penuh di Mobile (100vw), terpusat dengan lebar maksimum di Desktop.
-*   **Tombol Aksi:** Di Mobile, tombol aksi (Approve/Reject) pindah ke bagian bawah layar sebagai Fixed Action Button (FAB).
+| **Mobile (sm)** | ≥ 360px | Sidebar tersembunyi, navigasi pindah ke Bottom Bar. Layout 1 kolom. |
+| **Tablet (md)** | ≥ 768px | Sidebar ikoncollapsed, layout 2 kolom. |
+| **Desktop (lg)** | ≥ 1280px | Sidebar penuh (teks + ikon). Layout multi-kolom utama. |
+| **Large Desktop (xl)** | ≥ 1536px | Layout lebar penuh dengan panel statistik tambahan. |
 
 ---
 
 ## 5. Spesifikasi Responsif — Aplikasi Mobile Flutter
-
-### 5.1 Prinsip Dasar Responsif Flutter
-*   Gunakan `LayoutBuilder` dan `MediaQuery` untuk mendeteksi ukuran layar secara dinamis.
-*   Semua dimensi menggunakan **persentase relatif** (`MediaQuery.of(context).size.width * 0.XX`) atau widget `Flexible` / `Expanded`, **bukan nilai pixel statis**.
-*   Target perangkat utama: **Smartphone Android** (layar 360dp–480dp lebar).
-*   Target perangkat sekunder: **Tablet Android** (layar 600dp–840dp lebar).
-
-### 5.2 Breakpoint Flutter
-
-| Kondisi | Lebar (dp) | Perilaku Layout |
-|:---|:---|:---|
-| **Compact (HP kecil)** | < 360dp | Font dikurangi 10%. Padding minimal. Elemen di-stack vertikal. |
-| **Medium (HP standar)** | 360dp – 479dp | Tampilan standar. Layout utama 1 kolom. |
-| **Large (HP besar/Tablet kecil)** | 480dp – 599dp | Elemen dapat tampil 2 kolom di beranda. |
-| **Tablet** | ≥ 600dp | Grid 2 kolom. Navigasi pindah ke **NavigationRail** (sidebar kiri). |
-
-### 5.3 Ketentuan Koneksi Internet (Online-Only)
-*   **Semua fitur inti wajib online:** Deteksi AI foto sampah, scan QR, melihat riwayat, dan menambah poin memerlukan koneksi internet aktif karena bergantung pada Backend API dan AI Mock Service.
-*   **Penanganan Offline:** Ketika koneksi terputus (`DioException.type == connectionTimeout` atau `connectionError`):
-    1.  Tampilkan **Banner merah** di bagian atas layar: *"Tidak ada koneksi internet. Beberapa fitur tidak tersedia."*
-    2.  Tombol **"Foto & Pilah Sampah"** dan **"Scan QR Tong"** dinonaktifkan (`onPressed: null`).
-    3.  Halaman **Riwayat** dan **Poin** dapat tetap tampil menggunakan **cache terakhir** (dari `SharedPreferences`).
-*   **Cek Koneksi:** Gunakan package `connectivity_plus` untuk memantau perubahan status jaringan secara real-time.
-
+* **Online-Only:** Semua fitur penyetoran AI & Scan QR memerlukan koneksi internet aktif.
+* **Geofencing UI:** Peringatan visual jika lokasi GPS Warga melebihi 10m dari lokasi rumah/tempat sampah terdaftar.

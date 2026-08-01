@@ -275,7 +275,7 @@ class _LaporPelanggaranViewState extends ConsumerState<LaporPelanggaranView> {
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(14),
                           child: Stack(
-                            fit: StackPane.expand,
+                            fit: StackFit.expand,
                             children: [
                               Image.file(File(_photoPath!), fit: BoxFit.cover),
                               Positioned(
@@ -294,7 +294,7 @@ class _LaporPelanggaranViewState extends ConsumerState<LaporPelanggaranView> {
                           ),
                         )
                       : Column(
-                          mainAxisAlignment: Maincenter: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
                             Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.dangerRed),
                             SizedBox(height: 8),

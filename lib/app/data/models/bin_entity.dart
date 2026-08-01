@@ -16,6 +16,8 @@ class BinEntity extends Equatable {
     required this.rw,
     required this.kelurahan,
     required this.isActive,
+    this.createdAt,
+    this.activatedAt,
   });
 
   BinEntity copyWith({

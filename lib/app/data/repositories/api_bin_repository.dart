@@ -112,6 +112,20 @@ class ApiBinRepository implements BinRepository {
     }
   }
 
+  @override
+  Future<List<BinEntity>> getAllBins() async {
+    try {
+      final response = await apiClient.dio.get('/bins/my-bins');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] as List<dynamic>;
+        return data.map((json) => _mapMyBin(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   // ─── Get Bin by QR Serial ─────────────────────────────────────────────────
   // Pakai GET /bins/my lalu cari yang cocok — tidak ada endpoint by QR serial.
 

@@ -166,7 +166,7 @@ class PetugasResiduView extends ConsumerWidget {
                         ),
                         Text(
                           'Volume >= 70%',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.warningYellow[900]),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.warningOrange),
                         ),
                       ],
                     ),
@@ -358,7 +358,7 @@ class PetugasResiduView extends ConsumerWidget {
                   children: [
                     Icon(
                       Icons.delete_rounded,
-                      color: bin.isPickedUp ? AppColors.primaryGreen : AppColors.warningYellow[900],
+                      color: bin.isPickedUp ? AppColors.primaryGreen : AppColors.warningOrange,
                       size: 20,
                     ),
                     const SizedBox(width: 8),

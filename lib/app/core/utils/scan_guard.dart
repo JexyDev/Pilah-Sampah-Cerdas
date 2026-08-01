@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../modules/scan/controllers/scan_controller.dart';
@@ -7,6 +8,36 @@ import '../values/app_colors.dart';
 
 class ScanGuard {
   static void handleScanNavigation(BuildContext context, WidgetRef ref) {
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.desktop_windows_rounded, color: AppColors.primaryGreen),
+              SizedBox(width: 8),
+              Text('Monitoring Web', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          content: const Text(
+            'Fitur Scan & Foto Sampah khusus tersedia di Aplikasi Mobile (Role Warga).\nHalaman Web disiapkan khusus untuk Dashboard Monitoring & Tata Kelola Sampah.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Mengerti', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final bins = ref.read(binsProvider).value ?? [];
     final hasOrganic = bins.any((b) => b.binType == WasteType.organic && b.isActive);
     final hasNonOrganic = bins.any((b) => b.binType == WasteType.nonOrganic && b.isActive);

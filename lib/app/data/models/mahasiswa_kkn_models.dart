@@ -226,3 +226,64 @@ class RegisterWargaRequest {
     return map;
   }
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model Registrasi & Profil Mahasiswa (A.10) + Kode Unik (A.9)
+/// ─────────────────────────────────────────────────────────────────────────────
+class MahasiswaEntity extends Equatable {
+  const MahasiswaEntity({
+    required this.nim,
+    required this.nama,
+    required this.fakultas,
+    required this.prodi,
+    required this.jenjang,
+    required this.penugasanKelurahan,
+    required this.penugasanRw,
+    required this.penugasanRt,
+    required this.dplId,
+    required this.kelompokId,
+  });
+
+  final String nim;
+  final String nama;
+  final String fakultas;
+  final String prodi;
+  final String jenjang; // "D3" | "S1" | "S2"
+  final String penugasanKelurahan;
+  final String penugasanRw;
+  final String penugasanRt;
+  final String dplId;
+  final String kelompokId;
+
+  /// Kode Unik Mahasiswa: MHS-[NIM]-[KODE_KELOMPOK] (A.9)
+  String get uniqueCode => 'MHS-$nim-$kelompokId';
+
+  @override
+  List<Object?> get props => [nim, kelompokId];
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model Profil DPL (NIP sebagai username) (A.10) + Kode Unik (A.9)
+/// ─────────────────────────────────────────────────────────────────────────────
+class DplEntity extends Equatable {
+  const DplEntity({
+    required this.nip,
+    required this.nama,
+    required this.fakultas,
+    required this.prodi,
+    required this.kelompokBimbinganIds,
+  });
+
+  final String nip;
+  final String nama;
+  final String fakultas;
+  final String prodi;
+  final List<String> kelompokBimbinganIds;
+
+  /// Kode Unik DPL: DPL-[NIP]-[KODE_KELOMPOK] (A.9)
+  String get uniqueCode => 'DPL-$nip-${kelompokBimbinganIds.isNotEmpty ? kelompokBimbinganIds.first : "K01"}';
+
+  @override
+  List<Object?> get props => [nip];
+}
+

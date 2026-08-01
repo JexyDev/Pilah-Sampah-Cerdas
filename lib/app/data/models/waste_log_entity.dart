@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'bin_entity.dart';
 
-/// Entitas riwayat setoran sampah — sesuai sdd.md §2 tabel `waste_logs`.
+/// Entitas riwayat setoran sampah (`log_sampah` / `setoran_otomatis`)
 class WasteLogEntity extends Equatable {
   const WasteLogEntity({
     required this.id,
@@ -14,6 +14,12 @@ class WasteLogEntity extends Equatable {
     required this.createdAt,
     this.binQrSerial,
     this.kelurahan,
+    this.wargaName,
+    this.wilayah,
+    this.photoUrl,
+    this.isValidated = true,
+    this.location,
+    this.qrActivationTimestamp,
   });
 
   final String id;
@@ -26,6 +32,14 @@ class WasteLogEntity extends Equatable {
   final DateTime createdAt;
   final String? binQrSerial;
   final String? kelurahan;
+  final String? wargaName;
+  final String? wilayah;
+  final String? photoUrl;
+  final bool isValidated;
+  final String? location;
+  final DateTime? qrActivationTimestamp;
+
+  DateTime get date => createdAt;
 
   @override
   List<Object?> get props => [id];

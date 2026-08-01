@@ -70,7 +70,7 @@ Alur transaksi dibagi menjadi 4 tahap berurutan (*step-by-step state machine*):
                                                        │
                                                (Kirim ke AI API)
                                                        │
- Step 3: Sukses Cetak  <──(Kirim Transaksi)──  Step 2: Pindai QR Tong & GPS
+ Step 3: Sukses Cetak  <──(Kirim Transaksi)──  Step 2: Pindai QR Tempat Sampah & GPS
    * Refresh Providers                         * Verifikasi Radius (Anti-Fraud)
    * Trigger FCM/Notif                         * Validasi Mismatch Sampah
 ```
@@ -92,11 +92,11 @@ Alur transaksi dibagi menjadi 4 tahap berurutan (*step-by-step state machine*):
     *   Parameter pencarian diatur ke `LocationAccuracy.medium` dengan `timeLimit: Duration(seconds: 8)`. Hal ini dipilih agar penguncian satelit berjalan cepat tanpa membekukan antarmuka aplikasi (*non-blocking UI*).
     *   Jika GPS gagal dikunci atau diblokir warga, data lokasi dikirim kosong (`null`), dan validasi geofencing sepenuhnya diserahkan kepada mekanisme toleransi di sisi backend.
 
-### Tahap 3: Pemindaian QR Tong & Pengiriman Transaksi (FR-02)
-1.  **QR Code Scan:** Warga memindai stiker kode QR yang tertera pada badan tong sampah fisik.
-2.  **Optimasi Lokasi Persis Tong (Bypass GPS Inaccuracy):**
-    *   Untuk mengatasi inakurasi hardware GPS bawaan perangkat (khususnya pada wilayah bergang sempit/padat di Kecamatan Coblong), repositori memanggil `getBinByQrSerial(qrCode)` terlebih dahulu untuk mengambil koordinat presisi tong sampah dari basis data server.
-    *   Jika data koordinat tong ditemukan, nilai lintang & bujur (`latitude` dan `longitude`) tersebut akan menggantikan koordinat GPS HP warga sebelum dikirim ke endpoint transaksi.
+### Tahap 3: Pemindaian QR Tempat Sampah & Pengiriman Transaksi (FR-02)
+1.  **QR Code Scan:** Warga memindai stiker kode QR yang tertera pada badan tempat sampah fisik.
+2.  **Optimasi Lokasi Persis Tempat Sampah (Bypass GPS Inaccuracy):**
+    *   Untuk mengatasi inakurasi hardware GPS bawaan perangkat (khususnya pada wilayah bergang sempit/padat di Kecamatan Coblong), repositori memanggil `getBinByQrSerial(qrCode)` terlebih dahulu untuk mengambil koordinat presisi tempat sampah dari basis data server.
+    *   Jika data koordinat tempat sampah ditemukan, nilai lintang & bujur (`latitude` dan `longitude`) tersebut akan menggantikan koordinat GPS HP warga sebelum dikirim ke endpoint transaksi.
 3.  **Request API Transaksi:** Dikirim ke POST `/api/v1/bins/scan` dengan payload:
     ```json
     {
@@ -109,10 +109,10 @@ Alur transaksi dibagi menjadi 4 tahap berurutan (*step-by-step state machine*):
     }
     ```
 4.  **Penanganan Validasi Transaksi (Hard Validation):**
-    *   **Radius Geofencing (> 10 meter):** Jika jarak HP warga dan tong sampah melebihi 10 meter berdasarkan perhitungan Haversine di server, transaksi dibatalkan dengan kode error `LOCATION_OUT_OF_RANGE`.
-    *   **Mismatch Tipe Sampah:** Jika tipe sampah hasil deteksi AI (misalnya Organik) tidak cocok dengan tipe peruntukan tong sampah fisik yang di-scan (misalnya tong khusus Anorganik), transaksi ditolak dengan kode error `BIN_TYPE_MISMATCH`.
-    *   **Kapasitas Tong Penuh (Overflow > 90%):** Jika volume sampah baru menyebabkan kapasitas tong terlampaui, server membalas dengan `BIN_OVERFLOW`.
-    *   **Hak Milik Tong:** Jika tong sampah belum teraktivasi atau bukan milik rumah tangga warga yang bersangkutan, server membalas dengan `BIN_NOT_ACTIVATED` / `BIN_NOT_OWNED`.
+    *   **Radius Geofencing (> 10 meter):** Jika jarak HP warga dan tempat sampah melebihi 10 meter berdasarkan perhitungan Haversine di server, transaksi dibatalkan dengan kode error `LOCATION_OUT_OF_RANGE`.
+    *   **Mismatch Tipe Sampah:** Jika tipe sampah hasil deteksi AI (misalnya Organik) tidak cocok dengan tipe peruntukan tempat sampah fisik yang di-scan (misalnya tempat sampah khusus Anorganik), transaksi ditolak dengan kode error `BIN_TYPE_MISMATCH`.
+    *   **Kapasitas Tempat Sampah Penuh (Overflow > 90%):** Jika volume sampah baru menyebabkan kapasitas tempat sampah terlampaui, server membalas dengan `BIN_OVERFLOW`.
+    *   **Hak Milik Tempat Sampah:** Jika tempat sampah belum teraktivasi atau bukan milik rumah tangga warga yang bersangkutan, server membalas dengan `BIN_NOT_ACTIVATED` / `BIN_NOT_OWNED`.
 
 ### Tahap 4: Finalisasi & Siklus Auto-Refresh Data Beranda (FR-03)
 Setelah respons dari server bernilai sukses:
@@ -122,7 +122,7 @@ Setelah respons dari server bernilai sukses:
     *   `ref.invalidate(totalPointsProvider)` (Saldo poin beranda ter-update instan).
     *   `ref.invalidate(pointHistoryProvider)` (Ledger perolehan poin ter-update).
     *   `ref.invalidate(dailyPointsProvider)` (Limitasi deteksi AI hari ini disinkronkan).
-    *   `ref.invalidate(binsProvider)` (Kapasitas tong termutakhir terunduh).
+    *   `ref.invalidate(binsProvider)` (Kapasitas tempat sampah termutakhir terunduh).
 3.  **UI Lock (`PopScope`):** Sepanjang alur transaksi (Step 1 hingga 3), tombol kembali (*hardware back button*) diblokir menggunakan widget `<PopScope(canPop: state.currentStep == 0)>`. Langkah ini penting untuk mencegah data terkorupsi atau transaksi ganda akibat warga menekan tombol kembali di tengah proses pengiriman API.
 
 ---
@@ -135,9 +135,9 @@ Setiap kode error yang dikirimkan oleh API akan diterjemahkan menjadi dialog UI 
 | :--- | :--- | :--- |
 | `IMAGE_UNREADABLE` | Dialog: *"Foto Buram/Tidak Jelas"* | State kembali ke Step 0, tombol: **"Ambil Ulang Foto"** |
 | `AI_DAILY_LIMIT` | Dialog: *"Kuota Deteksi Habis"* | Membatasi warga untuk mencoba esok hari atau hubungi admin. |
-| `BIN_TYPE_MISMATCH` | Dialog: *"Salah Masukkan Tong"* | Menampilkan layar panduan `bin_mismatch.png`, mengarahkan warga ke tong sampah yang sesuai kategori. |
-| `BIN_OVERFLOW` | Dialog: *"Kapasitas Tong Penuh"* | Menyediakan form pintas untuk mengunggah foto bukti fisik agar diajukan permohonan pengosongan ke petugas RT via `submitResetRequest()`. |
-| `LOCATION_OUT_OF_RANGE` | Dialog: *"Jarak Terlalu Jauh"* | Menginstruksikan warga untuk mendekat ke tong sampah fisik sebelum memindai ulang. |
+| `BIN_TYPE_MISMATCH` | Dialog: *"Salah Masukkan Tempat Sampah"* | Menampilkan layar panduan `bin_mismatch.png`, mengarahkan warga ke tempat sampah yang sesuai kategori. |
+| `BIN_OVERFLOW` | Dialog: *"Kapasitas Tempat Sampah Penuh"* | Menyediakan form pintas untuk mengunggah foto bukti fisik agar diajukan permohonan pengosongan ke pengurus RT via `submitResetRequest()`. |
+| `LOCATION_OUT_OF_RANGE` | Dialog: *"Jarak Terlalu Jauh"* | Menginstruksikan warga untuk mendekat ke tempat sampah fisik sebelum memindai ulang. |
 | `NETWORK_ERROR` | Banner merah di atas layar | Menonaktifkan fungsi pemicu scan & AI. Mengaktifkan pembacaan offline-first dari cache `SharedPreferences`. |
 
 ---

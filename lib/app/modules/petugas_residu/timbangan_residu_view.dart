@@ -126,7 +126,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     setState(() => _isSubmitting = true);
 
     final success = await ref.read(petugasResiduControllerProvider.notifier).submitLog(
-          binId: _selectedBinId ?? _binCodeController.text.trim(),
+          binId: 'bin_residu',
           actualWeightKg: weight,
           classification: _selectedClassification,
           photoPath: _photoPath!,
@@ -300,7 +300,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(14),
                           child: Stack(
-                            fit: StackPane.expand,
+                            fit: StackFit.expand,
                             children: [
                               Image.file(File(_photoPath!), fit: BoxFit.cover),
                               Positioned(
