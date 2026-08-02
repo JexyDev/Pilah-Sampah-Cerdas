@@ -249,10 +249,12 @@ export class BinController {
           error: "BIN_NOT_OWNED",
           message: "tempat sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
         });
-      } else if (error.message === "LOCATION_OUT_OF_RANGE") {
+      } else if (error.message === "LOCATION_OUT_OF_RANGE" || error.message === "LOCATION_TOO_FAR") {
         res.status(400).json({
-          error: "LOCATION_OUT_OF_RANGE",
-          message: "Lokasi Anda terlalu jauh dari tempat sampah fisik (> 50m).",
+          success: false,
+          error: "LOCATION_TOO_FAR",
+          code: "LOCATION_TOO_FAR",
+          message: `Posisi Anda terlalu jauh dari lokasi tong sampah (${error.distanceMeters ? error.distanceMeters + "m" : ">10m"}).`,
           distanceMeters: error.distanceMeters,
         });
       } else if (error.message === "BIN_TYPE_MISMATCH") {

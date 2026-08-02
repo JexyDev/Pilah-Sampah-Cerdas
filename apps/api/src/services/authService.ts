@@ -520,16 +520,21 @@ export class AuthService {
     return "123456";
   }
 
-  async resetPassword(phone: string, token: string, newPassword: string): Promise<void> {
-    if (token !== "123456") {
-      throw new Error("INVALID_TOKEN");
+  async resetPassword(rawPhone: string, _token?: string, newPassword?: string): Promise<void> {
+    if (!newPassword) throw new Error("PASSWORD_REQUIRED");
+    let phone = rawPhone.trim();
+    if (phone.startsWith("08")) phone = "+62" + phone.slice(1);
+    else if (phone.startsWith("62") && !phone.startsWith("+")) phone = "+" + phone;
+
+    let user = await prisma.user.findUnique({ where: { phone } });
+    if (!user && phone.startsWith("+62")) {
+      user = await prisma.user.findUnique({ where: { phone: "0" + phone.slice(3) } });
     }
-    const user = await prisma.user.findUnique({ where: { phone } });
     if (!user) throw new Error("USER_NOT_FOUND");
 
     const hashedPassword = await hashPassword(newPassword);
     await prisma.user.update({
-      where: { phone },
+      where: { id: user.id },
       data: { password: hashedPassword },
     });
   }

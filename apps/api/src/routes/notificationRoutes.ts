@@ -290,10 +290,17 @@ router.post("/device-token", authMiddleware, async (req, res) => {
   try {
     const { token } = req.body;
     const userId = req.user!.userId;
-    await prisma.user.update({
-      where: { id: userId },
-      data: { fcmToken: token },
-    });
+    if (token) {
+      // Re-bind token: Remove token from any other user accounts to prevent notification leaks
+      await prisma.user.updateMany({
+        where: { fcmToken: token, id: { not: userId } },
+        data: { fcmToken: null },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { fcmToken: token },
+      });
+    }
     res.status(200).json({ status: "success", message: "Device token berhasil disimpan" });
   } catch (error) {
     console.error("Register Device Token Error:", error);
