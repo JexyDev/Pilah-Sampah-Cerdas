@@ -6,7 +6,6 @@ import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../../riwayat/views/riwayat_view.dart';
 import '../../poin/poin_view.dart';
 
 /// Halaman daftar notifikasi.

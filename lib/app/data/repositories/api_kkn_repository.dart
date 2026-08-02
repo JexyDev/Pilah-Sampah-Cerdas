@@ -88,16 +88,35 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> recordAttendance(String scheduleId, double latitude, double longitude, String method) async {
+  Future<bool> recordAttendance({
+    required String scheduleId,
+    required double latitude,
+    required double longitude,
+    required String method,
+    String? nim,
+    String? namaMahasiswa,
+    String? kodeZona,
+    String? rtRw,
+    String? kelurahan,
+    int? durationMinutes,
+    String? timestamp,
+  }) async {
     final response = await apiClient.dio.post(
       '/kegiatan/$scheduleId/absen',
       data: {
         'latitude': latitude,
         'longitude': longitude,
         'method': method,
+        if (nim != null && nim.isNotEmpty) 'nim': nim,
+        if (namaMahasiswa != null && namaMahasiswa.isNotEmpty) 'namaMahasiswa': namaMahasiswa,
+        if (kodeZona != null && kodeZona.isNotEmpty) 'kodeZona': kodeZona,
+        if (rtRw != null && rtRw.isNotEmpty) 'rtRw': rtRw,
+        if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
+        if (durationMinutes != null) 'durationMinutes': durationMinutes,
+        'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
       },
     );
-    return response.statusCode == 200;
+    return response.statusCode == 200 || response.statusCode == 201;
   }
 
   @override
@@ -172,5 +191,35 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       throw Exception('Gagal memuat riwayat KKN');
     }
+  }
+
+  @override
+  Future<KelompokKknData?> getKelompokKkn() async {
+    try {
+      final response = await apiClient.dio.get('/kkn/kelompok/me');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>? ?? {};
+        if (data.isEmpty) return null;
+        return KelompokKknData.fromJson(data);
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // Belum dimasukkan ke kelompok manapun oleh admin
+        return null;
+      }
+      throw Exception('Gagal memuat data kelompok KKN');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request) async {
+    final response = await apiClient.dio.post(
+      '/kkn/pemanfaatan-sampah',
+      data: request.toJson(),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
   }
 }

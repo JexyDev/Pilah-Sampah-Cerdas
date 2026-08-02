@@ -133,6 +133,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['nim'] = _nimController.text.trim();
       data['jurusan'] = _jurusanController.text.trim();
       data['fakultas'] = _fakultasController.text.trim();
+      data['rtRw'] = _rtRwController.text.trim();
+      data['kelurahan'] = _kelurahanController.text.trim();
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
@@ -399,14 +401,14 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 const SizedBox(height: 16),
                               ],
 
-                              if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu') ...[
+                              if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') ...[
                                 Row(
                                   children: [
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          _buildLabel('RT/RW'),
+                                          _buildLabel(_selectedRole == 'Mahasiswa' ? 'RT/RW DAMPINGAN' : 'RT/RW'),
                                           const SizedBox(height: 6),
                                           TextFormField(
                                             controller: _rtRwController,
@@ -415,7 +417,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                               prefixIcon: Icon(Icons.home_outlined, color: AppColors.textSecondary, size: 20),
                                             ),
                                             validator: (v) {
-                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu') && (v == null || v.trim().isEmpty)) {
+                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') && (v == null || v.trim().isEmpty)) {
                                                 return 'Wajib diisi';
                                               }
                                               return null;
@@ -429,7 +431,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          _buildLabel('KELURAHAN'),
+                                          _buildLabel(_selectedRole == 'Mahasiswa' ? 'KELURAHAN DAMPINGAN' : 'KELURAHAN'),
                                           const SizedBox(height: 6),
                                           TextFormField(
                                             controller: _kelurahanController,
@@ -438,7 +440,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                               prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
                                             ),
                                             validator: (v) {
-                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu') && (v == null || v.trim().isEmpty)) {
+                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') && (v == null || v.trim().isEmpty)) {
                                                 return 'Wajib diisi';
                                               }
                                               return null;
@@ -656,36 +658,48 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               const SizedBox(height: 20),
 
                               // Tombol Daftar
-                              ElevatedButton(
-                                onPressed: authState.isLoading ? null : _onRegister,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryGreen,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: authState.isLoading ? null : _onRegister,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryGreen,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 2,
+                                    shadowColor: AppColors.primaryGreen.withValues(alpha: 0.3),
                                   ),
-                                  elevation: 0,
-                                ),
-                                child: authState.isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2.5,
-                                        ),
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.person_add_alt_1_rounded,
-                                            size: 18,
+                                  child: authState.isLoading
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2.5,
                                           ),
-                                          SizedBox(width: 8),
-                                          Text('DAFTAR SEKARANG'),
-                                        ],
-                                      ),
+                                        )
+                                      : const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.person_add_alt_1_rounded,
+                                              size: 20,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'DAFTAR SEKARANG',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
                               ),
                               const SizedBox(height: 16),
 

@@ -91,6 +91,10 @@ graph TD
 
 ### 4.2 Penyetoran Sampah (Scan QR & Geofencing GPS)
 * **Endpoint:** `POST /api/v1/bins/scan`
+* **Formula Perhitungan Poin (FR-03 & SDD Spec):**
+  $$\text{Poin} = (\text{Berat (kg)} \times 100) \times \text{Confidence AI} \times 0.9$$
+  * *Ket:* $\text{Berat (kg)} = \text{estimatedVolume (Liter)} \times \text{density}$ ($0.4\text{ kg/L}$ untuk Organik, $0.2\text{ kg/L}$ untuk Anorganik).
+  * *Multiplier:* $0.9$ digunakan sebagai faktor penyesuaian (*safety margin 90%*).
 * **Request Body:**
   ```json
   {
@@ -98,8 +102,13 @@ graph TD
     "userId": "user-uuid-01",
     "detectedType": "ORGANIC",
     "estimatedVolume": 4.5,
+<<<<<<< HEAD
     "userLat": -6.90341234,
     "userLng": 107.61981234
+=======
+    "confidence": 0.95,
+    "householdId": "household-uuid-01"
+>>>>>>> 8bedc82b (fix(mahasiswa-warga): overhaul modul kkn dan penyelarasan api warga)
   }
   ```
 * **Response Success (200 OK):**
@@ -108,7 +117,7 @@ graph TD
     "success": true,
     "data": {
       "weightKg": 1.8,
-      "pointsAwarded": 180,
+      "pointsAwarded": 154,
       "newBinVolume": 14.8
     }
   }

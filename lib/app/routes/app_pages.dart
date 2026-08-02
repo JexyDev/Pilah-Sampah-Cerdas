@@ -16,11 +16,11 @@ import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_view.dart';
 import '../modules/mahasiswa/views/monitoring_warga_view.dart';
 import '../modules/mahasiswa/views/mahasiswa_view.dart';
-import '../modules/mahasiswa/views/registrasi_warga_view.dart';
+import '../modules/mahasiswa/views/kelompok_kkn_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
-import '../modules/profil/ganti_password_view.dart';
 import '../modules/poin/poin_view.dart';
+import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/petugas_residu/views/lapor_pelanggaran_view.dart';
 import '../modules/petugas_residu/views/riwayat_petugas_residu_view.dart';
 import 'app_routes.dart';
@@ -29,7 +29,7 @@ import 'app_routes.dart';
 class AppPages {
   AppPages._();
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+  static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.splash:
         return _buildRoute(const SplashView(), settings);
@@ -39,7 +39,7 @@ class AppPages {
         return _buildRoute(const RegisterView(), settings);
       case AppRoutes.forgotPassword:
         return _buildRoute(const ForgotPasswordView(), settings);
-      case AppRoutes.main:
+      case AppRoutes.dashboard:
         return _buildRoute(const DashboardView(), settings);
       case AppRoutes.scan:
         return _buildRoute(const ScanFlowView(), settings);
@@ -51,8 +51,6 @@ class AppPages {
         return _buildRoute(const KelolaBinView(), settings);
       case AppRoutes.resetBin:
         return _buildRoute(const ResetBinView(), settings);
-      case AppRoutes.poin:
-        return _buildRoute(const Scaffold(body: PoinView()), settings);
       case AppRoutes.notifikasi:
         return _buildRoute(const NotifikasiView(), settings);
       case AppRoutes.timbanganResidu:
@@ -65,16 +63,16 @@ class AppPages {
         return _buildRoute(const MonitoringWargaView(), settings);
       case AppRoutes.mahasiswa:
         return _buildRoute(const MahasiswaView(), settings);
-      case AppRoutes.registrasiWarga:
-        return _buildRoute(const RegistrasiWargaView(), settings);
+      case AppRoutes.kelompokKkn:
+        return _buildRoute(const KelompokKknView(), settings);
       case AppRoutes.daftarWarga:
         return _buildRoute(const DaftarWargaView(), settings);
       case AppRoutes.detailWarga:
         return _buildRoute(const DetailWargaView(), settings);
       case AppRoutes.aktivasiWarga:
         return _buildRoute(const AktivasiWargaView(), settings);
-      case AppRoutes.gantiPassword:
-        return _buildRoute(const GantiPasswordView(), settings);
+      case AppRoutes.pemanfaatanSampah:
+        return _buildRoute(const PemanfaatanSampahView(), settings);
       case AppRoutes.laporPelanggaran:
         return _buildRoute(const LaporPelanggaranView(), settings);
       case AppRoutes.riwayatPetugasResidu:

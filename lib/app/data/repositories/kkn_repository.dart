@@ -30,8 +30,20 @@ abstract class KknRepository {
   /// Mengambil target lokasi kegiatan KKN.
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId);
 
-  /// Mencatat absensi (radius KKN).
-  Future<bool> recordAttendance(String scheduleId, double latitude, double longitude, String method);
+  /// Mencatat absensi (radius KKN) dengan payload lengkap.
+  Future<bool> recordAttendance({
+    required String scheduleId,
+    required double latitude,
+    required double longitude,
+    required String method,
+    String? nim,
+    String? namaMahasiswa,
+    String? kodeZona,
+    String? rtRw,
+    String? kelurahan,
+    int? durationMinutes,
+    String? timestamp,
+  });
 
   /// Mengambil daftar warga (untuk fitur aktivasi)
   Future<List<dynamic>> getWargaForAktivasi({String? kelurahan, String? rtRw, String? search});
@@ -44,4 +56,10 @@ abstract class KknRepository {
 
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();
+
+  /// Mengambil data kelompok KKN mahasiswa yang sedang login (GET /kkn/kelompok/me)
+  Future<KelompokKknData?> getKelompokKkn();
+
+  /// Mengirim laporan pemanfaatan hasil sampah ke backend
+  Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request);
 }

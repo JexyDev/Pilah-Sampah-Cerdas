@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
+import '../../core/utils/image_compressor.dart';
 import '../../core/values/app_config.dart';
 import '../models/user_entity.dart';
 import 'auth_repository.dart';
@@ -210,38 +212,22 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<void> requestOtp({required String phone}) async {
     try {
-      // ==== INTEGRASI FONNTE API (Mock/QC Flow) ====
-      // Generate 6 digit acak
-      final otp = (100000 + Random().nextInt(900000)).toString();
-      _mockFonnteOtp = otp;
-
-      // Kirim via Fonnte menggunakan Dio
-      final dio = Dio();
-      final target = phone.startsWith('0') ? '62${phone.substring(1)}' : phone;
-      
-      final response = await dio.post(
-        'https://api.fonnte.com/send',
-        options: Options(
-          headers: {'Authorization': 'mrHbMDmd5sorX6KQexgb'},
-        ),
-        data: FormData.fromMap({
-          'target': target,
-          'message': 'Kode OTP Anda: $otp\n\nBerlaku selama 5 menit.\nJangan berikan kode ini kepada siapa pun.'
-        }),
-      );
-
-      if (response.statusCode != 200) {
-         throw const AuthException('OTP_FAILED', 'Gagal mengirim pesan via Fonnte');
+      // Generate OTP lokal untuk Mode Debug (Mock Flow)
+      if (kDebugMode) {
+        _mockFonnteOtp = (100000 + Random().nextInt(900000)).toString();
       }
-      // ===============================================
 
-      // Panggil endpoint backend agar backend (mock) mencatat state OTP (supaya verify-otp tidak gagal)
-      try {
-        await apiClient.dio.post('/auth/request-otp', data: {'phone': phone});
-      } catch (_) {}
-
-    } on DioException catch (_) {
-      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke Fonnte/Server');
+      // Panggil endpoint backend Express.js agar backend yang memproses & mengirim SMS/WA OTP Fonnte secara aman
+      final response = await apiClient.dio.post('/auth/request-otp', data: {'phone': phone});
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw const AuthException('OTP_FAILED', 'Gagal meminta kode OTP');
+      }
+    } on DioException catch (e) {
+      if (kDebugMode && _mockFonnteOtp != null) {
+        // Fallback debug jika backend belum aktif
+        return;
+      }
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
@@ -252,9 +238,9 @@ class ApiAuthRepository implements AuthRepository {
   Future<UserEntity> verifyOtp({required String phone, required String otp}) async {
     apiClient.clearTokenCache();
     
-    // Verifikasi OTP Lokal (Fonnte Mock)
+    // Verifikasi OTP Lokal (Fonnte Mock — HANYA diaktifkan pada Mode Debug)
     bool isMockFonnte = false;
-    if (_mockFonnteOtp != null) {
+    if (kDebugMode && _mockFonnteOtp != null) {
       if (otp != _mockFonnteOtp) {
          throw const AuthException('INVALID_OTP', 'Kode OTP salah. Silakan periksa pesan WhatsApp Anda.');
       }
@@ -480,8 +466,16 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<void> uploadAvatar(String imagePath) async {
     try {
+      // Auto-compress avatar before upload (Target < 300KB, max 512x512)
+      final compressedImagePath = await ImageCompressor.compressImage(
+        imagePath,
+        maxSizeBytes: 300 * 1024,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+
       final formData = FormData.fromMap({
-        'avatar': await MultipartFile.fromFile(imagePath),
+        'avatar': await MultipartFile.fromFile(compressedImagePath),
       });
 
       final response = await apiClient.dio.post(
@@ -538,6 +532,7 @@ class ApiAuthRepository implements AuthRepository {
       final response = await apiClient.dio.post(
         '/auth/reset-password',
         data: {
+          'phone': email,
           'email': email,
           'token': token,
           'newPassword': newPassword,

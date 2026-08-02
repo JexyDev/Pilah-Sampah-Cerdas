@@ -254,13 +254,13 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   Widget _buildEmpty() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_rounded, size: 64, color: AppColors.border),
-          const SizedBox(height: 16),
-          const Text(
+          Icon(Icons.history_rounded, size: 64, color: AppColors.textHint),
+          SizedBox(height: 16),
+          Text(
             'Belum ada riwayat aktivitas',
             style: TextStyle(
               fontSize: 16,

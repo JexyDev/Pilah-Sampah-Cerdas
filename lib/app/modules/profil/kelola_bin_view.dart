@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/values/app_colors.dart';
-import '../../data/models/bin_entity.dart';
-import '../auth/controllers/auth_controller.dart';
 import '../scan/controllers/scan_controller.dart';
 import '../../routes/app_routes.dart';
 

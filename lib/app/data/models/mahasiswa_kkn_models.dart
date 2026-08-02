@@ -287,3 +287,115 @@ class DplEntity extends Equatable {
   List<Object?> get props => [nip];
 }
 
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Request body untuk POST /api/v1/kkn/pemanfaatan-sampah
+/// ─────────────────────────────────────────────────────────────────────────────
+class PemanfaatanSampahRequest {
+  const PemanfaatanSampahRequest({
+    required this.jenisPemanfaatan,
+    required this.kategoriSampah,
+    required this.jumlah,
+    required this.satuan,
+    required this.wilayahDampingan,
+    required this.deskripsi,
+    this.timestamp,
+  });
+
+  final String jenisPemanfaatan;
+  final String kategoriSampah;
+  final double jumlah;
+  final String satuan;
+  final String wilayahDampingan;
+  final String deskripsi;
+  final String? timestamp;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'jenisPemanfaatan': jenisPemanfaatan,
+      'kategoriSampah': kategoriSampah,
+      'jumlah': jumlah,
+      'satuan': satuan,
+      'wilayahDampingan': wilayahDampingan,
+      'deskripsi': deskripsi,
+      'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
+    };
+  }
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk Data Kelompok KKN Mahasiswa (GET /api/v1/kkn/kelompok/me)
+/// ─────────────────────────────────────────────────────────────────────────────
+class KelompokMemberData extends Equatable {
+  const KelompokMemberData({
+    required this.userId,
+    required this.nim,
+    required this.name,
+    required this.jurusan,
+    required this.individualPoints,
+    this.isLeader = false,
+  });
+
+  final String userId;
+  final String nim;
+  final String name;
+  final String jurusan;
+  final int individualPoints;
+  final bool isLeader;
+
+  factory KelompokMemberData.fromJson(Map<String, dynamic> json) {
+    return KelompokMemberData(
+      userId: json['userId']?.toString() ?? json['id']?.toString() ?? '',
+      nim: json['nim']?.toString() ?? '',
+      name: json['name']?.toString() ?? json['nama']?.toString() ?? 'Mahasiswa',
+      jurusan: json['jurusan']?.toString() ?? '',
+      individualPoints: (json['individualPoints'] as num?)?.toInt() ?? (json['points'] as num?)?.toInt() ?? 0,
+      isLeader: json['isLeader'] as bool? ?? (json['role']?.toString().toUpperCase() == 'KETUA'),
+    );
+  }
+
+  @override
+  List<Object?> get props => [userId, nim, individualPoints];
+}
+
+class KelompokKknData extends Equatable {
+  const KelompokKknData({
+    required this.groupId,
+    required this.groupName,
+    required this.dosenPembimbing,
+    required this.poskoLocation,
+    required this.totalGroupPoints,
+    required this.members,
+  });
+
+  final String groupId;
+  final String groupName;
+  final String dosenPembimbing;
+  final String poskoLocation;
+  final int totalGroupPoints;
+  final List<KelompokMemberData> members;
+
+  /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
+  int get calculatedTotalPoints {
+    if (totalGroupPoints > 0) return totalGroupPoints;
+    return members.fold(0, (sum, m) => sum + m.individualPoints);
+  }
+
+  factory KelompokKknData.fromJson(Map<String, dynamic> json) {
+    final membersList = (json['members'] as List<dynamic>?)
+            ?.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    return KelompokKknData(
+      groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
+      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? 'Kelompok KKN',
+      dosenPembimbing: json['dosenPembimbing']?.toString() ?? json['dpsName']?.toString() ?? 'Belum Ditentukan',
+      poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? '-',
+      totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
+      members: membersList,
+    );
+  }
+
+  @override
+  List<Object?> get props => [groupId, groupName, totalGroupPoints, members];
+}

@@ -137,21 +137,33 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
+    final totalWarga = state.wargaList.length;
+    final wargaAktif = state.wargaList.where((w) => w.isActivated).length;
+
     return Row(
       children: [
         Expanded(
           child: _SummaryCard(
             icon: Icons.people_alt_rounded,
-            label: 'Warga',
-            value: '${d?.totalRegisteredBins ?? 0}',
+            label: 'Total Warga',
+            value: '$totalWarga',
             color: AppColors.primaryGreen,
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
         Expanded(
           child: _SummaryCard(
+            icon: Icons.verified_user_rounded,
+            label: 'Aktif Bin',
+            value: '$wargaAktif',
+            color: AppColors.primaryBlueDark,
+          ),
+        ),
+        const SizedBox(width: AppDimensions.sm),
+        Expanded(
+          child: _SummaryCard(
             icon: Icons.stars_rounded,
-            label: 'Poin',
+            label: 'Poin KKN',
             value: '${d?.contributionPoints ?? 0}',
             color: AppColors.success,
           ),
@@ -333,16 +345,34 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
   Widget _buildQuickActions() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text(
+          'Menu Utama KKN',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: _ActionButton(
+                icon: Icons.groups_rounded,
+                label: 'Kelompok KKN',
+                color: AppColors.primaryGreen,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.kelompokKkn),
+              ),
+            ),
+            const SizedBox(width: AppDimensions.sm),
+            Expanded(
+              child: _ActionButton(
                 icon: Icons.qr_code_scanner_rounded,
-                label: 'Aktivasi Bin',
+                label: 'Aktivasi Bin QR',
                 color: AppColors.warningOrange,
                 onTap: () {
-                  // Arahkan ke Monitoring Warga dengan mode "Aktivasi Bin"
                   Navigator.pushNamed(
                     context, 
                     AppRoutes.monitoringWarga, 
@@ -351,15 +381,43 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 },
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.location_on_rounded,
+                label: 'Absensi GPS KKN',
+                color: AppColors.dangerRed,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
+              ),
+            ),
             const SizedBox(width: AppDimensions.sm),
             Expanded(
               child: _ActionButton(
-                icon: Icons.groups_rounded,
-                label: 'Lihat Semua Warga',
+                icon: Icons.analytics_rounded,
+                label: 'Monitoring Ketaatan',
                 color: AppColors.primaryBlueDark,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.daftarWarga),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringWarga),
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.recycling_rounded,
+                label: 'Pemanfaatan Sampah',
+                color: AppColors.primaryGreen,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
+              ),
+            ),
+            const SizedBox(width: AppDimensions.sm),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ],

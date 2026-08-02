@@ -16,8 +16,6 @@ import '../auth/controllers/auth_controller.dart';
 import '../mahasiswa/views/mahasiswa_view.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
-import 'peta_monitoring_view.dart';
-
 import '../petugas_residu/views/petugas_residu_view.dart';
 import '../petugas_residu/views/riwayat_petugas_residu_view.dart';
 
@@ -47,7 +45,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn 
         ? const MonitoringWargaView() 
-        : (role == UserRole.petugasResidu ? const PetaMonitoringView() : const PoinView()),
+        : const PoinView(),
     const ProfilView(),
   ];
 

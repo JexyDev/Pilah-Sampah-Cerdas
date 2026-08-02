@@ -210,15 +210,23 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   String _mapError(String code, String? msg) {
+    if (code == 'ALREADY_ACTIVATED' ||
+        code.startsWith('BIN_ALREADY_USED') ||
+        (msg != null && (msg.contains('BIN_ALREADY_USED') || msg.contains('ALREADY_ACTIVATED')))) {
+      return 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.';
+    }
     switch (code) {
       case 'ALREADY_ACTIVATED':
-        return 'Tempat sampah ini sudah aktif dan terdaftar.';
+        return 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.';
       case 'BIN_NOT_FOUND':
-        return 'QR Serial tidak terdaftar di sistem.';
+        return 'QR Code tempat sampah tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
         return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
       default:
-        return msg ?? 'Terjadi kesalahan. Silakan coba lagi.';
+        if (msg != null && msg.isNotEmpty && !msg.startsWith('BIN_ALREADY_USED')) {
+          return msg;
+        }
+        return 'Terjadi kesalahan. Silakan coba lagi.';
     }
   }
 

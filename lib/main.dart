@@ -197,7 +197,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
       // Routing terpusat
       initialRoute: AppRoutes.splash,
-      onGenerateRoute: AppPages.onGenerateRoute,
+      onGenerateRoute: AppPages.generateRoute,
     );
   }
 }

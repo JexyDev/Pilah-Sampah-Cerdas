@@ -82,6 +82,23 @@ class ApiNotificationRepository implements NotificationRepository {
     }
   }
 
+  // ─── Unregister FCM Device Token ──────────────────────────────────────────
+  @override
+  Future<void> unregisterDeviceToken(String token) async {
+    try {
+      await apiClient.dio.post(
+        '/notifications/unregister-token',
+        data: {'token': token},
+      );
+    } on DioException catch (e) {
+      // Non-critical on logout — log warning only
+      throw NotificationException(
+        'NETWORK_ERROR',
+        'Gagal menghapus device token saat logout: ${e.message}',
+      );
+    }
+  }
+
   // ─── Helper ───────────────────────────────────────────────────────────────
   NotificationEntity _mapNotification(Map<String, dynamic> json) {
     return NotificationEntity(

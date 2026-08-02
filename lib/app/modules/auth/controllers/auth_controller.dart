@@ -178,8 +178,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Logout — hapus token, reset state.
+  /// Logout — unregister FCM token per-user, hapus token secure storage, reset state.
   Future<void> logout() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _notificationRepository.unregisterDeviceToken(token);
+      }
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (_) {
+      // Non-critical — abaikan jika Firebase tidak aktif
+    }
     await _authRepository.logout();
     state = const AuthState();
   }

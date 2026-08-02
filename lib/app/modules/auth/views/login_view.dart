@@ -317,32 +317,45 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 24),
 
                               // Tombol Masuk
-                              ElevatedButton(
-                                onPressed: authState.isLoading ? null : _onLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryGreen,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: authState.isLoading ? null : _onLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryGreen,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 2,
+                                    shadowColor: AppColors.primaryGreen.withValues(alpha: 0.3),
                                   ),
-                                  elevation: 0,
-                                ),
-                                child: authState.isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2.5,
+                                  child: authState.isLoading
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        )
+                                      : const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.login_rounded, size: 20),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'MASUK SISTEM',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.login_rounded, size: 18),
-                                          SizedBox(width: 8),
-                                          Text('MASUK SISTEM'),
-                                        ],
-                                      ),
+                                ),
                               ),
                               const SizedBox(height: 16),
 

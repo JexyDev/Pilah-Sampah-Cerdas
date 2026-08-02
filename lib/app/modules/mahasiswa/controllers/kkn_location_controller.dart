@@ -7,6 +7,7 @@ import '../../../data/services/location_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
+import 'mahasiswa_controller.dart';
 
 class KknLocationState {
   final Position? currentPosition;
@@ -17,6 +18,9 @@ class KknLocationState {
   final Map<String, dynamic>? activeActivity;
   final bool isSuccessAttendance;
   final String? attendanceTime;
+  final int inZoneDurationSeconds;
+  final bool isEligibleForAttendance;
+  final String? zoneResetWarning;
 
   KknLocationState({
     this.currentPosition,
@@ -27,6 +31,9 @@ class KknLocationState {
     this.activeActivity,
     this.isSuccessAttendance = false,
     this.attendanceTime,
+    this.inZoneDurationSeconds = 0,
+    this.isEligibleForAttendance = false,
+    this.zoneResetWarning,
   });
 
   KknLocationState copyWith({
@@ -38,8 +45,12 @@ class KknLocationState {
     Map<String, dynamic>? activeActivity,
     bool? isSuccessAttendance,
     String? attendanceTime,
+    int? inZoneDurationSeconds,
+    bool? isEligibleForAttendance,
+    String? zoneResetWarning,
     bool clearError = false,
     bool clearActivity = false,
+    bool clearWarning = false,
   }) {
     return KknLocationState(
       currentPosition: currentPosition ?? this.currentPosition,
@@ -50,18 +61,18 @@ class KknLocationState {
       activeActivity: clearActivity ? null : (activeActivity ?? this.activeActivity),
       isSuccessAttendance: isSuccessAttendance ?? this.isSuccessAttendance,
       attendanceTime: attendanceTime ?? this.attendanceTime,
+      inZoneDurationSeconds: inZoneDurationSeconds ?? this.inZoneDurationSeconds,
+      isEligibleForAttendance: isEligibleForAttendance ?? this.isEligibleForAttendance,
+      zoneResetWarning: clearWarning ? null : (zoneResetWarning ?? this.zoneResetWarning),
     );
   }
 }
 
 class KknLocationNotifier extends StateNotifier<KknLocationState> {
   KknLocationNotifier(this.ref) : super(KknLocationState()) {
-    // Listen for auth changes to start/stop tracking
     ref.listen(authProvider, (previous, next) {
       final user = next.user;
-      if (user != null && user.role == UserRole.mahasiswaKkn) {
-        // Automatically start checking permission/location
-      } else {
+      if (user == null || user.role != UserRole.mahasiswaKkn) {
         stopTracking();
       }
     });
@@ -69,6 +80,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   final Ref ref;
   Timer? _trackingTimer;
+  Timer? _zoneDurationTimer;
   String? _currentTargetScheduleId;
 
   /// Start tracking GPS locations and sync with backend
@@ -102,13 +114,21 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   void stopTracking() {
     _trackingTimer?.cancel();
     _trackingTimer = null;
+    _zoneDurationTimer?.cancel();
+    _zoneDurationTimer = null;
     state = state.copyWith(isTracking: false);
   }
 
   /// Set the active schedule target to calculate geofencing
   Future<void> setActiveSchedule(String scheduleId) async {
     _currentTargetScheduleId = scheduleId;
-    state = state.copyWith(isSuccessAttendance: false, attendanceTime: null);
+    state = state.copyWith(
+      isSuccessAttendance: false, 
+      attendanceTime: null,
+      inZoneDurationSeconds: 0,
+      isEligibleForAttendance: false,
+      clearWarning: true,
+    );
     await _fetchTargetLocation();
     await _performLocationUpdate();
   }
@@ -116,10 +136,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   /// Remove active target
   void clearActiveSchedule() {
     _currentTargetScheduleId = null;
+    _zoneDurationTimer?.cancel();
+    _zoneDurationTimer = null;
     state = state.copyWith(
       clearActivity: true,
       isInsideRadius: false,
       distanceToTarget: 999999.0,
+      inZoneDurationSeconds: 0,
+      isEligibleForAttendance: false,
     );
   }
 
@@ -135,6 +159,40 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
   }
 
+  /// Start 1-second ticker for in-zone duration
+  void _startZoneTimer() {
+    if (_zoneDurationTimer?.isActive ?? false) return;
+    _zoneDurationTimer?.cancel();
+    _zoneDurationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (state.isInsideRadius) {
+        final newSeconds = state.inZoneDurationSeconds + 1;
+        // 120 minutes = 7200 seconds
+        final bool eligible = newSeconds >= 7200;
+        state = state.copyWith(
+          inZoneDurationSeconds: newSeconds,
+          isEligibleForAttendance: eligible,
+          clearWarning: true,
+        );
+      } else {
+        _stopZoneTimer(hadDuration: state.inZoneDurationSeconds > 0);
+      }
+    });
+  }
+
+  /// Stop and reset zone duration timer
+  void _stopZoneTimer({bool hadDuration = false}) {
+    _zoneDurationTimer?.cancel();
+    _zoneDurationTimer = null;
+    state = state.copyWith(
+      inZoneDurationSeconds: 0,
+      isEligibleForAttendance: false,
+      zoneResetWarning: hadDuration
+          ? 'Anda keluar dari zona geofence KKN! Waktu keberadaan di-reset ke 0 menit.'
+          : null,
+    );
+  }
+
   /// Fetch GPS and sync to backend
   Future<void> _performLocationUpdate() async {
     final pos = await LocationService.instance.getCurrentLocation();
@@ -143,6 +201,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         error: 'Lokasi tidak diketahui. Harap aktifkan GPS Anda.',
         isInsideRadius: false,
       );
+      _stopZoneTimer(hadDuration: state.inZoneDurationSeconds > 0);
       return;
     }
 
@@ -170,15 +229,27 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         targetLng,
       );
 
+      final bool nowInside = distance <= radius;
       state = state.copyWith(
         distanceToTarget: distance,
-        isInsideRadius: distance <= radius,
+        isInsideRadius: nowInside,
       );
+
+      if (nowInside) {
+        _startZoneTimer();
+      } else {
+        _stopZoneTimer(hadDuration: state.inZoneDurationSeconds > 0);
+      }
     }
   }
 
-  /// Trigger manual or auto attendance
-  Future<bool> recordAttendance(String method) async {
+  /// Trigger manual or auto attendance with full payload
+  Future<bool> recordAttendance({
+    required String method,
+    required String kodeZona,
+    required String rtRw,
+    required String kelurahan,
+  }) async {
     if (_currentTargetScheduleId == null) return false;
     final pos = state.currentPosition;
     if (pos == null) {
@@ -186,9 +257,26 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       return false;
     }
 
+    final user = ref.read(authProvider).user;
+    final nim = ref.read(mahasiswaControllerProvider).dashboard?.nim ?? user?.phone ?? '';
+    final namaMahasiswa = user?.name ?? 'Mahasiswa KKN';
+    final durationMinutes = (state.inZoneDurationSeconds / 60).floor();
+
     try {
       final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.recordAttendance(_currentTargetScheduleId!, pos.latitude, pos.longitude, method);
+      final isSuccess = await repo.recordAttendance(
+        scheduleId: _currentTargetScheduleId!,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        method: method,
+        nim: nim,
+        namaMahasiswa: namaMahasiswa,
+        kodeZona: kodeZona,
+        rtRw: rtRw,
+        kelurahan: kelurahan,
+        durationMinutes: durationMinutes,
+        timestamp: DateTime.now().toUtc().toIso8601String(),
+      );
 
       if (isSuccess) {
         state = state.copyWith(
@@ -210,6 +298,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   @override
   void dispose() {
     _trackingTimer?.cancel();
+    _zoneDurationTimer?.cancel();
     super.dispose();
   }
 }

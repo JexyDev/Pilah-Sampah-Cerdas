@@ -5,6 +5,7 @@ import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
+import '../../core/utils/image_compressor.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -171,9 +172,17 @@ class ApiBinRepository implements BinRepository {
         );
       }
 
+      // Auto-compress image before upload (Target < 1MB, max 1024x1024)
+      final compressedImagePath = await ImageCompressor.compressImage(
+        imagePath,
+        maxSizeBytes: 1024 * 1024,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(
-          imagePath,
+          compressedImagePath,
           filename: 'waste_${DateTime.now().millisecondsSinceEpoch}.jpg',
         ),
       });
@@ -371,16 +380,19 @@ class ApiBinRepository implements BinRepository {
       final errorCode = e.response?.data?['error']?.toString();
       final message = e.response?.data?['message']?.toString();
 
-      if (errorCode == 'NOT_FOUND') {
+      if (errorCode == 'NOT_FOUND' || errorCode == 'BIN_NOT_FOUND') {
         throw const BinException(
           'BIN_NOT_FOUND',
-          'QR Code tong tidak terdaftar di sistem.',
+          'QR Code tempat sampah tidak terdaftar di sistem.',
         );
       }
-      if (errorCode == 'ALREADY_ACTIVATED') {
+      if (errorCode == 'ALREADY_ACTIVATED' ||
+          errorCode == 'BIN_ALREADY_USED' ||
+          (errorCode != null && errorCode.startsWith('BIN_ALREADY_USED')) ||
+          (message != null && message.contains('BIN_ALREADY_USED'))) {
         throw const BinException(
           'ALREADY_ACTIVATED',
-          'Tong ini sudah diaktivasi oleh warga lain.',
+          'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.',
         );
       }
       if (errorCode == 'BAD_REQUEST') {
@@ -427,11 +439,14 @@ class ApiBinRepository implements BinRepository {
       final errorCode = e.response?.data?['error']?.toString();
       final message = e.response?.data?['message']?.toString();
 
-      if (errorCode == 'NOT_FOUND') {
-        throw const BinException('BIN_NOT_FOUND', 'QR Code tong tidak terdaftar di sistem.');
+      if (errorCode == 'NOT_FOUND' || errorCode == 'BIN_NOT_FOUND') {
+        throw const BinException('BIN_NOT_FOUND', 'QR Code tempat sampah tidak terdaftar di sistem.');
       }
-      if (errorCode == 'ALREADY_ACTIVATED') {
-        throw const BinException('ALREADY_ACTIVATED', 'Tong ini sudah diaktivasi oleh warga lain.');
+      if (errorCode == 'ALREADY_ACTIVATED' ||
+          errorCode == 'BIN_ALREADY_USED' ||
+          (errorCode != null && errorCode.startsWith('BIN_ALREADY_USED')) ||
+          (message != null && message.contains('BIN_ALREADY_USED'))) {
+        throw const BinException('ALREADY_ACTIVATED', 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.');
       }
       if (errorCode == 'BIN_CATEGORY_DUPLICATE') {
         throw BinException('BIN_CATEGORY_DUPLICATE', message ?? 'Kategori tong sudah terdaftar.');
@@ -457,10 +472,18 @@ class ApiBinRepository implements BinRepository {
     required String evidencePhotoPath,
   }) async {
     try {
+      // Auto-compress evidence photo before upload (Target < 5MB, max 1920x1080)
+      final compressedEvidencePath = await ImageCompressor.compressImage(
+        evidencePhotoPath,
+        maxSizeBytes: 5 * 1024 * 1024,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+
       final formData = FormData.fromMap({
         'binId': binId,
         'evidence': await MultipartFile.fromFile(
-          evidencePhotoPath,
+          compressedEvidencePath,
           filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
         ),
       });
