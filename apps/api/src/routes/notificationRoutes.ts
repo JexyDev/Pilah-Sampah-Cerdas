@@ -301,6 +301,21 @@ router.post("/device-token", authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/v1/notifications/unregister-token
+router.post("/unregister-token", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { fcmToken: null },
+    });
+    res.status(200).json({ status: "success", message: "Device token berhasil dihapus" });
+  } catch (error) {
+    console.error("Unregister Device Token Error:", error);
+    res.status(500).json({ status: "error", message: "Gagal menghapus device token" });
+  }
+});
+
 // DELETE /api/v1/notifications/all
 router.delete("/all", authMiddleware, async (req, res) => {
   try {

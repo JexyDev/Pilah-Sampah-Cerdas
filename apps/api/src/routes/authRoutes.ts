@@ -265,6 +265,7 @@ router.post(
 router.post("/register/petugas-residu", authController.registerPetugasResidu);
 
 router.post("/register/warga", authController.registerWarga);
+router.post("/register", authController.registerWarga);
 
 router.post("/register/mahasiswa-kkn", authController.registerKkn);
 

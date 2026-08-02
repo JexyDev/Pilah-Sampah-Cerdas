@@ -45,7 +45,13 @@ router.get("/next-qr", authMiddleware, binController.getNextQr);
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  (req, res, next) => {
+    const role = req.user?.role;
+    if (role === "WARGA" || role === "MAHASISWA_KKN") {
+      return binController.registerWargaBin(req, res);
+    }
+    return roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"])(req, res, next);
+  },
   binController.createBin
 );
 
