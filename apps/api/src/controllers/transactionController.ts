@@ -16,14 +16,18 @@ export const transactionController = {
 
       const mappedDeposits = deposits.map((d: any) => ({
         id: d.id,
-        warga: d.warga?.name || "Unknown",
-        rtRw: d.warga?.rtRw?.name || "Unknown",
+        warga: d.warga?.name || "Warga Coblong",
+        phone: d.warga?.phone || "-",
+        rtRw: d.warga?.rtRw?.name || "RT 01 / RW 01",
+        kelurahan: d.warga?.rtRw?.kelurahan?.name || "Coblong",
         jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
         berat: Number(d.berat),
-        poin: Number(d.poin),
+        poin: Math.round(Number(d.poin)),
         waktu: d.createdAt,
         status: "Selesai",
-        lokasi: `Tempat Sampah: ${d.bin?.qrCode}`,
+        lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
+        confidence: d.confidenceAi ? Math.round(Number(d.confidenceAi)) : 95,
+        fotoUrl: d.fotoSampahUrl || d.fotoUrl || null,
       }));
 
       res.status(200).json({ success: true, data: mappedDeposits });

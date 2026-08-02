@@ -17,7 +17,12 @@ export class TransactionService {
         warga: {
           select: {
             name: true,
-            rtRw: true,
+            phone: true,
+            rtRw: {
+              include: {
+                kelurahan: true,
+              },
+            },
           },
         },
         bin: true,
