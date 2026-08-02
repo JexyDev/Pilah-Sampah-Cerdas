@@ -225,6 +225,40 @@ export class KknController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async getMyGroup(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.getMyGroup(kknUserId);
+      if (!data) {
+        res.status(404).json({
+          success: false,
+          message: "Anda belum dimasukkan ke kelompok KKN oleh Admin DLH.",
+        });
+        return;
+      }
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getMyGroup error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async createPemanfaatanSampah(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.createPemanfaatanSampah(kknUserId, req.body);
+      res.status(201).json({
+        success: true,
+        message: "Laporan pemanfaatan sampah berhasil disimpan dan tercatat di Web Monitoring.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] createPemanfaatanSampah error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();
+

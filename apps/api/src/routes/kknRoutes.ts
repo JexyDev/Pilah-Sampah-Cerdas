@@ -79,6 +79,20 @@ router.post(
 
 router.post("/qr/claim", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.claimQr);
 
+router.get(
+  "/kelompok/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getMyGroup
+);
+
+router.post(
+  "/pemanfaatan-sampah",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.createPemanfaatanSampah
+);
+
 router.post(
   "/register-warga",
   authMiddleware,

@@ -69,14 +69,18 @@ const registerKknSchema = registerStaffSchema.extend({
   nim: z.string().min(1, "NIM diperlukan"),
   jurusan: z.string().min(1, "Jurusan diperlukan"),
   fakultas: z.string().min(1, "Fakultas diperlukan"),
-  noWa: z.string().min(1, "WhatsApp diperlukan"),
+  noWa: z.string().optional(),
   startDate: z
     .string()
-    .refine((val) => !isNaN(Date.parse(val)), "Format tanggal mulai tidak valid"),
+    .optional()
+    .refine((val) => !val || !isNaN(Date.parse(val)), "Format tanggal mulai tidak valid"),
   endDate: z
     .string()
-    .refine((val) => !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
+    .optional()
+    .refine((val) => !val || !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
   assignedPolygonId: z.number().int().optional(),
+  kelurahan: z.string().optional(),
+  rtRw: z.string().optional(),
 });
 
 const registerPetugasSchema = registerStaffSchema.extend({
@@ -634,6 +638,8 @@ export class AuthController {
       // Normalize phone before validation
       if (req.body?.phone) req.body.phone = normalizePhone(req.body.phone);
       if (req.body?.noWa) req.body.noWa = normalizePhone(req.body.noWa);
+      if (!req.body?.phone && req.body?.noWa) req.body.phone = req.body.noWa;
+      if (!req.body?.noWa && req.body?.phone) req.body.noWa = req.body.phone;
       if (!req.body?.name && req.body?.nama) req.body.name = req.body.nama;
 
       const parsed = registerKknSchema.safeParse(req.body);
@@ -643,22 +649,23 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, ...userData } =
+      const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, kelurahan, rtRw, ...userData } =
         parsed.data;
       const kknData = {
         nim,
         jurusan,
         fakultas,
-        noWa,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        noWa: noWa || userData.phone || "-",
+        startDate: startDate ? new Date(startDate) : new Date(),
+        endDate: endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         assignedPolygonId,
       };
 
       const result = await authService.registerKkn(userData, kknData);
       res.status(201).json({
         success: true,
-        data: { id: result.user.id, name: result.user.name, status: result.user.status },
+        message: "Pendaftaran akun Mahasiswa KKN berhasil. Akun Anda sedang menunggu verifikasi (whitelist) Admin DLH.",
+        data: { id: result.user.id, name: result.user.name, role: "MAHASISWA_KKN" },
       });
     } catch (error: any) {
       res

@@ -608,6 +608,136 @@ export class KknService {
       return { warga, qrCodes };
     });
   }
+
+  async getMyGroup(userId: string) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: {
+        assignedPolygon: true,
+        kelompok: {
+          include: {
+            dpl: true,
+            students: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!student || !student.kelompok) {
+      return null;
+    }
+
+    const group = student.kelompok;
+    const memberUserIds = group.students.map((s) => s.userId);
+
+    const pointsAgg = await prisma.pointHistory.groupBy({
+      by: ["userId"],
+      where: { userId: { in: memberUserIds } },
+      _sum: { points: true },
+    });
+
+    const pointsMap = new Map<string, number>();
+    pointsAgg.forEach((item) => {
+      pointsMap.set(item.userId, item._sum.points || 0);
+    });
+
+    const members = group.students.map((s) => {
+      const p = pointsMap.get(s.userId) || 0;
+      return {
+        userId: s.userId,
+        nim: s.nim,
+        name: s.user?.name || "Mahasiswa",
+        jurusan: s.jurusan,
+        individualPoints: p,
+        isLeader: s.userId === group.dplId || s.userId === userId,
+      };
+    });
+
+    const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
+
+    return {
+      groupId: group.id,
+      groupName: group.name,
+      dosenPembimbing: group.dpl?.name || "Dr. Ir. Ahmad Sudrajat, M.T.",
+      poskoLocation: student.assignedPolygon?.name || "Kel. Bojongsoang RT 03 / RW 08",
+      totalGroupPoints,
+      members,
+    };
+  }
+
+  async createPemanfaatanSampah(
+    userId: string,
+    payload: {
+      jenisPemanfaatan?: string;
+      kategoriSampah?: string;
+      jumlah?: number;
+      satuan?: string;
+      wilayahDampingan?: string;
+      deskripsi?: string;
+      timestamp?: string;
+    }
+  ) {
+    const {
+      jenisPemanfaatan = "Kompos Organik",
+      kategoriSampah = "Organik",
+      jumlah = 10,
+      satuan = "Kg",
+      wilayahDampingan = "Wilayah KKN Dago",
+      deskripsi = "",
+    } = payload;
+
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { user: true },
+    });
+
+    const userRtRw = student?.user?.rtRwId;
+    let targetRwId = userRtRw;
+    if (!targetRwId) {
+      const firstRw = await prisma.rtRwArea.findFirst();
+      targetRwId = firstRw ? firstRw.id : 1;
+    }
+
+    const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const report = await prisma.pemanfaatan.create({
+      data: {
+        rwId: targetRwId,
+        nomorCaraPemanfaatan: uniqueNo,
+        program: jenisPemanfaatan,
+        teknologi: kategoriSampah,
+        bahanBaku: deskripsi || jenisPemanfaatan,
+        volumeBahanBaku: jumlah,
+        unitBahanBaku: satuan,
+        hasil: jumlah,
+        unitHasil: satuan,
+        fotoDokumentasiUrl: "/uploads/default-pemanfaatan.jpg",
+        tanggalPencatatan: payload.timestamp ? new Date(payload.timestamp) : new Date(),
+      },
+    });
+
+    // Award +25 points to student for waste utilization report
+    const earnedPoints = 25;
+    await prisma.pointHistory.create({
+      data: {
+        userId,
+        points: earnedPoints,
+        description: `Laporan Pemanfaatan Sampah: ${jenisPemanfaatan} (${jumlah} ${satuan})`,
+        kategori: "SETORAN_BEBAS_PENUH",
+        redeemable: false,
+      },
+    });
+
+    return {
+      reportId: report.id,
+      earnedPoints,
+    };
+  }
 }
 
 export const kknService = new KknService();
+
