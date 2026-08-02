@@ -787,13 +787,11 @@ export class AuthController {
         .json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
     } catch (error: any) {
       if (error.message === "INVALID_TOKEN" || error.message === "INVALID_OTP") {
-        res
-          .status(400)
-          .json({
-            success: false,
-            code: "INVALID_OTP",
-            message: "Kode verifikasi salah atau kedaluwarsa",
-          });
+        res.status(400).json({
+          success: false,
+          code: "INVALID_OTP",
+          message: "Kode verifikasi salah atau kedaluwarsa",
+        });
       } else if (error.message === "USER_NOT_FOUND") {
         res
           .status(404)

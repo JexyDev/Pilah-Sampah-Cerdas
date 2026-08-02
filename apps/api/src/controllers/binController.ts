@@ -517,12 +517,10 @@ export class BinController {
       } else if (error.message === "BIN_NOT_OWNED") {
         res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
       } else if (error.message === "DUPLICATE_REQUEST") {
-        res
-          .status(400)
-          .json({
-            error: "DUPLICATE_REQUEST",
-            message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
-          });
+        res.status(400).json({
+          error: "DUPLICATE_REQUEST",
+          message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+        });
       } else {
         res
           .status(500)
@@ -891,12 +889,10 @@ export class BinController {
       } else if (error.message === "BIN_NOT_OWNED") {
         res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
       } else if (error.message === "DUPLICATE_REQUEST") {
-        res
-          .status(400)
-          .json({
-            error: "DUPLICATE_REQUEST",
-            message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
-          });
+        res.status(400).json({
+          error: "DUPLICATE_REQUEST",
+          message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+        });
       } else {
         res
           .status(500)
