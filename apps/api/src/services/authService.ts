@@ -603,7 +603,8 @@ export class AuthService {
     if (phone.startsWith("08")) phone = "+62" + phone.slice(1);
     else if (phone.startsWith("62") && !phone.startsWith("+")) phone = "+" + phone;
 
-    const isMasterOtp = process.env.NODE_ENV !== "production" && (otp === "123456" || otp === "849201");
+    const isMasterOtp =
+      process.env.NODE_ENV !== "production" && (otp === "123456" || otp === "849201");
 
     if (!isMasterOtp) {
       const record = await prisma.otpCode.findFirst({

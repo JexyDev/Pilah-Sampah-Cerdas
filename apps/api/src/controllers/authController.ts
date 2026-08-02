@@ -782,14 +782,26 @@ export class AuthController {
       }
 
       await authService.resetPassword(target, verificationCode, newPassword);
-      res.status(200).json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
+      res
+        .status(200)
+        .json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
     } catch (error: any) {
       if (error.message === "INVALID_TOKEN" || error.message === "INVALID_OTP") {
-        res.status(400).json({ success: false, code: "INVALID_OTP", message: "Kode verifikasi salah atau kedaluwarsa" });
+        res
+          .status(400)
+          .json({
+            success: false,
+            code: "INVALID_OTP",
+            message: "Kode verifikasi salah atau kedaluwarsa",
+          });
       } else if (error.message === "USER_NOT_FOUND") {
-        res.status(404).json({ success: false, code: "USER_NOT_FOUND", message: "User tidak ditemukan" });
+        res
+          .status(404)
+          .json({ success: false, code: "USER_NOT_FOUND", message: "User tidak ditemukan" });
       } else {
-        res.status(500).json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+        res
+          .status(500)
+          .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
       }
     }
   }

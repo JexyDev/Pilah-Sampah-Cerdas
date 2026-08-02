@@ -64,7 +64,14 @@ export class BinController {
           lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
           rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
           kapasitas,
-          status: bin.status === "BROKEN" ? "Rusak" : kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+          status:
+            bin.status === "BROKEN"
+              ? "Rusak"
+              : kapasitas > 80
+                ? "Penuh"
+                : kapasitas > 50
+                  ? "Sedang"
+                  : "Normal",
           lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
           categoryId: bin.categoryId || null,
           rtRwId: bin.rtRwId || null,
@@ -249,7 +256,10 @@ export class BinController {
           error: "BIN_NOT_OWNED",
           message: "tempat sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
         });
-      } else if (error.message === "LOCATION_OUT_OF_RANGE" || error.message === "LOCATION_TOO_FAR") {
+      } else if (
+        error.message === "LOCATION_OUT_OF_RANGE" ||
+        error.message === "LOCATION_TOO_FAR"
+      ) {
         res.status(400).json({
           success: false,
           error: "LOCATION_TOO_FAR",
@@ -476,7 +486,9 @@ export class BinController {
       });
     } catch (error) {
       console.error("[BinController] getResetRequestStatus error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status pengajuan" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status pengajuan" });
     }
   }
 
@@ -499,11 +511,18 @@ export class BinController {
     } catch (error: any) {
       console.error("[BinController] createResetRequest error:", error);
       if (error.message === "RESOURCE_NOT_FOUND") {
-        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+        res
+          .status(404)
+          .json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
       } else if (error.message === "BIN_NOT_OWNED") {
         res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
       } else if (error.message === "DUPLICATE_REQUEST") {
-        res.status(400).json({ error: "DUPLICATE_REQUEST", message: "Sudah ada pengajuan pengosongan aktif untuk tong ini" });
+        res
+          .status(400)
+          .json({
+            error: "DUPLICATE_REQUEST",
+            message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+          });
       } else {
         res
           .status(500)
@@ -567,9 +586,7 @@ export class BinController {
         status !== "COMPLETED" &&
         status !== "ON_PROGRESS"
       ) {
-        res
-          .status(400)
-          .json({ error: "BAD_REQUEST", message: "status tidak valid" });
+        res.status(400).json({ error: "BAD_REQUEST", message: "status tidak valid" });
         return;
       }
 
@@ -868,11 +885,18 @@ export class BinController {
     } catch (error: any) {
       console.error("[BinController] createResetRequestMobile error:", error);
       if (error.message === "RESOURCE_NOT_FOUND") {
-        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+        res
+          .status(404)
+          .json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
       } else if (error.message === "BIN_NOT_OWNED") {
         res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
       } else if (error.message === "DUPLICATE_REQUEST") {
-        res.status(400).json({ error: "DUPLICATE_REQUEST", message: "Sudah ada pengajuan pengosongan aktif untuk tong ini" });
+        res
+          .status(400)
+          .json({
+            error: "DUPLICATE_REQUEST",
+            message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+          });
       } else {
         res
           .status(500)

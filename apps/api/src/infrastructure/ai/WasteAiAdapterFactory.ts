@@ -2,7 +2,7 @@
  * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Factory & Implementasi Adapter Vendor AI (Mock + HTTP Vendor Ready)
  */
 

@@ -177,19 +177,17 @@ router.get("/", authMiddleware, async (req, res) => {
               orderBy: { createdAt: "desc" },
               take: 20,
             });
-            userNotifs = dbNotifs
-              .map(mapNotification)
-              .filter((n: any) => {
-                const t = (n.title || "").toLowerCase();
-                const d = (n.desc || "").toLowerCase();
-                const isResetReq =
-                  t.includes("pengosongan") ||
-                  d.includes("pengosongan") ||
-                  d.includes("mengajukan") ||
-                  d.includes("[req-");
-                return !isResetReq;
-              });
-          } catch (e) {
+            userNotifs = dbNotifs.map(mapNotification).filter((n: any) => {
+              const t = (n.title || "").toLowerCase();
+              const d = (n.desc || "").toLowerCase();
+              const isResetReq =
+                t.includes("pengosongan") ||
+                d.includes("pengosongan") ||
+                d.includes("mengajukan") ||
+                d.includes("[req-");
+              return !isResetReq;
+            });
+          } catch {
             // ignore
           }
         }
@@ -208,7 +206,7 @@ router.get("/", authMiddleware, async (req, res) => {
             take: 20,
           });
           formattedNotifications = dbNotifs.map(mapNotification);
-        } catch (e) {
+        } catch {
           // ignore
         }
       }

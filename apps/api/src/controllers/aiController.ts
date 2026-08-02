@@ -99,7 +99,7 @@ export class AiController {
       const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(1)) || 1.0;
       const confidence = (result as any).confidence || 0.94;
       const organicPercentage = ((result as any).organik_percent ?? 94) / 100;
-      const estimatedPoints = Math.round((weightKg * 100.0) * confidence * 0.9) || 85;
+      const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || 85;
 
       res.status(200).json({
         success: true,

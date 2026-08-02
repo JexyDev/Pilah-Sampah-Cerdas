@@ -292,7 +292,8 @@ export const gamificationService = {
         // SLA Responsivitas (menit)
         let totalDurationMinutes = 0;
         completedTasks.forEach((t: any) => {
-          const duration = (new Date(t.updatedAt).getTime() - new Date(t.createdAt).getTime()) / (1000 * 60);
+          const duration =
+            (new Date(t.updatedAt).getTime() - new Date(t.createdAt).getTime()) / (1000 * 60);
           totalDurationMinutes += Math.max(1, duration);
         });
         const avgSlaMinutes = totalCompleted > 0 ? totalDurationMinutes / totalCompleted : 0;
@@ -302,7 +303,7 @@ export const gamificationService = {
         const successRate = totalClaimed > 0 ? totalCompleted / totalClaimed : 1;
 
         // Opsi D: Skor Komposit seimbang & minim error
-        const compositeScore = (0.5 * totalCompleted) + (0.3 * slaScore) + (0.2 * successRate * 100);
+        const compositeScore = 0.5 * totalCompleted + 0.3 * slaScore + 0.2 * successRate * 100;
 
         const totalKg = p.setoranManual.reduce(
           (acc: number, cur: any) => acc + Number(cur.berat || 0),
@@ -441,12 +442,16 @@ export const gamificationService = {
             let totalHours = 0;
             s.user.attendances.forEach((att: any) => {
               if (att.checkOutAt && att.attendedAt) {
-                const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+                const diffMs =
+                  new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
                 totalHours += diffMs / (1000 * 60 * 60);
               }
             });
-            const activeBins = s.user.registeredBins.filter((b: any) => b.status === "ACTIVE_BOUND").length;
-            const score = totalHours * 0.4 + activeBins * 0.3 + Number(s.assessmentScore || 0) * 0.3;
+            const activeBins = s.user.registeredBins.filter(
+              (b: any) => b.status === "ACTIVE_BOUND"
+            ).length;
+            const score =
+              totalHours * 0.4 + activeBins * 0.3 + Number(s.assessmentScore || 0) * 0.3;
             totalScoreSum += score;
           });
         });

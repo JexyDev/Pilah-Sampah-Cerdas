@@ -885,14 +885,15 @@ export class BinService {
     // 1. check if bin exists in DB
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
-      include: { binOwnerships: true }
+      include: { binOwnerships: true },
     });
     if (!bin) {
       throw new Error("RESOURCE_NOT_FOUND");
     }
 
     // 2. check if owned by user
-    const isOwner = bin.userId === userId || bin.binOwnerships.some((o: any) => o.userId === userId);
+    const isOwner =
+      bin.userId === userId || bin.binOwnerships.some((o: any) => o.userId === userId);
     if (!isOwner) {
       throw new Error("BIN_NOT_OWNED");
     }
@@ -901,8 +902,8 @@ export class BinService {
     const existing = await prisma.binResetRequest.findFirst({
       where: {
         binId,
-        status: "PENDING"
-      }
+        status: "PENDING",
+      },
     });
     if (existing) {
       throw new Error("DUPLICATE_REQUEST");

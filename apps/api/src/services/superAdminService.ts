@@ -352,7 +352,13 @@ export class SuperAdminService {
   /**
    * Get Audit Trail logs with Date Range, Action, User & Search filters
    */
-  async getAuditTrail(filters?: { action?: string; userId?: string; startDate?: string; endDate?: string; search?: string }) {
+  async getAuditTrail(filters?: {
+    action?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+  }) {
     const where: any = {};
     if (filters?.action) {
       where.action = filters.action;

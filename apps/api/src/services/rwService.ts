@@ -158,10 +158,7 @@ export const rwService = {
   getPendingPetugas: async (_rtRwId: number) => {
     return prisma.petugasResidu.findMany({
       where: {
-        OR: [
-          { whitelistStatus: "PENDING" },
-          { user: { status: "Pending" } },
-        ],
+        OR: [{ whitelistStatus: "PENDING" }, { user: { status: "Pending" } }],
       },
       include: { user: true },
     });

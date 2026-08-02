@@ -43,7 +43,8 @@ export const transactionController = {
         const areaName = d.bin?.rtRw?.name || "";
         const kelName = d.bin?.rtRw?.kelurahan?.name || "";
         const binCode = d.bin?.qrCode || "BIN";
-        const addr = d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
+        const addr =
+          d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
 
         return {
           id: d.id,

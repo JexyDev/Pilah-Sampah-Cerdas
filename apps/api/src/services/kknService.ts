@@ -553,7 +553,9 @@ export class KknService {
         });
       }
 
-      const qrCodes = [data.binQrCode, data.binQrCodeOrganic, data.binQrCodeInorganic].filter(Boolean);
+      const qrCodes = [data.binQrCode, data.binQrCodeOrganic, data.binQrCodeInorganic].filter(
+        Boolean
+      );
 
       for (const qr of qrCodes) {
         let bin = await tx.bin.findUnique({ where: { qrCode: qr } });
