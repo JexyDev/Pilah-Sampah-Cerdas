@@ -34,12 +34,22 @@ const InputSetoranManual: React.FC = () => {
         setWargaList(resWarga.data);
       }
 
-      // Ambil daftar kategori
+      // Ambil daftar kategori & set default ke Residu
       const resCats = await api.get("/categories");
+      let cats: any[] = [];
       if (resCats.data?.success) {
-        setCategoriesList(resCats.data.data);
+        cats = resCats.data.data;
       } else if (Array.isArray(resCats.data)) {
-        setCategoriesList(resCats.data);
+        cats = resCats.data;
+      }
+      setCategoriesList(cats);
+
+      // Auto-select Residu category for Petugas Residu
+      const residuCat = cats.find(
+        (c: any) => c.name?.toLowerCase().includes("residu")
+      );
+      if (residuCat) {
+        setKategoriId(residuCat.id);
       }
     } catch (err) {
       console.error("Gagal memuat data awal", err);
@@ -77,12 +87,11 @@ const InputSetoranManual: React.FC = () => {
       });
 
       if (res.data?.success) {
-        toast.success(res.data.message || "Setoran manual berhasil dicatat!");
+        toast.success(res.data.message || "Setoran sampah residu berhasil dicatat!");
         
-        // Reset form
+        // Reset form (keep Residu category selected)
         setWargaId("");
         setSearchQuery("");
-        setKategoriId("");
         setBeratKg("");
         setPhoto(null);
         setPhotoPreview(null);
@@ -128,9 +137,9 @@ const InputSetoranManual: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto py-6">
       <div className="mb-8">
-        <h2 className="text-2xl font-extrabold text-on-surface">Input Setoran Manual</h2>
+        <h2 className="text-2xl font-extrabold text-on-surface">Input Setoran Residu Hilir</h2>
         <p className="text-sm text-on-surface-variant mt-1">
-          Gunakan form ini untuk mencatat setoran sampah warga secara manual.
+          Gunakan form ini khusus Petugas Residu untuk mencatat penimbangan & setoran sampah residu hasil pemilahan hilir (Residu tanpa QR Code).
         </p>
       </div>
 

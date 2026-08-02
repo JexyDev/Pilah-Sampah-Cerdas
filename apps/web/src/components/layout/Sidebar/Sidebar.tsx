@@ -155,8 +155,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
         )}
 
-        {hasAccess(["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]) && (
-          <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Manual" />
+        {hasAccess(["PETUGAS_RESIDU"]) && (
+          <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Residu Hilir" />
         )}
 
         <SectionHeader label="Aktivitas Tata Kelola Sampah" />
