@@ -6,7 +6,18 @@
 
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Loader2, Medal, TrendingUp, BarChart2, Users, Search, ArrowUpDown, MapPin, GraduationCap } from "lucide-react";
+import {
+  Loader2,
+  Medal,
+  TrendingUp,
+  BarChart2,
+  Users,
+  Search,
+  ArrowUpDown,
+  MapPin,
+  GraduationCap,
+  Trophy,
+} from "lucide-react";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { Badge } from "../../components/common/Badge";
 import { BarChartRace } from "../../components/BarChartRace";
@@ -88,18 +99,19 @@ const Leaderboard: React.FC = () => {
 
   if (isLoading && users.length === 0 && kknStudents.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="animate-spin text-primary" size={48} />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <Loader2 className="animate-spin text-primary" size={36} />
+        <p className="text-xs font-bold text-slate-500">Memuat papan peringkat...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center p-6 bg-red-50 text-red-600 rounded-xl">
-        <p>Error: {error}</p>
+      <div className="max-w-2xl mx-auto my-12 text-center p-8 bg-rose-50 text-rose-700 rounded-2xl border border-rose-200 shadow-sm space-y-4">
+        <p className="font-bold text-sm">Gagal memuat papan peringkat: {error}</p>
         <button
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg font-bold"
+          className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs shadow-sm cursor-pointer transition-all"
           onClick={() => (system === "system1" ? fetchLeaderboard() : fetchLeaderboardKkn())}
         >
           Coba Lagi
@@ -124,7 +136,7 @@ const Leaderboard: React.FC = () => {
         subtitle: u.wilayah || "-",
         points: u.points,
       }));
-      pageTitle = "Leaderboard Warga";
+      pageTitle = "Papan Peringkat Warga";
       pageSubtitle = "Peringkat warga berdasarkan kontribusi pemilahan sampah organik & anorganik";
       nameHeader = "Nama Warga";
       subtitleHeader = "Wilayah RT/RW";
@@ -136,7 +148,7 @@ const Leaderboard: React.FC = () => {
         subtitle: r.kelurahanName,
         points: r.totalPoints,
       }));
-      pageTitle = "Leaderboard RT/RW";
+      pageTitle = "Papan Peringkat RT/RW";
       pageSubtitle = "Akumulasi poin kebersihan lingkungan tingkat rukun tetangga & warga";
       nameHeader = "Wilayah RT/RW";
       subtitleHeader = "Kelurahan";
@@ -148,13 +160,12 @@ const Leaderboard: React.FC = () => {
         subtitle: p.wilayah,
         points: p.totalPoints,
       }));
-      pageTitle = "Leaderboard Petugas Residu";
+      pageTitle = "Papan Peringkat Petugas Residu";
       pageSubtitle = "Metrik pengangkutan residu & pemilahan bersih oleh petugas";
       nameHeader = "Nama Petugas";
       subtitleHeader = "Wilayah RT/RW";
     }
   } else {
-    // KKN Leaderboard (Sistem 2)
     if (s2Tab === "students") {
       currentData = kknStudents.map((s, i) => ({
         id: s.id,
@@ -164,7 +175,7 @@ const Leaderboard: React.FC = () => {
         extraInfo: `Tong Aktif: ${s.activeBins} | Jam Kerja: ${s.totalHours} jam`,
         points: s.finalScore,
       }));
-      pageTitle = "Leaderboard Mahasiswa KKN (Individu)";
+      pageTitle = "Papan Peringkat Mahasiswa KKN";
       pageSubtitle = "Skor Akhir = (Jam Kerja * 0.4) + (Tong Aktif * 0.3) + (Nilai DPL * 0.3)";
       nameHeader = "Nama Mahasiswa";
       subtitleHeader = "Kelompok KKN";
@@ -177,14 +188,13 @@ const Leaderboard: React.FC = () => {
         subtitle: `Anggota: ${g.membersCount} orang`,
         points: g.avgScore,
       }));
-      pageTitle = "Leaderboard Kelompok KKN";
+      pageTitle = "Papan Peringkat Kelompok KKN";
       pageSubtitle = "Rata-rata Skor Akhir dari seluruh anggota kelompok KKN";
       nameHeader = "Nama Kelompok";
       subtitleHeader = "Jumlah Anggota";
     }
   }
 
-  // Search filter
   if (searchTerm) {
     const lowerSearch = searchTerm.toLowerCase();
     currentData = currentData.filter(
@@ -194,7 +204,6 @@ const Leaderboard: React.FC = () => {
     );
   }
 
-  // Sorting logic
   currentData = currentData.sort((a, b) => {
     let comparison = 0;
     if (sortBy === "rank") comparison = a.rank - b.rank;
@@ -218,91 +227,102 @@ const Leaderboard: React.FC = () => {
   const rest = currentData.slice(3);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 p-4">
-      {/* System Selector */}
-      <div className="flex justify-center bg-gray-100 p-1.5 rounded-2xl w-fit mx-auto border border-gray-200">
-        <button
-          onClick={() => {
-            setSystem("system1");
-            setSearchTerm("");
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-            system === "system1"
-              ? "bg-white text-primary shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          <Users size={16} /> Sistem 1: Warga & Wilayah
-        </button>
-        <button
-          onClick={() => {
-            setSystem("system2");
-            setSearchTerm("");
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-            system === "system2"
-              ? "bg-white text-primary shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          <GraduationCap size={16} /> Sistem 2: KKN Cerdas
-        </button>
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Papan Peringkat (Leaderboard)</h1>
+            <span className="bg-amber-50 text-amber-600 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
+              <Trophy size={13} /> Prestasi Lingkungan
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Penghargaan & pemeringkatan apresiasi atas kontribusi nyata pemilahan sampah di Coblong.
+          </p>
+        </div>
+
+        {/* System Selector Toggle */}
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+          <button
+            onClick={() => {
+              setSystem("system1");
+              setSearchTerm("");
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              system === "system1" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Users size={14} /> Warga & Wilayah
+          </button>
+          <button
+            onClick={() => {
+              setSystem("system2");
+              setSearchTerm("");
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              system === "system2" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <GraduationCap size={14} /> KKN Cerdas
+          </button>
+        </div>
       </div>
 
       {/* Tab Switcher depending on System */}
-      <div className="flex justify-center border-b border-slate-200 overflow-x-auto pb-1">
+      <div className="flex justify-center border-b border-slate-200 overflow-x-auto pb-1 gap-2">
         {system === "system1" ? (
           <>
             <button
               onClick={() => setS1Tab("citizens")}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
                 s1Tab === "citizens" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              <Users size={16} /> Warga
+              <Users size={15} /> Warga
             </button>
             <button
               onClick={() => setS1Tab("rtrw")}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
                 s1Tab === "rtrw" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              <MapPin size={16} /> RT / RW
+              <MapPin size={15} /> RT / RW
             </button>
             <button
               onClick={() => setS1Tab("pengangkut")}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
                 s1Tab === "pengangkut" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              <TrendingUp size={16} /> Petugas Residu
+              <TrendingUp size={15} /> Petugas Residu
             </button>
             <button
               onClick={() => setS1Tab("kelurahan")}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
                 s1Tab === "kelurahan" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              <BarChart2 size={16} /> Persaingan Kelurahan
+              <BarChart2 size={15} /> Persaingan Kelurahan
             </button>
           </>
         ) : (
           <>
             <button
               onClick={() => setS2Tab("students")}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
                 s2Tab === "students" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              <Users size={16} /> Individu Mahasiswa
+              <Users size={15} /> Individu Mahasiswa
             </button>
             <button
               onClick={() => setS2Tab("groups")}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
                 s2Tab === "groups" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              <GraduationCap size={16} /> Kelompok KKN
+              <GraduationCap size={15} /> Kelompok KKN
             </button>
           </>
         )}
@@ -312,37 +332,48 @@ const Leaderboard: React.FC = () => {
         <BarChartRace />
       ) : (
         <>
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-black text-slate-800">{pageTitle}</h2>
-            <p className="text-slate-500 text-sm">{pageSubtitle}</p>
+          <div className="text-center space-y-1 py-2">
+            <h2 className="text-xl font-black text-slate-900">{pageTitle}</h2>
+            <p className="text-slate-500 text-xs font-medium">{pageSubtitle}</p>
           </div>
 
-          {/* Top 3 Card Visualizations */}
+          {/* Top 3 Podium Cards */}
           {top3.length > 0 && (
-            <div className="flex flex-col md:flex-row justify-center items-end gap-4 md:gap-6 pt-10">
+            <div className="flex flex-col md:flex-row justify-center items-end gap-4 md:gap-6 pt-6 pb-2">
               {top3.map((u) => {
                 const isFirst = u.rank === 1;
                 const isSecond = u.rank === 2;
 
-                let heightClass = isFirst ? "h-64" : isSecond ? "h-56" : "h-48";
-                let colorClass = isFirst ? "from-yellow-400 to-amber-500" : isSecond ? "from-slate-300 to-gray-400" : "from-orange-300 to-orange-500";
+                let heightClass = isFirst ? "h-56" : isSecond ? "h-48" : "h-40";
+                let colorClass = isFirst
+                  ? "from-amber-400 to-amber-500"
+                  : isSecond
+                  ? "from-slate-300 to-slate-400"
+                  : "from-amber-600 to-orange-500";
                 let medalColor = isFirst ? "#FDE047" : isSecond ? "#E5E7EB" : "#FDBA74";
 
                 return (
                   <div
                     key={u.id}
-                    className={`w-full md:w-64 flex flex-col items-center justify-end relative order-${isFirst ? "2" : isSecond ? "1" : "3"}`}
+                    className={`w-full md:w-60 flex flex-col items-center justify-end relative order-${
+                      isFirst ? "2" : isSecond ? "1" : "3"
+                    }`}
                   >
-                    <div className="absolute -top-12 z-10 flex flex-col items-center">
-                      <Medal color={medalColor} size={48} className="drop-shadow-lg" />
-                      <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded-full text-xs shadow-sm mt-[-10px]">
-                        Peringkat {u.rank}
+                    <div className="absolute -top-10 z-10 flex flex-col items-center">
+                      <Medal color={medalColor} size={40} className="drop-shadow-md" />
+                      <span className="font-extrabold text-slate-800 bg-white px-2.5 py-0.5 rounded-full text-[11px] shadow-sm border border-slate-200 mt-[-8px]">
+                        Juara {u.rank}
                       </span>
                     </div>
-                    <div className={`w-full rounded-t-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-lg flex flex-col justify-end ${heightClass}`}>
-                      <h3 className="font-black text-white text-lg truncate drop-shadow-md">{u.name}</h3>
-                      <p className="text-white/90 font-bold text-sm drop-shadow-sm">
-                        {u.points.toFixed ? u.points.toFixed(1) : u.points} {system === "system2" ? "Skor" : "Pts"}
+                    <div
+                      className={`w-full rounded-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-md flex flex-col justify-end ${heightClass}`}
+                    >
+                      <h3 className="font-black text-white text-sm truncate drop-shadow-md">{u.name}</h3>
+                      <p className="text-white/90 font-extrabold text-xs mt-1">
+                        {Math.round(u.points).toLocaleString("id-ID")}{" "}
+                        <span className="text-[10px] font-bold text-white/80">
+                          {system === "system2" ? "Skor" : "Pts"}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -351,89 +382,87 @@ const Leaderboard: React.FC = () => {
             </div>
           )}
 
-          {/* Search Control */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          {/* Search & Stats Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="Cari..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                placeholder="Cari peringkat..."
+                className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="text-sm text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-800">{currentData.length}</span> data
+            <div className="text-xs text-slate-500 font-bold">
+              Menampilkan <span className="font-black text-slate-900">{currentData.length}</span> data
             </div>
           </div>
 
-          {/* Table list */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="max-h-[400px] overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200 relative">
-                <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                  <tr>
+          {/* Table List */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
                     <th
-                      className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors"
+                      className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors w-20"
                       onClick={() => toggleSort("rank")}
                     >
-                      <div className="flex items-center gap-2">Peringkat <ArrowUpDown size={14} /></div>
+                      <div className="flex items-center gap-1.5">Rank <ArrowUpDown size={13} /></div>
                     </th>
                     <th
-                      className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors"
+                      className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
                       onClick={() => toggleSort("name")}
                     >
-                      <div className="flex items-center gap-2">{nameHeader} <ArrowUpDown size={14} /></div>
+                      <div className="flex items-center gap-1.5">{nameHeader} <ArrowUpDown size={13} /></div>
                     </th>
                     <th
-                      className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors"
+                      className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
                       onClick={() => toggleSort("subtitle")}
                     >
-                      <div className="flex items-center gap-2">{subtitleHeader} <ArrowUpDown size={14} /></div>
+                      <div className="flex items-center gap-1.5">{subtitleHeader} <ArrowUpDown size={13} /></div>
                     </th>
                     {extraInfoHeader && (
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase">
-                        {extraInfoHeader}
-                      </th>
+                      <th className="py-3.5 px-4">{extraInfoHeader}</th>
                     )}
                     {system === "system1" && s1Tab === "citizens" && (
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase">Status</th>
+                      <th className="py-3.5 px-4">Status</th>
                     )}
                     <th
-                      className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors"
+                      className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 transition-colors"
                       onClick={() => toggleSort("points")}
                     >
-                      <div className="flex items-center justify-end gap-2">
-                        <ArrowUpDown size={14} /> {system === "system2" ? "Skor Akhir" : "Total Poin"}
+                      <div className="flex items-center justify-end gap-1.5">
+                        <ArrowUpDown size={13} /> {system === "system2" ? "Skor Akhir" : "Total Poin"}
                       </div>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100 text-xs font-medium">
                   {rest.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                        Tidak ada data yang sesuai dengan kriteria.
+                      <td colSpan={6} className="py-8 text-center text-slate-500">
+                        Tidak ada data peringkat yang sesuai dengan kriteria pencarian.
                       </td>
                     </tr>
                   ) : (
                     rest.map((u) => {
                       return (
-                        <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4 font-bold text-slate-500 w-24">{u.rank}</td>
-                          <td className="px-6 py-4 font-semibold text-slate-800">{u.name}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{u.subtitle || "-"}</td>
+                        <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4 font-black text-slate-700">#{u.rank}</td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                          <td className="py-3.5 px-4 text-slate-600 font-semibold">{u.subtitle || "-"}</td>
                           {extraInfoHeader && (
-                            <td className="px-6 py-4 text-sm text-slate-600">{u.extraInfo || "-"}</td>
+                            <td className="py-3.5 px-4 text-slate-600 font-medium">{u.extraInfo || "-"}</td>
                           )}
                           {system === "system1" && s1Tab === "citizens" && (
-                            <td className="px-6 py-4">
+                            <td className="py-3.5 px-4">
                               <Badge status="ACTIVE" />
                             </td>
                           )}
-                          <td className="px-6 py-4 font-black text-green-600 text-right">
-                            {u.points.toFixed ? u.points.toFixed(1) : u.points}
+                          <td className="py-3.5 px-4 font-black text-emerald-600 text-right text-sm">
+                            {Math.round(u.points).toLocaleString("id-ID")}
                           </td>
                         </tr>
                       );

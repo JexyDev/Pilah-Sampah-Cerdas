@@ -72,42 +72,39 @@ const LaporanAnalitik: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold text-on-surface mb-1">Laporan & Analitik Teknikal</h2>
-          <p className="text-[14px] text-on-surface-variant">
-            Monitoring performa sistem dan metrik teknikal secara real-time.
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Laporan & Analitik Teknikal</h1>
+            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
+              <LineChart size={13} /> Metric System
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Monitoring performa sistem, akurasi AI model, & metrik teknikal secara real-time.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-outline-variant/50">
-            <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-              Tampilan:
-            </span>
-            <span className="text-[14px] font-bold text-on-surface">Pusat</span>
-          </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           <button 
             onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
           >
-            <FileText size={20} />
-            Export PDF
+            <FileText size={14} /> Export PDF
           </button>
           <button 
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-[12px] font-bold"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
           >
-            <Grid size={20} />
-            Export CSV
+            <Grid size={14} /> Export CSV
           </button>
           <button 
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl transition-colors cursor-pointer text-[12px] font-bold shadow-md shadow-indigo-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
           >
-            <Download size={20} />
-            Export Dataset AI
+            <Download size={14} /> Export Dataset AI
           </button>
         </div>
       </div>

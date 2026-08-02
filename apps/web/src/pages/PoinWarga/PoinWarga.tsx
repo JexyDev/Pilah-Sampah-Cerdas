@@ -94,16 +94,25 @@ const PoinWarga: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
-      <div className="flex justify-between items-end mb-2">
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold text-on-surface">Poin Warga</h2>
-          <p className="text-[14px] text-on-surface-variant mt-1">
-            Pantau leaderboard dan peringkat setoran poin warga.
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Gamifikasi & Poin Warga</h1>
+            <span className="bg-amber-50 text-amber-600 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
+              <Star size={13} /> Reward System
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Pantau perolehan poin gamifikasi, riwayat apresiasi, dan peringkat setoran warga.
           </p>
         </div>
-        <div className="text-[12px] text-on-surface-variant font-medium">
-          {filteredLeaders.length} warga terdaftar
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+            {filteredLeaders.length} Warga Terdaftar
+          </span>
         </div>
       </div>
 

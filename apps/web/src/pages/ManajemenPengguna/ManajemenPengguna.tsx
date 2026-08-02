@@ -259,54 +259,60 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      {/* Header Actions */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold text-on-surface">Daftar Pengguna Sistem</h2>
-        <div className="flex gap-4">
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Pengguna</h1>
+            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
+              <User size={13} /> Data Pengguna
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Kelola data akun warga, petugas residu, pengurus RT/RW, & mahasiswa KKN di Kecamatan Coblong.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
           {!isReadOnly && (
             <button
               onClick={handleOpenAddModal}
-              className="bg-primary text-white px-6 h-12 rounded-lg font-medium text-base hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
             >
-              <UserPlus size={20} />
-              Tambah Pengguna
+              <UserPlus size={15} /> Tambah Pengguna
             </button>
           )}
           <button
             onClick={handleExportCSV}
-            className="bg-white border border-outline-variant text-on-surface-variant px-6 h-12 rounded-lg font-medium text-base hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
           >
-            <Download size={20} />
-            Ekspor CSV
+            <Download size={15} /> Ekspor CSV
           </button>
         </div>
       </div>
 
       {/* Filters Card */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-outline-variant/50">
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs text-on-surface-variant mb-1">Pencarian</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 h-10 bg-surface-container-low border border-outline-variant/50 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
-                placeholder="Cari nama, No. Telfon..."
-                type="text"
-              />
-            </div>
-          </div>
-          <div className="w-40">
-            <label className="block text-xs text-on-surface-variant mb-1">Peran</label>
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <div className="relative w-full lg:w-72">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            placeholder="Cari nama, No. HP..."
+            type="text"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
+          <div>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 h-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
-              <option value="Semua">Semua</option>
+              <option value="Semua">Semua Peran</option>
               <option value="SUPER_ADMIN">Super Admin</option>
               <option value="ADMIN_DLH">Admin DLH</option>
               <option value="CAMAT">Camat</option>
@@ -317,44 +323,41 @@ const ManajemenPengguna: React.FC = () => {
               <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
             </select>
           </div>
-          <div className="w-32">
-            <label className="block text-xs text-on-surface-variant mb-1">Status</label>
+          <div>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 h-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
-              <option value="Semua">Semua</option>
+              <option value="Semua">Semua Status</option>
               <option value="Aktif">Aktif</option>
               <option value="Nonaktif">Nonaktif</option>
             </select>
           </div>
-          <div className="w-28">
-            <label className="block text-xs text-on-surface-variant mb-1">RW</label>
+          <div>
             <select
               value={selectedRw}
               onChange={(e) => setSelectedRw(e.target.value)}
-              className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 h-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
-              <option value="Semua">Semua</option>
+              <option value="Semua">Semua RW</option>
               {uniqueRws.map((rw) => (
                 <option key={rw} value={rw}>
-                  {rw}
+                  RW {rw}
                 </option>
               ))}
             </select>
           </div>
-          <div className="w-28">
-            <label className="block text-xs text-on-surface-variant mb-1">RT</label>
+          <div>
             <select
               value={selectedRt}
               onChange={(e) => setSelectedRt(e.target.value)}
-              className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 h-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
-              <option value="Semua">Semua</option>
+              <option value="Semua">Semua RT</option>
               {uniqueRts.map((rt) => (
                 <option key={rt} value={rt}>
-                  {rt}
+                  RT {rt}
                 </option>
               ))}
             </select>
@@ -363,27 +366,19 @@ const ManajemenPengguna: React.FC = () => {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-surface-container-low border-b border-outline-variant/50">
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold w-16">Avatar</th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Nama</th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">No. Telfon</th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Peran</th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold">Wilayah</th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-right">
-                  Setoran (Kg)
-                </th>
-                <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center">
-                  Status
-                </th>
-                {!isReadOnly && (
-                  <th className="text-xs text-on-surface-variant px-6 py-4 font-bold text-center w-24">
-                    Aksi
-                  </th>
-                )}
+              <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <th className="py-3.5 px-4 w-16">Avatar</th>
+                <th className="py-3.5 px-4">Nama Lengkap</th>
+                <th className="py-3.5 px-4">No. HP</th>
+                <th className="py-3.5 px-4">Peran</th>
+                <th className="py-3.5 px-4">Wilayah</th>
+                <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
