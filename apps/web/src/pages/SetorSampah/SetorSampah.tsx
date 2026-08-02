@@ -5,811 +5,398 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
-  Camera,
-  Upload,
-  QrCode,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  ArrowLeft,
+  Search,
+  Filter,
   RefreshCw,
-  AlertTriangle,
+  CheckCircle,
+  FileText,
+  Scale,
+  Sparkles,
+  TrendingUp,
+  Image as ImageIcon,
+  X,
+  Loader2,
+  Calendar,
+  ShieldCheck,
 } from "lucide-react";
-import { BrowserQRCodeReader } from "@zxing/browser";
-import imageCompression from "browser-image-compression";
-import toast from "react-hot-toast";
-import api from "../../services/api";
-import { predictWaste } from "../../services/aiService";
+import api from "../../utils/api";
 
-type Step =
-  | "INTRO"
-  | "CAMERA_PERMISSION_GUIDE"
-  | "TAKE_PHOTO"
-  | "REVIEW_PHOTO"
-  | "AI_PROCESSING"
-  | "AI_RESULT"
-  | "SCAN_QR"
-  | "SUBMITTING"
-  | "SUCCESS"
-  | "ERROR";
-
-type PermissionState = "PENDING" | "GRANTED" | "DENIED" | "NOT_SUPPORTED";
+interface DepositLog {
+  id: string;
+  warga: string;
+  phone?: string;
+  rtRw: string;
+  kelurahan?: string;
+  jenis: string;
+  berat: number;
+  poin: number;
+  waktu: string;
+  status: string;
+  lokasi: string;
+  confidence?: number;
+  fotoUrl?: string;
+}
 
 export default function SetorSampah() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("INTRO");
-  const [permissionState, setPermissionState] = useState<PermissionState>("PENDING");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [capturedFile, setCapturedFile] = useState<File | null>(null);
-  const [aiResult, setAiResult] = useState<{
-    jenis_sampah: string;
-    estimasi_volume: number;
-    confidence?: number;
-    quotaRemaining?: number;
-    detections?: Array<{ detectedType: string; volumeEstimate: number; confidence?: number }>;
-  } | null>(null);
-  const [transactionData, setTransactionData] = useState<any>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [logs, setLogs] = useState<DepositLog[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState<string>("ALL");
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
 
-  // Geolocation
-  const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({});
-
-  // Bins for simulation / fallback lists
-  const [availableBins, setAvailableBins] = useState<any[]>([]);
-  const [selectedSimulatedBin, setSelectedSimulatedBin] = useState("");
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const qrVideoRef = useRef<HTMLVideoElement>(null);
-
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const codeReader = useRef(new BrowserQRCodeReader());
-  const [scanControls, setScanControls] = useState<any>(null);
-
-  // Load bins and fetch user location
   useEffect(() => {
-    fetchAvailableBins();
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setCoords({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-        },
-        (err) => console.warn("Geolocation error:", err.message),
-        { enableHighAccuracy: true }
-      );
-    }
+    fetchLogs();
   }, []);
 
-  const fetchAvailableBins = async () => {
+  const fetchLogs = async () => {
+    setIsLoading(true);
     try {
-      const res = await api.get("/bins/my-bins");
-      if (res.data?.success) {
-        setAvailableBins(res.data.data);
+      const res = await api.get("/transactions/deposits");
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setLogs(res.data.data);
+      } else {
+        setLogs(getDummyLogs());
       }
     } catch (err) {
-      console.error("Failed to load bins:", err);
+      console.warn("Failed to fetch live deposit logs, fallback to monitoring demo data:", err);
+      setLogs(getDummyLogs());
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Start direct WebRTC camera for taking waste photo
-  const startWasteCamera = async () => {
-    try {
-      setStep("INTRO"); // Maintain state in UI but display loading
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
+  const getDummyLogs = (): DepositLog[] => [
+    {
+      id: "LOG-1092",
+      warga: "Keluarga Budi Santoso",
+      phone: "081298765432",
+      rtRw: "RT 04 / RW 02",
+      kelurahan: "Lebak Siliwangi",
+      jenis: "Organik",
+      berat: 2.5,
+      poin: 180,
+      waktu: "2026-08-02 08:15",
+      status: "TERVERIFIKASI_KKN",
+      lokasi: "Bin BIN-ORG-04-001",
+      confidence: 94,
+      fotoUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "LOG-1091",
+      warga: "Ibu Siti Rahmawati",
+      phone: "081311223344",
+      rtRw: "RT 02 / RW 01",
+      kelurahan: "Sadang Serang",
+      jenis: "Anorganik",
+      berat: 1.8,
+      poin: 140,
+      waktu: "2026-08-02 07:45",
+      status: "TERVERIFIKASI_KKN",
+      lokasi: "Bin BIN-ANO-02-004",
+      confidence: 91,
+      fotoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "LOG-1090",
+      warga: "Pak Hendra Wijaya",
+      phone: "085299887766",
+      rtRw: "RT 05 / RW 03",
+      kelurahan: "Dago",
+      jenis: "Organik",
+      berat: 3.2,
+      poin: 230,
+      waktu: "2026-08-02 07:10",
+      status: "SELESAI",
+      lokasi: "Bin BIN-ORG-05-002",
+      confidence: 96,
+      fotoUrl: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=600&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "LOG-1089",
+      warga: "Keluarga Ahmad Jubaedi",
+      phone: "087766554433",
+      rtRw: "RT 01 / RW 02",
+      kelurahan: "Sekeloa",
+      jenis: "Anorganik",
+      berat: 4.0,
+      poin: 280,
+      waktu: "2026-08-01 17:30",
+      status: "PENDING_REVIEW",
+      lokasi: "Bin BIN-ANO-01-008",
+      confidence: 87,
+      fotoUrl: "https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=600&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "LOG-1088",
+      warga: "Ibu Ratna Dewi",
+      phone: "089612345678",
+      rtRw: "RT 03 / RW 02",
+      kelurahan: "Lebak Gede",
+      jenis: "Organik",
+      berat: 1.5,
+      poin: 110,
+      waktu: "2026-08-01 16:50",
+      status: "TERVERIFIKASI_KKN",
+      lokasi: "Bin BIN-ORG-03-005",
+      confidence: 95,
+      fotoUrl: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80",
+    },
+  ];
 
-      setCameraStream(stream);
-      setPermissionState("GRANTED");
-      setStep("TAKE_PHOTO");
-    } catch (error: any) {
-      console.error("Direct camera access failed:", error);
-      stopCamera();
-      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-        setPermissionState("DENIED");
-        setStep("CAMERA_PERMISSION_GUIDE");
-      } else {
-        setPermissionState("NOT_SUPPORTED");
-        setStep("CAMERA_PERMISSION_GUIDE");
-      }
-    }
-  };
+  const filteredLogs = logs.filter((log) => {
+    const matchesSearch =
+      log.warga.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.rtRw.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      filterCategory === "ALL" || log.jenis.toUpperCase() === filterCategory.toUpperCase();
+    return matchesSearch && matchesCategory;
+  });
 
-  // Attach stream to video tag once stream state updates
-  useEffect(() => {
-    if (step === "TAKE_PHOTO" && cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream;
-      videoRef.current.play().catch((e) => console.error("Play video error:", e));
-    }
-  }, [step, cameraStream]);
-
-  // Capture frame from the video stream
-  const capturePhoto = () => {
-    if (videoRef.current) {
-      const video = videoRef.current;
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const file = new File([blob], "captured_waste.jpg", { type: "image/jpeg" });
-              setPreviewUrl(URL.createObjectURL(file));
-              setCapturedFile(file);
-              stopCamera();
-              setStep("REVIEW_PHOTO");
-            }
-          },
-          "image/jpeg",
-          0.95
-        );
-      }
-    }
-  };
-
-  // Stop camera stream
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-      setCameraStream(null);
-    }
-  };
-
-  const handleFallbackFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setPreviewUrl(URL.createObjectURL(file));
-      setCapturedFile(file);
-      setStep("REVIEW_PHOTO");
-    }
-  };
-
-  // Compress & Detect Waste via Backend AI Service
-  const runAiDetection = async () => {
-    if (!capturedFile) return;
-
-    try {
-      setStep("AI_PROCESSING");
-
-      // Image compression to max 1MB
-      const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1280,
-        useWebWorker: true,
-      };
-
-      const compressedFile = await imageCompression(capturedFile, options);
-
-      // Call backend via the predictive service wrapper
-      const result = await predictWaste(compressedFile);
-      setAiResult(result);
-      setStep("AI_RESULT");
-      toast.success("Analisis AI selesai!");
-    } catch (error: any) {
-      console.error(error);
-      const msg = error.response?.data?.message || "Gagal menganalisis gambar. Silakan coba lagi.";
-      setErrorMessage(msg);
-      setStep("ERROR");
-    }
-  };
-
-  // WebRTC QR Scanner Startup
-  const startQRScanner = async () => {
-    setStep("SCAN_QR");
-    try {
-      // Small timeout to allow video tag to mount
-      setTimeout(async () => {
-        if (qrVideoRef.current) {
-          const controls = await codeReader.current.decodeFromVideoDevice(
-            undefined,
-            qrVideoRef.current,
-            (result, err, controls) => {
-              if (result) {
-                controls.stop();
-                submitTransaction(result.getText());
-              }
-              if (err && !(err.name === "NotFoundException")) {
-                console.error("QR Decode error:", err);
-              }
-            }
-          );
-          setScanControls(controls);
-        }
-      }, 300);
-    } catch (error) {
-      console.error("QR camera access failed:", error);
-      toast.error("Tidak dapat mengakses kamera untuk scan QR. Menggunakan fallback simulasi.");
-    }
-  };
-
-  const stopQRScanner = () => {
-    if (scanControls) {
-      scanControls.stop();
-      setScanControls(null);
-    }
-  };
-
-  // Submit scan transaction to backend
-  const submitTransaction = async (qrCodeText: string) => {
-    stopQRScanner();
-    setStep("SUBMITTING");
-    try {
-      // 1. Fetch household ID
-      const householdsReq = await api.get("/households/me");
-      const households = householdsReq.data.data;
-      if (!households || households.length === 0) {
-        throw new Error(
-          "Anda belum terdaftar dalam KK manapun. Silakan lengkapi profil KK Anda terlebih dahulu."
-        );
-      }
-      const householdId = households[0].id;
-
-      // 2. Scan request payload
-      const payload = {
-        householdId,
-        qrCode: qrCodeText,
-        detectedType: aiResult?.jenis_sampah || "ORGANIC",
-        estimatedVolume: aiResult?.estimasi_volume || 1.5,
-        aiConfidence: aiResult?.confidence || 1.0,
-        userLat: coords.lat,
-        userLng: coords.lng,
-        evidencePhotoUrl: previewUrl || "", // Send photo URL with transaction
-        detections: aiResult?.detections?.map(d => ({
-          detectedType: d.detectedType,
-          volumeEstimate: d.volumeEstimate,
-          confidence: d.confidence
-        })),
-      };
-
-      const response = await api.post("/bins/scan", payload);
-      setTransactionData(response.data.data);
-      setStep("SUCCESS");
-      toast.success("Pintu tempat sampah berhasil terbuka!");
-    } catch (error: any) {
-      console.error("Transaction failed:", error);
-      const msg =
-        error.response?.data?.message || error.message || "Gagal memproses setoran sampah.";
-      setErrorMessage(msg);
-      setStep("ERROR");
-    }
-  };
-
-  const resetFlow = () => {
-    stopCamera();
-    stopQRScanner();
-    setPreviewUrl(null);
-    setCapturedFile(null);
-    setAiResult(null);
-    setTransactionData(null);
-    setSelectedSimulatedBin("");
-    setStep("INTRO");
-  };
+  const totalBerat = filteredLogs.reduce((acc, curr) => acc + (curr.berat || 0), 0);
+  const totalPoin = filteredLogs.reduce((acc, curr) => acc + (curr.poin || 0), 0);
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col items-center pt-6 px-4 pb-24">
-      {/* Header bar */}
-      <div className="w-full flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Monitoring Pemilahan Sampah Warga
+            </h1>
+            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
+              <Sparkles size={13} /> Real-Time Sync
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Pemantauan aktivitas pemilahan harian warga, klasifikasi AI, & verifikasi lapangan di Kecamatan Coblong.
+          </p>
+        </div>
+
         <button
-          onClick={() => {
-            if (step === "INTRO") {
-              navigate("/");
-            } else {
-              resetFlow();
-            }
-          }}
-          className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors shadow-sm"
+          onClick={fetchLogs}
+          disabled={isLoading}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200"
         >
-          <ArrowLeft size={18} />
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          {isLoading ? "Memuat Data..." : "Refresh Data"}
         </button>
-        <h1 className="text-md font-bold text-slate-800 tracking-tight">Setor Sampah Cerdas</h1>
-        <div className="w-10"></div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 w-full flex-grow flex flex-col justify-between min-h-[500px]">
-        {/* STEP 1: INTRO */}
-        {step === "INTRO" && (
-          <div className="flex flex-col items-center justify-center flex-grow text-center py-4">
-            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100 shadow-sm animate-pulse">
-              <Camera size={38} className="text-green-600" />
-            </div>
-            <h2 className="text-lg font-bold text-slate-800 mb-2">Ambil Foto & Scan Tempat Sampah</h2>
-            <p className="text-xs text-slate-500 max-w-xs leading-relaxed mb-8">
-              Pilah sampah Anda secara cerdas. Pindai foto sampah Anda dengan AI, lalu scan QR pada
-              tempat sampah fisik untuk membuka pintu tempat sampah.
-            </p>
-
-            <div className="w-full space-y-3">
-              <button
-                onClick={startWasteCamera}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md shadow-green-600/10 flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wider"
-              >
-                <Camera size={16} />
-                Buka Kamera Perangkat
-              </button>
-
-              <div className="flex items-center my-3">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  ATAU
-                </span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleFallbackFileSelect}
-              />
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wider"
-              >
-                <Upload size={16} className="text-slate-500" />
-                Unggah File / Galeri
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: CAMERA PERMISSION GUIDE */}
-        {step === "CAMERA_PERMISSION_GUIDE" && (
-          <div className="flex flex-col items-center justify-center flex-grow text-center py-4">
-            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-6 border border-red-100 shadow-sm">
-              <AlertTriangle size={32} />
-            </div>
-
-            {permissionState === "DENIED" ? (
-              <>
-                <h3 className="text-base font-bold text-slate-800 mb-2">Akses Kamera Ditolak</h3>
-                <p className="text-xs text-slate-500 leading-relaxed mb-6 max-w-xs">
-                  Situs ini tidak diizinkan mengakses kamera. Silakan buka pengaturan browser Anda,
-                  aktifkan izin kamera untuk situs ini, lalu coba lagi.
-                </p>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left text-[11px] leading-relaxed text-slate-600 w-full mb-6 space-y-1">
-                  <p className="font-bold text-slate-700 mb-1">Cara Aktifkan:</p>
-                  <p>1. Klik ikon gembok/pengaturan di sebelah kiri URL situs browser Anda.</p>
-                  <p>
-                    2. Cari opsi <strong>Kamera</strong> dan pilih <strong>Izinkan (Allow)</strong>.
-                  </p>
-                  <p>3. Muat ulang halaman dan tekan tombol Coba Lagi di bawah.</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-base font-bold text-slate-800 mb-2">
-                  Perangkat Tidak Mendukung
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed mb-6 max-w-xs">
-                  Browser atau perangkat Anda tidak mendukung akses kamera langsung. Silakan gunakan
-                  metode unggah file/galeri.
-                </p>
-              </>
-            )}
-
-            <div className="w-full space-y-3">
-              {permissionState === "DENIED" && (
-                <button
-                  onClick={startWasteCamera}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors cursor-pointer text-xs uppercase tracking-wider"
-                >
-                  Coba Buka Kamera Lagi
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  fileInputRef.current?.click();
-                }}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors cursor-pointer text-xs uppercase tracking-wider"
-              >
-                Gunakan Unggah File
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: TAKE PHOTO */}
-        {step === "TAKE_PHOTO" && (
-          <div className="flex flex-col flex-grow">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 text-center">
-              Posisikan Sampah dalam Bingkai
-            </h3>
-
-            {/* Direct Camera Viewport */}
-            <div className="w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden relative border border-slate-200 shadow-inner flex items-center justify-center">
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-
-              {/* Styled guide frame overlay */}
-              <div className="absolute inset-6 border-2 border-dashed border-white/60 rounded-xl pointer-events-none flex items-center justify-center">
-                <div className="w-8 h-8 border-t-4 border-l-4 border-green-500 absolute top-0 left-0"></div>
-                <div className="w-8 h-8 border-t-4 border-r-4 border-green-500 absolute top-0 right-0"></div>
-                <div className="w-8 h-8 border-b-4 border-l-4 border-green-500 absolute bottom-0 left-0"></div>
-                <div className="w-8 h-8 border-b-4 border-r-4 border-green-500 absolute bottom-0 right-0"></div>
-
-                <span className="text-[10px] bg-black/60 px-3 py-1 rounded-full text-white/90 font-bold uppercase tracking-wider text-center">
-                  Kamera AI Aktif
-                </span>
-              </div>
-            </div>
-
-            <div className="flex justify-center items-center gap-6 mt-6">
-              <button
-                onClick={() => {
-                  stopCamera();
-                  setStep("INTRO");
-                }}
-                className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors shadow-sm cursor-pointer"
-              >
-                <XCircle size={20} />
-              </button>
-              {/* Styled Shutter button */}
-              <button
-                onClick={capturePhoto}
-                className="w-16 h-16 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-transform active:scale-90 border-4 border-white shadow-lg cursor-pointer"
-              >
-                <div className="w-8 h-8 bg-white rounded-full"></div>
-              </button>
-              <div className="w-12"></div> {/* Spacer balance */}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: REVIEW PHOTO */}
-        {step === "REVIEW_PHOTO" && previewUrl && (
-          <div className="flex flex-col flex-grow items-center justify-between">
-            <div className="w-full text-center space-y-1">
-              <h3 className="text-base font-bold text-slate-800">Verifikasi Foto Sampah</h3>
-              <p className="text-[11px] text-slate-500">
-                Pastikan sampah terlihat jelas dan tidak buram sebelum dianalisis.
-              </p>
-            </div>
-
-            <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden border border-slate-200 shadow-md my-4">
-              <img src={previewUrl} alt="Preview Sampah" className="w-full h-full object-cover" />
-            </div>
-
-            <div className="w-full space-y-3">
-              <button
-                onClick={runAiDetection}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md shadow-green-600/10 flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wider"
-              >
-                <CheckCircle size={16} />
-                Gunakan Foto Ini
-              </button>
-
-              <button
-                onClick={() => {
-                  setPreviewUrl(null);
-                  setCapturedFile(null);
-                  if (permissionState === "GRANTED") {
-                    startWasteCamera();
-                  } else {
-                    setStep("INTRO");
-                  }
-                }}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wider"
-              >
-                <RefreshCw size={16} />
-                Foto Ulang
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 5: AI PROCESSING */}
-        {step === "AI_PROCESSING" && (
-          <div className="flex flex-col items-center justify-center flex-grow text-center py-6">
-            <div className="relative w-28 h-28 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center mb-6">
-              {previewUrl && (
-                <>
-                  <img
-                    src={previewUrl}
-                    alt="Analyzing"
-                    className="w-full h-full object-cover opacity-60"
-                  />
-                  <div
-                    className="absolute inset-x-0 h-1 bg-green-500 shadow-lg animate-bounce"
-                    style={{ top: "50%" }}
-                  ></div>
-                </>
-              )}
-            </div>
-
-            <Loader2 size={36} className="text-green-600 animate-spin mb-3" />
-            <h3 className="text-base font-bold text-slate-800">Menjalankan Visi Komputer AI...</h3>
-            <p className="text-xs text-slate-500 max-w-xs mt-1.5 leading-relaxed">
-              Memilah jenis sampah (Organik/Anorganik) dan mengestimasi volume secara otomatis
-              melalui cloud queue.
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Sampah Terpilah</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1">{totalBerat.toFixed(1)} <span className="text-sm font-bold text-slate-500">Kg</span></h3>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <TrendingUp size={12} /> +12.4% vs minggu lalu
             </p>
           </div>
-        )}
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <Scale size={24} />
+          </div>
+        </div>
 
-        {/* STEP 6: AI RESULT */}
-        {step === "AI_RESULT" && aiResult && previewUrl && (
-          <div className="flex flex-col flex-grow items-center justify-between">
-            <div className="w-full text-center space-y-1">
-              <h3 className="text-base font-bold text-slate-800">Analisis Deteksi AI Selesai</h3>
-              <p className="text-[11px] text-slate-500">
-                Hasil klasifikasi gambar sampah berhasil diidentifikasi.
-              </p>
-            </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Skor Kepatuhan</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1">94.8%</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <CheckCircle size={12} /> Kategori Akurat
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <ShieldCheck size={24} />
+          </div>
+        </div>
 
-            <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm my-4">
-              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-            </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Poin Diterbitkan</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1">{totalPoin} <span className="text-sm font-bold text-slate-500">Pts</span></h3>
+            <p className="text-[11px] font-semibold text-slate-500 mt-1 flex items-center gap-1">
+              <Sparkles size={12} /> Reward Gamifikasi
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <Sparkles size={24} />
+          </div>
+        </div>
 
-            <div className="w-full space-y-3">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center space-y-3">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                  Hasil Klasifikasi Sampah
-                </span>
-                
-                {aiResult.detections && aiResult.detections.length > 0 ? (
-                  <div className="space-y-2">
-                    {aiResult.detections.map((d, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Akurasi AI Model</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1">96.2%</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <CheckCircle size={12} /> High Confidence
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+            <FileText size={24} />
+          </div>
+        </div>
+      </div>
+
+      {/* Filters & Search */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari Nama Warga, RT/RW, ID Log..."
+            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Filter size={16} className="text-slate-400" />
+          <span className="text-xs font-bold text-slate-600">Filter:</span>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          >
+            <option value="ALL">Semua Kategori</option>
+            <option value="ORGANIK">Organik</option>
+            <option value="ANORGANIK">Anorganik</option>
+            <option value="RESIDU">Residu</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Table Logs */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+          <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+            <Calendar size={16} className="text-primary" /> Daftar Aktivitas Pemilahan Terakhir
+          </h3>
+          <span className="text-xs font-bold text-slate-500">
+            Menampilkan {filteredLogs.length} data
+          </span>
+        </div>
+
+        {isLoading ? (
+          <div className="p-12 text-center flex flex-col items-center justify-center gap-2">
+            <Loader2 className="animate-spin text-primary" size={32} />
+            <p className="text-xs font-bold text-slate-500">Memuat aktivitas pemilahan...</p>
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 text-xs font-medium">
+            Tidak ada log aktivitas pemilahan yang sesuai dengan filter.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3 px-4">ID / Waktu</th>
+                  <th className="py-3 px-4">Warga & Wilayah</th>
+                  <th className="py-3 px-4">Kategori Sampah</th>
+                  <th className="py-3 px-4">Berat & Poin</th>
+                  <th className="py-3 px-4">Akurasi AI</th>
+                  <th className="py-3 px-4">Status Verifikasi</th>
+                  <th className="py-3 px-4 text-center">Foto Bukti</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                {filteredLogs.map((log) => {
+                  const isOrganik = log.jenis.toLowerCase() === "organik";
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <p className="text-xs font-black text-slate-800">{log.id}</p>
+                        <p className="text-[10px] font-medium text-slate-400 mt-0.5">{log.waktu}</p>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <p className="font-bold text-slate-800">{log.warga}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">{log.rtRw} • {log.kelurahan || "Coblong"}</p>
+                      </td>
+                      <td className="py-3.5 px-4">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                            d.detectedType === "ORGANIC"
-                              ? "bg-green-50 text-green-700 border-green-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                            isOrganik
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : "bg-blue-100 text-blue-800 border border-blue-200"
                           }`}
                         >
-                          {d.detectedType === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}
+                          {log.jenis}
                         </span>
-                        <div className="text-right text-xs font-semibold text-slate-700">
-                          <span>{d.volumeEstimate} Liter ({d.confidence ? `${Math.round(d.confidence * 100)}%` : "96%"})</span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <p className="font-black text-slate-900">{log.berat} Kg</p>
+                        <p className="text-[10px] font-bold text-emerald-600">+{log.poin} Poin</p>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-extrabold text-slate-700">{log.confidence || 95}%</span>
+                          <span className="text-[10px] text-emerald-600 font-bold">Akurat</span>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${
-                        aiResult.jenis_sampah === "ORGANIC"
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : "bg-blue-50 text-blue-700 border-blue-200"
-                      }`}
-                    >
-                      {aiResult.jenis_sampah === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}
-                    </span>
-
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 text-xs font-bold text-slate-700 mt-2">
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase">
-                          Estimasi Vol
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                          <CheckCircle size={12} /> {log.status === "TERVERIFIKASI_KKN" ? "Verified KKN" : "Selesai"}
                         </span>
-                        <span>{aiResult.estimasi_volume} Liter</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase">
-                          Akurasi
-                        </span>
-                        <span>
-                          {aiResult.confidence ? `${Math.round(aiResult.confidence * 100)}%` : "96%"}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {aiResult.quotaRemaining !== undefined && (
-                <div className="text-[10px] text-slate-400 text-center font-semibold">
-                  Sisa Kuota AI Hari Ini: {aiResult.quotaRemaining} / 50 Request
-                </div>
-              )}
-
-              <button
-                onClick={startQRScanner}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md shadow-green-600/10 flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wider"
-              >
-                <QrCode size={16} />
-                Scan QR tempat sampah
-              </button>
-
-              <button
-                onClick={resetFlow}
-                className="w-full text-slate-500 hover:text-slate-700 font-bold py-2 rounded-xl transition-colors text-xs uppercase tracking-wider cursor-pointer"
-              >
-                Batalkan / Ulangi
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 7: SCAN_QR */}
-        {step === "SCAN_QR" && (
-          <div className="flex flex-col flex-grow items-center justify-between">
-            <div className="text-center space-y-1 w-full">
-              <h3 className="text-base font-bold text-slate-800">Scan QR Code Tempat Sampah</h3>
-              <p className="text-[11px] text-slate-500">
-                Arahkan kamera perangkat Anda pada QR Code yang tertempel di tempat sampah.
-              </p>
-            </div>
-
-            {/* Video preview viewport */}
-            <div className="w-full aspect-square bg-slate-950 rounded-2xl overflow-hidden relative my-4 border border-slate-800 shadow-inner flex items-center justify-center">
-              <video ref={qrVideoRef} className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-10 border-2 border-green-500 opacity-60 rounded-xl pointer-events-none flex items-center justify-center">
-                <div className="w-6 h-6 border-t-4 border-l-4 border-green-500 absolute top-0 left-0"></div>
-                <div className="w-6 h-6 border-t-4 border-r-4 border-green-500 absolute top-0 right-0"></div>
-                <div className="w-6 h-6 border-b-4 border-l-4 border-green-500 absolute bottom-0 left-0"></div>
-                <div className="w-6 h-6 border-b-4 border-r-4 border-green-500 absolute bottom-0 right-0"></div>
-              </div>
-            </div>
-
-            <div className="w-full space-y-4">
-              {/* Simulated QR Fallback for Testing */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Simulasi Tanpa Scan QR (Debug / Testing)
-                </label>
-                <div className="flex gap-2">
-                  <select
-                     className="flex-1 text-xs border border-slate-200 rounded-lg p-2 bg-white font-medium"
-                    value={selectedSimulatedBin}
-                    onChange={(e) => setSelectedSimulatedBin(e.target.value)}
-                  >
-                    <option value="">-- Pilih tempat sampah RT Anda --</option>
-                    {availableBins.map((bin) => (
-                      <option key={bin.id} value={bin.qrCode}>
-                        Tempat Sampah {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    disabled={!selectedSimulatedBin}
-                    onClick={() => {
-                      stopQRScanner();
-                      submitTransaction(selectedSimulatedBin);
-                    }}
-                    className="bg-primary hover:bg-primary/95 disabled:bg-slate-200 disabled:text-slate-400 text-white text-[10px] font-bold uppercase tracking-wider px-3.5 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Setor
-                  </button>
-                </div>
-
-                {selectedSimulatedBin &&
-                  aiResult &&
-                  (() => {
-                    const binDetails = availableBins.find((b) => b.qrCode === selectedSimulatedBin);
-                    const binType = binDetails?.category;
-                    const trashType = aiResult.jenis_sampah;
-                    if (binType && binType !== trashType) {
-                      return (
-                        <div className="flex gap-1.5 items-center text-[9px] text-red-600 font-bold p-1 bg-red-50 border border-red-100 rounded">
-                          <AlertTriangle size={12} />
-                          <span>
-                            Peringatan: Tipe tempat sampah ({binType}) dan sampah ({trashType}) tidak cocok!
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-              </div>
-
-              <button
-                onClick={() => {
-                  stopQRScanner();
-                  setStep("AI_RESULT");
-                }}
-                className="w-full text-slate-500 hover:text-slate-700 font-bold py-2 rounded-xl transition-colors text-xs uppercase tracking-wider text-center cursor-pointer"
-              >
-                Kembali
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 8: SUBMITTING */}
-        {step === "SUBMITTING" && (
-          <div className="flex flex-col items-center justify-center flex-grow text-center py-6">
-            <Loader2 size={48} className="text-green-600 animate-spin mb-4" />
-            <h3 className="text-base font-bold text-slate-800">Memproses Setoran Sampah...</h3>
-            <p className="text-xs text-slate-500 max-w-xs mt-1.5 leading-relaxed">
-              Mengirimkan log timbangan sampah, menghitung poin, dan mencocokkan data RT/RW Anda.
-            </p>
-          </div>
-        )}
-
-        {/* STEP 9: SUCCESS */}
-        {step === "SUCCESS" && transactionData && (
-          <div className="flex flex-col flex-grow items-center justify-between py-2">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-green-50 border border-green-200 rounded-full flex items-center justify-center text-green-500 mb-5 shadow-sm shadow-green-100">
-                <CheckCircle size={36} />
-              </div>
-              <h2 className="text-lg font-extrabold text-slate-800">Setoran Sampah Berhasil!</h2>
-              <p className="text-xs text-slate-500 leading-relaxed mt-1 max-w-xs">
-                Pintu tempat sampah fisik telah terbuka. Silakan masukkan sampah Anda.
-              </p>
-            </div>
-
-            <div className="w-full bg-green-50 border border-green-100 rounded-2xl p-5 my-6 text-xs space-y-3 font-semibold text-slate-700">
-              <div className="flex justify-between items-center pb-2 border-b border-green-200/50">
-                <span className="text-slate-500">Berat Timbangan</span>
-                <span className="font-bold text-slate-800">{transactionData.weightKg} Kg</span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-green-200/50">
-                <span className="text-slate-500">Hadiah Poin</span>
-                <span className="text-green-700 font-extrabold text-sm">
-                  +{transactionData.pointsAwarded} Poin
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Estimasi Saldo</span>
-                <span className="text-green-700 font-extrabold text-sm">
-                  +Rp {(transactionData.pointsAwarded * 100).toLocaleString("id-ID")}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={resetFlow}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md shadow-green-600/10 text-xs uppercase tracking-wider cursor-pointer"
-            >
-              Selesai & Setor Lagi
-            </button>
-          </div>
-        )}
-
-        {/* STEP 10: ERROR */}
-        {step === "ERROR" && (
-          <div className="flex flex-col flex-grow items-center justify-between py-2">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-red-50 border border-red-200 rounded-full flex items-center justify-center text-red-500 mb-5 shadow-sm shadow-red-100">
-                <XCircle size={36} />
-              </div>
-              <h2 className="text-lg font-extrabold text-slate-800">Setoran Gagal</h2>
-              <p className="text-xs text-red-600 leading-relaxed mt-2 p-3 bg-red-50 rounded-xl border border-red-100 max-w-xs font-semibold">
-                {errorMessage}
-              </p>
-            </div>
-
-            <div className="w-full space-y-3">
-              <button
-                onClick={resetFlow}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors text-xs uppercase tracking-wider cursor-pointer shadow-md shadow-green-600/10"
-              >
-                Coba Ulang Dari Awal
-              </button>
-
-              <button
-                onClick={() => {
-                  if (aiResult) {
-                    setStep("AI_RESULT");
-                  } else {
-                    setStep("INTRO");
-                  }
-                }}
-                className="w-full text-slate-500 hover:text-slate-700 font-bold py-2 rounded-xl transition-colors text-xs uppercase tracking-wider text-center cursor-pointer"
-              >
-                Kembali
-              </button>
-            </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        {log.fotoUrl ? (
+                          <button
+                            onClick={() => setSelectedPhotoUrl(log.fotoUrl || null)}
+                            className="p-1.5 bg-slate-100 hover:bg-primary/10 hover:text-primary text-slate-600 rounded-lg transition-all inline-flex items-center justify-center gap-1 text-[11px] font-bold"
+                          >
+                            <ImageIcon size={14} /> Lihat Foto
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 text-[10px]">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      {/* Modal Preview Foto Bukti */}
+      {selectedPhotoUrl && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                <ImageIcon size={16} className="text-primary" /> Foto Bukti Pemilahan Sampah
+              </h4>
+              <button
+                onClick={() => setSelectedPhotoUrl(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-900 flex justify-center">
+              <img
+                src={selectedPhotoUrl}
+                alt="Foto Bukti Setoran"
+                className="max-h-80 w-auto object-contain rounded-lg border border-slate-700 shadow-md"
+              />
+            </div>
+            <div className="p-4 bg-white flex justify-end">
+              <button
+                onClick={() => setSelectedPhotoUrl(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

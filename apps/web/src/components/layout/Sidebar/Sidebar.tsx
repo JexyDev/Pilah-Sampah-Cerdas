@@ -139,10 +139,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <SectionHeader label="Layanan Utama" />
           <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
-        {hasAccess(["WARGA"]) && (
-          <NavItem to="/setor" icon={ScanLine} label="Setor Sampah" />
-        )}
-
         {hasAccess(["MAHASISWA_KKN"]) && (
           <NavItem to="/kkn-portal" icon={Compass} label="Portal Pendampingan" />
         )}
@@ -160,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
 
         <SectionHeader label="Aktivitas Tata Kelola Sampah" />
-        <NavItem to="/setor-sampah" icon={ScanLine} label="Pemilahan Sampah" />
+        <NavItem to="/setor-sampah" icon={ScanLine} label="Monitoring Pemilahan Warga" />
         <NavItem to="/manajemen-pengangkutan" icon={Truck} label="Pengangkutan Sampah" />
         <NavItem to="/pemanfaatan-sampah" icon={Sprout} label="Pemanfaatan Sampah" />
         <NavItem to="/hasil-pemanfaatan" icon={Archive} label="Hasil Pemanfaatan" />
