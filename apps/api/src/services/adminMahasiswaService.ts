@@ -58,8 +58,6 @@ export const adminMahasiswaService = {
     if (!role) throw new Error("Role MAHASISWA_KKN not found");
 
     const passwordHash = await bcrypt.hash("password123", 10);
-    const email = `${data.nim}@mahasiswa.kkn`;
-    const nik = `3273012026${data.nim.slice(-5)}`; // Fake NIK
 
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
