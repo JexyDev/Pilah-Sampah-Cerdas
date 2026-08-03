@@ -113,7 +113,7 @@ export class ResiduService {
     };
   }
 
-  async getDashboardSummary(petugasUserId: string, period: string = "hari") {
+  async getDashboardSummary(petugasUserId: string, _period: string = "hari") {
     const user = await prisma.user.findUnique({
       where: { id: petugasUserId },
       include: {
@@ -201,11 +201,15 @@ export class ResiduService {
     const totalJadwalCount = await prisma.bin.count();
     const totalJadwal = totalJadwalCount > 0 ? totalJadwalCount : 12;
 
+    const zoneLabel =
+      petugas.assignedZone ||
+      (rtRwStr ? `${rtRwStr}, Kel. ${kelurahanStr}` : "Kecamatan Coblong");
+
     return {
       // Mobile Flutter model exact keys
       petugasId: petugasIdStr,
       name: user.name,
-      assignedZone: petugas.assignedZone || (rtRwStr ? `${rtRwStr}, Kel. ${kelurahanStr}` : "Kecamatan Coblong"),
+      assignedZone: zoneLabel,
       totalJadwal,
       sudahDiambil: todayEntries,
       pelanggaranCount: totalViolationsToday,

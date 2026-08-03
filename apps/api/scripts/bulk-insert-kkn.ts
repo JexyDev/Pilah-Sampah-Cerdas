@@ -386,7 +386,7 @@ async function main() {
     await prisma.studentKkn.create({
       data: {
         userId: user.id,
-        nim: row.nim ? String(row.nim) : undefined,
+        nim: row.nim ? String(row.nim) : "",
         jurusan: row.programStudi || 'Belum diisi',
         fakultas: '-',
         noWa: row.phoneNormalized,

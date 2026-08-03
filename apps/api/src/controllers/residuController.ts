@@ -6,7 +6,10 @@
  */
 
 import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import { residuService } from "../services/residuService.js";
+
+const prisma = new PrismaClient();
 
 export class ResiduController {
   async getPendingLogs(req: Request, res: Response): Promise<void> {
@@ -36,14 +39,6 @@ export class ResiduController {
         return;
       }
 
-      const userId = req.user.userId;
-      // Get petugas assigned zone
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
-      const petugas = await prisma.petugasResidu.findUnique({ where: { userId: userId } });
-
-      const zoneSearch = petugas?.assignedZone || "";
-
       // Get all active bins
       const bins = await prisma.bin.findMany({
         where: {
@@ -57,13 +52,13 @@ export class ResiduController {
         take: 20,
       });
 
-      const targetBins = bins.filter((b) => {
+      const targetBins = bins.filter((b: any) => {
         const vol = Number(b.currentVolumeLiter);
         const max = Number(b.maxCapacityLiter);
         return max > 0 && vol / max >= 0.7;
       });
 
-      const scheduleList = (targetBins.length > 0 ? targetBins : bins).map((b, idx) => {
+      const scheduleList = (targetBins.length > 0 ? targetBins : bins).map((b: any, idx: number) => {
         const vol = Number(b.currentVolumeLiter);
         const max = Number(b.maxCapacityLiter);
         const pct = max > 0 ? Math.min(100, Math.round((vol / max) * 100)) : 80;
