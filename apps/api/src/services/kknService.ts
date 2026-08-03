@@ -118,6 +118,7 @@ export class KknService {
         user: {
           include: {
             rtRw: true,
+            households: true,
             pointHistory: true,
             wargaViolations: true,
             setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
@@ -130,6 +131,22 @@ export class KknService {
       const u = b.user;
       if (!u) return null;
 
+      const household = u.households?.[0];
+      const lat = b.latitude
+        ? Number(b.latitude)
+        : household?.latitude
+          ? Number(household.latitude)
+          : u.rtRw?.latitude
+            ? Number(u.rtRw.latitude)
+            : -6.891234;
+      const lng = b.longitude
+        ? Number(b.longitude)
+        : household?.longitude
+          ? Number(household.longitude)
+          : u.rtRw?.longitude
+            ? Number(u.rtRw.longitude)
+            : 107.610123;
+
       const recentLogs = u.setoranOtomatis.map((log: any) => ({
         weightKg: Number(log.berat),
         category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
@@ -137,14 +154,22 @@ export class KknService {
       }));
 
       return {
+        id: u.id,
+        wargaId: u.id,
         binId: b.qrCode,
+        binCode: b.qrCode,
         wargaName: u.name,
-        address: u.address,
+        name: u.name,
+        phone: u.phone,
+        address: u.address || (u.rtRw?.name ? `RT ${u.rtRw.name}` : "Alamat belum diisi"),
+        latitude: lat,
+        longitude: lng,
+        lat: lat,
+        lng: lng,
         isActivated: true,
         recentLogs,
         // for filters
         rtRwId: u.rtRwId,
-        binCode: b.qrCode,
       };
     });
 
@@ -203,7 +228,23 @@ export class KknService {
       throw new Error("UNAUTHORIZED_ACCESS_SCOPE");
     }
 
+    const household = warga.households?.[0];
     const defaultBin = warga.binOwnerships[0]?.bin;
+    const lat = household?.latitude
+      ? Number(household.latitude)
+      : defaultBin?.latitude
+        ? Number(defaultBin.latitude)
+        : warga.rtRw?.latitude
+          ? Number(warga.rtRw.latitude)
+          : -6.891234;
+    const lng = household?.longitude
+      ? Number(household.longitude)
+      : defaultBin?.longitude
+        ? Number(defaultBin.longitude)
+        : warga.rtRw?.longitude
+          ? Number(warga.rtRw.longitude)
+          : 107.610123;
+
     const recentLogs =
       warga.setoranOtomatis.map((log: any) => ({
         id: log.id,
@@ -215,11 +256,17 @@ export class KknService {
 
     return {
       wargaId: warga.id,
+      id: warga.id,
       name: warga.name,
+      wargaName: warga.name,
       email: warga.email,
       phone: warga.phone,
-      address: warga.address,
+      address: household?.address || warga.address || "Alamat belum diisi",
       rtRw: warga.rtRw?.name || "Belum diset",
+      latitude: lat,
+      longitude: lng,
+      lat: lat,
+      lng: lng,
       bin: defaultBin
         ? {
             qrCode: defaultBin.qrCode,
@@ -337,15 +384,35 @@ export class KknService {
         weightKg: Number(log.berat),
       }));
 
+      const lat = household?.latitude
+        ? Number(household.latitude)
+        : primaryBin?.latitude
+          ? Number(primaryBin.latitude)
+          : w.rtRw?.latitude
+            ? Number(w.rtRw.latitude)
+            : -6.891234;
+      const lng = household?.longitude
+        ? Number(household.longitude)
+        : primaryBin?.longitude
+          ? Number(primaryBin.longitude)
+          : w.rtRw?.longitude
+            ? Number(w.rtRw.longitude)
+            : 107.610123;
+
       return {
         id: w.id,
         wargaId: w.id,
         name: w.name,
         wargaName: w.name,
+        phone: w.phone,
         address: household?.address || w.address || (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
         rtRw: rtRwName,
         role: "WARGA",
+        latitude: lat,
+        longitude: lng,
+        lat: lat,
+        lng: lng,
         isActivated,
         mahasiswaId: registeredStudentId,
         binOrganikId: binOrganik?.qrCode || (primaryBin?.category?.name === "ORGANIC" ? primaryBin.qrCode : null),
