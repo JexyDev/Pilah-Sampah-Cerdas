@@ -10,6 +10,11 @@ import { verifyAccessToken } from "../utils/jwtUtils.js";
 
 export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): void => {
   try {
+    // Auth endpoints (login, logout, refresh, otp, register) are always permitted
+    if (req.originalUrl && /\/api\/(v1\/)?auth\/(login|logout|refresh|otp|register)/.test(req.originalUrl)) {
+      return next();
+    }
+
     let token = "";
 
     // 1. Try to get token from HttpOnly Cookie (Web Client)
