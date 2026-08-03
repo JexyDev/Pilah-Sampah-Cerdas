@@ -9,6 +9,7 @@ import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/location_ping_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class MahasiswaView extends ConsumerStatefulWidget {
   const MahasiswaView({super.key});
@@ -137,8 +138,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
+    final user = ref.watch(authProvider).user;
+    final userId = user?.id ?? '';
+
     final totalWarga = state.wargaList.length;
-    final wargaAktif = state.wargaList.where((w) => w.isActivated).length;
+    // Warga aktif bin khusus milik mahasiswa yang sedang login ini
+    final wargaAktif = state.wargaList
+        .where((w) => w.isActivated && (w.mahasiswaId.isEmpty || w.mahasiswaId == userId))
+        .length;
 
     return Row(
       children: [
@@ -414,7 +421,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildWargaSection(MahasiswaState state) {
-    final list = state.wargaList;
+    final user = ref.watch(authProvider).user;
+    final userId = user?.id ?? '';
+    // Hanya tampilkan Warga Dampingan yang diaktivasi oleh mahasiswa login ini
+    final list = state.wargaList
+        .where((w) => w.isActivated && (w.mahasiswaId.isEmpty || w.mahasiswaId == userId))
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

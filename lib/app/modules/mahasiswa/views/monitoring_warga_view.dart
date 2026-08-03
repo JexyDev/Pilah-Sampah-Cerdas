@@ -39,7 +39,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode) {
     return allWarga.where((w) {
       if (w.role != 'WARGA') return false; // Hanya tampilkan role warga
-      if (isAktivasiBinMode && w.isActivated) return false; // Sembunyikan warga yang sudah aktif di mode Aktivasi
+      // Warga teraktivasi tetap ditampilkan di list aktivasi tempat sampah warga (tanpa tombol aktivasi)
 
       if (_searchController.text.isNotEmpty) {
         if (!w.wargaName.toLowerCase().contains(_searchController.text.toLowerCase()) &&
@@ -403,26 +403,37 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                                     );
                                                   },
                                                   icon: const Icon(Icons.qr_code_scanner, size: 18),
-                                                  label: const Text('Aktivasi Bin'),
+                                                  label: const Text('Aktivasi Bin QR'),
                                                   style: ElevatedButton.styleFrom(
-                                                    backgroundColor: AppColors.primaryBlue,
+                                                    backgroundColor: AppColors.warningOrange,
                                                     foregroundColor: Colors.white,
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                                   ),
                                                 ),
                                               )
                                             else
-                                              SizedBox(
+                                              Container(
                                                 width: double.infinity,
-                                                child: ElevatedButton.icon(
-                                                  onPressed: null,
-                                                  icon: const Icon(Icons.check_circle, size: 18),
-                                                  label: const Text('Sudah Aktivasi Bin'),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.grey[200],
-                                                    foregroundColor: AppColors.textHint,
-                                                    disabledBackgroundColor: Colors.grey[100],
-                                                    disabledForegroundColor: AppColors.textHint,
-                                                  ),
+                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 16),
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      'Sudah Teraktivasi (Warga Dampingan)',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: AppColors.primaryGreen,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                           ],
