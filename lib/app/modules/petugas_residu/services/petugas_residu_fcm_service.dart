@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/repository_providers.dart';
 
+import '../../../data/services/notification_engine.dart';
+
 class PetugasResiduFcmService {
   PetugasResiduFcmService(this.ref);
 
@@ -34,6 +36,21 @@ class PetugasResiduFcmService {
       messaging.onTokenRefresh.listen((newToken) {
         _sendTokenToBackend(newToken);
       });
+
+      // Meneruskan pesan FCM (Push Notification) yang masuk ke NotificationEngine
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('[PetugasResiduFCM] Menerima pesan di foreground: ${message.messageId}');
+        
+        final title = message.notification?.title ?? 'Info Petugas';
+        final body = message.notification?.body ?? 'Ada pembaruan data';
+        
+        NotificationEngine().showGenericNotification(
+          id: message.messageId.hashCode,
+          title: title,
+          body: body,
+        );
+      });
+
     } catch (e) {
       debugPrint('[PetugasResiduFCM] Error registering FCM token: $e');
     }

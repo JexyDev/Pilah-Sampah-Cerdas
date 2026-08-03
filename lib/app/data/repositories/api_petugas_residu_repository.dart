@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/image_compressor.dart';
 import '../models/petugas_residu_models.dart';
 import '../providers/api_client.dart';
@@ -9,6 +13,10 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
 
   final ApiClient apiClient;
 
+  static const _cacheKeyDashboard = 'petugas_residu_dashboard_cache';
+  static const _cacheKeyJadwal = 'petugas_residu_jadwal_cache';
+  static const _cacheKeyHistory = 'petugas_residu_history_cache';
+
   @override
   Future<PetugasResiduDashboard> getDashboard() async {
     try {
@@ -17,26 +25,24 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         final data = response.data is Map<String, dynamic> 
             ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
             : <String, dynamic>{};
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
+
         return PetugasResiduDashboard.fromJson(data);
       }
-    } catch (_) {
-      // Fallback data jika backend endpoint belum tersedia / error
+      throw Exception('Invalid response');
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_cacheKeyDashboard);
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+          return PetugasResiduDashboard.fromJson(data);
+        } catch (_) {}
+      }
+      rethrow;
     }
-
-    return const PetugasResiduDashboard(
-      petugasId: 'PTR-001',
-      name: 'Budi Santoso',
-      assignedZone: 'RT 01/RW 02 Kel. Bojongsoang',
-      whitelistStatus: WhitelistStatus.approved,
-      accountStatus: 'ACTIVE',
-      totalJadwal: 8,
-      sudahDiambil: 3,
-      pelanggaranCount: 1,
-      totalWeightKg: 42.5,
-      kpiScore: 93.8,
-      ketepatanWaktuScore: 95.0,
-      akurasiScore: 92.0,
-    );
   }
 
   @override
@@ -52,65 +58,26 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
             ? (response.data['data'] as List<dynamic>? ?? [])
             : (response.data as List<dynamic>? ?? []);
         
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
+
         if (list.isNotEmpty) {
           return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
         }
+        return [];
       }
-    } catch (_) {
-      // Fallback list
+      throw Exception('Invalid response');
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_cacheKeyJadwal);
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          final list = jsonDecode(cachedStr) as List<dynamic>;
+          return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+        } catch (_) {}
+      }
+      rethrow;
     }
-
-    return [
-      const ResiduBinPickup(
-        binId: 'BIN-RES-01',
-        binCode: 'RES-010201',
-        wargaName: 'Asep Sunandar',
-        address: 'Jl. Asep Sunandar No. 49, RT 01/RW 02',
-        kelurahan: 'Bojongsoang',
-        rtRw: '01/02',
-        volumePercentage: 85.0,
-        isPickedUp: false,
-        latitude: -6.9744,
-        longitude: 107.6303,
-      ),
-      const ResiduBinPickup(
-        binId: 'BIN-RES-02',
-        binCode: 'RES-010202',
-        wargaName: 'Cecep Hidayat',
-        address: 'Jl. Cecep Hidayat No. 78, RT 01/RW 02',
-        kelurahan: 'Bojongsoang',
-        rtRw: '01/02',
-        volumePercentage: 78.5,
-        isPickedUp: false,
-        latitude: -6.9750,
-        longitude: 107.6310,
-      ),
-      const ResiduBinPickup(
-        binId: 'BIN-RES-03',
-        binCode: 'RES-010203',
-        wargaName: 'Dadang Suherman',
-        address: 'Jl. Dadang Suherman No. 96, RT 01/RW 02',
-        kelurahan: 'Bojongsoang',
-        rtRw: '01/02',
-        volumePercentage: 92.0,
-        isPickedUp: false,
-        latitude: -6.9760,
-        longitude: 107.6320,
-      ),
-      ResiduBinPickup(
-        binId: 'BIN-RES-04',
-        binCode: 'RES-010204',
-        wargaName: 'Gilang Ramadhan',
-        address: 'Jl. Gilang Ramadhan No. 57, RT 01/RW 02',
-        kelurahan: 'Bojongsoang',
-        rtRw: '01/02',
-        volumePercentage: 70.0,
-        isPickedUp: true,
-        lastPickedUpTime: DateTime.now().subtract(const Duration(hours: 1)),
-        latitude: -6.9770,
-        longitude: 107.6330,
-      ),
-    ];
   }
 
   @override
@@ -121,7 +88,6 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
     required String photoPath,
   }) async {
     try {
-      // Auto-compress photo before upload (Target < 500KB)
       final compressedPhotoPath = await ImageCompressor.compressImage(
         photoPath,
         maxSizeBytes: 500 * 1024,
@@ -129,58 +95,31 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         maxHeight: 720,
       );
 
+      debugPrint('[ApiPetugasResiduRepository] Creating FormData...');
       final formData = FormData.fromMap({
         'binId': binId,
         'actualWeightKg': actualWeightKg,
         'classification': classification,
-        'image': await MultipartFile.fromFile(compressedPhotoPath),
+        'image': await MultipartFile.fromFile(
+          compressedPhotoPath, 
+          filename: compressedPhotoPath.split('/').last,
+          contentType: MediaType('image', 'jpeg'),
+        ),
         'isGlobalBin': true,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       });
+      debugPrint('[ApiPetugasResiduRepository] Sending request to /residu/submit-log...');
 
       final response = await apiClient.dio.post('/residu/submit-log', data: formData);
+      debugPrint('[ApiPetugasResiduRepository] Response received: ${response.statusCode}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       }
-    } catch (_) {
-      // Direct success simulation if offline or dev endpoint not ready
-      return true;
+      throw Exception('Failed to submit log: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('[ApiPetugasResiduRepository] Error caught: $e');
+      rethrow;
     }
-    return true;
-  }
-
-  @override
-  Future<bool> laporViolation({
-    required String binQrCode,
-    required String evidencePhotoPath,
-    required String type,
-    required String severity,
-  }) async {
-    try {
-      // Auto-compress evidence photo before upload (Target < 500KB)
-      final compressedEvidencePath = await ImageCompressor.compressImage(
-        evidencePhotoPath,
-        maxSizeBytes: 500 * 1024,
-        maxWidth: 1280,
-        maxHeight: 720,
-      );
-
-      final formData = FormData.fromMap({
-        'binQrCode': binQrCode,
-        'type': type,
-        'severity': severity,
-        'evidence': await MultipartFile.fromFile(compressedEvidencePath),
-        'timestamp': DateTime.now().toUtc().toIso8601String(),
-      });
-
-      final response = await apiClient.dio.post('/residu/violation', data: formData);
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      }
-    } catch (_) {
-      return true;
-    }
-    return true;
   }
 
   @override
@@ -195,52 +134,27 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         final List<dynamic> list = response.data is Map<String, dynamic>
             ? (response.data['data'] as List<dynamic>? ?? [])
             : (response.data as List<dynamic>? ?? []);
+            
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKeyHistory, jsonEncode(list));
+
         if (list.isNotEmpty) {
           return list.cast<Map<String, dynamic>>();
         }
+        return [];
       }
-    } catch (_) {}
-
-    final now = DateTime.now();
-    return [
-      {
-        'id': 'HIST-01',
-        'type': 'SETORAN',
-        'title': 'Input Timbangan Residu Global',
-        'subtitle': 'Pos RT 01/RW 02 • 14.5 Kg',
-        'classification': 'Residu Non-B3',
-        'weightKg': 14.5,
-        'status': 'SUDAH_DIAMBIL',
-        'timestamp': now.subtract(const Duration(minutes: 45)).toIso8601String(),
-        'address': 'Pos RT 01 / RW 02 Kel. Bojongsoang',
-        'photoUrl': '',
-      },
-      {
-        'id': 'HIST-02',
-        'type': 'PELANGGARAN',
-        'title': 'Laporan Pelanggaran: Organik Tercampur',
-        'subtitle': 'QR: RES-010203 • Tingkat SEVERE',
-        'severity': 'SEVERE',
-        'violationType': 'Sampah Organik Tercampur',
-        'pointDeduction': 50,
-        'status': 'DIPROSES',
-        'timestamp': now.subtract(const Duration(hours: 3)).toIso8601String(),
-        'address': 'Jl. Dadang Suherman No. 96',
-        'photoUrl': '',
-      },
-      {
-        'id': 'HIST-03',
-        'type': 'SETORAN',
-        'title': 'Input Timbangan Residu Global',
-        'subtitle': 'Pos RT 01/RW 02 • 18.0 Kg',
-        'classification': 'Residu Popok/Pembalut',
-        'weightKg': 18.0,
-        'status': 'SUDAH_DIAMBIL',
-        'timestamp': now.subtract(const Duration(hours: 5)).toIso8601String(),
-        'address': 'Pos RT 01 / RW 02 Kel. Bojongsoang',
-        'photoUrl': '',
-      },
-    ];
+      throw Exception('Invalid response');
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_cacheKeyHistory);
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          final list = jsonDecode(cachedStr) as List<dynamic>;
+          return list.cast<Map<String, dynamic>>();
+        } catch (_) {}
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -256,11 +170,9 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       }
+      throw Exception('Failed to change password: ${response.statusCode}');
     } catch (e) {
-      // Fallback response if dev backend is not yet attached
-      return true;
+      rethrow;
     }
-    return true;
   }
 }
-

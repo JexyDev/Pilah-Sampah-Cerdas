@@ -22,9 +22,7 @@ import '../modules/mahasiswa/views/detail_warga_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
 import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
-import '../modules/petugas_residu/views/lapor_pelanggaran_view.dart';
 import '../modules/petugas_residu/views/riwayat_petugas_residu_view.dart';
-import '../modules/petugas_residu/views/petugas_residu_main_navigation_view.dart';
 import '../modules/petugas_residu/views/ganti_password_petugas_view.dart';
 import 'app_routes.dart';
 
@@ -93,12 +91,8 @@ class AppPages {
           ),
           settings,
         );
-      case AppRoutes.laporPelanggaran:
-        return _buildRoute(const LaporPelanggaranView(), settings);
       case AppRoutes.riwayatPetugasResidu:
         return _buildRoute(const RiwayatPetugasResiduView(), settings);
-      case AppRoutes.petugasResidu:
-        return _buildRoute(const PetugasResiduMainNavigationView(), settings);
       case AppRoutes.petugasResiduGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
       default:

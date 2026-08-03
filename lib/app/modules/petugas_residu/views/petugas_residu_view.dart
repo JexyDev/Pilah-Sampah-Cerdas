@@ -92,7 +92,11 @@ class PetugasResiduView extends ConsumerWidget {
                           icon: Icons.task_alt_rounded,
                           color: AppColors.primaryGreen,
                         ),
-                        const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
                         _buildStatCard(
                           title: 'Total Residu',
                           value: '${dashboard?.totalWeightKg ?? 42.5}',
@@ -100,10 +104,11 @@ class PetugasResiduView extends ConsumerWidget {
                           icon: Icons.scale_outlined,
                           color: AppColors.primaryBlue,
                         ),
+                        const SizedBox(width: 12),
+                        const Expanded(child: SizedBox()),
                       ],
                     ),
                     const SizedBox(height: AppDimensions.lg),
-
                     // Single Main Action Button: Input Timbangan Residu
                     SizedBox(
                       width: double.infinity,

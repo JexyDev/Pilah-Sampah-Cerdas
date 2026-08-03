@@ -12,7 +12,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
     final state = ref.watch(petugasResiduControllerProvider);
     final dashboard = state.dashboard;
 
-    final int totalPoints = ((dashboard?.totalWeightKg ?? 42.5) * 2).toInt();
+    final int totalPoints = dashboard?.totalPoints ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -83,22 +83,30 @@ class PetugasResiduPoinView extends ConsumerWidget {
 
               // Penjelasan Skema Poin Insentif
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlueLight,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline_rounded, color: AppColors.primaryBlueDark, size: 24),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Poin insentif diberikan berbasis jumlah berat (Kg) timbangan residu yang berhasil diupload ke sistem. Rate formula diatur dari backend Admin DLH.',
-                        style: TextStyle(fontSize: 12, color: AppColors.primaryBlueDark, height: 1.3),
-                      ),
+                    const Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded, color: AppColors.primaryBlueDark, size: 24),
+                        SizedBox(width: 12),
+                        Text(
+                          'Skema Insentif Poin',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryBlueDark),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 12),
+                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Dasar', '1 Kg = 2 Poin'),
+                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Valid', '+10 Poin / Input'),
+                    _buildPoinRuleRow(Icons.verified_rounded, 'Penyelesaian Jadwal', '+50 Poin (100% Selesai)'),
+                    _buildPoinRuleRow(Icons.assessment_rounded, 'Bonus Mingguan', 'KPI Score x 5 Poin'),
                   ],
                 ),
               ),
@@ -125,9 +133,10 @@ class PetugasResiduPoinView extends ConsumerWidget {
                   itemCount: state.historyList.length,
                   itemBuilder: (ctx, idx) {
                     final item = state.historyList[idx];
-                    final isViolation = item['type'] == 'PELANGGARAN';
-                    final weight = (item['weightKg'] as num?)?.toDouble() ?? 10.0;
-                    final points = (weight * 2).toInt();
+                    final rawWeight = item['actualWeightKg'] ?? item['weightKg'] ?? item['weight'] ?? 0.0;
+                    final weight = (rawWeight as num).toDouble();
+                    // Rumus: (Berat * 2) + 10 (Bonus Foto Valid)
+                    final points = (weight * 2).toInt() + 10;
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
@@ -135,12 +144,10 @@ class PetugasResiduPoinView extends ConsumerWidget {
                       elevation: 1,
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: isViolation
-                              ? AppColors.dangerRed.withValues(alpha: 0.1)
-                              : Colors.amber.withValues(alpha: 0.15),
+                          backgroundColor: Colors.amber.withValues(alpha: 0.15),
                           child: Icon(
-                            isViolation ? Icons.remove_circle_outline : Icons.add_circle_outline,
-                            color: isViolation ? AppColors.dangerRed : Colors.amber[800],
+                            Icons.add_circle_outline,
+                            color: Colors.amber[800],
                           ),
                         ),
                         title: Text(
@@ -152,11 +159,11 @@ class PetugasResiduPoinView extends ConsumerWidget {
                           style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                         trailing: Text(
-                          isViolation ? '-${item['pointDeduction'] ?? 10} Pts' : '+$points Pts',
-                          style: TextStyle(
+                          '+$points Pts',
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: isViolation ? AppColors.dangerRed : AppColors.primaryGreen,
+                            color: AppColors.primaryGreen,
                           ),
                         ),
                       ),
@@ -166,6 +173,25 @@ class PetugasResiduPoinView extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPoinRuleRow(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppColors.primaryBlueDark.withValues(alpha: 0.7)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(title, style: const TextStyle(fontSize: 12, color: AppColors.primaryBlueDark)),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryBlueDark),
+          ),
+        ],
       ),
     );
   }

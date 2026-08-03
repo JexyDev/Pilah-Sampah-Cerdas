@@ -15,13 +15,6 @@ abstract class PetugasResiduRepository {
     required String photoPath,
   });
 
-  /// Submit laporan pelanggaran residu tercampur
-  Future<bool> laporViolation({
-    required String binQrCode,
-    required String evidencePhotoPath,
-    required String type,
-    required String severity,
-  });
 
   /// Ambil riwayat gabungan setoran manual & violation milik petugas
   Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type});

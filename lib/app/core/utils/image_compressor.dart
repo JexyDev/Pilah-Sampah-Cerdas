@@ -24,7 +24,7 @@ class ImageCompressor {
     try {
       final inputFile = File(inputPath);
       if (!await inputFile.exists()) {
-        return inputPath;
+        throw FileSystemException('Berkas fisik foto tidak ditemukan pada direktori lokal', inputPath);
       }
 
       final fileSize = await inputFile.length();

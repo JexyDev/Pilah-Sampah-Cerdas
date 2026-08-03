@@ -46,7 +46,7 @@ dependencies:
   connectivity_plus: ^6.1.4
 
   # Local Cache
-  shared_preferences: ^2.5.3
+  shared_preferences: ^2.5.5
 
   # Google Fonts (Poppins)
   google_fonts: ^6.2.1

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/petugas_residu_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../services/petugas_residu_fcm_service.dart';
 
 class PetugasResiduState {
   const PetugasResiduState({
@@ -55,6 +56,9 @@ class PetugasResiduState {
 class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
   PetugasResiduNotifier(this._ref) : super(const PetugasResiduState()) {
     refreshAll();
+    
+    // Inisialisasi notifikasi latar belakang khusus role Petugas Residu
+    _ref.read(petugasResiduFcmServiceProvider).registerFcmToken();
   }
 
   final Ref _ref;
@@ -121,33 +125,6 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
     }
   }
 
-  Future<bool> laporViolation({
-    required String binQrCode,
-    required String evidencePhotoPath,
-    required String type,
-    required String severity,
-  }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final repo = _ref.read(petugasResiduRepositoryProvider);
-      final success = await repo.laporViolation(
-        binQrCode: binQrCode,
-        evidencePhotoPath: evidencePhotoPath,
-        type: type,
-        severity: severity,
-      );
-
-      if (success) {
-        await refreshAll();
-        return true;
-      }
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengirim laporan pelanggaran.');
-      return false;
-    } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Terjadi kesalahan saat lapor pelanggaran.');
-      return false;
-    }
-  }
 
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
     state = state.copyWith(

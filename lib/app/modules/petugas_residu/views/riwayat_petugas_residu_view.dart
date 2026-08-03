@@ -16,7 +16,6 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
   String _typeFilter = 'SEMUA';
 
   void _showDetailModal(Map<String, dynamic> item) {
-    final bool isViolation = item['type'] == 'PELANGGARAN';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -28,31 +27,26 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
           children: [
             Row(
               children: [
-                Icon(
-                  isViolation ? Icons.report_problem_rounded : Icons.scale_rounded,
-                  color: isViolation ? AppColors.dangerRed : AppColors.primaryGreen,
+                const Icon(
+                  Icons.scale_rounded,
+                  color: AppColors.primaryGreen,
                   size: 28,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    item['title']?.toString() ?? 'Detail Transaksi',
+                    item['title']?.toString() ?? item['classification']?.toString() ?? 'Setoran Timbangan',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ],
             ),
             const Divider(height: 24),
-            _infoRow('Waktu Submit', item['timestamp']?.toString() ?? '-'),
-            _infoRow('Lokasi / Alamat', item['address']?.toString() ?? '-'),
-            if (!isViolation) ...[
-              _infoRow('Berat Fisik', '${item['weightKg'] ?? 0} Kg'),
-              _infoRow('Klasifikasi', item['classification']?.toString() ?? '-'),
-            ] else ...[
-              _infoRow('Jenis Pelanggaran', item['violationType']?.toString() ?? '-'),
-              _infoRow('Tingkat Keparahan', item['severity']?.toString() ?? 'LOW'),
-              _infoRow('Pemotongan Poin', '-${item['pointDeduction'] ?? 10} Poin'),
-            ],
+            _infoRow('Waktu Submit', item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString() ?? '-'),
+            _infoRow('Lokasi / Alamat', item['address']?.toString() ?? item['alamat']?.toString() ?? '-'),
+            _infoRow('Berat Fisik', '${item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0} Kg'),
+            _infoRow('Klasifikasi', item['classification']?.toString() ?? item['kategori']?.toString() ?? '-'),
+            _infoRow('Warga', item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? '-'),
             _infoRow('Status Server', item['status']?.toString() ?? 'TERKIRIM'),
             const SizedBox(height: 16),
             SizedBox(
@@ -117,15 +111,16 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _dateRange,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         labelText: 'Tanggal',
                         labelStyle: TextStyle(fontSize: 12),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'HARI_INI', child: Text('Hari Ini', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'MINGGU_INI', child: Text('Minggu Ini', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'BULAN_INI', child: Text('Bulan Ini', style: TextStyle(fontSize: 13))),
+                        DropdownMenuItem(value: 'HARI_INI', child: Text('Hari Ini', style: TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: 'MINGGU_INI', child: Text('Minggu Ini', style: TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: 'BULAN_INI', child: Text('Bulan Ini', style: TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
                       ],
                       onChanged: (v) {
                         if (v != null) {
@@ -139,15 +134,15 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _typeFilter,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         labelText: 'Jenis Log',
                         labelStyle: TextStyle(fontSize: 12),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'SEMUA', child: Text('Semua Log', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'SETORAN', child: Text('Setoran Timbangan', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'PELANGGARAN', child: Text('Pelanggaran', style: TextStyle(fontSize: 13))),
+                        DropdownMenuItem(value: 'SEMUA', child: Text('Semua Log', style: TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: 'SETORAN', child: Text('Setoran Timbangan', style: TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
                       ],
                       onChanged: (v) {
                         if (v != null) {
@@ -182,7 +177,10 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                           itemCount: state.historyList.length,
                           itemBuilder: (ctx, index) {
                             final item = state.historyList[index];
-                            final isViolation = item['type'] == 'PELANGGARAN';
+                            final title = item['title']?.toString() ?? item['classification']?.toString() ?? item['kategori']?.toString() ?? 'Setoran Timbangan';
+                            final subtitle = item['subtitle']?.toString() ?? item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? item['binCode']?.toString() ?? '';
+                            final address = item['address']?.toString() ?? item['alamat']?.toString() ?? '';
+                            final weight = item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0;
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -191,25 +189,23 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                               child: ListTile(
                                 onTap: () => _showDetailModal(item),
                                 leading: CircleAvatar(
-                                  backgroundColor: isViolation
-                                      ? AppColors.dangerRed.withValues(alpha: 0.12)
-                                      : AppColors.primaryGreen.withValues(alpha: 0.12),
-                                  child: Icon(
-                                    isViolation ? Icons.report_problem_rounded : Icons.scale_rounded,
-                                    color: isViolation ? AppColors.dangerRed : AppColors.primaryGreen,
+                                  backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.12),
+                                  child: const Icon(
+                                    Icons.scale_rounded,
+                                    color: AppColors.primaryGreen,
                                   ),
                                 ),
                                 title: Text(
-                                  item['title']?.toString() ?? '',
+                                  title,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 4),
-                                    Text(item['subtitle']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                    Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                     const SizedBox(height: 2),
-                                    Text(item['address']?.toString() ?? '', style: const TextStyle(fontSize: 11, color: AppColors.textHint)),
+                                    Text(address, style: const TextStyle(fontSize: 11, color: AppColors.textHint)),
                                   ],
                                 ),
                                 trailing: Column(
@@ -219,15 +215,15 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isViolation ? Colors.red[50] : Colors.green[50],
+                                        color: Colors.green[50],
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        isViolation ? item['severity']?.toString() ?? 'PELANGGARAN' : '${item['weightKg'] ?? 0} Kg',
-                                        style: TextStyle(
+                                        '$weight Kg',
+                                        style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
-                                          color: isViolation ? AppColors.dangerRed : AppColors.primaryGreen,
+                                          color: AppColors.primaryGreen,
                                         ),
                                       ),
                                     ),
