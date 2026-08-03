@@ -83,7 +83,7 @@ export class AuthRepository {
         ) {
           targetRole = "SUPER_ADMIN";
         } else if (lower.includes("dlh") || raw === "08111111112" || raw === "+628111111112") {
-          targetRole = "ADMIN_KECAMATAN";
+          targetRole = "ADMIN_DLH";
         } else if (lower.includes("warga") || raw === "0812001001" || raw === "+62812001001") {
           targetRole = "WARGA";
         }

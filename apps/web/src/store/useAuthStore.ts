@@ -47,7 +47,15 @@ interface AuthState {
   updateUser: (updatedFields: Partial<User>) => void;
 }
 
-const getAvatarConfig = (role: string): { avatarBg: string; avatarColor: string } => {
+const normalizeRole = (role: string): UserRole => {
+  if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(role)) return "ADMIN_DLH";
+  if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(role)) return "CAMAT";
+  if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
+  return role as UserRole;
+};
+
+const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: string } => {
+  const role = normalizeRole(rawRole);
   switch (role) {
     case "SUPER_ADMIN":
       return { avatarBg: "bg-indigo-100", avatarColor: "text-indigo-700" };
@@ -139,13 +147,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       // Buat user object untuk store
-      const avatarConfig = getAvatarConfig(backendUser.role);
+      const normalizedRole = normalizeRole(backendUser.role);
+      const avatarConfig = getAvatarConfig(normalizedRole);
       const user: User = {
         id: backendUser.id,
         name: backendUser.name,
         email: backendUser.email,
-        peran: backendUser.role as UserRole,
-        wilayah: getWilayahByRole(backendUser.role),
+        peran: normalizedRole,
+        wilayah: getWilayahByRole(normalizedRole),
         avatar: backendUser.name.substring(0, 2).toUpperCase(),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
@@ -194,13 +203,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.setItem("psc_refresh_token", refreshToken);
       }
 
-      const avatarConfig = getAvatarConfig(backendUser.role);
+      const normalizedRole = normalizeRole(backendUser.role);
+      const avatarConfig = getAvatarConfig(normalizedRole);
       const user: User = {
         id: backendUser.id,
         name: backendUser.name,
         email: backendUser.email,
-        peran: backendUser.role as UserRole,
-        wilayah: getWilayahByRole(backendUser.role),
+        peran: normalizedRole,
+        wilayah: getWilayahByRole(normalizedRole),
         avatar: backendUser.name.substring(0, 2).toUpperCase(),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,

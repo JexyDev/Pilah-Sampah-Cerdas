@@ -30,8 +30,12 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
     if (token) {
       try {
         const decoded = verifyAccessToken(token);
-        const normalizeRole = (r: string) =>
-          ["DLH", "DLH_ADMIN", "Admin DLH"].includes(r) ? "ADMIN_DLH" : r;
+        const normalizeRole = (r: string) => {
+          if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(r)) return "ADMIN_DLH";
+          if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r)) return "CAMAT";
+          if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r)) return "LURAH";
+          return r;
+        };
         const role = normalizeRole(decoded.role);
 
         if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
