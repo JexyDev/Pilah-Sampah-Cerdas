@@ -30,7 +30,9 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
     if (token) {
       try {
         const decoded = verifyAccessToken(token);
-        const role = decoded.role;
+        const normalizeRole = (r: string) =>
+          ["DLH", "DLH_ADMIN", "Admin DLH"].includes(r) ? "ADMIN_DLH" : r;
+        const role = normalizeRole(decoded.role);
 
         if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
           const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];

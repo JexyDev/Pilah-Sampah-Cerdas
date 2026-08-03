@@ -23,7 +23,12 @@ export const roleMiddleware = (allowedRoles: string[]) => {
         return;
       }
 
-      if (!allowedRoles.includes(user.role)) {
+      const normalizeRole = (r: string) =>
+        ["DLH", "DLH_ADMIN", "Admin DLH"].includes(r) ? "ADMIN_DLH" : r;
+      const userRole = normalizeRole(user.role);
+      const normalizedAllowed = allowedRoles.map(normalizeRole);
+
+      if (!normalizedAllowed.includes(userRole)) {
         res
           .status(403)
           .json({ error: "FORBIDDEN", message: "Anda tidak memiliki akses ke resource ini" });
