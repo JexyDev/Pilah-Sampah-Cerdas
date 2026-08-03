@@ -376,12 +376,25 @@ async function main() {
         // Seed activated bin + citizen setoran for student 0
         if (idx === 0) {
           const citizenPhone = `+62857${String(Math.floor(Math.random() * 10000000)).padStart(8, '0')}`;
+          const sampleCitizenNames = [
+            "Bpk. Supriatna",
+            "Ibu Siti Aminah",
+            "Bpk. Bambang Hermawan",
+            "Ibu Ratna Juwita",
+            "Bpk. Hidayat Sutrisno",
+            "Ibu Sri Wahyuni",
+            "Bpk. Eko Prasetyo",
+            "Ibu Ningrum",
+            "Bpk. Cecep Subagja",
+            "Ibu Dewanti Subandi",
+          ];
+          const citizenName = sampleCitizenNames[Math.floor(Math.random() * sampleCitizenNames.length)];
           let citizen = await prisma.user.findUnique({ where: { phone: citizenPhone } });
           if (!citizen) {
             const pass = await bcrypt.hash('123456', 10);
             citizen = await prisma.user.create({
               data: {
-                name: `Warga Binaan ${mhs.user.name.split(' ')[0]}`,
+                name: citizenName,
                 phone: citizenPhone,
                 password: pass,
                 roleId: wargaRole.id,

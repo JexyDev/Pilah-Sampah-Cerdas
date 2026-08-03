@@ -1,4 +1,4 @@
-import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin } from "lucide-react";
+import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin, GraduationCap } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -576,6 +576,12 @@ const ManajemenPengguna: React.FC = () => {
                         <p className="text-[10px] text-slate-400 font-mono">
                           NIK: {user.nik || `3273110${user.phone ? user.phone.slice(-9) : "029377001"}`}
                         </p>
+                        {user.pendampingKkn && (
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
+                            <GraduationCap size={12} className="text-emerald-600" />
+                            Pendamping: {user.pendampingKkn.name}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">
                         {user.phone || "-"}

@@ -76,6 +76,18 @@ export class UserService {
 
       const totalPoin = u.pointHistory.reduce((sum: number, p: any) => sum + p.points, 0);
 
+      let pendampingKkn = null;
+      if (u.bins && u.bins.length > 0) {
+        const boundBin = u.bins.find((b: any) => b.registeredByStudent);
+        if (boundBin && boundBin.registeredByStudent) {
+          pendampingKkn = {
+            id: boundBin.registeredByStudent.id,
+            name: boundBin.registeredByStudent.name,
+            phone: boundBin.registeredByStudent.phone,
+          };
+        }
+      }
+
       return {
         id: u.id,
         name: u.name,
@@ -87,6 +99,7 @@ export class UserService {
         wilayah,
         setoran: parseFloat(totalSetoranKg.toFixed(1)),
         totalPoin,
+        pendampingKkn,
         createdAt: u.createdAt,
         studentProfile: u.studentProfile
           ? {

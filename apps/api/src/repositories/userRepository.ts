@@ -35,6 +35,11 @@ export class UserRepository {
           include: { assignedPolygon: true, kelompok: true },
         },
         petugasProfile: true,
+        bins: {
+          include: {
+            registeredByStudent: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
