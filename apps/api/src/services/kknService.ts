@@ -292,15 +292,16 @@ export class KknService {
       include: {
         rtRw: { include: { kelurahan: true } },
         households: { include: { rtRw: { include: { kelurahan: true } } } },
-        binOwnerships: { include: { bin: { include: { category: true } } } },
+        binOwnerships: { include: { bin: { include: { category: true, qrBatch: true } } } },
         setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
       },
     });
 
     return warga.map((w: any) => {
       const household = w.households?.[0];
-      const kelName = w.rtRw?.kelurahan?.name || household?.rtRw?.kelurahan?.name || filters.kelurahan || "Bojongsoang";
-      const rtRwName = w.rtRw?.name || household?.rtRw?.name || filters.rtRw || "003/008";
+      const kelName =
+        w.rtRw?.kelurahan?.name || household?.rtRw?.kelurahan?.name || filters.kelurahan || "";
+      const rtRwName = w.rtRw?.name || household?.rtRw?.name || filters.rtRw || "";
 
       const binOrganik = w.binOwnerships?.find(
         (bo: any) =>
@@ -323,6 +324,13 @@ export class KknService {
           (bo: any) => bo.bin?.status === "ACTIVE_BOUND" || bo.bin?.status === "PENDING_APPROVAL"
         ) || false;
 
+      const registeredStudentId =
+        primaryBin?.registeredByStudentId ||
+        primaryBin?.qrBatch?.assignedPicUserId ||
+        binOrganik?.registeredByStudentId ||
+        binAnorganik?.registeredByStudentId ||
+        null;
+
       const recentLogs = w.setoranOtomatis.map((log: any) => ({
         date: new Date(log.createdAt).toISOString().split("T")[0],
         wasteType: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
@@ -334,14 +342,14 @@ export class KknService {
         wargaId: w.id,
         name: w.name,
         wargaName: w.name,
-        address: household?.address || w.address || `Jl. ${w.name} No. 26, RT ${rtRwName}, Kel. ${kelName}`,
+        address: household?.address || w.address || (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
         rtRw: rtRwName,
         role: "WARGA",
         isActivated,
-        mahasiswaId: kknUserId,
-        binOrganikId: binOrganik?.qrCode || primaryBin?.qrCode || "BIN-ORG-001",
-        binAnorganikId: binAnorganik?.qrCode || "BIN-ANO-001",
+        mahasiswaId: registeredStudentId,
+        binOrganikId: binOrganik?.qrCode || (primaryBin?.category?.name === "ORGANIC" ? primaryBin.qrCode : null),
+        binAnorganikId: binAnorganik?.qrCode || (primaryBin?.category?.name === "NON_ORGANIC" ? primaryBin.qrCode : null),
         needsReeducation: false,
         recentLogs,
       };
