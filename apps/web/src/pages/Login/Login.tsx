@@ -183,53 +183,28 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm space-y-2.5">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm space-y-3">
           <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
             <p className="font-bold flex items-center gap-1.5 text-slate-800">
               <Info className="text-primary" size={16} />
-              Pilih Akun Demo (9 Role Complete)
+              Pilih Akun Demo (9 Role Lengkap)
             </p>
             <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
               pass: password123
             </span>
           </div>
 
-          <select
-            onChange={(e) => {
-              if (e.target.value) {
-                const [p, lbl] = e.target.value.split("|");
-                setIdentifier(p);
-                setPassword("password123");
-                setIdentifierError("");
-                setPasswordError("");
-                toast.success(`Akun ${lbl} dipilih`, { id: "autofill-toast", duration: 1500 });
-              }
-            }}
-            className="w-full h-9 bg-white border border-slate-300 rounded-lg px-3 text-xs font-semibold text-slate-700 outline-none focus:border-primary cursor-pointer shadow-2xs"
-          >
-            <option value="">-- Klik untuk memilih Peran Akun --</option>
-            <option value="08111111111|Super Admin">🔴 Super Admin (08111111111)</option>
-            <option value="08111111112|Admin DLH">🔵 Admin DLH Kota (08111111112 / 081200999998)</option>
-            <option value="08111111113|Camat Coblong">🟣 Camat Coblong (08111111113 / 081200999997)</option>
-            <option value="08111111114|Lurah Dago">🔷 Lurah Dago (08111111114 / 081200999996)</option>
-            <option value="08111111115|Asep RW 06">🟣 RW 06 Dago (08111111115 / 081200999995)</option>
-            <option value="08111111116|Bambang RT 01">🟡 RT 01 Dago (08111111116 / 081200999994)</option>
-            <option value="08111111117|Petugas Residu">🟠 Petugas Residu Hilir (08111111117 / 0812001004)</option>
-            <option value="08111111118|Mahasiswa KKN">🟢 Mahasiswa KKN (08111111118 / 0812001005)</option>
-            <option value="0812001001|Warga Mandiri">🟢 Warga Mandiri (0812001001 / 0812001003)</option>
-          </select>
-
-          <div className="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+          <div className="grid grid-cols-3 gap-1.5">
             {[
-              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200" },
-              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-              { phone: "08111111113", label: "Camat Coblong", bg: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-              { phone: "08111111114", label: "Lurah Dago", bg: "bg-cyan-50 text-cyan-700 border-cyan-200" },
-              { phone: "08111111115", label: "RW 06 Dago", bg: "bg-purple-50 text-purple-700 border-purple-200" },
-              { phone: "08111111116", label: "RT 01 Dago", bg: "bg-amber-50 text-amber-700 border-amber-200" },
-              { phone: "08111111117", label: "Petugas Residu", bg: "bg-orange-50 text-orange-700 border-orange-200" },
-              { phone: "08111111118", label: "Mahasiswa KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
-              { phone: "0812001001", label: "Warga Mandiri", bg: "bg-green-50 text-green-700 border-green-200" },
+              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" },
+              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" },
+              { phone: "08111111113", label: "Camat", bg: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100" },
+              { phone: "08111111114", label: "Lurah", bg: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100" },
+              { phone: "08111111115", label: "RW 06", bg: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100" },
+              { phone: "08111111116", label: "RT 01", bg: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" },
+              { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100" },
+              { phone: "08111111118", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100" },
+              { phone: "0812001001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200 hover:bg-green-100" },
             ].map((acc) => (
               <button
                 key={acc.phone}
@@ -239,12 +214,12 @@ const Login: React.FC = () => {
                   setPassword("password123");
                   setIdentifierError("");
                   setPasswordError("");
-                  toast.success(`Mengisi kredensial ${acc.label}`, { id: "autofill-toast", duration: 1500 });
+                  toast.success(`Akun ${acc.label} (${acc.phone}) dipilih`, { id: "autofill-toast", duration: 1500 });
                 }}
-                className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left shadow-2xs"
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs ${acc.bg}`}
               >
-                <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${acc.bg}`}>{acc.label}</span>
-                <span className="text-[10px] font-mono text-slate-500">{acc.phone}</span>
+                <span className="font-extrabold text-[10px] leading-tight">{acc.label}</span>
+                <span className="text-[8px] font-mono opacity-80 mt-0.5">{acc.phone}</span>
               </button>
             ))}
           </div>
