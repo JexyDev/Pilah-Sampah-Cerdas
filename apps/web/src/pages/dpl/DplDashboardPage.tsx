@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Users,
   Award,
@@ -13,9 +14,9 @@ import {
   Search,
   Filter,
   Eye,
-  Activity,
-  UserCheck,
   Sparkles,
+  ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -28,15 +29,42 @@ import {
   type ApprovalHistoryLog,
 } from "../../services/dplService";
 
+type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP";
+
 export const DplDashboardPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
+  
+  // Normalize tab string alias
+  const activeTab: TabType = useMemo(() => {
+    if (rawTab === "STUDENTS") return "MAHASISWA";
+    if (rawTab === "APPROVALS") return "APPROVAL";
+    if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "MAP"].includes(rawTab)) {
+      return rawTab as TabType;
+    }
+    return "OVERVIEW";
+  }, [rawTab]);
+
+  const setActiveTab = (newTab: TabType) => {
+    setSearchParams({ tab: newTab });
+  };
+
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [students, setStudents] = useState<StudentDetail[]>([]);
-  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [alerts, setAlerts] = useState<DplAlerts | null>(null);
   const [approvalHistory, setApprovalHistory] = useState<ApprovalHistoryLog[]>([]);
   const [mapCoverage, setMapCoverage] = useState<MapCoverage | null>(null);
+
+  // Filters & Pagination States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
+  const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
+
+  const [kelompokPage, setKelompokPage] = useState(1);
+  const [mahasiswaPage, setMahasiswaPage] = useState(1);
+  const [approvalPage, setApprovalPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   // Drill-down Modal States
   const [selectedStudentForCitizens, setSelectedStudentForCitizens] = useState<StudentDetail | null>(null);
@@ -49,8 +77,9 @@ export const DplDashboardPage: React.FC = () => {
   const [assessmentNoteInput, setAssessmentNoteInput] = useState("");
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
 
-  // Active Tab View: 'OVERVIEW' | 'STUDENTS' | 'MAP' | 'APPROVALS'
-  const [activeTab, setActiveTab] = useState<"OVERVIEW" | "STUDENTS" | "MAP" | "APPROVALS">("OVERVIEW");
+  // Rejection Note Modal States
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
 
   useEffect(() => {
     loadDashboardData();
@@ -104,10 +133,13 @@ export const DplDashboardPage: React.FC = () => {
     if (!selectedStudentForAssessment) return;
     setSubmittingAssessment(true);
     try {
-      await dplService.assessStudent(selectedStudentForAssessment.id, assessmentScoreInput, assessmentNoteInput);
+      await dplService.assessStudent(
+        selectedStudentForAssessment.id,
+        assessmentScoreInput,
+        assessmentNoteInput
+      );
       toast.success(`Penilaian untuk ${selectedStudentForAssessment.name} berhasil disimpan!`);
       setSelectedStudentForAssessment(null);
-      // Refresh students
       const updatedStudents = await dplService.getStudents();
       setStudents(updatedStudents);
     } catch (err: any) {
@@ -117,11 +149,12 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
-  const handleDecideLeave = async (requestId: string, status: "APPROVED" | "REJECTED") => {
+  const handleDecideLeave = async (requestId: string, status: "APPROVED" | "REJECTED", note?: string) => {
     try {
-      await dplService.decideLeaveRequest(requestId, status);
-      toast.success(status === "APPROVED" ? "Pengajuan disetujui" : "Pengajuan ditolak");
-      // Refresh alerts & history
+      await dplService.decideLeaveRequest(requestId, status, note);
+      toast.success(status === "APPROVED" ? "Pengajuan berhasil disetujui" : "Pengajuan berhasil ditolak");
+      setRejectingRequestId(null);
+      setRejectionReasonInput("");
       const [updatedAlerts, updatedHistory] = await Promise.all([
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
@@ -133,14 +166,64 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
-  const filteredStudents = students.filter((s) => {
-    const matchesGroup = selectedGroupFilter ? s.kelompokName === selectedGroupFilter : true;
-    const matchesSearch =
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.jurusan.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.nim.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesGroup && matchesSearch;
-  });
+  // Filtered & Paginated Kelompok
+  const filteredKelompok = useMemo(() => {
+    return groups.filter((g) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        g.name.toLowerCase().includes(query) ||
+        (g.kelurahan && g.kelurahan.toLowerCase().includes(query))
+      );
+    });
+  }, [groups, searchQuery]);
+
+  const paginatedKelompok = useMemo(() => {
+    const start = (kelompokPage - 1) * 6;
+    return filteredKelompok.slice(start, start + 6);
+  }, [filteredKelompok, kelompokPage]);
+
+  const totalKelompokPages = Math.max(1, Math.ceil(filteredKelompok.length / 6));
+
+  // Filtered & Paginated Students
+  const filteredStudents = useMemo(() => {
+    return students.filter((s) => {
+      const matchesGroup = selectedGroupFilter ? s.kelompokName === selectedGroupFilter : true;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        s.name.toLowerCase().includes(query) ||
+        s.jurusan.toLowerCase().includes(query) ||
+        s.nim.toLowerCase().includes(query) ||
+        s.kelompokName.toLowerCase().includes(query);
+      return matchesGroup && matchesSearch;
+    });
+  }, [students, selectedGroupFilter, searchQuery]);
+
+  const paginatedStudents = useMemo(() => {
+    const start = (mahasiswaPage - 1) * ITEMS_PER_PAGE;
+    return filteredStudents.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredStudents, mahasiswaPage]);
+
+  const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / ITEMS_PER_PAGE));
+
+  // Filtered & Paginated Approvals History
+  const filteredApprovalHistory = useMemo(() => {
+    return approvalHistory.filter((log) => {
+      const matchesStatus = selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        log.studentName.toLowerCase().includes(query) ||
+        log.reason.toLowerCase().includes(query) ||
+        log.type.toLowerCase().includes(query);
+      return matchesStatus && matchesSearch;
+    });
+  }, [approvalHistory, selectedApprovalStatus, searchQuery]);
+
+  const paginatedApprovalHistory = useMemo(() => {
+    const start = (approvalPage - 1) * ITEMS_PER_PAGE;
+    return filteredApprovalHistory.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredApprovalHistory, approvalPage]);
+
+  const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
   const totalAllStudents = groups.reduce((acc, g) => acc + g.studentCount, 0);
   const totalActivatedBins = groups.reduce((acc, g) => acc + g.activatedBinsCount, 0);
@@ -152,213 +235,310 @@ export const DplDashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-gray-600 font-medium">Memuat Real Data Dashboard DPL...</p>
+        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm text-slate-600 font-medium">Memuat Data Panel Bimbingan DPL...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      {/* Executive Header Banner */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 bg-emerald-700/50 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold w-fit mb-2 text-emerald-200 border border-emerald-500/30">
-            <Sparkles size={14} /> Portal Dosen Pembimbing Lapangan (DPL)
+          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-emerald-500/30">
+            <Sparkles size={14} /> Panel Dosen Pembimbing Lapangan (DPL)
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Dashboard Bimbingan KKN</h1>
-          <p className="text-emerald-100 text-sm mt-1">
-            Monitoring keaktifan mahasiswa, dampak pendampingan warga, dan validasi izin secara real-time.
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            {activeTab === "OVERVIEW" && "Ringkasan Bimbingan KKN"}
+            {activeTab === "KELOMPOK" && "Kelompok Bimbingan DPL"}
+            {activeTab === "MAHASISWA" && "Mahasiswa & Dampak Warga"}
+            {activeTab === "APPROVAL" && "Persetujuan Sakit / Izin"}
+            {activeTab === "MAP" && "Peta Sebaran RW Dampingan"}
+          </h1>
+          <p className="text-slate-400 text-xs md:text-sm mt-1">
+            Portal evaluasi kinerja mahasiswa KKN, pendampingan warga, dan validasi izin presensi.
           </p>
         </div>
 
-        {alerts && alerts.pendingApprovalsCount > 0 && (
-          <div className="bg-amber-500/20 border border-amber-400/40 rounded-xl p-3 flex items-center gap-3 backdrop-blur">
-            <AlertTriangle size={24} className="text-amber-300 animate-pulse" />
-            <div>
-              <p className="text-xs font-bold text-amber-200">Perhatian Required</p>
-              <p className="text-xs text-white">
-                <span className="font-extrabold text-amber-300">{alerts.pendingApprovalsCount}</span> Pengajuan Sakit/Izin menunggu approval Anda.
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadDashboardData}
+            className="p-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700"
+            title="Refresh Data"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+          {alerts && alerts.pendingApprovalsCount > 0 && (
             <button
-              onClick={() => setActiveTab("APPROVALS")}
-              className="px-3 py-1.5 bg-amber-400 text-amber-950 font-bold text-xs rounded-lg hover:bg-amber-300 transition"
+              onClick={() => setActiveTab("APPROVAL")}
+              className="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-amber-500/30 transition"
             >
-              Review
+              <AlertTriangle size={16} className="animate-pulse" />
+              <span>{alerts.pendingApprovalsCount} Izin Pending</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Metric Cards (1. Ringkasan Kelompok Bimbingan) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <Users size={24} />
+      {/* Overview Cards Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <Users size={20} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Total Kelompok / Mhs</p>
-            <h3 className="text-xl font-black text-gray-800">
-              {groups.length} <span className="text-sm font-semibold text-gray-500">Kelompok ({totalAllStudents} Mhs)</span>
+            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Total Kelompok</p>
+            <h3 className="text-lg font-bold text-slate-900">
+              {groups.length} <span className="text-xs font-normal text-slate-500">({totalAllStudents} Mhs)</span>
             </h3>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <QrCode size={24} />
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <QrCode size={20} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Warga Dibantu Aktivasi</p>
-            <h3 className="text-xl font-black text-gray-800">{totalActivatedBins} <span className="text-xs font-normal text-gray-500">Tong Sampah</span></h3>
+            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Aktivasi Sampah</p>
+            <h3 className="text-lg font-bold text-slate-900">{totalActivatedBins} <span className="text-xs font-normal text-slate-500">Tong</span></h3>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
-            <CalendarCheck size={24} />
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+            <CalendarCheck size={20} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Rata-Rata Kehadiran</p>
-            <h3 className="text-xl font-black text-gray-800">{avgOverallAttendance}%</h3>
+            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Tingkat Kehadiran</p>
+            <h3 className="text-lg font-bold text-slate-900">{avgOverallAttendance}%</h3>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Award size={24} />
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <Award size={20} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Approval Pending</p>
-            <h3 className="text-xl font-black text-gray-800">{alerts?.pendingApprovalsCount || 0} <span className="text-xs font-normal text-gray-500">Permohonan</span></h3>
+            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Permohonan Izin</p>
+            <h3 className="text-lg font-bold text-slate-900">{alerts?.pendingApprovalsCount || 0} <span className="text-xs font-normal text-slate-500">Pending</span></h3>
           </div>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab("OVERVIEW")}
-          className={`px-4 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition ${
-            activeTab === "OVERVIEW"
-              ? "border-emerald-600 text-emerald-700"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          <Activity size={18} /> Kelompok Bimbingan
-        </button>
-        <button
-          onClick={() => setActiveTab("STUDENTS")}
-          className={`px-4 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition ${
-            activeTab === "STUDENTS"
-              ? "border-emerald-600 text-emerald-700"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          <UserCheck size={18} /> Detail Mahasiswa & Dampak Warga
-        </button>
-        <button
-          onClick={() => setActiveTab("APPROVALS")}
-          className={`px-4 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition ${
-            activeTab === "APPROVALS"
-              ? "border-emerald-600 text-emerald-700"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          <FileCheck size={18} />
-          Approval Sakit/Izin
-          {alerts && alerts.pendingApprovalsCount > 0 && (
-            <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {alerts.pendingApprovalsCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("MAP")}
-          className={`px-4 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition ${
-            activeTab === "MAP"
-              ? "border-emerald-600 text-emerald-700"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          <MapPin size={18} /> Peta Sebaran RW
-        </button>
-      </div>
-
-      {/* TAB 1: OVERVIEW KELOMPOK */}
+      {/* VIEW 1: OVERVIEW */}
       {activeTab === "OVERVIEW" && (
+        <div className="space-y-6">
+          {/* Action Callout if pending approvals exist */}
+          {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 text-amber-800 rounded-lg">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-amber-950">
+                    Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan)
+                  </h4>
+                  <p className="text-xs text-amber-800">
+                    Beberapa mahasiswa mengajukan surat izin/sakit yang memerlukan validasi DPL.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab("APPROVAL")}
+                className="px-4 py-2 bg-amber-600 text-white font-bold text-xs rounded-lg hover:bg-amber-700 transition"
+              >
+                Kelola Persetujuan
+              </button>
+            </div>
+          )}
+
+          {/* Quick Groups Grid */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Kelompok Bimbingan DPL</h3>
+                <p className="text-xs text-slate-500">Daftar kelompok KKN yang saat ini berada di bawah pengawasan Anda.</p>
+              </div>
+              <button
+                onClick={() => setActiveTab("KELOMPOK")}
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+              >
+                Lihat Semua ({groups.length}) <ChevronRight size={14} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {groups.slice(0, 6).map((grp) => (
+                <div
+                  key={grp.id}
+                  className="bg-slate-50/70 border border-slate-200/60 rounded-xl p-4 space-y-3 hover:border-emerald-300 transition"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded">
+                        {grp.kelurahan}
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 mt-1">{grp.name}</h4>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded">
+                      RW {grp.cakupanRw?.join(", ") || "-"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                    <div className="bg-white p-2 rounded-lg border border-slate-100">
+                      <span className="text-slate-400 block text-[10px]">Mahasiswa</span>
+                      <span className="font-bold text-slate-800">{grp.studentCount} Orang</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-slate-100">
+                      <span className="text-slate-400 block text-[10px]">Kehadiran</span>
+                      <span className="font-bold text-emerald-600">{grp.avgAttendanceRate}%</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedGroupFilter(grp.name);
+                      setActiveTab("MAHASISWA");
+                    }}
+                    className="w-full py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-100 transition flex items-center justify-center gap-1"
+                  >
+                    <Eye size={12} /> Detail Mahasiswa
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 2: KELOMPOK BIMBINGAN */}
+      {activeTab === "KELOMPOK" && (
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-800">Daftar Kelompok Bimbingan DPL</h2>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 w-full sm:w-80 text-xs">
+              <Search size={16} className="text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari nama kelompok atau kelurahan..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setKelompokPage(1);
+                }}
+                className="w-full outline-none bg-transparent"
+              />
+            </div>
+
+            <div className="text-xs text-slate-500 font-medium">
+              Menampilkan {filteredKelompok.length} Kelompok Bimbingan
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {groups.map((grp) => (
-              <div key={grp.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4 hover:shadow-md transition">
+            {paginatedKelompok.map((grp) => (
+              <div key={grp.id} className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4 hover:border-emerald-500/50 transition">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                       {grp.kelurahan}
                     </span>
-                    <h3 className="text-lg font-bold text-gray-900 mt-2">{grp.name}</h3>
+                    <h3 className="text-base font-bold text-slate-900 mt-2">{grp.name}</h3>
                   </div>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
                     RW: {grp.cakupanRw?.join(", ") || "-"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
-                  <div className="bg-gray-50 p-2.5 rounded-xl">
-                    <p className="text-gray-500">Anggota Kelompok</p>
-                    <p className="text-sm font-bold text-gray-800">{grp.studentCount} Mahasiswa</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <p className="text-slate-400 text-[10px]">Jumlah Anggota</p>
+                    <p className="font-bold text-slate-800">{grp.studentCount} Mahasiswa</p>
                   </div>
-                  <div className="bg-gray-50 p-2.5 rounded-xl">
-                    <p className="text-gray-500">Aktivasi Tong</p>
-                    <p className="text-sm font-bold text-blue-600">{grp.activatedBinsCount} Tong</p>
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <p className="text-slate-400 text-[10px]">Aktivasi Tong</p>
+                    <p className="font-bold text-blue-600">{grp.activatedBinsCount} Tong</p>
                   </div>
-                  <div className="bg-gray-50 p-2.5 rounded-xl">
-                    <p className="text-gray-500">Kehadiran Kelompok</p>
-                    <p className="text-sm font-bold text-emerald-600">{grp.avgAttendanceRate}%</p>
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <p className="text-slate-400 text-[10px]">Rata Kehadiran</p>
+                    <p className="font-bold text-emerald-600">{grp.avgAttendanceRate}%</p>
                   </div>
-                  <div className="bg-gray-50 p-2.5 rounded-xl">
-                    <p className="text-gray-500">Total Poin</p>
-                    <p className="text-sm font-bold text-purple-600">{grp.totalGroupPoints} Pts</p>
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <p className="text-slate-400 text-[10px]">Total Poin</p>
+                    <p className="font-bold text-purple-600">{grp.totalGroupPoints} Pts</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => {
                     setSelectedGroupFilter(grp.name);
-                    setActiveTab("STUDENTS");
+                    setActiveTab("MAHASISWA");
                   }}
-                  className="w-full py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl hover:bg-emerald-100 transition flex items-center justify-center gap-1"
+                  className="w-full py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition flex items-center justify-center gap-1 border border-emerald-200/60"
                 >
-                  <Eye size={14} /> Lihat Detail Mahasiswa
+                  <Eye size={14} /> lihat Anggota Mahasiswa
                 </button>
               </div>
             ))}
           </div>
+
+          {/* Pagination Controls */}
+          {totalKelompokPages > 1 && (
+            <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl border border-slate-200/80 text-xs">
+              <span className="text-slate-500">
+                Halaman {kelompokPage} dari {totalKelompokPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  disabled={kelompokPage === 1}
+                  onClick={() => setKelompokPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-200 transition"
+                >
+                  Sebelumnya
+                </button>
+                <button
+                  disabled={kelompokPage === totalKelompokPages}
+                  onClick={() => setKelompokPage((p) => Math.min(totalKelompokPages, p + 1))}
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-200 transition"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* TAB 2: DETAIL MAHASISWA & DAMPAK WARGA */}
-      {activeTab === "STUDENTS" && (
+      {/* VIEW 3: MAHASISWA & DAMPAK WARGA */}
+      {activeTab === "MAHASISWA" && (
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100">
-            <div className="flex items-center gap-2 flex-1">
-              <Search size={18} className="text-gray-400" />
+          {/* Controls Filter & Search */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 w-full sm:w-80 text-xs">
+              <Search size={16} className="text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari nama mahasiswa, NIM, prodi..."
+                placeholder="Cari nama, NIM, jurusan, kelompok..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full text-sm outline-none bg-transparent"
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setMahasiswaPage(1);
+                }}
+                className="w-full outline-none bg-transparent"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter size={16} className="text-gray-400" />
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter size={15} className="text-slate-400" />
               <select
                 value={selectedGroupFilter}
-                onChange={(e) => setSelectedGroupFilter(e.target.value)}
-                className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg p-2 outline-none"
+                onChange={(e) => {
+                  setSelectedGroupFilter(e.target.value);
+                  setMahasiswaPage(1);
+                }}
+                className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none w-full sm:w-auto"
               >
                 <option value="">Semua Kelompok Bimbingan</option>
                 {groups.map((g) => (
@@ -370,114 +550,176 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-600 font-bold border-b border-gray-100">
-                <tr>
-                  <th className="p-3.5">Mahasiswa</th>
-                  <th className="p-3.5">Kelompok</th>
-                  <th className="p-3.5">Kehadiran</th>
-                  <th className="p-3.5">Status (H/S/I/A)</th>
-                  <th className="p-3.5">Skor DPL</th>
-                  <th className="p-3.5 text-center">Aksi Bimbingan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredStudents.map((st) => (
-                  <tr key={st.id} className="hover:bg-gray-50/80 transition">
-                    <td className="p-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">
-                          {st.name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 flex items-center gap-1">
-                            {st.name} {st.isKetua && <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.2 rounded">Ketua</span>}
-                          </p>
-                          <p className="text-[11px] text-gray-500">{st.jurusan} • {st.nim}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-3.5 font-medium text-gray-700">{st.kelompokName}</td>
-                    <td className="p-3.5">
-                      <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                        {st.attendanceRate}%
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      <div className="flex items-center gap-1.5 font-semibold">
-                        <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded" title="Hadir">{st.attendedCount}H</span>
-                        <span className="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded" title="Sakit">{st.sickCount}S</span>
-                        <span className="text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded" title="Izin">{st.izinCount}I</span>
-                        <span className={`px-1.5 py-0.5 rounded ${st.alphaCount > 0 ? "text-red-700 bg-red-100 font-bold" : "text-gray-500 bg-gray-100"}`} title="Alpha">{st.alphaCount}A</span>
-                      </div>
-                    </td>
-                    <td className="p-3.5 font-bold text-gray-800">
-                      {st.assessmentScore > 0 ? `${st.assessmentScore} Pts` : <span className="text-gray-400 font-normal italic">Belum dinilai</span>}
-                    </td>
-                    <td className="p-3.5 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleOpenCitizensDrilldown(st)}
-                          className="px-2.5 py-1 bg-blue-50 text-blue-700 font-semibold rounded-lg hover:bg-blue-100 transition flex items-center gap-1 text-[11px]"
-                          title="Lihat Warga yang Dibantu & Pola Buang Sampah"
-                        >
-                          <QrCode size={13} /> Dampak Warga
-                        </button>
-                        <button
-                          onClick={() => handleOpenAssessmentModal(st)}
-                          className="px-2.5 py-1 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 text-[11px]"
-                          title="Input Form Penilaian Aktivitas DPL"
-                        >
-                          <Star size={13} /> Nilai
-                        </button>
-                      </div>
-                    </td>
+          {/* Table Mahasiswa */}
+          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
+                  <tr>
+                    <th className="p-3.5">Mahasiswa Bimbingan</th>
+                    <th className="p-3.5">Kelompok KKN</th>
+                    <th className="p-3.5">Kehadiran (%)</th>
+                    <th className="p-3.5">Status (H/S/I/A)</th>
+                    <th className="p-3.5">Skor Penilaian DPL</th>
+                    <th className="p-3.5 text-center">Aksi Manajemen</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedStudents.map((st) => (
+                    <tr key={st.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs border border-emerald-200">
+                            {st.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                              {st.name}
+                              {st.isKetua && (
+                                <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.2 rounded font-bold">
+                                  Ketua
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              {st.jurusan} • {st.nim}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3.5 font-medium text-slate-700">{st.kelompokName}</td>
+                      <td className="p-3.5">
+                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          {st.attendanceRate}%
+                        </span>
+                      </td>
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-1 font-semibold text-[11px]">
+                          <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded" title="Hadir">{st.attendedCount}H</span>
+                          <span className="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded" title="Sakit">{st.sickCount}S</span>
+                          <span className="text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded" title="Izin">{st.izinCount}I</span>
+                          <span className={`px-1.5 py-0.5 rounded ${st.alphaCount > 0 ? "text-red-700 bg-red-100 font-bold" : "text-slate-500 bg-slate-100"}`} title="Alpha">{st.alphaCount}A</span>
+                        </div>
+                      </td>
+                      <td className="p-3.5 font-bold text-slate-800">
+                        {st.assessmentScore > 0 ? (
+                          <span className="bg-slate-100 px-2 py-1 rounded text-slate-900 border border-slate-200">
+                            {st.assessmentScore} Pts
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal italic">Belum dinilai</span>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleOpenCitizensDrilldown(st)}
+                            className="px-2.5 py-1.5 bg-blue-50 text-blue-700 font-semibold rounded-lg hover:bg-blue-100 transition flex items-center gap-1 text-[11px] border border-blue-200/60"
+                            title="Detail Warga & Tempat Sampah Dibantu"
+                          >
+                            <QrCode size={13} /> Dampak Warga
+                          </button>
+                          <button
+                            onClick={() => handleOpenAssessmentModal(st)}
+                            className="px-2.5 py-1.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 text-[11px]"
+                            title="Form Input Skor Penilaian DPL"
+                          >
+                            <Star size={13} /> Nilai
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {paginatedStudents.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-slate-400 italic text-xs">
+                        Tidak ada data mahasiswa bimbingan yang cocok.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalStudentPages > 1 && (
+              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
+                <span className="text-slate-500 font-medium">
+                  Mahasiswa { (mahasiswaPage - 1) * ITEMS_PER_PAGE + 1 } - { Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length) } dari {filteredStudents.length}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={mahasiswaPage === 1}
+                    onClick={() => setMahasiswaPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                  >
+                    Sebelumnya
+                  </button>
+                  <button
+                    disabled={mahasiswaPage === totalStudentPages}
+                    onClick={() => setMahasiswaPage((p) => Math.min(totalStudentPages, p + 1))}
+                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* TAB 3: APPROVAL SAKIT / IZIN */}
-      {activeTab === "APPROVALS" && (
+      {/* VIEW 4: PERSETUJUAN SAKIT / IZIN */}
+      {activeTab === "APPROVAL" && (
         <div className="space-y-6">
           {/* Pending Approval Requests */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <FileCheck size={20} className="text-amber-500" /> Pengajuan Izin/Sakit Menunggu Approval
-            </h2>
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FileCheck size={18} className="text-amber-500" /> Permohonan Izin / Sakit Menunggu Verification
+              </h3>
+              <span className="bg-amber-100 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                {alerts?.pendingRequests?.length || 0} Pending
+              </span>
+            </div>
 
             {alerts?.pendingRequests && alerts.pendingRequests.length > 0 ? (
               <div className="space-y-3">
                 {alerts.pendingRequests.map((req) => (
-                  <div key={req.id} className="p-4 border border-amber-200 bg-amber-50/50 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
+                  <div
+                    key={req.id}
+                    className="p-4 border border-amber-200/80 bg-amber-50/40 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">{req.studentName}</span>
-                        <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-amber-200 text-amber-900">
+                        <span className="font-bold text-slate-900 text-sm">{req.studentName}</span>
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded ${
+                            req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
                           {req.type}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        <span className="font-medium">Alasan:</span> {req.reason}
+                      <p className="text-xs text-slate-600">
+                        <span className="font-semibold text-slate-700">Alasan:</span> {req.reason}
                       </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        Tanggal: {new Date(req.startDate).toLocaleDateString("id-ID")}
+                      <p className="text-[11px] text-slate-400">
+                        Diajukan pada: {new Date(req.createdAt).toLocaleDateString("id-ID")}
                       </p>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleDecideLeave(req.id, "REJECTED")}
-                        className="px-3 py-1.5 bg-red-100 text-red-700 font-bold text-xs rounded-lg hover:bg-red-200 transition flex items-center gap-1"
+                        onClick={() => setRejectingRequestId(req.id)}
+                        className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200"
                       >
                         <XCircle size={14} /> Tolak
                       </button>
                       <button
                         onClick={() => handleDecideLeave(req.id, "APPROVED")}
-                        className="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition flex items-center gap-1"
+                        className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs"
                       >
                         <CheckCircle size={14} /> Setujui
                       </button>
@@ -486,35 +728,53 @@ export const DplDashboardPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-500 italic p-4 text-center bg-gray-50 rounded-xl">
-                Tidak ada pengajuan sakit/izin yang menunggu approval saat ini.
+              <p className="text-xs text-slate-500 italic p-4 text-center bg-slate-50 rounded-xl border border-slate-100">
+                Tidak ada permohonan sakit/izin yang membutuhkan persetujuan saat ini.
               </p>
             )}
           </div>
 
           {/* Riwayat Approval Log */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-gray-800">Riwayat Log Approval DPL</h3>
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <h3 className="text-base font-bold text-slate-900">Riwayat Validasi Izin DPL</h3>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={selectedApprovalStatus}
+                  onChange={(e) => {
+                    setSelectedApprovalStatus(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none"
+                >
+                  <option value="ALL">Semua Status Review</option>
+                  <option value="APPROVED">Disetujui (APPROVED)</option>
+                  <option value="REJECTED">Ditolak (REJECTED)</option>
+                </select>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-600 font-bold border-b border-gray-100">
+                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
                   <tr>
-                    <th className="p-3">Mahasiswa</th>
-                    <th className="p-3">Tipe</th>
-                    <th className="p-3">Alasan</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Tanggal Review</th>
+                    <th className="p-3">Nama Mahasiswa</th>
+                    <th className="p-3">Jenis Izin</th>
+                    <th className="p-3">Alasan / Catatan</th>
+                    <th className="p-3">Status Decision</th>
+                    <th className="p-3">Waktu Review</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {approvalHistory.map((log) => (
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedApprovalHistory.map((log) => (
                     <tr key={log.id}>
-                      <td className="p-3 font-bold text-gray-800">{log.studentName}</td>
+                      <td className="p-3 font-bold text-slate-900">{log.studentName}</td>
                       <td className="p-3 font-semibold">{log.type}</td>
-                      <td className="p-3 text-gray-600">{log.reason}</td>
+                      <td className="p-3 text-slate-600 max-w-xs truncate">{log.reason}</td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-0.5 rounded font-bold ${
+                          className={`px-2 py-0.5 rounded font-bold text-[11px] ${
                             log.status === "APPROVED"
                               ? "bg-emerald-100 text-emerald-800"
                               : "bg-red-100 text-red-800"
@@ -523,44 +783,75 @@ export const DplDashboardPage: React.FC = () => {
                           {log.status}
                         </span>
                       </td>
-                      <td className="p-3 text-gray-400">
+                      <td className="p-3 text-slate-400">
                         {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
                       </td>
                     </tr>
                   ))}
-                  {approvalHistory.length === 0 && (
+
+                  {paginatedApprovalHistory.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-gray-400 italic">
-                        Belum ada riwayat approval.
+                      <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                        Belum ada data riwayat persetujuan.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalApprovalPages > 1 && (
+              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
+                <span className="text-slate-500 font-medium">
+                  Halaman {approvalPage} dari {totalApprovalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={approvalPage === 1}
+                    onClick={() => setApprovalPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                  >
+                    Sebelumnya
+                  </button>
+                  <button
+                    disabled={approvalPage === totalApprovalPages}
+                    onClick={() => setApprovalPage((p) => Math.min(totalApprovalPages, p + 1))}
+                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* TAB 4: PETA SEBARAN */}
+      {/* VIEW 5: PETA SEBARAN */}
       {activeTab === "MAP" && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <MapPin size={20} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tong Sampah Warga
-          </h2>
-          <p className="text-xs text-gray-500">
-            Peta koordinat sebaran RW dampingan kelompok bimbingan dan tempat sampah warga yang telah diaktivasi mahasiswa.
-          </p>
-
-          <div className="bg-emerald-950/90 text-white rounded-2xl p-8 min-h-[350px] flex flex-col items-center justify-center text-center relative overflow-hidden border border-emerald-800 shadow-inner">
-            <MapPin size={48} className="text-emerald-400 animate-bounce mb-3" />
-            <h3 className="text-xl font-bold text-emerald-200">Cakupan Wilayah DPL</h3>
-            <p className="text-xs text-emerald-300 max-w-md mt-1">
-              Terdeteksi <span className="font-extrabold text-white">{mapCoverage?.rwAreas.length || 0} Wilayah RW</span> & <span className="font-extrabold text-white">{mapCoverage?.bins.length || 0} Titik Tempat Sampah Aktif</span>.
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <MapPin size={18} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tong Sampah
+            </h3>
+            <p className="text-xs text-slate-500">
+              Visualisasi batas wilayah RW dampingan dan lokasi tong sampah warga yang telah diaktivasi mahasiswa.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2 justify-center">
+          </div>
+
+          <div className="bg-slate-900 text-white rounded-xl p-8 min-h-[380px] flex flex-col items-center justify-center text-center relative overflow-hidden border border-slate-800 shadow-inner">
+            <MapPin size={42} className="text-emerald-400 animate-bounce mb-3" />
+            <h4 className="text-lg font-bold text-slate-100">Cakupan Wilayah DPL</h4>
+            <p className="text-xs text-slate-300 max-w-md mt-1">
+              Terdeteksi <span className="font-bold text-emerald-400">{mapCoverage?.rwAreas.length || 0} Wilayah RW</span> & <span className="font-bold text-emerald-400">{mapCoverage?.bins.length || 0} Titik Sampah Aktif</span>.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2 justify-center max-w-xl">
               {mapCoverage?.rwAreas.map((rw) => (
-                <span key={rw.id} className="bg-emerald-800/60 border border-emerald-600/40 text-emerald-200 text-xs px-3 py-1 rounded-full">
+                <span
+                  key={rw.id}
+                  className="bg-slate-800/80 border border-slate-700 text-emerald-300 text-xs px-3 py-1 rounded-full font-medium"
+                >
                   {rw.kelurahan} - {rw.name}
                 </span>
               ))}
@@ -571,60 +862,64 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* MODAL 1: DRILLDOWN DAMPAK WARGA DIBANTU */}
       {selectedStudentForCitizens && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start border-b border-gray-100 pb-3">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
               <div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Drill-Down Dampak Nyata</span>
-                <h3 className="text-lg font-bold text-gray-900 mt-1">
-                  Warga Dibantu oleh {selectedStudentForCitizens.name}
+                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  Dampak Pendampingan Warga
+                </span>
+                <h3 className="text-base font-bold text-slate-900 mt-1">
+                  Warga Dibantu: {selectedStudentForCitizens.name}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedStudentForCitizens(null)}
-                className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 font-bold"
               >
                 ✕
               </button>
             </div>
 
             {loadingCitizens ? (
-              <div className="py-12 text-center text-sm text-gray-500 animate-pulse">Memuat data warga & pola buang...</div>
+              <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
+                Memuat data warga & pola buang sampah...
+              </div>
             ) : assistedCitizensData && assistedCitizensData.citizens.length > 0 ? (
               <div className="space-y-3">
-                <div className="bg-blue-50 p-3 rounded-xl flex items-center justify-between text-xs text-blue-900 font-medium">
+                <div className="bg-slate-50 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 border border-slate-200/60">
                   <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
                 </div>
                 {assistedCitizensData.citizens.map((c) => (
-                  <div key={c.binId} className="p-4 border border-gray-100 rounded-xl bg-gray-50/50 space-y-2">
+                  <div key={c.binId} className="p-4 border border-slate-200/60 rounded-xl bg-slate-50/40 space-y-2">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-bold text-gray-900 text-sm">{c.warga?.nama || "Warga Binaan"}</p>
-                        <p className="text-xs text-gray-500">{c.warga?.alamat || "Alamat tercatat"}</p>
+                        <p className="font-bold text-slate-900 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
+                        <p className="text-[11px] text-slate-500">{c.warga?.alamat || "Alamat tercatat"}</p>
                       </div>
                       <span
-                        className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${
+                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
                           c.polaBuangSampah === "RUTIN"
                             ? "bg-emerald-100 text-emerald-800"
                             : c.polaBuangSampah === "KURANG_RUTIN"
                             ? "bg-amber-100 text-amber-800"
-                            : "bg-gray-200 text-gray-700"
+                            : "bg-slate-200 text-slate-700"
                         }`}
                       >
-                        {c.polaBuangSampah === "RUTIN" ? "⚡ Pola Buang Sampah: RUTIN" : "Pola: KURANG RUTIN"}
+                        Pola: {c.polaBuangSampah}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 pt-2 text-xs text-gray-600">
-                      <div><span className="text-gray-400">Kode QR:</span> <br/><strong className="text-gray-800">{c.qrCode}</strong></div>
-                      <div><span className="text-gray-400">Total Setoran:</span> <br/><strong className="text-gray-800">{c.totalSetoranCount}x Setor</strong></div>
-                      <div><span className="text-gray-400">Total Berat:</span> <br/><strong className="text-emerald-700">{c.totalKg} Kg</strong></div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600">
+                      <div><span className="text-slate-400 block text-[10px]">Kode QR Bin</span> <strong className="text-slate-800">{c.qrCode}</strong></div>
+                      <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800">{c.totalSetoranCount}x Setor</strong></div>
+                      <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700">{c.totalKg} Kg</strong></div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-gray-500 italic bg-gray-50 rounded-xl">
+              <div className="py-8 text-center text-xs text-slate-500 italic bg-slate-50 rounded-xl">
                 Mahasiswa ini belum mengaktivasi tempat sampah warga.
               </div>
             )}
@@ -634,38 +929,38 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* MODAL 2: FORM PENILAIAN DPL */}
       {selectedStudentForAssessment && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-start border-b border-gray-100 pb-3">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-bold text-gray-900">Form Penilaian DPL</h3>
-                <p className="text-xs text-gray-500">{selectedStudentForAssessment.name} ({selectedStudentForAssessment.jurusan})</p>
+                <h3 className="text-base font-bold text-slate-900">Form Penilaian Aktivitas DPL</h3>
+                <p className="text-xs text-slate-500">{selectedStudentForAssessment.name} ({selectedStudentForAssessment.jurusan})</p>
               </div>
-              <button onClick={() => setSelectedStudentForAssessment(null)} className="text-gray-400 hover:text-gray-600 font-bold">✕</button>
+              <button onClick={() => setSelectedStudentForAssessment(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
             </div>
 
             <form onSubmit={handleSubmitAssessment} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Skor Penilaian Aktivitas (0 - 100):</label>
+                <label className="block font-bold text-slate-700 mb-1">Skor Penilaian (0 - 100):</label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={assessmentScoreInput}
                   onChange={(e) => setAssessmentScoreInput(Number(e.target.value))}
-                  className="w-full p-2.5 border border-gray-200 rounded-xl font-bold text-base outline-none focus:border-emerald-600"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg font-bold text-sm outline-none focus:border-emerald-600"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Catatan Evaluasi / Umpan Balik DPL:</label>
+                <label className="block font-bold text-slate-700 mb-1">Catatan Evaluasi DPL:</label>
                 <textarea
                   rows={3}
                   value={assessmentNoteInput}
                   onChange={(e) => setAssessmentNoteInput(e.target.value)}
-                  placeholder="Contoh: Mahasiswa sangat aktif membantu pendaftaran warga dan edukasi pemilahan..."
-                  className="w-full p-2.5 border border-gray-200 rounded-xl outline-none focus:border-emerald-600"
+                  placeholder="Catatan evaluasi keaktifan mahasiswa..."
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-emerald-600"
                 />
               </div>
 
@@ -673,19 +968,59 @@ export const DplDashboardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedStudentForAssessment(null)}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAssessment}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
+                  className="flex-1 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition"
                 >
                   {submittingAssessment ? "Menyimpan..." : "Simpan Penilaian"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: PENOLAKAN IZIN CATATAN */}
+      {rejectingRequestId && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-red-600 flex items-center gap-1.5">
+                <XCircle size={18} /> Alasan Penolakan Izin
+              </h3>
+              <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <label className="block font-semibold text-slate-700">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
+              <textarea
+                rows={3}
+                value={rejectionReasonInput}
+                onChange={(e) => setRejectionReasonInput(e.target.value)}
+                placeholder="Contoh: Bukti surat sakit tidak melampirkan keterangan dokter resmi..."
+                className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-red-500"
+              />
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setRejectingRequestId(null)}
+                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleDecideLeave(rejectingRequestId, "REJECTED", rejectionReasonInput)}
+                  className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
+                >
+                  Konfirmasi Penolakan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

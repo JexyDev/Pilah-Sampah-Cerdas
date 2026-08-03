@@ -188,6 +188,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ],
     },
     {
+      header: "Panel Dosen Pembimbing (DPL)",
+      items: [
+        {
+          type: "group",
+          icon: GraduationCap,
+          label: "Navigasi Bimbingan DPL",
+          allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[],
+          children: [
+            { to: "/dashboard-dpl?tab=OVERVIEW", label: "Ringkasan Bimbingan" },
+            { to: "/dashboard-dpl?tab=KELOMPOK", label: "Kelompok Bimbingan" },
+            { to: "/dashboard-dpl?tab=MAHASISWA", label: "Mahasiswa & Dampak Warga" },
+            { to: "/dashboard-dpl?tab=APPROVAL", label: "Persetujuan Sakit / Izin" },
+            { to: "/dashboard-dpl?tab=MAP", label: "Peta Sebaran RW" },
+          ],
+        },
+      ],
+    },
+    {
       header: "Aktivitas Tata Kelola Sampah",
       items: [
         { to: "/setor-sampah", icon: ScanLine, label: "Monitoring Pemilahan Warga", allowed: ALL_ROLES },
