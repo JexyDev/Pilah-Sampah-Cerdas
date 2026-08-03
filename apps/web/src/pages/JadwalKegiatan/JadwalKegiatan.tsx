@@ -143,10 +143,29 @@ const JadwalKegiatan: React.FC = () => {
       }
     }
 
+    let formattedIsoDate: string;
+    try {
+      const timePart = formData.time && formData.time.includes(":") ? formData.time : "00:00";
+      const dateObj = new Date(`${formData.date}T${timePart}:00`);
+      if (isNaN(dateObj.getTime())) {
+        const fallbackDate = new Date(formData.date);
+        if (isNaN(fallbackDate.getTime())) {
+          toast.error("Format tanggal tidak valid");
+          return;
+        }
+        formattedIsoDate = fallbackDate.toISOString();
+      } else {
+        formattedIsoDate = dateObj.toISOString();
+      }
+    } catch {
+      toast.error("Format tanggal tidak valid");
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
-        date: new Date(formData.date).toISOString(),
+        date: formattedIsoDate,
         latitude: formData.polygon.length === 1 ? formData.polygon[0][0] : null,
         longitude: formData.polygon.length === 1 ? formData.polygon[0][1] : null,
         radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 100,

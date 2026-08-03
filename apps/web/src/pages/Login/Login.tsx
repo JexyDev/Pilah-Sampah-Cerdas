@@ -195,26 +195,27 @@ const Login: React.FC = () => {
           </div>
 
           <div
-            className="flex flex-col gap-2 max-h-[175px] overflow-y-auto pr-1"
+            className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1"
             style={{ scrollbarWidth: "thin" }}
           >
             {[
-              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-600 border-red-200" },
-              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-600 border-blue-200" },
-              { phone: "08111111113", label: "Camat Coblong", bg: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-              { phone: "08111111114", label: "Lurah Dago", bg: "bg-cyan-50 text-cyan-600 border-cyan-200" },
-              { phone: "08111111115", label: "RW 06 Dago", bg: "bg-purple-50 text-purple-600 border-purple-200" },
-              { phone: "08111111116", label: "RT 01 Dago", bg: "bg-amber-50 text-amber-600 border-amber-200" },
-              { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-600 border-orange-200" },
-              { phone: "08111111118", label: "Mhs KKN", bg: "bg-teal-50 text-teal-600 border-teal-200" },
-              { phone: "0812001001", label: "Warga", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+              { phone: "08111111111", pass: "password123", label: "Super Admin", bg: "bg-red-50 text-red-600 border-red-200" },
+              { phone: "08111111112", pass: "password123", label: "Admin DLH", bg: "bg-blue-50 text-blue-600 border-blue-200" },
+              { phone: "+6281300000001", pass: "123456", label: "DPL (Dosen)", bg: "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold" },
+              { phone: "08111111113", pass: "password123", label: "Camat Coblong", bg: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+              { phone: "08111111114", pass: "password123", label: "Lurah Dago", bg: "bg-cyan-50 text-cyan-600 border-cyan-200" },
+              { phone: "08111111115", pass: "password123", label: "RW 06 Dago", bg: "bg-purple-50 text-purple-600 border-purple-200" },
+              { phone: "08111111116", pass: "password123", label: "RT 01 Dago", bg: "bg-amber-50 text-amber-600 border-amber-200" },
+              { phone: "08111111117", pass: "password123", label: "Petugas Residu", bg: "bg-orange-50 text-orange-600 border-orange-200" },
+              { phone: "08111111118", pass: "password123", label: "Mhs KKN", bg: "bg-teal-50 text-teal-600 border-teal-200" },
+              { phone: "0812001001", pass: "password123", label: "Warga Mandiri", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" },
             ].map((acc) => (
               <button
                 key={acc.phone}
                 type="button"
                 onClick={() => {
                   setIdentifier(acc.phone);
-                  setPassword("password123");
+                  setPassword(acc.pass || "password123");
                   setIdentifierError("");
                   setPasswordError("");
                   toast.success(`Akun ${acc.label} (${acc.phone}) dipilih`, { id: "autofill-toast", duration: 1500 });

@@ -63,6 +63,7 @@ const ManajemenTempatSampah: React.FC = () => {
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBin, setSelectedBin] = useState<string | null>(null);
+  const [selectedBinDetail, setSelectedBinDetail] = useState<any | null>(null);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -566,8 +567,15 @@ const ManajemenTempatSampah: React.FC = () => {
                           </>
                         )}
                         <button
+                          onClick={() => setSelectedBinDetail(bin)}
+                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                          title="Detail Bin"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
                           onClick={() => openLogModal(bin.kode)}
-                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
+                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                           title="Log Transaksi"
                         >
                           <History size={18} />
@@ -748,6 +756,71 @@ const ManajemenTempatSampah: React.FC = () => {
               <button
                 className="px-4 py-2 border border-outline-variant/50 text-on-surface rounded-lg text-[12px] font-bold hover:bg-surface-container transition-colors cursor-pointer"
                 onClick={closeLogModal}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Detail Bin Modal */}
+      {selectedBinDetail && (
+        <div className="fixed inset-0 bg-on-surface/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-[18px] font-bold text-slate-800 flex items-center gap-2">
+                <Map className="text-primary" size={20} />
+                Detail Smart Bin
+              </h3>
+              <button
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+                onClick={() => setSelectedBinDetail(null)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <img
+                  className="w-32 h-32"
+                  alt="QR Code"
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(selectedBinDetail.kode)}`}
+                />
+                <span className="text-xs font-mono font-bold text-primary tracking-widest uppercase">
+                  {selectedBinDetail.kode}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 font-bold block mb-0.5">Pemilik Warga</span>
+                  <span className="font-bold text-slate-700">{selectedBinDetail.wargaName || "Publik / Umum"}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 font-bold block mb-0.5">Lokasi RT/RW</span>
+                  <span className="font-bold text-slate-700">{selectedBinDetail.rtRw || "-"}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 font-bold block mb-0.5">Kategori</span>
+                  <span className="font-bold text-emerald-600">{selectedBinDetail.category?.name || selectedBinDetail.categoryId || "Umum"}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 font-bold block mb-0.5">Kapasitas Maks</span>
+                  <span className="font-bold text-slate-700">{selectedBinDetail.maxCapacityLiter || 25} Liter ({selectedBinDetail.kapasitas || 0}% terisi)</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 col-span-2">
+                  <span className="text-slate-400 font-bold block mb-0.5">Koordinat GPS</span>
+                  <span className="font-mono text-slate-700 font-bold">
+                    {selectedBinDetail.latitude && selectedBinDetail.longitude
+                      ? `${selectedBinDetail.latitude}, ${selectedBinDetail.longitude}`
+                      : "Belum diset (0, 0)"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-200 flex justify-end bg-slate-50">
+              <button
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                onClick={() => setSelectedBinDetail(null)}
               >
                 Tutup
               </button>

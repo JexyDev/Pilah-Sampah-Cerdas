@@ -26,7 +26,13 @@ export const adminMahasiswaService = {
         include: {
           studentProfile: {
             include: {
+              kelompok: true,
               assignedPolygon: true,
+            },
+          },
+          rtRw: {
+            include: {
+              kelurahan: true,
             },
           },
         },

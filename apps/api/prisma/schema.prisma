@@ -30,6 +30,7 @@ model User {
   status             String               @default("Aktif")
   address            String?              @map("alamat")
   phone              String               @unique @map("no_telepon")
+  mustChangePassword Boolean              @default(false) @map("harus_ganti_password")
   wargaSubtype       String?              @map("subtipe_warga")
   bankSampahLedger   BankSampahLedger?
   aiRequestLogs      AiRequestLog[]
@@ -60,6 +61,8 @@ model User {
   bins               Bin[]                @relation("UserBins")
   claimedTasks       DispatchTask[]       @relation("ClaimedTasks")
   rtRwAreaOwned      RtRwArea?            @relation("RwPetugasResidu")
+  studentLeaveRequests StudentLeaveRequest[] @relation("StudentLeaveRequests")
+  reviewedLeaveRequests StudentLeaveRequest[] @relation("ReviewedLeaveRequests")
 
   @@map("pengguna")
 }
@@ -203,7 +206,7 @@ model Bin {
 model StudentKkn {
   id                String       @id @default(uuid())
   userId            String       @unique @map("id_pengguna")
-  nim               String       @unique
+  nim               String?      @unique
   jurusan           String
   fakultas          String
   noWa              String       @map("no_wa")
@@ -215,6 +218,7 @@ model StudentKkn {
   updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
   kelompokId        String?      @map("id_kelompok")
   assessmentScore   Decimal?     @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
+  isKetua           Boolean      @default(false) @map("is_ketua")
   kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id])
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedPolygon   RtRwArea?    @relation(fields: [assignedPolygonId], references: [id])
@@ -578,9 +582,12 @@ model SetoranManual {
 }
 
 model KelompokKkn {
-  id        String       @id @default(uuid())
-  name      String       @unique @map("nama")
-  dplId     String?      @map("id_dpl")
+  id            String       @id @default(uuid())
+  name          String       @unique @map("nama")
+  kelurahan     String?      @map("kelurahan")
+  cakupanRw     Json?        @map("cakupan_rw")
+  dplNamaMentah String?      @map("dpl_nama_mentah")
+  dplId         String?      @map("id_dpl")
   createdAt DateTime     @default(now()) @map("dibuat_pada")
   updatedAt DateTime     @updatedAt @map("diperbarui_pada")
   dpl       User?        @relation("DplKelompok", fields: [dplId], references: [id])
@@ -645,3 +652,24 @@ enum DispatchStatus {
   COMPLETED
   ESCALATED
 }
+
+model StudentLeaveRequest {
+  id              String    @id @default(uuid())
+  studentId       String    @map("id_mahasiswa")
+  type            String    @map("tipe")
+  reason          String    @map("alasan")
+  evidenceUrl     String?   @map("url_bukti")
+  startDate       DateTime  @map("tanggal_mulai")
+  endDate         DateTime  @map("tanggal_selesai")
+  status          String    @default("PENDING") @map("status")
+  reviewedById    String?   @map("id_pereview")
+  reviewedAt      DateTime? @map("direview_pada")
+  rejectionReason String?   @map("alasan_penolakan")
+  createdAt       DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime  @updatedAt @map("diperbarui_pada")
+  student         User      @relation("StudentLeaveRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  reviewedBy      User?     @relation("ReviewedLeaveRequests", fields: [reviewedById], references: [id])
+
+  @@map("pengajuan_izin_mahasiswa")
+}
+

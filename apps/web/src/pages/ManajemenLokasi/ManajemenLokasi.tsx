@@ -115,6 +115,7 @@ const ManajemenLokasi: React.FC = () => {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKelurahan, setSelectedKelurahan] = useState("Semua Kelurahan");
+  const [selectedRt, setSelectedRt] = useState("Semua RT");
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -264,11 +265,26 @@ const ManajemenLokasi: React.FC = () => {
     return `${name}, Kec: Coblong`;
   };
 
+  const uniqueRts = useMemo(() => {
+    return Array.from(
+      new Set(
+        locations
+          .map((l) => {
+            const match = l.rw.match(/RT\s*(\d+)/i);
+            return match ? match[1] : null;
+          })
+          .filter(Boolean)
+      )
+    ).sort() as string[];
+  }, [locations]);
+
   const filteredLocations = locations.filter((loc) => {
     const matchesSearch = loc.rw.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesKelurahan =
       selectedKelurahan === "Semua Kelurahan" || loc.kelurahan === selectedKelurahan;
-    return matchesSearch && matchesKelurahan;
+    const matchesRt =
+      selectedRt === "Semua RT" || loc.rw.toLowerCase().includes(`rt ${selectedRt.toLowerCase()}`);
+    return matchesSearch && matchesKelurahan && matchesRt;
   });
 
   const paginatedLocations = useMemo(() => {
@@ -588,12 +604,27 @@ const ManajemenLokasi: React.FC = () => {
                 <select
                   value={selectedKelurahan}
                   onChange={(e) => { setSelectedKelurahan(e.target.value); setCurrentPage(1); }}
-                  className="w-full pl-3 pr-8 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] appearance-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full pl-3 pr-8 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] appearance-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-medium"
                 >
                   <option value="Semua Kelurahan">Semua Kelurahan</option>
                   {kelurahans.map((k) => (
                     <option key={k.id} value={k.name}>
                       {k.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-2 text-on-surface-variant pointer-events-none" size={18} />
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedRt}
+                  onChange={(e) => { setSelectedRt(e.target.value); setCurrentPage(1); }}
+                  className="w-full pl-3 pr-8 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-lg text-[13px] appearance-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-medium"
+                >
+                  <option value="Semua RT">Semua RT</option>
+                  {uniqueRts.map((rt) => (
+                    <option key={rt} value={rt}>
+                      RT {rt}
                     </option>
                   ))}
                 </select>

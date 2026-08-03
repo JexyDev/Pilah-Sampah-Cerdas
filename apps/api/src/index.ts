@@ -38,6 +38,7 @@ import kknAttendanceRouter from "./routes/kknAttendanceRoutes.js";
 import pemanfaatanRouter from "./routes/pemanfaatanRoutes.js";
 import pengangkutanRouter from "./routes/pengangkutanRoutes.js";
 import kelompokRouter from "./routes/kelompokRoutes.js";
+import dplRouter from "./routes/dplRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
@@ -99,6 +100,7 @@ app.use("/api/v1", kknAttendanceRouter);
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
+app.use("/api/v1/dpl", dplRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);

@@ -17,7 +17,8 @@
     "install:all": "npm run install:api && npm run install:web",
     "prisma:generate": "cd apps/api && npx prisma generate",
     "prisma:migrate": "cd apps/api && npx prisma migrate dev",
-    "test:api": "cd apps/api && npx vitest run"
+    "test:api": "cd apps/api && npx vitest run",
+    "bulk-insert-kkn": "npm --prefix apps/api run bulk-insert-kkn --"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"

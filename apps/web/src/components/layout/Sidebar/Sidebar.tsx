@@ -180,6 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       header: "Layanan Utama",
       items: [
         { to: "/", icon: LayoutDashboard, label: "Dashboard", allowed: ALL_ROLES },
+        { to: "/dashboard-dpl", icon: GraduationCap, label: "Dashboard DPL", allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
         { to: "/kkn-portal", icon: Compass, label: "Portal Pendampingan", allowed: ["MAHASISWA_KKN"] as UserRole[] },
         { to: "/residu-portal", icon: Shield, label: "Portal Pengawasan", allowed: ["PETUGAS_RESIDU"] as UserRole[] },
         { to: "/rw/approval", icon: ShieldCheck, label: "Approval Bin & Petugas", allowed: ["RW", "RT"] as UserRole[] },

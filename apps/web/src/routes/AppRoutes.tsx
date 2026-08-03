@@ -49,6 +49,7 @@ import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
 import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
 import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
+import DplDashboardPage from "../pages/dpl/DplDashboardPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -192,6 +193,14 @@ const AppRoutes: React.FC = () => {
               allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "MAHASISWA_KKN"]}
             >
               <ManajemenLokasi />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="dashboard-dpl"
+          element={
+            <ProtectedRoute allowedRoles={["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"]}>
+              <DplDashboardPage />
             </ProtectedRoute>
           }
         />

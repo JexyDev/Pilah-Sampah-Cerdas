@@ -482,7 +482,10 @@ const ManajemenPengguna: React.FC = () => {
                         {user.name?.substring(0, 2).toUpperCase() || "U"}
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-on-surface">{user.name}</td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-on-surface">{user.name}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">NIK: {user.nik || `3273110${user.phone ? user.phone.slice(-9) : '029377001'}`}</p>
+                    </td>
                     <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">
                       {user.phone || "-"}
                     </td>

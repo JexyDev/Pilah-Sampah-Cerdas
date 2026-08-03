@@ -1,24 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
 import { toast } from "react-hot-toast";
-import { Loader2, Plus, X, Pencil, Trash2, Search, GraduationCap, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  X,
+  Pencil,
+  Trash2,
+  Search,
+  GraduationCap,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  Users,
+  CheckCircle,
+  MapPin,
+  Eye,
+  Building,
+  Phone,
+  FileSpreadsheet,
+  Download,
+  Filter
+} from "lucide-react";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
 
 const ManajemenMahasiswa: React.FC = () => {
   const { user } = useAuthStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+
   const [mahasiswas, setMahasiswas] = useState<any[]>([]);
+  const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Filters State
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Semua");
+  const [kelompokFilter, setKelompokFilter] = useState("Semua");
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"add" | "edit">("add");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedStudentDetail, setSelectedStudentDetail] = useState<any | null>(null);
+
   const [formData, setFormData] = useState({
     nama_lengkap: "",
     nim: "",
     universitas: "UNIKOM",
     no_telepon: "",
+    area_tugas: "",
     status_aktif: "Aktif",
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,350 +61,631 @@ const ManajemenMahasiswa: React.FC = () => {
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<any>(null);
 
   const fetchMahasiswas = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/admin/mahasiswa?search=${searchTerm}`);
+      const response = await api.get(`/admin/mahasiswa?search=${searchTerm}&limit=500`);
       setMahasiswas(response.data.users || []);
     } catch (err: any) {
+      setError("Gagal memuat data mahasiswa dari server.");
       toast.error(err.response?.data?.message || "Gagal memuat data mahasiswa");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    setCurrentPage(1); // reset to page 1 on search
-    fetchMahasiswas();
-  }, [searchTerm]);
-
-  const handleSubmit = async () => {
-    if (!formData.nama_lengkap || !formData.nim || !formData.no_telepon) {
-      toast.error("Nama, NIM, dan No Telepon wajib diisi");
-      return;
-    }
-    
-    // Ensure no_telepon starts with +62
-    let phone = formData.no_telepon;
-    if (phone.startsWith("0")) phone = "+62" + phone.substring(1);
-    else if (!phone.startsWith("+62")) phone = "+62" + phone;
-
+  const fetchAreas = async () => {
     try {
-      const payload = { ...formData, no_telepon: phone };
-      if (editId) {
-        await api.put(`/admin/mahasiswa/${editId}`, payload);
-        toast.success("Data mahasiswa berhasil diperbarui");
-      } else {
-        await api.post("/admin/mahasiswa", payload);
-        toast.success("Mahasiswa berhasil ditambahkan");
-      }
-      setIsModalOpen(false);
-      setEditId(null);
-      fetchMahasiswas();
-      setFormData({ nama_lengkap: "", nim: "", universitas: "UNIKOM", no_telepon: "", status_aktif: "Aktif" });
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menyimpan data");
+      const res = await api.get("/bins/areas");
+      setAreas(res.data?.data || []);
+    } catch (err) {
+      console.error("Failed to fetch areas:", err);
     }
   };
 
-  const handleEdit = (mhs: any) => {
-    setEditId(mhs.id);
+  useEffect(() => {
+    fetchMahasiswas();
+    fetchAreas();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, kelompokFilter]);
+
+  // Extract unique Kelompok KKN list
+  const uniqueKelompoks = useMemo(() => {
+    const set = new Set<string>();
+    mahasiswas.forEach((m) => {
+      if (m.studentProfile?.kelompok?.name) {
+        set.add(m.studentProfile.kelompok.name);
+      }
+    });
+    return Array.from(set).sort();
+  }, [mahasiswas]);
+
+  // Filtered List
+  const filteredMahasiswas = useMemo(() => {
+    return mahasiswas.filter((m) => {
+      const matchesSearch =
+        (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.studentProfile?.nim || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.phone || "").toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "Semua" || m.status === statusFilter;
+
+      const matchesKelompok =
+        kelompokFilter === "Semua" ||
+        m.studentProfile?.kelompok?.name === kelompokFilter;
+
+      return matchesSearch && matchesStatus && matchesKelompok;
+    });
+  }, [mahasiswas, searchTerm, statusFilter, kelompokFilter]);
+
+  const handleOpenAddModal = () => {
+    setModalType("add");
+    setEditingId(null);
+    setFormData({
+      nama_lengkap: "",
+      nim: "",
+      universitas: "UNIKOM",
+      no_telepon: "",
+      area_tugas: areas[0]?.id ? String(areas[0].id) : "",
+      status_aktif: "Aktif",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (mhs: any) => {
+    setModalType("edit");
+    setEditingId(mhs.id);
     setFormData({
       nama_lengkap: mhs.name || "",
       nim: mhs.studentProfile?.nim || "",
       universitas: mhs.studentProfile?.fakultas || "UNIKOM",
       no_telepon: mhs.phone || "",
+      area_tugas: mhs.rtRwId ? String(mhs.rtRwId) : "",
       status_aktif: mhs.status || "Aktif",
     });
     setIsModalOpen(true);
   };
 
-  const handleDeleteClick = (id: string) => {
-    setStudentToDelete(id);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.nama_lengkap.trim() || !formData.nim.trim() || !formData.no_telepon.trim()) {
+      toast.error("Nama Lengkap, NIM, dan No WhatsApp wajib diisi");
+      return;
+    }
+
+    let phone = formData.no_telepon.trim();
+    if (phone.startsWith("0")) phone = "+62" + phone.substring(1);
+    else if (!phone.startsWith("+62")) phone = "+62" + phone;
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        ...formData,
+        no_telepon: phone,
+        area_tugas: formData.area_tugas ? Number(formData.area_tugas) : undefined,
+      };
+
+      if (modalType === "add") {
+        await api.post("/admin/mahasiswa", payload);
+        toast.success("Mahasiswa KKN berhasil ditambahkan!");
+      } else {
+        await api.put(`/admin/mahasiswa/${editingId}`, payload);
+        toast.success("Data mahasiswa KKN berhasil diperbarui!");
+      }
+      setIsModalOpen(false);
+      fetchMahasiswas();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menyimpan data mahasiswa");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (mhs: any) => {
+    setStudentToDelete(mhs);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!studentToDelete) return;
     try {
-      await api.delete(`/admin/mahasiswa/${studentToDelete}`);
-      toast.success("Mahasiswa berhasil dinonaktifkan");
+      await api.delete(`/admin/mahasiswa/${studentToDelete.id}`);
+      toast.success("Akun mahasiswa berhasil dinonaktifkan!");
       setIsDeleteModalOpen(false);
       setStudentToDelete(null);
       fetchMahasiswas();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menghapus mahasiswa");
+      toast.error(err.response?.data?.message || "Gagal menonaktifkan mahasiswa");
     }
   };
 
+  const handleExportCSV = () => {
+    if (filteredMahasiswas.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "Wilayah RT/RW", "Status"];
+    const csvRows = [headers.join(",")];
+
+    filteredMahasiswas.forEach((m) => {
+      const row = [
+        `"${m.name || ""}"`,
+        `"${m.studentProfile?.nim || ""}"`,
+        `"${m.studentProfile?.fakultas || "UNIKOM"}"`,
+        `"${m.phone || ""}"`,
+        `"${m.studentProfile?.kelompok?.name || "-"}"`,
+        `"${m.rtRw?.name || "-"}"`,
+        `"${m.status || "Aktif"}"`,
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `data-mahasiswa-kkn-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Berhasil mengunduh ${filteredMahasiswas.length} data mahasiswa!`);
+  };
+
   // Pagination logic
-  const totalPages = Math.ceil(mahasiswas.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredMahasiswas.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedMahasiswas = mahasiswas.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedMahasiswas = filteredMahasiswas.slice(startIndex, startIndex + rowsPerPage);
 
   if (user?.peran !== "SUPER_ADMIN") {
-    return <div className="p-8 text-center text-error">Akses Ditolak. Halaman ini khusus Super Admin.</div>;
+    return (
+      <div className="p-8 text-center text-rose-600 font-bold bg-white rounded-2xl m-6 border border-rose-200">
+        Akses Ditolak. Halaman ini khusus Super Admin.
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen bg-surface-container-lowest font-sans">
+    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
       <Sidebar isOpen={true} onClose={() => {}} />
-      <main className="flex-1 overflow-y-auto p-8 relative">
-        <div className="flex justify-between items-end mb-8">
+
+      <main className="flex-1 overflow-y-auto p-8 relative space-y-6">
+        {/* Header Banner */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div>
-            <h1 className="text-[32px] font-bold text-on-surface flex items-center gap-3">
-              <GraduationCap className="text-primary" size={32} />
-              Manajemen Mahasiswa KKN
-            </h1>
-            <p className="text-on-surface-variant text-[14px] mt-1">
-              Kelola data mahasiswa KKN, penempatan, dan akses sistem
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Mahasiswa KKN</h1>
+              <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
+                <GraduationCap size={13} /> Modul Penugasan
+              </span>
+            </div>
+            <p className="text-sm text-slate-500 mt-1">
+              Kelola data mahasiswa pendamping KKN, plotting wilayah RT/RW, dan penetapan kelompok kerja.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setEditId(null);
-              setFormData({ nama_lengkap: "", nim: "", universitas: "UNIKOM", no_telepon: "", status_aktif: "Aktif" });
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold shadow-sm hover:shadow-md transition-all hover:bg-primary/90"
-          >
-            <Plus size={20} />
-            Tambah Mahasiswa
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
+            >
+              <Plus size={15} /> Tambah Mahasiswa
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
+            >
+              <Download size={15} /> Ekspor CSV
+            </button>
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-outline-variant/30 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-[18px] font-bold text-on-surface">Daftar Mahasiswa</h2>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
-              <input
-                type="text"
-                placeholder="Cari nama atau NIM..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl focus:outline-none focus:border-primary text-[14px]"
-              />
-            </div>
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Mahasiswa</p>
+            <p className="text-2xl font-black text-slate-800 mt-1">{mahasiswas.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Status Aktif</p>
+            <p className="text-2xl font-black text-emerald-600 mt-1">
+              {mahasiswas.filter((m) => m.status === "Aktif").length}
+            </p>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Kelompok KKN</p>
+            <p className="text-2xl font-black text-blue-600 mt-1">{uniqueKelompoks.length} Kelompok</p>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Wilayah Dampingan</p>
+            <p className="text-2xl font-black text-purple-600 mt-1">{areas.length} RT/RW</p>
+          </div>
+        </div>
+
+        {/* Filter Controls Bar */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+          <div className="relative w-full lg:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Cari Nama, NIM, No. WA..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
           </div>
 
-          {loading ? (
-            <div className="flex justify-center items-center h-48">
-              <Loader2 className="animate-spin text-primary" size={32} />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-surface-container-low text-on-surface-variant text-[12px] uppercase tracking-wider">
-                    <th className="p-4 font-bold rounded-tl-lg">Nama & NIM</th>
-                    <th className="p-4 font-bold">Universitas</th>
-                    <th className="p-4 font-bold">No WhatsApp</th>
-                    <th className="p-4 font-bold">Status</th>
-                    <th className="p-4 font-bold text-right rounded-tr-lg">Aksi</th>
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <Filter size={15} className="text-slate-400" />
+            <span className="text-xs font-bold text-slate-600">Filter:</span>
+            
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+            >
+              <option value="Semua">Semua Status</option>
+              <option value="Aktif">Aktif</option>
+              <option value="Nonaktif">Nonaktif</option>
+            </select>
+
+            <select
+              value={kelompokFilter}
+              onChange={(e) => setKelompokFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+            >
+              <option value="Semua">Semua Kelompok</option>
+              {uniqueKelompoks.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Table Master Data */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-14 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama & NIM</th>
+                  <th className="py-3.5 px-4">Universitas / Fakultas</th>
+                  <th className="py-3.5 px-4">No. WhatsApp</th>
+                  <th className="py-3.5 px-4">Kelompok KKN</th>
+                  <th className="py-3.5 px-4">Wilayah Tugas</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  <th className="py-3.5 px-4 text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="animate-spin text-primary" size={32} />
+                        <p className="font-bold text-xs">Memuat data mahasiswa KKN...</p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="text-[14px] text-on-surface divide-y divide-outline-variant/30">
-                  {paginatedMahasiswas.map((mhs) => (
-                    <tr key={mhs.id} className="hover:bg-surface-container-lowest/50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold">{mhs.name}</div>
-                        <div className="text-on-surface-variant text-[12px]">{mhs.studentProfile?.nim || "-"}</div>
+                ) : paginatedMahasiswas.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
+                      Tidak ada data mahasiswa yang cocok dengan kriteria pencarian.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedMahasiswas.map((mhs, idx) => (
+                    <tr key={mhs.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {startIndex + idx + 1}
                       </td>
-                      <td className="p-4">{mhs.studentProfile?.fakultas || "-"}</td>
-                      <td className="p-4">{mhs.phone}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded-full text-[12px] font-bold ${
-                          mhs.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                        }`}>
+                      <td className="py-3.5 px-4">
+                        <p className="font-bold text-slate-900">{mhs.name}</p>
+                        <p className="text-[10px] font-mono text-slate-400">NIM: {mhs.studentProfile?.nim || "-"}</p>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                        {mhs.studentProfile?.fakultas || "UNIKOM"}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        <a
+                          href={`https://wa.me/${(mhs.phone || "").replace(/\+/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          <Phone size={12} className="text-emerald-500" />
+                          {mhs.phone || "-"}
+                        </a>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200 font-bold text-[10px] inline-block">
+                          {mhs.studentProfile?.kelompok?.name || "Belum Plotting"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {mhs.rtRw?.name ? (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={13} className="text-primary" />
+                            {mhs.rtRw.name}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">Belum diset</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            mhs.status === "Aktif"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : "bg-rose-100 text-rose-800 border border-rose-200"
+                          }`}
+                        >
                           {mhs.status}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2">
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex justify-center gap-1">
                           <button
-                            onClick={() => handleEdit(mhs)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="Edit"
+                            onClick={() => setSelectedStudentDetail(mhs)}
+                            className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                            title="Detail Profil"
                           >
-                            <Pencil size={16} />
+                            <Eye size={15} />
                           </button>
                           <button
-                            onClick={() => handleDeleteClick(mhs.id)}
-                            className="p-1.5 text-error hover:bg-error/10 rounded transition-colors"
-                            title="Hapus"
+                            onClick={() => handleOpenEditModal(mhs)}
+                            className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                            title="Edit Data"
                           >
-                            <Trash2 size={16} />
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(mhs)}
+                            className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                            title="Nonaktifkan"
+                          >
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                  {mahasiswas.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-on-surface-variant">
-                        Belum ada data mahasiswa KKN.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-          {/* Pagination Controls */}
-          {mahasiswas.length > 0 && !loading && (
-            <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-outline-variant/30 mt-4 gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-on-surface-variant">Tampilkan</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="bg-surface-container-low border border-outline-variant/50 rounded-md px-2 py-1 text-sm focus:border-primary focus:outline-none cursor-pointer"
+          {/* Pagination */}
+          {!loading && totalPages > 1 && (
+            <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs font-bold text-slate-500">
+                Halaman <span className="text-slate-900 font-black">{currentPage}</span> dari{" "}
+                <span className="text-slate-900 font-black">{totalPages}</span>
+              </p>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-on-surface-variant">data</span>
-              </div>
+                  <ChevronLeft size={14} /> Sebelum
+                </button>
 
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-on-surface-variant">
-                  {startIndex + 1}-{Math.min(startIndex + rowsPerPage, mahasiswas.length)} dari {mahasiswas.length}
-                </span>
-                <div className="flex gap-1 bg-surface-container-low rounded-lg p-1 border border-outline-variant/30">
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 rounded-md hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft size={18} className="text-on-surface-variant" />
-                  </button>
-                  <div className="flex items-center px-3 text-sm font-bold text-on-surface">
-                    {currentPage} / {totalPages || 1}
-                  </div>
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className="p-1.5 rounded-md hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  >
-                    <ChevronRight size={18} className="text-on-surface-variant" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  Lanjut <ChevronRight size={14} />
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-on-surface/30 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-lg w-[500px] max-w-[90%] flex flex-col">
-              <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low/30">
-                <h3 className="text-[18px] font-bold text-on-surface">{editId ? "Edit Mahasiswa" : "Tambah Mahasiswa"}</h3>
+        {/* Modal Detail Student */}
+        {selectedStudentDetail && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <GraduationCap className="text-primary" size={20} />
+                  Detail Profil Mahasiswa KKN
+                </h3>
                 <button
-                  className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setSelectedStudentDetail(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
                 >
-                  <X />
+                  <X size={20} />
                 </button>
               </div>
-              <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[12px] font-bold text-on-surface-variant">Nama Lengkap <span className="text-error">*</span></label>
-                  <input
-                    type="text"
-                    value={formData.nama_lengkap}
-                    onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
-                    className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary w-full text-[14px]"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[12px] font-bold text-on-surface-variant">NIM <span className="text-error">*</span></label>
-                  <input
-                    type="text"
-                    value={formData.nim}
-                    onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
-                    className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary w-full text-[14px]"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[12px] font-bold text-on-surface-variant">Universitas</label>
-                  <input
-                    type="text"
-                    value={formData.universitas}
-                    onChange={(e) => setFormData({ ...formData, universitas: e.target.value })}
-                    className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary w-full text-[14px]"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[12px] font-bold text-on-surface-variant">No WhatsApp (+62) <span className="text-error">*</span></label>
-                  <input
-                    type="text"
-                    value={formData.no_telepon}
-                    onChange={(e) => setFormData({ ...formData, no_telepon: e.target.value })}
-                    className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary w-full text-[14px]"
-                    placeholder="Contoh: 08123456789 atau +628123456789"
-                  />
-                </div>
-                {editId && (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[12px] font-bold text-on-surface-variant">Status Akun</label>
-                    <select
-                      value={formData.status_aktif}
-                      onChange={(e) => setFormData({ ...formData, status_aktif: e.target.value })}
-                      className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary w-full text-[14px] bg-white"
-                    >
-                      <option value="Aktif">Aktif</option>
-                      <option value="Nonaktif">Nonaktif</option>
-                    </select>
+
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-primary/20">
+                    {selectedStudentDetail.name?.substring(0, 2).toUpperCase()}
                   </div>
-                )}
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-base">{selectedStudentDetail.name}</h4>
+                    <p className="text-xs font-mono text-slate-500">NIM: {selectedStudentDetail.studentProfile?.nim || "-"}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-bold block mb-0.5">Universitas</span>
+                    <span className="font-bold text-slate-700">{selectedStudentDetail.studentProfile?.fakultas || "UNIKOM"}</span>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-bold block mb-0.5">No. WhatsApp</span>
+                    <span className="font-mono font-bold text-slate-700">{selectedStudentDetail.phone || "-"}</span>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-bold block mb-0.5">Kelompok KKN</span>
+                    <span className="font-bold text-blue-600">{selectedStudentDetail.studentProfile?.kelompok?.name || "Belum Plotting"}</span>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-bold block mb-0.5">Wilayah Tugas</span>
+                    <span className="font-bold text-emerald-600">{selectedStudentDetail.rtRw?.name || "-"}</span>
+                  </div>
+                </div>
               </div>
-              <div className="p-5 border-t border-outline-variant/30 bg-surface-container-lowest flex justify-end gap-3 rounded-b-xl">
+
+              <div className="px-6 py-3 border-t border-slate-200 flex justify-end bg-slate-50">
                 <button
-                  className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setSelectedStudentDetail(null)}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 >
-                  Batal
-                </button>
-                <button
-                  className="px-4 py-2 text-[14px] font-bold bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors"
-                  onClick={handleSubmit}
-                >
-                  {editId ? "Simpan Perubahan" : "Simpan Data"}
+                  Tutup
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Modal Confirm Delete */}
-        {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all">
-              <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border-4 border-red-100">
-                <AlertTriangle size={26} />
+        {/* Modal Tambah / Edit */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 className="text-lg font-bold text-slate-800">
+                  {modalType === "add" ? "Tambah Mahasiswa KKN" : "Edit Mahasiswa KKN"}
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <h3 className="text-xl font-bold text-on-surface mb-2">Nonaktifkan Akun?</h3>
-              <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
-                Apakah Anda yakin ingin menonaktifkan akun mahasiswa ini? Mereka tidak akan bisa login lagi ke sistem.
+
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.nama_lengkap}
+                    onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">NIM *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.nim}
+                    onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Universitas / Perguruan Tinggi</label>
+                  <input
+                    type="text"
+                    value={formData.universitas}
+                    onChange={(e) => setFormData({ ...formData, universitas: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp (+62) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.no_telepon}
+                    onChange={(e) => setFormData({ ...formData, no_telepon: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    placeholder="081234567890"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Wilayah RT/RW Penugasan</label>
+                  <select
+                    value={formData.area_tugas}
+                    onChange={(e) => setFormData({ ...formData, area_tugas: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                  >
+                    <option value="">Pilih Wilayah RT/RW</option>
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} (Kel. {a.kelurahan?.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {modalType === "edit" && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Status Akun</label>
+                    <select
+                      value={formData.status_aktif}
+                      onChange={(e) => setFormData({ ...formData, status_aktif: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                    >
+                      <option value="Aktif">Aktif</option>
+                      <option value="Nonaktif">Nonaktif</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {isSubmitting && <Loader2 className="animate-spin" size={16} />}
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && studentToDelete && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center border border-slate-200">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4 border-4 border-rose-50">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">Nonaktifkan Akun</h3>
+              <p className="text-xs text-slate-500 mb-6">
+                Apakah Anda yakin ingin menonaktifkan akun <strong>{studentToDelete.name}</strong>?
               </p>
               <div className="flex justify-center gap-3">
                 <button
                   onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors text-xs"
                 >
                   Batal
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm shadow-red-200 cursor-pointer transition-all"
+                  className="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 cursor-pointer transition-colors text-xs shadow-sm"
                 >
                   Nonaktifkan
                 </button>

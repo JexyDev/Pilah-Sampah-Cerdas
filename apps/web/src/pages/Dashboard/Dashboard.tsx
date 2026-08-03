@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
+import DplDashboardPage from "../dpl/DplDashboardPage";
 import { Badge } from "../../components/common/Badge";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 
@@ -1328,6 +1329,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
 // ========== Main Dashboard ==========
 const Dashboard: React.FC = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
@@ -1363,7 +1365,9 @@ const Dashboard: React.FC = () => {
       user?.peran === "MAHASISWA_KKN" ||
       user?.peran === "PETUGAS_RESIDU" ||
       user?.peran === "RW" ||
-      user?.peran === "RT"
+      user?.peran === "RT" ||
+      user?.peran === "DPL" ||
+      user?.peran === "DOSEN_PEMBIMBING"
     ) {
       setLoading(false);
       return;
@@ -1552,6 +1556,11 @@ const Dashboard: React.FC = () => {
     return <ResiduDashboard />;
   }
 
+  // Render DPL Dashboard
+  if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") {
+    return <DplDashboardPage />;
+  }
+
   // Scaling factors for Trend SVG
   const maxWeightTrend = Math.max(
     ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.residu || 0, d.weight || 0)),
@@ -1674,12 +1683,19 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-gutter pb-12 text-on-surface">
-      {/* === Time Filter === */}
-      <div className="flex justify-end mb-4">
+      {/* === Time Filter & Actions === */}
+      <div className="flex justify-end gap-3 mb-4">
+        <button
+          onClick={() => setShowComplianceModal(true)}
+          className="bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/30 text-[12px] font-bold px-4 py-2 rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
+        >
+          <LineChart size={16} />
+          <span>Kepatuhan RT/RW</span>
+        </button>
         <select
           value={timeFilter}
           onChange={(e) => setTimeFilter(e.target.value)}
-          className="bg-white border border-outline-variant/30 text-[12px] font-bold text-on-surface px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="bg-white border border-outline-variant/30 text-[12px] font-bold text-on-surface px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
         >
           <option value="semua">Semua Waktu</option>
           <option value="harian">Harian (Hari Ini)</option>
@@ -2077,8 +2093,36 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => setSelectedBinForDetail(bin)} className="p-1 hover:text-primary text-gray-400 rounded hover:bg-surface-container-high transition-colors cursor-pointer">
+                          <button
+                            onClick={() => setSelectedBinForDetail(bin)}
+                            className="p-1.5 hover:text-primary text-slate-400 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Detail Bin"
+                          >
                             <Eye size={16} />
+                          </button>
+                          <button
+                            onClick={() => navigate(`/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
+                            className="p-1.5 hover:text-blue-600 text-slate-400 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Edit Bin"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm(`Apakah Anda yakin ingin menghapus tempat sampah ${bin.qrCode || bin.kode}?`)) {
+                                try {
+                                  await api.delete(`/bins/${bin.id || bin.kode}`);
+                                  toast.success("Tempat sampah berhasil dihapus");
+                                  setRecentBins(prev => prev.filter(b => (b.id !== bin.id && b.kode !== bin.kode)));
+                                } catch (err: any) {
+                                  toast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
+                                }
+                              }
+                            }}
+                            className="p-1.5 hover:text-rose-600 text-slate-400 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Hapus Bin"
+                          >
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>

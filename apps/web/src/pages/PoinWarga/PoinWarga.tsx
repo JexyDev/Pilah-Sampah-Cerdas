@@ -9,16 +9,19 @@ import { BarChart3, Search, Loader2, PlusCircle, MinusCircle, X, SearchX, Star, 
 import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const PoinWarga: React.FC = () => {
   const [leaders, setLeaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState(""); // POIN-02
-  const [showAll, setShowAll] = useState(false); // POIN-03
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [userDetail, setUserDetail] = useState<any>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  const { user } = useAuthStore();
+  const isAuthorizedToAdjust = ["SUPER_ADMIN", "ADMIN_DLH", "RW"].includes(user?.peran || "");
+
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [adjustPointsVal, setAdjustPointsVal] = useState(50);
+  const [adjustDesc, setAdjustDesc] = useState("Bonus Aktivitas Daur Ulang Mandiri");
+  const [isSubmittingAdjust, setIsSubmittingAdjust] = useState(false);
 
   useEffect(() => {
     const fetchLeaders = async () => {
@@ -47,6 +50,26 @@ const PoinWarga: React.FC = () => {
 
   // POIN-03: Lihat Semua â€” show top 10 or all
   const displayedLeaders = showAll ? filteredLeaders : filteredLeaders.slice(0, 10);
+
+  const handleAdjustPointsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setIsSubmittingAdjust(true);
+    try {
+      await api.post("/points/adjust", {
+        userId: selectedUser.id,
+        points: Number(adjustPointsVal),
+        description: adjustDesc,
+      });
+      toast.success("Penyesuaian poin berhasil disimpan!");
+      setIsAdjustModalOpen(false);
+      handleViewDetail(selectedUser);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menyesuaikan poin");
+    } finally {
+      setIsSubmittingAdjust(false);
+    }
+  };
 
   // POIN-01: Fetch detail profil & riwayat poin saat klik "Detail Profil"
   const handleViewDetail = async (leader: any) => {
@@ -290,17 +313,28 @@ const PoinWarga: React.FC = () => {
               </div>
 
               {/* Total poin */}
-              <div className="bg-green-50 rounded-xl p-4 flex items-center gap-3 border border-green-100">
-                <Star className="text-primary" size={28} />
-                <div>
-                  <p className="text-[28px] font-bold text-primary">
-                    {(selectedUser.poin || 0).toLocaleString()}
-                  </p>
-                  <p className="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
-                    Total Poin Terkumpul
-                  </p>
+              <div className="bg-green-50 rounded-xl p-4 flex items-center justify-between border border-green-100">
+                <div className="flex items-center gap-3">
+                  <Star className="text-primary" size={28} />
+                  <div>
+                    <p className="text-[28px] font-bold text-primary">
+                      {(selectedUser.poin || 0).toLocaleString()}
+                    </p>
+                    <p className="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
+                      Total Poin Terkumpul
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {isAuthorizedToAdjust && (
+                <button
+                  onClick={() => setIsAdjustModalOpen(true)}
+                  className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                >
+                  <PlusCircle size={16} /> Beri / Penyesuaian Poin Manual
+                </button>
+              )}
 
               {/* Riwayat poin */}
               <div>
@@ -361,6 +395,73 @@ const PoinWarga: React.FC = () => {
           </section>
         )}
       </div>
+      {/* Modal Penyesuaian Poin Manual */}
+      {isAdjustModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-[18px] font-extrabold text-slate-800 flex items-center gap-2">
+                <Star className="text-amber-500" size={20} /> Penyesuaian Poin Warga
+              </h3>
+              <button
+                onClick={() => setIsAdjustModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAdjustPointsSubmit} className="p-6 space-y-4">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-600">Penerima Poin:</span>
+                <span className="font-extrabold text-slate-900">{selectedUser.nama} ({selectedUser.rtRw})</span>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Jumlah Poin (Gunakan nilai negatif (-) untuk pengurangan)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={adjustPointsVal}
+                  onChange={(e) => setAdjustPointsVal(Number(e.target.value))}
+                  placeholder="Contoh: 50 atau -20"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-black text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Keterangan / Alasan Penyesuaian
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={adjustDesc}
+                  onChange={(e) => setAdjustDesc(e.target.value)}
+                  placeholder="Contoh: Bonus partisipasi acara kebersihan RW"
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsAdjustModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAdjust}
+                  className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  {isSubmittingAdjust && <Loader2 className="animate-spin" size={16} />}
+                  Simpan Poin
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
