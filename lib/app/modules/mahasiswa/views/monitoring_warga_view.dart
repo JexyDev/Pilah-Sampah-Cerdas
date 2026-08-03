@@ -59,10 +59,26 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     }).toList();
   }
 
-  List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga) {
-    // Convert Map to WargaDampingan so the UI can render it safely
+  List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga, String userKel, String userRt) {
     try {
-      return allWarga.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
+      return allWarga.map((e) {
+        final w = WargaDampingan.fromJson(e as Map<String, dynamic>);
+        final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
+        final targetRt = w.rtRw.isNotEmpty ? w.rtRw : userRt;
+        return WargaDampingan(
+          binId: w.binId,
+          wargaName: w.wargaName,
+          address: w.address.contains('RT') ? w.address : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel',
+          kelurahan: targetKel,
+          rtRw: targetRt,
+          mahasiswaId: w.mahasiswaId,
+          recentLogs: w.recentLogs,
+          isActivated: w.isActivated,
+          role: w.role,
+          totalPoints: w.totalPoints,
+          apiCorrectPercentage: w.apiCorrectPercentage,
+        );
+      }).toList();
     } catch (_) {
       return [];
     }
@@ -82,7 +98,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     final aktivasiState = isAktivasiBinMode ? ref.watch(aktivasiWargaProvider) : null;
 
     final allWargaList = isAktivasiBinMode 
-        ? _getFilteredWargaAktivasi(aktivasiState?.wargaList ?? [])
+        ? _getFilteredWargaAktivasi(aktivasiState?.wargaList ?? [], userKel, userRt)
         : state.wargaList.where((w) {
             // Jika bukan mode aktivasi, hanya tampilkan Warga Dampingan milik mahasiswa ini
             if (!w.isActivated) return false;
@@ -98,41 +114,40 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
             );
           }).toList();
 
-    List<String> kelurahans;
-    List<String> rtrws;
+    List<String> kelurahanList;
+    List<String> rtRwList;
 
     if (isAktivasiBinMode) {
-      // Saat Aktivasi Bin, hanya bisa melihat RT/RW & Kelurahan sendiri
-      kelurahans = [userKel];
-      rtrws = [userRt];
+      // Saat Aktivasi Bin, default & pilihan dropdown dikunci ke wilayah penugasan mahasiswa itu sendiri
+      _selectedKelurahan = userKel;
+      _selectedRtRw = userRt;
+      kelurahanList = [userKel];
+      rtRwList = [userRt];
     } else {
-      kelurahans = allWargaList
+      final kelurahans = allWargaList
           .where((w) => w.role == 'WARGA' && w.kelurahan.isNotEmpty)
           .map((w) => w.kelurahan)
           .toSet()
           .toList();
       kelurahans.sort();
 
-      rtrws = allWargaList
+      final rtrws = allWargaList
           .where((w) => w.role == 'WARGA' && w.rtRw.isNotEmpty && 
                        (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
           .map((w) => w.rtRw)
           .toSet()
           .toList();
       rtrws.sort();
-    }
 
-    final kelurahanList = <String>['Semua', ...kelurahans];
-    final rtRwList = <String>['Semua', ...rtrws];
+      kelurahanList = <String>['Semua', ...kelurahans];
+      rtRwList = <String>['Semua', ...rtrws];
 
-    // Check if current selected is valid
-    if (!kelurahanList.contains(_selectedKelurahan)) {
-      _selectedKelurahan = isAktivasiBinMode ? userKel : 'Semua';
-    }
-
-    // Check if current selected rtRw is valid
-    if (!rtRwList.contains(_selectedRtRw)) {
-      _selectedRtRw = isAktivasiBinMode ? userRt : 'Semua';
+      if (!kelurahanList.contains(_selectedKelurahan)) {
+        _selectedKelurahan = 'Semua';
+      }
+      if (!rtRwList.contains(_selectedRtRw)) {
+        _selectedRtRw = 'Semua';
+      }
     }
 
     final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode);
