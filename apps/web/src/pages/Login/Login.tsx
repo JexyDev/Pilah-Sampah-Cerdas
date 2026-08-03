@@ -183,28 +183,31 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-            <p className="font-bold flex items-center gap-1.5 text-slate-800">
-              <Info className="text-primary" size={16} />
-              Pilih Akun Demo (9 Role Lengkap)
+        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 text-[11px] text-slate-700 shadow-sm space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+            <p className="font-extrabold flex items-center gap-1.5 text-slate-800 text-[12px]">
+              <Info className="text-emerald-600" size={16} />
+              Pilih Akun Demo
             </p>
-            <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
+            <span className="bg-slate-200/80 text-slate-600 font-mono px-2 py-0.5 rounded-md text-[10px] font-medium tracking-tight">
               pass: password123
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5">
+          <div
+            className="flex flex-col gap-2 max-h-[175px] overflow-y-auto pr-1"
+            style={{ scrollbarWidth: "thin" }}
+          >
             {[
-              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" },
-              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" },
-              { phone: "08111111113", label: "Camat", bg: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100" },
-              { phone: "08111111114", label: "Lurah", bg: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100" },
-              { phone: "08111111115", label: "RW 06", bg: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100" },
-              { phone: "08111111116", label: "RT 01", bg: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" },
-              { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100" },
-              { phone: "08111111118", label: "Mhs KKN", bg: "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100" },
-              { phone: "0812001001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200 hover:bg-green-100" },
+              { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-600 border-red-200" },
+              { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-600 border-blue-200" },
+              { phone: "08111111113", label: "Camat Coblong", bg: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+              { phone: "08111111114", label: "Lurah Dago", bg: "bg-cyan-50 text-cyan-600 border-cyan-200" },
+              { phone: "08111111115", label: "RW 06 Dago", bg: "bg-purple-50 text-purple-600 border-purple-200" },
+              { phone: "08111111116", label: "RT 01 Dago", bg: "bg-amber-50 text-amber-600 border-amber-200" },
+              { phone: "08111111117", label: "Petugas", bg: "bg-orange-50 text-orange-600 border-orange-200" },
+              { phone: "08111111118", label: "Mhs KKN", bg: "bg-teal-50 text-teal-600 border-teal-200" },
+              { phone: "0812001001", label: "Warga", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" },
             ].map((acc) => (
               <button
                 key={acc.phone}
@@ -216,10 +219,14 @@ const Login: React.FC = () => {
                   setPasswordError("");
                   toast.success(`Akun ${acc.label} (${acc.phone}) dipilih`, { id: "autofill-toast", duration: 1500 });
                 }}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs ${acc.bg}`}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200/90 bg-white hover:border-emerald-500 hover:shadow-xs transition-all cursor-pointer group text-left"
               >
-                <span className="font-extrabold text-[10px] leading-tight">{acc.label}</span>
-                <span className="text-[8px] font-mono opacity-80 mt-0.5">{acc.phone}</span>
+                <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border ${acc.bg}`}>
+                  {acc.label}
+                </span>
+                <span className="text-[11px] font-mono font-medium text-slate-500 group-hover:text-slate-900 transition-colors">
+                  {acc.phone}
+                </span>
               </button>
             ))}
           </div>
