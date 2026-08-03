@@ -3,10 +3,35 @@ import { notificationIntegrationService as notificationService } from "./notific
 
 const prisma = new PrismaClient();
 
+/**
+ * Helper to retrieve all RtRwArea IDs under the same RW number and Kelurahan.
+ */
+async function getRwAreaIds(rtRwId: number): Promise<number[]> {
+  const area = await prisma.rtRwArea.findUnique({ where: { id: rtRwId } });
+  if (!area) return [rtRwId];
+
+  const rwPart =
+    area.name
+      .split("/")
+      .map((s) => s.trim())
+      .find((s) => s.startsWith("RW")) || area.name;
+
+  const matchingAreas = await prisma.rtRwArea.findMany({
+    where: {
+      kelurahanId: area.kelurahanId,
+      name: { contains: rwPart },
+    },
+    select: { id: true },
+  });
+
+  return matchingAreas.length > 0 ? matchingAreas.map((a) => a.id) : [rtRwId];
+}
+
 export const rwService = {
   getDashboard: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     const bins = await prisma.bin.findMany({
-      where: { rtRwId },
+      where: { rtRwId: { in: areaIds } },
       include: {
         category: true,
         user: { select: { name: true, address: true, phone: true } },
@@ -46,9 +71,10 @@ export const rwService = {
   },
 
   getPendingBins: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.bin.findMany({
       where: {
-        rtRwId,
+        rtRwId: { in: areaIds },
         status: "PENDING_APPROVAL",
       },
       include: {
@@ -62,6 +88,7 @@ export const rwService = {
   },
 
   approveBin: async (binId: string, rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.$transaction(async (tx) => {
       const bin = await tx.bin.findUnique({
         where: { id: binId },
@@ -69,11 +96,11 @@ export const rwService = {
       });
 
       if (!bin || bin.status !== "PENDING_APPROVAL") {
-        throw new Error("Bin not found or not in PENDING_APPROVAL status");
+        throw new Error("Bin tidak ditemukan atau status bukan PENDING_APPROVAL");
       }
 
-      if (bin.rtRwId !== rtRwId) {
-        throw new Error("Bin does not belong to your RW area");
+      if (!bin.rtRwId || !areaIds.includes(bin.rtRwId)) {
+        throw new Error("Bin ini tidak berada di wilayah RW Anda");
       }
 
       const updatedBin = await tx.bin.update({
@@ -135,9 +162,10 @@ export const rwService = {
   },
 
   rejectBin: async (binId: string, reason: string, rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     const binCheck = await prisma.bin.findUnique({ where: { id: binId } });
-    if (!binCheck || binCheck.rtRwId !== rtRwId) {
-      throw new Error("Bin not found or does not belong to your RW area");
+    if (!binCheck || !binCheck.rtRwId || !areaIds.includes(binCheck.rtRwId)) {
+      throw new Error("Bin tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
     const bin = await prisma.bin.update({
@@ -155,16 +183,19 @@ export const rwService = {
     return bin;
   },
 
-  getPendingPetugas: async (_rtRwId: number) => {
+  getPendingPetugas: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.petugasResidu.findMany({
       where: {
         OR: [{ whitelistStatus: "PENDING" }, { user: { status: "Pending" } }],
+        user: { rtRwId: { in: areaIds } },
       },
       include: { user: true },
     });
   },
 
-  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", _rtRwId: number) => {
+  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     let petugasCheck = await prisma.petugasResidu.findUnique({
       where: { id: petugasId },
       include: { user: true },
@@ -176,7 +207,10 @@ export const rwService = {
       });
     }
     if (!petugasCheck) {
-      throw new Error("Petugas not found");
+      throw new Error("Petugas tidak ditemukan");
+    }
+    if (!petugasCheck.user?.rtRwId || !areaIds.includes(petugasCheck.user.rtRwId)) {
+      throw new Error("Petugas tidak terdaftar di wilayah RW Anda");
     }
 
     const petugas = await prisma.petugasResidu.update({
@@ -209,16 +243,18 @@ export const rwService = {
   },
 
   getInactiveBins: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.bin.findMany({
-      where: { rtRwId, status: "INACTIVE" },
+      where: { rtRwId: { in: areaIds }, status: "INACTIVE" },
       include: { user: true, category: true },
     });
   },
 
   markBinBroken: async (binId: string, userId: string, rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     const binCheck = await prisma.bin.findUnique({ where: { id: binId } });
-    if (!binCheck || binCheck.rtRwId !== rtRwId) {
-      throw new Error("Bin not found or does not belong to your RW area");
+    if (!binCheck || !binCheck.rtRwId || !areaIds.includes(binCheck.rtRwId)) {
+      throw new Error("Bin tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
     const bin = await prisma.bin.update({
@@ -238,11 +274,11 @@ export const rwService = {
   },
 
   getPendingIde: async (rtRwId: number) => {
-    // Ambil ide dari warga yang ada di RW tersebut
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.ideDaurUlang.findMany({
       where: {
         statusApproval: "PENDING",
-        user: { rtRwId },
+        user: { rtRwId: { in: areaIds } },
       },
       include: { user: true },
     });
@@ -254,14 +290,15 @@ export const rwService = {
     rwUserId: string,
     rtRwId: number
   ) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.$transaction(async (tx) => {
       const ideCheck = await tx.ideDaurUlang.findUnique({
         where: { id: ideId },
         include: { user: true },
       });
 
-      if (!ideCheck || ideCheck.user.rtRwId !== rtRwId) {
-        throw new Error("Idea not found or does not belong to your RW area");
+      if (!ideCheck || !ideCheck.user.rtRwId || !areaIds.includes(ideCheck.user.rtRwId)) {
+        throw new Error("Ide tidak ditemukan atau milik warga di luar wilayah RW Anda");
       }
 
       const ide = await tx.ideDaurUlang.update({
@@ -295,15 +332,17 @@ export const rwService = {
   },
 
   getPendingFacilities: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.facility.findMany({
-      where: { rtRwId, statusApproval: "PENDING" },
+      where: { rtRwId: { in: areaIds }, statusApproval: "PENDING" },
     });
   },
 
   verifyFacility: async (facilityId: string, action: "APPROVED" | "REJECTED", rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
-    if (!facilityCheck || facilityCheck.rtRwId !== rtRwId) {
-      throw new Error("Facility not found or does not belong to your RW area");
+    if (!facilityCheck || !facilityCheck.rtRwId || !areaIds.includes(facilityCheck.rtRwId)) {
+      throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
     return prisma.facility.update({
@@ -313,8 +352,9 @@ export const rwService = {
   },
 
   getFacilities: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     return prisma.facility.findMany({
-      where: { rtRwId, statusApproval: "APPROVED" },
+      where: { rtRwId: { in: areaIds }, statusApproval: "APPROVED" },
       include: { productionLogs: true },
     });
   },
@@ -327,9 +367,10 @@ export const rwService = {
     periode: string,
     rtRwId: number
   ) => {
+    const areaIds = await getRwAreaIds(rtRwId);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
-    if (!facilityCheck || facilityCheck.rtRwId !== rtRwId) {
-      throw new Error("Facility not found or does not belong to your RW area");
+    if (!facilityCheck || !facilityCheck.rtRwId || !areaIds.includes(facilityCheck.rtRwId)) {
+      throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
     return prisma.facilityProductionLog.create({

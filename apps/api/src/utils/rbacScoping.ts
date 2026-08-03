@@ -62,22 +62,12 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 3. RW is scoped by RW
+  // 3. RW is scoped strictly by RW number and Kelurahan
   if (role === "RW") {
     const areaName = dbUser.rtRw?.name; // e.g. "RT 02 / RW 06"
-    if (!areaName || !areaName.includes("RW")) {
-      return {
-        userFilter: { id: "none" },
-        binFilter: { id: "none" },
-        householdFilter: { id: "none" },
-        wasteLogFilter: { id: "none" },
-      };
-    }
-    const rwPart = areaName
-      .split("/")
-      .map((s) => s.trim())
-      .find((s) => s.startsWith("RW"));
-    if (!rwPart) {
+    const kelurahanId = dbUser.rtRw?.kelurahanId;
+
+    if (!areaName || !kelurahanId) {
       return {
         userFilter: { id: "none" },
         binFilter: { id: "none" },
@@ -86,11 +76,17 @@ export async function getScopingFilters(user: {
       };
     }
 
+    const rwPart =
+      areaName
+        .split("/")
+        .map((s) => s.trim())
+        .find((s) => s.startsWith("RW")) || areaName;
+
     return {
-      userFilter: { rtRw: { name: { contains: rwPart } } },
-      binFilter: { rtRw: { name: { contains: rwPart } } },
-      householdFilter: { rtRw: { name: { contains: rwPart } } },
-      wasteLogFilter: { bin: { rtRw: { name: { contains: rwPart } } } },
+      userFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
+      binFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
+      householdFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
+      wasteLogFilter: { bin: { rtRw: { kelurahanId, name: { contains: rwPart } } } },
     };
   }
 

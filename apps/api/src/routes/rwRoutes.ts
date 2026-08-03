@@ -25,11 +25,16 @@ router.use(async (req, res, next) => {
       if (dbUser?.rtRwId) {
         req.user.rtRwId = dbUser.rtRwId;
       } else {
-        const firstArea = await prisma.rtRwArea.findFirst({ select: { id: true } });
-        req.user.rtRwId = firstArea?.id || 1;
+        return res.status(403).json({
+          error: "FORBIDDEN",
+          message: "Akun RW/RT Anda belum terikat dengan wilayah tugas di database.",
+        });
       }
     } catch {
-      req.user.rtRwId = 1;
+      return res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Gagal mengonfirmasi wilayah tugas RW/RT.",
+      });
     }
   }
   next();
