@@ -12,6 +12,8 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 import { PrismaClient } from "@prisma/client";
 
+import { uploadResiduImage } from "../middlewares/uploadMiddleware.js";
+
 const router = Router();
 const prisma = new PrismaClient();
 
@@ -64,6 +66,7 @@ router.post(
   authMiddleware,
   roleMiddleware(["PETUGAS_RESIDU"]),
   verifiedPetugasGuard,
+  uploadResiduImage,
   residuController.recordViolation
 );
 router.post(
@@ -71,6 +74,7 @@ router.post(
   authMiddleware,
   roleMiddleware(["PETUGAS_RESIDU"]),
   verifiedPetugasGuard,
+  uploadResiduImage,
   residuController.submitLog
 );
 router.get(

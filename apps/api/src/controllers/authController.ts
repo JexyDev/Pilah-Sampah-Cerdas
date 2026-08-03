@@ -339,6 +339,53 @@ export class AuthController {
   }
 
   /**
+   * Handle Change Password for Petugas Residu / Users
+   * POST /api/v1/auth/change-password
+   */
+  async changePassword(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ success: false, message: "Tidak memiliki akses" });
+        return;
+      }
+
+      const oldPassword = req.body.oldPassword || req.body.currentPassword;
+      const newPassword = req.body.newPassword;
+
+      if (!oldPassword || !newPassword) {
+        res.status(400).json({
+          success: false,
+          message: "oldPassword dan newPassword wajib diisi",
+        });
+        return;
+      }
+
+      if (typeof newPassword !== "string" || newPassword.length < 6) {
+        res.status(400).json({
+          success: false,
+          message: "Kata sandi baru minimal 6 karakter",
+        });
+        return;
+      }
+
+      await authService.updatePassword(req.user.userId, oldPassword, newPassword);
+
+      res.status(200).json({
+        success: true,
+        message: "Kata sandi berhasil diperbarui",
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "User tidak ditemukan" });
+      } else if (error.message === "INVALID_CREDENTIALS") {
+        res.status(401).json({ success: false, message: "Kata sandi lama tidak sesuai" });
+      } else {
+        res.status(500).json({ success: false, message: "Terjadi kesalahan pada server" });
+      }
+    }
+  }
+
+  /**
    * Get Current Authenticated User Profile
    */
   async getCurrentUser(req: Request, res: Response): Promise<void> {

@@ -219,6 +219,7 @@ router.put("/profile", authMiddleware, authController.updateProfile);
  *         description: User not found
  */
 router.put("/password", authMiddleware, authController.updatePassword);
+router.post("/change-password", authMiddleware, authController.changePassword);
 
 router.post(
   "/register/admin-dlh",

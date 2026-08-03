@@ -82,7 +82,24 @@ export class ResiduController {
   async recordViolation(req: Request, res: Response) {
     try {
       const petugasUserId = req.user!.userId;
-      const result = await residuService.recordViolation(petugasUserId, req.body);
+
+      let evidencePhotoUrl = req.body.evidencePhotoUrl || req.body.evidence;
+      if (req.file) {
+        evidencePhotoUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f = filesObj.evidence?.[0] || filesObj.image?.[0] || filesObj.evidencePhotoUrl?.[0];
+        if (f) evidencePhotoUrl = `/uploads/${f.filename}`;
+      }
+
+      const result = await residuService.recordViolation(petugasUserId, {
+        binQrCode: req.body.binQrCode,
+        type: req.body.type,
+        severity: req.body.severity,
+        evidencePhotoUrl: evidencePhotoUrl || "/uploads/default-violation.jpg",
+        notes: req.body.notes,
+      });
+
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[ResiduController] recordViolation error:", error);
@@ -93,7 +110,8 @@ export class ResiduController {
   async getDashboardSummary(req: Request, res: Response) {
     try {
       const petugasUserId = req.user!.userId;
-      const data = await residuService.getDashboardSummary(petugasUserId);
+      const period = (req.query.period as string) || "hari";
+      const data = await residuService.getDashboardSummary(petugasUserId, period);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[ResiduController] getDashboardSummary error:", error);
@@ -110,11 +128,31 @@ export class ResiduController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
   async submitLog(req: Request, res: Response) {
     try {
       const petugasUserId = req.user!.userId;
-      const data = await residuService.submitLog(petugasUserId, req.body);
-      res.status(200).json({ success: true, data });
+
+      let imagePhotoUrl = req.body.imagePhotoUrl || req.body.image;
+      if (req.file) {
+        imagePhotoUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f = filesObj.image?.[0] || filesObj.evidence?.[0] || filesObj.imagePhotoUrl?.[0];
+        if (f) imagePhotoUrl = `/uploads/${f.filename}`;
+      }
+
+      const data = await residuService.submitLog(petugasUserId, {
+        actualWeightKg: Number(req.body.actualWeightKg),
+        classification: req.body.classification,
+        imagePhotoUrl: imagePhotoUrl || "/uploads/default-residu.jpg",
+        rtRw: req.body.rtRw,
+        kelurahan: req.body.kelurahan,
+        notes: req.body.notes,
+        logId: req.body.logId,
+      });
+
+      res.status(201).json({ success: true, data });
     } catch (error: any) {
       console.error("[ResiduController] submitLog error:", error);
       res.status(400).json({ success: false, message: error.message });
