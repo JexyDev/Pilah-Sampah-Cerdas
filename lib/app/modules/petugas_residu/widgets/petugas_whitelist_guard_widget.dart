@@ -64,7 +64,7 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
           Text(
             isRejected
                 ? 'Pengajuan akun Petugas Residu Anda ditolak oleh Admin. Silakan hubungi pengurus RW setempat untuk informasi lebih lanjut.'
-                : 'Akun Anda telah terdaftar sebagai Petugas Residu dan sedang dalam tahap verifikasi Whitelist RW/Admin. Fitur penjemputan & pelaporan akan otomatis aktif setelah akun Anda disetujui.',
+                : 'Akun Anda telah terdaftar sebagai Petugas Residu dan sedang dalam tahap verifikasi Whitelist RW/Admin. Fitur input timbangan residu RT/RW & pelaporan akan otomatis aktif setelah akun Anda disetujui.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,

@@ -78,7 +78,7 @@ class PetugasResiduView extends ConsumerWidget {
                     Row(
                       children: [
                         _buildStatCard(
-                          title: 'Perlu Diambil',
+                          title: 'Siap Ditimbang',
                           value: '${dashboard?.totalJadwal ?? 8}',
                           unit: 'Lokasi',
                           icon: Icons.delete_outline_rounded,
@@ -86,7 +86,7 @@ class PetugasResiduView extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         _buildStatCard(
-                          title: 'Sudah Diambil',
+                          title: 'Sudah Dicatat',
                           value: '${dashboard?.sudahDiambil ?? 3}',
                           unit: 'Selesai',
                           icon: Icons.task_alt_rounded,
@@ -98,7 +98,7 @@ class PetugasResiduView extends ConsumerWidget {
                     Row(
                       children: [
                         _buildStatCard(
-                          title: 'Pelanggaran',
+                          title: 'Laporan Violasi',
                           value: '${dashboard?.pelanggaranCount ?? 1}',
                           unit: 'Laporan',
                           icon: Icons.report_problem_outlined,
@@ -106,28 +106,24 @@ class PetugasResiduView extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         _buildStatCard(
-                          title: 'Kg Terkumpul',
+                          title: 'Total Residu',
                           value: '${dashboard?.totalWeightKg ?? 42.5}',
                           unit: 'Kg',
-                          icon: Icons.scale_rounded,
+                          icon: Icons.scale_outlined,
                           color: AppColors.primaryBlue,
                         ),
                       ],
                     ),
                     const SizedBox(height: AppDimensions.lg),
 
-                    // Quick Actions
-                    const Text('Aksi Cepat Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
-                    const SizedBox(height: 10),
+                    // Quick Action Input Timbangan & Lapor
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: isApproved
-                                ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu)
-                                : null,
-                            icon: const Icon(Icons.scale_rounded, size: 18),
-                            label: const Text('Ambil Sampah'),
+                            onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu) : null,
+                            icon: const Icon(Icons.scale_rounded, size: 20),
+                            label: const Text('Input Timbangan', style: TextStyle(fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryGreen,
                               foregroundColor: Colors.white,
@@ -136,17 +132,14 @@ class PetugasResiduView extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: isApproved
-                                ? () => Navigator.pushNamed(context, AppRoutes.laporPelanggaran)
-                                : null,
-                            icon: const Icon(Icons.warning_amber_rounded, size: 18),
-                            label: const Text('Lapor Violation'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.dangerRed,
-                              foregroundColor: Colors.white,
+                          child: OutlinedButton.icon(
+                            onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.laporPelanggaran) : null,
+                            icon: const Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.dangerRed),
+                            label: const Text('Lapor Pelanggaran', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.dangerRed)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.dangerRed),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -156,12 +149,12 @@ class PetugasResiduView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.xl),
 
-                    // Jadwal Penjemputan Header
+                    // Daftar Residu RT/RW Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Jadwal Penjemputan Hilir',
+                          'Daftar Residu RT/RW (Input Timbangan)',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                         ),
                         Text(
@@ -177,7 +170,7 @@ class PetugasResiduView extends ConsumerWidget {
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(24.0),
-                          child: Text('Tidak ada tempat sampah residu yang memerlukan penjemputan saat ini.', style: TextStyle(color: AppColors.textSecondary)),
+                          child: Text('Tidak ada tempat sampah residu yang siap diinput timbangan saat ini.', style: TextStyle(color: AppColors.textSecondary)),
                         ),
                       )
                     else
@@ -216,8 +209,8 @@ class PetugasResiduView extends ConsumerWidget {
           Expanded(
             child: Text(
               isActive
-                  ? 'Jadwal Penjemputan Aktif (Window 06:00–08:00 & 16:00–18:00)'
-                  : 'Di Luar Window Waktu Penjemputan (Status Read-Only)',
+                  ? 'Window Input Timbangan Aktif (06:00–08:00 & 16:00–18:00)'
+                  : 'Di Luar Window Waktu Input Timbangan (Status Read-Only)',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
