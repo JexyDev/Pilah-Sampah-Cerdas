@@ -284,7 +284,13 @@ export class KknService {
 
   async getWargaList(
     kknUserId: string,
-    filters: { status?: string; kelurahan?: string; rtRwId?: number; rtRw?: string; search?: string }
+    filters: {
+      status?: string;
+      kelurahan?: string;
+      rtRwId?: number;
+      rtRw?: string;
+      search?: string;
+    }
   ) {
     let studentRtRwId: number | undefined = filters.rtRwId;
     let studentKelurahanName: string | undefined = filters.kelurahan;
@@ -409,7 +415,10 @@ export class KknService {
         name: w.name,
         wargaName: w.name,
         phone: w.phone,
-        address: household?.address || w.address || (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
+        address:
+          household?.address ||
+          w.address ||
+          (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
         rtRw: rtRwName,
         role: "WARGA",
@@ -419,8 +428,12 @@ export class KknService {
         lng: lng,
         isActivated,
         mahasiswaId: registeredStudentId,
-        binOrganikId: binOrganik?.qrCode || (primaryBin?.category?.name === "ORGANIC" ? primaryBin.qrCode : null),
-        binAnorganikId: binAnorganik?.qrCode || (primaryBin?.category?.name === "NON_ORGANIC" ? primaryBin.qrCode : null),
+        binOrganikId:
+          binOrganik?.qrCode ||
+          (primaryBin?.category?.name === "ORGANIC" ? primaryBin.qrCode : null),
+        binAnorganikId:
+          binAnorganik?.qrCode ||
+          (primaryBin?.category?.name === "NON_ORGANIC" ? primaryBin.qrCode : null),
         needsReeducation: false,
         recentLogs,
       };
@@ -814,8 +827,12 @@ export class KknService {
 
     const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
 
-    const poskoLat = student.assignedPolygon?.latitude ? Number(student.assignedPolygon.latitude) : -6.975412;
-    const poskoLng = student.assignedPolygon?.longitude ? Number(student.assignedPolygon.longitude) : 107.632145;
+    const poskoLat = student.assignedPolygon?.latitude
+      ? Number(student.assignedPolygon.latitude)
+      : -6.975412;
+    const poskoLng = student.assignedPolygon?.longitude
+      ? Number(student.assignedPolygon.longitude)
+      : 107.632145;
 
     return {
       groupId: group.id,
@@ -957,7 +974,9 @@ export class KknService {
 
     if (warga.fcmToken) {
       try {
-        const { notificationIntegrationService } = await import("./notificationIntegrationService.js");
+        const { notificationIntegrationService } = await import(
+          "./notificationIntegrationService.js"
+        );
         await notificationIntegrationService.sendPushNotification(
           warga.fcmToken,
           title,
