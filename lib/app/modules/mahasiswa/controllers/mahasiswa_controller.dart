@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../core/utils/network_exception_helper.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -54,15 +55,36 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final repo = _ref.read(kknRepositoryProvider);
+      final user = _ref.read(authProvider).user;
+      final userId = user?.id ?? '';
+      final userNim = user?.nim ?? '';
+
       final results = await Future.wait([
         repo.getDashboard(),
         repo.getWargaDampingan(),
       ]);
 
+      final rawWarga = results[1] as List<WargaDampingan>;
+
+      // Filter ketat: HANYA warga yang terikat pada akun mahasiswa ini (berdasarkan ID atau NIM)
+      final myWarga = rawWarga.where((w) {
+        if (!w.isActivated) return false;
+        
+        final mhsId = w.mahasiswaId.trim();
+        if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
+          return false;
+        }
+        
+        final matchUserId = userId.isNotEmpty && mhsId == userId;
+        final matchUserNim = userNim.isNotEmpty && mhsId == userNim;
+
+        return matchUserId || matchUserNim;
+      }).toList();
+
       state = state.copyWith(
         isLoading: false,
         dashboard: results[0] as KknDashboardData,
-        wargaList: results[1] as List<WargaDampingan>,
+        wargaList: myWarga,
       );
     } catch (e) {
       state = state.copyWith(
@@ -85,5 +107,6 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
 final mahasiswaControllerProvider =
     StateNotifierProvider<MahasiswaNotifier, MahasiswaState>((ref) {
+  ref.watch(authProvider.select((s) => s.user?.id));
   return MahasiswaNotifier(ref);
 });

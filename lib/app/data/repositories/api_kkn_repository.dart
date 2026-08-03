@@ -26,6 +26,18 @@ class ApiKknRepository implements KknRepository {
     if (response.statusCode == 200) {
       if (response.data is Map<String, dynamic>) {
         final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+        
+        // DEBUGGING LOG UNTUK MELIHAT RESPON ASLI BACKEND
+        if (data.isNotEmpty) {
+          print("=== DEBUG API WARGA ===");
+          print("Warga pertama: ${data[0]['wargaName'] ?? data[0]['name']}");
+          print("mahasiswaId: ${data[0]['mahasiswaId'] ?? data[0]['registeredByStudentId']}");
+          print("status: ${data[0]['status'] ?? data[0]['isActivated']}");
+          print("binOrganikId: ${data[0]['binOrganikId']}");
+          print("Total data: ${data.length}");
+          print("=======================");
+        }
+
         return data.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
       } else {
         throw Exception("Server merespons dengan format yang tidak valid (Bukan JSON).");
@@ -88,6 +100,21 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> getActiveZone() async {
+    try {
+      final response = await apiClient.dio.get('/kkn/active-zone');
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data['data'] as Map<String, dynamic>? ?? {};
+        }
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  @override
   Future<bool> recordAttendance({
     required String scheduleId,
     required double latitude,
@@ -101,9 +128,8 @@ class ApiKknRepository implements KknRepository {
     int? durationMinutes,
     String? timestamp,
   }) async {
-    final response = await apiClient.dio.post(
-      '/kegiatan/$scheduleId/absen',
-      data: {
+    try {
+      final payload = {
         'latitude': latitude,
         'longitude': longitude,
         'method': method,
@@ -114,9 +140,20 @@ class ApiKknRepository implements KknRepository {
         if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
         if (durationMinutes != null) 'durationMinutes': durationMinutes,
         'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
-      },
-    );
-    return response.statusCode == 200 || response.statusCode == 201;
+      };
+
+      // Coba endpoint spesifik jadwal dahulu, jika gagal coba fallback /kkn/attendance/check-in
+      try {
+        final res = await apiClient.dio.post('/kegiatan/$scheduleId/absen', data: payload);
+        if (res.statusCode == 200 || res.statusCode == 201) return true;
+      } catch (_) {
+        final res = await apiClient.dio.post('/kkn/attendance/check-in', data: payload);
+        return res.statusCode == 200 || res.statusCode == 201;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -216,10 +253,46 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request) async {
+    dynamic payload;
+    if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
+      payload = FormData.fromMap({
+        ...request.toJson(),
+        'fotoBukti': await MultipartFile.fromFile(request.fotoPath!),
+      });
+    } else {
+      payload = request.toJson();
+    }
+
     final response = await apiClient.dio.post(
       '/kkn/pemanfaatan-sampah',
-      data: request.toJson(),
+      data: payload,
     );
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  @override
+  Future<void> submitPengajuanIzin({
+    String? scheduleId,
+    required String kategori,
+    required DateTime tanggal,
+    required String deskripsi,
+    required String fotoPath,
+  }) async {
+    final formData = FormData.fromMap({
+      'kategori': kategori,
+      'tanggalKegiatanTerkait': tanggal.toIso8601String(),
+      'deskripsi': deskripsi,
+      if (scheduleId != null) 'scheduleId': scheduleId,
+      'fotoBukti': await MultipartFile.fromFile(fotoPath),
+    });
+
+    final response = await apiClient.dio.post(
+      '/kkn/pengajuan-izin',
+      data: formData,
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Gagal mengirim pengajuan izin (${response.statusCode})');
+    }
   }
 }

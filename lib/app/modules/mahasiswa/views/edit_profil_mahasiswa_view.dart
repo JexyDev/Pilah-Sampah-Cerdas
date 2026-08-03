@@ -6,7 +6,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
-import '../controllers/location_ping_controller.dart';
 
 class EditProfilMahasiswaView extends ConsumerStatefulWidget {
   const EditProfilMahasiswaView({super.key});
@@ -164,10 +163,11 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final mhsData = ref.watch(mahasiswaControllerProvider).dashboard;
-    final locData = ref.watch(locationPingControllerProvider);
 
-    final nim = mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '136467959797';
-    final jurusan = mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : 'S1 Teknik Elektro';
+    final userNim = user?.nim.isNotEmpty == true ? user!.nim : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '1301210042');
+    final userProdi = user?.prodi.isNotEmpty == true ? user!.prodi : (user?.jurusan.isNotEmpty == true ? user!.jurusan : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : 'S1 Teknik Informatika'));
+    final userFakultas = user?.fakultas.isNotEmpty == true ? user!.fakultas : 'Fakultas Informatika';
+    final userUniversitas = user?.universitas.isNotEmpty == true ? user!.universitas : 'Telkom University';
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
     final rtRw = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
 
@@ -210,8 +210,12 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                         CircleAvatar(
                           radius: 44,
                           backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
-                          backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-                          child: _profileImage == null
+                          backgroundImage: _profileImage != null
+                              ? FileImage(_profileImage!)
+                              : (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty
+                                  ? NetworkImage(user.fotoProfil!) as ImageProvider
+                                  : null),
+                          child: (_profileImage == null && (user?.fotoProfil == null || user!.fotoProfil!.isEmpty))
                               ? Text(
                                   user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'M',
                                   style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
@@ -234,10 +238,11 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                     user?.name ?? 'Mahasiswa KKN',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
-                  Text(
-                    'NIM: $nim',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
+                  if (userNim.isNotEmpty)
+                    Text(
+                      'NIM: $userNim',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
                 ],
               ),
             ),
@@ -265,15 +270,12 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _buildReadOnlyField('NIM', nim.isNotEmpty ? nim : '136467959797'),
-                  _buildReadOnlyField('Universitas', 'Telkom University'),
-                  _buildReadOnlyField('Fakultas', 'Fakultas Teknik Elektro'),
-                  _buildReadOnlyField('Program Studi (Jurusan)', jurusan.isNotEmpty ? jurusan : 'S1 Teknik Elektro'),
-                  _buildReadOnlyField('Jenjang', 'S1'),
-                  _buildReadOnlyField('Kecamatan', 'Bojongsoang'),
-                  _buildReadOnlyField('Kelurahan', kelurahan.isNotEmpty ? kelurahan : 'Bojongsoang'),
-                  _buildReadOnlyField('RT / RW', rtRw.isNotEmpty ? rtRw : '01/02'),
-                  _buildReadOnlyField('Nama DPL', 'Dr. Ir. Pembimbing, M.T.'),
+                  _buildReadOnlyField('NIM', userNim.isNotEmpty ? userNim : '-'),
+                  _buildReadOnlyField('Universitas', userUniversitas.isNotEmpty ? userUniversitas : '-'),
+                  _buildReadOnlyField('Fakultas', userFakultas.isNotEmpty ? userFakultas : '-'),
+                  _buildReadOnlyField('Program Studi (Prodi)', userProdi.isNotEmpty ? userProdi : '-'),
+                  _buildReadOnlyField('Kelurahan Dampingan', kelurahan.isNotEmpty ? kelurahan : '-'),
+                  _buildReadOnlyField('RT / RW Dampingan', rtRw.isNotEmpty ? rtRw : '-'),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -351,16 +353,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Nomor telepon wajib diisi' : null,
                     ),
-                    const SizedBox(height: 14),
-                    const Text('Alamat Domisili / Catatan Kontak', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.home_outlined, color: AppColors.primaryGreen),
-                        hintText: 'Masukkan alamat domisili',
-                      ),
-                    ),
+
                   ],
                 ),
               ),

@@ -11,13 +11,12 @@ import '../riwayat/views/riwayat_view.dart';
 import '../poin/poin_view.dart';
 import '../profil/profil_view.dart';
 import '../mahasiswa/views/monitoring_warga_view.dart';
-import '../mahasiswa/views/riwayat_kkn_view.dart';
-import '../auth/controllers/auth_controller.dart';
 import '../mahasiswa/views/mahasiswa_view.dart';
+import '../petugas_residu/views/petugas_residu_main_navigation_view.dart';
+import '../auth/controllers/auth_controller.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
-import '../petugas_residu/views/petugas_residu_main_navigation_view.dart';
-import '../petugas_residu/views/riwayat_petugas_residu_view.dart';
+import '../mahasiswa/views/mahasiswa_poin_view.dart';
 
 /// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
@@ -38,7 +37,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             ? const PetugasResiduMainNavigationView() 
             : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
     role == UserRole.mahasiswaKkn 
-        ? const RiwayatKknView() 
+        ? const MahasiswaPoinView() 
         : (role == UserRole.petugasResidu 
             ? const PetugasResiduMainNavigationView() 
             : const RiwayatView()),
@@ -149,9 +148,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             _navItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
             _navItem(
               1,
-              Icons.history_rounded,
-              Icons.history_outlined,
-              'History',
+              role == UserRole.mahasiswaKkn ? Icons.stars_rounded : Icons.history_rounded,
+              role == UserRole.mahasiswaKkn ? Icons.stars_outlined : Icons.history_outlined,
+              role == UserRole.mahasiswaKkn ? 'Poin KKN' : 'History',
             ),
             if (isWarga) const SizedBox(width: 60),
             _navItem(

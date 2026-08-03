@@ -26,12 +26,12 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     super.dispose();
   }
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId) {
-    // Hanya tampilkan warga yang diaktivasi oleh mahasiswa ini, atau yang mahasiswaId-nya kosong tapi berada di wilayah yang sama (sebagai fallback jika backend belum support)
+  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId, String userNim) {
+    // Hanya tampilkan warga yang diaktivasi/didampingi oleh mahasiswa ini (mahasiswaId tidak boleh kosong)
     var activatedOnly = list.where((w) {
       if (!w.isActivated) return false;
-      if (w.mahasiswaId.isNotEmpty && w.mahasiswaId != userId) return false;
-      return true;
+      if (w.mahasiswaId.isEmpty) return false;
+      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
       final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';
@@ -71,8 +71,9 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     final userKel = user?.kelurahan ?? 'Bojongsoang';
     final userRt = user?.rtRw ?? '01/02';
     final userId = user?.id ?? '';
+    final userNim = user?.nim ?? '';
     
-    final filtered = _filteredList(state.wargaList, userKel, userRt, userId);
+    final filtered = _filteredList(state.wargaList, userKel, userRt, userId, userNim);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -272,6 +273,31 @@ class _WargaListItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (warga.pendampingName.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFA5D6A7)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.school, size: 12, color: AppColors.primaryGreen),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Pendamping: ${warga.pendampingName}',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Row(
                         children: [

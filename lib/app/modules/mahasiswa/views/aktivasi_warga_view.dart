@@ -122,7 +122,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                     // Invalidate state agar Warga & Tempat Sampah langsung ter-update di Mahasiswa dan Warga
                     ref.invalidate(mahasiswaControllerProvider);
                     ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-                    ref.read(aktivasiWargaProvider.notifier).fetchWarga();
+                    ref.read(aktivasiWargaProvider.notifier).refresh();
 
                     // Tampilkan Success Modal Dialog Pop-up
                     await showDialog(

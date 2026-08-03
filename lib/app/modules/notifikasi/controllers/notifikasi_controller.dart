@@ -21,9 +21,37 @@ final notificationsProvider =
   final list = await repo.getNotifications();
 
   // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
+  // Dikunci presisi per ID Mahasiswa & membuang notifikasi Warga jika role adalah Mahasiswa KKN.
+  final userId = user.id;
+  final isMahasiswa = user.role.name.toUpperCase() == 'MAHASISWAKKN';
+
   for (final notif in list) {
-    if (!notif.isRead && !_shownNotifIds.contains(notif.id)) {
-      _shownNotifIds.add(notif.id);
+    final notifKey = '${userId}_${notif.id}';
+    final type = notif.type.toUpperCase();
+    final title = notif.title.toLowerCase();
+
+    // ❌ CANGGIH: Cegah notifikasi Warga (Pengosongan, Tong Kritis, Setor Sampah) masuk ke System Tray HP Mahasiswa
+    if (isMahasiswa) {
+      final isWargaNotif = type.contains('POIN_BERTAMBAH') ||
+          type.contains('TONG_PENUH') ||
+          type.contains('PENGOSONGAN') ||
+          type.contains('SETOR') ||
+          type.contains('RESIDU') ||
+          type.contains('JADWAL') ||
+          title.contains('pengosongan') ||
+          title.contains('kapasitas tong') ||
+          title.contains('setor sampah') ||
+          title.contains('poin bertambah') ||
+          title.contains('timbangan') ||
+          title.contains('jemput') ||
+          title.contains('penjemputan') ||
+          title.contains('buang sampah');
+
+      if (isWargaNotif) continue;
+    }
+
+    if (!notif.isRead && !_shownNotifIds.contains(notifKey)) {
+      _shownNotifIds.add(notifKey);
       NotificationEngine().showGenericNotification(
         id: notif.id.hashCode,
         title: notif.title,

@@ -15,6 +15,11 @@ class UserEntity extends Equatable {
     this.fcmToken,
     this.fotoProfil,
     this.email,
+    this.nim = '',
+    this.jurusan = '',
+    this.prodi = '',
+    this.fakultas = '',
+    this.universitas = '',
   });
 
   final String id;
@@ -28,6 +33,11 @@ class UserEntity extends Equatable {
   final String? fcmToken;
   final String? fotoProfil;
   final String? email;
+  final String nim;
+  final String jurusan;
+  final String prodi;
+  final String fakultas;
+  final String universitas;
 
   UserEntity copyWith({
     String? id,
@@ -41,6 +51,11 @@ class UserEntity extends Equatable {
     String? fcmToken,
     String? fotoProfil,
     String? email,
+    String? nim,
+    String? jurusan,
+    String? prodi,
+    String? fakultas,
+    String? universitas,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -54,11 +69,16 @@ class UserEntity extends Equatable {
       fcmToken: fcmToken ?? this.fcmToken,
       fotoProfil: fotoProfil ?? this.fotoProfil,
       email: email ?? this.email,
+      nim: nim ?? this.nim,
+      jurusan: jurusan ?? this.jurusan,
+      prodi: prodi ?? this.prodi,
+      fakultas: fakultas ?? this.fakultas,
+      universitas: universitas ?? this.universitas,
     );
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role];
+  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kelurahan, rtRw];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.

@@ -63,8 +63,8 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
   final Ref _ref;
   Timer? _timer;
 
-  /// Interval pengiriman ping: 5 menit.
-  static const Duration pingInterval = Duration(minutes: 5);
+  /// Interval pengiriman ping ke backend: 30 detik (real-time continuous tracking).
+  static const Duration pingInterval = Duration(seconds: 30);
 
   /// Mulai tracking lokasi.
   Future<void> startTracking() async {

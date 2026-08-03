@@ -27,6 +27,9 @@ abstract class KknRepository {
   /// Mengambil daftar jadwal kegiatan KKN.
   Future<List<dynamic>> getSchedules();
 
+  /// Mengambil data koordinat zona penugasan aktif (GET /kkn/active-zone)
+  Future<Map<String, dynamic>> getActiveZone();
+
   /// Mengambil target lokasi kegiatan KKN.
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId);
 
@@ -62,4 +65,14 @@ abstract class KknRepository {
 
   /// Mengirim laporan pemanfaatan hasil sampah ke backend
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request);
+
+  /// Mengirim pengajuan izin/sakit ke DPL (Dosen Pembimbing Lapangan)
+  /// POST /api/v1/kkn/pengajuan-izin
+  Future<void> submitPengajuanIzin({
+    String? scheduleId,
+    required String kategori,
+    required DateTime tanggal,
+    required String deskripsi,
+    required String fotoPath,
+  });
 }

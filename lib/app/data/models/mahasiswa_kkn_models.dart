@@ -88,6 +88,8 @@ class WargaDampingan extends Equatable {
     this.kelurahan = '',
     this.rtRw = '',
     this.mahasiswaId = '',
+    this.pendampingName = '',
+    this.status = '',
     required this.recentLogs,
     this.isActivated = true,
     this.role = 'WARGA',
@@ -101,6 +103,8 @@ class WargaDampingan extends Equatable {
   final String kelurahan;
   final String rtRw;
   final String mahasiswaId;
+  final String pendampingName;
+  final String status;
   final bool isActivated;
   final String role;
   final List<WasteLogEntry> recentLogs;
@@ -146,15 +150,62 @@ class WargaDampingan extends Equatable {
         json['userId']?.toString() ??
         '';
 
+    String extractMhsId() {
+      final candidates = [
+        json['mahasiswaId'],
+        json['registeredByStudentId'],
+        json['studentId'],
+        json['activatedBy'],
+        json['didaftarkanOleh'],
+        json['studentKknId'],
+      ];
+      for (final c in candidates) {
+        if (c != null) {
+          final str = c.toString().trim();
+          if (str.isNotEmpty && str.toLowerCase() != 'null' && str.toLowerCase() != 'undefined' && str != '0') {
+            return str;
+          }
+        }
+      }
+      return '';
+    }
+
+    String extractPendampingName() {
+      final candidates = [
+        json['pendampingName'],
+        json['pendamping'],
+        json['mahasiswaName'],
+        json['studentName'],
+        json['didaftarkanOlehNama'],
+        json['registeredByStudentName'],
+      ];
+      for (final c in candidates) {
+        if (c != null) {
+          final str = c.toString().trim();
+          if (str.isNotEmpty && str.toLowerCase() != 'null' && str.toLowerCase() != 'undefined') {
+            return str;
+          }
+        }
+      }
+      return '';
+    }
+
+    final rawStatus = json['status']?.toString() ?? json['statusPendamping']?.toString() ?? json['status_pendamping']?.toString() ?? '';
+
     return WargaDampingan(
       binId: extractedBinId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
       address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       rtRw: json['rtRw']?.toString() ?? json['rt_rw']?.toString() ?? '',
-      mahasiswaId: json['mahasiswaId']?.toString() ?? json['activatedBy']?.toString() ?? json['didaftarkanOleh']?.toString() ?? '',
+      mahasiswaId: extractMhsId(),
+      pendampingName: extractPendampingName(),
+      status: rawStatus,
       recentLogs: logs,
-      isActivated: json['isActivated'] as bool? ?? (json['status']?.toString().toUpperCase() != 'UNACTIVATED'),
+      isActivated: (json['isActivated'] == true) ||
+          (json['is_activated'] == true) ||
+          (json['status']?.toString().toUpperCase() == 'ACTIVATED') ||
+          (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
       role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
       totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
                    (logs.fold(0, (sum, log) => sum + (log.weightKg * 10).toInt())),
@@ -163,7 +214,7 @@ class WargaDampingan extends Equatable {
   }
 
   @override
-  List<Object?> get props => [binId, wargaName, totalPoints, mahasiswaId];
+  List<Object?> get props => [binId, wargaName, totalPoints, mahasiswaId, pendampingName, status];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -301,6 +352,7 @@ class PemanfaatanSampahRequest {
     required this.satuan,
     required this.wilayahDampingan,
     required this.deskripsi,
+    this.fotoPath,
     this.timestamp,
   });
 
@@ -310,6 +362,7 @@ class PemanfaatanSampahRequest {
   final String satuan;
   final String wilayahDampingan;
   final String deskripsi;
+  final String? fotoPath;
   final String? timestamp;
 
   Map<String, dynamic> toJson() {
@@ -320,6 +373,7 @@ class PemanfaatanSampahRequest {
       'satuan': satuan,
       'wilayahDampingan': wilayahDampingan,
       'deskripsi': deskripsi,
+      if (fotoPath != null) 'fotoPath': fotoPath,
       'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
     };
   }
@@ -334,6 +388,7 @@ class KelompokMemberData extends Equatable {
     required this.nim,
     required this.name,
     required this.jurusan,
+    this.fakultas = '',
     required this.individualPoints,
     this.isLeader = false,
   });
@@ -342,6 +397,7 @@ class KelompokMemberData extends Equatable {
   final String nim;
   final String name;
   final String jurusan;
+  final String fakultas;
   final int individualPoints;
   final bool isLeader;
 
@@ -350,14 +406,15 @@ class KelompokMemberData extends Equatable {
       userId: json['userId']?.toString() ?? json['id']?.toString() ?? '',
       nim: json['nim']?.toString() ?? '',
       name: json['name']?.toString() ?? json['nama']?.toString() ?? 'Mahasiswa',
-      jurusan: json['jurusan']?.toString() ?? '',
+      jurusan: json['jurusan']?.toString() ?? json['prodi']?.toString() ?? '',
+      fakultas: json['fakultas']?.toString() ?? '',
       individualPoints: (json['individualPoints'] as num?)?.toInt() ?? (json['points'] as num?)?.toInt() ?? 0,
       isLeader: json['isLeader'] as bool? ?? (json['role']?.toString().toUpperCase() == 'KETUA'),
     );
   }
 
   @override
-  List<Object?> get props => [userId, nim, individualPoints];
+  List<Object?> get props => [userId, nim, individualPoints, fakultas];
 }
 
 class KelompokKknData extends Equatable {
@@ -384,16 +441,31 @@ class KelompokKknData extends Equatable {
   }
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
-    final membersList = (json['members'] as List<dynamic>?)
+    final membersList = (json['members'] as List<dynamic>? ?? json['anggota'] as List<dynamic>?)
             ?.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
 
+    String dpl = json['dosenPembimbing']?.toString() ??
+        json['dplName']?.toString() ??
+        json['dpsName']?.toString() ??
+        json['dpl']?.toString() ??
+        json['dosen']?.toString() ??
+        '';
+
+    if (dpl.isEmpty && json['dps'] is Map) {
+      dpl = json['dps']['name']?.toString() ?? json['dps']['nama']?.toString() ?? '';
+    } else if (dpl.isEmpty && json['dplObj'] is Map) {
+      dpl = json['dplObj']['name']?.toString() ?? json['dplObj']['nama']?.toString() ?? '';
+    }
+
+    if (dpl.isEmpty) dpl = 'Belum Ditentukan';
+
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
-      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? 'Kelompok KKN',
-      dosenPembimbing: json['dosenPembimbing']?.toString() ?? json['dpsName']?.toString() ?? 'Belum Ditentukan',
-      poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? '-',
+      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? 'Kelompok KKN',
+      dosenPembimbing: dpl,
+      poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
       members: membersList,
     );

@@ -30,4 +30,6 @@ class AppRoutes {
   static const String petugasResidu = '/petugas-residu';
   static const String petugasResiduGantiPassword = '/petugas-residu/ganti-password';
   static const String editProfilMahasiswa = '/mahasiswa/edit-profil';
+  static const String pengajuanIzin = '/mahasiswa/pengajuan-izin';
+  static const String mahasiswaNotifikasi = '/mahasiswa/notifikasi';
 }

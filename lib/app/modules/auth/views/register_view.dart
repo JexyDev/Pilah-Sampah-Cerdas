@@ -24,8 +24,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _alamatController = TextEditingController();
-  final _rtRwController = TextEditingController();
-  final _kelurahanController = TextEditingController();
   
   // Mahasiswa fields
   final _nimController = TextEditingController();
@@ -35,10 +33,51 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _kecamatanController = TextEditingController();
   final _dplNameController = TextEditingController();
   String _selectedJenjang = 'S1';
+  String _selectedKelurahan = 'Bojongsoang';
+  String _selectedRtRw = '01/02';
   DateTime? _tglMulaiKKN;
   DateTime? _tglSelesaiKKN;
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
+  final List<String> _kelurahanList = [
+    'Bojongsoang',
+    'Sukapura',
+    'Mengger',
+    'Dayeuhkolot',
+    'Cipagalo',
+    'Bojongsari',
+    'Buahbatu',
+    'Lengkong',
+  ];
+  final List<String> _rtRwList = [
+    '01/01',
+    '02/01',
+    '03/01',
+    '01/02',
+    '02/02',
+    '03/02',
+    '04/02',
+    '01/03',
+    '02/03',
+    '03/03',
+    '01/04',
+    '02/04',
+    '03/04',
+    '04/04',
+    '05/04',
+    '01/05',
+    '02/05',
+    '03/05',
+    '01/06',
+    '02/06',
+    '03/06',
+    '01/07',
+    '02/07',
+    '03/07',
+    '01/08',
+    '02/08',
+    '03/08',
+  ];
 
   String _selectedRole = 'Warga';
   bool _obscurePassword = true;
@@ -56,8 +95,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _alamatController.dispose();
-    _rtRwController.dispose();
-    _kelurahanController.dispose();
     _nimController.dispose();
     _jurusanController.dispose();
     _fakultasController.dispose();
@@ -136,24 +173,25 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
 
     if (_selectedRole == 'Warga') {
       data['address'] = _alamatController.text.trim();
-      data['rtRw'] = _rtRwController.text.trim();
-      data['kelurahan'] = _kelurahanController.text.trim();
+      data['rtRw'] = _selectedRtRw;
+      data['kelurahan'] = _selectedKelurahan;
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = _nimController.text.trim();
-      data['jurusan'] = _jurusanController.text.trim();
       data['fakultas'] = _fakultasController.text.trim();
+      data['prodi'] = _jurusanController.text.trim();
+      data['jurusan'] = _jurusanController.text.trim();
       data['universitas'] = _universitasController.text.trim();
       data['jenjang'] = _selectedJenjang;
       data['kecamatan'] = _kecamatanController.text.trim();
       data['dplName'] = _dplNameController.text.trim();
-      data['rtRw'] = _rtRwController.text.trim();
-      data['kelurahan'] = _kelurahanController.text.trim();
+      data['rtRw'] = _selectedRtRw;
+      data['kelurahan'] = _selectedKelurahan;
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
-      data['rtRw'] = _rtRwController.text.trim();
-      data['kelurahan'] = _kelurahanController.text.trim();
-      data['assignedZone'] = _kelurahanController.text.trim();
+      data['rtRw'] = _selectedRtRw;
+      data['kelurahan'] = _selectedKelurahan;
+      data['assignedZone'] = _selectedKelurahan;
     }
 
     ref.read(authProvider.notifier).clearError();
@@ -316,6 +354,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               _buildLabel('PILIH PERAN'),
                               const SizedBox(height: 6),
                               DropdownButtonFormField<String>(
+                                isExpanded: true,
                                 initialValue: _selectedRole,
                                 items: const [
                                   DropdownMenuItem(value: 'Warga', child: Text('Warga')),
@@ -423,17 +462,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                         children: [
                                           _buildLabel(_selectedRole == 'Mahasiswa' ? 'RT/RW DAMPINGAN' : 'RT/RW'),
                                           const SizedBox(height: 6),
-                                          TextFormField(
-                                            controller: _rtRwController,
+                                          DropdownButtonFormField<String>(
+                                            isExpanded: true,
+                                            initialValue: _selectedRtRw,
                                             decoration: const InputDecoration(
-                                              hintText: 'Contoh: 01/02',
                                               prefixIcon: Icon(Icons.home_outlined, color: AppColors.textSecondary, size: 20),
                                             ),
-                                            validator: (v) {
-                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') && (v == null || v.trim().isEmpty)) {
-                                                return 'Wajib diisi';
-                                              }
-                                              return null;
+                                            items: _rtRwList.map((r) => DropdownMenuItem(value: r, child: Text('RT/RW $r', overflow: TextOverflow.ellipsis))).toList(),
+                                            onChanged: (val) {
+                                              if (val != null) setState(() => _selectedRtRw = val);
                                             },
                                           ),
                                         ],
@@ -446,17 +483,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                         children: [
                                           _buildLabel(_selectedRole == 'Mahasiswa' ? 'KELURAHAN DAMPINGAN' : 'KELURAHAN'),
                                           const SizedBox(height: 6),
-                                          TextFormField(
-                                            controller: _kelurahanController,
+                                          DropdownButtonFormField<String>(
+                                            isExpanded: true,
+                                            initialValue: _selectedKelurahan,
                                             decoration: const InputDecoration(
-                                              hintText: 'Kelurahan',
                                               prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
                                             ),
-                                            validator: (v) {
-                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') && (v == null || v.trim().isEmpty)) {
-                                                return 'Wajib diisi';
-                                              }
-                                              return null;
+                                            items: _kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text('Kel. $k', overflow: TextOverflow.ellipsis))).toList(),
+                                            onChanged: (val) {
+                                              if (val != null) setState(() => _selectedKelurahan = val);
                                             },
                                           ),
                                         ],
@@ -515,11 +550,12 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                            _buildLabel('JENJANG'),
                                            const SizedBox(height: 6),
                                            DropdownButtonFormField<String>(
-                                             value: _selectedJenjang,
+                                             isExpanded: true,
+                                             initialValue: _selectedJenjang,
                                              decoration: const InputDecoration(
                                                prefixIcon: Icon(Icons.workspace_premium_outlined, color: AppColors.textSecondary, size: 20),
                                              ),
-                                             items: _jenjangList.map((j) => DropdownMenuItem(value: j, child: Text(j))).toList(),
+                                             items: _jenjangList.map((j) => DropdownMenuItem(value: j, child: Text(j, overflow: TextOverflow.ellipsis))).toList(),
                                              onChanged: (val) {
                                                if (val != null) setState(() => _selectedJenjang = val);
                                              },
@@ -582,27 +618,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                        child: Column(
                                          crossAxisAlignment: CrossAxisAlignment.start,
                                          children: [
-                                           _buildLabel('JURUSAN'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _jurusanController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Jurusan',
-                                               prefixIcon: Icon(Icons.school_outlined, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                     const SizedBox(width: 16),
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
                                            _buildLabel('FAKULTAS'),
                                            const SizedBox(height: 6),
                                            TextFormField(
@@ -619,9 +634,29 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                          ],
                                        ),
                                      ),
+                                     const SizedBox(width: 16),
+                                     Expanded(
+                                       child: Column(
+                                         crossAxisAlignment: CrossAxisAlignment.start,
+                                         children: [
+                                           _buildLabel('PROGRAM STUDI (PRODI)'),
+                                           const SizedBox(height: 6),
+                                           TextFormField(
+                                             controller: _jurusanController,
+                                             decoration: const InputDecoration(
+                                               hintText: 'Program Studi / Prodi',
+                                               prefixIcon: Icon(Icons.school_outlined, color: AppColors.textSecondary, size: 20),
+                                             ),
+                                             validator: (v) {
+                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
+                                               return null;
+                                             },
+                                           ),
+                                         ],
+                                       ),
+                                     ),
                                    ],
                                  ),
-                                const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(

@@ -21,6 +21,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   final _searchController = TextEditingController();
   String _selectedKelurahan = 'Semua';
   String _selectedRtRw = 'Semua';
+  bool _hasFetchedAktivasi = false;
 
   @override
   void dispose() {
@@ -36,24 +37,54 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     });
   }
 
-  List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode) {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Pastikan fetch dipanggil sekali setelah context & auth state tersedia
+    final isAktivasiBinMode =
+        ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
+    if (isAktivasiBinMode && !_hasFetchedAktivasi) {
+      _hasFetchedAktivasi = true;
+      final user = ref.read(authProvider).user;
+      final kelurahan = user?.kelurahan ?? '';
+      final rtRw = user?.rtRw ?? '';
+      // Gunakan addPostFrameCallback agar ref.read aman dipanggil setelah build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
+                kelurahan: kelurahan,
+                rtRw: rtRw,
+              );
+        }
+      });
+    }
+  }
+
+  List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode, String userKel, String userRt) {
     return allWarga.where((w) {
-      if (w.role != 'WARGA') return false; // Hanya tampilkan role warga
-      // Warga teraktivasi tetap ditampilkan di list aktivasi tempat sampah warga (tanpa tombol aktivasi)
+      if (w.role.isNotEmpty && w.role != 'WARGA') return false; // Hanya tampilkan role warga
+
+      // Mode Aktivasi Bin: Tampilkan warga yang berada di wilayah penugasan KKN mahasiswa
+      if (isAktivasiBinMode) {
+        final matchesKel = w.kelurahan.isEmpty || w.kelurahan == userKel || w.address.contains(userKel);
+        final matchesRt = w.rtRw.isEmpty || w.rtRw == userRt || w.address.contains(userRt);
+        if (!matchesKel && !matchesRt) return false;
+      } else {
+        if (_selectedKelurahan != 'Semua') {
+          final matches = w.kelurahan == _selectedKelurahan || w.address.contains(_selectedKelurahan);
+          if (!matches) return false;
+        }
+        if (_selectedRtRw != 'Semua') {
+          final matches = w.rtRw == _selectedRtRw || w.address.contains(_selectedRtRw);
+          if (!matches) return false;
+        }
+      }
 
       if (_searchController.text.isNotEmpty) {
         if (!w.wargaName.toLowerCase().contains(_searchController.text.toLowerCase()) &&
             !w.binId.toLowerCase().contains(_searchController.text.toLowerCase())) {
           return false;
         }
-      }
-      if (_selectedKelurahan != 'Semua') {
-        final matches = w.kelurahan == _selectedKelurahan || w.address.contains(_selectedKelurahan);
-        if (!matches) return false;
-      }
-      if (_selectedRtRw != 'Semua') {
-        final matches = w.rtRw == _selectedRtRw || w.address.contains(_selectedRtRw);
-        if (!matches) return false;
       }
       return true;
     }).toList();
@@ -62,6 +93,23 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga, String userKel, String userRt) {
     try {
       return allWarga.map((e) {
+        if (e is WargaDampingan) {
+          final targetKel = e.kelurahan.isNotEmpty ? e.kelurahan : userKel;
+          final targetRt = e.rtRw.isNotEmpty ? e.rtRw : userRt;
+          return WargaDampingan(
+            binId: e.binId,
+            wargaName: e.wargaName,
+            address: e.address.contains('RT') ? e.address : 'Jl. ${e.wargaName} No. ${e.binId.length > 3 ? e.binId.substring(e.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel',
+            kelurahan: targetKel,
+            rtRw: targetRt,
+            mahasiswaId: e.mahasiswaId,
+            recentLogs: e.recentLogs,
+            isActivated: e.isActivated,
+            role: e.role,
+            totalPoints: e.totalPoints,
+            apiCorrectPercentage: e.apiCorrectPercentage,
+          );
+        }
         final w = WargaDampingan.fromJson(e as Map<String, dynamic>);
         final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
         final targetRt = w.rtRw.isNotEmpty ? w.rtRw : userRt;
@@ -97,15 +145,18 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // For aktivasi mode, we need to watch the aktivasi controller too
     final aktivasiState = isAktivasiBinMode ? ref.watch(aktivasiWargaProvider) : null;
 
+    final rawAktivasiList = aktivasiState?.wargaList ?? [];
+
+    final userNim = user?.nim ?? '';
+
     final allWargaList = isAktivasiBinMode 
-        ? _getFilteredWargaAktivasi(aktivasiState?.wargaList ?? [], userKel, userRt)
+        ? _getFilteredWargaAktivasi(rawAktivasiList, userKel, userRt)
         : state.wargaList.where((w) {
-            // Jika bukan mode aktivasi, hanya tampilkan Warga Dampingan milik mahasiswa ini
+            // Jika bukan mode aktivasi, hanya tampilkan Warga Dampingan milik mahasiswa ini (mahasiswaId tidak boleh kosong)
             if (!w.isActivated) return false;
-            if (w.mahasiswaId.isNotEmpty && w.mahasiswaId != userId) return false;
-            return true;
+            if (w.mahasiswaId.isEmpty) return false;
+            return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
           }).map((w) {
-            // Selaraskan alamat seperti di DaftarWargaView
             final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
                 ? w.address
                 : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $userRt, Kel. $userKel';
@@ -118,7 +169,6 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     List<String> rtRwList;
 
     if (isAktivasiBinMode) {
-      // Saat Aktivasi Bin, default & pilihan dropdown dikunci ke wilayah penugasan mahasiswa itu sendiri
       _selectedKelurahan = userKel;
       _selectedRtRw = userRt;
       kelurahanList = [userKel];
@@ -150,7 +200,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       }
     }
 
-    final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode);
+    final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode, userKel, userRt);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -163,18 +213,18 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       body: RefreshIndicator(
         onRefresh: () async {
           if (isAktivasiBinMode) {
-            await ref.read(aktivasiWargaProvider.notifier).fetchWarga();
+            await ref.read(aktivasiWargaProvider.notifier).refresh();
           } else {
             await ref.read(mahasiswaControllerProvider.notifier).refresh();
           }
         },
         color: AppColors.primaryGreen,
-        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList),
+        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKel, userRt),
       ),
     );
   }
 
-  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList) {
+  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKel, String userRt) {
     final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
     final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
@@ -198,7 +248,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               ElevatedButton(
                 onPressed: () {
                   if (isAktivasiBinMode) {
-                    ref.read(aktivasiWargaProvider.notifier).fetchWarga();
+                    ref.read(aktivasiWargaProvider.notifier).refresh();
                   } else {
                     ref.read(mahasiswaControllerProvider.notifier).refresh();
                   }
@@ -240,40 +290,74 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: DropdownButtonFormField<String>(
-                                      value: _selectedKelurahan,
-                                      decoration: const InputDecoration(labelText: 'Kelurahan', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                                      items: kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() {
-                                            _selectedKelurahan = val;
-                                            _selectedRtRw = 'Semua'; // Reset rt/rw saat kelurahan berubah
-                                          });
-                                          // Filter is applied locally, no need to trigger backend API.
-                                        }
-                                      },
+                              isAktivasiBinMode
+                                  ? Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            initialValue: userKel,
+                                            readOnly: true,
+                                            decoration: InputDecoration(
+                                              labelText: 'Kelurahan',
+                                              prefixIcon: const Icon(Icons.location_city, size: 18, color: AppColors.primaryBlue),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                              filled: true,
+                                              fillColor: const Color(0xFFF5F7FA),
+                                            ),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: TextFormField(
+                                            initialValue: userRt,
+                                            readOnly: true,
+                                            decoration: InputDecoration(
+                                              labelText: 'RT/RW',
+                                              prefixIcon: const Icon(Icons.home_work, size: 18, color: AppColors.primaryBlue),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                              filled: true,
+                                              fillColor: const Color(0xFFF5F7FA),
+                                            ),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Expanded(
+                                          child: DropdownButtonFormField<String>(
+                                            value: _selectedKelurahan,
+                                            decoration: const InputDecoration(labelText: 'Kelurahan', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
+                                            items: kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
+                                            onChanged: (val) {
+                                              if (val != null) {
+                                                setState(() {
+                                                  _selectedKelurahan = val;
+                                                  _selectedRtRw = 'Semua';
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: DropdownButtonFormField<String>(
+                                            value: _selectedRtRw,
+                                            decoration: const InputDecoration(labelText: 'RT/RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
+                                            items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
+                                            onChanged: (val) {
+                                              if (val != null) {
+                                                setState(() => _selectedRtRw = val);
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: DropdownButtonFormField<String>(
-                                      value: _selectedRtRw,
-                                      decoration: const InputDecoration(labelText: 'RT/RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                                      items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() => _selectedRtRw = val);
-                                          // Filter is applied locally, no need to trigger backend API.
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),

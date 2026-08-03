@@ -33,6 +33,8 @@ class AppConfig {
   static const String refreshTokenKey = 'refresh_token';
   static const String userDataKey = 'user_data';
   static const String householdIdKey = 'household_id';
+  static const String mahasiswaKelurahanKey = 'mahasiswa_kelurahan';
+  static const String mahasiswaRtRwKey = 'mahasiswa_rtrw';
 
   // --- Bin Capacity (FR-02) ---
   static const double binMaxCapacityLiters = 25.0;

@@ -21,15 +21,20 @@ import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
+import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
 import '../modules/petugas_residu/views/lapor_pelanggaran_view.dart';
 import '../modules/petugas_residu/views/riwayat_petugas_residu_view.dart';
 import '../modules/petugas_residu/views/petugas_residu_main_navigation_view.dart';
 import '../modules/petugas_residu/views/ganti_password_petugas_view.dart';
 import 'app_routes.dart';
 
-/// Route generator terpusat.
+import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
+
+/// Peta route terpusat untuk MaterialApp.
 class AppPages {
   AppPages._();
+
+  static const String initial = AppRoutes.splash;
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -55,6 +60,8 @@ class AppPages {
         return _buildRoute(const ResetBinView(), settings);
       case AppRoutes.notifikasi:
         return _buildRoute(const NotifikasiView(), settings);
+      case AppRoutes.mahasiswaNotifikasi:
+        return _buildRoute(const MahasiswaNotifikasiView(), settings);
       case AppRoutes.timbanganResidu:
         return _buildRoute(const TimbanganResiduView(), settings);
       case AppRoutes.tentang:
@@ -77,6 +84,15 @@ class AppPages {
         return _buildRoute(const PemanfaatanSampahView(), settings);
       case AppRoutes.editProfilMahasiswa:
         return _buildRoute(const EditProfilMahasiswaView(), settings);
+      case AppRoutes.pengajuanIzin:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          PengajuanIzinFormView(
+            scheduleId: args?['scheduleId'] as String?,
+            scheduleTitle: args?['scheduleTitle'] as String?,
+          ),
+          settings,
+        );
       case AppRoutes.laporPelanggaran:
         return _buildRoute(const LaporPelanggaranView(), settings);
       case AppRoutes.riwayatPetugasResidu:

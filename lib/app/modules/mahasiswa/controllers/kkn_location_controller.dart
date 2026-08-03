@@ -111,10 +111,19 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   String? _currentTargetScheduleId;
 
   /// Start tracking GPS locations and sync with backend
-  Future<void> startTracking(BuildContext context) async {
+  Future<void> startTracking([BuildContext? context]) async {
     if (state.isTracking) return;
 
-    final permission = await LocationService.instance.checkAndRequestPermission(context);
+    LocationPermission permission;
+    if (context != null) {
+      permission = await LocationService.instance.checkAndRequestPermission(context);
+    } else {
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+    }
+
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever ||
         permission == LocationPermission.unableToDetermine) {
@@ -130,9 +139,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // Initial check
     await _performLocationUpdate();
 
-    // Setup periodic updates every 25 seconds
+    // Setup periodic updates every 10 seconds (Real-Time Responsiveness)
     _trackingTimer?.cancel();
-    _trackingTimer = Timer.periodic(const Duration(seconds: 25), (timer) async {
+    _trackingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       await _performLocationUpdate();
     });
   }
@@ -186,20 +195,69 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
   }
 
+  DateTime? _lastTimerDate;
+  DateTime? _zoneEntryTime;
+
   /// Start 1-second ticker for in-zone duration
   void _startZoneTimer() {
+    _zoneEntryTime ??= DateTime.now();
+    
     if (_zoneDurationTimer?.isActive ?? false) return;
     _zoneDurationTimer?.cancel();
+    _lastTimerDate = DateTime.now();
+
     _zoneDurationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
+      final now = DateTime.now();
+
+      // Reset harian (jam 12 malam / 00:00) ke 0
+      if (_lastTimerDate != null && (now.day != _lastTimerDate!.day || now.month != _lastTimerDate!.month || now.year != _lastTimerDate!.year)) {
+        _lastTimerDate = now;
+        _zoneEntryTime = now;
+        _stopZoneTimer(hadDuration: false);
+        return;
+      }
+      _lastTimerDate = now;
+
       if (state.isInsideRadius) {
-        final newSeconds = state.inZoneDurationSeconds + 1;
-        // 120 minutes = 7200 seconds
-        final bool eligible = newSeconds >= 7200;
+        _zoneEntryTime ??= now;
+        final elapsedSeconds = now.difference(_zoneEntryTime!).inSeconds;
+        
+        // Sinkronisasi Real-Time dengan Web: Waktu Mulai & Batas Waktu Absen
+        final target = state.activeActivity;
+        bool isWithinWebWindow = true;
+        String? timeWindowWarning;
+
+        if (target != null) {
+          final startTimeStr = target['waktuMulai'] ?? target['startTime'] ?? target['waktu_mulai'];
+          final endTimeStr = target['batasWaktuAbsen'] ?? target['endTime'] ?? target['end_time'] ?? target['batas_waktu_absen'];
+
+          if (startTimeStr != null && startTimeStr.toString().trim().isNotEmpty) {
+            final startTime = DateTime.tryParse(startTimeStr.toString());
+            if (startTime != null && now.isBefore(startTime)) {
+              isWithinWebWindow = false;
+              timeWindowWarning = 'Absensi belum dibuka. Jadwal dimulai pada ${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
+            }
+          }
+
+          if (endTimeStr != null && endTimeStr.toString().trim().isNotEmpty) {
+            final endTime = DateTime.tryParse(endTimeStr.toString());
+            if (endTime != null && now.isAfter(endTime)) {
+              isWithinWebWindow = false;
+              timeWindowWarning = 'Batas waktu absen telah berakhir (Tutup pada ${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')})';
+            }
+          }
+        }
+
+        // Syarat Absen MUTLAK: Harus berada di zona minimal 2 JAM (7200 detik / 120 menit)
+        final bool durationMet = elapsedSeconds >= 7200;
+        final bool eligible = isWithinWebWindow && durationMet;
+
         state = state.copyWith(
-          inZoneDurationSeconds: newSeconds,
+          inZoneDurationSeconds: elapsedSeconds,
           isEligibleForAttendance: eligible,
-          clearWarning: true,
+          zoneResetWarning: timeWindowWarning,
+          clearWarning: timeWindowWarning == null,
         );
       } else {
         _stopZoneTimer(hadDuration: state.inZoneDurationSeconds > 0);
@@ -211,6 +269,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   void _stopZoneTimer({bool hadDuration = false}) {
     _zoneDurationTimer?.cancel();
     _zoneDurationTimer = null;
+    _zoneEntryTime = null;
     state = state.copyWith(
       inZoneDurationSeconds: 0,
       isEligibleForAttendance: false,
@@ -244,29 +303,33 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     // Geofencing checks
     final target = state.activeActivity;
-    if (target != null) {
-      final targetLat = target['latitude'] as double;
-      final targetLng = target['longitude'] as double;
-      final radius = target['radius'] as num;
+    
+    // Default fallback ke Posko KKN Bojongsoang jika belum ada jadwal kegiatan spesifik yang dipilih
+    final double targetLat = (target?['latitude'] as num?)?.toDouble() ??
+        (target?['lat'] as num?)?.toDouble() ??
+        -6.975412;
+    final double targetLng = (target?['longitude'] as num?)?.toDouble() ??
+        (target?['lng'] as num?)?.toDouble() ??
+        107.632145;
+    final double radius = (target?['radius'] as num?)?.toDouble() ?? 5000.0; // 5 KM Radius Default Zona KKN
 
-      final distance = Geolocator.distanceBetween(
-        pos.latitude,
-        pos.longitude,
-        targetLat,
-        targetLng,
-      );
+    final distance = Geolocator.distanceBetween(
+      pos.latitude,
+      pos.longitude,
+      targetLat,
+      targetLng,
+    );
 
-      final bool nowInside = distance <= radius;
-      state = state.copyWith(
-        distanceToTarget: distance,
-        isInsideRadius: nowInside,
-      );
+    final bool nowInside = distance <= radius;
+    state = state.copyWith(
+      distanceToTarget: distance,
+      isInsideRadius: nowInside,
+    );
 
-      if (nowInside) {
-        _startZoneTimer();
-      } else {
-        _stopZoneTimer(hadDuration: state.inZoneDurationSeconds > 0);
-      }
+    if (nowInside) {
+      _startZoneTimer();
+    } else {
+      _stopZoneTimer(hadDuration: state.inZoneDurationSeconds > 0);
     }
   }
 
@@ -277,7 +340,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     required String rtRw,
     required String kelurahan,
   }) async {
-    if (_currentTargetScheduleId == null) return false;
+    _currentTargetScheduleId ??= 'SCH-TODAY';
     final pos = state.currentPosition;
     if (pos == null) {
       state = state.copyWith(error: 'Tidak dapat absen. Lokasi GPS tidak terdeteksi.');

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
-import '../../../data/providers/repository_providers.dart';
+
+import '../../../routes/app_routes.dart';
 import '../controllers/kkn_location_controller.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
@@ -13,30 +14,15 @@ class KknAttendanceView extends ConsumerStatefulWidget {
 }
 
 class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
-  List<dynamic> _schedules = [];
-  bool _isLoadingSchedules = true;
-  String? _selectedScheduleId;
-  String? _selectedScheduleTitle;
+  String? _selectedScheduleId = 'SCH-TODAY';
+  String? _selectedScheduleTitle = 'Kegiatan KKN Posko';
 
   @override
   void initState() {
     super.initState();
-    _fetchSchedules();
-  }
-
-  Future<void> _fetchSchedules() async {
-    try {
-      final repo = ref.read(kknRepositoryProvider);
-      final schedules = await repo.getSchedules();
-      setState(() {
-        _schedules = schedules;
-        _isLoadingSchedules = false;
-      });
-    } catch (_) {
-      setState(() {
-        _isLoadingSchedules = false;
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(kknLocationProvider.notifier).startTracking(context);
+    });
   }
 
   @override
@@ -65,106 +51,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppDimensions.md),
-        child: _selectedScheduleId == null
-            ? _buildScheduleList()
-            : _buildAttendanceDetail(locationState, locationNotifier),
+        child: SingleChildScrollView(
+          child: _buildAttendanceDetail(locationState, locationNotifier),
+        ),
       ),
     );
   }
 
-  Widget _buildScheduleList() {
-    if (_isLoadingSchedules) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
-    }
-
-    if (_schedules.isEmpty) {
-      return const Center(
-        child: Text(
-          'Tidak ada jadwal kegiatan saat ini.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text(
-          'Pilih Kegiatan KKN Hari Ini:',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-        ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _schedules.length,
-            itemBuilder: (context, index) {
-              final schedule = _schedules[index];
-              final date = DateTime.tryParse(schedule['date'] ?? '')?.toLocal();
-              final dateStr = date != null
-                  ? '${date.day}/${date.month}/${date.year}'
-                  : '-';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedScheduleId = schedule['id'];
-                      _selectedScheduleTitle = schedule['title'];
-                    });
-                    ref.read(kknLocationProvider.notifier).setActiveSchedule(schedule['id']);
-                    ref.read(kknLocationProvider.notifier).startTracking(context);
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.md),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.calendar_today, color: AppColors.primaryGreen, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                schedule['title'] ?? '(Tanpa Judul)',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${schedule['category']} • $dateStr',
-                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                              ),
-                              if (schedule['location'] != null) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  schedule['location'],
-                                  style: const TextStyle(fontSize: 11, color: AppColors.textHint),
-                                ),
-                              ]
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right, color: AppColors.textHint)
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildAttendanceDetail(KknLocationState state, KknLocationNotifier notifier) {
     final activity = state.activeActivity;
@@ -174,27 +67,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Header info
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-              onPressed: () {
-                notifier.stopTracking();
-                notifier.clearActiveSchedule();
-                setState(() {
-                  _selectedScheduleId = null;
-                  _selectedScheduleTitle = null;
-                });
-              },
-            ),
-            Expanded(
-              child: Text(
-                _selectedScheduleTitle ?? 'Detail Kegiatan',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+            _selectedScheduleTitle ?? 'Kegiatan KKN Posko',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          ),
         ),
         const SizedBox(height: 12),
 
@@ -523,6 +401,35 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
               textAlign: TextAlign.center,
             ),
           ],
+
+          const SizedBox(height: 16),
+          // Tombol Pengajuan Tidak Hadir / Sakit / Izin
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.pengajuanIzin,
+                  arguments: {
+                    'scheduleId': _selectedScheduleId ?? 'SCH-TODAY',
+                    'scheduleTitle': _selectedScheduleTitle ?? 'Kegiatan KKN Posko',
+                  },
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange.shade800,
+                side: BorderSide(color: Colors.orange.shade400, width: 1.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.event_busy_rounded, size: 20),
+              label: const Text(
+                'Tidak Hadir / Ajukan Izin / Sakit',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+          ),
         ],
       ],
     );

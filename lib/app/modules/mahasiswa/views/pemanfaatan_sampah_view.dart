@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/pemanfaatan_sampah_controller.dart';
@@ -24,6 +26,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   String _jenisPemanfaatan = 'Kompos Organik';
   String _kategoriSampah = 'Organik';
   String _satuan = 'Kg/Hari';
+  File? _selectedImage;
 
   final List<String> _jenisList = [
     'Kompos Organik',
@@ -47,6 +50,37 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     'Unit/Hari',
   ];
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+              title: const Text('Kamera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+              title: const Text('Galeri HP'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final picked = await picker.pickImage(source: source, imageQuality: 80);
+      if (picked != null) {
+        setState(() => _selectedImage = File(picked.path));
+      }
+    }
+  }
+
   @override
   void dispose() {
     _jumlahCtrl.dispose();
@@ -69,6 +103,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       satuan: _satuan,
       wilayahDampingan: '$rwTarget - ${_lokasiCtrl.text.trim()}',
       deskripsi: 'Hasil Produk: ${_hasilProdukCtrl.text.trim()} | Catatan: ${_deskripsiCtrl.text.trim()}',
+      fotoPath: _selectedImage?.path,
     );
 
     final success = await ref.read(pemanfaatanSampahProvider.notifier).submitLaporan(request);
@@ -122,16 +157,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           'Input Pemanfaatan Sampah',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
         ),
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryGreen, AppColors.primaryBlueDark],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        backgroundColor: AppColors.primaryGreen,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -297,6 +324,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                       ),
                       const SizedBox(height: 16),
 
+                      const SizedBox(height: 16),
+
                       // Deskripsi Pemanfaatan
                       const Text('Deskripsi & Catatan Kegiatan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       const SizedBox(height: 6),
@@ -311,6 +340,53 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                           if (v == null || v.trim().isEmpty) return 'Deskripsi wajib diisi';
                           return null;
                         },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Foto Bukti Pemanfaatan Sampah
+                      const Text('Foto Bukti Pemanfaatan (Opsional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: _pickImage,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundCanvas,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+                          ),
+                          child: _selectedImage != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Stack(
+                                    children: [
+                                      Image.file(_selectedImage!, width: double.infinity, height: 140, fit: BoxFit.cover),
+                                      Positioned(
+                                        right: 8,
+                                        top: 8,
+                                        child: CircleAvatar(
+                                          backgroundColor: Colors.black54,
+                                          radius: 16,
+                                          child: IconButton(
+                                            icon: const Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                                            onPressed: () => setState(() => _selectedImage = null),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_a_photo_rounded, size: 36, color: AppColors.primaryGreen),
+                                    SizedBox(height: 8),
+                                    Text('Ketuk untuk Ambil / Upload Foto Bukti', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                        ),
                       ),
                     ],
                   ),

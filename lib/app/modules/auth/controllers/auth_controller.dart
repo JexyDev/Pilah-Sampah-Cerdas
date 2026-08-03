@@ -4,6 +4,7 @@ import '../../../data/models/user_entity.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/services/notification_engine.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -178,7 +179,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Logout — unregister FCM token per-user, hapus token secure storage, reset state.
+  /// Logout — unregister FCM token per-user, hapus token secure storage, reset state & bersihkan system tray.
   Future<void> logout() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -189,6 +190,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {
       // Non-critical — abaikan jika Firebase tidak aktif
     }
+    await NotificationEngine().cancelAll();
     await _authRepository.logout();
     state = const AuthState();
   }
@@ -198,6 +200,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (state.user == null) return;
     state = state.copyWith(
       user: state.user!.copyWith(householdId: householdId),
+    );
+  }
+
+  /// Update kelurahan & rtRw mahasiswa KKN langsung di state.
+  /// Data ini disimpan permanen di local storage oleh AuthRepository.
+  void setMahasiswaRegion({required String kelurahan, required String rtRw}) {
+    if (state.user == null) return;
+    state = state.copyWith(
+      user: state.user!.copyWith(kelurahan: kelurahan, rtRw: rtRw),
     );
   }
 

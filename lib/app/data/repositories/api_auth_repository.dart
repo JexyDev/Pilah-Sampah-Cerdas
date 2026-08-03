@@ -45,6 +45,10 @@ class ApiAuthRepository implements AuthRepository {
         final accessToken = data['accessToken'] as String;
         final refreshToken = data['refreshToken'] as String;
 
+        // DEBUG: lihat apa yang backend kirim saat login
+        debugPrint('[DEBUG LOGIN] userMap keys=${userMap.keys.toList()}');
+        debugPrint('[DEBUG LOGIN] userMap=$userMap');
+
         // Simpan token ke secure storage
         await Future.wait([
           secureStorage.write(
@@ -63,8 +67,25 @@ class ApiAuthRepository implements AuthRepository {
 
         var user = _mapUser(userMap);
 
-        // Langsung fetch householdId setelah login berhasil
-        user = await _fetchAndAttachHousehold(user);
+        // Untuk warga: fetch household (householdId, rtRw, kelurahan)
+        // Untuk mahasiswa/petugas: baca dari local storage dulu
+        if (user.role == UserRole.warga) {
+          user = await _fetchAndAttachHousehold(user);
+        } else if (user.role == UserRole.mahasiswaKkn) {
+          // Cek apakah login response sudah ada kelurahan/rtRw
+          if (user.kelurahan.isEmpty || user.rtRw.isEmpty) {
+            // Baca dari local storage yang mungkin sudah disimpan sebelumnya
+            final localKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
+            final localRt = await secureStorage.read(key: AppConfig.mahasiswaRtRwKey);
+            if ((localKel != null && localKel.isNotEmpty) ||
+                (localRt != null && localRt.isNotEmpty)) {
+              user = user.copyWith(
+                kelurahan: localKel?.isNotEmpty == true ? localKel! : user.kelurahan,
+                rtRw: localRt?.isNotEmpty == true ? localRt! : user.rtRw,
+              );
+            }
+          }
+        }
 
         return user;
       }
@@ -336,12 +357,29 @@ class ApiAuthRepository implements AuthRepository {
       final userMap = jsonDecode(userDataStr) as Map<String, dynamic>;
       var user = _mapUser(userMap);
 
-      // Attach householdId dari cache
+      // Attach householdId dari cache (untuk warga)
       final cachedHouseholdId = await secureStorage.read(
         key: AppConfig.householdIdKey,
       );
       if (cachedHouseholdId != null && cachedHouseholdId.isNotEmpty) {
         user = user.copyWith(householdId: cachedHouseholdId);
+      }
+
+      // Untuk mahasiswa KKN: baca kelurahan & rtRw dari local storage
+      if (user.role == UserRole.mahasiswaKkn) {
+        final cachedKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
+        final cachedRt = await secureStorage.read(key: AppConfig.mahasiswaRtRwKey);
+        final hasLocalRegion = (cachedKel != null && cachedKel.isNotEmpty) ||
+                               (cachedRt != null && cachedRt.isNotEmpty);
+        if (hasLocalRegion) {
+          user = user.copyWith(
+            kelurahan: cachedKel?.isNotEmpty == true ? cachedKel! : user.kelurahan,
+            rtRw: cachedRt?.isNotEmpty == true ? cachedRt! : user.rtRw,
+          );
+        } else if (user.kelurahan.isEmpty || user.rtRw.isEmpty) {
+          // Fallback ke API hanya jika lokal belum ada
+          user = await _fetchProfileMe(user);
+        }
       }
 
       return user;
@@ -558,6 +596,64 @@ class ApiAuthRepository implements AuthRepository {
   // ─── Helper ───────────────────────────────────────────────────────────────
 
   UserEntity _mapUser(Map<String, dynamic> userMap) {
+    // Ekstrak kelurahan & rtRw dari berbagai kemungkinan struktur response:
+    // - Flat: {'kelurahan': 'Bojongsoang', 'rtRw': '01/02'}
+    // - Nested via rtRw object: {'rtRw': {'name': '01/02', 'kelurahan': {'name': 'Bojongsoang'}}}
+    // - Nested via kelompok KKN: {'kelompokKkn': {'kelurahan': ..., 'rtRw': ...}}
+    String kelurahan = '';
+    String rtRw = '';
+
+    // 1. Coba flat field langsung
+    kelurahan = userMap['kelurahan']?.toString() ?? '';
+    rtRw = userMap['rtRw']?.toString() ?? '';
+
+    // 2. Jika rtRw adalah object nested (seperti struktur warga)
+    if (rtRw.isEmpty && userMap['rtRw'] is Map) {
+      final rtRwMap = userMap['rtRw'] as Map<String, dynamic>;
+      rtRw = rtRwMap['name']?.toString() ?? '';
+      if (kelurahan.isEmpty && rtRwMap['kelurahan'] is Map) {
+        final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
+        kelurahan = kelMap['name']?.toString() ?? '';
+      } else if (kelurahan.isEmpty) {
+        kelurahan = rtRwMap['kelurahan']?.toString() ?? '';
+      }
+    }
+
+    // 3. Coba dari studentProfile (response backend VPS /users & /auth/me yang baru di-deploy)
+    final sp = userMap['studentProfile'] is Map ? (userMap['studentProfile'] as Map<String, dynamic>) : null;
+    if (sp != null) {
+      if (kelurahan.isEmpty) kelurahan = sp['kelurahan']?.toString() ?? sp['penugasanKelurahan']?.toString() ?? sp['kelompok']?['kelurahan']?.toString() ?? '';
+      if (rtRw.isEmpty) {
+        if (sp['rtRw'] != null) {
+          rtRw = sp['rtRw'].toString();
+        } else if (sp['penugasanRt'] != null && sp['penugasanRw'] != null) {
+          rtRw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
+        } else if (sp['kelompok']?['rtRw'] != null) {
+          rtRw = sp['kelompok']['rtRw'].toString();
+        }
+      }
+    }
+
+    // 4. Coba dari kelompokKkn (struktur mahasiswa KKN)
+    if ((kelurahan.isEmpty || rtRw.isEmpty) && userMap['kelompokKkn'] is Map) {
+      final kkn = userMap['kelompokKkn'] as Map<String, dynamic>;
+      if (kelurahan.isEmpty) kelurahan = kkn['kelurahan']?.toString() ?? '';
+      if (rtRw.isEmpty) rtRw = kkn['rtRw']?.toString() ?? '';
+    }
+
+    // 5. Coba dari profile nested
+    if ((kelurahan.isEmpty || rtRw.isEmpty) && userMap['profile'] is Map) {
+      final profile = userMap['profile'] as Map<String, dynamic>;
+      if (kelurahan.isEmpty) kelurahan = profile['kelurahan']?.toString() ?? '';
+      if (rtRw.isEmpty) rtRw = profile['rtRw']?.toString() ?? '';
+    }
+
+    final String nim = userMap['nim']?.toString() ?? sp?['nim']?.toString() ?? userMap['profile']?['nim']?.toString() ?? '';
+    final String prodi = userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? '';
+    final String jurusan = userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? '';
+    final String fakultas = userMap['fakultas']?.toString() ?? sp?['fakultas']?.toString() ?? userMap['profile']?['fakultas']?.toString() ?? '';
+    final String universitas = userMap['universitas']?.toString() ?? sp?['universitas']?.toString() ?? userMap['profile']?['universitas']?.toString() ?? '';
+
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
@@ -565,6 +661,93 @@ class ApiAuthRepository implements AuthRepository {
       email: userMap['email']?.toString(),
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
       fotoProfil: userMap['fotoProfil']?.toString(),
+      kelurahan: kelurahan,
+      rtRw: rtRw,
+      nim: nim,
+      jurusan: jurusan,
+      prodi: prodi,
+      fakultas: fakultas,
+      universitas: universitas,
     );
+  }
+
+  /// Fetch data wilayah mahasiswa dari /auth/me atau fallback ke /kkn/kelompok/me.
+  /// Backend /auth/me tidak return kelurahan/rtRw, tapi /kkn/kelompok/me punya poskoLocation.
+  Future<UserEntity> _fetchProfileMe(UserEntity user) async {
+    // Coba /auth/me dulu (siapa tahu backend nanti update untuk return wilayah)
+    try {
+      final response = await apiClient.dio.get('/auth/me');
+      debugPrint('[DEBUG /auth/me] status=${response.statusCode} data=${response.data}');
+      if (response.statusCode == 200) {
+        // Backend return {success, message, user: {...}} — bukan {data: {...}}
+        final rawData = response.data;
+        Map<String, dynamic> userMap = {};
+        if (rawData is Map) {
+          // Coba key 'user' langsung
+          if (rawData['user'] is Map) {
+            userMap = rawData['user'] as Map<String, dynamic>;
+          } else if (rawData['data'] is Map) {
+            final d = rawData['data'] as Map<String, dynamic>;
+            userMap = d['user'] is Map ? d['user'] as Map<String, dynamic> : d;
+          }
+        }
+        debugPrint('[DEBUG /auth/me] userMap=$userMap');
+        if (userMap.isNotEmpty) {
+          final fetched = _mapUser(userMap);
+          if (fetched.kelurahan.isNotEmpty && fetched.rtRw.isNotEmpty) {
+            debugPrint('[DEBUG /auth/me] Got kelurahan=${fetched.kelurahan} rtRw=${fetched.rtRw}');
+            return user.copyWith(
+              kelurahan: fetched.kelurahan,
+              rtRw: fetched.rtRw,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[DEBUG /auth/me] ERROR: $e');
+    }
+
+    // Fallback: ambil dari /kkn/kelompok/me yang punya poskoLocation
+    try {
+      final kelompokResp = await apiClient.dio.get('/kkn/kelompok/me');
+      debugPrint('[DEBUG /kkn/kelompok/me] status=${kelompokResp.statusCode} data=${kelompokResp.data}');
+      if (kelompokResp.statusCode == 200) {
+        final data = kelompokResp.data;
+        Map<String, dynamic> kelompokData = {};
+        if (data is Map && data['data'] is Map) {
+          kelompokData = data['data'] as Map<String, dynamic>;
+        } else if (data is Map) {
+          kelompokData = data as Map<String, dynamic>;
+        }
+
+        // Coba field kelurahan & rtRw langsung
+        String kel = kelompokData['kelurahan']?.toString() ?? '';
+        String rt = kelompokData['rtRw']?.toString() ?? '';
+
+        // Parse dari poskoLocation: "Kel. Bojongsoang RT 03 / RW 08"
+        if ((kel.isEmpty || rt.isEmpty) && kelompokData['poskoLocation'] is String) {
+          final posko = kelompokData['poskoLocation'] as String;
+          debugPrint('[DEBUG kelompok] poskoLocation=$posko');
+          // Extract kelurahan: teks setelah 'Kel.' atau sebelum 'RT'
+          final kelMatch = RegExp(r'Kel\.\s*([\w\s]+?)(?:\s+RT|\s*$)', caseSensitive: false).firstMatch(posko);
+          if (kelMatch != null && kel.isEmpty) kel = kelMatch.group(1)?.trim() ?? '';
+          // Extract RT/RW: format 'RT XX / RW YY' atau 'XX/YY'
+          final rtMatch = RegExp(r'RT\s*(\d+)\s*/\s*RW\s*(\d+)', caseSensitive: false).firstMatch(posko);
+          if (rtMatch != null && rt.isEmpty) rt = '${rtMatch.group(1)?.padLeft(2,'0')}/${rtMatch.group(2)?.padLeft(2,'0')}';
+        }
+
+        debugPrint('[DEBUG kelompok] parsed kelurahan=$kel rtRw=$rt');
+        if (kel.isNotEmpty || rt.isNotEmpty) {
+          return user.copyWith(
+            kelurahan: kel.isNotEmpty ? kel : user.kelurahan,
+            rtRw: rt.isNotEmpty ? rt : user.rtRw,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[DEBUG /kkn/kelompok/me] ERROR: $e');
+    }
+
+    return user;
   }
 }

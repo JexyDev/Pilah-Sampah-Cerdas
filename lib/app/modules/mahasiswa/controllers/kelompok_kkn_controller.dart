@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../core/utils/network_exception_helper.dart';
 
 class KelompokKknState {
   final bool isLoading;
@@ -42,7 +43,10 @@ class KelompokKknNotifier extends StateNotifier<KelompokKknState> {
       final data = await repo.getKelompokKkn();
       state = state.copyWith(isLoading: false, kelompok: data, clearError: true);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Gagal memuat data kelompok KKN.');
+      state = state.copyWith(
+        isLoading: false,
+        error: NetworkExceptionHelper.getErrorMessage(e),
+      );
     }
   }
 }
