@@ -183,17 +183,43 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
-          <div className="flex items-center justify-between mb-3 border-b border-slate-200/60 pb-2">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm space-y-2.5">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
             <p className="font-bold flex items-center gap-1.5 text-slate-800">
               <Info className="text-primary" size={16} />
-              Pilih Akun Demo 
+              Pilih Akun Demo (9 Role Complete)
             </p>
             <span className="bg-slate-200/70 text-slate-700 font-mono px-1.5 py-0.5 rounded text-[9px]">
               pass: password123
             </span>
           </div>
-          <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+
+          <select
+            onChange={(e) => {
+              if (e.target.value) {
+                const [p, lbl] = e.target.value.split("|");
+                setIdentifier(p);
+                setPassword("password123");
+                setIdentifierError("");
+                setPasswordError("");
+                toast.success(`Akun ${lbl} dipilih`, { id: "autofill-toast", duration: 1500 });
+              }
+            }}
+            className="w-full h-9 bg-white border border-slate-300 rounded-lg px-3 text-xs font-semibold text-slate-700 outline-none focus:border-primary cursor-pointer shadow-2xs"
+          >
+            <option value="">-- Klik untuk memilih Peran Akun --</option>
+            <option value="08111111111|Super Admin">🔴 Super Admin (08111111111)</option>
+            <option value="08111111112|Admin DLH">🔵 Admin DLH Kota (08111111112 / 081200999998)</option>
+            <option value="08111111113|Camat Coblong">🟣 Camat Coblong (08111111113 / 081200999997)</option>
+            <option value="08111111114|Lurah Dago">🔷 Lurah Dago (08111111114 / 081200999996)</option>
+            <option value="08111111115|Asep RW 06">🟣 RW 06 Dago (08111111115 / 081200999995)</option>
+            <option value="08111111116|Bambang RT 01">🟡 RT 01 Dago (08111111116 / 081200999994)</option>
+            <option value="08111111117|Petugas Residu">🟠 Petugas Residu Hilir (08111111117 / 0812001004)</option>
+            <option value="08111111118|Mahasiswa KKN">🟢 Mahasiswa KKN (08111111118 / 0812001005)</option>
+            <option value="0812001001|Warga Mandiri">🟢 Warga Mandiri (0812001001 / 0812001003)</option>
+          </select>
+
+          <div className="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
             {[
               { phone: "08111111111", label: "Super Admin", bg: "bg-red-50 text-red-700 border-red-200" },
               { phone: "08111111112", label: "Admin DLH", bg: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -203,7 +229,7 @@ const Login: React.FC = () => {
               { phone: "08111111116", label: "RT 01 Dago", bg: "bg-amber-50 text-amber-700 border-amber-200" },
               { phone: "08111111117", label: "Petugas Residu", bg: "bg-orange-50 text-orange-700 border-orange-200" },
               { phone: "08111111118", label: "Mahasiswa KKN", bg: "bg-teal-50 text-teal-700 border-teal-200" },
-              { phone: "0812001001", label: "Warga", bg: "bg-green-50 text-green-700 border-green-200" },
+              { phone: "0812001001", label: "Warga Mandiri", bg: "bg-green-50 text-green-700 border-green-200" },
             ].map((acc) => (
               <button
                 key={acc.phone}
@@ -215,7 +241,7 @@ const Login: React.FC = () => {
                   setPasswordError("");
                   toast.success(`Mengisi kredensial ${acc.label}`, { id: "autofill-toast", duration: 1500 });
                 }}
-                className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 transition-all cursor-pointer text-left shadow-2xs"
               >
                 <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${acc.bg}`}>{acc.label}</span>
                 <span className="text-[10px] font-mono text-slate-500">{acc.phone}</span>
