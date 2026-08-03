@@ -86,6 +86,13 @@ router.get(
   kknController.getMyGroup
 );
 
+router.get(
+  "/active-zone",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getActiveZone
+);
+
 router.post(
   "/pemanfaatan-sampah",
   authMiddleware,

@@ -305,6 +305,17 @@ export class KknController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async getActiveZone(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.getActiveZone(kknUserId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getActiveZone error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();

@@ -893,6 +893,56 @@ export class KknService {
 
     return { wargaId, statusBimbingan, notifiedAt: new Date() };
   }
+  async getActiveZone(userId: string) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: {
+        assignedPolygon: {
+          include: { kelurahan: true },
+        },
+        user: {
+          include: {
+            rtRw: {
+              include: { kelurahan: true },
+            },
+          },
+        },
+      },
+    });
+
+    const activeArea = student?.assignedPolygon || student?.user?.rtRw;
+
+    if (!activeArea) {
+      return {
+        hasActiveZone: false,
+        message: "Wilayah penugasan KKN belum ditentukan oleh Admin.",
+        zoneName: null,
+        kelurahan: null,
+        latitude: null,
+        longitude: null,
+        radiusMeter: 500,
+        polygonPoints: [],
+      };
+    }
+
+    const lat = activeArea.latitude ? Number(activeArea.latitude) : null;
+    const lng = activeArea.longitude ? Number(activeArea.longitude) : null;
+
+    return {
+      hasActiveZone: true,
+      zoneName: activeArea.name || "Wilayah Dampingan KKN",
+      kelurahan: activeArea.kelurahan?.name || "Coblong",
+      latitude: lat,
+      longitude: lng,
+      radiusMeter: 500,
+      polygonPoints: lat && lng ? [
+        [lat + 0.002, lng - 0.002],
+        [lat + 0.002, lng + 0.002],
+        [lat - 0.002, lng + 0.002],
+        [lat - 0.002, lng - 0.002],
+      ] : [],
+    };
+  }
 }
 
 export const kknService = new KknService();
