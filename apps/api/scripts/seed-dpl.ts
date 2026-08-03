@@ -49,14 +49,24 @@ async function main() {
   const isCommit = args.includes('--commit');
   const customFileArg = args.find((a) => !a.startsWith('--'));
 
-  const defaultExcelPath = 'C:\\Users\\USER\\.gemini\\antigravity-ide\\scratch\\data_kkn.xlsx';
-  const excelPath = customFileArg
-    ? path.isAbsolute(customFileArg)
-      ? customFileArg
-      : path.resolve(process.cwd(), customFileArg)
-    : fs.existsSync(defaultExcelPath)
-    ? defaultExcelPath
-    : null;
+  const candidatePaths = [
+    path.resolve(process.cwd(), 'scripts/data_kkn.xlsx'),
+    path.resolve(process.cwd(), 'apps/api/scripts/data_kkn.xlsx'),
+    path.resolve(process.cwd(), 'data_kkn.xlsx'),
+    'C:\\Users\\USER\\.gemini\\antigravity-ide\\scratch\\data_kkn.xlsx',
+  ];
+
+  let excelPath: string | null = null;
+  if (customFileArg) {
+    excelPath = path.isAbsolute(customFileArg) ? customFileArg : path.resolve(process.cwd(), customFileArg);
+  } else {
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        excelPath = p;
+        break;
+      }
+    }
+  }
 
   console.log(`\n==================================================`);
   console.log(`📂 MEMPROSES DATA SEED & LINKING DPL (BAGIAN 1)`);
