@@ -100,6 +100,14 @@ app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
 
+// Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
+app.use("/api/v1/user", userRouter);
+app.use("/api/kkn", kknRouter);
+app.use("/api", kknAttendanceRouter);
+app.use("/api/residu", residuRouter);
+app.use("/api/notifications", notificationRouter);
+app.use("/api/auth", authRouter);
+
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {
   console.error("Unhandled Global Error:", err);

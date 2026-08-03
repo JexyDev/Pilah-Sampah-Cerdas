@@ -737,6 +737,45 @@ export class KknService {
       earnedPoints,
     };
   }
+
+  async notifyWargaStatus(kknUserId: string, wargaId: string, statusBimbingan: string) {
+    const warga = await prisma.user.findUnique({ where: { id: wargaId } });
+    if (!warga) {
+      throw new Error("WARGA_NOT_FOUND");
+    }
+
+    const isTerbina = statusBimbingan.toUpperCase() === "TERBINA";
+    const title = isTerbina
+      ? "Status Pendampingan KKN: Terbina"
+      : "Status Pendampingan KKN: Perlu Evaluasi";
+    const message = isTerbina
+      ? "Selamat! Rumah tangga Anda telah dinilai Terbina dalam pemilahan sampah oleh Mahasiswa KKN."
+      : "Rumah tangga Anda saat ini memerlukan peningkatan konsistensi dalam pemilahan sampah.";
+
+    await prisma.notification.create({
+      data: {
+        userId: wargaId,
+        title,
+        message,
+      },
+    });
+
+    if (warga.fcmToken) {
+      try {
+        const { notificationIntegrationService } = await import("./notificationIntegrationService.js");
+        await notificationIntegrationService.sendPushNotification(
+          warga.fcmToken,
+          title,
+          message,
+          "KKN_STATUS_NOTIFICATION"
+        );
+      } catch (err) {
+        console.error("[KknService] FCM send push error:", err);
+      }
+    }
+
+    return { wargaId, statusBimbingan, notifiedAt: new Date() };
+  }
 }
 
 export const kknService = new KknService();

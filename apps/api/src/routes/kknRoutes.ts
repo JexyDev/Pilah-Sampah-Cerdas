@@ -100,4 +100,11 @@ router.post(
   kknController.registerWarga
 );
 
+router.post(
+  "/warga/notify-status",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.notifyWargaStatus
+);
+
 export default router;

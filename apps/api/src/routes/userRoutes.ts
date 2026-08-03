@@ -124,6 +124,9 @@ router.put(
  *         schema:
  *           type: string
  */
+import { authController } from "../controllers/authController.js";
+
+router.put("/profile", authMiddleware, authController.updateProfile);
 router.get("/:id/onboarding-status", authMiddleware, userController.getOnboardingStatus);
 
 export default router;

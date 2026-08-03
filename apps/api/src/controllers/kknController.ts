@@ -258,6 +258,28 @@ export class KknController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async notifyWargaStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const { wargaId, statusBimbingan } = req.body;
+      if (!wargaId || !statusBimbingan) {
+        res.status(400).json({
+          success: false,
+          message: "wargaId dan statusBimbingan wajib diisi",
+        });
+        return;
+      }
+      await kknService.notifyWargaStatus(kknUserId, wargaId, statusBimbingan);
+      res.status(200).json({
+        success: true,
+        message: "Notifikasi terkirim",
+      });
+    } catch (error: any) {
+      console.error("[KknController] notifyWargaStatus error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();
