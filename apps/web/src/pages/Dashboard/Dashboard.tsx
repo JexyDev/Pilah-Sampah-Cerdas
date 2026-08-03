@@ -687,8 +687,6 @@ const WargaDashboard: React.FC = () => {
             )}
           </div>
 
-          <LeaderboardWidget />
-
           {/* Recent Activity */}
           <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
@@ -745,6 +743,11 @@ const WargaDashboard: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Leaderboard Full Width Section */}
+      <div className="mt-8">
+        <LeaderboardWidget />
       </div>
 
       {/* ================= MODALS ================= */}

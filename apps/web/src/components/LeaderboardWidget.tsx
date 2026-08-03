@@ -77,20 +77,20 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               </span>
 
               {/* Name & Subtitle */}
-              <div className="flex-1 min-w-0 pr-2">
-                <p className="font-bold text-slate-800 truncate text-[12px] leading-snug group-hover:text-emerald-700" title={item.name}>
+              <div className="flex-1 min-w-[120px] pr-2">
+                <p className="font-extrabold text-slate-800 text-[13px] leading-snug group-hover:text-emerald-700" title={item.name}>
                   {item.name}
                 </p>
                 {item.subtitle && (
-                  <p className="text-[10px] text-slate-400 truncate leading-none mt-0.5 font-medium">
+                  <p className="text-[11px] text-slate-400 leading-tight mt-0.5 font-medium">
                     {item.subtitle}
                   </p>
                 )}
               </div>
 
               {/* Bar Indicator */}
-              <div className="w-16 shrink-0 flex items-center justify-end">
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-20 sm:w-28 shrink-0 flex items-center justify-end">
+                <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
                     style={{ width: `${pct}%`, backgroundColor: barColor }}
@@ -99,7 +99,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               </div>
 
               {/* Points */}
-              <span className="w-14 text-right font-extrabold text-slate-700 text-[12px] shrink-0 font-mono">
+              <span className="w-16 text-right font-extrabold text-slate-800 text-[13px] shrink-0 font-mono">
                 {item.points.toLocaleString("id-ID")}
               </span>
             </div>
