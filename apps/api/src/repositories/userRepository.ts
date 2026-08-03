@@ -32,7 +32,7 @@ export class UserRepository {
           select: { points: true },
         },
         studentProfile: {
-          include: { assignedPolygon: true },
+          include: { assignedPolygon: true, kelompok: true },
         },
         petugasProfile: true,
       },

@@ -99,6 +99,12 @@ export class UserService {
               assignedPolygonId: u.studentProfile.assignedPolygonId,
               assignedPolygonName: u.studentProfile.assignedPolygon?.name,
               whitelistStatus: u.studentProfile.whitelistStatus,
+              kelompok: u.studentProfile.kelompok
+                ? {
+                    id: u.studentProfile.kelompok.id,
+                    name: u.studentProfile.kelompok.name,
+                  }
+                : null,
             }
           : null,
       };

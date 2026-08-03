@@ -1,4 +1,4 @@
-import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil } from "lucide-react";
+import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -442,16 +442,29 @@ const ManajemenPengguna: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
-                <th className="py-3.5 px-4 w-16">Avatar</th>
-                <th className="py-3.5 px-4">Nama Lengkap</th>
-                <th className="py-3.5 px-4">No. HP</th>
-                <th className="py-3.5 px-4">Peran</th>
-                <th className="py-3.5 px-4">Wilayah</th>
-                <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
-                {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
-              </tr>
+              {selectedRole === "MAHASISWA_KKN" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama & NIM</th>
+                  <th className="py-3.5 px-4">Universitas / Fakultas</th>
+                  <th className="py-3.5 px-4">No. WhatsApp</th>
+                  <th className="py-3.5 px-4">Kelompok KKN</th>
+                  <th className="py-3.5 px-4">Wilayah Tugas</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-16">Avatar</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4">Wilayah</th>
+                  <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              )}
             </thead>
             <tbody className="text-sm">
               {loading ? (
@@ -470,43 +483,117 @@ const ManajemenPengguna: React.FC = () => {
                   </td>
                 </tr>
               ) : paginatedUsers.length > 0 ? (
-                paginatedUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-outline-variant/30 hover:bg-surface-container-lowest/80 transition-colors duration-150"
-                  >
-                    <td className="px-6 py-4">
-                      <div
-                        className={`w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20`}
-                      >
-                        {user.name?.substring(0, 2).toUpperCase() || "U"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-on-surface">{user.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">NIK: {user.nik || `3273110${user.phone ? user.phone.slice(-9) : '029377001'}`}</p>
-                    </td>
-                    <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">
-                      {user.phone || "-"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 w-fit">
-                        {["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role) && (
-                          <ShieldAlert className="text-blue-600" size={15} />
+                paginatedUsers.map((user, idx) =>
+                  selectedRole === "MAHASISWA_KKN" ? (
+                    <tr
+                      key={user.id}
+                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <p className="font-bold text-slate-900">{user.name}</p>
+                        <p className="text-[10px] font-mono text-slate-400">
+                          NIM: {user.studentProfile?.nim || "-"}
+                        </p>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                        {user.studentProfile?.fakultas || "UNIKOM"}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        <a
+                          href={`https://wa.me/${(user.phone || "").replace(/\+/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          <Phone size={12} className="text-emerald-500" />
+                          {user.phone || "-"}
+                        </a>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200 font-bold text-[10px] inline-block">
+                          {user.studentProfile?.kelompok?.name || "Belum Plotting"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {user.wilayah && user.wilayah !== "-" ? (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={13} className="text-primary" />
+                            {user.wilayah}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">Belum diset</span>
                         )}
-                        {["CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(
-                          user.role
-                        ) && (
-                          <HardHat className="text-orange-600" size={15} />
-                        )}
-                        {user.role === "WARGA" && (
-                          <User className="text-green-600" size={15} />
-                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
                         <span
-                          className={`inline-block px-2.5 py-1 ${
-                            ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : [
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            user.status === "Aktif" || user.status === "ACTIVE"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : "bg-rose-100 text-rose-800 border border-rose-200"
+                          }`}
+                        >
+                          {user.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(user)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : (
+                    <tr
+                      key={user.id}
+                      className="border-b border-outline-variant/30 hover:bg-surface-container-lowest/80 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4">
+                        <div
+                          className={`w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20`}
+                        >
+                          {user.name?.substring(0, 2).toUpperCase() || "U"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-on-surface">{user.name}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          NIK: {user.nik || `3273110${user.phone ? user.phone.slice(-9) : "029377001"}`}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">
+                        {user.phone || "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 w-fit">
+                          {["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role) && (
+                            <ShieldAlert className="text-blue-600" size={15} />
+                          )}
+                          {["CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(
+                            user.role
+                          ) && <HardHat className="text-orange-600" size={15} />}
+                          {user.role === "WARGA" && <User className="text-green-600" size={15} />}
+                          <span
+                            className={`inline-block px-2.5 py-1 ${
+                              ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
+                                ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                : [
                                     "CAMAT",
                                     "LURAH",
                                     "RW",
@@ -515,54 +602,55 @@ const ManajemenPengguna: React.FC = () => {
                                   ].includes(user.role)
                                 ? "bg-orange-50 text-orange-700 border border-orange-200"
                                 : "bg-green-50 text-green-700 border border-green-200"
-                          } rounded-md text-[10px] font-bold tracking-wide uppercase`}
-                        >
-                          {user.role}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-on-surface-variant font-medium">
-                      {user.wilayah}
-                    </td>
-                    <td className="px-6 py-4 text-right font-bold text-on-surface-variant">
-                      {user.setoran}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-outline-variant/30 bg-surface-container-lowest">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${user.status === "Aktif" ? "bg-green-600" : "bg-outline-variant"}`}
-                        ></span>
-                        <span
-                          className={
-                            user.status === "Aktif" ? "text-green-700" : "text-on-surface-variant"
-                          }
-                        >
-                          {user.status}
-                        </span>
-                      </div>
-                    </td>
-                    {!isReadOnly && (
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-1">
-                          <button
-                            onClick={() => handleOpenEditModal(user)}
-                            className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
-                            title="Edit"
+                            } rounded-md text-[10px] font-bold tracking-wide uppercase`}
                           >
-                            <Pencil size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(user)}
-                            className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Hapus"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                            {user.role}
+                          </span>
                         </div>
                       </td>
-                    )}
-                  </tr>
-                ))
+                      <td className="px-6 py-4 text-on-surface-variant font-medium">
+                        {user.wilayah}
+                      </td>
+                      <td className="px-6 py-4 text-right font-bold text-on-surface-variant">
+                        {user.setoran}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-outline-variant/30 bg-surface-container-lowest">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Aktif" ? "bg-green-600" : "bg-outline-variant"}`}
+                          ></span>
+                          <span
+                            className={
+                              user.status === "Aktif" ? "text-green-700" : "text-on-surface-variant"
+                            }
+                          >
+                            {user.status}
+                          </span>
+                        </div>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(user)}
+                              className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  )
+                )
               ) : (
                 <tr>
                   <td
