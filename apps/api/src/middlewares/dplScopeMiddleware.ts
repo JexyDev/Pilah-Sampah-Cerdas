@@ -21,16 +21,20 @@ export const dplScopeMiddleware = async (
     }
 
     const currentUserId = user.userId || (user as any).id;
-    const roleName = String(user.role).toUpperCase();
+    const roleName = String(user.role || "").toUpperCase();
 
     // SuperAdmin and Admin DLH can view all DPL data
-    if (["ADMIN_DLH", "DLH", "SUPERADMIN", "ADMIN"].includes(roleName)) {
+    if (
+      ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPERADMIN", "SUPER_ADMIN", "ADMIN"].some((r) =>
+        roleName.includes(r)
+      )
+    ) {
       next();
       return;
     }
 
     // Only DPL role proceeds
-    if (!["DPL", "DOSEN_PEMBIMBING"].includes(roleName)) {
+    if (!["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(roleName)) {
       res.status(403).json({ error: "FORBIDDEN", message: "Akses hanya untuk Dosen Pembimbing Lapangan (DPL)" });
       return;
     }

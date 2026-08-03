@@ -9,7 +9,8 @@ export const dplController = {
   getGroupSummary: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
-      const data = await dplService.getGroupSummary(dplUserId);
+      const userRole = (req.user as any)?.role;
+      const data = await dplService.getGroupSummary(dplUserId, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.getGroupSummary] error:", error);
@@ -20,8 +21,9 @@ export const dplController = {
   getStudentDetails: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
       const groupId = req.query.groupId as string | undefined;
-      const data = await dplService.getStudentDetails(dplUserId, groupId);
+      const data = await dplService.getStudentDetails(dplUserId, groupId, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.getStudentDetails] error:", error);
@@ -48,7 +50,8 @@ export const dplController = {
   getMapCoverage: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
-      const data = await dplService.getMapCoverage(dplUserId);
+      const userRole = (req.user as any)?.role;
+      const data = await dplService.getMapCoverage(dplUserId, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.getMapCoverage] error:", error);
@@ -59,7 +62,8 @@ export const dplController = {
   getAlerts: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
-      const data = await dplService.getAlerts(dplUserId);
+      const userRole = (req.user as any)?.role;
+      const data = await dplService.getAlerts(dplUserId, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.getAlerts] error:", error);
@@ -70,7 +74,8 @@ export const dplController = {
   getApprovalHistory: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
-      const data = await dplService.getApprovalHistory(dplUserId);
+      const userRole = (req.user as any)?.role;
+      const data = await dplService.getApprovalHistory(dplUserId, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.getApprovalHistory] error:", error);

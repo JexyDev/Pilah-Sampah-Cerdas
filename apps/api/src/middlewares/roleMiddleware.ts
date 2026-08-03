@@ -24,10 +24,13 @@ export const roleMiddleware = (allowedRoles: string[]) => {
       }
 
       const normalizeRole = (r: string) => {
-        if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(r)) return "ADMIN_DLH";
-        if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r)) return "CAMAT";
-        if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r)) return "LURAH";
-        return r;
+        const upper = String(r || "").toUpperCase();
+        if (["DLH", "DLH_ADMIN", "ADMIN_DLH", "ADMIN DLH"].includes(upper)) return "ADMIN_DLH";
+        if (["ADMIN_KECAMATAN", "CAMAT", "CAMAT_ADMIN"].includes(upper)) return "CAMAT";
+        if (["ADMIN_KELURAH", "LURAH", "LURAH_ADMIN"].includes(upper)) return "LURAH";
+        if (["SUPER_ADMIN", "SUPERADMIN", "SUPER ADMIN"].includes(upper)) return "SUPERADMIN";
+        if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper)) return "DPL";
+        return upper;
       };
       const userRole = normalizeRole(user.role);
       const normalizedAllowed = allowedRoles.map(normalizeRole);
