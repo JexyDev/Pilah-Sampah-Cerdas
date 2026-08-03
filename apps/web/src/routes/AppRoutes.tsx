@@ -319,8 +319,8 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="peta" element={<PlaceholderPage title="Peta Wilayah" />} />
-        <Route path="evaluasi-ai" element={<PlaceholderPage title="Evaluasi AI" />} />
+        <Route path="peta" element={<ManajemenLokasi />} />
+        <Route path="evaluasi-ai" element={<ReviewDiscrepancy />} />
         <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
         <Route
           path="setor"

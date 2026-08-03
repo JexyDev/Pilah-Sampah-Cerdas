@@ -1,4 +1,4 @@
-﻿# Product Requirement Document (PRD) — Pilah Sampah Cerdas
+# Product Requirement Document (PRD) — Pilah Sampah Cerdas
 
 ## 1. Pendahuluan
 ### 1.1 Deskripsi Produk
@@ -49,4 +49,18 @@ Disediakan menu khusus di dalam Master Data Tong Sampah untuk mempermudah pendaf
 * **Aktivasi Mobile:** Saat warga menerima tong, mereka melakukan scan pertama kali lewat aplikasi mobile untuk mengasosiasikan `bin_id` tersebut dengan akun warga mereka.
 
 ### 4.2 Bulk Import & Verify Bins (Linked to Master Data)
-* **Fungsi:** Mengimpor file Excel/CSV berisi tong sampah yang sudah diverifikasi dan langsung diasosiasikan dengan Master Data Warga (`user_id` / NIK).
+* **Fungsi:** Mengimpor file Excel/CSV berisi tong sampah yang sudah diverifikasi dan langsung diasosiasikan dengan Master Data Warga (`user_id` / No HP).
+
+---
+
+## 5. Peran Pengguna (RBAC 9 Role) & Autentikasi
+1. **Warga:** Mengunggah foto sampah, scan QR bin, mengumpulkan poin gamifikasi. (Auth: No HP +62).
+2. **Mahasiswa KKN:** Pendaftaran warga, scan awal & penyerahan QR Bins, logbook KKN. (Auth: No HP +62, Profile: NIM).
+3. **DPL (Dosen Pembimbing Lapangan):** Monitoring progress KKN & dampingan mahasiswa. (Auth: No HP +62, Profile: NIP).
+4. **Petugas Residu:** Monitoring web/mobile timbulan residu, log penimbangan fisik manual, penanganan eskalasi. (Auth: No HP +62).
+5. **RW:** Approval aktivasi tempat sampah, approval daur ulang, penanganan pengaduan wilayah. (Auth: No HP +62).
+6. **Lurah:** Monitoring read-only wilayah Kelurahan. (Auth: No HP +62).
+7. **Camat:** Monitoring read-only wilayah Kecamatan Coblong. (Auth: No HP +62).
+8. **Admin DLH:** Monitoring read-only Kota & Approval Diskrepansi AI. (Auth: No HP +62).
+9. **Super Admin:** Master data management (Bulk KKN/DPL, Configurator). (Auth: No HP +62).
+

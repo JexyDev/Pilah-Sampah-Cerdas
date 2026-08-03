@@ -128,7 +128,7 @@ export const PemanfaatanSampah: React.FC = () => {
     setUnitBahanBaku("Kg");
     setHasil("");
     setUnitHasil("Kg");
-    setFotoDokumentasiUrl("https://picsum.photos/400/300");
+    setFotoDokumentasiUrl("");
     setTanggalPencatatan(new Date().toISOString().split("T")[0]);
     setIsModalOpen(true);
   };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Search, Loader2, X, GraduationCap, User, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, X, GraduationCap, User, BookOpen, ChevronLeft, ChevronRight, Crown } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -10,10 +10,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState("kelompok");
 
-  // Kelompok State
+  // Kelompok State & Pagination
   const [kelompokList, setKelompokList] = useState<any[]>([]);
   const [loadingKelompok, setLoadingKelompok] = useState(true);
   const [searchKelompok, setSearchKelompok] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
   const [isKelompokModalOpen, setIsKelompokModalOpen] = useState(false);
   const [kelompokModalType, setKelompokModalType] = useState<"add" | "edit">("add");
   const [selectedKelompokId, setSelectedKelompokId] = useState<string | null>(null);
@@ -244,48 +246,92 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 Belum ada data kelompok KKN.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-100">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Nama Kelompok</th>
-                      <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Dosen Pembimbing (DPL)</th>
-                      <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Jumlah Anggota</th>
-                      {!isReadOnly && (
-                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Aksi</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {kelompokList.map((k) => (
-                      <tr key={k.id} className="hover:bg-slate-50/55 transition-colors">
-                        <td className="p-4 font-semibold text-slate-800">{k.name}</td>
-                        <td className="p-4 text-slate-600">{k.dpl?.name || <span className="text-slate-400 italic">Belum ditentukan</span>}</td>
-                        <td className="p-4 text-slate-600 text-center font-medium">{k.students?.length || 0} Mahasiswa</td>
+              <div className="space-y-4">
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Nama Kelompok</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Ketua Kelompok</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Dosen Pembimbing (DPL)</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Anggota</th>
                         {!isReadOnly && (
-                          <td className="p-4 text-center">
-                            <div className="flex items-center justify-center gap-3">
-                              <button
-                                onClick={() => handleOpenEditKelompok(k)}
-                                className="p-1.5 text-slate-500 hover:text-emerald-600 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
-                                title="Edit Kelompok"
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteKelompok(k.id)}
-                                className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
-                                title="Hapus Kelompok"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
+                          <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Aksi</th>
                         )}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {kelompokList
+                        .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                        .map((k) => {
+                          const ketuaMhs = k.students?.find((s: any) => s.isKetua);
+                          return (
+                            <tr key={k.id} className="hover:bg-slate-50/55 transition-colors">
+                              <td className="p-4 font-semibold text-slate-800">{k.name}</td>
+                              <td className="p-4">
+                                {ketuaMhs ? (
+                                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-lg text-xs font-bold">
+                                    <Crown size={12} className="text-amber-600" />
+                                    {ketuaMhs.user?.name || "Ketua Kelompok"}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 italic text-xs">Belum di-assign</span>
+                                )}
+                              </td>
+                              <td className="p-4 text-slate-600">{k.dpl?.name || <span className="text-slate-400 italic">Belum ditentukan</span>}</td>
+                              <td className="p-4 text-slate-600 text-center font-medium">{k.students?.length || 0} Mahasiswa</td>
+                              {!isReadOnly && (
+                                <td className="p-4 text-center">
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button
+                                      onClick={() => handleOpenEditKelompok(k)}
+                                      className="p-1.5 text-slate-500 hover:text-emerald-600 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
+                                      title="Edit Kelompok"
+                                    >
+                                      <Pencil size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteKelompok(k.id)}
+                                      className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
+                                      title="Hapus Kelompok"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {Math.ceil(kelompokList.length / rowsPerPage) > 1 && (
+                  <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500">
+                      Halaman <span className="text-slate-900">{currentPage}</span> dari{" "}
+                      <span className="text-slate-900">{Math.ceil(kelompokList.length / rowsPerPage)}</span> ({kelompokList.length} total)
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <ChevronLeft size={14} /> Sebelumnya
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, Math.ceil(kelompokList.length / rowsPerPage)))}
+                        disabled={currentPage === Math.ceil(kelompokList.length / rowsPerPage)}
+                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        Selanjutnya <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

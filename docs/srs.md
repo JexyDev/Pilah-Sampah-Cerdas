@@ -7,6 +7,9 @@
 * **FR-04 (Notifikasi & Monitoring):** Sistem harus memicu notifikasi "Tong Penuh" jika kapasitas tong mencapai >90%.
 * **FR-05 (Master Data CRUD):** Admin dan Petugas Kelurahan dapat mengelola seluruh entitas master data melalui halaman Master Data dengan navigasi dropdown.
 * **FR-06 (Live Monitoring):** Sistem menyediakan 1 halaman khusus Live Monitoring yang menampilkan titik tong sampah real-time di atas peta geospatial, mencakup area RT, RW, dan Kelurahan secara hierarkis.
+* **FR-07 (Autentikasi Universal Phone Number):** SELURUH 9 Role menggunakan No HP (+62) sebagai identitas utama login. NIK dihapus total. NIM (Mahasiswa) dan NIP (DPL) digunakan sebagai metadata profil.
+* **FR-08 (Portal Web Monitoring Multi-Role):** Menyediakan Web Monitoring khusus untuk DPL (monitoring KKN), Petugas Residu (monitoring timbulan residu & penimbangan manual), Admin DLH/Camat/Lurah (monitoring read-only ter-scope wilayah), RW, dan Super Admin.
+
 
 ---
 

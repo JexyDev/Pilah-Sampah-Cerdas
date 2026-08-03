@@ -384,7 +384,14 @@ const ManajemenMahasiswa: React.FC = () => {
                         {startIndex + idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">{mhs.name}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-slate-900">{mhs.name}</p>
+                          {mhs.studentProfile?.isKetua && (
+                            <span className="bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.5 rounded text-[9px] font-extrabold inline-flex items-center gap-0.5 shadow-2xs" title="Ketua Kelompok KKN">
+                              ⭐ KETUA
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] font-mono text-slate-400">NIM: {mhs.studentProfile?.nim || "-"}</p>
                       </td>
                       <td className="py-3.5 px-4 text-slate-700 font-semibold">

@@ -153,10 +153,11 @@ docs/<deskripsi-singkat>
 
 ---
 
-## 9. Kebijakan Identitas Pengguna & Penghapusan NIK (WAJIB DIIKUTI)
+## 9. Kebijakan Identitas Pengguna, Auth & Web Monitoring (WAJIB DIIKUTI)
 
 - **NIK (Nomor Induk Kependudukan)**: DIHAPUS dari SELURUH tabel database, UI, endpoint API, dan formulir aplikasi. **Tidak ada role atau modul yang menggunakan NIK**.
-- **Mahasiswa KKN**: Menggunakan **NIM** (Nomor Induk Mahasiswa).
-- **DPL (Dosen Pembimbing Lapangan)**: Menggunakan **NIP** (Nomor Induk Pegawai).
-- **Seluruh Role Lain (Warga, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin)**: Hanya menggunakan **Nomor Telepon (+62)**.
+- **Identitas Auth Universal (Saat ini)**: **SELURUH Role (100%)** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** untuk login utama (OTP / kredensial).
+- **NIM & NIP**: Disimpan sebagai data profil/metadata Mahasiswa KKN & DPL.
+- **Petugas Residu**: Memiliki akses ke **Web Monitoring** (`apps/web`) untuk pemantauan data timbulan residu, eskalasi penjemputan, dan laporan warga.
+
 

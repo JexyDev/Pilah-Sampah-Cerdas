@@ -51,12 +51,16 @@ L.Icon.Default.mergeOptions({
 // Custom HTML DivIcon for Bins
 const createMapBinIcon = (status: string) => {
   let color = "#10b981"; // default Normal
-  if (status === "Sedang") color = "#f59e0b";
-  if (status === "Penuh") color = "#ef4444";
+  if (status === "Sedang" || status === "waspada") color = "#f59e0b";
+  if (status === "Penuh" || status === "penuh") color = "#ef4444";
 
   return L.divIcon({
-    className: "custom-div-icon",
-    html: `<div style="background-color: ${color}; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.4);"></div>`,
+    className: "custom-bin-icon",
+    html: `
+      <div style="background-color: ${color}; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+    `,
     iconSize: [26, 26],
     iconAnchor: [13, 13],
   });
@@ -64,12 +68,17 @@ const createMapBinIcon = (status: string) => {
 
 const createHouseIcon = () => {
   return L.divIcon({
-    className: "custom-div-icon",
-    html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 4px; border: 2.5px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">H</div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
+    className: "custom-house-icon",
+    html: `
+      <div style="background-color: #3b82f6; width: 24px; height: 24px; border-radius: 6px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 };
+
 
 const createRwZonaIcon = (rwName: string, patuh: number) => {
   let color = "#10b981"; // green

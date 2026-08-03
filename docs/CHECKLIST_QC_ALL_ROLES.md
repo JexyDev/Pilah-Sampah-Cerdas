@@ -11,18 +11,18 @@
 
 Sistem Trashcare mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses data yang terisolasi secara ketat:
 
-| No | Peran / Role | Metode Login | Scope Data | Batasan Operasi (Read/Write) |
+| No | Peran / Role | Metode Login (Saat Ini) | Scope Data | Batasan Operasi (Read/Write) |
 |---|---|---|---|---|
-| 1 | **Warga** | No HP (+62) + WA OTP | Rumah Tangga Sendiri | Read/Write (Setoran, Bin, Ide Daur Ulang) |
-| 2 | **RT** | Email / HP + Password | Wilayah RT Sendiri | Read/Write (Verifikasi Registrasi GPS) |
-| 3 | **RW** | Email / HP + Password | Wilayah RW Sendiri | Read/Write (Approval Bin, Pemanfaatan, Approval Ide) |
-| 4 | **Petugas Pengangkut** | Email / HP + Password | Area Penugasan Polygon | Read/Write (Status Penjemputan, Notif Tong Penuh) |
-| 5 | **Petugas Residu** | Email / HP + Password | TPS / TPA Hilir | Read/Write (Input Timbangan Industri Fisik) |
-| 6 | **Mahasiswa KKN** | NIM / Email + Password | Zona Polygon KKN & Warga Dampingan | Read/Write (Binding Warga, Location Ping) |
-| 7 | **DPL (Dosen Pembimbing)** | NIP / Email + Password | Mahasiswa Bimbingan KKN | Read/Write (Monitoring Presensi & Assessment) |
-| 8 | **Admin Kelurahan** | Email + Password | Se-Kelurahan | **Read-Only** (Strict Guard 403 write attempt) |
-| 9 | **Admin Kecamatan** | Email + Password | Se-Kecamatan | **Read-Only** (Strict Guard 403 write attempt) |
-| 10 | **Super Admin** | Email + Password | System Wide (Se-Kota) | Akses Penuh (Raw Data, System Config, Admin CRUD) |
+| 1 | **Warga** | No HP (+62) + OTP/Password | Rumah Tangga Sendiri | Read/Write (Setoran, Bin, Ide Daur Ulang) |
+| 2 | **Mahasiswa KKN** | No HP (+62) + Password (Profile: NIM) | Zona KKN & Warga Dampingan | Read/Write (Binding Warga, Location Ping) |
+| 3 | **DPL (Dosen Pembimbing)** | No HP (+62) + Password (Profile: NIP) | Mahasiswa Bimbingan KKN | Read/Write (Web Monitoring KKN & Logbook) |
+| 4 | **Petugas Residu** | No HP (+62) + Password | TPS / TPA Hilir & Web Portal | Read/Write (Web Monitoring Residu & Input Timbangan Manual) |
+| 5 | **RW** | No HP (+62) + Password | Wilayah RW Sendiri | Read/Write (Approval Bin, Pemanfaatan, Approval Ide) |
+| 6 | **Lurah** | No HP (+62) + Password | Se-Kelurahan | **Read-Only** (Strict Guard 403 write attempt) |
+| 7 | **Camat** | No HP (+62) + Password | Se-Kecamatan | **Read-Only** (Strict Guard 403 write attempt) |
+| 8 | **Admin DLH** | No HP (+62) + Password | Se-Kota | **Read-Only** (Kecuali Approval Diskrepansi AI) |
+| 9 | **Super Admin** | No HP (+62) + Password | System Wide (Se-Kota) | Akses Penuh (Raw Data, System Config, Admin CRUD, Bulk KKN) |
+
 
 ---
 

@@ -46,7 +46,25 @@ const verifiedPetugasGuard = async (req: any, res: any, next: any) => {
   next();
 };
 
-// Only PETUGAS_RESIDU allowed
+/**
+ * @swagger
+ * tags:
+ *   name: Petugas Residu
+ *   description: API Khusus Petugas Residu (Input Timbangan Manual & Web Monitoring Hilir)
+ */
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/pending-logs:
+ *   get:
+ *     summary: Mendapatkan antrian tempat sampah yang perlu ditimbang/diangkut
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan pending logs
+ */
 router.get(
   "/pending-logs",
   authMiddleware,
@@ -54,6 +72,19 @@ router.get(
   verifiedPetugasGuard,
   residuController.getPendingLogs
 );
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/jadwal-harian:
+ *   get:
+ *     summary: Mendapatkan jadwal penjemputan harian petugas residu
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan jadwal
+ */
 router.get(
   "/jadwal-harian",
   authMiddleware,
@@ -61,6 +92,19 @@ router.get(
   verifiedPetugasGuard,
   residuController.getJadwalHarian
 );
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/violation:
+ *   post:
+ *     summary: Melaporkan pelanggaran pemilahan sampah warga oleh petugas
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pelanggaran berhasil dilaporkan
+ */
 router.post(
   "/violation",
   authMiddleware,
@@ -69,6 +113,19 @@ router.post(
   uploadResiduImage,
   residuController.recordViolation
 );
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/submit-log:
+ *   post:
+ *     summary: Input manual hasil penimbangan residu industri/fisik
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Log timbulan residu berhasil disimpan
+ */
 router.post(
   "/submit-log",
   authMiddleware,
@@ -77,6 +134,19 @@ router.post(
   uploadResiduImage,
   residuController.submitLog
 );
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/dashboard:
+ *   get:
+ *     summary: Dashboard monitoring timbulan residu & penjemputan
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan dashboard summary
+ */
 router.get(
   "/dashboard",
   authMiddleware,
@@ -84,6 +154,19 @@ router.get(
   verifiedPetugasGuard,
   residuController.getDashboardSummary
 );
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/analytics:
+ *   get:
+ *     summary: Analitik timbulan residu per wilayah
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan analytics
+ */
 router.get(
   "/analytics",
   authMiddleware,
@@ -91,6 +174,19 @@ router.get(
   verifiedPetugasGuard,
   residuController.getAnalytics
 );
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/riwayat:
+ *   get:
+ *     summary: Riwayat penimbangan & setoran residu
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan riwayat
+ */
 router.get(
   "/riwayat",
   authMiddleware,

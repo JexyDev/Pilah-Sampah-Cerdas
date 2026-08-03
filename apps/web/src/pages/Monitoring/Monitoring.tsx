@@ -48,59 +48,53 @@ interface FacilityItem {
 }
 
 // Custom DivIcons for Map Marker Bins & Facilities
-const createBinIcon = (status: "aman" | "waspada" | "penuh") => {
+const createBinIcon = (status: "aman" | "waspada" | "penuh" | string) => {
   let color = "#10B981"; // green
-  let pulse = "";
-  if (status === "waspada") {
-    color = "#F59E0B"; // yellow
-  } else if (status === "penuh") {
-    color = "#EF4444"; // red
-    // Red radar pulse effect for full bins
-    pulse = `<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>`;
-  }
+  if (status === "waspada") color = "#F59E0B"; // yellow
+  if (status === "penuh") color = "#EF4444"; // red
 
   return L.divIcon({
-    className: "relative flex h-6 w-6 items-center justify-center",
+    className: "custom-bin-icon",
     html: `
-      <div class="relative flex h-6 w-6">
-        ${pulse}
-        <span class="relative inline-flex rounded-full h-6 w-6 border-4 border-white shadow-md bg-[${color}]" style="background-color: ${color}"></span>
+      <div style="background-color: ${color}; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
   });
 };
 
 const createFacilityIcon = (jenis: string) => {
-  let iconName = "storefront";
-  let colorClass = "bg-purple-600"; // fallback
+  let bgColor = "#8b5cf6"; // purple default
+  let svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
 
   if (jenis === "loseda" || jenis === "bata_terawang" || jenis === "rumah_maggot") {
-    iconName = jenis === "loseda" ? "water_pipe" : jenis === "rumah_maggot" ? "bug_report" : "grid_view";
-    colorClass = "bg-[#10b981]"; // Hijau (Organik/Kompos)
+    bgColor = "#10b981"; // Hijau (Organik/Kompos)
+    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>`;
   } else if (jenis === "bank_sampah" || jenis === "daur_ulang") {
-    iconName = "recycling";
-    colorClass = "bg-[#3b82f6]"; // Biru (Daur Ulang)
+    bgColor = "#3b82f6"; // Biru (Daur Ulang)
+    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19H3v-2a3 3 0 0 1 3-3h1m4-4h6m-3-3v6m4 4h3v2a3 3 0 0 1-3 3h-1"/></svg>`;
   } else if (jenis === "tpa" || jenis === "residu") {
-    iconName = "delete";
-    colorClass = "bg-[#ef4444]"; // Merah (Residu/TPA)
+    bgColor = "#ef4444"; // Merah (Residu/TPA)
+    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
   } else if (jenis === "flash_drop") {
-    iconName = "bolt";
-    colorClass = "bg-[#eab308]"; // Emas (Flash Drop Challenge)
+    bgColor = "#eab308"; // Emas (Flash Drop Challenge)
+    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
   }
 
   return L.divIcon({
-    className: "relative flex h-8 w-8 items-center justify-center",
+    className: "custom-facility-icon",
     html: `
-      <div class="${colorClass} text-white rounded-lg p-1.5 shadow-lg flex items-center justify-center border-2 border-white">
-        <span class="material-symbols-outlined text-[16px] text-white font-bold">${iconName}</span>
+      <div style="background-color: ${bgColor}; color: white; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        ${svgIcon}
       </div>
     `,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
   });
 };
+
 
 const createRwIcon = (totalBins: number) => {
   return L.divIcon({
@@ -408,7 +402,7 @@ const Monitoring: React.FC = () => {
                               const percentage = max > 0 ? (vol / max) * 100 : 0;
                               return (
                                 <div key={bin.id} className="mb-2 last:mb-0">
-                                  <span className="font-semibold">{bin.category.name}</span>
+                                  <span className="font-semibold">{bin.category?.name || (bin as any).categoryName || "Tempat Sampah"}</span>
                                   <span className="block text-gray-500 text-[10px]">QR: {bin.qrCode}</span>
                                   <span className="block text-gray-700">Terisi: {percentage.toFixed(1)}% ({vol}L / {max}L)</span>
                                 </div>

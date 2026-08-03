@@ -22,36 +22,33 @@ L.Icon.Default.mergeOptions({
 
 // Custom Icons for Map markers
 const createStudentIcon = (status: "in_radius" | "out_radius") => {
-  const color = status === "in_radius" ? "#10B981" : "#EF4444"; // green vs red
-  const pulse = status === "in_radius" 
-    ? `<span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>`
-    : "";
+  const bgColor = status === "in_radius" ? "#10b981" : "#ef4444"; // green vs red
 
   return L.divIcon({
-    className: "relative flex h-6 w-6 items-center justify-center",
+    className: "custom-student-icon",
     html: `
-      <div class="relative flex h-6 w-6">
-        ${pulse}
-        <span class="relative inline-flex rounded-full h-6 w-6 border-4 border-white shadow-md" style="background-color: ${color}"></span>
+      <div style="background-color: ${bgColor}; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
       </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
   });
 };
 
 const createActivityMarkerIcon = () => {
   return L.divIcon({
-    className: "relative flex h-8 w-8 items-center justify-center",
+    className: "custom-activity-icon",
     html: `
-      <div class="bg-primary text-white rounded-lg p-1.5 shadow-lg flex items-center justify-center border-2 border-white">
-        <span class="material-symbols-outlined text-[16px] text-white font-bold">flag</span>
+      <div style="background-color: #3b82f6; color: white; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
       </div>
     `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   });
 };
+
 
 interface StudentLoc {
   id: string;

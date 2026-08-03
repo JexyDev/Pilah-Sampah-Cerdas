@@ -349,10 +349,54 @@ async function main() {
     kknRole = await prisma.role.create({ data: { name: 'MAHASISWA_KKN' } });
   }
 
+  let rwRole = await prisma.role.findUnique({ where: { name: 'RW' } });
+  if (!rwRole) {
+    rwRole = await prisma.role.create({ data: { name: 'RW' } });
+  }
+
   let createdUsersCount = 0;
   let createdKelompokCount = 0;
+  let createdRwCount = 0;
+  const processedRwKeys = new Set<string>();
 
   for (const row of cleanedRows) {
+    // Auto-create RW Accounts per Kelurahan & RW Number
+    if (row.rwList && row.rwList.length > 0) {
+      for (const rwNum of row.rwList) {
+        const key = `${row.kelurahan}-RW-${rwNum}`;
+        if (!processedRwKeys.has(key)) {
+          processedRwKeys.add(key);
+          const kelPadded = String(Math.abs(row.kelurahan.length * 7) % 89 + 10);
+          const rwPadded = String(rwNum).padStart(2, '0');
+          const rwPhone = `+628${kelPadded}00${rwPadded}`;
+          
+          let existingRw = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { phone: rwPhone },
+                { name: { contains: `RW ${rwPadded}` } }
+              ]
+            }
+          });
+
+          if (!existingRw) {
+            const rwPassword = await bcrypt.hash(rwPhone, 10);
+            await prisma.user.create({
+              data: {
+                name: `Pengurus RW ${rwPadded} - Kel. ${row.kelurahan}`,
+                phone: rwPhone,
+                password: rwPassword,
+                roleId: rwRole.id,
+                status: 'Aktif',
+                mustChangePassword: false,
+              } as any
+            });
+            createdRwCount++;
+          }
+        }
+      }
+    }
+
     // 1. Create or get KelompokKkn
     let kelompok = await prisma.kelompokKkn.findUnique({ where: { name: row.namaKelompok } });
     if (!kelompok) {
@@ -404,6 +448,7 @@ async function main() {
   console.log(`✅ PROSES INSERT SUNGGUHAN SELESAI`);
   console.log(`==================================================`);
   console.log(` • Akun Mahasiswa KKN Berhasil Dibuat : ${createdUsersCount}`);
+  console.log(` • Akun Pengurus RW Berhasil Dibuat   : ${createdRwCount}`);
   console.log(` • Kelompok KKN Berhasil Dibuat       : ${createdKelompokCount}`);
   console.log(` • Total Dilewati                     : ${skippedRows.length}\n`);
 

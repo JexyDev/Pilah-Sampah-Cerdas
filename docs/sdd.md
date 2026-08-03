@@ -14,20 +14,21 @@ graph TD
 
 ---
 
-## 2. Desain Database (13 Tabel Utama)
-* **`roles`**: Menyimpan level hak akses (ADMIN, PETUGAS_KELURAHAN, PETUGAS_RW, PETUGAS_RT, WARGA).
-* **`users`**: Kredensial akun dan profil warga/petugas.
+## 2. Desain Database (Tabel Utama)
+* **`roles`**: Hak akses RBAC (SUPER_ADMIN, ADMIN_DLH, CAMAT, LURAH, RW, MAHASISWA_KKN, DPL, PETUGAS_RESIDU, WARGA).
+* **`users`**: Kredensial akun (Phone Number +62 universal login), profil, NIM (Mahasiswa KKN), dan NIP (DPL). (NIK Dihapus).
 * **`refresh_tokens`**: Token rotasi refresh session untuk keamanan login (id, user_id, token, expires_at, created_at).
 * **`kelurahan`**: Data kelurahan dalam Kecamatan Coblong (Dago, Sadangserang, Sekeloa, Lebak Siliwangi, Cipaganti, Coblong).
 * **`rt_rw_areas`**: Penanda area administratif pengelolaan sampah (berelasi ke `kelurahan`).
 * **`households`**: Data rumah tangga warga dengan koordinat presisi DECIMAL(11,8) untuk peta GIS.
-* **`bins`**: Informasi fisik tong sampah warga (kapasitas maks 25 Liter), dengan status real-time kapasitas.
-* **`waste_categories`**: Kategori sampah (ORGANIC, NON_ORGANIC, B3) — Master Data.
+* **`bins`**: Informasi fisik tong sampah warga (kapasitas maks 2 tong: Organik & Anorganik per KK), status `PRINTED`, `ASSIGNED_TO_PIC`, `PENDING_APPROVAL`, `ACTIVE_BOUND`, `BROKEN`.
+* **`waste_categories`**: Kategori sampah (ORGANIC, NON_ORGANIC, RESIDUE, B3) — Master Data.
 * **`waste_logs`**: Catatan riwayat setoran volume dan berat sampah.
+* **`residue_logs`**: Catatan log timbulan residu dan hasil timbangan manual fisik oleh Petugas Residu.
+* **`point_ledger`**: Ledger terpisah pencatatan mutasi poin gamifikasi per role.
 * **`ai_request_logs`**: Log transaksi pendeteksian AI beserta status (SUCCESS, TIMEOUT, IMAGE_UNREADABLE).
-* **`point_history`**: Riwayat perolehan poin warga.
-* **`notifications`**: Penyimpanan pesan notifikasi sistem.
 * **`bin_reset_requests`**: Persetujuan Pengosongan Tong (id, bin_id, user_id, evidence_photo_url, status: PENDING/APPROVED/REJECTED, reviewed_by, created_at, updated_at).
+
 
 ---
 
