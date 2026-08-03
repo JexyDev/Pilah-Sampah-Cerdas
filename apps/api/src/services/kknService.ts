@@ -61,6 +61,9 @@ export class KknService {
     });
     const contributionPoints = pointsSum._sum.points || 0;
 
+    const poskoLat = student.assignedPolygon?.latitude ? Number(student.assignedPolygon.latitude) : -6.975412;
+    const poskoLng = student.assignedPolygon?.longitude ? Number(student.assignedPolygon.longitude) : 107.632145;
+
     return {
       studentKkn: {
         nim: student.nim,
@@ -68,7 +71,16 @@ export class KknService {
         fakultas: student.fakultas,
         whitelistStatus: student.whitelistStatus,
         endDate: student.endDate,
-        assignedArea: student.assignedPolygon?.name || "Area KKN Dago",
+        assignedArea: student.assignedPolygon?.name || "Area KKN Bojongsoang",
+        latitude: poskoLat,
+        longitude: poskoLng,
+        radiusMeter: 5000,
+      },
+      poskoLocation: {
+        name: student.assignedPolygon?.name || "Kel. Bojongsoang RT 03 / RW 08",
+        latitude: poskoLat,
+        longitude: poskoLng,
+        radiusMeter: 5000,
       },
       stats: {
         totalRegistered: totalRegistered,
@@ -85,6 +97,9 @@ export class KknService {
       progressPct,
       contributionPoints,
       assignmentLimit: maxLimit,
+      latitude: poskoLat,
+      longitude: poskoLng,
+      radiusMeter: 5000,
     };
   }
 
@@ -720,11 +735,19 @@ export class KknService {
 
     const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
 
+    const poskoLat = student.assignedPolygon?.latitude ? Number(student.assignedPolygon.latitude) : -6.975412;
+    const poskoLng = student.assignedPolygon?.longitude ? Number(student.assignedPolygon.longitude) : 107.632145;
+
     return {
       groupId: group.id,
       groupName: group.name,
       dosenPembimbing: group.dpl?.name || "Dr. Ir. Ahmad Sudrajat, M.T.",
       poskoLocation: student.assignedPolygon?.name || "Kel. Bojongsoang RT 03 / RW 08",
+      latitude: poskoLat,
+      longitude: poskoLng,
+      poskoLatitude: poskoLat,
+      poskoLongitude: poskoLng,
+      radiusMeter: 5000,
       totalGroupPoints,
       members,
     };
