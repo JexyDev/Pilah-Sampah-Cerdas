@@ -58,30 +58,51 @@ export class AuthRepository {
       if (!user) {
         const lower = raw.toLowerCase();
         let targetRole = "";
-        if (lower.includes("petugas") || ["08111111117", "+628111111117", "0812001004", "+62812001004"].includes(raw)) {
+        if (
+          lower.includes("petugas") ||
+          ["08111111117", "+628111111117", "0812001004", "+62812001004"].includes(raw)
+        ) {
           targetRole = "PETUGAS_RESIDU";
         } else if (
           lower.includes("kkn") ||
           lower.includes("mahasiswa") ||
-          ["08111111118", "+628111111118", "0812001005", "+62812001005"].includes(raw)
+          ["08111111118", "+62811111118", "0812001005", "+62812001005"].includes(raw)
         ) {
           targetRole = "MAHASISWA_KKN";
-        } else if (lower.includes("rw") || ["08111111115", "+628111111115", "081200999995", "+6281200999995"].includes(raw)) {
+        } else if (
+          lower.includes("rw") ||
+          ["08111111115", "+628111111115", "081200999995", "+6281200999995"].includes(raw)
+        ) {
           targetRole = "RW";
-        } else if (lower.includes("rt") || ["08111111116", "+628111111116", "081200999994", "+6281200999994"].includes(raw)) {
+        } else if (
+          lower.includes("rt") ||
+          ["08111111116", "+628111111116", "081200999994", "+6281200999994"].includes(raw)
+        ) {
           targetRole = "RT";
-        } else if (lower.includes("lurah") || ["08111111114", "+628111111114", "081200999996", "+6281200999996"].includes(raw)) {
+        } else if (
+          lower.includes("lurah") ||
+          ["08111111114", "+628111111114", "081200999996", "+6281200999996"].includes(raw)
+        ) {
           targetRole = "LURAH";
-        } else if (lower.includes("camat") || ["08111111113", "+628111111113", "081200999997", "+6281200999997"].includes(raw)) {
+        } else if (
+          lower.includes("camat") ||
+          ["08111111113", "+628111111113", "081200999997", "+6281200999997"].includes(raw)
+        ) {
           targetRole = "CAMAT";
-        } else if (lower.includes("dlh") || ["08111111112", "+628111111112", "081200999998", "+6281200999998"].includes(raw)) {
+        } else if (
+          lower.includes("dlh") ||
+          ["08111111112", "+628111111112", "081200999998", "+6281200999998"].includes(raw)
+        ) {
           targetRole = "ADMIN_DLH";
         } else if (
           lower.includes("super") ||
           ["08111111111", "+628111111111", "081200999999", "+6281200999999"].includes(raw)
         ) {
           targetRole = "SUPER_ADMIN";
-        } else if (lower.includes("warga") || ["0812001001", "+62812001001", "0812001003", "+62812001003"].includes(raw)) {
+        } else if (
+          lower.includes("warga") ||
+          ["0812001001", "+62812001001", "0812001003", "+62812001003"].includes(raw)
+        ) {
           targetRole = "WARGA";
         }
 
