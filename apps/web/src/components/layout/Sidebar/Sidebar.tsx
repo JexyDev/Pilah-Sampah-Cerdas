@@ -89,10 +89,10 @@ const NavGroup: React.FC<{
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center px-4 py-3 rounded-r-xl transition-all text-[13px] w-full text-left cursor-pointer ${
+        className={`flex items-center px-4 py-2.5 rounded-r-xl transition-all text-[13px] w-full text-left cursor-pointer ${
           isAnySubActive
-            ? "bg-secondary-fixed/40 text-on-secondary-fixed-variant font-bold border-l-4 border-secondary"
-            : "text-on-surface-variant hover:bg-surface-container-high"
+            ? "bg-slate-100/80 text-slate-900 font-bold border-l-3 border-emerald-600"
+            : "text-slate-600 hover:bg-slate-100/60"
         }`}
       >
         <Icon className="mr-3 text-[20px]" size={20} />
@@ -103,17 +103,17 @@ const NavGroup: React.FC<{
         />
       </button>
       {isOpen && (
-        <div className="ml-7 pl-2 border-l-2 border-primary/20 my-1 space-y-1">
+        <div className="ml-6 pl-2 border-l border-slate-200 my-1 space-y-1">
           {items.map((sub) => {
             const isActive = currentPath === sub.to || (sub.to === "/manajemen-pengguna" && location.pathname === "/manajemen-pengguna" && !location.search);
             return (
               <NavLink
                 key={sub.to}
                 to={sub.to}
-                className={`block px-3 py-1.5 rounded-lg text-[11px] transition-all ${
+                className={`block px-3 py-1.5 rounded-md text-[12px] transition-all ${
                   isActive
-                    ? "bg-primary text-white font-bold shadow-2xs"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-emerald-50 text-emerald-800 font-bold border-l-2 border-emerald-600 pl-2.5"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium"
                 }`}
               >
                 {sub.label}
