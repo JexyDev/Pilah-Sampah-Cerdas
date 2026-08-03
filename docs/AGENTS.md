@@ -150,3 +150,13 @@ docs/<deskripsi-singkat>
 - Frontend Web (React/Vite) → `docs/ARCHITECTURE_FRONTEND.md`
 - Mobile (Flutter) → `docs/ARCHITECTURE_MOBILE.md`
 - CI/CD Pipeline → `.github/workflows/deploy.yml`
+
+---
+
+## 9. Kebijakan Identitas Pengguna & Penghapusan NIK (WAJIB DIIKUTI)
+
+- **NIK (Nomor Induk Kependudukan)**: DIHAPUS dari SELURUH tabel database, UI, endpoint API, dan formulir aplikasi. **Tidak ada role atau modul yang menggunakan NIK**.
+- **Mahasiswa KKN**: Menggunakan **NIM** (Nomor Induk Mahasiswa).
+- **DPL (Dosen Pembimbing Lapangan)**: Menggunakan **NIP** (Nomor Induk Pegawai).
+- **Seluruh Role Lain (Warga, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin)**: Hanya menggunakan **Nomor Telepon (+62)**.
+

@@ -573,9 +573,11 @@ const ManajemenPengguna: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-bold text-on-surface">{user.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">
-                          NIK: {user.nik || `3273110${user.phone ? user.phone.slice(-9) : "029377001"}`}
-                        </p>
+                        {user.studentProfile?.nim && (
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            NIM: {user.studentProfile.nim}
+                          </p>
+                        )}
                         {user.pendampingKkn && (
                           <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
                             <GraduationCap size={12} className="text-emerald-600" />

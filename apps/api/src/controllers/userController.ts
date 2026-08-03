@@ -109,8 +109,6 @@ export const userController = {
         res
           .status(409)
           .json({ success: false, error: "CONFLICT", message: "Email sudah digunakan" });
-      } else if (error.message === "NIK_CONFLICT") {
-        res.status(409).json({ success: false, error: "CONFLICT", message: "NIK sudah digunakan" });
       } else {
         res.status(500).json({
           success: false,

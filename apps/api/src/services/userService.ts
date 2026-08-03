@@ -94,7 +94,6 @@ export class UserService {
         email: u.phone,
         phone: u.phone,
         role: u.role.name,
-        nik: "-",
         status: u.status,
         wilayah,
         setoran: parseFloat(totalSetoranKg.toFixed(1)),
@@ -209,7 +208,7 @@ export class UserService {
   }
 
   async updateUser(id: string, data: any, currentUser?: { userId: string; role: string }) {
-    const { name, email, password, roleName, nik, status, rtRwId, studentProfile } = data;
+    const { name, email, password, roleName, status, rtRwId, studentProfile } = data;
 
     const user = await userRepository.findById(id);
     if (!user) {

@@ -109,7 +109,6 @@ const InputSetoranManual: React.FC = () => {
     ? wargaList.filter(
         (w) =>
           w.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (w.nik && w.nik.toLowerCase().includes(searchQuery.toLowerCase())) ||
           (w.phone && w.phone.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : wargaList;
@@ -148,7 +147,7 @@ const InputSetoranManual: React.FC = () => {
           
           {/* Warga Selection Searchable Autocomplete */}
           <div className="relative">
-            <label className="block text-sm font-bold text-slate-700 mb-2">Nama Warga / NKK *</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Nama Warga / Nomor HP *</label>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
@@ -163,7 +162,7 @@ const InputSetoranManual: React.FC = () => {
                   setWargaId("");
                   setShowWargaSuggestions(true);
                 }}
-                placeholder="Cari Nama Warga, Nomor HP, atau NKK..."
+                placeholder="Cari Nama Warga atau Nomor HP..."
                 className="w-full bg-slate-50 border border-slate-200 pl-11 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                 required
               />
@@ -177,14 +176,14 @@ const InputSetoranManual: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setWargaId(w.id);
-                      setSearchQuery(`${w.name} (${w.phone || w.nik || 'Warga'})`);
+                      setSearchQuery(`${w.name} (${w.phone || 'Warga'})`);
                       setShowWargaSuggestions(false);
                     }}
                     className="text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-slate-50 text-slate-700 flex justify-between items-center"
                   >
                     <div>
                       <p className="font-bold">{w.name}</p>
-                      <p className="text-[10px] text-slate-500">{w.phone || w.nik || "-"}</p>
+                      <p className="text-[10px] text-slate-500">{w.phone || "-"}</p>
                     </div>
                     {wargaId === w.id && (
                       <span className="text-primary font-bold">Terpilih</span>

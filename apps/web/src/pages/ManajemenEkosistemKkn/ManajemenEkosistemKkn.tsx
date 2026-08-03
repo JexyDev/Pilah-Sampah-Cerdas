@@ -505,10 +505,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">NIDN / NIK (Opsional)</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">NIP / NIDN (Opsional)</label>
                 <input
                   type="text"
-                  placeholder="Nomor Induk Dosen Nasional"
+                  placeholder="Nomor Induk Pegawai / Dosen"
                   value={dplForm.nik}
                   onChange={(e) => setDplForm({ ...dplForm, nik: e.target.value })}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"

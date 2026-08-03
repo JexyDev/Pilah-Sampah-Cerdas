@@ -2364,7 +2364,7 @@ const Dashboard: React.FC = () => {
               <thead>
                 <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
                   <th className="pb-3">Nama Warga</th>
-                  <th className="pb-3">Kontak & NIK</th>
+                  <th className="pb-3">Kontak</th>
                   <th className="pb-3">QR Bin</th>
                   <th className="pb-3">Status Keaktifan</th>
                   <th className="pb-3 text-right">Skor Kepatuhan</th>
@@ -2377,7 +2377,6 @@ const Dashboard: React.FC = () => {
                   </tr>
                 ) : (
                   wargaList.map((u, i) => {
-                    const mockNik = u.nik || `327311029377000${(i % 9) + 1}`;
                     const mockQr = allBins.find(b => b.userId === u.id)?.qrCode || `TS-COB-00${(i % 9) + 1}`;
                     const complRate = 75 + (u.id.charCodeAt(0) % 23);
                     return (
@@ -2385,7 +2384,6 @@ const Dashboard: React.FC = () => {
                         <td className="py-3 font-semibold text-on-surface">{u.name}</td>
                         <td className="py-3">
                           <p>{u.email || u.phone}</p>
-                          <p className="text-[10px] text-gray-400 font-mono">NIK: {mockNik}</p>
                         </td>
                         <td className="py-3 font-mono font-bold text-primary">{mockQr}</td>
                         <td className="py-3">
