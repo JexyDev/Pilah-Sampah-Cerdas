@@ -311,7 +311,7 @@ class _LaporPelanggaranViewState extends ConsumerState<LaporPelanggaranView> {
               const Text('Jenis Pelanggaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed),
                 ),

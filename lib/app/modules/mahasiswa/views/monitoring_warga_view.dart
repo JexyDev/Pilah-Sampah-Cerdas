@@ -5,6 +5,7 @@ import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/aktivasi_warga_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 
@@ -59,7 +60,6 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   }
 
   List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga) {
-    // The API already filters by Kelurahan and RT/RW, so we only need to local filter by search if we want (or we can rely on API search)
     // Convert Map to WargaDampingan so the UI can render it safely
     try {
       return allWarga.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
@@ -71,6 +71,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
+    final user = ref.watch(authProvider).user;
+    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRt = user?.rtRw ?? '01/02';
+    final userId = user?.id ?? '';
+
     final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     
     // For aktivasi mode, we need to watch the aktivasi controller too
@@ -78,34 +83,56 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     final allWargaList = isAktivasiBinMode 
         ? _getFilteredWargaAktivasi(aktivasiState?.wargaList ?? [])
-        : state.wargaList;
+        : state.wargaList.where((w) {
+            // Jika bukan mode aktivasi, hanya tampilkan Warga Dampingan milik mahasiswa ini
+            if (!w.isActivated) return false;
+            if (w.mahasiswaId.isNotEmpty && w.mahasiswaId != userId) return false;
+            return true;
+          }).map((w) {
+            // Selaraskan alamat seperti di DaftarWargaView
+            final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+                ? w.address
+                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $userRt, Kel. $userKel';
+            return WargaDampingan(
+              binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rtRw: userRt, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
+            );
+          }).toList();
 
-    final kelurahans = allWargaList
-        .where((w) => w.role == 'WARGA' && w.kelurahan.isNotEmpty)
-        .map((w) => w.kelurahan)
-        .toSet()
-        .toList();
-    kelurahans.sort();
+    List<String> kelurahans;
+    List<String> rtrws;
+
+    if (isAktivasiBinMode) {
+      // Saat Aktivasi Bin, hanya bisa melihat RT/RW & Kelurahan sendiri
+      kelurahans = [userKel];
+      rtrws = [userRt];
+    } else {
+      kelurahans = allWargaList
+          .where((w) => w.role == 'WARGA' && w.kelurahan.isNotEmpty)
+          .map((w) => w.kelurahan)
+          .toSet()
+          .toList();
+      kelurahans.sort();
+
+      rtrws = allWargaList
+          .where((w) => w.role == 'WARGA' && w.rtRw.isNotEmpty && 
+                       (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
+          .map((w) => w.rtRw)
+          .toSet()
+          .toList();
+      rtrws.sort();
+    }
+
     final kelurahanList = <String>['Semua', ...kelurahans];
+    final rtRwList = <String>['Semua', ...rtrws];
 
     // Check if current selected is valid
     if (!kelurahanList.contains(_selectedKelurahan)) {
-      _selectedKelurahan = 'Semua';
+      _selectedKelurahan = isAktivasiBinMode ? userKel : 'Semua';
     }
-
-    // Generate rtrw list dynamically based on selected kelurahan
-    final rtrws = allWargaList
-        .where((w) => w.role == 'WARGA' && w.rtRw.isNotEmpty && 
-                     (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
-        .map((w) => w.rtRw)
-        .toSet()
-        .toList();
-    rtrws.sort();
-    final rtRwList = <String>['Semua', ...rtrws];
 
     // Check if current selected rtRw is valid
     if (!rtRwList.contains(_selectedRtRw)) {
-      _selectedRtRw = 'Semua';
+      _selectedRtRw = isAktivasiBinMode ? userRt : 'Semua';
     }
 
     final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode);

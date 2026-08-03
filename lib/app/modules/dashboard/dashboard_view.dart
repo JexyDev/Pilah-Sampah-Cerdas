@@ -16,7 +16,7 @@ import '../auth/controllers/auth_controller.dart';
 import '../mahasiswa/views/mahasiswa_view.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
-import '../petugas_residu/views/petugas_residu_view.dart';
+import '../petugas_residu/views/petugas_residu_main_navigation_view.dart';
 import '../petugas_residu/views/riwayat_petugas_residu_view.dart';
 
 /// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
@@ -35,12 +35,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     role == UserRole.mahasiswaKkn 
         ? const MahasiswaView() 
         : (role == UserRole.petugasResidu 
-            ? const PetugasResiduView() 
+            ? const PetugasResiduMainNavigationView() 
             : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
     role == UserRole.mahasiswaKkn 
         ? const RiwayatKknView() 
         : (role == UserRole.petugasResidu 
-            ? const RiwayatPetugasResiduView() 
+            ? const PetugasResiduMainNavigationView() 
             : const RiwayatView()),
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn 
@@ -84,6 +84,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   Widget _buildMobileShell(bool isOnline, UserRole role) {
     final screens = _getScreens(role);
+    final bool showFab = role == UserRole.warga;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: Column(
@@ -93,8 +94,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         ],
       ),
       bottomNavigationBar: _buildBottomBar(role),
-      floatingActionButton: _buildFab(isOnline),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: showFab ? _buildFab(isOnline) : null,
+      floatingActionButtonLocation: showFab ? FloatingActionButtonLocation.centerDocked : null,
     );
   }
 
@@ -134,9 +135,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   BottomAppBar _buildBottomBar(UserRole role) {
+    final bool isWarga = role == UserRole.warga;
     return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
+      shape: isWarga ? const CircularNotchedRectangle() : null,
+      notchMargin: isWarga ? 8 : 0,
       color: Colors.white,
       elevation: 8,
       child: SizedBox(
@@ -151,7 +153,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               Icons.history_outlined,
               'History',
             ),
-            const SizedBox(width: 60),
+            if (isWarga) const SizedBox(width: 60),
             _navItem(
               3,
               role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 

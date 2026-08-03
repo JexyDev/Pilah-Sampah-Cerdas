@@ -116,7 +116,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _dateRange,
+                      initialValue: _dateRange,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         labelText: 'Tanggal',
@@ -138,7 +138,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _typeFilter,
+                      initialValue: _typeFilter,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         labelText: 'Jenis Log',

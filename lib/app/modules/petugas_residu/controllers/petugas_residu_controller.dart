@@ -166,6 +166,28 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
       state = state.copyWith(isLoading: false, errorMessage: 'Gagal memuat riwayat.');
     }
   }
+
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repo = _ref.read(petugasResiduRepositoryProvider);
+      final success = await repo.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      state = state.copyWith(isLoading: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.',
+      );
+      return false;
+    }
+  }
 }
 
 final petugasResiduControllerProvider =

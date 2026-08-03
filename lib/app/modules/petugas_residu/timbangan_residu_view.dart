@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/values/app_colors.dart';
 import '../../core/values/app_dimensions.dart';
-import '../shared/widgets/qr_scanner_widget.dart';
 import 'controllers/petugas_residu_controller.dart';
 
 class TimbanganResiduView extends ConsumerStatefulWidget {
@@ -18,9 +17,7 @@ class TimbanganResiduView extends ConsumerStatefulWidget {
 class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   final _formKey = GlobalKey<FormState>();
   final _weightController = TextEditingController();
-  final _binCodeController = TextEditingController();
   
-  String? _selectedBinId;
   String? _photoPath;
   String _selectedClassification = 'Residu Non-B3';
   bool _isSubmitting = false;
@@ -35,7 +32,6 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   @override
   void dispose() {
     _weightController.dispose();
-    _binCodeController.dispose();
     super.dispose();
   }
 
@@ -54,50 +50,6 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
         SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.dangerRed),
       );
     }
-  }
-
-  void _showQrScannerModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.black,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SizedBox(
-        height: MediaQuery.of(ctx).size.height * 0.7,
-        child: Column(
-          children: [
-            AppBar(
-              title: const Text('Scan QR Code Bin', style: TextStyle(color: Colors.white, fontSize: 16)),
-              backgroundColor: Colors.black,
-              iconTheme: const IconThemeData(color: Colors.white),
-              automaticallyImplyLeading: false,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            Expanded(
-              child: QrScannerWidget(
-                hint: 'Scan QR Tempat Sampah Warga',
-                overlayColor: AppColors.primaryGreen,
-                onQrDetected: (code) async {
-                  setState(() {
-                    _binCodeController.text = code;
-                    _selectedBinId = code;
-                  });
-                  Navigator.pop(ctx);
-                  return true;
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _submitLog() async {
@@ -148,8 +100,6 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(petugasResiduControllerProvider);
-
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
@@ -172,13 +122,13 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 28),
-                    const SizedBox(width: 12),
-                    const Expanded(
+                    Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        'Input manual hasil timbangan fisik residu untuk update status penjemputan hilir.',
+                        'Input manual hasil timbangan fisik residu untuk terakumulasi ke Bin Residu Global RT/RW.',
                         style: TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -187,57 +137,31 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 1. Pilih Bin / Scan QR
-              const Text('Kode / QR Tempat Sampah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 1. Lokasi / Bin Global Info
+              const Text('Target Penampungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
-              if (state.jadwalList.isNotEmpty)
-                DropdownButtonFormField<String>(
-                  value: _selectedBinId,
-                  decoration: const InputDecoration(
-                    hintText: 'Pilih dari Jadwal Penjemputan',
-                    prefixIcon: Icon(Icons.delete_outline_rounded, color: AppColors.primaryGreen),
-                  ),
-                  items: state.jadwalList.map((bin) {
-                    return DropdownMenuItem(
-                      value: bin.binId,
-                      child: Text(
-                        '${bin.binCode} - ${bin.wargaName} (${bin.volumePercentage.toInt()}%)',
-                        style: const TextStyle(fontSize: 13),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (v) {
-                    setState(() {
-                      _selectedBinId = v;
-                      _binCodeController.text = v ?? '';
-                    });
-                  },
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _binCodeController,
-                      decoration: const InputDecoration(
-                        hintText: 'Atau ketik manual Kode BIN',
-                        prefixIcon: Icon(Icons.qr_code_rounded, color: AppColors.textSecondary),
+                child: const Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Bin Residu Global RT/RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('Tercatat di Audit Trail Monitoring RT/RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        ],
                       ),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Kode Tempat Sampah Wajib diisi' : null,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _showQrScannerModal,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlueDark,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Icon(Icons.qr_code_scanner, color: Colors.white),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: AppDimensions.lg),
 
@@ -267,7 +191,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
               const Text('Klasifikasi Kategori Residu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedClassification,
+                initialValue: _selectedClassification,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.category_outlined, color: AppColors.primaryGreen),
                 ),

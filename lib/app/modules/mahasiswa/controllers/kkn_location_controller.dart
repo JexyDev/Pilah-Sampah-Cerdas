@@ -21,6 +21,27 @@ class KknLocationState {
   final int inZoneDurationSeconds;
   final bool isEligibleForAttendance;
   final String? zoneResetWarning;
+  final DateTime? checkInTime;
+  final DateTime? checkOutTime;
+
+  /// Kalkulasi Total Jam Kerja (Selisih Pulang - Masuk)
+  int get totalWorkMinutes {
+    if (checkInTime == null) return 0;
+    final end = checkOutTime ?? DateTime.now();
+    return end.difference(checkInTime!).inMinutes;
+  }
+
+  /// Format String Jam Kerja (misal: "7 Jam 30 Menit")
+  String get formattedWorkDuration {
+    final mins = totalWorkMinutes;
+    if (mins <= 0) return '0 Menit';
+    final hours = mins ~/ 60;
+    final remainingMins = mins % 60;
+    if (hours > 0) {
+      return '$hours Jam $remainingMins Menit';
+    }
+    return '$remainingMins Menit';
+  }
 
   KknLocationState({
     this.currentPosition,
@@ -34,6 +55,8 @@ class KknLocationState {
     this.inZoneDurationSeconds = 0,
     this.isEligibleForAttendance = false,
     this.zoneResetWarning,
+    this.checkInTime,
+    this.checkOutTime,
   });
 
   KknLocationState copyWith({
@@ -48,6 +71,8 @@ class KknLocationState {
     int? inZoneDurationSeconds,
     bool? isEligibleForAttendance,
     String? zoneResetWarning,
+    DateTime? checkInTime,
+    DateTime? checkOutTime,
     bool clearError = false,
     bool clearActivity = false,
     bool clearWarning = false,
@@ -64,6 +89,8 @@ class KknLocationState {
       inZoneDurationSeconds: inZoneDurationSeconds ?? this.inZoneDurationSeconds,
       isEligibleForAttendance: isEligibleForAttendance ?? this.isEligibleForAttendance,
       zoneResetWarning: clearWarning ? null : (zoneResetWarning ?? this.zoneResetWarning),
+      checkInTime: checkInTime ?? this.checkInTime,
+      checkOutTime: checkOutTime ?? this.checkOutTime,
     );
   }
 }

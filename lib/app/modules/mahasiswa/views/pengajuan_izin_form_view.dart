@@ -105,7 +105,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               const Text('Kategori Pengajuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 6),
               DropdownButtonFormField<KategoriIzin>(
-                value: _selectedKategori,
+                initialValue: _selectedKategori,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

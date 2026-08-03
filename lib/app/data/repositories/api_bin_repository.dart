@@ -655,6 +655,7 @@ class ApiBinRepository implements BinRepository {
       id: json['id']?.toString() ?? '',
       binId: json['binId']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',
+      rwId: json['rwId']?.toString() ?? json['rtRwId']?.toString() ?? '',
       status: status,
       evidencePhotoUrl: json['evidencePhotoUrl']?.toString(),
       createdAt: json['createdAt'] != null

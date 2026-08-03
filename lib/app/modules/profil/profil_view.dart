@@ -337,6 +337,20 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                     child: Column(
                       children: [
+                        if (user?.role == UserRole.mahasiswaKkn) ...[
+                          _MenuTile(
+                            icon: Icons.manage_accounts_rounded,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Edit Profil Mahasiswa',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.editProfilMahasiswa),
+                          ),
+                          const Divider(height: 1, indent: 56),
+                        ],
                         if (user?.role == UserRole.warga) ...[
                           // Tambah Tempat Sampah Baru
                           _MenuTile(

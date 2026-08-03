@@ -397,27 +397,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             const SizedBox(width: AppDimensions.sm),
             Expanded(
               child: _ActionButton(
-                icon: Icons.analytics_rounded,
-                label: 'Monitoring Ketaatan',
-                color: AppColors.primaryBlueDark,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringWarga),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.sm),
-        Row(
-          children: [
-            Expanded(
-              child: _ActionButton(
                 icon: Icons.recycling_rounded,
                 label: 'Pemanfaatan Sampah',
                 color: AppColors.primaryGreen,
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
               ),
             ),
-            const SizedBox(width: AppDimensions.sm),
-            const Expanded(child: SizedBox()),
           ],
         ),
       ],

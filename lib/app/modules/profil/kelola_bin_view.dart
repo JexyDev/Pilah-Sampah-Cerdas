@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/values/app_colors.dart';
 import '../scan/controllers/scan_controller.dart';
 import '../../routes/app_routes.dart';
+import '../../data/models/bin_entity.dart';
 
 class KelolaBinView extends ConsumerWidget {
   const KelolaBinView({super.key});

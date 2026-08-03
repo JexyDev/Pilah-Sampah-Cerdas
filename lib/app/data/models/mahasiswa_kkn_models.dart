@@ -87,6 +87,7 @@ class WargaDampingan extends Equatable {
     required this.address,
     this.kelurahan = '',
     this.rtRw = '',
+    this.mahasiswaId = '',
     required this.recentLogs,
     this.isActivated = true,
     this.role = 'WARGA',
@@ -99,6 +100,7 @@ class WargaDampingan extends Equatable {
   final String address;
   final String kelurahan;
   final String rtRw;
+  final String mahasiswaId;
   final bool isActivated;
   final String role;
   final List<WasteLogEntry> recentLogs;
@@ -150,6 +152,7 @@ class WargaDampingan extends Equatable {
       address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       rtRw: json['rtRw']?.toString() ?? json['rt_rw']?.toString() ?? '',
+      mahasiswaId: json['mahasiswaId']?.toString() ?? json['activatedBy']?.toString() ?? json['didaftarkanOleh']?.toString() ?? '',
       recentLogs: logs,
       isActivated: json['isActivated'] as bool? ?? (json['status']?.toString().toUpperCase() != 'UNACTIVATED'),
       role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
@@ -160,7 +163,7 @@ class WargaDampingan extends Equatable {
   }
 
   @override
-  List<Object?> get props => [binId, wargaName, totalPoints];
+  List<Object?> get props => [binId, wargaName, totalPoints, mahasiswaId];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────

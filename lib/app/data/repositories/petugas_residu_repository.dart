@@ -25,4 +25,7 @@ abstract class PetugasResiduRepository {
 
   /// Ambil riwayat gabungan setoran manual & violation milik petugas
   Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type});
+
+  /// Ganti password khusus Petugas Residu
+  Future<bool> changePassword({required String oldPassword, required String newPassword});
 }

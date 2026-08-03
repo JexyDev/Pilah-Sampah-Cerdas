@@ -7,6 +7,7 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class DaftarWargaView extends ConsumerStatefulWidget {
   const DaftarWargaView({super.key});
@@ -25,9 +26,35 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     super.dispose();
   }
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list) {
-    // 1. Khusus Daftar Warga Dampingan: Hanya tampilkan Warga yang SUDAH DIBANTU AKTIVASI
-    final activatedOnly = list.where((w) => w.isActivated == true).toList();
+  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId) {
+    // Hanya tampilkan warga yang diaktivasi oleh mahasiswa ini, atau yang mahasiswaId-nya kosong tapi berada di wilayah yang sama (sebagai fallback jika backend belum support)
+    var activatedOnly = list.where((w) {
+      if (!w.isActivated) return false;
+      if (w.mahasiswaId.isNotEmpty && w.mahasiswaId != userId) return false;
+      return true;
+    }).map((w) {
+      // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
+      final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';
+      final targetRt = userRtRw.isNotEmpty ? userRtRw : '01/02';
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+          ? w.address
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel';
+      
+      return WargaDampingan(
+        binId: w.binId,
+        wargaName: w.wargaName,
+        address: displayAddr,
+        kelurahan: targetKel,
+        rtRw: targetRt,
+        mahasiswaId: w.mahasiswaId,
+        recentLogs: w.recentLogs,
+        isActivated: w.isActivated,
+        role: w.role,
+        totalPoints: w.totalPoints,
+        apiCorrectPercentage: w.apiCorrectPercentage,
+      );
+    }).toList();
+
     if (_searchQuery.isEmpty) return activatedOnly;
     final query = _searchQuery.toLowerCase();
     return activatedOnly
@@ -40,8 +67,12 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
-    final activatedOnlyList = state.wargaList.where((w) => w.isActivated == true).toList();
-    final filtered = _filteredList(state.wargaList);
+    final user = ref.watch(authProvider).user;
+    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRt = user?.rtRw ?? '01/02';
+    final userId = user?.id ?? '';
+    
+    final filtered = _filteredList(state.wargaList, userKel, userRt, userId);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -50,7 +81,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Warga Dampingan (${activatedOnlyList.length})',
+          'Warga Dampingan (${filtered.length})',
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),

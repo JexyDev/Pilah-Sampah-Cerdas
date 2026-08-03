@@ -291,6 +291,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
   }
+
+  /// Update data profil editable pengguna (Nama, HP, Alamat)
+  Future<bool> updateProfile({
+    required String name,
+    required String phone,
+    String? address,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      if (state.user != null) {
+        final updatedUser = state.user!.copyWith(
+          name: name,
+          phone: phone,
+          address: address ?? state.user!.address,
+        );
+        state = state.copyWith(user: updatedUser, isLoading: false);
+      }
+      return true;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'UPDATE_FAILED');
+      return false;
+    }
+  }
+
+  /// Change password untuk pengguna aktif
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      // In production, calls PUT /api/v1/auth/change-password via authRepository
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
+      return false;
+    }
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

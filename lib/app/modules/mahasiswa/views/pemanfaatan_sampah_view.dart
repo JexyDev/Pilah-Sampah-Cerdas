@@ -5,6 +5,7 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/pemanfaatan_sampah_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class PemanfaatanSampahView extends ConsumerStatefulWidget {
   const PemanfaatanSampahView({super.key});
@@ -16,12 +17,13 @@ class PemanfaatanSampahView extends ConsumerStatefulWidget {
 class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   final _formKey = GlobalKey<FormState>();
   final _jumlahCtrl = TextEditingController(text: '5.0');
-  final _wilayahCtrl = TextEditingController(text: 'Kel. Bojongsoang RT 01 / RW 02');
+  final _lokasiCtrl = TextEditingController(text: 'Posko KKN / TPS3R RW');
+  final _hasilProdukCtrl = TextEditingController(text: 'Pupuk Organik Cair');
   final _deskripsiCtrl = TextEditingController();
 
   String _jenisPemanfaatan = 'Kompos Organik';
   String _kategoriSampah = 'Organik';
-  String _satuan = 'Kg';
+  String _satuan = 'Kg/Hari';
 
   final List<String> _jenisList = [
     'Kompos Organik',
@@ -29,25 +31,27 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     'Pakan Maggot/Organik',
     'Eco-Enzyme',
     'Penjualan Bank Sampah',
+    'Biogas / Energi',
   ];
 
   final List<String> _kategoriList = [
     'Organik',
     'Anorganik',
-    'Residu',
+    'Daur Ulang Plastik/Kertas',
+    'Residu Non-B3',
   ];
 
   final List<String> _satuanList = [
-    'Kg',
-    'Liter',
-    'Pcs / Unit',
-    'Paket',
+    'Kg/Hari',
+    'Liter/Hari',
+    'Unit/Hari',
   ];
 
   @override
   void dispose() {
     _jumlahCtrl.dispose();
-    _wilayahCtrl.dispose();
+    _lokasiCtrl.dispose();
+    _hasilProdukCtrl.dispose();
     _deskripsiCtrl.dispose();
     super.dispose();
   }
@@ -55,13 +59,16 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   Future<void> _onSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final user = ref.read(authProvider).user;
+    final rwTarget = user?.rtRw.isNotEmpty == true ? 'RW ${user!.rtRw.split('/').last}' : 'RW 02';
+
     final request = PemanfaatanSampahRequest(
       jenisPemanfaatan: _jenisPemanfaatan,
       kategoriSampah: _kategoriSampah,
       jumlah: double.tryParse(_jumlahCtrl.text.trim()) ?? 1.0,
       satuan: _satuan,
-      wilayahDampingan: _wilayahCtrl.text.trim(),
-      deskripsi: _deskripsiCtrl.text.trim(),
+      wilayahDampingan: '$rwTarget - ${_lokasiCtrl.text.trim()}',
+      deskripsi: 'Hasil Produk: ${_hasilProdukCtrl.text.trim()} | Catatan: ${_deskripsiCtrl.text.trim()}',
     );
 
     final success = await ref.read(pemanfaatanSampahProvider.notifier).submitLaporan(request);
@@ -83,8 +90,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               Text('Laporan Terkirim!'),
             ],
           ),
-          content: const Text(
-            'Data pemanfaatan hasil sampah berhasil disimpan ke sistem dan tercatat di Web Monitoring. Poin Anda otomatis bertambah.',
+          content: Text(
+            'Data pemanfaatan sampah ($rwTarget) berhasil disimpan ke sistem dan tercatat di Web Monitoring.',
           ),
           actions: [
             ElevatedButton(
@@ -194,7 +201,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                       const Text('Jenis Pemanfaatan Sampah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        value: _jenisPemanfaatan,
+                        initialValue: _jenisPemanfaatan,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.nature_people_rounded, color: AppColors.textSecondary, size: 20),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -210,7 +217,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                       const Text('Kategori Sampah Utama', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        value: _kategoriSampah,
+                        initialValue: _kategoriSampah,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.category_outlined, color: AppColors.textSecondary, size: 20),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -257,7 +264,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                                 const Text('Satuan Unit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                 const SizedBox(height: 6),
                                 DropdownButtonFormField<String>(
-                                  value: _satuan,
+                                  initialValue: _satuan,
                                   decoration: InputDecoration(
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
@@ -273,17 +280,18 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Wilayah Dampingan
-                      const Text('Wilayah / RT-RW Dampingan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      // Lokasi Pemanfaatan
+                      const Text('Lokasi / Tempat Pemanfaatan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       const SizedBox(height: 6),
                       TextFormField(
-                        controller: _wilayahCtrl,
+                        controller: _lokasiCtrl,
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.map_rounded, color: AppColors.textSecondary, size: 20),
+                          hintText: 'Misal: Posko KKN / TPS3R RW',
+                          prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Wilayah dampingan wajib diisi';
+                          if (v == null || v.trim().isEmpty) return 'Lokasi pemanfaatan wajib diisi';
                           return null;
                         },
                       ),

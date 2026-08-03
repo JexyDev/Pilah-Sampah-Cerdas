@@ -62,6 +62,8 @@ class BinEntity extends Equatable {
   final String rw;
   final String kelurahan;
   final bool isActive;
+  final DateTime? createdAt;
+  final DateTime? activatedAt;
 
   /// Persentase kapasitas terisi (0.0 – 1.0).
   double get capacityPercent => currentVolumeL / maxCapacityL;

@@ -27,4 +27,7 @@ class AppRoutes {
   static const String laporPelanggaran = '/lapor-pelanggaran';
   static const String riwayatPetugasResidu = '/riwayat-petugas-residu';
   static const String pemanfaatanSampah = '/pemanfaatan-sampah';
+  static const String petugasResidu = '/petugas-residu';
+  static const String petugasResiduGantiPassword = '/petugas-residu/ganti-password';
+  static const String editProfilMahasiswa = '/mahasiswa/edit-profil';
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../core/utils/network_exception_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -66,13 +67,16 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Gagal memuat data dashboard: ${e.toString()}',
+        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
       );
     }
   }
 
   /// Pull-to-refresh.
   Future<void> refresh() => fetchAll();
+
+  /// Alias for fetchAll
+  Future<void> fetchDashboardData() => fetchAll();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

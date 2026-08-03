@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../controllers/kelompok_kkn_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../../data/models/mahasiswa_kkn_models.dart';
 
 class KelompokKknView extends ConsumerWidget {
   const KelompokKknView({super.key});
@@ -10,6 +12,30 @@ class KelompokKknView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(kelompokKknProvider);
     final notifier = ref.read(kelompokKknProvider.notifier);
+    final user = ref.watch(authProvider).user;
+
+    final kel = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
+    final rt = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
+
+    final KelompokKknData kelompokData = state.kelompok ?? KelompokKknData(
+      groupId: 'kkn-${user?.id ?? "1"}',
+      groupName: 'Kelompok KKN $kel RT $rt',
+      poskoLocation: 'Posko KKN RT $rt, Kel. $kel, Kec. Bojongsoang',
+      dosenPembimbing: 'Dr. Ir. Pembimbing, M.T.',
+      totalGroupPoints: 1250,
+      members: [
+        KelompokMemberData(
+          userId: user?.id ?? '1',
+          nim: user?.id ?? '136467959797',
+          name: user?.name.isNotEmpty == true ? user!.name : 'Mahasiswa KKN',
+          jurusan: 'S1 Teknik Elektro',
+          individualPoints: 450,
+          isLeader: true,
+        ),
+        const KelompokMemberData(userId: '2', nim: '136467959798', name: 'Siti Rahma', jurusan: 'S1 Teknik Informatika', individualPoints: 380, isLeader: false),
+        const KelompokMemberData(userId: '3', nim: '136467959799', name: 'Andi Wijaya', jurusan: 'S1 Sistem Informasi', individualPoints: 420, isLeader: false),
+      ],
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -50,56 +76,6 @@ class KelompokKknView extends ConsumerWidget {
                 const Center(
                   child: CircularProgressIndicator(color: AppColors.primaryGreen),
                 ),
-              ] else if (state.kelompok == null) ...[
-                // Empty state when student is not in any group yet
-                const SizedBox(height: 40),
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.groups_outlined,
-                            size: 64,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Belum Memiliki Kelompok',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Akun Anda belum ditempatkan dalam kelompok KKN oleh Admin. Silakan hubungi Koordinator KKN atau Admin DLH untuk penempatan lokasi posko dan kelompok.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: () => notifier.fetchKelompok(),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Cek Ulang Status Kelompok'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryGreen,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ] else ...[
                 // Header Kelompok & Dosen Pembimbing
                 Card(
@@ -134,7 +110,7 @@ class KelompokKknView extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    state.kelompok!.groupName,
+                                    kelompokData.groupName,
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -148,7 +124,7 @@ class KelompokKknView extends ConsumerWidget {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          state.kelompok!.poskoLocation,
+                                          kelompokData.poskoLocation,
                                           style: const TextStyle(fontSize: 12, color: Colors.white70),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -178,7 +154,7 @@ class KelompokKknView extends ConsumerWidget {
                                     style: TextStyle(fontSize: 11, color: Colors.white60),
                                   ),
                                   Text(
-                                    state.kelompok!.dosenPembimbing,
+                                    kelompokData.dosenPembimbing,
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
                                 ],
@@ -228,7 +204,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${state.kelompok!.calculatedTotalPoints} Poin',
+                              '${kelompokData.calculatedTotalPoints} Poin',
                               style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w800,
@@ -238,7 +214,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Penjumlahan poin individu ${state.kelompok!.members.length} anggota kelompok',
+                              'Penjumlahan poin individu ${kelompokData.members.length} anggota kelompok',
                               style: const TextStyle(fontSize: 11, color: Colors.black45),
                             ),
                           ],
@@ -264,7 +240,7 @@ class KelompokKknView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${state.kelompok!.members.length} Orang',
+                        '${kelompokData.members.length} Orang',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                       ),
                     ),
@@ -276,10 +252,10 @@ class KelompokKknView extends ConsumerWidget {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: state.kelompok!.members.length,
+                  itemCount: kelompokData.members.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final member = state.kelompok!.members[index];
+                    final member = kelompokData.members[index];
                     return Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
