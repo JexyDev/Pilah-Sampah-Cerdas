@@ -161,6 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const currentRole = user?.peran || "WARGA";
+  const hasAccess = (allowed: UserRole[]) => allowed.includes(currentRole as UserRole);
 
   const ALL_ROLES: UserRole[] = [
     "SUPER_ADMIN",
