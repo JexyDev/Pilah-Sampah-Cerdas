@@ -200,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <img
             src="/logo.png"
             alt="TrashCare - Sampah Terdata, Lingkungan Tertata"
-            className="h-20 w-auto object-contain"
+            className="h-20 w-auto object-contain mix-blend-multiply"
           />
         </div>
 

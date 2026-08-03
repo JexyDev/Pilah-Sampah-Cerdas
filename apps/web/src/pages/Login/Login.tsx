@@ -168,10 +168,19 @@ const Login: React.FC = () => {
 
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-outline-variant/30 overflow-hidden flex flex-col p-8 gap-6 z-10 transition-all duration-300">
         <div className="flex flex-col items-center text-center gap-3">
-          <img src="/logo.png" alt="TrashCare" className="h-28 w-auto object-contain" />
-          <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium">
-            Masuk ke sistem TrashCare.
-          </p>
+          <div className="relative group flex items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white/80 border border-emerald-100/50 shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+            <img
+              src="/logo.png"
+              alt="TrashCare Logo"
+              className="h-24 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">TrashCare</h1>
+            <p className="text-[12px] text-on-surface-variant max-w-xs leading-relaxed font-medium mt-0.5">
+              Sistem Pemilahan & Pengelolaan Sampah Cerdas
+            </p>
+          </div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 leading-relaxed shadow-sm">
