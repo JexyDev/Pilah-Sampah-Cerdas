@@ -8,7 +8,6 @@ import {
   CheckCircle,
   XCircle,
   MapPin,
-  TrendingUp,
   FileCheck,
   Star,
   Search,

@@ -23,6 +23,12 @@ const PoinWarga: React.FC = () => {
   const [adjustDesc, setAdjustDesc] = useState("Bonus Aktivitas Daur Ulang Mandiri");
   const [isSubmittingAdjust, setIsSubmittingAdjust] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [userDetail, setUserDetail] = useState<any | null>(null);
+
   useEffect(() => {
     const fetchLeaders = async () => {
       try {

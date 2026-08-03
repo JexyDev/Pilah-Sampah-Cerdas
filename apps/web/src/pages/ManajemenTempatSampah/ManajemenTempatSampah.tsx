@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil } from "lucide-react";
+import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo

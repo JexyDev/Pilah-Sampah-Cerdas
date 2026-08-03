@@ -13,13 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
-  Users,
-  CheckCircle,
   MapPin,
   Eye,
-  Building,
   Phone,
-  FileSpreadsheet,
   Download,
   Filter
 } from "lucide-react";
@@ -31,7 +27,7 @@ const ManajemenMahasiswa: React.FC = () => {
   const [mahasiswas, setMahasiswas] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [_error, setError] = useState("");
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,7 +53,7 @@ const ManajemenMahasiswa: React.FC = () => {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, _setRowsPerPage] = useState(10);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
