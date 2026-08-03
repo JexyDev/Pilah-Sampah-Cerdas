@@ -392,10 +392,9 @@ async function main() {
         noWa: row.phoneNormalized,
         startDate: new Date(),
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
-        kelompokId: kelompok.id,
         isKetua: row.isKetua || false,
         whitelistStatus: 'APPROVED'
-      }
+      } as any
     });
 
     createdUsersCount++;

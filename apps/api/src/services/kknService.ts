@@ -729,7 +729,7 @@ export class KknService {
         jurusan: s.jurusan || "Teknik Informatika",
         fakultas: s.fakultas || "Informatika",
         individualPoints: p,
-        isLeader: Boolean(s.isKetua || s.userId === userId),
+        isLeader: Boolean((s as any).isKetua || s.userId === userId),
       };
     });
 
@@ -768,7 +768,7 @@ export class KknService {
       : new Date();
     const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
 
-    const leave = await prisma.studentLeaveRequest.create({
+    const leave = await (prisma as any).studentLeaveRequest.create({
       data: {
         studentId,
         type: payload.kategori || "Izin",
@@ -803,7 +803,6 @@ export class KknService {
       kategoriSampah = "Organik",
       jumlah = 10,
       satuan = "Kg",
-      wilayahDampingan = "Wilayah KKN Dago",
       deskripsi = "",
     } = payload;
 
