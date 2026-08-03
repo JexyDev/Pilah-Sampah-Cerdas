@@ -10,8 +10,14 @@ import { verifyAccessToken } from "../utils/jwtUtils.js";
 
 export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    // Auth endpoints (login, logout, refresh, otp, register) are always permitted
-    if (req.originalUrl && /\/api\/(v1\/)?auth\/(login|logout|refresh|otp|register)/.test(req.originalUrl)) {
+    // 1. Read operations (GET, HEAD, OPTIONS) are ALWAYS permitted
+    if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+      return next();
+    }
+
+    // 2. Auth routes (/auth/*) are ALWAYS permitted for all users/roles
+    const reqUrl = (req.originalUrl || req.url || req.path || "").toLowerCase();
+    if (reqUrl.includes("/auth/") || reqUrl.endsWith("/auth")) {
       return next();
     }
 
