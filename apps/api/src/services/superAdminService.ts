@@ -630,11 +630,38 @@ export class SuperAdminService {
   async verifyPetugas(petugasId: string, action: "APPROVED" | "REJECTED") {
     const { notificationIntegrationService: notificationService } =
       await import("./notificationIntegrationService.js");
-    const petugas = await prisma.petugasResidu.update({
+
+    let petugasCheck = await prisma.petugasResidu.findUnique({
       where: { id: petugasId },
+      include: { user: true },
+    });
+    if (!petugasCheck) {
+      petugasCheck = await prisma.petugasResidu.findFirst({
+        where: { userId: petugasId },
+        include: { user: true },
+      });
+    }
+    if (!petugasCheck) {
+      throw new Error("Petugas not found");
+    }
+
+    const petugas = await prisma.petugasResidu.update({
+      where: { id: petugasCheck.id },
       data: { whitelistStatus: action },
       include: { user: true },
     });
+
+    if (action === "APPROVED") {
+      await prisma.user.update({
+        where: { id: petugas.userId },
+        data: { status: "Aktif" },
+      });
+    } else if (action === "REJECTED") {
+      await prisma.user.update({
+        where: { id: petugas.userId },
+        data: { status: "Inaktif" },
+      });
+    }
 
     if (petugas.user?.phone && action === "APPROVED") {
       await notificationService

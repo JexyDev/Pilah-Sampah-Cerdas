@@ -190,6 +190,11 @@ export const rwService = {
         where: { id: petugas.userId },
         data: { status: "Aktif" },
       });
+    } else if (action === "REJECTED") {
+      await prisma.user.update({
+        where: { id: petugas.userId },
+        data: { status: "Inaktif" },
+      });
     }
 
     if (petugas.user?.phone && action === "APPROVED") {

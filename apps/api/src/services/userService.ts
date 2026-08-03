@@ -285,6 +285,14 @@ export class UserService {
         });
       }
 
+      if ((u.role.name === "PETUGAS_RESIDU" || roleName === "PETUGAS_RESIDU") && status) {
+        const pStatus = (status === "Aktif" || status === "ACTIVE") ? "APPROVED" : "REJECTED";
+        await tx.petugasResidu.updateMany({
+          where: { userId: id },
+          data: { whitelistStatus: pStatus },
+        });
+      }
+
       return u;
     });
 
