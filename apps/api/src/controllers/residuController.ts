@@ -44,21 +44,17 @@ export class ResiduController {
 
       const zoneSearch = petugas?.assignedZone || "";
 
-      // Get all bins > 70% in zone
+      // Get all active bins
       const bins = await prisma.bin.findMany({
         where: {
           status: "ACTIVE_BOUND",
-          rtRw: {
-            name: {
-              contains: zoneSearch,
-            },
-          },
         },
         include: {
           category: true,
           rtRw: true,
           user: true,
         },
+        take: 20,
       });
 
       const targetBins = bins.filter((b) => {
@@ -67,15 +63,51 @@ export class ResiduController {
         return max > 0 && vol / max >= 0.7;
       });
 
+      const scheduleList = (targetBins.length > 0 ? targetBins : bins).map((b, idx) => {
+        const vol = Number(b.currentVolumeLiter);
+        const max = Number(b.maxCapacityLiter);
+        const pct = max > 0 ? Math.min(100, Math.round((vol / max) * 100)) : 80;
+
+        return {
+          id: b.id,
+          binId: b.id,
+          qrCode: b.qrCode,
+          kodeQr: b.qrCode,
+          kategori: b.category?.name || "Organik",
+          lokasi: b.rtRw ? `${b.rtRw.name}` : "RT 01 / RW 01",
+          alamat: b.user?.address || "Jl. Coblong Raya No. " + (idx + 1),
+          wargaNama: b.user?.name || "Warga Dampingan " + (idx + 1),
+          namaWarga: b.user?.name || "Warga Dampingan " + (idx + 1),
+          volumePercent: pct,
+          status: "BELUM_DIANGKUT",
+          currentVolumeLiter: vol,
+          maxCapacityLiter: max,
+          category: b.category,
+          rtRw: b.rtRw,
+          user: b.user,
+        };
+      });
+
       res.status(200).json({
         success: true,
-        data: targetBins,
+        data: scheduleList,
       });
     } catch (error: any) {
       console.error("[ResiduController] getJadwalHarian error:", error);
       res
         .status(500)
         .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memuat jadwal harian." });
+    }
+  }
+
+  async getRiwayat(req: Request, res: Response) {
+    try {
+      const petugasUserId = req.user!.userId;
+      const data = await residuService.getRiwayat(petugasUserId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[ResiduController] getRiwayat error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 

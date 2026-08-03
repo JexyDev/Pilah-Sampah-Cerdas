@@ -91,5 +91,12 @@ router.get(
   verifiedPetugasGuard,
   residuController.getAnalytics
 );
+router.get(
+  "/riwayat",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getRiwayat
+);
 
 export default router;

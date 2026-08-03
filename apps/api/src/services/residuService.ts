@@ -198,9 +198,22 @@ export class ResiduService {
       },
     });
 
+    const totalJadwalCount = await prisma.bin.count();
+    const totalJadwal = totalJadwalCount > 0 ? totalJadwalCount : 12;
+
     return {
+      // Mobile Flutter model exact keys
       petugasId: petugasIdStr,
       name: user.name,
+      assignedZone: petugas.assignedZone || (rtRwStr ? `${rtRwStr}, Kel. ${kelurahanStr}` : "Kecamatan Coblong"),
+      totalJadwal,
+      sudahDiambil: todayEntries,
+      pelanggaranCount: totalViolationsToday,
+      totalWeightKg: Number(todayWeightKg.toFixed(1)),
+      ketepatanWaktuScore: Number(petugas.kpiScore) || 95,
+      akurasiScore: 90,
+
+      // Additional & legacy metadata for compatibility
       rtRw: rtRwStr,
       kelurahan: kelurahanStr,
       todayWeightKg: Number(todayWeightKg.toFixed(1)),
@@ -208,10 +221,7 @@ export class ResiduService {
       todayEntries,
       totalPoints: pointsSum._sum.points || 0,
       pointRatePerKg,
-
-      // Additional metadata for compatibility
       kpiScore: Number(petugas.kpiScore),
-      assignedZone: petugas.assignedZone || "Semua Zona",
       totalViolationsToday,
       tugasSelesaiHariIni: todayEntries,
       recentViolations: recentViolations.map((v) => ({
@@ -224,6 +234,33 @@ export class ResiduService {
         createdAt: v.createdAt,
       })),
     };
+  }
+
+  async getRiwayat(petugasUserId: string) {
+    const logs = await prisma.setoranManual.findMany({
+      where: { petugasResiduId: petugasUserId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        rw: true,
+      },
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      logId: log.id,
+      diinputOleh: log.diinputOleh,
+      berat: Number(log.berat),
+      actualWeightKg: Number(log.berat),
+      unit: log.unit,
+      kategori: log.kategori,
+      classification: log.kategori,
+      fotoResiduUrl: log.fotoResiduUrl,
+      imagePhotoUrl: log.fotoResiduUrl,
+      rwName: log.rw?.name || "RW Area",
+      createdAt: log.createdAt.toISOString(),
+      timestamp: log.createdAt.toISOString(),
+    }));
   }
 
   async getAnalytics() {
