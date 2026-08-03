@@ -154,9 +154,34 @@ export class KknController {
         longitude != null ? Number(longitude) : undefined,
         kknUserId
       );
-      res.status(200).json({ success: true, message: "Aktivasi bin warga berhasil disatukan" });
+      res.status(200).json({
+        success: true,
+        message: "Tempat sampah berhasil di-binding ke akun Warga di wilayah RT/RW dampingan KKN.",
+      });
     } catch (error: any) {
       console.error("[KknController] activateBin error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async createLeaveRequest(req: Request, res: Response) {
+    try {
+      const studentId = req.user!.userId;
+      let fotoBuktiUrl = req.body.fotoBuktiUrl;
+      if (req.file) {
+        fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      }
+      const data = await kknService.createLeaveRequest(studentId, {
+        ...req.body,
+        fotoBuktiUrl,
+      });
+      res.status(201).json({
+        success: true,
+        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Admin DLH.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] createLeaveRequest error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }

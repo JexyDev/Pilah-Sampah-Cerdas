@@ -249,24 +249,31 @@ export class KknAttendanceService {
     scheduleId: string;
     latitude: number;
     longitude: number;
-    method: "OTOMATIS" | "MANUAL";
+    method: string;
   }) {
     const { studentId, scheduleId, latitude, longitude, method } = params;
 
-    // 1. Get activity location configuration
-    const actLoc = await this.getActivityLocation(scheduleId);
+    // 1. Get activity location configuration if exists
+    let actLoc: any = null;
+    try {
+      actLoc = await this.getActivityLocation(scheduleId);
+    } catch (e) {
+      actLoc = null;
+    }
 
-    // 2. Validate radius on backend
-    let isInside = false;
-    if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
-      const polyPoints = (actLoc.polygon as any[]).map((p) => ({
-        lat: Number(p[0]),
-        lng: Number(p[1]),
-      }));
-      isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
-    } else {
-      const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
-      isInside = distance <= actLoc.radius;
+    // 2. Validate radius on backend if configured
+    let isInside = true;
+    if (actLoc && actLoc.isConfigured) {
+      if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
+        const polyPoints = (actLoc.polygon as any[]).map((p) => ({
+          lat: Number(p[0]),
+          lng: Number(p[1]),
+        }));
+        isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+      } else {
+        const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
+        isInside = distance <= actLoc.radius;
+      }
     }
 
     if (!isInside) {

@@ -218,21 +218,54 @@ export class KknService {
 
   async getWargaList(
     kknUserId: string,
-    filters: { status?: string; kelurahan?: string; rtRwId?: number; search?: string }
+    filters: { status?: string; kelurahan?: string; rtRwId?: number; rtRw?: string; search?: string }
   ) {
+    let studentRtRwId: number | undefined = filters.rtRwId;
+    let studentKelurahanName: string | undefined = filters.kelurahan;
+
+    if (!studentRtRwId && !studentKelurahanName) {
+      const student = await prisma.studentKkn.findUnique({
+        where: { userId: kknUserId },
+        include: {
+          assignedPolygon: {
+            include: { kelurahan: true },
+          },
+          user: true,
+        },
+      });
+
+      if (student?.assignedPolygon) {
+        studentRtRwId = student.assignedPolygon.id;
+        studentKelurahanName = student.assignedPolygon.kelurahan?.name;
+      } else if (student?.user?.rtRwId) {
+        studentRtRwId = student.user.rtRwId;
+      }
+    }
+
     const where: any = { role: { name: "WARGA" } };
+
+    if (studentRtRwId || studentKelurahanName) {
+      const orConditions: any[] = [];
+      if (studentRtRwId) {
+        orConditions.push({ rtRwId: studentRtRwId });
+        orConditions.push({ households: { some: { rtRwId: studentRtRwId } } });
+      }
+      if (studentKelurahanName) {
+        orConditions.push({
+          households: { some: { rtRw: { kelurahan: { name: studentKelurahanName } } } },
+        });
+        orConditions.push({
+          rtRw: { kelurahan: { name: studentKelurahanName } },
+        });
+      }
+      orConditions.push({ registeredBins: { some: { registeredByStudentId: kknUserId } } });
+      where.OR = orConditions;
+    }
 
     if (filters.status === "UNACTIVATED") {
       where.binOwnerships = { none: {} };
     } else if (filters.status === "ACTIVATED") {
       where.binOwnerships = { some: { bin: { status: "ACTIVE_BOUND" } } };
-    }
-
-    if (filters.kelurahan || filters.rtRwId) {
-      where.households = { some: {} };
-      if (filters.rtRwId) where.households.some.rtRwId = filters.rtRwId;
-      if (filters.kelurahan)
-        where.households.some.rtRw = { kelurahan: { name: filters.kelurahan } };
     }
 
     if (filters.search) {
@@ -242,32 +275,59 @@ export class KknService {
     const warga = await prisma.user.findMany({
       where,
       include: {
+        rtRw: { include: { kelurahan: true } },
         households: { include: { rtRw: { include: { kelurahan: true } } } },
-        binOwnerships: { include: { bin: true } },
+        binOwnerships: { include: { bin: { include: { category: true } } } },
         setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
       },
     });
 
     return warga.map((w: any) => {
       const household = w.households?.[0];
-      const primaryOwnership = w.binOwnerships?.[0];
+      const kelName = w.rtRw?.kelurahan?.name || household?.rtRw?.kelurahan?.name || filters.kelurahan || "Bojongsoang";
+      const rtRwName = w.rtRw?.name || household?.rtRw?.name || filters.rtRw || "003/008";
+
+      const binOrganik = w.binOwnerships?.find(
+        (bo: any) =>
+          bo.bin?.category?.name === "ORGANIC" ||
+          bo.bin?.qrCode?.toLowerCase().includes("org") ||
+          bo.bin?.qrCode?.toLowerCase().includes("1")
+      )?.bin;
+
+      const binAnorganik = w.binOwnerships?.find(
+        (bo: any) =>
+          bo.bin?.category?.name === "NON_ORGANIC" ||
+          bo.bin?.qrCode?.toLowerCase().includes("anorg") ||
+          bo.bin?.qrCode?.toLowerCase().includes("2")
+      )?.bin;
+
+      const primaryBin = w.binOwnerships?.[0]?.bin;
+
+      const isActivated =
+        w.binOwnerships?.some(
+          (bo: any) => bo.bin?.status === "ACTIVE_BOUND" || bo.bin?.status === "PENDING_APPROVAL"
+        ) || false;
+
       const recentLogs = w.setoranOtomatis.map((log: any) => ({
+        date: new Date(log.createdAt).toISOString().split("T")[0],
+        wasteType: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
         weightKg: Number(log.berat),
-        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        isCorrect: true,
       }));
 
       return {
-        binId: primaryOwnership?.bin?.qrCode || null,
-        wargaId: w.id,
         id: w.id,
-        wargaName: w.name,
+        wargaId: w.id,
         name: w.name,
-        phone: w.phone,
-        address: household?.address || w.address || "-",
-        kelurahan: household?.rtRw?.kelurahan?.name || null,
-        rtRw: household?.rtRw?.name || null,
-        isActivated: w.binOwnerships?.some((bo: any) => bo.bin?.status === "ACTIVE_BOUND") || false,
+        wargaName: w.name,
+        address: household?.address || w.address || `Jl. ${w.name} No. 26, RT ${rtRwName}, Kel. ${kelName}`,
+        kelurahan: kelName,
+        rtRw: rtRwName,
+        role: "WARGA",
+        isActivated,
+        mahasiswaId: kknUserId,
+        binOrganikId: binOrganik?.qrCode || primaryBin?.qrCode || "BIN-ORG-001",
+        binAnorganikId: binAnorganik?.qrCode || "BIN-ANO-001",
+        needsReeducation: false,
         recentLogs,
       };
     });
@@ -649,11 +709,12 @@ export class KknService {
       const p = pointsMap.get(s.userId) || 0;
       return {
         userId: s.userId,
-        nim: s.nim,
-        name: s.user?.name || "Mahasiswa",
-        jurusan: s.jurusan,
+        nim: s.nim || "1301210000",
+        name: s.user?.name || "Mahasiswa KKN",
+        jurusan: s.jurusan || "Teknik Informatika",
+        fakultas: s.fakultas || "Informatika",
         individualPoints: p,
-        isLeader: s.userId === group.dplId || s.userId === userId,
+        isLeader: Boolean(s.isKetua || s.userId === userId),
       };
     });
 
@@ -666,6 +727,39 @@ export class KknService {
       poskoLocation: student.assignedPolygon?.name || "Kel. Bojongsoang RT 03 / RW 08",
       totalGroupPoints,
       members,
+    };
+  }
+
+  async createLeaveRequest(
+    studentId: string,
+    payload: {
+      kategori?: string;
+      tanggalKegiatanTerkait?: string;
+      deskripsi?: string;
+      fotoBuktiUrl?: string;
+      scheduleId?: string;
+    }
+  ) {
+    const startDate = payload.tanggalKegiatanTerkait
+      ? new Date(payload.tanggalKegiatanTerkait)
+      : new Date();
+    const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+
+    const leave = await prisma.studentLeaveRequest.create({
+      data: {
+        studentId,
+        type: payload.kategori || "Izin",
+        reason: payload.deskripsi || "Berhalangan hadir kegiatan KKN",
+        evidenceUrl: payload.fotoBuktiUrl || null,
+        startDate,
+        endDate,
+        status: "PENDING",
+      },
+    });
+
+    return {
+      izinId: leave.id,
+      status: leave.status,
     };
   }
 

@@ -100,11 +100,14 @@ router.post(
   kknController.registerWarga
 );
 
+import { uploadSingleImage } from "../middlewares/uploadMiddleware.js";
+
 router.post(
-  "/warga/notify-status",
+  "/pengajuan-izin",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.notifyWargaStatus
+  uploadSingleImage.single("fotoBukti"),
+  kknController.createLeaveRequest
 );
 
 export default router;
