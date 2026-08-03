@@ -106,8 +106,84 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const currentRole = user?.peran || "WARGA";
 
-  // Role based helper
-  const hasAccess = (allowed: UserRole[]) => allowed.includes(currentRole);
+  const ALL_ROLES: UserRole[] = [
+    "SUPER_ADMIN",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+    "WARGA",
+  ];
+
+  const menuSections = [
+    {
+      header: "Layanan Utama",
+      items: [
+        { to: "/", icon: LayoutDashboard, label: "Dashboard", allowed: ALL_ROLES },
+        { to: "/kkn-portal", icon: Compass, label: "Portal Pendampingan", allowed: ["MAHASISWA_KKN"] as UserRole[] },
+        { to: "/residu-portal", icon: Shield, label: "Portal Pengawasan", allowed: ["PETUGAS_RESIDU"] as UserRole[] },
+        { to: "/rw/approval", icon: ShieldCheck, label: "Approval Bin & Petugas", allowed: ["RW", "RT"] as UserRole[] },
+        { to: "/input-manual", icon: FilePlus, label: "Input Setoran Residu Hilir", allowed: ["PETUGAS_RESIDU"] as UserRole[] },
+      ],
+    },
+    {
+      header: "Aktivitas Tata Kelola Sampah",
+      items: [
+        { to: "/setor-sampah", icon: ScanLine, label: "Monitoring Pemilahan Warga", allowed: ALL_ROLES },
+        { to: "/manajemen-pengangkutan", icon: Truck, label: "Pengangkutan Sampah", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "PETUGAS_RESIDU"] as UserRole[] },
+        { to: "/pemanfaatan-sampah", icon: Sprout, label: "Pemanfaatan Sampah", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
+        { to: "/hasil-pemanfaatan", icon: Archive, label: "Hasil Pemanfaatan", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
+      ],
+    },
+    {
+      header: "Manajemen Data",
+      items: [
+        { to: "/manajemen-pengguna", icon: Users, label: "Manajemen Pengguna", allowed: ["SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        { to: "/manajemen-mahasiswa", icon: GraduationCap, label: "Manajemen Mahasiswa", allowed: ["SUPER_ADMIN"] as UserRole[] },
+        { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Manajemen Tempat Sampah", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"] as UserRole[] },
+        { to: "/manajemen-lokasi", icon: MapPin, label: "Manajemen Lokasi", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
+        { to: "/rw/fasilitas", icon: Sprout, label: "Fasilitas & Ide", allowed: ["RW", "RT"] as UserRole[] },
+      ],
+    },
+    {
+      header: "Laporan & Validasi",
+      items: [
+        { to: "/superadmin/discrepancies", icon: ClipboardCheck, label: "Review Diskrepansi AI", allowed: ["SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        { to: "/monitoring-absen", icon: Compass, label: "Monitoring Absen KKN", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
+        { to: "/rekap-setoran", icon: Receipt, label: "Rekap Setoran", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"] as UserRole[] },
+        { to: "/laporan-analitik", icon: LineChart, label: "Laporan & Analitik", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
+      ],
+    },
+    {
+      header: "Edukasi & Gamifikasi",
+      items: [
+        { to: "/leaderboard", icon: Trophy, label: "Leaderboard", allowed: ALL_ROLES },
+        { to: "/poin-warga", icon: Star, label: "Poin Warga", allowed: ALL_ROLES },
+        { to: "/ide-daur-ulang", icon: Lightbulb, label: "Ide Daur Ulang", allowed: ALL_ROLES },
+        { to: "/jadwal-kegiatan", icon: Calendar, label: "Jadwal Kegiatan", allowed: ALL_ROLES },
+        { to: "/kategori-sampah", icon: Tags, label: "Kategori Sampah", allowed: ["SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+      ],
+    },
+    {
+      header: "Sistem",
+      items: [
+        { to: "/notifikasi", icon: Bell, label: "Notifikasi", allowed: ALL_ROLES },
+        { to: "/pengaturan", icon: Settings, label: "Pengaturan", allowed: ALL_ROLES },
+        { to: "/tentang", icon: Info, label: "Tentang Aplikasi", allowed: ALL_ROLES },
+      ],
+    },
+    {
+      header: "Super Admin Panel",
+      items: [
+        { to: "/superadmin/configs", icon: Sliders, label: "Rule Engine", allowed: ["SUPER_ADMIN"] as UserRole[] },
+        { to: "/superadmin/qr-master", icon: QrCode, label: "Master QR & Inaktif", allowed: ["SUPER_ADMIN"] as UserRole[] },
+        { to: "/superadmin/audit", icon: FileText, label: "Audit Trail", allowed: ["SUPER_ADMIN"] as UserRole[] },
+      ],
+    },
+  ];
 
   return (
     <>
@@ -136,118 +212,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             if (window.innerWidth < 1024) onClose();
           }}
         >
-          <SectionHeader label="Layanan Utama" />
-          <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
-
-        {hasAccess(["MAHASISWA_KKN"]) && (
-          <NavItem to="/kkn-portal" icon={Compass} label="Portal Pendampingan" />
-        )}
-
-        {hasAccess(["PETUGAS_RESIDU"]) && (
-          <NavItem to="/residu-portal" icon={Shield} label="Portal Pengawasan" />
-        )}
-
-        {hasAccess(["RW", "RT"]) && (
-          <NavItem to="/rw/approval" icon={ShieldCheck} label="Approval Bin & Petugas" />
-        )}
-
-        {hasAccess(["PETUGAS_RESIDU"]) && (
-          <NavItem to="/input-manual" icon={FilePlus} label="Input Setoran Residu Hilir" />
-        )}
-
-        <SectionHeader label="Aktivitas Tata Kelola Sampah" />
-        <NavItem to="/setor-sampah" icon={ScanLine} label="Monitoring Pemilahan Warga" />
-        <NavItem to="/manajemen-pengangkutan" icon={Truck} label="Pengangkutan Sampah" />
-        <NavItem to="/pemanfaatan-sampah" icon={Sprout} label="Pemanfaatan Sampah" />
-        <NavItem to="/hasil-pemanfaatan" icon={Archive} label="Hasil Pemanfaatan" />
-
-        <SectionHeader label="Manajemen Data" />
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/manajemen-pengguna" icon={Users} label="Manajemen Pengguna" />
-        )}
-
-        {hasAccess(["SUPER_ADMIN"]) && (
-          <NavItem to="/manajemen-mahasiswa" icon={GraduationCap} label="Manajemen Mahasiswa" />
-        )}
-
-        {hasAccess([
-          "SUPER_ADMIN",
-          "ADMIN_DLH",
-          "CAMAT",
-          "LURAH",
-          "RW",
-          "RT",
-          "PETUGAS_RESIDU",
-          "MAHASISWA_KKN",
-        ]) && (
-          <NavItem to="/manajemen-tempat-sampah" icon={Trash2} label="Manajemen Tempat Sampah" />
-        )}
-
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
-          <NavItem to="/manajemen-lokasi" icon={MapPin} label="Manajemen Lokasi" />
-        )}
-
-        {hasAccess(["RW", "RT"]) && (
-          <NavItem to="/rw/fasilitas" icon={Sprout} label="Fasilitas & Ide" />
-        )}
-
-        <SectionHeader label="Laporan & Validasi" />
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/superadmin/discrepancies" icon={ClipboardCheck} label="Review Diskrepansi AI" />
-        )}
-
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
-          <NavItem to="/monitoring-absen" icon={Compass} label="Monitoring Absen KKN" />
-        )}
-
-        {hasAccess([
-          "SUPER_ADMIN",
-          "ADMIN_DLH",
-          "CAMAT",
-          "LURAH",
-          "RW",
-          "RT",
-          "PETUGAS_RESIDU",
-          "MAHASISWA_KKN",
-        ]) && <NavItem to="/rekap-setoran" icon={Receipt} label="Rekap Setoran" />}
-
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]) && (
-          <NavItem to="/laporan-analitik" icon={LineChart} label="Laporan & Analitik" />
-        )}
-
-        <SectionHeader label="Edukasi & Gamifikasi" />
-        <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" />
-        <NavItem to="/poin-warga" icon={Star} label="Poin Warga" />
-        <NavItem to="/ide-daur-ulang" icon={Lightbulb} label="Ide Daur Ulang" />
-        <NavItem to="/jadwal-kegiatan" icon={Calendar} label="Jadwal Kegiatan" />
-        {hasAccess(["SUPER_ADMIN", "ADMIN_DLH"]) && (
-          <NavItem to="/kategori-sampah" icon={Tags} label="Kategori Sampah" />
-        )}
-
-        <SectionHeader label="Sistem" />
-        <NavItem to="/notifikasi" icon={Bell} label="Notifikasi" badge={8} />
-        {hasAccess([
-          "SUPER_ADMIN",
-          "ADMIN_DLH",
-          "CAMAT",
-          "LURAH",
-          "RW",
-          "RT",
-          "PETUGAS_RESIDU",
-          "MAHASISWA_KKN",
-          "WARGA",
-        ]) && <NavItem to="/pengaturan" icon={Settings} label="Pengaturan" />}
-        <NavItem to="/tentang" icon={Info} label="Tentang Aplikasi" />
-
-        {hasAccess(["SUPER_ADMIN"]) && (
-          <>
-            <SectionHeader label="Super Admin Panel" />
-            <NavItem to="/superadmin/configs" icon={Sliders} label="Rule Engine" />
-            <NavItem to="/superadmin/qr-master" icon={QrCode} label="Master QR & Inaktif" />
-            <NavItem to="/superadmin/audit" icon={FileText} label="Audit Trail" />
-          </>
-        )}
-      </nav>
+          {menuSections.map((sec) => {
+            const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
+            if (visibleItems.length === 0) return null;
+            return (
+              <React.Fragment key={sec.header}>
+                <SectionHeader label={sec.header} />
+                {visibleItems.map((item) => (
+                  <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+                ))}
+              </React.Fragment>
+            );
+          })}
+        </nav>
 
       {/* Sidebar Footer */}
       <div className="p-4 border-t border-outline-variant bg-surface-container-low">

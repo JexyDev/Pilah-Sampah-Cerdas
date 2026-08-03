@@ -67,11 +67,19 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
               (req.originalUrl.includes("/bins/generate-qr") ||
                 req.originalUrl.includes("/bins/qr-batch"));
 
+            // Exception: Any user can manage their notification inbox & profile/password settings
+            const isUserNotificationAction =
+              req.originalUrl.includes("/notifications") ||
+              req.originalUrl.includes("/auth/profile") ||
+              req.originalUrl.includes("/auth/password") ||
+              req.originalUrl.includes("/auth/change-password");
+
             if (
               !isResolveDiscrepancy &&
               !isRegisterStaff &&
               !isKknApproval &&
-              !isQrBatchManagement
+              !isQrBatchManagement &&
+              !isUserNotificationAction
             ) {
               res.status(403).json({
                 error: "FORBIDDEN",

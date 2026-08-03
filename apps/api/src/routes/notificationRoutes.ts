@@ -168,7 +168,35 @@ router.get("/", authMiddleware, async (req, res) => {
           iconColor: "text-emerald-600",
         };
 
-        // 3. User direct DB notifications (strictly filter out duplicate reset request logs covered by reqNotifications)
+        // 3. Fetch real full bins (>90% volume capacity) in system/area
+        let criticalBinNotifs: any[] = [];
+        try {
+          const fullBins = await prisma.bin.findMany({
+            include: { rtRw: true, category: true },
+            take: 10,
+          });
+          const realCriticalBins = fullBins.filter(
+            (b) => Number(b.maxCapacityLiter) > 0 && Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9
+          );
+          criticalBinNotifs = realCriticalBins.map((b) => {
+            const pct = Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100);
+            return {
+              id: `crit-bin-${b.id}`,
+              type: "TONG_PENUH",
+              title: "Kapasitas Tong Kritis",
+              desc: `Tempat sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rtRw?.name || "Wilayah"} telah mencapai ${pct}%!`,
+              isRead: false,
+              time: "Status Real-time",
+              icon: "warning",
+              iconBg: "bg-red-100",
+              iconColor: "text-red-500",
+            };
+          });
+        } catch (e) {
+          console.error("[NotificationRoute] Error fetching critical bins:", e);
+        }
+
+        // 4. User direct DB notifications
         let userNotifs: any[] = [];
         if (userId) {
           try {
@@ -192,7 +220,7 @@ router.get("/", authMiddleware, async (req, res) => {
           }
         }
 
-        formattedNotifications = [scheduleNotif, ...reqNotifications, ...userNotifs];
+        formattedNotifications = [scheduleNotif, ...criticalBinNotifs, ...reqNotifications, ...userNotifs];
       } catch (err) {
         console.error("[NotificationRoute] Error fetching admin notifications:", err);
       }
@@ -206,36 +234,32 @@ router.get("/", authMiddleware, async (req, res) => {
             take: 20,
           });
           formattedNotifications = dbNotifs.map(mapNotification);
+
+          // Check if citizen has real bins that are > 90% full
+          const myBinOwnerships = await prisma.binOwnership.findMany({
+            where: { userId },
+            include: { bin: { include: { category: true } } },
+          });
+          myBinOwnerships.forEach((bo) => {
+            const b = bo.bin;
+            if (b && Number(b.maxCapacityLiter) > 0 && Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9) {
+              const pct = Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100);
+              formattedNotifications.unshift({
+                id: `my-crit-bin-${b.id}`,
+                type: "TONG_PENUH",
+                title: "Kapasitas Tong Kritis",
+                desc: `Tong ${b.category?.name || ""} Anda hampir penuh (${pct}%).`,
+                isRead: false,
+                time: "Status Real-time",
+                icon: "warning",
+                iconBg: "bg-red-100",
+                iconColor: "text-red-500",
+              });
+            }
+          });
         } catch {
           // ignore
         }
-      }
-
-      if (formattedNotifications.length === 0) {
-        formattedNotifications = [
-          {
-            id: "seed-notif-1",
-            type: "TONG_PENUH",
-            title: "Kapasitas Tong Kritis",
-            desc: "Tong Anorganik Anda hampir penuh (92%).",
-            isRead: false,
-            time: "2 jam lalu",
-            icon: "warning",
-            iconBg: "bg-red-100",
-            iconColor: "text-red-500",
-          },
-          {
-            id: "seed-notif-2",
-            type: "POIN_BERTAMBAH",
-            title: "Poin Bertambah",
-            desc: "Anda mendapatkan +150 poin dari setoran organik terakhir.",
-            isRead: true,
-            time: "1 hari lalu",
-            icon: "star",
-            iconBg: "bg-yellow-100",
-            iconColor: "text-yellow-500",
-          },
-        ];
       }
     }
 

@@ -326,7 +326,7 @@ const JadwalKegiatan: React.FC = () => {
                 </button>
               </div>
             </div>
-            {user?.peran !== "WARGA" && (
+            {["SUPER_ADMIN", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
               <button
                 className="bg-primary text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors active:scale-95 transform shadow-sm"
                 onClick={() => setIsModalOpen(true)}
