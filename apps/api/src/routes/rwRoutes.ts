@@ -40,6 +40,25 @@ router.use(async (req, res, next) => {
   next();
 });
 
+/**
+ * @swagger
+ * tags:
+ *   name: Portal RW & RT
+ *   description: API Portal Pengurus RT dan RW (Approval Tempat Sampah, Verifikasi Petugas, Ide Daur Ulang, & Fasilitas)
+ */
+
+/**
+ * @swagger
+ * /api/v1/rw/dashboard:
+ *   get:
+ *     summary: Dashboard ringkasan statistik wilayah RT/RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan data dashboard RW/RT
+ */
 router.get("/dashboard", async (req, res, next) => {
   try {
     const data = await rwService.getDashboard(req.user!.rtRwId!);
@@ -48,7 +67,19 @@ router.get("/dashboard", async (req, res, next) => {
     next(error);
   }
 });
-// BINS
+
+/**
+ * @swagger
+ * /api/v1/rw/bins/pending:
+ *   get:
+ *     summary: Daftar pengajuan aktivasi tempat sampah warga yang pending approval RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan data pending bins
+ */
 router.get("/bins/pending", async (req, res, next) => {
   try {
     const data = await rwService.getPendingBins(req.user!.rtRwId!);
@@ -58,6 +89,24 @@ router.get("/bins/pending", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/bins/{id}/approve:
+ *   put:
+ *     summary: Menyetujui pengajuan aktivasi tempat sampah warga oleh RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Bin berhasil diaktifkan
+ */
 router.put("/bins/:id/approve", async (req, res, next) => {
   try {
     const data = await rwService.approveBin(req.params.id, req.user!.rtRwId!);
@@ -67,6 +116,24 @@ router.put("/bins/:id/approve", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/bins/{id}/reject:
+ *   put:
+ *     summary: Menolak pengajuan tempat sampah warga
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pengajuan ditolak
+ */
 router.put("/bins/:id/reject", async (req, res, next) => {
   try {
     const { reason } = req.body;
@@ -78,6 +145,18 @@ router.put("/bins/:id/reject", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/bins/inactive:
+ *   get:
+ *     summary: Daftar tempat sampah inaktif (30 hari tanpa aktivitas) di wilayah RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan inactive bins
+ */
 router.get("/bins/inactive", async (req, res, next) => {
   try {
     const data = await rwService.getInactiveBins(req.user!.rtRwId!);
@@ -87,6 +166,24 @@ router.get("/bins/inactive", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/bins/{id}/broken:
+ *   put:
+ *     summary: Menandai tempat sampah rusak fisik secara permanen (BROKEN)
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Bin berhasil ditandai rusak
+ */
 router.put("/bins/:id/broken", async (req, res, next) => {
   try {
     const data = await rwService.markBinBroken(req.params.id, req.user!.userId, req.user!.rtRwId!);
@@ -96,7 +193,18 @@ router.put("/bins/:id/broken", async (req, res, next) => {
   }
 });
 
-// PETUGAS RESIDU
+/**
+ * @swagger
+ * /api/v1/rw/petugas/pending:
+ *   get:
+ *     summary: Daftar pengajuan verifikasi akun petugas residu
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar petugas pending
+ */
 router.get("/petugas/pending", async (req, res, next) => {
   try {
     const data = await rwService.getPendingPetugas(req.user!.rtRwId!);
@@ -106,6 +214,24 @@ router.get("/petugas/pending", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/petugas/{id}/verify:
+ *   put:
+ *     summary: Verifikasi persetujuan / penolakan akun petugas residu oleh RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Verifikasi petugas berhasil
+ */
 router.put("/petugas/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body; // "APPROVED" or "REJECTED"
@@ -123,7 +249,18 @@ router.put("/petugas/:id/verify", async (req, res, next) => {
   }
 });
 
-// IDE DAUR ULANG
+/**
+ * @swagger
+ * /api/v1/rw/ide:
+ *   get:
+ *     summary: Daftar pengajuan ide daur ulang warga
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar ide daur ulang
+ */
 router.get("/ide", async (req, res, next) => {
   try {
     const data = await rwService.getPendingIde(req.user!.rtRwId!);
@@ -133,6 +270,24 @@ router.get("/ide", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/ide/{id}/verify:
+ *   put:
+ *     summary: Verifikasi ide daur ulang warga & penambahan +50 poin
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Ide berhasil diverifikasi
+ */
 router.put("/ide/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body; // "APPROVED" or "REJECTED"
@@ -148,7 +303,18 @@ router.put("/ide/:id/verify", async (req, res, next) => {
   }
 });
 
-// FASILITAS
+/**
+ * @swagger
+ * /api/v1/rw/facilities/pending:
+ *   get:
+ *     summary: Daftar pengajuan registrasi fasilitas daur ulang/kompos
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan pending fasilitas
+ */
 router.get("/facilities/pending", async (req, res, next) => {
   try {
     const data = await rwService.getPendingFacilities(req.user!.rtRwId!);
@@ -158,6 +324,24 @@ router.get("/facilities/pending", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/facilities/{id}/verify:
+ *   put:
+ *     summary: Verifikasi pengajuan fasilitas daur ulang/kompos
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Fasilitas berhasil diverifikasi
+ */
 router.put("/facilities/:id/verify", async (req, res, next) => {
   try {
     const { action } = req.body;
@@ -172,6 +356,18 @@ router.put("/facilities/:id/verify", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/facilities:
+ *   get:
+ *     summary: Daftar seluruh fasilitas (Loseda, Maggot, Bata Terawang, Bank Sampah) di RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar fasilitas
+ */
 router.get("/facilities", async (req, res, next) => {
   try {
     const data = await rwService.getFacilities(req.user!.rtRwId!);
@@ -181,6 +377,24 @@ router.get("/facilities", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/rw/facilities/{id}/production:
+ *   post:
+ *     summary: Input laporan mingguan hasil panen & material masuk fasilitas
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Data produksi berhasil disimpan
+ */
 router.post("/facilities/:id/production", async (req, res, next) => {
   try {
     const { materialMasukKg, outputKg, jenisOutput, periode } = req.body;
