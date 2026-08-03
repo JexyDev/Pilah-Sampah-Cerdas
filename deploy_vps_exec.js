@@ -14,6 +14,7 @@ cd /home/maker/Pilah-Sampah-Cerdas/apps/api
 npm install --silent
 npx prisma generate
 npx prisma db push --skip-generate
+npx tsx scripts/seed-rt-rw-all.ts || true
 npx tsx scripts/seed-dpl.ts --commit || true
 npx tsx scripts/seed-mhs-demo.ts || true
 npm run build
