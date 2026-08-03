@@ -61,8 +61,12 @@ export class KknService {
     });
     const contributionPoints = pointsSum._sum.points || 0;
 
-    const poskoLat = student.assignedPolygon?.latitude ? Number(student.assignedPolygon.latitude) : -6.975412;
-    const poskoLng = student.assignedPolygon?.longitude ? Number(student.assignedPolygon.longitude) : 107.632145;
+    const poskoLat = student.assignedPolygon?.latitude
+      ? Number(student.assignedPolygon.latitude)
+      : -6.975412;
+    const poskoLng = student.assignedPolygon?.longitude
+      ? Number(student.assignedPolygon.longitude)
+      : 107.632145;
 
     return {
       studentKkn: {
@@ -1009,15 +1013,17 @@ export class KknService {
       latitude: lat,
       longitude: lng,
       radiusMeter: 500,
-      polygonPoints: lat && lng ? [
-        [lat + 0.002, lng - 0.002],
-        [lat + 0.002, lng + 0.002],
-        [lat - 0.002, lng + 0.002],
-        [lat - 0.002, lng - 0.002],
-      ] : [],
+      polygonPoints:
+        lat && lng
+          ? [
+              [lat + 0.002, lng - 0.002],
+              [lat + 0.002, lng + 0.002],
+              [lat - 0.002, lng + 0.002],
+              [lat - 0.002, lng - 0.002],
+            ]
+          : [],
     };
   }
 }
 
 export const kknService = new KknService();
-
