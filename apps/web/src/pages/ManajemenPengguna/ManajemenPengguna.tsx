@@ -11,9 +11,13 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 
+import { useSearchParams } from "react-router-dom";
+
 const ManajemenPengguna: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get("role") || "Semua";
 
   const [users, setUsers] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
@@ -22,7 +26,22 @@ const ManajemenPengguna: React.FC = () => {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRole, setSelectedRole] = useState("Semua");
+  const [selectedRole, setSelectedRole] = useState(roleFromUrl);
+
+  useEffect(() => {
+    if (roleFromUrl !== selectedRole) {
+      setSelectedRole(roleFromUrl);
+    }
+  }, [roleFromUrl]);
+
+  const handleRoleTabChange = (role: string) => {
+    setSelectedRole(role);
+    if (role === "Semua") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ role });
+    }
+  };
   const [selectedStatus, setSelectedStatus] = useState("Semua");
   const [selectedRw, setSelectedRw] = useState("Semua");
   const [selectedRt, setSelectedRt] = useState("Semua");
@@ -289,6 +308,59 @@ const ManajemenPengguna: React.FC = () => {
           >
             <Download size={15} /> Ekspor CSV
           </button>
+        </div>
+      </div>
+
+      {/* Master Role Switcher Tabs */}
+      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
+        {[
+          { key: "Semua", label: "Semua Peran", icon: "🌐" },
+          { key: "ADMIN_DLH", label: "Admin & Eksekutif", icon: "🏢" },
+          { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },
+          { key: "PETUGAS_RESIDU", label: "Petugas Residu Hilir", icon: "🚚" },
+          { key: "MAHASISWA_KKN", label: "Mahasiswa KKN", icon: "🎓" },
+          { key: "WARGA", label: "Warga Mandiri", icon: "🏠" },
+        ].map((tab) => {
+          const isActive = selectedRole === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => handleRoleTabChange(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Pengguna</p>
+          <p className="text-2xl font-black text-slate-800 mt-1">{users.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Status Aktif</p>
+          <p className="text-2xl font-black text-emerald-600 mt-1">
+            {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE").length}
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Pending Verifikasi</p>
+          <p className="text-2xl font-black text-amber-600 mt-1">
+            {users.filter((u) => u.status === "PENDING" || u.status === "Pending" || u.status === "PENDING_APPROVAL").length}
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Peran Terfilter</p>
+          <p className="text-base font-extrabold text-blue-700 mt-1 truncate">{selectedRole === "Semua" ? "Seluruh Role (9)" : selectedRole.replace("_", " ")}</p>
         </div>
       </div>
 

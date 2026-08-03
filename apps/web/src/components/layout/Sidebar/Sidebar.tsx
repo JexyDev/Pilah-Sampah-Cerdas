@@ -37,7 +37,8 @@ import {
   Shield
 } from "lucide-react";
 
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
@@ -69,6 +70,61 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => (
     )}
   </NavLink>
 );
+
+const NavGroup: React.FC<{
+  icon: LucideIcon;
+  label: string;
+  items: Array<{ to: string; label: string }>;
+}> = ({ icon: Icon, label, items }) => {
+  const [isOpen, setIsOpen] = React.useState(true);
+  const location = useLocation();
+  const currentPath = location.pathname + location.search;
+
+  const isAnySubActive = items.some(
+    (sub) => location.pathname === sub.to || currentPath === sub.to
+  );
+
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center px-4 py-3 rounded-r-xl transition-all text-[13px] w-full text-left cursor-pointer ${
+          isAnySubActive
+            ? "bg-secondary-fixed/40 text-on-secondary-fixed-variant font-bold border-l-4 border-secondary"
+            : "text-on-surface-variant hover:bg-surface-container-high"
+        }`}
+      >
+        <Icon className="mr-3 text-[20px]" size={20} />
+        <span className="flex-1 font-bold">{label}</span>
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+      {isOpen && (
+        <div className="ml-7 pl-2 border-l-2 border-primary/20 my-1 space-y-1">
+          {items.map((sub) => {
+            const isActive = currentPath === sub.to || (sub.to === "/manajemen-pengguna" && location.pathname === "/manajemen-pengguna" && !location.search);
+            return (
+              <NavLink
+                key={sub.to}
+                to={sub.to}
+                className={`block px-3 py-1.5 rounded-lg text-[11px] transition-all ${
+                  isActive
+                    ? "bg-primary text-white font-bold shadow-2xs"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                {sub.label}
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
   <div className="px-4 py-2 text-[10px] uppercase font-bold text-primary tracking-wider mt-4 mb-1 border-t border-outline-variant/20 pt-3 first:border-t-0 first:pt-0 first:mt-2">
@@ -141,7 +197,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     {
       header: "Manajemen Data",
       items: [
-        { to: "/manajemen-pengguna", icon: Users, label: "Manajemen Pengguna", allowed: ["SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        {
+          type: "group",
+          icon: Users,
+          label: "Master Pengguna",
+          allowed: ["SUPER_ADMIN", "ADMIN_DLH"] as UserRole[],
+          children: [
+            { to: "/manajemen-pengguna", label: "Semua Pengguna" },
+            { to: "/manajemen-pengguna?role=ADMIN_DLH", label: "Admin & Eksekutif" },
+            { to: "/manajemen-pengguna?role=RW", label: "Pengurus RW / RT" },
+            { to: "/manajemen-pengguna?role=PETUGAS_RESIDU", label: "Petugas Residu Hilir" },
+            { to: "/manajemen-pengguna?role=MAHASISWA_KKN", label: "Mahasiswa KKN" },
+            { to: "/manajemen-pengguna?role=WARGA", label: "Warga Mandiri" },
+          ],
+        },
         { to: "/manajemen-mahasiswa", icon: GraduationCap, label: "Manajemen Mahasiswa", allowed: ["SUPER_ADMIN"] as UserRole[] },
         { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Manajemen Tempat Sampah", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"] as UserRole[] },
         { to: "/manajemen-lokasi", icon: MapPin, label: "Manajemen Lokasi", allowed: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
@@ -218,9 +287,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             return (
               <React.Fragment key={sec.header}>
                 <SectionHeader label={sec.header} />
-                {visibleItems.map((item) => (
-                  <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
-                ))}
+                {visibleItems.map((item: any) =>
+                  item.type === "group" ? (
+                    <NavGroup
+                      key={item.label}
+                      icon={item.icon}
+                      label={item.label}
+                      items={item.children}
+                    />
+                  ) : (
+                    <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+                  )
+                )}
               </React.Fragment>
             );
           })}
