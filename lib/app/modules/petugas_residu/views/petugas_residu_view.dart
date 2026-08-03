@@ -74,7 +74,7 @@ class PetugasResiduView extends ConsumerWidget {
                     _buildKpiCard(dashboard?.kpiScore ?? 93.8),
                     const SizedBox(height: AppDimensions.md),
 
-                    // Grid 4 Stat Cards
+                    // Grid Stat Cards
                     Row(
                       children: [
                         _buildStatCard(
@@ -92,18 +92,6 @@ class PetugasResiduView extends ConsumerWidget {
                           icon: Icons.task_alt_rounded,
                           color: AppColors.primaryGreen,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _buildStatCard(
-                          title: 'Laporan Violasi',
-                          value: '${dashboard?.pelanggaranCount ?? 1}',
-                          unit: 'Laporan',
-                          icon: Icons.report_problem_outlined,
-                          color: AppColors.dangerRed,
-                        ),
                         const SizedBox(width: 12),
                         _buildStatCard(
                           title: 'Total Residu',
@@ -116,36 +104,21 @@ class PetugasResiduView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.lg),
 
-                    // Quick Action Input Timbangan & Lapor
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu) : null,
-                            icon: const Icon(Icons.scale_rounded, size: 20),
-                            label: const Text('Input Timbangan', style: TextStyle(fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryGreen,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
+                    // Single Main Action Button: Input Timbangan Residu
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu) : null,
+                        icon: const Icon(Icons.scale_rounded, size: 22),
+                        label: const Text('Input Timbangan Sampah Residu RT/RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 2,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.laporPelanggaran) : null,
-                            icon: const Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.dangerRed),
-                            label: const Text('Lapor Pelanggaran', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.dangerRed)),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.dangerRed),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: AppDimensions.xl),
 
