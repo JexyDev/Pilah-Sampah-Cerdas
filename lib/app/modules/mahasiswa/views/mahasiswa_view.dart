@@ -140,12 +140,23 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final d = state.dashboard;
     final user = ref.watch(authProvider).user;
     final userId = user?.id ?? '';
+    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRt = user?.rtRw ?? '01/02';
 
-    final totalWarga = state.wargaList.length;
-    // Warga aktif bin khusus milik mahasiswa yang sedang login ini
-    final wargaAktif = state.wargaList
-        .where((w) => w.isActivated && (w.mahasiswaId.isEmpty || w.mahasiswaId == userId))
-        .length;
+    // Total Warga di wilayah Kelurahan & RT/RW penugasan mahasiswa
+    final totalWarga = state.wargaList.where((w) {
+      if (w.role != 'WARGA') return false;
+      final matchesKel = w.kelurahan.isEmpty || w.kelurahan == userKel || w.address.contains(userKel);
+      final matchesRt = w.rtRw.isEmpty || w.rtRw == userRt || w.address.contains(userRt);
+      return matchesKel && matchesRt;
+    }).length;
+
+    // Aktif Bin: Warga di wilayah tersebut yang SUDAH DIBANTU AKTIVASI oleh mahasiswa login ini
+    final wargaAktif = state.wargaList.where((w) {
+      if (!w.isActivated) return false;
+      if (w.mahasiswaId.isNotEmpty && w.mahasiswaId != userId) return false;
+      return true;
+    }).length;
 
     return Row(
       children: [
@@ -423,10 +434,32 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   Widget _buildWargaSection(MahasiswaState state) {
     final user = ref.watch(authProvider).user;
     final userId = user?.id ?? '';
+    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRt = user?.rtRw ?? '01/02';
+
     // Hanya tampilkan Warga Dampingan yang diaktivasi oleh mahasiswa login ini
-    final list = state.wargaList
-        .where((w) => w.isActivated && (w.mahasiswaId.isEmpty || w.mahasiswaId == userId))
-        .toList();
+    final list = state.wargaList.where((w) {
+      if (!w.isActivated) return false;
+      if (w.mahasiswaId.isNotEmpty && w.mahasiswaId != userId) return false;
+      return true;
+    }).map((w) {
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+          ? w.address
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $userRt, Kel. $userKel';
+      return WargaDampingan(
+        binId: w.binId,
+        wargaName: w.wargaName,
+        address: displayAddr,
+        kelurahan: userKel,
+        rtRw: userRt,
+        mahasiswaId: w.mahasiswaId,
+        recentLogs: w.recentLogs,
+        isActivated: w.isActivated,
+        role: w.role,
+        totalPoints: w.totalPoints,
+        apiCorrectPercentage: w.apiCorrectPercentage,
+      );
+    }).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
