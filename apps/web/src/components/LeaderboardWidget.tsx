@@ -42,64 +42,64 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   const displayItems = items.slice(0, 10);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 flex flex-col justify-between hover:shadow-md transition-all duration-200 h-full">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full">
       {/* Header */}
       <div className="flex justify-between items-center pb-3 border-b border-slate-100 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className={`p-1.5 rounded-xl ${iconBg} text-white shadow-xs shrink-0`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={`p-2 rounded-xl ${iconBg} text-white shadow-xs shrink-0 flex items-center justify-center`}>
             {icon}
           </div>
-          <h5 className="font-bold text-[13px] text-slate-800 tracking-tight truncate" title={title}>
+          <h5 className="font-extrabold text-[14px] text-slate-800 tracking-tight truncate" title={title}>
             {title}
           </h5>
         </div>
         <Link
           to={linkTo}
-          className="text-slate-400 hover:text-emerald-600 transition-colors p-1 rounded-lg hover:bg-slate-100 shrink-0"
+          className="text-slate-400 hover:text-emerald-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 shrink-0"
           title="Lihat Detail"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={18} />
         </Link>
       </div>
 
       {/* Item List */}
-      <div className="my-2.5 flex-1 flex flex-col justify-start space-y-1.5 min-h-[220px]">
+      <div className="my-3 flex-1 flex flex-col justify-start space-y-2 min-h-[240px]">
         {displayItems.map((item) => {
-          const pct = Math.min(100, Math.max(14, (item.points / (maxPoints || 1)) * 100));
+          const pct = Math.min(100, Math.max(12, (item.points / (maxPoints || 1)) * 100));
           return (
             <div
               key={`${item.rank}-${item.name}`}
-              className="flex items-center gap-1.5 text-[11px] group hover:bg-slate-50/80 px-1 py-0.5 rounded-lg transition-all"
+              className="flex items-center gap-2 text-xs group hover:bg-slate-50 px-2 py-1 rounded-xl transition-all"
             >
               {/* Rank */}
-              <span className="w-3.5 text-center font-bold text-slate-400 shrink-0 text-[10px] group-hover:text-emerald-600">
+              <span className="w-5 text-center font-bold text-slate-400 shrink-0 text-xs group-hover:text-emerald-600">
                 {item.rank}
               </span>
 
               {/* Name & Subtitle */}
-              <div className="flex-1 min-w-0 pr-1">
-                <p className="font-bold text-slate-800 truncate text-[11px] leading-tight group-hover:text-emerald-700" title={item.name}>
+              <div className="flex-1 min-w-0 pr-2">
+                <p className="font-bold text-slate-800 truncate text-[12px] leading-snug group-hover:text-emerald-700" title={item.name}>
                   {item.name}
                 </p>
                 {item.subtitle && (
-                  <p className="text-[9px] text-slate-400 truncate leading-none mt-0.5 font-medium">
+                  <p className="text-[10px] text-slate-400 truncate leading-none mt-0.5 font-medium">
                     {item.subtitle}
                   </p>
                 )}
               </div>
 
               {/* Bar Indicator */}
-              <div className="w-10 shrink-0 flex items-center justify-end">
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-16 shrink-0 flex items-center justify-end">
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-500 opacity-85 group-hover:opacity-100 shadow-xs"
+                    className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
                     style={{ width: `${pct}%`, backgroundColor: barColor }}
                   />
                 </div>
               </div>
 
               {/* Points */}
-              <span className="w-12 text-right font-extrabold text-slate-700 text-[11px] shrink-0 font-mono">
+              <span className="w-14 text-right font-extrabold text-slate-700 text-[12px] shrink-0 font-mono">
                 {item.points.toLocaleString("id-ID")}
               </span>
             </div>
@@ -108,16 +108,16 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
       </div>
 
       {/* Card Footer */}
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] shrink-0">
-        <span className="text-slate-400 font-medium flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] shrink-0">
+        <span className="text-slate-400 font-medium flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           Real-time
         </span>
         <Link
           to={linkTo}
           className="font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-0.5"
         >
-          Detail <ChevronRight size={12} />
+          Detail Lengkap <ChevronRight size={14} />
         </Link>
       </div>
     </div>
@@ -326,7 +326,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
           {/* 1. Top 10 Warga */}
           <ColumnCard
             title="Top 10 Warga"
@@ -389,7 +389,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
           {/* 1. Top 10 Mahasiswa */}
           <ColumnCard
             title="Top 10 Mahasiswa"
