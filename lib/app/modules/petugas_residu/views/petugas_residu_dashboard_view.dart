@@ -10,6 +10,7 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../../data/models/user_entity.dart';
 import '../controllers/petugas_residu_controller.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
+import 'petugas_notification_view.dart';
 
 class PetugasResiduDashboardView extends ConsumerWidget {
   const PetugasResiduDashboardView({super.key});
@@ -139,7 +140,9 @@ class PetugasResiduDashboardView extends ConsumerWidget {
               ),
               // Notifikasi
               GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PetugasNotificationView()),
+                ),
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [

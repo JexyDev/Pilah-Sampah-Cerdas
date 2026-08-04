@@ -21,10 +21,18 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       Response response;
       try {
-        response = await apiClient.dio.get('/kkn/notifications');
+        response = await apiClient.dio.get('/notifications');
       } on DioException catch (e) {
         if (e.response?.statusCode == 404) {
-          response = await apiClient.dio.get('/notifications');
+          try {
+            response = await apiClient.dio.get('/rt/notifications');
+          } on DioException catch (_) {
+            try {
+              response = await apiClient.dio.get('/rw/notifications');
+            } on DioException catch (_) {
+              response = await apiClient.dio.get('/kkn/notifications');
+            }
+          }
         } else {
           rethrow;
         }
@@ -42,7 +50,7 @@ class ApiNotificationRepository implements NotificationRepository {
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
-        'Gagal memuat notifikasi mahasiswa: ${e.message}',
+        'Gagal memuat notifikasi: ${e.message}',
       );
     } catch (e) {
       if (e is NotificationException) rethrow;

@@ -751,6 +751,23 @@ class ApiAuthRepository implements AuthRepository {
     return user;
   }
 
+  String _cleanName(dynamic val) {
+    if (val == null) return '';
+    if (val is String) {
+      final str = val.trim();
+      if (str.startsWith('{') && str.contains('name:')) {
+        final match = RegExp(r'name:\s*([\w\s]+?)(?:,|\})', caseSensitive: false).firstMatch(str);
+        if (match != null) return match.group(1)?.trim() ?? str;
+      }
+      return str;
+    }
+    if (val is Map) {
+      final n = val['name'] ?? val['nama'] ?? val['title'] ?? val['label'];
+      if (n != null) return _cleanName(n);
+    }
+    return '';
+  }
+
   @override
   Future<Map<String, dynamic>> fetchTerritories() async {
     List<String> kelurahans = [];
@@ -758,39 +775,49 @@ class ApiAuthRepository implements AuthRepository {
     List<Map<String, dynamic>> rtRwListRaw = [];
 
     try {
-      final rtRwResp = await apiClient.dio.get('/areas/rt-rw');
-      if (rtRwResp.statusCode == 200 && rtRwResp.data != null) {
-        final list = rtRwResp.data is List ? rtRwResp.data as List : (rtRwResp.data['data'] as List? ?? []);
+      final kelResp = await apiClient.dio.get('/areas/kelurahan');
+      if (kelResp.statusCode == 200 && kelResp.data != null) {
+        final list = kelResp.data is List ? kelResp.data as List : (kelResp.data['data'] as List? ?? []);
         for (final item in list) {
-          if (item is Map<String, dynamic>) {
-            final name = item['name']?.toString() ?? '';
-            final kel = item['kelurahan']?.toString() ?? '';
-            if (name.isNotEmpty) rtRws.add(name);
-            if (kel.isNotEmpty && !kelurahans.contains(kel)) kelurahans.add(kel);
-            rtRwListRaw.add(item);
-          } else if (item is String && item.isNotEmpty) {
-            rtRws.add(item);
+          final clean = _cleanName(item);
+          if (clean.isNotEmpty && !clean.contains('{') && !kelurahans.contains(clean)) {
+            kelurahans.add(clean);
           }
         }
       }
     } catch (_) {}
 
     try {
-      if (kelurahans.isEmpty) {
-        final kelResp = await apiClient.dio.get('/areas/kelurahan');
-        if (kelResp.statusCode == 200 && kelResp.data != null) {
-          final list = kelResp.data is List ? kelResp.data as List : (kelResp.data['data'] as List? ?? []);
-          for (final item in list) {
-            final name = item is Map ? (item['name']?.toString() ?? '') : item.toString();
-            if (name.isNotEmpty && !kelurahans.contains(name)) kelurahans.add(name);
+      final rtRwResp = await apiClient.dio.get('/areas/rt-rw');
+      if (rtRwResp.statusCode == 200 && rtRwResp.data != null) {
+        final list = rtRwResp.data is List ? rtRwResp.data as List : (rtRwResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          if (item is Map<String, dynamic>) {
+            final name = _cleanName(item['name']);
+            final kel = _cleanName(item['kelurahan']);
+            if (name.isNotEmpty && !name.contains('{')) rtRws.add(name);
+            if (kel.isNotEmpty && !kel.contains('{') && !kelurahans.contains(kel)) {
+              kelurahans.add(kel);
+            }
+            rtRwListRaw.add(item);
+          } else if (item is String) {
+            final clean = _cleanName(item);
+            if (clean.isNotEmpty && !clean.contains('{')) rtRws.add(clean);
           }
         }
       }
     } catch (_) {}
 
+    final validKels = kelurahans.where((k) => k.isNotEmpty && !k.contains('{')).toList();
+    final validRts = rtRws.where((r) => r.isNotEmpty && !r.contains('{')).toList();
+
     return {
-      'kelurahans': kelurahans.isNotEmpty ? kelurahans : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot'],
-      'rtRws': rtRws.isNotEmpty ? rtRws : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04'],
+      'kelurahans': validKels.isNotEmpty
+          ? validKels
+          : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot'],
+      'rtRws': validRts.isNotEmpty
+          ? validRts
+          : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04'],
       'rawRtRw': rtRwListRaw,
     };
   }

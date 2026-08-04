@@ -75,23 +75,33 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     _loadDynamicTerritories();
   }
 
+  String _cleanTerritoryName(dynamic val) {
+    if (val == null) return '';
+    String str = val.toString().trim();
+    if (str.contains('{') && str.contains('name:')) {
+      final match = RegExp(r'name:\s*([\w\s]+?)(?:,|\})', caseSensitive: false).firstMatch(str);
+      if (match != null) str = match.group(1)?.trim() ?? str;
+    }
+    return str.replaceAll(RegExp(r'[\{\}]'), '').trim();
+  }
+
   Future<void> _loadDynamicTerritories() async {
     try {
       final repo = ref.read(authRepositoryProvider);
       final res = await repo.fetchTerritories();
-      final kels = (res['kelurahans'] as List?)?.map((e) => e.toString()).toList() ?? [];
-      final rts = (res['rtRws'] as List?)?.map((e) => e.toString()).toList() ?? [];
+      final kelsRaw = (res['kelurahans'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
+      final rtsRaw = (res['rtRws'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
 
       if (mounted) {
         setState(() {
           _kelurahanList.clear();
-          _kelurahanList.addAll(kels.isNotEmpty ? kels : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot']);
+          _kelurahanList.addAll(kelsRaw.isNotEmpty ? kelsRaw : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot']);
           if (_kelurahanList.isNotEmpty && !_kelurahanList.contains(_selectedKelurahan)) {
             _selectedKelurahan = _kelurahanList.first;
           }
 
           _rtRwList.clear();
-          _rtRwList.addAll(rts.isNotEmpty ? rts : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04']);
+          _rtRwList.addAll(rtsRaw.isNotEmpty ? rtsRaw : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04']);
         });
       }
     } catch (_) {

@@ -28,33 +28,53 @@ final notificationsProvider =
   // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
   // Dikunci presisi per ID Mahasiswa & membuang notifikasi Warga jika role adalah Mahasiswa KKN.
   final userId = user.id;
-  final isMahasiswa = user.role.name.toUpperCase() == 'MAHASISWAKKN';
+  final roleName = user.role.name.toUpperCase();
+  final isMahasiswa = roleName == 'MAHASISWAKKN';
+  final isPetugas = roleName == 'PETUGASRESIDU';
+  final isWarga = roleName == 'WARGA';
+
+  final List<NotificationEntity> filteredList = [];
 
   for (final notif in list) {
-    final notifKey = '${userId}_${notif.id}';
     final type = notif.type.toUpperCase();
     final title = notif.title.toLowerCase();
 
-    // ❌ CANGGIH: Cegah notifikasi Warga (Pengosongan, Tong Kritis, Setor Sampah) masuk ke System Tray HP Mahasiswa
-    if (isMahasiswa) {
-      final isWargaNotif = type.contains('POIN_BERTAMBAH') ||
-          type.contains('TONG_PENUH') ||
-          type.contains('PENGOSONGAN') ||
-          type.contains('SETOR') ||
-          type.contains('RESIDU') ||
-          type.contains('JADWAL') ||
-          title.contains('pengosongan') ||
-          title.contains('kapasitas tong') ||
-          title.contains('setor sampah') ||
-          title.contains('poin bertambah') ||
-          title.contains('timbangan') ||
-          title.contains('jemput') ||
-          title.contains('penjemputan') ||
-          title.contains('buang sampah');
+    final isKknNotif = type.contains('KKN') ||
+        type.contains('POIN_KKN') ||
+        type.contains('IZIN') ||
+        type.contains('DPL') ||
+        type.contains('PRESENSI') ||
+        type.contains('AKTIVASI') ||
+        type.contains('PEMANFAATAN') ||
+        title.contains('kkn') ||
+        title.contains('dpl') ||
+        title.contains('posko') ||
+        title.contains('presensi') ||
+        title.contains('aktivasi');
 
-      if (isWargaNotif) continue;
+    final isPetugasNotif = type.contains('RESIDU') ||
+        type.contains('TIMBANGAN') ||
+        type.contains('VIOLATION') ||
+        title.contains('timbangan') ||
+        title.contains('residu') ||
+        title.contains('pelanggaran');
+
+    bool isAllowed = false;
+    if (isMahasiswa) {
+      isAllowed = isKknNotif;
+    } else if (isPetugas) {
+      isAllowed = isPetugasNotif;
+    } else if (isWarga) {
+      isAllowed = !isKknNotif && !isPetugasNotif;
+    } else {
+      isAllowed = true;
     }
 
+    if (!isAllowed) continue;
+    filteredList.add(notif);
+
+    // Otomatis tampilkan di system tray HANYA untuk notifikasi yang lolos filter role user
+    final notifKey = '${userId}_${notif.id}';
     if (!notif.isRead && !_shownNotifIds.contains(notifKey)) {
       _shownNotifIds.add(notifKey);
       NotificationEngine().showGenericNotification(
@@ -65,7 +85,7 @@ final notificationsProvider =
     }
   }
 
-  return list;
+  return filteredList;
 });
 
 /// Provider jumlah notifikasi yang belum dibaca (badge count).
