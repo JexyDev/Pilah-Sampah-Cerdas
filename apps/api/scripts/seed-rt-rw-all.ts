@@ -85,6 +85,15 @@ async function main() {
   // 4. Seed Kelurahan, Lurah Accounts, RWs & RW Accounts
   let fallbackOfficialAreaId: number | null = null;
 
+  const kelurahanCenterMap: Record<string, { lat: number; lng: number }> = {
+    "Dago": { lat: -6.8850, lng: 107.6140 },
+    "Sadang Serang": { lat: -6.8930, lng: 107.6250 },
+    "Sekeloa": { lat: -6.8910, lng: 107.6180 },
+    "Lebak Gede": { lat: -6.8890, lng: 107.6100 },
+    "Lebak Siliwangi": { lat: -6.8870, lng: 107.6060 },
+    "Cipaganti": { lat: -6.8950, lng: 107.6030 },
+  };
+
   for (const kelData of kelurahanMaster) {
     const kel = await prisma.kelurahan.upsert({
       where: { name: kelData.name },
@@ -109,9 +118,17 @@ async function main() {
 
     console.log(`📍 Kelurahan: ${kel.name} (${kelData.rwCount} RW)`);
 
+    const center = kelurahanCenterMap[kelData.name] || { lat: -6.8903, lng: 107.6110 };
+
     for (let i = 1; i <= kelData.rwCount; i++) {
       const rwCode = `RW ${i < 10 ? "0" + i : i}`;
       const fullName = `${rwCode} (${kel.name})`;
+
+      // Calculate spread-out GPS coordinates around Kelurahan center
+      const angle = (i / kelData.rwCount) * 2 * Math.PI;
+      const radiusOffset = 0.002 + (i % 3) * 0.001; // ~200m - 500m radius
+      const rwLat = Number((center.lat + Math.sin(angle) * radiusOffset).toFixed(7));
+      const rwLng = Number((center.lng + Math.cos(angle) * radiusOffset).toFixed(7));
 
       let area = await prisma.rtRwArea.findFirst({
         where: {
@@ -125,9 +142,19 @@ async function main() {
           data: {
             kelurahanId: kel.id,
             name: fullName,
+            latitude: rwLat,
+            longitude: rwLng,
           },
         });
         totalRwCreated++;
+      } else if (!area.latitude || !area.longitude) {
+        area = await prisma.rtRwArea.update({
+          where: { id: area.id },
+          data: {
+            latitude: rwLat,
+            longitude: rwLng,
+          },
+        });
       }
 
       if (!fallbackOfficialAreaId) {

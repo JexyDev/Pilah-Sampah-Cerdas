@@ -85,16 +85,19 @@ const createRwZonaIcon = (rwName: string, patuh: number) => {
   if (patuh < 60) color = "#ef4444"; // red
   else if (patuh < 85) color = "#f97316"; // orange
 
+  const match = rwName.match(/(\d+)/);
+  const num = match ? match[1].padStart(2, "0") : "01";
+
   return L.divIcon({
     className: "custom-div-icon",
     html: `
-      <div style="background-color: ${color}; width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; line-height: 1.1;">
-        <span style="font-size: 11px;">${rwName.replace("RW ", "")}</span>
-        <span style="font-size: 9px; font-weight: normal;">${patuh}%</span>
+      <div style="background-color: ${color}; width: 42px; height: 42px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 800; line-height: 1.05;">
+        <span style="font-size: 10px; font-weight: 900;">RW ${num}</span>
+        <span style="font-size: 9px; opacity: 0.95;">${patuh}%</span>
       </div>
     `,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
   });
 };
 
@@ -822,8 +825,16 @@ const ManajemenLokasi: React.FC = () => {
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center font-black text-base group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
-                      {loc.rw.replace("RW ", "")}
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex flex-col items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm leading-none p-1">
+                      <span className="text-[8px] font-extrabold uppercase opacity-70">
+                        {loc.rw.includes("RT") ? "RT" : "RW"}
+                      </span>
+                      <span className="text-sm font-black tracking-tight mt-0.5">
+                        {(() => {
+                          const m = loc.rw.match(/(\d+)/);
+                          return m ? m[1].padStart(2, "0") : "01";
+                        })()}
+                      </span>
                     </div>
                     <div>
                       <h4 className="text-[13px] font-bold text-slate-800 leading-tight">
