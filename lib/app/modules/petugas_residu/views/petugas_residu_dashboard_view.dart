@@ -11,6 +11,7 @@ import '../../../data/models/user_entity.dart';
 import '../controllers/petugas_residu_controller.dart';
 import '../controllers/petugas_residu_notifikasi_controller.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
+import '../widgets/sop_kerja_petugas_widget.dart';
 import 'petugas_notification_view.dart';
 
 class PetugasResiduDashboardView extends ConsumerWidget {
@@ -225,14 +226,10 @@ class PetugasResiduDashboardView extends ConsumerWidget {
           ),
           _buildActionItem(
             context,
-            icon: Icons.warning_amber_rounded,
+            icon: Icons.assignment_turned_in_rounded,
             label: 'SOP\nKerja',
             color: AppColors.warningOrange,
-            onTap: isApproved ? () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('SOP Kerja Petugas Residu belum tersedia.'))
-              );
-            } : null,
+            onTap: isApproved ? () => SopKerjaPetugasWidget.show(context) : null,
           ),
         ],
       ),
