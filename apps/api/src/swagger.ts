@@ -23,8 +23,12 @@ const options: swaggerJSDoc.Options = {
         description: "VPS Production Server (157.10.252.252)",
       },
       {
+        url: "http://192.168.1.16:3000/api/v1",
+        description: "Local Wi-Fi Network Server (192.168.1.16)",
+      },
+      {
         url: "http://localhost:3000/api/v1",
-        description: "Local Development Server",
+        description: "Localhost Server",
       },
     ],
     components: {
