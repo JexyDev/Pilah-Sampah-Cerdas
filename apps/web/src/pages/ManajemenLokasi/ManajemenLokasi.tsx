@@ -125,10 +125,20 @@ const kelurahanCentroidsMap: Array<{ name: string; lat: number; lng: number }> =
   { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
 ];
 
-const MapEvents = ({ setZoom }: { setZoom: (z: number) => void }) => {
+const MapEvents = ({
+  setZoom,
+  setSelectedKelurahan,
+}: {
+  setZoom: (z: number) => void;
+  setSelectedKelurahan: (k: string) => void;
+}) => {
   useMapEvents({
     zoomend: (e) => {
-      setZoom(e.target.getZoom());
+      const z = e.target.getZoom();
+      setZoom(z);
+      if (z < 15) {
+        setSelectedKelurahan("Semua Kelurahan");
+      }
     },
   });
   return null;
@@ -510,7 +520,7 @@ const ManajemenLokasi: React.FC = () => {
             style={{ height: "100%", width: "100%" }}
           >
             <MapUpdater center={mapCenter} zoom={mapZoom} />
-            <MapEvents setZoom={setMapZoom} />
+            <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedKelurahan} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

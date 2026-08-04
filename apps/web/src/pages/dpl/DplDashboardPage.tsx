@@ -18,7 +18,7 @@ import {
   ChevronRight,
   RefreshCw,
 } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 
 // Fix default Leaflet icon issue
@@ -28,6 +28,29 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
+
+const MapAutoFlyer: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, zoom, { duration: 1.1 });
+  }, [center, zoom, map]);
+  return null;
+};
+
+const MapZoomListener: React.FC<{
+  selectedKelurahan: string | null;
+  setSelectedKelurahan: (kel: string | null) => void;
+}> = ({ selectedKelurahan, setSelectedKelurahan }) => {
+  const map = useMapEvents({
+    zoomend: () => {
+      const z = map.getZoom();
+      if (z < 15 && selectedKelurahan !== null) {
+        setSelectedKelurahan(null);
+      }
+    },
+  });
+  return null;
+};
 
 const createRwPinIcon = (rwName: string) => {
   const match = rwName.match(/(\d+)/);
@@ -958,6 +981,21 @@ export const DplDashboardPage: React.FC = () => {
               scrollWheelZoom={true}
               style={{ height: "100%", width: "100%" }}
             >
+              <MapAutoFlyer
+                center={
+                  selectedKelurahanMap
+                    ? [
+                        kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
+                        kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
+                      ]
+                    : [-6.8903, 107.6110]
+                }
+                zoom={selectedKelurahanMap ? 16 : 14}
+              />
+              <MapZoomListener
+                selectedKelurahan={selectedKelurahanMap}
+                setSelectedKelurahan={setSelectedKelurahanMap}
+              />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
