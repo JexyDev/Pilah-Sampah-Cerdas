@@ -99,17 +99,54 @@ router.get("/", authMiddleware, async (req, res) => {
       "CAMAT",
       "LURAH",
       "RW",
+      "RT",
       "PETUGAS_RESIDU",
       "MAHASISWA_KKN",
     ].includes(role);
 
+    // Fetch user details for area scoping
+    let dbUser = null;
+    let areaIds: number[] = [];
+    if (userId) {
+      dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { rtRw: true },
+      });
+
+      if (dbUser?.rtRwId) {
+        const area = dbUser.rtRw;
+        if (area) {
+          const rwPart =
+            area.name
+              .split("/")
+              .map((s) => s.trim())
+              .find((s) => s.startsWith("RW")) || area.name;
+
+          const matchingAreas = await prisma.rtRwArea.findMany({
+            where: {
+              kelurahanId: area.kelurahanId,
+              name: { contains: rwPart },
+            },
+            select: { id: true },
+          });
+          areaIds = matchingAreas.map((a) => a.id);
+        }
+        if (areaIds.length === 0) areaIds = [dbUser.rtRwId];
+      }
+    }
+
     if (isAdminOrPetugas) {
-      // 1. Fetch real PENDING BinResetRequests from database
+      // 1. Fetch real PENDING BinResetRequests scoped by area/role
       try {
+        let reqWhere: any = { status: "PENDING" };
+        if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role) && areaIds.length > 0) {
+          reqWhere.bin = { rtRwId: { in: areaIds } };
+        } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
+          reqWhere.bin = { rtRw: { kelurahanId: dbUser.rtRw.kelurahanId } };
+        }
+
         const requests = await prisma.binResetRequest.findMany({
-          where: {
-            status: "PENDING",
-          },
+          where: reqWhere,
           include: {
             bin: {
               include: {
@@ -168,10 +205,18 @@ router.get("/", authMiddleware, async (req, res) => {
           iconColor: "text-emerald-600",
         };
 
-        // 3. Fetch real full bins (>90% volume capacity) in system/area
+        // 3. Fetch real full bins (>90% volume capacity) scoped by area/role
         let criticalBinNotifs: any[] = [];
         try {
+          let binWhere: any = {};
+          if (["RW", "RT", "PETUGAS_RESIDU"].includes(role) && areaIds.length > 0) {
+            binWhere.rtRwId = { in: areaIds };
+          } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
+            binWhere.rtRw = { kelurahanId: dbUser.rtRw.kelurahanId };
+          }
+
           const fullBins = await prisma.bin.findMany({
+            where: binWhere,
             include: { rtRw: true, category: true },
             take: 10,
           });
