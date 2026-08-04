@@ -11,10 +11,10 @@ import { binController } from "../controllers/binController.js";
 const prisma = new PrismaClient();
 const router = Router();
 
-// Legacy route for drop-down list of RT/RW
+// Legacy route for drop-down list of RT/RW combined
 router.get("/rt-rw", binController.getAreas);
 
-// Cascading region dropdown endpoints for Mobile & Web
+// 1. GET /api/v1/wilayah/kecamatan
 router.get("/kecamatan", async (req, res) => {
   try {
     res.json({
@@ -26,6 +26,7 @@ router.get("/kecamatan", async (req, res) => {
   }
 });
 
+// 2. GET /api/v1/wilayah/kelurahan
 router.get("/kelurahan", async (req, res) => {
   try {
     const kelurahans = await prisma.kelurahan.findMany({
@@ -37,35 +38,78 @@ router.get("/kelurahan", async (req, res) => {
   }
 });
 
+// 3. GET /api/v1/wilayah/rw (Kusus RW)
 router.get("/rw", async (req, res) => {
   try {
-    const { kelurahan_id } = req.query;
+    const { kelurahan_id, kelurahan_name } = req.query;
     const where: any = {};
     if (kelurahan_id) {
       where.kelurahanId = String(kelurahan_id);
+    } else if (kelurahan_name) {
+      where.kelurahan = { name: { contains: String(kelurahan_name), mode: "insensitive" } };
     }
-    const rwAreas = await prisma.rtRwArea.findMany({
+
+    const areas = await prisma.rtRwArea.findMany({
       where,
+      include: { kelurahan: true },
       orderBy: { name: "asc" },
     });
-    res.json({ success: true, data: rwAreas });
+
+    const rwMap = new Map();
+    for (const area of areas) {
+      const match = area.name.match(/RW\s*(\d+)/i);
+      const rwNum = match ? match[1].padStart(2, "0") : null;
+      const rwLabel = rwNum ? `RW ${rwNum}` : area.name;
+      
+      if (!rwMap.has(rwLabel)) {
+        rwMap.set(rwLabel, {
+          id: area.id,
+          rw: rwLabel,
+          name: area.name,
+          kelurahanId: area.kelurahanId,
+          kelurahanName: area.kelurahan?.name || "",
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: Array.from(rwMap.values()),
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// 4. GET /api/v1/wilayah/rt (Khusus RT)
 router.get("/rt", async (req, res) => {
   try {
-    const { rw_id } = req.query;
-    const where: any = {};
+    const { rw_id, rw_name } = req.query;
+    let baseArea = null;
+
     if (rw_id) {
-      where.id = Number(rw_id);
+      baseArea = await prisma.rtRwArea.findUnique({ where: { id: Number(rw_id) } });
+    } else if (rw_name) {
+      baseArea = await prisma.rtRwArea.findFirst({
+        where: { name: { contains: String(rw_name), mode: "insensitive" } },
+      });
     }
-    const rtAreas = await prisma.rtRwArea.findMany({
-      where,
-      orderBy: { name: "asc" },
+
+    const rtList = Array.from({ length: 10 }, (_, i) => {
+      const rtNum = String(i + 1).padStart(2, "0");
+      return {
+        id: baseArea ? baseArea.id : i + 1,
+        rt: `RT ${rtNum}`,
+        name: `RT ${rtNum}`,
+        rwId: baseArea ? baseArea.id : null,
+        rwName: baseArea ? baseArea.name : (rw_name ? String(rw_name) : "RW"),
+      };
     });
-    res.json({ success: true, data: rtAreas });
+
+    res.json({
+      success: true,
+      data: rtList,
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
