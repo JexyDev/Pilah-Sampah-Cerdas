@@ -7,36 +7,67 @@ const router = Router();
 // Semua route di sini dilindungi authMiddleware dan khusus untuk role RW
 router.use(authMiddleware);
 
-// Middleware khusus RW & RT
+// Middleware khusus RW & RT (serta role Eksekutif untuk audit/monitoring)
 router.use(async (req, res, next) => {
-  if (req.user?.role !== "RW" && req.user?.role !== "RT") {
+  if (!req.user) {
+    return res.status(401).json({ error: "UNAUTHORIZED", message: "Token tidak valid" });
+  }
+
+  const allowedRoles = ["RW", "RT", "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"];
+  if (!allowedRoles.includes(req.user.role)) {
     return res
       .status(403)
-      .json({ error: "FORBIDDEN", message: "Hanya RW atau RT yang dapat mengakses portal ini." });
+      .json({ error: "FORBIDDEN", message: "Hanya pengurus wilayah yang dapat mengakses portal ini." });
   }
-  if (!req.user?.rtRwId) {
+
+  if (!req.user.rtRwId) {
     try {
       const { PrismaClient } = await import("@prisma/client");
       const prisma = new PrismaClient();
       const dbUser = await prisma.user.findUnique({
         where: { id: req.user.userId },
-        select: { rtRwId: true },
+        select: { rtRwId: true, name: true, address: true },
       });
+
       if (dbUser?.rtRwId) {
         req.user.rtRwId = dbUser.rtRwId;
       } else {
-        return res.status(403).json({
-          error: "FORBIDDEN",
-          message: "Akun RW/RT Anda belum terikat dengan wilayah tugas di database.",
-        });
+        // Auto-link RW user by matching name (e.g., "RW 06") or fallback to first RW area
+        let matchedArea = null;
+        if (dbUser?.name) {
+          const match = dbUser.name.match(/RW\s*(\d+)/i);
+          if (match) {
+            const rwNum = match[1].padStart(2, "0");
+            matchedArea = await prisma.rtRwArea.findFirst({
+              where: { name: { contains: `RW ${rwNum}` } },
+            });
+          }
+        }
+
+        if (!matchedArea) {
+          matchedArea = await prisma.rtRwArea.findFirst();
+        }
+
+        if (matchedArea && req.user) {
+          req.user.rtRwId = matchedArea.id;
+          await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { rtRwId: matchedArea.id },
+          });
+        }
       }
-    } catch {
-      return res.status(403).json({
-        error: "FORBIDDEN",
-        message: "Gagal mengonfirmasi wilayah tugas RW/RT.",
-      });
+    } catch (err) {
+      console.error("[rwRoutes] Error auto-linking RW user:", err);
     }
   }
+
+  if (!req.user.rtRwId) {
+    return res.status(403).json({
+      error: "FORBIDDEN",
+      message: "Akun RW/RT Anda belum terikat dengan wilayah tugas di database.",
+    });
+  }
+
   next();
 });
 

@@ -11,19 +11,19 @@ export const RwApproval = () => {
 
   const fetchData = async () => {
     try {
-      const [_binsRes, petugasRes, inactiveRes] = await Promise.all([
-        api.get("/rw/bins/pending"),
-        api.get("/rw/petugas/pending"),
-        api.get("/rw/bins/inactive")
+      setLoading(true);
+      const [petugasRes, inactiveRes] = await Promise.all([
+        api.get("/rw/petugas/pending").catch(() => ({ data: { data: [] } })),
+        api.get("/rw/bins/inactive").catch(() => ({ data: { data: [] } })),
       ]);
-      //
+
       setPendingPetugas(petugasRes.data?.data || petugasRes.data || []);
       setInactiveBins(inactiveRes.data?.data || inactiveRes.data || []);
     } catch (error) {
       console.error("Failed to fetch RW approval data", error);
-      toast.error("Gagal memuat data persetujuan");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
