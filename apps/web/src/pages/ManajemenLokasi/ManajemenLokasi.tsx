@@ -495,7 +495,7 @@ const ManajemenLokasi: React.FC = () => {
             {(() => {
               if (mapZoom >= 16) return null;
 
-              const validLocations = locations.filter((g) => g.latitude && g.longitude);
+              const validLocations = filteredLocations.filter((g) => g.latitude && g.longitude);
               if (validLocations.length === 0) return null;
 
               // Setup Voronoi polygons with fallback to Hexagons
