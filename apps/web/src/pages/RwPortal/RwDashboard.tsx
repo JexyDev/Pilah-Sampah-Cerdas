@@ -7,7 +7,8 @@ import {
   Lightbulb,
   Factory,
   Database,
-  ArrowRight
+  ArrowRight,
+  Truck
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import toast from "react-hot-toast";
@@ -210,6 +211,109 @@ export const RwDashboard: React.FC = () => {
                   <div className="bg-rose-600 h-full rounded-full" style={{ width: '15%' }}></div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Monitoring Petugas Residu Wilayah RW */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+              <Truck className="w-5 h-5 text-rose-600" />
+              Monitoring Petugas Residu Wilayah RW
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Pemantauan data timbulan residu hilir, jadwal pengangkutan, dan kinerja Petugas Residu di area RW ini.
+            </p>
+          </div>
+          <span className="bg-rose-50 text-rose-700 border border-rose-100 font-bold text-xs px-3 py-1 rounded-full">
+            Petugas Residu Terpasang
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* PIC Petugas Residu Card */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl border border-slate-800 shadow-md space-y-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                  Petugas Residu Resmi
+                </span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              </div>
+              <h4 className="text-base font-bold text-slate-100">Bpk. Agus Supriatna</h4>
+              <p className="text-xs text-slate-400 mt-0.5">NIP/ID: RESIDU-CB-004</p>
+              <div className="mt-4 pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Wilayah Tugas:</span>
+                  <strong className="text-emerald-400">{user?.address || "RW 01"}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Kelurahan:</span>
+                  <strong className="text-slate-200">Dago</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Window Tugas:</span>
+                  <strong className="text-amber-300">06:00-08:00 & 16:00-18:00</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 flex items-center justify-between text-xs">
+              <span className="text-slate-400">Kontak Petugas:</span>
+              <a href="tel:+6281200000004" className="font-bold text-emerald-400 hover:underline">
+                +62 812-0000-0004
+              </a>
+            </div>
+          </div>
+
+          {/* Table Log Penimbangan Residu RW */}
+          <div className="lg:col-span-2 space-y-3">
+            <div className="flex justify-between items-center">
+              <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                Riwayat Penimbangan Residu Hilir RW Hari Ini
+              </h4>
+              <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                Total: 48.5 Kg Residu Terinput
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
+                  <tr>
+                    <th className="p-3">Waktu Input</th>
+                    <th className="p-3">Diinput Oleh</th>
+                    <th className="p-3">Kategori Residu</th>
+                    <th className="p-3">Berat (Kg)</th>
+                    <th className="p-3">Status Monitoring</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white font-medium">
+                  {[
+                    { time: "07:30 WIB", pet: "Bpk. Agus Supriatna", kat: "Residu Non-Recyclable", kg: "18.5 Kg", status: "VERIFIED_HILIR" },
+                    { time: "06:45 WIB", pet: "Bpk. Agus Supriatna", kat: "Residu B3 / Popok", kg: "16.0 Kg", status: "VERIFIED_HILIR" },
+                    { time: "Kemarin", pet: "Bpk. Agus Supriatna", kat: "Residu TPA Hilir", kg: "14.0 Kg", status: "VERIFIED_HILIR" },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-semibold text-slate-700">{row.time}</td>
+                      <td className="p-3 font-bold text-slate-800">{row.pet}</td>
+                      <td className="p-3">
+                        <span className="bg-rose-50 text-rose-700 border border-rose-200 font-bold px-2 py-0.5 rounded text-[10px]">
+                          {row.kat}
+                        </span>
+                      </td>
+                      <td className="p-3 font-black text-slate-900">{row.kg}</td>
+                      <td className="p-3">
+                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 font-extrabold px-2 py-0.5 rounded text-[10px]">
+                          100% Terverifikasi
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
