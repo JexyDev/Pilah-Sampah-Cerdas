@@ -280,7 +280,7 @@ router.get("/:id/status", binController.getStatus);
 router.post(
   "/:id/empty",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.emptyBin
 );
 
@@ -296,7 +296,7 @@ router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.reviewResetRequest
 );
 
@@ -395,14 +395,14 @@ router.post(
 router.get(
   "/reset-requests",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.listResetRequests
 );
 
 router.put(
   "/reset/:id/approve",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.approveResetRequest
 );
 

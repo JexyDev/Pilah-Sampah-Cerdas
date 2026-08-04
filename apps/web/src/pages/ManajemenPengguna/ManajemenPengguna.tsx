@@ -315,7 +315,7 @@ const ManajemenPengguna: React.FC = () => {
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
         {[
           { key: "Semua", label: "Semua Peran", icon: "🌐" },
-          { key: "ADMIN_DLH", label: "Admin & Eksekutif", icon: "🏢" },
+          { key: "EKSEKUTIF", label: "Admin & Eksekutif", icon: "🏢" },
           { key: "CAMAT", label: "Camat", icon: "🏛️" },
           { key: "LURAH", label: "Lurah", icon: "🏢" },
           { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },

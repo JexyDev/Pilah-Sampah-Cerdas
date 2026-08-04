@@ -28,7 +28,7 @@ export const roleMiddleware = (allowedRoles: string[]) => {
         if (["DLH", "DLH_ADMIN", "ADMIN_DLH", "ADMIN DLH"].includes(upper)) return "ADMIN_DLH";
         if (["ADMIN_KECAMATAN", "CAMAT", "CAMAT_ADMIN"].includes(upper)) return "CAMAT";
         if (["ADMIN_KELURAH", "LURAH", "LURAH_ADMIN"].includes(upper)) return "LURAH";
-        if (["SUPER_ADMIN", "SUPERADMIN", "SUPER ADMIN"].includes(upper)) return "SUPERADMIN";
+        if (["SUPER_ADMIN", "SUPERADMIN", "SUPER ADMIN"].includes(upper)) return "SUPER_ADMIN";
         if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper)) return "DPL";
         return upper;
       };

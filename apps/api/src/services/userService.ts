@@ -36,11 +36,14 @@ export class UserService {
     }
 
     if (roleName) {
-      if (roleName === "PENGURUS_RW_RT" || roleName === "RW") {
+      if (roleName === "PENGURUS_RW_RT") {
+        // Tab "Pengurus RW/RT" → tampilkan RW dan RT
         whereClause.role = { name: { in: ["RW", "RT"] } };
-      } else if (roleName === "ADMIN_DLH" || roleName === "EKSEKUTIF") {
+      } else if (roleName === "EKSEKUTIF") {
+        // Tab umbrella eksekutif → tampilkan semua admin
         whereClause.role = { name: { in: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"] } };
       } else {
+        // Tab spesifik (CAMAT, LURAH, ADMIN_DLH, SUPER_ADMIN, dll) → query persis
         whereClause.role = { name: roleName };
       }
     }
