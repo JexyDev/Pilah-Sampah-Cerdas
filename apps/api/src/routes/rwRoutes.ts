@@ -15,9 +15,10 @@ router.use(async (req, res, next) => {
 
   const allowedRoles = ["RW", "RT", "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"];
   if (!allowedRoles.includes(req.user.role)) {
-    return res
-      .status(403)
-      .json({ error: "FORBIDDEN", message: "Hanya pengurus wilayah yang dapat mengakses portal ini." });
+    return res.status(403).json({
+      error: "FORBIDDEN",
+      message: "Hanya pengurus wilayah yang dapat mengakses portal ini.",
+    });
   }
 
   if (!req.user.rtRwId) {
@@ -438,6 +439,27 @@ router.post("/facilities/:id/production", async (req, res, next) => {
       req.user!.rtRwId!
     );
     res.json({ message: "Data produksi berhasil disimpan", data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/rw/residu-monitoring:
+ *   get:
+ *     summary: Monitoring hasil setoran residu petugas hilir yang terikat dengan 1 RW
+ *     tags: [Portal RW & RT]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data monitoring residu petugas RW berhasil didapatkan
+ */
+router.get("/residu-monitoring", async (req, res, next) => {
+  try {
+    const data = await rwService.getResiduMonitoring(req.user!.rtRwId!);
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }

@@ -72,14 +72,14 @@ const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
   return L.divIcon({
     className: "custom-kelurahan-pin-icon",
     html: `
-      <div style="background: #ffffff; color: #0f172a; padding: 6px 12px; border-radius: 9999px; border: 2.5px solid #059669; box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.35), 0 4px 12px -2px rgba(0,0,0,0.18); font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap;">
-        <div style="background: #ecfdf5; color: #059669; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px;">📍</div>
-        <span style="font-weight: 800; font-size: 12px; color: #0f172a; letter-spacing: -0.01em;">Kel. ${kelName}</span>
-        <span style="background: #059669; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2.5px 9px; border-radius: 9999px; letter-spacing: 0.02em;">${rwCount} RW</span>
+      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
+        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
+        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
       </div>
     `,
-    iconSize: [140, 36],
-    iconAnchor: [70, 18],
+    iconSize: [130, 36],
+    iconAnchor: [65, 18],
   });
 };
 
@@ -115,7 +115,7 @@ type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP";
 export const DplDashboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
-  
+
   // Normalize tab string alias
   const activeTab: TabType = useMemo(() => {
     if (rawTab === "STUDENTS") return "MAHASISWA";
@@ -140,12 +140,12 @@ export const DplDashboardPage: React.FC = () => {
 
   const kelurahanCentroids = useMemo(
     () => [
-      { name: "Dago", lat: -6.8790, lng: 107.6160 },
-      { name: "Sadang Serang", lat: -6.8970, lng: 107.6270 },
-      { name: "Sekeloa", lat: -6.8880, lng: 107.6240 },
-      { name: "Lebak Gede", lat: -6.8890, lng: 107.6120 },
-      { name: "Lebak Siliwangi", lat: -6.8860, lng: 107.6040 },
-      { name: "Cipaganti", lat: -6.8960, lng: 107.6030 },
+      { name: "Dago", lat: -6.8850, lng: 107.6140 },
+      { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
+      { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
+      { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
+      { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
+      { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
     ],
     []
   );
@@ -740,7 +740,7 @@ export const DplDashboardPage: React.FC = () => {
             {totalStudentPages > 1 && (
               <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
                 <span className="text-slate-500 font-medium">
-                  Mahasiswa { (mahasiswaPage - 1) * ITEMS_PER_PAGE + 1 } - { Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length) } dari {filteredStudents.length}
+                  Mahasiswa {(mahasiswaPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length)} dari {filteredStudents.length}
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -789,9 +789,8 @@ export const DplDashboardPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900 text-sm">{req.studentName}</span>
                         <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
-                          }`}
+                          className={`text-xs font-bold px-2 py-0.5 rounded ${req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
+                            }`}
                         >
                           {req.type}
                         </span>
@@ -868,11 +867,10 @@ export const DplDashboardPage: React.FC = () => {
                       <td className="p-3 text-slate-600 max-w-xs truncate">{log.reason}</td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-0.5 rounded font-bold text-[11px] ${
-                            log.status === "APPROVED"
+                          className={`px-2 py-0.5 rounded font-bold text-[11px] ${log.status === "APPROVED"
                               ? "bg-emerald-100 text-emerald-800"
                               : "bg-red-100 text-red-800"
-                          }`}
+                            }`}
                         >
                           {log.status}
                         </span>
@@ -972,9 +970,9 @@ export const DplDashboardPage: React.FC = () => {
               center={
                 selectedKelurahanMap
                   ? [
-                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
-                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
-                    ]
+                    kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
+                    kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
+                  ]
                   : [-6.8903, 107.6110]
               }
               zoom={selectedKelurahanMap ? 16 : 14}
@@ -985,9 +983,9 @@ export const DplDashboardPage: React.FC = () => {
                 center={
                   selectedKelurahanMap
                     ? [
-                        kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
-                        kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
-                      ]
+                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
+                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
+                    ]
                     : [-6.8903, 107.6110]
                 }
                 zoom={selectedKelurahanMap ? 16 : 14}
@@ -1154,13 +1152,12 @@ export const DplDashboardPage: React.FC = () => {
                         <p className="text-[11px] text-slate-500">{c.warga?.alamat || "Alamat tercatat"}</p>
                       </div>
                       <span
-                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                          c.polaBuangSampah === "RUTIN"
+                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${c.polaBuangSampah === "RUTIN"
                             ? "bg-emerald-100 text-emerald-800"
                             : c.polaBuangSampah === "KURANG_RUTIN"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-slate-200 text-slate-700"
-                        }`}
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
                       >
                         Pola: {c.polaBuangSampah}
                       </span>

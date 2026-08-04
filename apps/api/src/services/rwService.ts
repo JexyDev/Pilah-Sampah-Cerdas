@@ -383,4 +383,64 @@ export const rwService = {
       },
     });
   },
+
+  getResiduMonitoring: async (rtRwId: number) => {
+    const areaIds = await getRwAreaIds(rtRwId);
+
+    // 1. Cari petugas residu yang ditugaskan / terdaftar di RW ini
+    const petugasUser = await prisma.user.findFirst({
+      where: {
+        role: { name: "PETUGAS_RESIDU" },
+        rtRwId: { in: areaIds },
+      },
+      include: { petugasProfile: true },
+    });
+
+    // 2. Ambil riwayat setoran manual residu hilir khusus wilayah RW ini
+    const logs = await prisma.setoranManual.findMany({
+      where: { rwId: { in: areaIds } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        petugas: { select: { name: true, phone: true } },
+      },
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const totalResiduKg = logs.reduce((sum, item) => sum + Number(item.berat), 0);
+    const todayResiduKg = logs
+      .filter((item) => new Date(item.createdAt) >= today)
+      .reduce((sum, item) => sum + Number(item.berat), 0);
+
+    return {
+      petugas: petugasUser
+        ? {
+            id: petugasUser.id,
+            nama: petugasUser.name,
+            phone: petugasUser.phone,
+            status: petugasUser.status,
+            whitelistStatus: petugasUser.petugasProfile?.whitelistStatus || "APPROVED",
+            kpiScore: Number(petugasUser.petugasProfile?.kpiScore || 100),
+          }
+        : null,
+      stats: {
+        totalResiduKg: Number(totalResiduKg.toFixed(1)),
+        todayResiduKg: Number(todayResiduKg.toFixed(1)),
+        totalPengangkutan: logs.length,
+      },
+      logs: logs.map((l) => ({
+        id: l.id,
+        diinputOleh: l.diinputOleh,
+        petugasNama: l.petugas?.name || l.diinputOleh,
+        petugasPhone: l.petugas?.phone || "-",
+        beratKg: Number(l.berat),
+        unit: l.unit,
+        kategori: l.kategori,
+        fotoResiduUrl: l.fotoResiduUrl,
+        createdAt: l.createdAt.toISOString(),
+      })),
+    };
+  },
 };

@@ -105,24 +105,24 @@ const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
   return L.divIcon({
     className: "custom-kelurahan-pin-icon",
     html: `
-      <div style="background: #ffffff; color: #0f172a; padding: 6px 12px; border-radius: 9999px; border: 2.5px solid #059669; box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.35), 0 4px 12px -2px rgba(0,0,0,0.18); font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap;">
-        <div style="background: #ecfdf5; color: #059669; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px;">📍</div>
-        <span style="font-weight: 800; font-size: 12px; color: #0f172a; letter-spacing: -0.01em;">Kel. ${kelName}</span>
-        <span style="background: #059669; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2.5px 9px; border-radius: 9999px; letter-spacing: 0.02em;">${rwCount} RW</span>
+      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
+        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
+        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
       </div>
     `,
-    iconSize: [140, 36],
-    iconAnchor: [70, 18],
+    iconSize: [130, 36],
+    iconAnchor: [65, 18],
   });
 };
 
 const kelurahanCentroidsMap: Array<{ name: string; lat: number; lng: number }> = [
-  { name: "Dago", lat: -6.8790, lng: 107.6160 },
-  { name: "Sadang Serang", lat: -6.8970, lng: 107.6270 },
-  { name: "Sekeloa", lat: -6.8880, lng: 107.6240 },
-  { name: "Lebak Gede", lat: -6.8890, lng: 107.6120 },
-  { name: "Lebak Siliwangi", lat: -6.8860, lng: 107.6040 },
-  { name: "Cipaganti", lat: -6.8960, lng: 107.6030 },
+  { name: "Dago", lat: -6.8850, lng: 107.6140 },
+  { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
+  { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
+  { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
+  { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
+  { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
 ];
 
 const MapEvents = ({
@@ -928,13 +928,12 @@ const ManajemenLokasi: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
-                        loc.patuh >= 85
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold ${loc.patuh >= 85
                           ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                           : loc.patuh >= 60
                             ? "bg-amber-100 text-amber-800 border border-amber-200"
                             : "bg-rose-100 text-rose-800 border border-rose-200"
-                      }`}
+                        }`}
                     >
                       {loc.patuh}% Patuh
                     </span>
@@ -1062,11 +1061,10 @@ const ManajemenLokasi: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setInputMode("polygon")}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        inputMode === "polygon"
+                      className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${inputMode === "polygon"
                           ? "bg-white text-emerald-700 shadow-sm"
                           : "text-slate-500 hover:text-slate-800"
-                      }`}
+                        }`}
                     >
                       <Pentagon size={13} />
                       Draw Polygon
@@ -1074,11 +1072,10 @@ const ManajemenLokasi: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setInputMode("marker")}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        inputMode === "marker"
+                      className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${inputMode === "marker"
                           ? "bg-white text-emerald-700 shadow-sm"
                           : "text-slate-500 hover:text-slate-800"
-                      }`}
+                        }`}
                     >
                       <MapPin size={13} />
                       Single Marker
