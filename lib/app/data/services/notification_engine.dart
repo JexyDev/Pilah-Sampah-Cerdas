@@ -184,6 +184,35 @@ class NotificationEngine {
     }
   }
 
+  Future<void> showSubmitLogTimbanganNotification({
+    required double weightKg,
+    required String type,
+  }) async {
+    try {
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'timbangan_channel',
+        'Log Timbangan Residu',
+        channelDescription: 'Notifikasi konfirmasi pengunggahan timbangan residu',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        color: Color(0xFF0D9488), // Teal color
+      );
+      const NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: 'Log Timbangan Berhasil Disimpan! ⚖️',
+        body: 'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+        notificationDetails: platformDetails,
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show timbangan notification: $e');
+    }
+  }
+
   Future<void> showGenericNotification({
     required int id,
     required String title,

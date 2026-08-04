@@ -45,24 +45,30 @@ class _LoginViewState extends ConsumerState<LoginView> {
     });
   }
 
-  String _normalizePhone(String raw) {
-    // Normalisasi: hilangkan spasi dan tanda hubung
-    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
-    if (!phone.startsWith('0') && phone.startsWith('8')) phone = '0$phone';
-    return phone;
+  String _normalizeIdentifier(String raw) {
+    String input = raw.trim().replaceAll(RegExp(r'[\s\-]'), '');
+    final digitsOnly = input.replaceAll(RegExp(r'[^\d]'), '');
+    if (digitsOnly.length >= 10 &&
+        (input.startsWith('0') ||
+            input.startsWith('8') ||
+            input.startsWith('+62') ||
+            input.startsWith('62'))) {
+      if (!input.startsWith('0') && input.startsWith('8')) input = '0$input';
+    }
+    return input;
   }
 
   Future<void> _onLogin() async {
-    final phone = _phoneController.text.trim();
+    final identifier = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (phone.isEmpty && password.isEmpty) {
-      _showToast('Nomor telepon dan kata sandi wajib diisi');
+    if (identifier.isEmpty && password.isEmpty) {
+      _showToast('Nomor telepon/NIM dan kata sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
-    if (phone.isEmpty) {
-      _showToast('Nomor telepon wajib diisi');
+    if (identifier.isEmpty) {
+      _showToast('Nomor telepon/NIM wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -74,11 +80,11 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    final normalizedPhone = _normalizePhone(phone);
+    final normalized = _normalizeIdentifier(identifier);
     ref.read(authProvider.notifier).clearError();
 
     final bool ok = await ref.read(authProvider.notifier).login(
-          phone: normalizedPhone,
+          phone: normalized,
           password: password,
         );
 
@@ -86,13 +92,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
       Navigator.of(context).pushReplacementNamed(AppRoutes.main);
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Nomor telepon atau password salah. Coba lagi.';
+      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
-        errorText = 'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
-      } else if (authState.errorCode == 'SERVER_ERROR' || authState.errorCode == 'INTERNAL_SERVER_ERROR') {
-        errorText = 'Server sedang mengalami gangguan sementara, silakan coba beberapa saat lagi.';
+        errorText =
+            'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
+      } else if (authState.errorCode == 'SERVER_ERROR' ||
+          authState.errorCode == 'INTERNAL_SERVER_ERROR') {
+        errorText =
+            'Server sedang mengalami gangguan sementara, silakan coba beberapa saat lagi.';
       }
       _showToast(errorText);
       _passwordController.clear();
@@ -200,7 +209,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Masukkan nomor HP terdaftar Anda',
+                                'Masukkan nomor HP atau NIM terdaftar Anda',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -208,9 +217,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Field No. Telepon
+                              // Field No. Telepon / NIM
                               const Text(
-                                'NOMOR TELEPON',
+                                'NOMOR TELEPON / NIM',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -221,31 +230,35 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _phoneController,
-                                keyboardType: TextInputType.phone,
+                                keyboardType: TextInputType.text,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9\+\-\s]'),
+                                    RegExp(r'[0-9a-zA-Z\+\-\s]'),
                                   ),
                                 ],
                                 decoration: const InputDecoration(
-                                  hintText: '081234567890',
+                                  hintText: '081234567890 atau NIM Anda',
                                   prefixIcon: Icon(
-                                    Icons.phone_outlined,
+                                    Icons.person_outline_rounded,
                                     color: AppColors.textSecondary,
                                     size: 20,
                                   ),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'Nomor telepon wajib diisi';
+                                    return 'Nomor telepon atau NIM wajib diisi';
                                   }
-                                  final digits = v.replaceAll(RegExp(r'[^\d]'), '');
-                                  if (digits.length < 10 || digits.length > 13) {
-                                    return 'Format nomor telepon tidak valid (10-13 digit)';
+                                  final clean = v.trim();
+                                  final digits = clean.replaceAll(RegExp(r'[^\d]'), '');
+                                  if (digits.length >= 10 && digits.length <= 13) {
+                                    return null; // Phone number valid
                                   }
-                                  return null;
+                                  if (clean.length >= 8 && clean.length <= 10) {
+                                    return null; // NIM valid
+                                  }
+                                  return 'Format tidak valid (12 digit No. HP atau 8-10 digit NIM)';
                                 },
                               ),
                               const SizedBox(height: 18),

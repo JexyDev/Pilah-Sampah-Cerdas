@@ -8,6 +8,11 @@ import '../../../data/services/notification_engine.dart';
 
 final Set<String> _shownNotifIds = {};
 
+/// Reset cache notifikasi lokal saat logout
+void clearNotificationCache() {
+  _shownNotifIds.clear();
+}
+
 // ─── Notifications List Provider ──────────────────────────────────────────────
 
 /// Provider daftar notifikasi user yang login.

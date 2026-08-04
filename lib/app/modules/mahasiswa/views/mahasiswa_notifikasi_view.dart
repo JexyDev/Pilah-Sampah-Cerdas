@@ -62,7 +62,14 @@ class MahasiswaNotifikasiView extends ConsumerStatefulWidget {
 
 class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiView> {
   String _selectedFilter = 'Semua';
-  final List<String> _filters = ['Semua', 'Poin KKN', 'DPL & Izin', 'Kelompok KKN', 'Presensi GPS', 'Aktivasi Bin'];
+  final List<String> _filters = [
+    'Semua',
+    'Poin KKN',
+    'DPL & Izin',
+    'Presensi & Posko GPS',
+    'Aktivasi Bin Warga',
+    'Laporan Pemanfaatan'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -136,78 +143,90 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
               color: AppColors.primaryGreen,
               child: notifAsync.when(
                 data: (list) {
-                  // Notifikasi Dinamis Khusus Mahasiswa KKN (Notifikasi Poin & Notifikasi Biasa KKN)
+                  // Notifikasi Dinamis Khusus Mahasiswa KKN (5 Kategori Lengkap Sesuai Spesifikasi)
                   final List<NotificationEntity> combinedList = [
                     ...list,
-                    // 1. Notifikasi Poin Presensi KKN
+                    // 1. Poin KKN (Individu, Kelompok, Akumulasi)
                     const NotificationEntity(
                       id: 'MHS-POIN-01',
-                      type: 'POIN_KKN_PRESENSI',
-                      title: 'Poin Presensi KKN Bertambah (+10 Poin)',
-                      desc: 'Selamat! Anda memperoleh 10 Poin KKN setelah menyelesaikan presensi GPS 2 jam di zona Posko KKN Bojongsoang.',
+                      type: 'POIN_KKN_INDIVIDU',
+                      title: 'Poin Individu Bertambah (+10 Poin)',
+                      desc: 'Selamat! Poin individu Anda bertambah 10 poin dari kegiatan presensi harian Posko KKN.',
                       isRead: false,
                       time: '5 menit lalu',
                       icon: 'stars',
                     ),
-                    // 2. Notifikasi Poin Aktivasi Bin Warga
                     const NotificationEntity(
                       id: 'MHS-POIN-02',
-                      type: 'POIN_KKN_AKTIVASI',
-                      title: 'Poin Aktivasi Bin Warga (+15 Poin)',
-                      desc: 'Selamat! Anda mendapatkan +15 Poin KKN atas keberhasilan mengaktivasi pasang tong QR warga dampingan.',
+                      type: 'POIN_KKN_KELOMPOK',
+                      title: 'Poin Kelompok KKN Bertambah (+50 Poin)',
+                      desc: 'Akumulasi total poin Kelompok KKN Bojongsoang 01 meningkat menjadi 450 Poin.',
                       isRead: false,
-                      time: '30 menit lalu',
+                      time: '20 menit lalu',
                       icon: 'stars',
                     ),
-                    // 3. Notifikasi Status Pengajuan Izin/Sakit DPL
+                    // 2. DPL & Izin (Disetujui, Ditolak, Update Status)
                     const NotificationEntity(
-                      id: 'MHS-NOTIF-01',
-                      type: 'IZIN_DPL',
-                      title: 'Status Pengajuan Izin / Sakit DPL',
-                      desc: 'Pengajuan izin kegiatan Anda telah diterima dan diteruskan ke DPL (Dosen Pembimbing Lapangan) untuk diverifikasi.',
+                      id: 'MHS-IZIN-01',
+                      type: 'IZIN_DPL_APPROVED',
+                      title: 'Pengajuan Izin Disetujui DPL',
+                      desc: 'Pengajuan izin kegiatan / sakit Anda telah disetujui oleh DPL (Dr. Ir. Ahmad).',
                       isRead: false,
                       time: '1 jam lalu',
                       icon: 'assignment_turned_in',
                     ),
-                    // 4. Notifikasi Presensi GPS Geofence 2 Jam
+                    // 3. Presensi & Posko GPS (Reminder, Berhasil, Reminder Posko)
                     const NotificationEntity(
-                      id: 'MHS-NOTIF-02',
-                      type: 'PRESENSI_GPS',
-                      title: 'Presensi Kelompok KKN Berhasil',
-                      desc: 'Anda telah berada di radius zona posko KKN Bojongsoang selama 2 jam. Status presensi Anda tercatat HADIR.',
+                      id: 'MHS-GPS-01',
+                      type: 'PRESENSI_GPS_BERHASIL',
+                      title: 'Presensi GPS Posko Berhasil',
+                      desc: 'Anda berada di radius 50m Posko Bojongsoang selama 2 jam. Presensi harian tercatat HADIR.',
                       isRead: true,
                       time: '2 jam lalu',
                       icon: 'location_on',
                     ),
-                    // 5. Notifikasi Pembaruan Kelompok & DPL
+                    // 4. Aktivasi Bin Warga (Bin Diaktivasi, QR Dipasang)
                     const NotificationEntity(
-                      id: 'MHS-NOTIF-03',
-                      type: 'KELOMPOK_KKN',
-                      title: 'Pembaruan Kelompok KKN',
-                      desc: 'Anggota kelompok KKN Bojongsoang 01 & DPL terkait telah diperbarui oleh Super Admin.',
+                      id: 'MHS-AKTIVASI-01',
+                      type: 'AKTIVASI_BIN_SUKSES',
+                      title: 'Bin QR Warga Berhasil Dipasang',
+                      desc: 'Aktivasi Bin QR untuk Warga Binaan (Bpk. Slamet - RT 01) sukses terdaftar.',
+                      isRead: true,
+                      time: '3 jam lalu',
+                      icon: 'qr_code_scanner',
+                    ),
+                    // 5. Laporan Pemanfaatan Sampah (Dikirim, Disetujui, Direvisi)
+                    const NotificationEntity(
+                      id: 'MHS-LAPORAN-01',
+                      type: 'LAPORAN_PEMANFAATAN_STATUS',
+                      title: 'Laporan Pemanfaatan Sampah Disetujui',
+                      desc: 'Laporan program kerja pemanfaatan sampah organik RW 02 telah disetujui oleh DPL.',
                       isRead: true,
                       time: 'Kemarin',
-                      icon: 'group',
+                      icon: 'description',
                     ),
                   ];
 
                   // Filter berdasarkan kategori tab chip yang dipilih
                   final filteredList = combinedList.where((n) {
                     if (_selectedFilter == 'Semua') return true;
+                    final typeUpper = n.type.toUpperCase();
+                    final titleLower = n.title.toLowerCase();
+
                     if (_selectedFilter == 'Poin KKN') {
-                      return n.type.contains('POIN_KKN') || n.title.toLowerCase().contains('poin');
+                      return typeUpper.contains('POIN') || titleLower.contains('poin');
                     }
                     if (_selectedFilter == 'DPL & Izin') {
-                      return n.type.contains('IZIN') || n.title.toLowerCase().contains('dpl') || n.title.toLowerCase().contains('izin');
+                      return typeUpper.contains('IZIN') || typeUpper.contains('DPL') || titleLower.contains('dpl') || titleLower.contains('izin');
                     }
-                    if (_selectedFilter == 'Kelompok KKN') {
-                      return n.type.contains('KELOMPOK') || n.title.toLowerCase().contains('kelompok');
+                    if (_selectedFilter == 'Presensi & Posko GPS') {
+                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || titleLower.contains('presensi') || titleLower.contains('posko');
                     }
-                    if (_selectedFilter == 'Presensi GPS') {
-                      return n.type.contains('PRESENSI') || n.title.toLowerCase().contains('presensi');
+                    if (_selectedFilter == 'Aktivasi Bin Warga') {
+                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi');
                     }
-                    if (_selectedFilter == 'Aktivasi Bin') {
-                      return n.type.contains('AKTIVASI') || n.title.toLowerCase().contains('warga') || n.title.toLowerCase().contains('bin');
+                    if (_selectedFilter == 'Laporan Pemanfaatan') {
+                      return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan');
                     }
                     return true;
                   }).toList();

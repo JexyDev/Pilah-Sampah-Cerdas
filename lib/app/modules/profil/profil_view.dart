@@ -257,7 +257,15 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _divider(),
                         ] else ...[
                           _InfoTile(
-                            Icons.location_on_outlined,
+                            Icons.map_rounded,
+                            'Kecamatan',
+                            user?.kecamatan != null && user!.kecamatan.isNotEmpty
+                                ? 'Kec. ${user.kecamatan}'
+                                : 'Kec. Coblong',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.map_outlined,
                             'Kelurahan',
                             user?.kelurahan != null && user!.kelurahan.isNotEmpty
                                 ? 'Kel. ${user.kelurahan}'
@@ -265,10 +273,18 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           _divider(),
                           _InfoTile(
-                            Icons.home_work_outlined,
-                            'RT / RW',
-                            user?.rtRw != null && user!.rtRw.isNotEmpty
-                                ? user.rtRw
+                            Icons.location_city_rounded,
+                            'RW',
+                            user?.rw != null && user!.rw.isNotEmpty
+                                ? 'RW ${user.rw}'
+                                : 'Belum diatur',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.home_outlined,
+                            'RT',
+                            user?.rt != null && user!.rt.isNotEmpty
+                                ? 'RT ${user.rt}'
                                 : 'Belum diatur',
                           ),
                           _divider(),

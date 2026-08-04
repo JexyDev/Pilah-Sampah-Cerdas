@@ -603,6 +603,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   ),
                 ),
               ),
+              const SizedBox(height: 40),
             ],
           ),
         ),

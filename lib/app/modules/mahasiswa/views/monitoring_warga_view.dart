@@ -6,7 +6,6 @@ import '../../../routes/app_routes.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 
 class MonitoringWargaView extends ConsumerStatefulWidget {
@@ -40,15 +39,22 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Pastikan fetch dipanggil sekali setelah context & auth state tersedia
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      if (_selectedKelurahan == 'Semua' && user.kelurahan.isNotEmpty) {
+        _selectedKelurahan = user.kelurahan;
+      }
+      if (_selectedRtRw == 'Semua' && user.rtRw.isNotEmpty) {
+        _selectedRtRw = user.rtRw;
+      }
+    }
+
     final isAktivasiBinMode =
         ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     if (isAktivasiBinMode && !_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
-      final user = ref.read(authProvider).user;
-      final kelurahan = user?.kelurahan ?? '';
-      final rtRw = user?.rtRw ?? '';
-      // Gunakan addPostFrameCallback agar ref.read aman dipanggil setelah build
+      final kelurahan = user?.kelurahan ?? 'Bojongsoang';
+      final rtRw = user?.rtRw ?? '01/02';
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
@@ -64,11 +70,15 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false; // Hanya tampilkan role warga
 
-      // Mode Aktivasi Bin: Tampilkan warga yang berada di wilayah penugasan KKN mahasiswa
+      // Mode Aktivasi Bin & Monitoring: Tampilkan HANYA Warga yang berada di wilayah penugasan KKN Mahasiswa (Kelurahan + RT/RW)
       if (isAktivasiBinMode) {
-        final matchesKel = w.kelurahan.isEmpty || w.kelurahan == userKel || w.address.contains(userKel);
-        final matchesRt = w.rtRw.isEmpty || w.rtRw == userRt || w.address.contains(userRt);
-        if (!matchesKel && !matchesRt) return false;
+        final matchesKel = w.kelurahan.isEmpty || 
+            w.kelurahan.toLowerCase() == userKel.toLowerCase() || 
+            w.address.toLowerCase().contains(userKel.toLowerCase());
+        final matchesRt = w.rtRw.isEmpty || 
+            w.rtRw == userRt || 
+            w.address.contains(userRt);
+        if (!matchesKel || !matchesRt) return false; // Strict gating (keduanya wajib sesuai)
       } else {
         if (_selectedKelurahan != 'Semua') {
           final matches = w.kelurahan == _selectedKelurahan || w.address.contains(_selectedKelurahan);
@@ -93,30 +103,27 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga, String userKel, String userRt) {
     try {
       return allWarga.map((e) {
-        if (e is WargaDampingan) {
-          final targetKel = e.kelurahan.isNotEmpty ? e.kelurahan : userKel;
-          final targetRt = e.rtRw.isNotEmpty ? e.rtRw : userRt;
-          return WargaDampingan(
-            binId: e.binId,
-            wargaName: e.wargaName,
-            address: e.address.contains('RT') ? e.address : 'Jl. ${e.wargaName} No. ${e.binId.length > 3 ? e.binId.substring(e.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel',
-            kelurahan: targetKel,
-            rtRw: targetRt,
-            mahasiswaId: e.mahasiswaId,
-            recentLogs: e.recentLogs,
-            isActivated: e.isActivated,
-            role: e.role,
-            totalPoints: e.totalPoints,
-            apiCorrectPercentage: e.apiCorrectPercentage,
-          );
-        }
-        final w = WargaDampingan.fromJson(e as Map<String, dynamic>);
+        final WargaDampingan w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
         final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
         final targetRt = w.rtRw.isNotEmpty ? w.rtRw : userRt;
+
+        String formattedAddr = w.address;
+        if (formattedAddr.contains('RT ,') || formattedAddr.contains('Kel.') && (formattedAddr.endsWith('Kel.') || formattedAddr.contains('Kel.,') || formattedAddr.contains('Kel. '))) {
+          String cleaned = formattedAddr
+              .replaceAll(RegExp(r',?\s*RT\s*,?'), '')
+              .replaceAll(RegExp(r',?\s*Kel\.?\s*$'), '')
+              .trim();
+          if (cleaned.endsWith(',')) cleaned = cleaned.substring(0, cleaned.length - 1).trim();
+          formattedAddr = '$cleaned, RT $targetRt, Kel. $targetKel';
+        } else if (!formattedAddr.toLowerCase().contains('rt') && !formattedAddr.toLowerCase().contains('kel')) {
+          final numStr = w.binId.length >= 2 ? w.binId.substring(w.binId.length - 2) : '04';
+          formattedAddr = '$formattedAddr No. $numStr, RT $targetRt, Kel. $targetKel';
+        }
+
         return WargaDampingan(
           binId: w.binId,
           wargaName: w.wargaName,
-          address: w.address.contains('RT') ? w.address : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel',
+          address: formattedAddr,
           kelurahan: targetKel,
           rtRw: targetRt,
           mahasiswaId: w.mahasiswaId,
@@ -294,34 +301,42 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                   ? Row(
                                       children: [
                                         Expanded(
-                                          child: TextFormField(
-                                            initialValue: userKel,
-                                            readOnly: true,
+                                          child: InputDecorator(
+                                            key: ValueKey('kel_$userKel'),
                                             decoration: InputDecoration(
-                                              labelText: 'Kelurahan',
-                                              prefixIcon: const Icon(Icons.location_city, size: 18, color: AppColors.primaryBlue),
+                                              labelText: 'Kelurahan Dampingan',
+                                              prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: AppColors.primaryGreen),
                                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                               filled: true,
                                               fillColor: const Color(0xFFF5F7FA),
+                                              isDense: true,
                                             ),
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            child: Text(
+                                              userKel.isNotEmpty ? (userKel.startsWith('Kel.') ? userKel : 'Kel. $userKel') : 'Kel. Dago',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: TextFormField(
-                                            initialValue: userRt,
-                                            readOnly: true,
+                                          child: InputDecorator(
+                                            key: ValueKey('rtrw_$userRt'),
                                             decoration: InputDecoration(
-                                              labelText: 'RT/RW',
-                                              prefixIcon: const Icon(Icons.home_work, size: 18, color: AppColors.primaryBlue),
+                                              labelText: 'RT/RW Dampingan',
+                                              prefixIcon: const Icon(Icons.maps_home_work_outlined, size: 18, color: AppColors.primaryGreen),
                                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                               filled: true,
                                               fillColor: const Color(0xFFF5F7FA),
+                                              isDense: true,
                                             ),
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            child: Text(
+                                              userRt.isNotEmpty ? (userRt.startsWith('RT') ? userRt : 'RT $userRt') : 'RT 01/RW 02',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -423,10 +438,19 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                                   children: [
                                                     Text(warga.wargaName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                                     const SizedBox(height: 4),
-                                                    if (warga.kelurahan.isNotEmpty || warga.rtRw.isNotEmpty) ...[
-                                                      Text('${warga.rtRw}, ${warga.kelurahan}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryBlue)),
-                                                      const SizedBox(height: 2),
-                                                    ],
+                                                     Builder(
+                                                       builder: (_) {
+                                                         final rtStr = warga.rtRw.isNotEmpty ? (warga.rtRw.startsWith('RT') ? warga.rtRw : 'RT ${warga.rtRw}') : (userRt.startsWith('RT') ? userRt : 'RT $userRt');
+                                                         final kelStr = warga.kelurahan.isNotEmpty ? (warga.kelurahan.startsWith('Kel.') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') : (userKel.startsWith('Kel.') ? userKel : 'Kel. $userKel');
+                                                         return Column(
+                                                           crossAxisAlignment: CrossAxisAlignment.start,
+                                                           children: [
+                                                             Text('$rtStr, $kelStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryGreen)),
+                                                             const SizedBox(height: 2),
+                                                           ],
+                                                         );
+                                                       },
+                                                     ),
                                                     Text(warga.address, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                                     const SizedBox(height: 8),
                                                     // Metrik Keaktifan

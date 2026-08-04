@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/image_compressor.dart';
 import '../models/petugas_residu_models.dart';
 import '../providers/api_client.dart';
+import '../services/notification_engine.dart';
 import 'petugas_residu_repository.dart';
 
 class ApiPetugasResiduRepository implements PetugasResiduRepository {
@@ -20,7 +21,7 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   @override
   Future<PetugasResiduDashboard> getDashboard() async {
     try {
-      final response = await apiClient.dio.get('/residu/dashboard');
+      final response = await apiClient.dio.get('/petugas-residu/dashboard');
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is Map<String, dynamic> 
             ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
@@ -52,7 +53,7 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
       if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
       if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
 
-      final response = await apiClient.dio.get('/residu/jadwal-harian', queryParameters: queryParams);
+      final response = await apiClient.dio.get('/petugas-residu/jadwal-harian', queryParameters: queryParams);
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> list = response.data is Map<String, dynamic>
             ? (response.data['data'] as List<dynamic>? ?? [])
@@ -108,11 +109,16 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         'isGlobalBin': true,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       });
-      debugPrint('[ApiPetugasResiduRepository] Sending request to /residu/submit-log...');
+      debugPrint('[ApiPetugasResiduRepository] Sending request to /petugas-residu/submit-log...');
 
-      final response = await apiClient.dio.post('/residu/submit-log', data: formData);
+      final response = await apiClient.dio.post('/petugas-residu/submit-log', data: formData);
       debugPrint('[ApiPetugasResiduRepository] Response received: ${response.statusCode}');
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Tampilkan push notification & update status log timbangan
+        NotificationEngine().showSubmitLogTimbanganNotification(
+          weightKg: actualWeightKg,
+          type: classification,
+        );
         return true;
       }
       throw Exception('Failed to submit log: ${response.statusCode}');
@@ -125,7 +131,7 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   @override
   Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type}) async {
     try {
-      final response = await apiClient.dio.get('/residu/riwayat', queryParameters: {
+      final response = await apiClient.dio.get('/petugas-residu/riwayat', queryParameters: {
         if (dateRange != null) 'range': dateRange,
         if (type != null) 'type': type,
       });

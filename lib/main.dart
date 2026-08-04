@@ -154,7 +154,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     final title = (message.notification?.title ?? '').toLowerCase();
     final type = (message.data['event']?.toString() ?? '').toLowerCase();
 
-    if (title.contains('penuh') || 
+    if (type.contains('kkn') || title.contains('kkn') || title.contains('dpl') || title.contains('presensi')) {
+      navigatorKey.currentState?.pushNamed(AppRoutes.mahasiswaNotifikasi);
+    } else if (title.contains('penuh') || 
         title.contains('pengajuan') || 
         title.contains('kritis') ||
         title.contains('setuju') ||
@@ -163,12 +165,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         type.contains('reset')) {
       navigatorKey.currentState?.pushNamed('/reset-bin');
     } else if (title.contains('poin') || 
-               title.contains('berhasil') ||
-               title.contains('sukses') ||
-               title.contains('setor') ||
-               title.contains('sampah') ||
                type.contains('transaction_success')) {
       navigatorKey.currentState?.pushNamed('/poin');
+    } else {
+      navigatorKey.currentState?.pushNamed(AppRoutes.notifikasi);
     }
   }
 

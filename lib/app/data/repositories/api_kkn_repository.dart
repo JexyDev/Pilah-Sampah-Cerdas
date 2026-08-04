@@ -22,7 +22,7 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<List<WargaDampingan>> getWargaDampingan() async {
-    final response = await apiClient.dio.get('/kkn/warga');
+    final response = await apiClient.dio.get('/kkn/warga-dampingan');
     if (response.statusCode == 200) {
       if (response.data is Map<String, dynamic>) {
         final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];

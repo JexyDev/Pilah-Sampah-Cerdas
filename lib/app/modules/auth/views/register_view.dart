@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widgets/searchable_dropdown.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -454,67 +455,107 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               ],
 
                               if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') ...[
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          _buildLabel(_selectedRole == 'Mahasiswa' ? 'RT/RW DAMPINGAN' : 'RT/RW'),
-                                          const SizedBox(height: 6),
-                                          DropdownButtonFormField<String>(
-                                            isExpanded: true,
-                                            initialValue: _selectedRtRw,
-                                            decoration: const InputDecoration(
-                                              prefixIcon: Icon(Icons.home_outlined, color: AppColors.textSecondary, size: 20),
-                                            ),
-                                            items: _rtRwList.map((r) => DropdownMenuItem(value: r, child: Text('RT/RW $r', overflow: TextOverflow.ellipsis))).toList(),
-                                            onChanged: (val) {
-                                              if (val != null) setState(() => _selectedRtRw = val);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          _buildLabel(_selectedRole == 'Mahasiswa' ? 'KELURAHAN DAMPINGAN' : 'KELURAHAN'),
-                                          const SizedBox(height: 6),
-                                          DropdownButtonFormField<String>(
-                                            isExpanded: true,
-                                            initialValue: _selectedKelurahan,
-                                            decoration: const InputDecoration(
-                                              prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
-                                            ),
-                                            items: _kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text('Kel. $k', overflow: TextOverflow.ellipsis))).toList(),
-                                            onChanged: (val) {
-                                              if (val != null) setState(() => _selectedKelurahan = val);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                _buildLabel('KECAMATAN'),
+                                const SizedBox(height: 6),
+                                SearchableDropdownField<String>(
+                                  labelText: 'Kecamatan',
+                                  hintText: 'Pilih Kecamatan',
+                                  prefixIcon: Icons.map_rounded,
+                                  value: _kecamatanController.text.isNotEmpty ? _kecamatanController.text : 'Coblong',
+                                  items: const [
+                                    DropdownItem(value: 'Coblong', label: 'Kecamatan Coblong', subtitle: 'Kota Bandung'),
                                   ],
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _kecamatanController.text = val);
+                                  },
                                 ),
                                 const SizedBox(height: 16),
+                                SearchableDropdownField<String>(
+                                  labelText: _selectedRole == 'Mahasiswa' ? 'Kelurahan Dampingan' : 'Kelurahan',
+                                  hintText: 'Pilih Kelurahan',
+                                  prefixIcon: Icons.map_outlined,
+                                  value: _selectedKelurahan,
+                                  items: _kelurahanList
+                                      .map((k) => DropdownItem(value: k, label: 'Kel. $k'))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _selectedKelurahan = val);
+                                  },
+                                ),
+                                 const SizedBox(height: 16),
+                                 Row(
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                     Expanded(
+                                       child: SearchableDropdownField<String>(
+                                         labelText: 'RT',
+                                         hintText: 'Pilih RT',
+                                         prefixIcon: Icons.home_outlined,
+                                         value: _selectedRtRw.split('/')[0],
+                                         items: List.generate(
+                                           10,
+                                           (i) => DropdownItem(
+                                             value: (i + 1).toString().padLeft(2, '0'),
+                                             label: 'RT ${(i + 1).toString().padLeft(2, '0')}',
+                                           ),
+                                         ),
+                                         onChanged: (val) {
+                                           if (val != null) {
+                                             final currentRw = _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02';
+                                             setState(() => _selectedRtRw = '$val/$currentRw');
+                                           }
+                                         },
+                                       ),
+                                     ),
+                                     const SizedBox(width: 12),
+                                     Expanded(
+                                       child: SearchableDropdownField<String>(
+                                         labelText: 'RW',
+                                         hintText: 'Pilih RW',
+                                         prefixIcon: Icons.location_city_rounded,
+                                         value: _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02',
+                                         items: List.generate(
+                                           10,
+                                           (i) => DropdownItem(
+                                             value: (i + 1).toString().padLeft(2, '0'),
+                                             label: 'RW ${(i + 1).toString().padLeft(2, '0')}',
+                                           ),
+                                         ),
+                                         onChanged: (val) {
+                                           if (val != null) {
+                                             final currentRt = _selectedRtRw.split('/')[0];
+                                             setState(() => _selectedRtRw = '$currentRt/$val');
+                                           }
+                                         },
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                                 const SizedBox(height: 16),
                               ],
 
                               if (_selectedRole == 'Mahasiswa') ...[
-                                _buildLabel('NIM'),
+                                _buildLabel('NIM (NOMOR INDUK MAHASISWA)'),
                                 const SizedBox(height: 6),
                                 TextFormField(
                                   controller: _nimController,
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
                                   decoration: const InputDecoration(
-                                    hintText: 'Nomor Induk Mahasiswa',
+                                    hintText: '8-10 digit NIM',
                                     prefixIcon: Icon(Icons.badge_outlined, color: AppColors.textSecondary, size: 20),
                                   ),
                                   validator: (v) {
-                                    if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) {
-                                      return 'Wajib diisi';
+                                    if (_selectedRole == 'Mahasiswa') {
+                                      if (v == null || v.trim().isEmpty) {
+                                        return 'NIM wajib diisi';
+                                      }
+                                      final clean = v.trim();
+                                      if (clean.length < 8 || clean.length > 10) {
+                                        return 'Format NIM tidak valid (8-10 digit)';
+                                      }
                                     }
                                     return null;
                                   },

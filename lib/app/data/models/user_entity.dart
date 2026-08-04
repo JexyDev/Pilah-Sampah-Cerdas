@@ -20,6 +20,7 @@ class UserEntity extends Equatable {
     this.prodi = '',
     this.fakultas = '',
     this.universitas = '',
+    this.kecamatan = 'Coblong',
   });
 
   final String id;
@@ -38,6 +39,23 @@ class UserEntity extends Equatable {
   final String prodi;
   final String fakultas;
   final String universitas;
+  final String kecamatan;
+
+  String get rt {
+    if (rtRw.contains('/')) {
+      final parts = rtRw.split('/');
+      return parts[0].trim();
+    }
+    return rtRw;
+  }
+
+  String get rw {
+    if (rtRw.contains('/')) {
+      final parts = rtRw.split('/');
+      return parts.length > 1 ? parts[1].trim() : '';
+    }
+    return '';
+  }
 
   UserEntity copyWith({
     String? id,

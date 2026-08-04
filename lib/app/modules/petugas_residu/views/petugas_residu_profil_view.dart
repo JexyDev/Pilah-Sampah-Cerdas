@@ -123,16 +123,28 @@ class PetugasResiduProfilView extends ConsumerWidget {
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
-                    Icons.location_on_outlined,
-                    'Wilayah Penugasan RT/RW',
-                    user?.rtRw.isNotEmpty == true ? 'RT ${user!.rtRw}' : (dashboard?.assignedZone ?? 'RT 01/RW 02'),
-                    bold: true,
+                    Icons.map_rounded,
+                    'Kecamatan',
+                    user?.kecamatan.isNotEmpty == true ? 'Kec. ${user!.kecamatan}' : 'Kec. Coblong',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_outlined,
                     'Kelurahan',
                     user?.kelurahan.isNotEmpty == true ? 'Kel. ${user!.kelurahan}' : 'Kel. Bojongsoang',
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _infoTile(
+                    Icons.location_city_rounded,
+                    'RW Penugasan',
+                    user?.rw.isNotEmpty == true ? 'RW ${user!.rw}' : 'RW 02',
+                    bold: true,
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _infoTile(
+                    Icons.home_outlined,
+                    'RT Penugasan',
+                    user?.rt.isNotEmpty == true ? 'RT ${user!.rt}' : 'RT 01',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(

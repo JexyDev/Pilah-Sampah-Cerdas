@@ -67,6 +67,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                             _buildQuickActions(),
                             const SizedBox(height: AppDimensions.lg),
                             _buildWargaSection(state),
+                            const SizedBox(height: 80),
                           ]),
                         ),
                       ),

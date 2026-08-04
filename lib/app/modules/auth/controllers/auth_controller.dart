@@ -5,6 +5,7 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
+import '../../notifikasi/controllers/notifikasi_controller.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -191,6 +192,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Non-critical — abaikan jika Firebase tidak aktif
     }
     await NotificationEngine().cancelAll();
+    clearNotificationCache();
     await _authRepository.logout();
     state = const AuthState();
   }
