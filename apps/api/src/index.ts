@@ -156,17 +156,18 @@ cronService.start();
         OR: [
           { name: { contains: "Ketua RT" } },
           { name: { contains: "Ketua RW" } },
+          { name: { contains: "Lurah " } },
+          { name: { contains: "Camat " } },
           { name: { startsWith: "Asep RW" } },
           { name: { startsWith: "Bambang RT" } },
         ],
       },
     });
     if (dummyUser) {
-      console.log("[AutoSanitize] Found dummy RT/RW names in DB. Sanitizing to human names...");
+      console.log("[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Sanitizing to human names...");
       const { exec } = await import("child_process");
-      exec("npx tsx scripts/fix-rt-rw-human-names.ts", (err, stdout) => {
-        if (!err) console.log("[AutoSanitize] RT/RW human names updated successfully.");
-      });
+      exec("npx tsx scripts/fix-rt-rw-human-names.ts");
+      exec("npx tsx scripts/fix-executive-human-names.ts");
     }
   } catch (e) {
     // Non-blocking catch
