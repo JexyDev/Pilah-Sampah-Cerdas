@@ -45,6 +45,21 @@ const createRwPinIcon = (rwName: string) => {
   });
 };
 
+const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
+  return L.divIcon({
+    className: "custom-kelurahan-pin-icon",
+    html: `
+      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
+        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
+        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
+      </div>
+    `,
+    iconSize: [130, 36],
+    iconAnchor: [65, 18],
+  });
+};
+
 const createBinPinIcon = (status: string) => {
   let bg = "#10b981"; // Active / Normal
   if (status === "FULL" || status === "penuh") bg = "#ef4444";
@@ -98,6 +113,19 @@ export const DplDashboardPage: React.FC = () => {
   const [alerts, setAlerts] = useState<DplAlerts | null>(null);
   const [approvalHistory, setApprovalHistory] = useState<ApprovalHistoryLog[]>([]);
   const [mapCoverage, setMapCoverage] = useState<MapCoverage | null>(null);
+  const [selectedKelurahanMap, setSelectedKelurahanMap] = useState<string | null>(null);
+
+  const kelurahanCentroids = useMemo(
+    () => [
+      { name: "Dago", lat: -6.8850, lng: 107.6140 },
+      { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
+      { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
+      { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
+      { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
+      { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
+    ],
+    []
+  );
 
   // Filters & Pagination States
   const [searchQuery, setSearchQuery] = useState("");
@@ -880,7 +908,7 @@ export const DplDashboardPage: React.FC = () => {
                 <MapPin size={18} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tong Sampah
               </h3>
               <p className="text-xs text-slate-500">
-                Visualisasi lokasi riil wilayah RW dampingan dan tong sampah warga terdaftar oleh kelompok mahasiswa KKN.
+                Pilih Kelurahan untuk melihat detail titik RW dampingan dan lokasi tempat sampah warga.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
@@ -897,9 +925,36 @@ export const DplDashboardPage: React.FC = () => {
           </div>
 
           <div className="h-[520px] w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner relative z-0">
+            {/* Top Floating Control Bar */}
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+              {selectedKelurahanMap ? (
+                <button
+                  onClick={() => setSelectedKelurahanMap(null)}
+                  className="bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-bold px-3.5 py-2 rounded-xl backdrop-blur-md shadow-lg border border-slate-700 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <span>← Kembali ke Ringkasan Kelurahan</span>
+                  <span className="bg-emerald-500/30 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md border border-emerald-500/40">
+                    {selectedKelurahanMap}
+                  </span>
+                </button>
+              ) : (
+                <div className="bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>Klik icon Kelurahan di bawah untuk zoom ke detail tempat</span>
+                </div>
+              )}
+            </div>
+
             <MapContainer
-              center={[-6.8903, 107.6110]}
-              zoom={14}
+              center={
+                selectedKelurahanMap
+                  ? [
+                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
+                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
+                    ]
+                  : [-6.8903, 107.6110]
+              }
+              zoom={selectedKelurahanMap ? 16 : 14}
               scrollWheelZoom={true}
               style={{ height: "100%", width: "100%" }}
             >
@@ -908,68 +963,116 @@ export const DplDashboardPage: React.FC = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* 1. Render RW Area Markers */}
-              {mapCoverage?.rwAreas.map((rw) => {
-                if (!rw.latitude || !rw.longitude) return null;
-                const lat = Number(rw.latitude);
-                const lng = Number(rw.longitude);
-                if (isNaN(lat) || isNaN(lng)) return null;
+              {/* LEVEL 1: RENDER ONLY KELURAHAN OVERVIEW MARKERS WHEN NO KELURAHAN SELECTED */}
+              {!selectedKelurahanMap &&
+                kelurahanCentroids.map((kel) => {
+                  const rwsInKel = (mapCoverage?.rwAreas || []).filter((r) =>
+                    r.kelurahan.toLowerCase().includes(kel.name.toLowerCase()) ||
+                    r.name.toLowerCase().includes(kel.name.toLowerCase())
+                  );
 
-                return (
-                  <Marker
-                    key={`dpl-rw-${rw.id}`}
-                    position={[lat, lng]}
-                    icon={createRwPinIcon(rw.name)}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 text-center font-sans">
-                        <strong className="text-sm font-bold block mb-1 text-slate-800">
-                          Wilayah {rw.name}
-                        </strong>
-                        <p className="text-slate-600 mb-1">
-                          Kelurahan: <strong className="text-emerald-600">{rw.kelurahan}</strong>
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-semibold italic">
-                          Wilayah Pendampingan Mahasiswa KKN
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
+                  return (
+                    <Marker
+                      key={`kel-pin-${kel.name}`}
+                      position={[kel.lat, kel.lng]}
+                      icon={createKelurahanPinIcon(kel.name, rwsInKel.length || 10)}
+                      eventHandlers={{
+                        click: () => setSelectedKelurahanMap(kel.name),
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-xs p-1 text-center font-sans">
+                          <strong className="text-sm font-bold block text-slate-900 mb-1">
+                            Kelurahan {kel.name}
+                          </strong>
+                          <p className="text-slate-600 mb-2">
+                            Total Wilayah: <strong>{rwsInKel.length} RW</strong>
+                          </p>
+                          <button
+                            onClick={() => setSelectedKelurahanMap(kel.name)}
+                            className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition"
+                          >
+                            Buka Detail Titik Tempat Sampah →
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
 
-              {/* 2. Render Bin Markers */}
-              {mapCoverage?.bins.map((bin) => {
-                if (!bin.latitude || !bin.longitude) return null;
-                const lat = Number(bin.latitude);
-                const lng = Number(bin.longitude);
-                if (isNaN(lat) || isNaN(lng)) return null;
+              {/* LEVEL 2: RENDER DETAILED RW AND BIN MARKERS WHEN A KELURAHAN IS SELECTED */}
+              {selectedKelurahanMap && (
+                <>
+                  {/* 1. Render RW Area Markers for Selected Kelurahan */}
+                  {(mapCoverage?.rwAreas || [])
+                    .filter(
+                      (rw) =>
+                        rw.kelurahan.toLowerCase().includes(selectedKelurahanMap.toLowerCase()) ||
+                        rw.name.toLowerCase().includes(selectedKelurahanMap.toLowerCase())
+                    )
+                    .map((rw) => {
+                      if (!rw.latitude || !rw.longitude) return null;
+                      const lat = Number(rw.latitude);
+                      const lng = Number(rw.longitude);
+                      if (isNaN(lat) || isNaN(lng)) return null;
 
-                return (
-                  <Marker
-                    key={`dpl-bin-${bin.id}`}
-                    position={[lat, lng]}
-                    icon={createBinPinIcon(bin.status)}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 text-center font-sans space-y-1">
-                        <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full inline-block">
-                          Tong Sampah Aktif
-                        </span>
-                        <strong className="text-sm font-bold block text-slate-900">
-                          {bin.qrCode}
-                        </strong>
-                        <p className="text-slate-600 text-[11px]">
-                          Warga: <strong>{bin.wargaNama || "Warga Binaan"}</strong>
-                        </p>
-                        <p className="text-[10px] text-slate-500">
-                          Status: <span className="font-bold text-slate-800">{bin.status}</span>
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
+                      return (
+                        <Marker
+                          key={`dpl-rw-${rw.id}`}
+                          position={[lat, lng]}
+                          icon={createRwPinIcon(rw.name)}
+                        >
+                          <Popup>
+                            <div className="text-xs p-1 text-center font-sans">
+                              <strong className="text-sm font-bold block mb-1 text-slate-800">
+                                Wilayah {rw.name}
+                              </strong>
+                              <p className="text-slate-600 mb-1">
+                                Kelurahan: <strong className="text-emerald-600">{rw.kelurahan}</strong>
+                              </p>
+                              <p className="text-[10px] text-slate-500 font-semibold italic">
+                                Wilayah Pendampingan Mahasiswa KKN
+                              </p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      );
+                    })}
+
+                  {/* 2. Render Bin Markers for Selected Kelurahan */}
+                  {(mapCoverage?.bins || []).map((bin) => {
+                    if (!bin.latitude || !bin.longitude) return null;
+                    const lat = Number(bin.latitude);
+                    const lng = Number(bin.longitude);
+                    if (isNaN(lat) || isNaN(lng)) return null;
+
+                    return (
+                      <Marker
+                        key={`dpl-bin-${bin.id}`}
+                        position={[lat, lng]}
+                        icon={createBinPinIcon(bin.status)}
+                      >
+                        <Popup>
+                          <div className="text-xs p-1 text-center font-sans space-y-1">
+                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full inline-block">
+                              Tong Sampah Aktif
+                            </span>
+                            <strong className="text-sm font-bold block text-slate-900">
+                              {bin.qrCode}
+                            </strong>
+                            <p className="text-slate-600 text-[11px]">
+                              Warga: <strong>{bin.wargaNama || "Warga Binaan"}</strong>
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              Status: <span className="font-bold text-slate-800">{bin.status}</span>
+                            </p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
+                </>
+              )}
             </MapContainer>
           </div>
         </div>
