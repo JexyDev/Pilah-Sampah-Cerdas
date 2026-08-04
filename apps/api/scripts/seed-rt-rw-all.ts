@@ -202,8 +202,8 @@ async function main() {
     });
 
     await prisma.studentKkn.updateMany({
-      where: { rtRwId: { in: dirtyIds } },
-      data: { rtRwId: fallbackOfficialAreaId },
+      where: { assignedPolygonId: { in: dirtyIds } },
+      data: { assignedPolygonId: fallbackOfficialAreaId },
     });
 
     await prisma.pemanfaatan.updateMany({
