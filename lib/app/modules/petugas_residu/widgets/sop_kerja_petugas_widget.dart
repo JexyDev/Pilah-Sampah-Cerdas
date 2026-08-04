@@ -18,7 +18,9 @@ class SopKerjaPetugasWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      maxHeight: MediaQuery.of(context).size.height * 0.85,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
