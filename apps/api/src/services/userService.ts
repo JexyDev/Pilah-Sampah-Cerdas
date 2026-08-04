@@ -36,7 +36,11 @@ export class UserService {
     }
 
     if (roleName) {
-      whereClause.role = { name: roleName };
+      if (roleName === "PENGURUS_RW_RT" || roleName === "RW") {
+        whereClause.role = { name: { in: ["RW", "RT"] } };
+      } else {
+        whereClause.role = { name: roleName };
+      }
     }
 
     if (status) {

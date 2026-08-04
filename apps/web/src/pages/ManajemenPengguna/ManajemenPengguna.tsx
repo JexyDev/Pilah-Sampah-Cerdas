@@ -558,64 +558,25 @@ const ManajemenPengguna: React.FC = () => {
                           </div>
                         </td>
                       )}
-                    </tr>
-                  ) : (
-                    <tr
-                      key={user.id}
-                      className="border-b border-outline-variant/30 hover:bg-surface-container-lowest/80 transition-colors duration-150"
-                    >
-                      <td className="px-6 py-4">
-                        <div
-                          className={`w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20`}
+                          className={`inline-block px-2.5 py-1 ${
+                            ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : [
+                                  "CAMAT",
+                                  "LURAH",
+                                  "RW",
+                                  "RT",
+                                  "PETUGAS_RESIDU",
+                                  "MAHASISWA_KKN",
+                                ].includes(user.role)
+                              ? "bg-orange-50 text-orange-700 border border-orange-200"
+                              : "bg-green-50 text-green-700 border border-green-200"
+                          } rounded-md text-[10px] font-bold tracking-wide uppercase`}
                         >
-                          {user.name?.substring(0, 2).toUpperCase() || "U"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-on-surface">{user.name}</p>
-                        {user.studentProfile?.nim && (
-                          <p className="text-[10px] text-slate-400 font-mono">
-                            NIM: {user.studentProfile.nim}
-                          </p>
-                        )}
-                        {user.pendampingKkn && (
-                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
-                            <GraduationCap size={12} className="text-emerald-600" />
-                            Pendamping: {user.pendampingKkn.name}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-on-surface-variant font-mono text-[13px]">
-                        {user.phone || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 w-fit">
-                          {["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role) && (
-                            <ShieldAlert className="text-blue-600" size={15} />
-                          )}
-                          {["CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(
-                            user.role
-                          ) && <HardHat className="text-orange-600" size={15} />}
-                          {user.role === "WARGA" && <User className="text-green-600" size={15} />}
-                          <span
-                            className={`inline-block px-2.5 py-1 ${
-                              ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
-                                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                : [
-                                    "CAMAT",
-                                    "LURAH",
-                                    "RW",
-                                    "PETUGAS_RESIDU",
-                                    "MAHASISWA_KKN",
-                                  ].includes(user.role)
-                                ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                : "bg-green-50 text-green-700 border border-green-200"
-                            } rounded-md text-[10px] font-bold tracking-wide uppercase`}
-                          >
-                            {user.role}
-                          </span>
-                        </div>
-                      </td>
+                          {user.role}
+                        </span>
+                      </div>
+                    </td>
                       <td className="px-6 py-4 text-on-surface-variant font-medium">
                         {user.wilayah}
                       </td>
