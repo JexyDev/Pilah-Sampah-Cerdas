@@ -66,6 +66,7 @@ const JadwalKegiatan: React.FC = () => {
   const [error, setError] = useState("");
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [formData, setFormData] = useState<any>({
     title: "",
@@ -375,46 +376,84 @@ const JadwalKegiatan: React.FC = () => {
               {days.map((day, i) => {
                 const daySchedules = getSchedulesForDay(day.date);
                 const isToday = new Date().toDateString() === day.date.toDateString();
+                const isSelected = selectedDate.toDateString() === day.date.toDateString();
+
+                const maxPills = 2;
+                const visibleSchedules = daySchedules.slice(0, maxPills);
+                const hiddenCount = daySchedules.length - maxPills;
 
                 return (
                   <div
                     key={i}
-                    className={`bg-white p-2 hover:bg-surface-container-low transition-colors cursor-pointer group ${!day.isCurrentMonth ? "opacity-50" : ""} ${isToday ? "bg-blue-50/30 border-2 border-blue-500 relative" : ""}`}
+                    onClick={() => setSelectedDate(day.date)}
+                    className={`bg-white p-2 hover:bg-emerald-50/30 transition-all cursor-pointer group flex flex-col justify-between min-h-[90px] border border-transparent rounded-lg ${
+                      !day.isCurrentMonth ? "opacity-40" : ""
+                    } ${
+                      isSelected
+                        ? "ring-2 ring-emerald-500 bg-emerald-50/60 font-bold shadow-sm z-10"
+                        : isToday
+                        ? "bg-blue-50/40 border-blue-400 font-bold relative"
+                        : ""
+                    }`}
                   >
-                    {isToday && (
-                      <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-blue-500 py-0.5"></div>
-                    )}
-                    <div
-                      className={`text-right text-[12px] font-medium mb-1 ${isToday ? "text-on-surface font-bold" : i % 7 >= 5 ? "text-red-500" : "text-on-surface"}`}
-                    >
-                      {day.day}
-                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        {isToday ? (
+                          <span className="text-[10px] font-extrabold bg-blue-600 text-white px-1.5 py-0.2 rounded-full">
+                            Hari Ini
+                          </span>
+                        ) : (
+                          <span></span>
+                        )}
+                        <span
+                          className={`text-right text-[12px] font-bold ${
+                            isToday
+                              ? "text-blue-700 font-black"
+                              : i % 7 >= 5
+                              ? "text-red-500"
+                              : "text-slate-800"
+                          }`}
+                        >
+                          {day.day}
+                        </span>
+                      </div>
 
-                    <div className="flex flex-col gap-1 mt-1 overflow-y-auto max-h-[80px]">
-                      {daySchedules.map((s) => {
-                        let colorCls = "bg-blue-50 border-blue-200 text-blue-700";
-                        const titleLower = (s.title || "").toLowerCase();
-                        const catLower = (s.category || "").toLowerCase();
-                        if (
-                          catLower.includes("pengangkutan") ||
-                          titleLower.includes("pengangkutan")
-                        )
-                          colorCls = "bg-green-50 border-green-200 text-green-700";
-                        if (catLower.includes("sosialisasi") || titleLower.includes("sosialisasi"))
-                          colorCls = "bg-orange-50 border-orange-200 text-orange-700";
-                        if (catLower.includes("rapat") || titleLower.includes("rapat"))
-                          colorCls = "bg-purple-50 border-purple-200 text-purple-700";
+                      {/* Clean Activity Pills (No Dropdown Scrollbar) */}
+                      <div className="flex flex-col gap-1">
+                        {visibleSchedules.map((s) => {
+                          let colorCls = "bg-blue-50 border-blue-200 text-blue-800";
+                          const titleLower = (s.title || "").toLowerCase();
+                          const catLower = (s.category || "").toLowerCase();
+                          if (
+                            catLower.includes("pengangkutan") ||
+                            titleLower.includes("pengangkutan")
+                          )
+                            colorCls = "bg-emerald-50 border-emerald-200 text-emerald-800";
+                          if (
+                            catLower.includes("sosialisasi") ||
+                            titleLower.includes("sosialisasi")
+                          )
+                            colorCls = "bg-amber-50 border-amber-200 text-amber-800";
+                          if (catLower.includes("rapat") || titleLower.includes("rapat"))
+                            colorCls = "bg-purple-50 border-purple-200 text-purple-800";
 
-                        return (
-                          <div
-                            key={s.id}
-                            className={`border text-[10px] font-bold px-1 rounded truncate w-full py-0.5 ${colorCls}`}
-                            title={s.title}
-                          >
-                            {s.title || "(tanpa judul)"}
+                          return (
+                            <div
+                              key={s.id}
+                              className={`border text-[10px] font-bold px-2 py-1 rounded-md truncate w-full shadow-2xs hover:scale-[1.02] transition-transform ${colorCls}`}
+                              title={s.title}
+                            >
+                              {s.title || "(tanpa judul)"}
+                            </div>
+                          );
+                        })}
+
+                        {hiddenCount > 0 && (
+                          <div className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded-md text-center truncate">
+                            +{hiddenCount} agenda lagi
                           </div>
-                        );
-                      })}
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -426,9 +465,12 @@ const JadwalKegiatan: React.FC = () => {
         {/* Right Sidebar: Details */}
         <aside className="w-[320px] bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
           <div className="p-5 border-b border-outline-variant/30 bg-surface-container-low/30">
-            <h3 className="text-[18px] font-bold text-on-surface">Detail Kegiatan Hari Ini</h3>
-            <p className="text-[11px] font-bold text-on-surface-variant mt-1 uppercase tracking-wider">
-              {currentDate.toLocaleDateString("id-ID", {
+            <h3 className="text-[16px] font-bold text-on-surface flex items-center gap-2">
+              <CalendarCheck className="text-primary" size={20} />
+              Detail Agenda
+            </h3>
+            <p className="text-[11px] font-extrabold text-emerald-700 mt-1 uppercase tracking-wider">
+              {selectedDate.toLocaleDateString("id-ID", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -444,84 +486,112 @@ const JadwalKegiatan: React.FC = () => {
               </div>
             ) : error ? (
               <div className="p-8 text-center text-error font-medium">{error}</div>
-            ) : schedules.length > 0 ? (
-              schedules.slice(0, 5).map((schedule) => {
-                const catColor: Record<string, string> = {
-                  Pengangkutan: "bg-green-500",
-                  Sosialisasi: "bg-orange-500",
-                  Rapat: "bg-purple-500",
-                  Lainnya: "bg-blue-500",
-                };
-                const barColor = catColor[schedule.category] || "bg-blue-500";
-                const badgeColor: Record<string, string> = {
-                  Pengangkutan: "bg-green-100 text-green-700",
-                  Sosialisasi: "bg-orange-100 text-orange-700",
-                  Rapat: "bg-purple-100 text-purple-700",
-                  Lainnya: "bg-blue-100 text-blue-700",
-                };
-                const badge = badgeColor[schedule.category] || "bg-blue-100 text-blue-700";
-                return (
-                  <div
-                    key={schedule.id}
-                    className="p-3 border border-outline-variant/50 rounded-lg bg-surface-container-lowest hover:border-primary transition-colors cursor-pointer group relative overflow-hidden"
-                  >
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`}></div>
-                    
-                    {user?.peran === "SUPER_ADMIN" && (
-                      <div className="absolute right-2 bottom-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => handleEdit(schedule, e)}
-                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                          title="Edit Jadwal"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(schedule.id, e)}
-                          className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-md transition-colors"
-                          title="Hapus Jadwal"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-start mb-2 pl-2">
-                      <span
-                        className={`${badge} text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold`}
-                      >
-                        {schedule.category || "Kegiatan"}
-                      </span>
-                      <span className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1">
-                        <Clock size={14} />
-                        {schedule.time || safeFormatTime(schedule.date)}
-                      </span>
-                    </div>
-                    <h4 className="text-[14px] font-bold text-on-surface mb-1 pl-2 pr-6">
-                      {schedule.title || "(tanpa judul)"}
-                    </h4>
-                    <p className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1 pl-2 mb-1">
-                      <Calendar size={14} />
-                      {safeFormatDate(schedule.date, {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                      })}
-                    </p>
-                    <p className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1 pl-2">
-                      <MapPin size={14} />
-                      {schedule.location || "-"}
-                    </p>
-                  </div>
-                );
-              })
             ) : (
-              <div className="mt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant/50 rounded-lg text-center opacity-70">
-                <CalendarCheck className="text-on-surface-variant mb-2" size={32} />
-                <p className="text-[11px] font-medium text-on-surface-variant">
-                  Tidak ada kegiatan lain dijadwalkan.
-                </p>
-              </div>
+              (() => {
+                const daySchedules = getSchedulesForDay(selectedDate);
+                if (daySchedules.length === 0) {
+                  return (
+                    <div className="mt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-xl text-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <CalendarDays size={24} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">
+                          Tidak ada kegiatan
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Belum ada agenda dijadwalkan pada tanggal ini.
+                        </p>
+                      </div>
+                      {["SUPER_ADMIN", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
+                        <button
+                          onClick={() => {
+                            const year = selectedDate.getFullYear();
+                            const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+                            const day = String(selectedDate.getDate()).padStart(2, "0");
+                            setFormData((prev: any) => ({ ...prev, date: `${year}-${month}-${day}` }));
+                            setIsModalOpen(true);
+                          }}
+                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Plus size={14} /> Buat Agenda Baru
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+
+                return daySchedules.map((schedule) => {
+                  const catColor: Record<string, string> = {
+                    Pengangkutan: "bg-green-500",
+                    Sosialisasi: "bg-amber-500",
+                    Rapat: "bg-purple-500",
+                    Lainnya: "bg-blue-500",
+                  };
+                  const barColor = catColor[schedule.category] || "bg-blue-500";
+                  const badgeColor: Record<string, string> = {
+                    Pengangkutan: "bg-green-100 text-green-700",
+                    Sosialisasi: "bg-amber-100 text-amber-700",
+                    Rapat: "bg-purple-100 text-purple-700",
+                    Lainnya: "bg-blue-100 text-blue-700",
+                  };
+                  const badge = badgeColor[schedule.category] || "bg-blue-100 text-blue-700";
+                  return (
+                    <div
+                      key={schedule.id}
+                      className="p-3.5 border border-slate-200/80 rounded-xl bg-white hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden space-y-2"
+                    >
+                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${barColor}`}></div>
+
+                      {user?.peran === "SUPER_ADMIN" && (
+                        <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => handleEdit(schedule, e)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Edit Jadwal"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(schedule.id, e)}
+                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Hapus Jadwal"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center pl-2">
+                        <span
+                          className={`${badge} text-[10px] px-2.5 py-0.5 rounded-md uppercase tracking-wider font-extrabold`}
+                        >
+                          {schedule.category || "Kegiatan"}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <Clock size={13} />
+                          {schedule.time || safeFormatTime(schedule.date)}
+                        </span>
+                      </div>
+                      <h4 className="text-[14px] font-extrabold text-slate-900 pl-2">
+                        {schedule.title || "(tanpa judul)"}
+                      </h4>
+                      <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 pl-2">
+                        <Calendar size={13} className="text-slate-400" />
+                        {safeFormatDate(schedule.date, {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                        })}
+                      </p>
+                      <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 pl-2">
+                        <MapPin size={13} className="text-slate-400" />
+                        {schedule.location || "Wilayah Coblong"}
+                      </p>
+                    </div>
+                  );
+                });
+              })()
             )}
           </div>
         </aside>
