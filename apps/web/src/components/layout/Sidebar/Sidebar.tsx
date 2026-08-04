@@ -230,7 +230,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             { to: "/manajemen-pengguna?role=RW", label: "Pengurus RW / RT" },
             { to: "/manajemen-pengguna?role=PETUGAS_RESIDU", label: "Petugas Residu Hilir" },
             { to: "/manajemen-pengguna?role=MAHASISWA_KKN", label: "Mahasiswa KKN" },
-            { to: "/manajemen-pengguna?role=WARGA", label: "Warga Mandiri" },
+            { to: "/manajemen-pengguna?role=WARGA", label: "Warga" },
           ],
         },
         { to: "/manajemen-mahasiswa", icon: GraduationCap, label: "Manajemen Mahasiswa", allowed: ["SUPER_ADMIN"] as UserRole[] },

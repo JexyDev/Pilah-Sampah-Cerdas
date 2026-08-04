@@ -208,7 +208,7 @@ const Login: React.FC = () => {
               { phone: "+6281300000001", pass: "123456", label: "DPL (Dosen)", bg: "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold" },
               { phone: "08111111118", pass: "password123", label: "Mhs KKN", bg: "bg-teal-50 text-teal-600 border-teal-200" },
               { phone: "08111111117", pass: "password123", label: "Petugas Residu", bg: "bg-orange-50 text-orange-600 border-orange-200" },
-              { phone: "0812001001", pass: "password123", label: "Warga Mandiri", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+              { phone: "0812001001", pass: "password123", label: "Warga", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" },
             ].map((acc) => (
               <button
                 key={acc.phone}

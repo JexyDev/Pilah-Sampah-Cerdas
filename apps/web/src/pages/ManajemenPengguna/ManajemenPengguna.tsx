@@ -319,7 +319,7 @@ const ManajemenPengguna: React.FC = () => {
           { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },
           { key: "PETUGAS_RESIDU", label: "Petugas Residu Hilir", icon: "🚚" },
           { key: "MAHASISWA_KKN", label: "Mahasiswa KKN", icon: "🎓" },
-          { key: "WARGA", label: "Warga Mandiri", icon: "🏠" },
+          { key: "WARGA", label: "Warga", icon: "🏠" },
         ].map((tab) => {
           const isActive = selectedRole === tab.key;
           return (
