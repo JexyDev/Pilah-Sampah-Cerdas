@@ -3,25 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
-
-/// Provider khusus Notifikasi Petugas Residu
-final petugasNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref) async {
-  final notifList = await ref.watch(notificationsProvider.future);
-
-  return notifList.where((n) {
-    final type = n.type.toUpperCase();
-    final title = n.title.toLowerCase();
-
-    // Notifikasi Petugas Residu: Submit Log Timbangan, Residu, Violation
-    return type.contains('RESIDU') ||
-        type.contains('TIMBANGAN') ||
-        type.contains('VIOLATION') ||
-        title.contains('timbangan') ||
-        title.contains('residu') ||
-        title.contains('pelanggaran') ||
-        title.contains('sukses');
-  }).toList();
-});
+import '../controllers/petugas_residu_notifikasi_controller.dart';
 
 /// Halaman Notifikasi Khusus Petugas Residu Hilir.
 class PetugasNotificationView extends ConsumerWidget {
@@ -29,7 +11,7 @@ class PetugasNotificationView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifAsync = ref.watch(petugasNotificationsProvider);
+    final notifAsync = ref.watch(petugasResiduNotificationsProvider);
     final markState = ref.watch(markReadProvider);
 
     return Scaffold(
@@ -50,17 +32,17 @@ class PetugasNotificationView extends ConsumerWidget {
                 ? null
                 : () async {
                     await ref.read(markReadProvider.notifier).markAllRead();
-                    ref.invalidate(petugasNotificationsProvider);
+                    ref.invalidate(petugasResiduNotificationsProvider);
                   },
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: () => ref.invalidate(petugasNotificationsProvider),
+            onPressed: () => ref.invalidate(petugasResiduNotificationsProvider),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(petugasNotificationsProvider),
+        onRefresh: () async => ref.invalidate(petugasResiduNotificationsProvider),
         child: notifAsync.when(
           data: (list) {
             if (list.isEmpty) {

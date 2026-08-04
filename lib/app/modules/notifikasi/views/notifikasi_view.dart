@@ -3,14 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/notification_entity.dart';
-import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../controllers/notifikasi_controller.dart';
+import '../controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../poin/poin_view.dart';
 
-/// Halaman daftar notifikasi.
-/// Data dari GET /api/v1/notifications.
-/// Tap item → tandai dibaca (PUT /api/v1/notifications/:id/read).
+/// Halaman daftar notifikasi Warga.
 class NotifikasiView extends ConsumerWidget {
   const NotifikasiView({super.key});
 
@@ -28,7 +27,7 @@ class NotifikasiView extends ConsumerWidget {
       }
     });
 
-    final notifAsync = ref.watch(notificationsProvider);
+    final notifAsync = ref.watch(wargaNotificationsProvider);
     final markState = ref.watch(markReadProvider);
 
     return Scaffold(

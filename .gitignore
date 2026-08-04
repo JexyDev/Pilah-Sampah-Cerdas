@@ -3,3 +3,5 @@ node_modules
 .flutter-plugins-dependencies
 build/
 node_modules
+*.py
+*.csv

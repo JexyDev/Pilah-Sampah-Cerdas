@@ -3,53 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
-
-/// Provider khusus untuk Notifikasi Mahasiswa KKN
-final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref) async {
-  final notifList = await ref.watch(notificationsProvider.future);
-
-  // Filter ketat: Membuang 100% notifikasi khas Warga (Setor Sampah, Tong Penuh)
-  return notifList.where((n) {
-    final type = n.type.toUpperCase();
-    final title = n.title.toLowerCase();
-
-    // ❌ EXCLUDE KETAT NOTIFIKASI WARGA
-    final isWargaNotif = type == 'POIN_BERTAMBAH' ||
-        type.contains('TONG_PENUH') ||
-        type.contains('PENGOSONGAN') ||
-        type.contains('SETOR') ||
-        type.contains('RESIDU') ||
-        type.contains('JADWAL') ||
-        title.contains('pengosongan') ||
-        title.contains('kapasitas tong') ||
-        title.contains('setor sampah') ||
-        title.contains('timbangan') ||
-        title.contains('jemput') ||
-        title.contains('penjemputan') ||
-        title.contains('buang sampah');
-
-    if (isWargaNotif) return false;
-
-    // ✅ KHUSUS NOTIFIKASI MAHASISWA KKN (Poin KKN, DPL, Izin, Kelompok, Presensi GPS, Aktivasi Bin Warga)
-    final isMahasiswaType = type.contains('KKN') ||
-        type.contains('POIN_KKN') ||
-        type.contains('IZIN') ||
-        type.contains('DPL') ||
-        type.contains('PRESENSI') ||
-        type.contains('AKTIVASI') ||
-        type.contains('PEMANFAATAN') ||
-        title.contains('kkn') ||
-        title.contains('poin') ||
-        title.contains('dpl') ||
-        title.contains('izin') ||
-        title.contains('sakit') ||
-        title.contains('presensi') ||
-        title.contains('posko') ||
-        title.contains('aktivasi');
-
-    return isMahasiswaType;
-  }).toList();
-});
+import '../controllers/mahasiswa_notifikasi_controller.dart';
 
 /// Halaman Notifikasi Khusus Mahasiswa KKN.
 /// Terpisah sepenuhnya dari Halaman Notifikasi Warga & Petugas.

@@ -9,6 +9,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../../data/models/user_entity.dart';
 import '../controllers/petugas_residu_controller.dart';
+import '../controllers/petugas_residu_notifikasi_controller.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
 import 'petugas_notification_view.dart';
 
@@ -364,7 +365,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
     final state = ref.watch(petugasResiduControllerProvider);
-    final unreadCount = ref.watch(unreadNotificationCountProvider);
+    final unreadCount = ref.watch(petugasUnreadNotificationCountProvider);
     final dashboard = state.dashboard;
 
     final bool isApproved = dashboard?.isApproved ?? true;
