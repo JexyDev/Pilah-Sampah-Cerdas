@@ -1,0 +1,114 @@
+/**
+ * Project: TrashCare
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ */
+import { pengangkutanService } from "../services/pengangkutanService.js";
+export class PengangkutanController {
+    async getAll(req, res) {
+        try {
+            const user = req.user;
+            let rtRwId;
+            // Restrict to user's RW area if they are RT/RW
+            if (user && (user.role === "RW" || user.role === "RT")) {
+                rtRwId = user.rtRwId;
+            }
+            else if (req.query.rtRwId) {
+                rtRwId = parseInt(req.query.rtRwId, 10);
+            }
+            const status = req.query.status;
+            const tasks = await pengangkutanService.getAll({ status, rtRwId });
+            res.status(200).json({ success: true, data: tasks });
+        }
+        catch (error) {
+            res.status(500).json({
+                success: false,
+                code: "INTERNAL_SERVER_ERROR",
+                message: error.message || "Gagal memuat data pengangkutan",
+            });
+        }
+    }
+    async getById(req, res) {
+        try {
+            const { id } = req.params;
+            const task = await pengangkutanService.getById(id);
+            res.status(200).json({ success: true, data: task });
+        }
+        catch (error) {
+            const status = error.message === "DISPATCH_TASK_NOT_FOUND" ? 404 : 500;
+            res.status(status).json({
+                success: false,
+                code: error.message || "INTERNAL_SERVER_ERROR",
+                message: error.message || "Gagal memuat data detail pengangkutan",
+            });
+        }
+    }
+    async create(req, res) {
+        try {
+            const { binId, status, claimedByUserId } = req.body;
+            if (!binId) {
+                res.status(400).json({
+                    success: false,
+                    code: "VALIDATION_ERROR",
+                    message: "ID tempat sampah (binId) wajib diisi",
+                });
+                return;
+            }
+            const task = await pengangkutanService.create({ binId, status, claimedByUserId });
+            res.status(201).json({
+                success: true,
+                message: "Tugas pengangkutan berhasil dicatat",
+                data: task,
+            });
+        }
+        catch (error) {
+            const status = error.message === "BIN_NOT_FOUND" || error.message === "USER_NOT_FOUND" ? 400 : 500;
+            res.status(status).json({
+                success: false,
+                code: error.message || "INTERNAL_SERVER_ERROR",
+                message: error.message || "Gagal mencatat tugas pengangkutan",
+            });
+        }
+    }
+    async update(req, res) {
+        try {
+            const { id } = req.params;
+            const { status, claimedByUserId } = req.body;
+            const task = await pengangkutanService.update(id, { status, claimedByUserId });
+            res.status(200).json({
+                success: true,
+                message: "Tugas pengangkutan berhasil diperbarui",
+                data: task,
+            });
+        }
+        catch (error) {
+            const status = error.message === "DISPATCH_TASK_NOT_FOUND" || error.message === "USER_NOT_FOUND"
+                ? 400
+                : 500;
+            res.status(status).json({
+                success: false,
+                code: error.message || "INTERNAL_SERVER_ERROR",
+                message: error.message || "Gagal memperbarui tugas pengangkutan",
+            });
+        }
+    }
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+            await pengangkutanService.delete(id);
+            res.status(200).json({
+                success: true,
+                message: "Tugas pengangkutan berhasil dihapus",
+            });
+        }
+        catch (error) {
+            const status = error.message === "DISPATCH_TASK_NOT_FOUND" ? 404 : 500;
+            res.status(status).json({
+                success: false,
+                code: error.message || "INTERNAL_SERVER_ERROR",
+                message: error.message || "Gagal menghapus tugas pengangkutan",
+            });
+        }
+    }
+}
+export const pengangkutanController = new PengangkutanController();

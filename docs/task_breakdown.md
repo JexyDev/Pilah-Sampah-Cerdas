@@ -1,54 +1,51 @@
-# Task Breakdown & Trello Sync — Trashcare
+# Task Breakdown & MoM Implementation — Pilah Sampah Cerdas
 
-## 1. Rangkuman MoM & Spesifikasi Final (27 Juli 2026)
+## 1. Rangkuman MoM (Kamis, 09 Juli 2026)
 
 ### 1.1 Penamaan Proyek & Monorepo
-*   **Nama Resmi Proyek:** "Trashcare — Sistem Pemilahan Sampah Cerdas Kecamatan Coblong".
-*   **Struktur Repositori:** Monorepo murni (`apps/backend`, `apps/frontend`, `apps/mobile`, `packages/shared-types`).
+*   **Nama Resmi Proyek:** "Pilah Sampah Cerdas" (Repository: `pilah-sampah-cerdas`).
+*   **Struktur Repositori:** Monorepo dengan default branch `backend`. Ditambah 2 branch independen: `frontend` dan `mobile`.
 
-### 1.2 Target Pengguna (10 Role RBAC)
-1.  **Warga:** Registrasi (Auto-accept GPS vs RT/RW), Aktivasi Tempat Sampah 30 hari, Setoran AI + Scan QR, Monitoring Poin & Leaderboard.
-2.  **RT:** Akses monitoring warga & data wilayah RT.
-3.  **RW:** Approval aktivasi Tempat Sampah (+10 Poin atomik), CRUD Pemanfaatan Sampah (Buruan Sae, Maggot, POC), Monitoring Poligon RW.
-4.  **Petugas Residu:** Timbangan manual Kg, Setoran via-RW / mandiri, Monitoring Notifikasi Marker Merah.
-5.  **Pengangkut:** Penugasan otomatis area poligon terdekat, update status armada pengangkutan.
-6.  **Mahasiswa KKN:** Pendaftaran NIM, pendampingan warga gaptek, Presensi Poligon GPS (2 jam akumulasi).
-7.  **DPL:** Pemantauan durasi presensi mahasiswa & penilaian performa KKN.
-8.  **Admin Kelurahan:** Monitoring visual dashboard (Read-Only), drill-down zoom RT/RW.
-9.  **Admin Kecamatan:** Monitoring visual se-Kecamatan (Read-Only), evaluasi diskrepansi AI (`PENDING_REVIEW`).
-10. **Super Admin:** Akses penuh data mentah & log immutable Aktivitas Pemilahan Sampah.
+### 1.2 Target Pengguna & Platform Role Scoping
+1. **Aplikasi Mobile (Thin-Client):** Digunakan eksklusif oleh **Warga**, **Mahasiswa KKN**, dan **Petugas Residu**.
+2. **Aplikasi Web (Superset Dashboard):** Digunakan oleh **Super Admin, Admin Kecamatan, Admin Kelurahan, DPL, Pengangkut, Petugas RW, Petugas RT**, serta **Warga, Mahasiswa KKN, Petugas Residu** (untuk monitoring visual & analytics).
 
 ---
 
-## 2. Struktur Trello Board ("PT Markerindo Project Pengolahan Sampah Kecamatan")
+## 2. Pembagian Tugas & Branching Strategy
 
-### 🟢 DONE (89 Cards)
-- [x] Setup Monorepo, CI/CD Actions, Database Schema & Seeding Data Bandung
-- [x] Backend Clean Architecture & Express API Scaffolding
-- [x] RBAC & JWT Authentication (Auth WA OTP Warga & Email/Password Role Lain)
-- [x] Core Use Case: Setoran AI, Scan QR Bin, Timbangan Residu, Presensi KKN, Pemanfaatan RW
-- [x] Dashboard Analytics (Dominant Category Chart, Pemanfaatan Bar Chart, Fix Overlapping Leaderboard)
+| Branch Name | Codebase Folder | Docs Folder | Yang Dihapus di Branch Ini |
+|---|---|---|---|
+| **`backend`** | `/backend`, `/prisma` | `/docs` | `/frontend`, `/mobile` |
+| **`frontend`** | `/frontend` | `/docs` | `/backend`, `/mobile`, `/prisma` |
+| **`mobile`** | `/mobile` | `/docs` | `/backend`, `/frontend`, `/prisma` |
 
-### ⏳ IN PROGRESS (5 Cards)
-- [ ] **[Fullstack]** Sinkronisasi Sistem Terpadu (BE - FE - Mobile)
-- [ ] **[Mobile]** Mobile Tes Fitur (End-to-End Flow Warga & Mahasiswa)
-- [ ] **[FE Web]** Frontend Tes Fitur (Dashboard Monitoring & Management Data)
-- [ ] **[QA]** Trial & Error Manual & Penyelarasan Skenario Demo
-- [ ] **[Docs]** 📂 Pilah Sampah Cerdas — Project Overview & Synchronization
+---
 
-### 📋 BACKLOG / TASK (19 Cards & Catatan Terbuka)
+## 3. Milestones Sprint 1
+1. **Setup Database Schema (BE):** Migrasi database PostgreSQL (13 tabel) tanpa field NIK (menggunakan Nomor Telepon, NIM, NIP).
+2. **Setup Web Shell (FE):** Dashboard berbasis React + Vite. Setup Halaman Khusus Management Reset Tempat Sampah (RT/RW) & Dashboard Monitoring Warga.
+3. **Setup Mobile Shell (Mobile):** Project Flutter minimalis dengan assets acuan `/mobile/assets/stitch_ui`.
+4. **Integrasi AI Mock (BE):** API deteksi sampah mock sukses, timeout, dan unreadable.
 
-#### 🔴 Butuh Klarifikasi (Top Backlog)
-1. **[Catatan Terbuka] — Pengangkut:** Rumus final ranking leaderboard pengangkut.
-2. **[Catatan Terbuka] — RW:** Field schema spesifik CRUD Pemanfaatan (Buruan Sae, Maggot, POC).
-3. **[Catatan Terbuka] — Monitoring:** Trigger detail kondisi Tempat Sampah bermasalah/rusak.
-4. **[Catatan Terbuka] — GIS:** Skala gradasi warna pekat poligon wilayah berdasarkan akumulasi Kg.
-5. **[Catatan Terbuka] — Backend:** Spesifikasi contract interface AI Vendor.
+---
 
-#### 🟡 Task MVP & Bug Tracker
-- [ ] `🔴 [BUG-001] Missing Backend Geofencing Validation`
-- [ ] `🟡 [BUG-002] AI API Contract Schema Mismatch`
-- [ ] `🟡 [BUG-003] Incorrect Point Reward Calculation Formula`
-- [ ] `🟡 [BUG-004] Missing "Tong Penuh" Notification Event Trigger`
-- [ ] `🟢 [BUG-005] Missing Live Monitoring Geospatial Endpoint`
-- [ ] `🔴 [BUG-006] Security: Missing Route Authentication and Rate Limiting`
+## 4. Trello / Task Board (Sprint 1)
+
+### ✅ DONE
+- [x] **[Mobile]** Merapikan struktur direktori (menggabungkan `mobile_app` ke `mobile`).
+- [x] **[Mobile & BE]** Singkronisasi koneksi: Memperbarui IP Config Mobile (`172.16.0.2` & `127.0.0.1`).
+- [x] **[BE]** Memastikan server backend berjalan dan port 3000 terekspos.
+- [x] **[Mobile]** Perbaikan `InlineCameraWidget` untuk simulasi Scan QR dan Foto Sampah (AI).
+- [x] **[Mobile]** Mengganti `dart:io File` ke `image_picker XFile` untuk kompatibilitas browser Chrome.
+
+### ⏳ IN PROGRESS
+- [ ] **[BE]** Hapus field NIK & perbarui Auth Controller menggunakan Nomor Telepon, NIM (KKN), dan NIP (DPL).
+- [ ] **[FE Web]** Halaman Khusus Management Request Reset Tempat Sampah untuk RT dan RW (terarah per `rt_id`/`rw_id`).
+- [ ] **[FE Web]** Halaman Dashboard Monitoring Warga (Status 2 Tempat Sampah, Grafik Setoran, Leaderboard).
+- [ ] **[Mobile & BE & FE]** Sinkronisasi Sistem Terpadu (BE-FE-Mobile).
+
+### 📝 TODO
+- [ ] **[BE]** Filter otomatis request reset tempat sampah di database berdasarkan `rt_id` & `rw_id` pengurus yang login.
+- [ ] **[BE]** Menyesuaikan *Mock AI* agar mengembalikan jenis sampah secara dinamis berdasarkan input gambar Warga.
+- [ ] **[Mobile]** Menyiapkan panduan *build* APK/IPA jika aplikasi sudah lolos seluruh tahap Trial & Error.
