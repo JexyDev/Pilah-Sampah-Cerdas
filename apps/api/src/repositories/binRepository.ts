@@ -294,7 +294,20 @@ export class BinRepository {
 
   async findKelurahans() {
     return prisma.kelurahan.findMany({
+      include: { _count: { select: { rtRwAreas: true } } },
       orderBy: { name: "asc" },
+    });
+  }
+
+  async createKelurahan(name: string) {
+    return prisma.kelurahan.create({
+      data: { name },
+    });
+  }
+
+  async deleteKelurahan(id: string) {
+    return prisma.kelurahan.delete({
+      where: { id },
     });
   }
 

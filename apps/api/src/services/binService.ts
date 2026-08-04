@@ -766,6 +766,17 @@ export class BinService {
     return binRepository.findKelurahans();
   }
 
+  async createKelurahan(name: string) {
+    if (!name || name.trim().length === 0) {
+      throw new Error("NAMA_KELURAHAN_INVALID");
+    }
+    return binRepository.createKelurahan(name.trim());
+  }
+
+  async deleteKelurahan(id: string) {
+    return binRepository.deleteKelurahan(id);
+  }
+
   async createArea(name: string, kelurahanId: string, latitude?: number, longitude?: number) {
     return binRepository.createArea(name, kelurahanId, latitude, longitude);
   }

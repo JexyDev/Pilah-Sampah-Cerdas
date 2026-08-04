@@ -106,8 +106,19 @@ router.put(
  */
 router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, binController.getMyBins);
-router.get("/areas", binController.getAreas);
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
+router.post(
+  "/kelurahans",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.createKelurahan
+);
+router.delete(
+  "/kelurahans/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  binController.deleteKelurahan
+);
 router.post("/measure", authMiddleware, binController.measure);
 router.post(
   "/areas",

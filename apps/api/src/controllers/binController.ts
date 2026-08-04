@@ -140,6 +140,30 @@ export class BinController {
     }
   }
 
+  async createKelurahan(req: Request, res: Response): Promise<void> {
+    try {
+      const { name } = req.body;
+      if (!name) {
+        res.status(400).json({ success: false, error: "INVALID_INPUT", message: "Nama Kelurahan wajib diisi" });
+        return;
+      }
+      const kelurahan = await binService.createKelurahan(name);
+      res.status(201).json({ success: true, data: kelurahan });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  async deleteKelurahan(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      await binService.deleteKelurahan(id);
+      res.status(200).json({ success: true, message: "Kelurahan berhasil dihapus" });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
   async createArea(req: Request, res: Response): Promise<void> {
     try {
       const { name, kelurahanId, latitude, longitude } = req.body;
