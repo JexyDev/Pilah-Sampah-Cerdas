@@ -292,46 +292,51 @@ export class AuthService {
   }
 
   async resolveRtRwId(rtRw?: string, kelurahan?: string): Promise<number> {
-    let kelName = kelurahan;
-    if (!kelName) {
-      const firstKel = await prisma.kelurahan.findFirst();
-      if (firstKel) {
-        kelName = firstKel.name;
-      } else {
-        kelName = "Default";
+    // If rtRw is numeric string, try parsing directly
+    if (rtRw && !isNaN(Number(rtRw))) {
+      const existingById = await prisma.rtRwArea.findUnique({ where: { id: Number(rtRw) } });
+      if (existingById) return existingById.id;
+    }
+
+    // Try finding by name and optional kelurahan
+    let whereClause: any = {};
+    if (kelurahan) {
+      const kel = await prisma.kelurahan.findFirst({
+        where: { name: { equals: kelurahan, mode: "insensitive" } },
+      });
+      if (kel) {
+        whereClause.kelurahanId = kel.id;
       }
     }
 
-    // Find or create Kelurahan
-    let kel = await prisma.kelurahan.findFirst({
-      where: { name: { equals: kelName, mode: "insensitive" } },
-    });
-    if (!kel) {
-      kel = await prisma.kelurahan.create({
-        data: { name: kelName },
-      });
-    }
-
-    const rtRwName = rtRw || "RT 01 / RW 01";
-
-    // Find or create RtRwArea
-    let area = await prisma.rtRwArea.findFirst({
-      where: {
-        kelurahanId: kel.id,
-        name: { equals: rtRwName, mode: "insensitive" },
-      },
-    });
-
-    if (!area) {
-      area = await prisma.rtRwArea.create({
-        data: {
-          kelurahanId: kel.id,
-          name: rtRwName,
+    if (rtRw) {
+      const areaMatch = await prisma.rtRwArea.findFirst({
+        where: {
+          ...whereClause,
+          name: { contains: rtRw, mode: "insensitive" },
         },
       });
+      if (areaMatch) return areaMatch.id;
     }
 
-    return area.id;
+    // If kelurahan matched but rtRw didn't match specific string, get first area in kelurahan
+    if (whereClause.kelurahanId) {
+      const areaInKel = await prisma.rtRwArea.findFirst({
+        where: { kelurahanId: whereClause.kelurahanId },
+      });
+      if (areaInKel) return areaInKel.id;
+    }
+
+    // Fallback: pick the first registered official RtRwArea in system
+    const defaultArea = await prisma.rtRwArea.findFirst({
+      orderBy: { id: "asc" },
+    });
+
+    if (!defaultArea) {
+      throw new Error("RT_RW_AREA_NOT_FOUND");
+    }
+
+    return defaultArea.id;
   }
 
   /**
