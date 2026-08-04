@@ -82,7 +82,7 @@ class PetugasNotificationView extends ConsumerWidget {
                   onTap: () async {
                     if (!notif.isRead) {
                       await ref.read(markReadProvider.notifier).markRead(notif.id);
-                      ref.invalidate(petugasNotificationsProvider);
+                      ref.invalidate(petugasResiduNotificationsProvider);
                     }
                   },
                   borderRadius: BorderRadius.circular(12),
