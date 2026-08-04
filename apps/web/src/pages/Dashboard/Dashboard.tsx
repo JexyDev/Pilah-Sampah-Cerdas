@@ -2550,7 +2550,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto text-sm">
               <p className="text-xs text-on-surface-variant">
-                Detail material timbulan sampah organik (kompos, sisa makanan) dan anorganik (plastik, kertas, logam) di wilayah Kecamatan Coblong.
+                Detail material timbulan sampah organik (kompos, sisa makanan), anorganik (plastik, kertas, logam), dan residu hilir (b3, popok, TPA) di wilayah Kecamatan Coblong.
               </p>
 
               <div className="space-y-3">
@@ -2574,7 +2574,7 @@ const Dashboard: React.FC = () => {
                 <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
                   <h4 className="font-bold text-blue-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Recycle size={16} />
-                    Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "50%"})
+                    Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "35%"})
                   </h4>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
@@ -2588,6 +2588,27 @@ const Dashboard: React.FC = () => {
                     <div>
                       <span className="text-gray-500 block">Logam / Kaca</span>
                       <strong className="text-blue-900 font-bold">25%</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                  <h4 className="font-bold text-rose-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Trash2 size={16} />
+                    Material Residu Hilir ({stats?.komposisiSampah?.residu?.persentase || "15%"})
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500 block">Popok / Pembalut</span>
+                      <strong className="text-rose-900 font-bold">40% (Timbangan Hilir)</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block">Residu B3 / Medis</span>
+                      <strong className="text-rose-900 font-bold">35% (Timbangan Hilir)</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block">Non-Recyclable / TPA</span>
+                      <strong className="text-rose-900 font-bold">25% (Timbangan Hilir)</strong>
                     </div>
                   </div>
                 </div>
