@@ -3,6 +3,24 @@ import { hashPassword } from "../src/utils/hashUtils.js";
 
 const prisma = new PrismaClient();
 
+const rwNamesPool = [
+  "Bpk. Asep Hendra", "Bpk. Budi Santoso", "Bpk. Cecep Hidayat", "Bpk. Dadang Suherman",
+  "Bpk. Eko Kurniawan", "Bpk. Firman Utina", "Bpk. Gunawan Hidayat", "Bpk. Hendra Setiawan",
+  "Bpk. Irwan Wijaya", "Bpk. Joko Widodo", "Bpk. Kosasih", "Bpk. Lukman Hakim",
+  "Bpk. Maman Abdurrahman", "Bpk. Nana Sumarna", "Bpk. Oman Sukmana", "Bpk. Popon Sutarman",
+  "Bpk. Rahmat Hidayat", "Bpk. Suryana", "Bpk. Tatang Sutarman", "Bpk. Ujang Koswara",
+  "Bpk. Wahyu Hidayat", "Bpk. Yayan Ruhian", "Bpk. Zainal Abidin"
+];
+
+const rtNamesPool = [
+  "Bpk. Agum Gumelar", "Bpk. Bambang Pamungkas", "Bpk. Caca Handika", "Bpk. Dedi Mulyadi",
+  "Bpk. Engkus Kusnadi", "Bpk. Farid Husain", "Bpk. Ganjar Pranowo", "Bpk. Haji Oding",
+  "Bpk. Indra Sjafri", "Bpk. Jajang C. Noer", "Bpk. Kiki Syahnakri", "Bpk. Leman Abidin",
+  "Bpk. Mulyadi", "Bpk. Nuryadi", "Bpk. Otong Lalo", "Bpk. Pamungkas",
+  "Bpk. Ridwan Kamil", "Bpk. Syafruddin", "Bpk. Tono Suratman", "Bpk. Utut Adianto",
+  "Bpk. Wawan Hermawan", "Bpk. Yudi Guntara", "Bpk. Zulkifli"
+];
+
 async function main() {
   console.log("==================================================");
   console.log("🌱 MASTER SEEDING: KECAMATAN COBLONG & HIERARKI PERAN");
@@ -164,11 +182,12 @@ async function main() {
       // Seed RW Account for first 3 RWs of each Kelurahan as real representation
       if (i <= 3) {
         const rwPhone = getNextPhone();
+        const rwHumanName = rwNamesPool[totalRwCreated % rwNamesPool.length];
         await prisma.user.upsert({
           where: { phone: rwPhone },
           update: { rtRwId: area.id, roleId: roleMap["RW"] },
           create: {
-            name: `Ketua ${rwCode} ${kel.name}`,
+            name: rwHumanName,
             phone: rwPhone,
             password: DEFAULT_PASSWORD_HASH,
             roleId: roleMap["RW"],
@@ -180,11 +199,12 @@ async function main() {
 
         // Seed RT Account connected to this RW area
         const rtPhone = getNextPhone();
+        const rtHumanName = rtNamesPool[totalRwCreated % rtNamesPool.length];
         await prisma.user.upsert({
           where: { phone: rtPhone },
           update: { rtRwId: area.id, roleId: roleMap["RT"] },
           create: {
-            name: `Ketua RT 01 / ${rwCode} ${kel.name}`,
+            name: rtHumanName,
             phone: rtPhone,
             password: DEFAULT_PASSWORD_HASH,
             roleId: roleMap["RT"],

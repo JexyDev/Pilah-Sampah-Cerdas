@@ -145,3 +145,30 @@ websocketService.init(server);
 // Initialize Cron Scheduler Service
 import { cronService } from "./services/cronService.js";
 cronService.start();
+
+// Auto-sanitize RT/RW names to human names if dummy names exist in DB
+(async () => {
+  try {
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
+    const dummyUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { name: { contains: "Ketua RT" } },
+          { name: { contains: "Ketua RW" } },
+          { name: { startsWith: "Asep RW" } },
+          { name: { startsWith: "Bambang RT" } },
+        ],
+      },
+    });
+    if (dummyUser) {
+      console.log("[AutoSanitize] Found dummy RT/RW names in DB. Sanitizing to human names...");
+      const { exec } = await import("child_process");
+      exec("npx tsx scripts/fix-rt-rw-human-names.ts", (err, stdout) => {
+        if (!err) console.log("[AutoSanitize] RT/RW human names updated successfully.");
+      });
+    }
+  } catch (e) {
+    // Non-blocking catch
+  }
+})();
