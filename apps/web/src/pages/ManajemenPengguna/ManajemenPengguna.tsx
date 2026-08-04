@@ -1,4 +1,4 @@
-import { Search, Loader2, ShieldAlert, HardHat, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin, GraduationCap } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo

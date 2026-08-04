@@ -229,10 +229,14 @@ router.get("/", authMiddleware, async (req, res) => {
             take: 10,
           });
           const realCriticalBins = fullBins.filter(
-            (b) => Number(b.maxCapacityLiter) > 0 && Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9
+            (b) =>
+              Number(b.maxCapacityLiter) > 0 &&
+              Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9
           );
           criticalBinNotifs = realCriticalBins.map((b) => {
-            const pct = Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100);
+            const pct = Math.round(
+              (Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100
+            );
             return {
               id: `crit-bin-${b.id}`,
               type: "TONG_PENUH",
@@ -273,7 +277,12 @@ router.get("/", authMiddleware, async (req, res) => {
           }
         }
 
-        formattedNotifications = [scheduleNotif, ...criticalBinNotifs, ...reqNotifications, ...userNotifs];
+        formattedNotifications = [
+          scheduleNotif,
+          ...criticalBinNotifs,
+          ...reqNotifications,
+          ...userNotifs,
+        ];
       } catch (err) {
         console.error("[NotificationRoute] Error fetching admin notifications:", err);
       }
@@ -295,8 +304,14 @@ router.get("/", authMiddleware, async (req, res) => {
           });
           myBinOwnerships.forEach((bo) => {
             const b = bo.bin;
-            if (b && Number(b.maxCapacityLiter) > 0 && Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9) {
-              const pct = Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100);
+            if (
+              b &&
+              Number(b.maxCapacityLiter) > 0 &&
+              Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9
+            ) {
+              const pct = Math.round(
+                (Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100
+              );
               formattedNotifications.unshift({
                 id: `my-crit-bin-${b.id}`,
                 type: "TONG_PENUH",

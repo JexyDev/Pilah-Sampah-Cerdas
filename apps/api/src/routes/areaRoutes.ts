@@ -60,7 +60,7 @@ router.get("/rw", async (req, res) => {
       const match = area.name.match(/RW\s*(\d+)/i);
       const rwNum = match ? match[1].padStart(2, "0") : null;
       const rwLabel = rwNum ? `RW ${rwNum}` : area.name;
-      
+
       if (!rwMap.has(rwLabel)) {
         rwMap.set(rwLabel, {
           id: area.id,
@@ -102,7 +102,7 @@ router.get("/rt", async (req, res) => {
         rt: `RT ${rtNum}`,
         name: `RT ${rtNum}`,
         rwId: baseArea ? baseArea.id : null,
-        rwName: baseArea ? baseArea.name : (rw_name ? String(rw_name) : "RW"),
+        rwName: baseArea ? baseArea.name : rw_name ? String(rw_name) : "RW",
       };
     });
 
