@@ -6,6 +6,7 @@ import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widgets/searchable_dropdown.dart';
 import '../../../routes/app_routes.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 /// Layar registrasi Warga baru.
@@ -40,51 +41,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   DateTime? _tglSelesaiKKN;
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
-  final List<String> _kelurahanList = [
-    'Dago',
-    'Bojongsoang',
-    'Sukapura',
-    'Lebak Siliwangi',
-    'Sadang Serang',
-    'Sekeloa',
-    'Lebak Gede',
-    'Cipaganti',
-    'Mengger',
-    'Dayeuhkolot',
-    'Cipagalo',
-    'Bojongsari',
-    'Buahbatu',
-    'Lengkong',
-  ];
-  final List<String> _rtRwList = [
-    '01/01',
-    '02/01',
-    '03/01',
-    '01/02',
-    '02/02',
-    '03/02',
-    '04/02',
-    '01/03',
-    '02/03',
-    '03/03',
-    '01/04',
-    '02/04',
-    '03/04',
-    '04/04',
-    '05/04',
-    '01/05',
-    '02/05',
-    '03/05',
-    '01/06',
-    '02/06',
-    '03/06',
-    '01/07',
-    '02/07',
-    '03/07',
-    '01/08',
-    '02/08',
-    '03/08',
-  ];
+  final List<String> _kelurahanList = [];
+  final List<String> _rtRwList = [];
 
   String _selectedRole = 'Warga';
   bool _obscurePassword = true;
@@ -105,26 +63,28 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     try {
       final repo = ref.read(authRepositoryProvider);
       final res = await repo.fetchTerritories();
-      final kels = res['kelurahans'] as List<String>? ?? [];
-      final rts = res['rtRws'] as List<String>? ?? [];
+      final kels = (res['kelurahans'] as List?)?.map((e) => e.toString()).toList() ?? [];
+      final rts = (res['rtRws'] as List?)?.map((e) => e.toString()).toList() ?? [];
 
       if (mounted) {
         setState(() {
-          if (kels.isNotEmpty) {
-            _kelurahanList.clear();
-            _kelurahanList.addAll(kels);
-            if (!_kelurahanList.contains(_selectedKelurahan)) {
-              _selectedKelurahan = _kelurahanList.first;
-            }
+          _kelurahanList.clear();
+          _kelurahanList.addAll(kels.isNotEmpty ? kels : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot']);
+          if (_kelurahanList.isNotEmpty && !_kelurahanList.contains(_selectedKelurahan)) {
+            _selectedKelurahan = _kelurahanList.first;
           }
-          if (rts.isNotEmpty) {
-            _rtRwList.clear();
-            _rtRwList.addAll(rts);
-          }
+
+          _rtRwList.clear();
+          _rtRwList.addAll(rts.isNotEmpty ? rts : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04']);
         });
       }
     } catch (_) {
-      // Graceful fallback ke list bawaan
+      if (mounted && _kelurahanList.isEmpty) {
+        setState(() {
+          _kelurahanList.addAll(['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa']);
+          _rtRwList.addAll(['01/01', '01/02', '02/02', '01/03', '02/03']);
+        });
+      }
     }
   }
 
