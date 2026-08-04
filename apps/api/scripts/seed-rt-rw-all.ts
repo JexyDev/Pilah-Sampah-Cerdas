@@ -35,29 +35,7 @@ async function main() {
   }
   console.log("✅ 10 Peran (Roles) terverifikasi.");
 
-  // 2. Clean dirty RT/RW areas (where name doesn't follow official standard format)
-  const allCurrentAreas = await prisma.rtRwArea.findMany();
-  const dirtyAreas = allCurrentAreas.filter(
-    (a) => !a.name.match(/^RW \d{2} \(.+\)$/) && !a.name.match(/^RT \d{2} \/ RW \d{2} \(.+\)$/)
-  );
-
-  if (dirtyAreas.length > 0) {
-    console.log(`🧹 Membersihkan ${dirtyAreas.length} data RT/RW acak/dirty...`);
-    const dirtyIds = dirtyAreas.map((a) => a.id);
-
-    // Re-link or update users connected to dirty areas before deletion
-    await prisma.user.updateMany({
-      where: { rtRwId: { in: dirtyIds } },
-      data: { rtRwId: null },
-    });
-
-    await prisma.rtRwArea.deleteMany({
-      where: { id: { in: dirtyIds } },
-    });
-    console.log("✅ Data RT/RW acak berhasil dibersihkan.");
-  }
-
-  // 3. Define 6 Kelurahan & RW Counts in Kecamatan Coblong
+  // 2. Define 6 Kelurahan & RW Counts in Kecamatan Coblong
   const kelurahanMaster = [
     { name: "Dago", rwCount: 13 },
     { name: "Sadang Serang", rwCount: 9 },
@@ -75,7 +53,7 @@ async function main() {
     return `+62812999${phoneCounter}`;
   };
 
-  // 4. Seed Camat & Admin DLH Accounts
+  // 3. Seed Camat & Admin DLH Accounts
   await prisma.user.upsert({
     where: { phone: "+6281200000001" },
     update: { roleId: roleMap["CAMAT"], password: DEFAULT_PASSWORD_HASH },
@@ -104,7 +82,9 @@ async function main() {
 
   console.log("✅ Akun Camat & Admin DLH siap.");
 
-  // 5. Seed Kelurahan, Lurah Accounts, RWs & RW Accounts
+  // 4. Seed Kelurahan, Lurah Accounts, RWs & RW Accounts
+  let fallbackOfficialAreaId: number | null = null;
+
   for (const kelData of kelurahanMaster) {
     const kel = await prisma.kelurahan.upsert({
       where: { name: kelData.name },
@@ -150,6 +130,10 @@ async function main() {
         totalRwCreated++;
       }
 
+      if (!fallbackOfficialAreaId) {
+        fallbackOfficialAreaId = area.id;
+      }
+
       // Seed RW Account for first 3 RWs of each Kelurahan as real representation
       if (i <= 3) {
         const rwPhone = getNextPhone();
@@ -184,6 +168,63 @@ async function main() {
         });
       }
     }
+  }
+
+  // 5. Clean dirty RT/RW areas cleanly after official areas are created
+  const allCurrentAreas = await prisma.rtRwArea.findMany();
+  const dirtyAreas = allCurrentAreas.filter(
+    (a) => !a.name.match(/^RW \d{2} \(.+\)$/) && !a.name.match(/^RT \d{2} \/ RW \d{2} \(.+\)$/)
+  );
+
+  if (dirtyAreas.length > 0 && fallbackOfficialAreaId) {
+    console.log(`🧹 Membersihkan ${dirtyAreas.length} data RT/RW acak/dirty...`);
+    const dirtyIds = dirtyAreas.map((a) => a.id);
+
+    // Re-link connected records to fallback official area
+    await prisma.user.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.household.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.bin.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.facility.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.studentKkn.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.pemanfaatan.updateMany({
+      where: { rwId: { in: dirtyIds } },
+      data: { rwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.setoranManual.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.kknHandoverHistory.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.rtRwArea.deleteMany({
+      where: { id: { in: dirtyIds } },
+    });
+    console.log("✅ Data RT/RW acak berhasil re-link & dibersihkan dari DB.");
   }
 
   const totalRtRwInDb = await prisma.rtRwArea.count();
