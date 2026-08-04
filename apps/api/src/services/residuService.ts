@@ -311,6 +311,15 @@ export class ResiduService {
 
     let targetRwId = user.rtRwId;
 
+    if (!targetRwId) {
+      const assignedRw = await prisma.rtRwArea.findFirst({
+        where: { petugasResiduId: petugasUserId },
+      });
+      if (assignedRw) {
+        targetRwId = assignedRw.id;
+      }
+    }
+
     if (!targetRwId && data.rtRw) {
       const foundRw = await prisma.rtRwArea.findFirst({
         where: { name: { contains: data.rtRw } },
