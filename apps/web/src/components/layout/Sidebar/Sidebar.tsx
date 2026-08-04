@@ -190,19 +190,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     {
       header: "Panel Dosen Pembimbing (DPL)",
       items: [
-        {
-          type: "group",
-          icon: GraduationCap,
-          label: "Navigasi Bimbingan DPL",
-          allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[],
-          children: [
-            { to: "/dashboard-dpl?tab=OVERVIEW", label: "Ringkasan Bimbingan" },
-            { to: "/dashboard-dpl?tab=KELOMPOK", label: "Kelompok Bimbingan" },
-            { to: "/dashboard-dpl?tab=MAHASISWA", label: "Mahasiswa & Dampak Warga" },
-            { to: "/dashboard-dpl?tab=APPROVAL", label: "Persetujuan Sakit / Izin" },
-            { to: "/dashboard-dpl?tab=MAP", label: "Peta Sebaran RW" },
-          ],
-        },
+        { to: "/dashboard-dpl?tab=OVERVIEW", icon: LayoutDashboard, label: "Ringkasan Bimbingan", allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        { to: "/dashboard-dpl?tab=KELOMPOK", icon: Users, label: "Kelompok Bimbingan", allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        { to: "/dashboard-dpl?tab=MAHASISWA", icon: GraduationCap, label: "Mahasiswa & Dampak Warga", allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        { to: "/dashboard-dpl?tab=APPROVAL", icon: ClipboardCheck, label: "Persetujuan Sakit / Izin", allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
+        { to: "/dashboard-dpl?tab=MAP", icon: MapPin, label: "Peta Sebaran RW", allowed: ["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"] as UserRole[] },
       ],
     },
     {
