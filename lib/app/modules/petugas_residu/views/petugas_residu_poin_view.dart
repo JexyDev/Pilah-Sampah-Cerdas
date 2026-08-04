@@ -24,7 +24,10 @@ class PetugasResiduPoinView extends ConsumerWidget {
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),

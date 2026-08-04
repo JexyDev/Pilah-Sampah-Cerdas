@@ -100,16 +100,6 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                 children: [
                   _buildStepCard(
                     stepNumber: '1',
-                    title: 'Pantau Kapasitas Bin (>70%)',
-                    icon: Icons.analytics_rounded,
-                    color: AppColors.primaryBlue,
-                    description:
-                        'Cek grafik kapasitas tong residu di Dashboard. Jika tong mencapai warna kuning/merah (>70%), tandanya tong siap dijemput & ditimbang.',
-                    tips: 'Tips: Prioritaskan wilayah yang statusnya kritis.',
-                  ),
-                  const SizedBox(height: 14),
-                  _buildStepCard(
-                    stepNumber: '2',
                     title: 'Input Timbangan Residu (Kg)',
                     icon: Icons.scale_rounded,
                     color: AppColors.primaryGreen,
@@ -119,7 +109,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   _buildStepCard(
-                    stepNumber: '3',
+                    stepNumber: '2',
                     title: 'Catat Pelanggaran (Opsional)',
                     icon: Icons.report_problem_rounded,
                     color: AppColors.dangerRed,
@@ -129,7 +119,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   _buildStepCard(
-                    stepNumber: '4',
+                    stepNumber: '3',
                     title: 'Cek Riwayat & Performa KPI',
                     icon: Icons.stars_rounded,
                     color: AppColors.warningOrange,
@@ -143,27 +133,30 @@ class SopKerjaPetugasWidget extends StatelessWidget {
             ),
           ),
 
-          // Bottom Action Button
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          // Bottom Action Button Responsif dengan SafeArea
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Saya Mengerti & Siap Bertugas',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Saya Mengerti & Siap Bertugas',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

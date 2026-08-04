@@ -95,7 +95,10 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
         title: const Text('Riwayat Tugas & Pelanggaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),

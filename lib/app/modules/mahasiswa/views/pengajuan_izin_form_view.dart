@@ -107,6 +107,10 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         ),
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         elevation: 0,
       ),
       body: _isSuccess ? _buildSuccessView() : _buildForm(),

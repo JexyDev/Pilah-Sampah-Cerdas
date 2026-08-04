@@ -39,6 +39,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         ),
         backgroundColor: AppColors.primaryGreen,
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           if (_selectedScheduleId != null)
             IconButton(

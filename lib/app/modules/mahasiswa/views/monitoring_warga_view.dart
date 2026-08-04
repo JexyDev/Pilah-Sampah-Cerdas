@@ -214,8 +214,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       appBar: AppBar(
         title: Text(isAktivasiBinMode ? 'Pilih Warga' : 'Monitoring Warga Dampingan', style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
         backgroundColor: AppColors.primaryGreen,
-        leading: isAktivasiBinMode ? const BackButton(color: Colors.white) : null,
-        automaticallyImplyLeading: isAktivasiBinMode,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
