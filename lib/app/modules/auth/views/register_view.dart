@@ -626,27 +626,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                        child: Column(
                                          crossAxisAlignment: CrossAxisAlignment.start,
                                          children: [
-                                           _buildLabel('KECAMATAN'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _kecamatanController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Kecamatan',
-                                               prefixIcon: Icon(Icons.map_outlined, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                     const SizedBox(width: 16),
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
                                            _buildLabel('NAMA DPL'),
                                            const SizedBox(height: 6),
                                            TextFormField(
