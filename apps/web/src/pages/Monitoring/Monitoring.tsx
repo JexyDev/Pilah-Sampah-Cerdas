@@ -144,22 +144,19 @@ const Monitoring: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await fetchBins();
-      
-      const kpiRes = await api.get("/dashboard/kpi", {
-        params: { wilayah: apiFilterWilayah },
-      });
-      const trendRes = await api.get("/dashboard/trend", {
-        params: { wilayah: apiFilterWilayah },
-      });
-      const facRes = await api.get("/facilities");
+      await fetchBins().catch(() => {});
 
-      if (kpiRes.data.success) setKpi(kpiRes.data.data);
-      if (trendRes.data.success) setTrends(trendRes.data.data);
-      if (facRes.data.success) setFacilities(facRes.data.data);
+      const [kpiRes, trendRes, facRes] = await Promise.all([
+        api.get("/dashboard/kpi", { params: { wilayah: apiFilterWilayah } }).catch(() => ({ data: { success: false } })),
+        api.get("/dashboard/trend", { params: { wilayah: apiFilterWilayah } }).catch(() => ({ data: { success: false } })),
+        api.get("/facilities").catch(() => ({ data: { success: false } })),
+      ]);
+
+      if (kpiRes.data?.success && kpiRes.data.data) setKpi(kpiRes.data.data);
+      if (trendRes.data?.success && trendRes.data.data) setTrends(trendRes.data.data);
+      if (facRes.data?.success && facRes.data.data) setFacilities(facRes.data.data);
     } catch (e) {
       console.error("Gagal memuat analitik dashboard:", e);
-      toast.error("Gagal memuat visualisasi real-time");
     } finally {
       setLoading(false);
     }
