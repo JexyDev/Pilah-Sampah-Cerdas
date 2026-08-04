@@ -96,6 +96,39 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   Timer? _toastTimer;
 
   @override
+  void initState() {
+    super.initState();
+    _loadDynamicTerritories();
+  }
+
+  Future<void> _loadDynamicTerritories() async {
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      final res = await repo.fetchTerritories();
+      final kels = res['kelurahans'] as List<String>? ?? [];
+      final rts = res['rtRws'] as List<String>? ?? [];
+
+      if (mounted) {
+        setState(() {
+          if (kels.isNotEmpty) {
+            _kelurahanList.clear();
+            _kelurahanList.addAll(kels);
+            if (!_kelurahanList.contains(_selectedKelurahan)) {
+              _selectedKelurahan = _kelurahanList.first;
+            }
+          }
+          if (rts.isNotEmpty) {
+            _rtRwList.clear();
+            _rtRwList.addAll(rts);
+          }
+        });
+      }
+    } catch (_) {
+      // Graceful fallback ke list bawaan
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();

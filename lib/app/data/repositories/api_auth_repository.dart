@@ -750,4 +750,26 @@ class ApiAuthRepository implements AuthRepository {
 
     return user;
   }
+
+  @override
+  Future<Map<String, dynamic>> fetchTerritories() async {
+    try {
+      final response = await apiClient.dio.get('/territories');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          return {
+            'kelurahans': (data['kelurahans'] as List?)?.map((e) => e.toString()).toList() ?? [],
+            'rtRws': (data['rtRws'] as List?)?.map((e) => e.toString()).toList() ?? [],
+          };
+        }
+      }
+    } catch (_) {
+      // Non-critical fallback
+    }
+    return {
+      'kelurahans': ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot', 'Cipagalo', 'Bojongsari', 'Buahbatu', 'Lengkong'],
+      'rtRws': ['01/01', '02/01', '03/01', '01/02', '02/02', '03/02', '04/02', '01/03', '02/03', '03/03', '01/04', '02/04', '03/04', '04/04', '05/04', '01/05', '02/05', '03/05', '01/06', '02/06', '03/06', '01/07', '02/07', '03/07', '01/08', '02/08', '03/08'],
+    };
+  }
 }
