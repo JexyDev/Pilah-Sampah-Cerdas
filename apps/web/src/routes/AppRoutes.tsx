@@ -121,7 +121,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="monitoring-aktivitas"
           element={
-            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_ADMIN", "ADMIN_DLH"]}>
               <AktivitasMonitoring />
             </ProtectedRoute>
           }
@@ -320,7 +320,14 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route path="peta" element={<ManajemenLokasi />} />
-        <Route path="evaluasi-ai" element={<ReviewDiscrepancy />} />
+        <Route
+          path="evaluasi-ai"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+              <ReviewDiscrepancy />
+            </ProtectedRoute>
+          }
+        />
         <Route path="lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
         <Route
           path="setor"
@@ -401,7 +408,8 @@ const AppRoutes: React.FC = () => {
         <Route path="tentang" element={<TentangAplikasi />} />
         <Route path="*" element={<NotFound />} />
       </Route>
-      <Route path="/kkn/monitoring-warga" element={<KknWargaMonitoring />} />\n    </Routes>
+      <Route path="/kkn/monitoring-warga" element={<KknWargaMonitoring />} />
+    </Routes>
   );
 };
 

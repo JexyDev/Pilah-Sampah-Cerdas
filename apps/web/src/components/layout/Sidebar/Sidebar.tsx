@@ -228,7 +228,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           allowed: ["SUPER_ADMIN", "ADMIN_DLH"] as UserRole[],
           children: [
             { to: "/manajemen-pengguna", label: "Semua Pengguna" },
-            { to: "/manajemen-pengguna?role=ADMIN_DLH", label: "Admin & Eksekutif" },
+            { to: "/manajemen-pengguna?role=EKSEKUTIF", label: "Admin & Eksekutif" },
             { to: "/manajemen-pengguna?role=CAMAT", label: "Camat" },
             { to: "/manajemen-pengguna?role=LURAH", label: "Lurah" },
             { to: "/manajemen-pengguna?role=RW", label: "Pengurus RW / RT" },
