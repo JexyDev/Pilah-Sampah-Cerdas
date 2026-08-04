@@ -157,21 +157,26 @@ export default function SetorSampah() {
     },
   ];
 
+  // Helper to format Warga name cleanly
+  const cleanWargaName = (rawName: string) => {
+    if (!rawName) return "Warga Coblong";
+    let cleaned = rawName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim();
+    return cleaned || "Warga Coblong";
+  };
+
   // Helper to format image URL with fallback
   const getPhotoUrl = (log: DepositLog) => {
-    if (log.fotoUrl) {
-      if (log.fotoUrl.startsWith("http://") || log.fotoUrl.startsWith("https://")) {
+    if (log.fotoUrl && log.fotoUrl.length > 5 && !log.fotoUrl.includes("default-residu")) {
+      if (log.fotoUrl.startsWith("http://") || log.fotoUrl.startsWith("https://") || log.fotoUrl.startsWith("data:image/")) {
         return log.fotoUrl;
       }
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      return `${baseUrl.replace(/\/api\/v1$/, "")}${log.fotoUrl.startsWith("/") ? "" : "/"}${log.fotoUrl}`;
+      return log.fotoUrl.startsWith("/") ? log.fotoUrl : `/${log.fotoUrl}`;
     }
-    // Fallback placeholder images based on category
-    if (log.jenis.toLowerCase() === "organik") {
+    // High quality Unsplash waste sorting demo images
+    if (log.jenis?.toLowerCase() === "organik") {
       return "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80";
-    } else {
-      return "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80";
     }
+    return "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80";
   };
 
   // Helper to format confidence percentage properly (converting decimal <= 1 or missing value)
@@ -485,7 +490,7 @@ export default function SetorSampah() {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-800">{log.warga}</p>
+                        <p className="font-bold text-slate-800">{cleanWargaName(log.warga)}</p>
                         <p className="text-[10px] text-slate-500 font-semibold">
                           {log.rtRw} • {log.kelurahan || "Coblong"}
                         </p>

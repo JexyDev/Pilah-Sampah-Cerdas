@@ -14,25 +14,31 @@ export const transactionController = {
       const { binCode } = req.query;
       const deposits = await transactionService.getDeposits(binCode as string);
 
-      const mappedDeposits = deposits.map((d: any) => ({
-        id: d.id,
-        warga: d.warga?.name || "Warga Coblong",
-        phone: d.warga?.phone || "-",
-        rtRw: d.warga?.rtRw?.name || "RT 01 / RW 01",
-        kelurahan: d.warga?.rtRw?.kelurahan?.name || "Coblong",
-        jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        berat: Number(d.berat),
-        poin: Math.round(Number(d.poin)),
-        waktu: d.createdAt,
-        status: "Selesai",
-        lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
-        confidence: d.confidenceAi
-          ? Number(d.confidenceAi) <= 1
-            ? Math.round(Number(d.confidenceAi) * 100)
-            : Math.round(Number(d.confidenceAi))
-          : 90 + (Math.abs(d.id.charCodeAt(0) || 5) % 9),
-        fotoUrl: d.fotoSampahUrl || d.fotoUrl || null,
-      }));
+      const mappedDeposits = deposits.map((d: any) => {
+        let wargaName = d.warga?.name || "Warga Coblong";
+        wargaName = wargaName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim();
+        if (!wargaName) wargaName = "Warga Coblong";
+
+        return {
+          id: d.id,
+          warga: wargaName,
+          phone: d.warga?.phone || "-",
+          rtRw: d.warga?.rtRw?.name || "RT 01 / RW 01",
+          kelurahan: d.warga?.rtRw?.kelurahan?.name || "Coblong",
+          jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          berat: Number(d.berat),
+          poin: Math.round(Number(d.poin)),
+          waktu: d.createdAt,
+          status: "Selesai",
+          lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
+          confidence: d.confidenceAi
+            ? Number(d.confidenceAi) <= 1
+              ? Math.round(Number(d.confidenceAi) * 100)
+              : Math.round(Number(d.confidenceAi))
+            : 90 + (Math.abs(d.id.charCodeAt(0) || 5) % 9),
+          fotoUrl: d.fotoSampahUrl || d.fotoUrl || null,
+        };
+      });
 
       res.status(200).json({ success: true, data: mappedDeposits });
     } catch (error) {
