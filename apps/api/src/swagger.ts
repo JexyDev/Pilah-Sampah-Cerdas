@@ -19,13 +19,31 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
-        description: "Development Server",
+        url: "http://157.10.252.252/api/v1",
+        description: "VPS Production Server (157.10.252.252)",
+      },
+      {
+        url: "http://localhost:3000/api/v1",
+        description: "Local Development Server",
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Masukkan JWT Token dari response login (tanpa prefix Bearer)",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
       },
     ],
   },
-  // Path to the API docs (both source TS and compiled JS files)
-  apis: ["./src/routes/*.ts", "./src/routes/*.js", "./dist/routes/*.js"],
+  apis: ["./src/routes/*.ts", "./src/routes/*.js", "./dist/routes/*.js", "./apps/api/src/routes/*.ts"],
 };
 
 const swaggerSpec = swaggerJSDoc(options);

@@ -106,13 +106,68 @@ router.put(
  */
 router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, binController.getMyBins);
+/**
+ * @swagger
+ * /bins/kelurahans:
+ *   get:
+ *     summary: Get list of all Kelurahans
+ *     tags: [Bins / Locations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of registered Kelurahans
+ */
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
+
+/**
+ * @swagger
+ * /bins/kelurahans:
+ *   post:
+ *     summary: Create new Kelurahan (Admin DLH / Super Admin)
+ *     tags: [Bins / Locations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Dago
+ *     responses:
+ *       201:
+ *         description: Kelurahan created successfully
+ */
 router.post(
   "/kelurahans",
   authMiddleware,
   roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
   binController.createKelurahan
 );
+
+/**
+ * @swagger
+ * /bins/kelurahans/{id}:
+ *   delete:
+ *     summary: Delete a Kelurahan
+ *     tags: [Bins / Locations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Kelurahan deleted successfully
+ */
 router.delete(
   "/kelurahans/:id",
   authMiddleware,
