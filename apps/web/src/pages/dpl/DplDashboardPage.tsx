@@ -72,14 +72,14 @@ const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
   return L.divIcon({
     className: "custom-kelurahan-pin-icon",
     html: `
-      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
-        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
-        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
+      <div style="background: #ffffff; color: #0f172a; padding: 6px 12px; border-radius: 9999px; border: 2.5px solid #059669; box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.35), 0 4px 12px -2px rgba(0,0,0,0.18); font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap;">
+        <div style="background: #ecfdf5; color: #059669; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px;">📍</div>
+        <span style="font-weight: 800; font-size: 12px; color: #0f172a; letter-spacing: -0.01em;">Kel. ${kelName}</span>
+        <span style="background: #059669; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2.5px 9px; border-radius: 9999px; letter-spacing: 0.02em;">${rwCount} RW</span>
       </div>
     `,
-    iconSize: [130, 36],
-    iconAnchor: [65, 18],
+    iconSize: [140, 36],
+    iconAnchor: [70, 18],
   });
 };
 
@@ -140,12 +140,12 @@ export const DplDashboardPage: React.FC = () => {
 
   const kelurahanCentroids = useMemo(
     () => [
-      { name: "Dago", lat: -6.8850, lng: 107.6140 },
-      { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
-      { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
-      { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
-      { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
-      { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
+      { name: "Dago", lat: -6.8790, lng: 107.6160 },
+      { name: "Sadang Serang", lat: -6.8970, lng: 107.6270 },
+      { name: "Sekeloa", lat: -6.8880, lng: 107.6240 },
+      { name: "Lebak Gede", lat: -6.8890, lng: 107.6120 },
+      { name: "Lebak Siliwangi", lat: -6.8860, lng: 107.6040 },
+      { name: "Cipaganti", lat: -6.8960, lng: 107.6030 },
     ],
     []
   );
