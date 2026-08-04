@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { 
   LayoutDashboard, 
   Trash2, 
@@ -37,7 +37,7 @@ import {
   Shield
 } from "lucide-react";
 
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -52,24 +52,34 @@ interface NavItemProps {
   badge?: number;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) =>
-      `flex items-center px-4 py-3 rounded-r-xl transition-all text-[13px] ${
-        isActive
+const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
+  const location = useLocation();
+  const currentPathWithSearch = location.pathname + location.search;
+
+  const isCurrentActive = useMemo(() => {
+    if (to.includes("?")) {
+      return currentPathWithSearch === to;
+    }
+    return location.pathname === to;
+  }, [to, location.pathname, currentPathWithSearch]);
+
+  return (
+    <Link
+      to={to}
+      className={`flex items-center px-4 py-3 rounded-r-xl transition-all text-[13px] ${
+        isCurrentActive
           ? "bg-secondary-fixed text-on-secondary-fixed-variant border-l-4 border-secondary font-bold"
           : "text-on-surface-variant hover:bg-surface-container-high"
-      }`
-    }
-  >
-    <Icon className="mr-3 text-[20px]" size={20} />
-    <span className="flex-1">{label}</span>
-    {badge !== undefined && (
-      <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{badge}</span>
-    )}
-  </NavLink>
-);
+      }`}
+    >
+      <Icon className="mr-3 text-[20px]" size={20} />
+      <span className="flex-1">{label}</span>
+      {badge !== undefined && (
+        <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{badge}</span>
+      )}
+    </Link>
+  );
+};
 
 const NavGroup: React.FC<{
   icon: LucideIcon;
