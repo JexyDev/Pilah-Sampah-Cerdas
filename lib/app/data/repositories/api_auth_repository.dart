@@ -753,23 +753,45 @@ class ApiAuthRepository implements AuthRepository {
 
   @override
   Future<Map<String, dynamic>> fetchTerritories() async {
+    List<String> kelurahans = [];
+    List<String> rtRws = [];
+    List<Map<String, dynamic>> rtRwListRaw = [];
+
     try {
-      final response = await apiClient.dio.get('/territories');
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data;
-        if (data is Map<String, dynamic>) {
-          return {
-            'kelurahans': (data['kelurahans'] as List?)?.map((e) => e.toString()).toList() ?? [],
-            'rtRws': (data['rtRws'] as List?)?.map((e) => e.toString()).toList() ?? [],
-          };
+      final rtRwResp = await apiClient.dio.get('/areas/rt-rw');
+      if (rtRwResp.statusCode == 200 && rtRwResp.data != null) {
+        final list = rtRwResp.data is List ? rtRwResp.data as List : (rtRwResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          if (item is Map<String, dynamic>) {
+            final name = item['name']?.toString() ?? '';
+            final kel = item['kelurahan']?.toString() ?? '';
+            if (name.isNotEmpty) rtRws.add(name);
+            if (kel.isNotEmpty && !kelurahans.contains(kel)) kelurahans.add(kel);
+            rtRwListRaw.add(item);
+          } else if (item is String && item.isNotEmpty) {
+            rtRws.add(item);
+          }
         }
       }
-    } catch (_) {
-      // Non-critical fallback
-    }
+    } catch (_) {}
+
+    try {
+      if (kelurahans.isEmpty) {
+        final kelResp = await apiClient.dio.get('/areas/kelurahan');
+        if (kelResp.statusCode == 200 && kelResp.data != null) {
+          final list = kelResp.data is List ? kelResp.data as List : (kelResp.data['data'] as List? ?? []);
+          for (final item in list) {
+            final name = item is Map ? (item['name']?.toString() ?? '') : item.toString();
+            if (name.isNotEmpty && !kelurahans.contains(name)) kelurahans.add(name);
+          }
+        }
+      }
+    } catch (_) {}
+
     return {
-      'kelurahans': ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot', 'Cipagalo', 'Bojongsari', 'Buahbatu', 'Lengkong'],
-      'rtRws': ['01/01', '02/01', '03/01', '01/02', '02/02', '03/02', '04/02', '01/03', '02/03', '03/03', '01/04', '02/04', '03/04', '04/04', '05/04', '01/05', '02/05', '03/05', '01/06', '02/06', '03/06', '01/07', '02/07', '03/07', '01/08', '02/08', '03/08'],
+      'kelurahans': kelurahans.isNotEmpty ? kelurahans : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot'],
+      'rtRws': rtRws.isNotEmpty ? rtRws : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04'],
+      'rawRtRw': rtRwListRaw,
     };
   }
 }
