@@ -211,11 +211,6 @@ async function main() {
       data: { rwId: fallbackOfficialAreaId },
     });
 
-    await prisma.setoranManual.updateMany({
-      where: { rtRwId: { in: dirtyIds } },
-      data: { rtRwId: fallbackOfficialAreaId },
-    });
-
     await prisma.kknHandoverHistory.updateMany({
       where: { rtRwId: { in: dirtyIds } },
       data: { rtRwId: fallbackOfficialAreaId },
