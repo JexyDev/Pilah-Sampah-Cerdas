@@ -44,6 +44,22 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final List<String> _kelurahanList = [];
   final List<String> _rtRwList = [];
 
+  List<String> get _availableRtList {
+    if (_rtRwList.isEmpty) return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
+    final rts = _rtRwList.map((e) => e.split('/')[0].trim()).toSet().toList()..sort();
+    return rts;
+  }
+
+  List<String> get _availableRwList {
+    if (_rtRwList.isEmpty) return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
+    final rws = _rtRwList
+        .map((e) => e.split('/').length > 1 ? e.split('/')[1].trim() : '01')
+        .toSet()
+        .toList()
+      ..sort();
+    return rws;
+  }
+
   String _selectedRole = 'Warga';
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -482,54 +498,52 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   },
                                 ),
                                  const SizedBox(height: 16),
-                                 Row(
-                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                   children: [
-                                     Expanded(
-                                       child: SearchableDropdownField<String>(
-                                         labelText: 'RT',
-                                         hintText: 'Pilih RT',
-                                         prefixIcon: Icons.home_outlined,
-                                         value: _selectedRtRw.split('/')[0],
-                                         items: List.generate(
-                                           10,
-                                           (i) => DropdownItem(
-                                             value: (i + 1).toString().padLeft(2, '0'),
-                                             label: 'RT ${(i + 1).toString().padLeft(2, '0')}',
-                                           ),
-                                         ),
-                                         onChanged: (val) {
-                                           if (val != null) {
-                                             final currentRw = _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02';
-                                             setState(() => _selectedRtRw = '$val/$currentRw');
-                                           }
-                                         },
-                                       ),
-                                     ),
-                                     const SizedBox(width: 12),
-                                     Expanded(
-                                       child: SearchableDropdownField<String>(
-                                         labelText: 'RW',
-                                         hintText: 'Pilih RW',
-                                         prefixIcon: Icons.location_city_rounded,
-                                         value: _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02',
-                                         items: List.generate(
-                                           10,
-                                           (i) => DropdownItem(
-                                             value: (i + 1).toString().padLeft(2, '0'),
-                                             label: 'RW ${(i + 1).toString().padLeft(2, '0')}',
-                                           ),
-                                         ),
-                                         onChanged: (val) {
-                                           if (val != null) {
-                                             final currentRt = _selectedRtRw.split('/')[0];
-                                             setState(() => _selectedRtRw = '$currentRt/$val');
-                                           }
-                                         },
-                                       ),
-                                     ),
-                                   ],
-                                 ),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: SearchableDropdownField<String>(
+                                          labelText: 'RT',
+                                          hintText: 'Pilih RT',
+                                          prefixIcon: Icons.home_outlined,
+                                          value: _selectedRtRw.split('/')[0],
+                                          items: _availableRtList
+                                              .map((rt) => DropdownItem(
+                                                    value: rt,
+                                                    label: 'RT $rt',
+                                                  ))
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              final currentRw = _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02';
+                                              setState(() => _selectedRtRw = '$val/$currentRw');
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: SearchableDropdownField<String>(
+                                          labelText: 'RW',
+                                          hintText: 'Pilih RW',
+                                          prefixIcon: Icons.location_city_rounded,
+                                          value: _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02',
+                                          items: _availableRwList
+                                              .map((rw) => DropdownItem(
+                                                    value: rw,
+                                                    label: 'RW $rw',
+                                                  ))
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              final currentRt = _selectedRtRw.split('/')[0];
+                                              setState(() => _selectedRtRw = '$currentRt/$val');
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                  const SizedBox(height: 16),
                               ],
 
