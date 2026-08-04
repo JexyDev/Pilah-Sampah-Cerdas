@@ -34,15 +34,21 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _kecamatanController = TextEditingController();
   final _dplNameController = TextEditingController();
   String _selectedJenjang = 'S1';
-  String _selectedKelurahan = 'Bojongsoang';
+  String _selectedKelurahan = 'Dago';
   String _selectedRtRw = '01/02';
   DateTime? _tglMulaiKKN;
   DateTime? _tglSelesaiKKN;
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
   final List<String> _kelurahanList = [
+    'Dago',
     'Bojongsoang',
     'Sukapura',
+    'Lebak Siliwangi',
+    'Sadang Serang',
+    'Sekeloa',
+    'Lebak Gede',
+    'Cipaganti',
     'Mengger',
     'Dayeuhkolot',
     'Cipagalo',
