@@ -108,10 +108,10 @@ router.get("/locations", binController.getLocations);
 router.get("/my-bins", authMiddleware, binController.getMyBins);
 /**
  * @swagger
- * /bins/kelurahans:
+ * /api/v1/bins/kelurahans:
  *   get:
- *     summary: Get list of all Kelurahans
- *     tags: [Bins / Locations]
+ *     summary: Mendapatkan daftar seluruh Kelurahan (Coblong)
+ *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -122,10 +122,10 @@ router.get("/kelurahans", authMiddleware, binController.getKelurahans);
 
 /**
  * @swagger
- * /bins/kelurahans:
+ * /api/v1/bins/kelurahans:
  *   post:
- *     summary: Create new Kelurahan (Admin DLH / Super Admin)
- *     tags: [Bins / Locations]
+ *     summary: Tambah Kelurahan Baru (Admin DLH / Super Admin)
+ *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -152,10 +152,10 @@ router.post(
 
 /**
  * @swagger
- * /bins/kelurahans/{id}:
+ * /api/v1/bins/kelurahans/{id}:
  *   delete:
- *     summary: Delete a Kelurahan
- *     tags: [Bins / Locations]
+ *     summary: Hapus Kelurahan (Admin DLH / Super Admin)
+ *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
  *     parameters:

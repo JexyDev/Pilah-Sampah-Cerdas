@@ -31,6 +31,18 @@ const options: swaggerJSDoc.Options = {
         description: "Localhost Server",
       },
     ],
+    tags: [
+      { name: "Authentication", description: "Login, OTP WhatsApp, Logout, & Session Status" },
+      { name: "Executive & Monitoring (Camat, Lurah, Admin DLH)", description: "API Read-Only Web Monitoring untuk Camat, Lurah, dan Admin DLH" },
+      { name: "Kelurahan & Wilayah", description: "Manajemen Kelurahan (Dago, Sekeloa, dll), RW, & RT Coblong" },
+      { name: "Petugas Residu", description: "API Khusus Petugas Residu (Input Timbangan Manual & Web Monitoring Hilir)" },
+      { name: "DPL", description: "API Monitoring & Evaluasi Dosen Pembimbing Lapangan (DPL)" },
+      { name: "Mahasiswa KKN", description: "API Penugasan, QR Batch, Absensi & Dampingan Mahasiswa KKN" },
+      { name: "Pengurus RW", description: "API Approval Warga, Fasilitas, & Ide Daur Ulang Pengurus RW/RT" },
+      { name: "Bins", description: "Manajemen Tempat Sampah, Status QR, & Aktivasi" },
+      { name: "Users", description: "Manajemen Pengguna & Profil" },
+      { name: "Dashboard", description: "Statistik KPI & Agregasi Wilayah" },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -47,7 +59,14 @@ const options: swaggerJSDoc.Options = {
       },
     ],
   },
-  apis: ["./src/routes/*.ts", "./src/routes/*.js", "./dist/routes/*.js", "./apps/api/src/routes/*.ts"],
+  apis: [
+    "./src/routes/*.ts",
+    "./src/routes/*.js",
+    "./dist/routes/*.js",
+    "apps/api/src/routes/*.ts",
+    "apps/api/src/routes/*.js",
+    "apps/api/dist/routes/*.js"
+  ],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
