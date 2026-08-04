@@ -60,6 +60,7 @@ async function main() {
   const areas = [
     { kel: 'Dago', rw: '01', lat: -6.873, lng: 107.618 },
     { kel: 'Dago', rw: '02', lat: -6.875, lng: 107.619 },
+    { kel: 'Dago', rw: '06', lat: -6.878, lng: 107.616 },
     { kel: 'Sekeloa', rw: '01', lat: -6.885, lng: 107.617 },
     { kel: 'Sekeloa', rw: '02', lat: -6.887, lng: 107.618 },
     { kel: 'Lebak Gede', rw: '01', lat: -6.892, lng: 107.615 }
@@ -83,6 +84,9 @@ async function main() {
       rtRwObjects.push(rtRw);
     }
   }
+
+  // Also resolve existing RW 06 Dago area (ID 14) if present
+  const rw06DagoArea = await prisma.rtRwArea.findFirst({ where: { name: { contains: "RW 06", mode: "insensitive" } } });
 
   // 5. Setup Users
   const salt = await bcrypt.genSalt(10);
@@ -118,13 +122,16 @@ async function main() {
     });
   };
 
+  const rw06TargetId = rw06DagoArea?.id || (rtRwObjects.find(r => r.name.includes("RW 06"))?.id ?? null);
+
   const adminSeeds = [
     { phone: "+628111111111", name: "Super Admin TrashCare", role: "SUPER_ADMIN", rtRwId: null },
     { phone: "+628111111112", name: "Admin DLH Bandung", role: "ADMIN_DLH", rtRwId: null },
     { phone: "+628111111113", name: "Camat Coblong", role: "CAMAT", rtRwId: null },
     { phone: "+628111111114", name: "Lurah Dago", role: "LURAH", rtRwId: null },
     { phone: "+628111111115", name: "Asep RW 01", role: "RW", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null },
-    { phone: "+628111111116", name: "Bambang RT 01", role: "RT", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null }
+    { phone: "+628111111116", name: "Bambang RT 01", role: "RT", rtRwId: rtRwObjects.length > 0 ? rtRwObjects[0].id : null },
+    { phone: "+6281234567803", name: "Asep RW 06", role: "RW", rtRwId: rw06TargetId }
   ];
 
   for (const admin of adminSeeds) {
@@ -344,14 +351,14 @@ async function main() {
   // Tambahkan Data Residu
   for (const rtRw of rtRwObjects) {
       const numResidu = Math.floor(Math.random() * 20) + 10;
-      const petugas = await prisma.petugasResidu.findFirst({ where: { user: { rtRwId: rtRw.id } } });
-      if (petugas) {
+      const petugasUser = await prisma.user.findFirst({ where: { role: { name: "PETUGAS_RESIDU" }, rtRwId: rtRw.id } });
+      if (petugasUser) {
           for (let r=0; r<numResidu; r++) {
               const date = new Date(Date.now() - Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000);
               await prisma.setoranManual.create({
                   data: {
-                      petugasResiduId: petugas.userId,
-                      diinputOleh: 'petugas',
+                      petugasResiduId: petugasUser.id,
+                      diinputOleh: petugasUser.name,
                       rwId: rtRw.id,
                       fotoResiduUrl: 'https://dummyimage.com/600x400/ff0000/fff&text=Residu',
                       berat: (Math.random() * 15) + 5,

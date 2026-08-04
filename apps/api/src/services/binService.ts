@@ -22,6 +22,42 @@ const DENSITY = {
   NON_ORGANIC: 0.2, // Non-organic is lighter
 };
 
+// Helper to find local RW/RT and Petugas staff for a given bin area
+async function getStaffForBin(binRtRwId: number | null) {
+  if (!binRtRwId) return [];
+
+  const area = await prisma.rtRwArea.findUnique({
+    where: { id: binRtRwId },
+  });
+  if (!area) return [];
+
+  const rwPart =
+    area.name
+      .split("/")
+      .map((s) => s.trim())
+      .find((s) => s.startsWith("RW")) || area.name;
+
+  const matchingAreas = await prisma.rtRwArea.findMany({
+    where: {
+      kelurahanId: area.kelurahanId,
+      name: { contains: rwPart },
+    },
+    select: { id: true },
+  });
+
+  let areaIds = matchingAreas.map((a) => a.id);
+  if (areaIds.length === 0) areaIds = [binRtRwId];
+
+  return prisma.user.findMany({
+    where: {
+      rtRwId: { in: areaIds },
+      role: {
+        name: { in: ["RW", "PETUGAS_RESIDU", "RT", "MAHASISWA_KKN"] },
+      },
+    },
+  });
+}
+
 export class BinService {
   /**
    * Get all bins
@@ -921,6 +957,36 @@ export class BinService {
     }
 
     const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
+
+    // Notify local RW & Petugas staff
+    const staffList = await getStaffForBin(request.bin?.rtRwId || null);
+    const citizenName = request.user?.name || "Warga";
+    const binQr = request.bin?.qrCode || "Tong";
+    const areaName = request.bin?.rtRw?.name || "Wilayah";
+
+    for (const staff of staffList) {
+      await prisma.notification
+        .create({
+          data: {
+            userId: staff.id,
+            title: "Pengajuan Pengosongan Baru",
+            message: `Warga (${citizenName}) mengajukan pengosongan tempat sampah ${binQr} di ${areaName}.`,
+          },
+        })
+        .catch(() => {});
+    }
+
+    // Notify citizen
+    await prisma.notification
+      .create({
+        data: {
+          userId,
+          title: "Pengajuan Pengosongan Dikirim",
+          message: `Pengajuan pengosongan tempat sampah ${binQr} berhasil dikirim ke petugas RT/RW.`,
+        },
+      })
+      .catch(() => {});
+
     return request;
   }
 
@@ -1315,14 +1381,7 @@ export class BinService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    const staffList = await prisma.user.findMany({
-      where: {
-        rtRwId: bin.rtRwId,
-        role: {
-          name: { in: ["RW", "PETUGAS_RESIDU"] },
-        },
-      },
-    });
+    const staffList = await getStaffForBin(bin.rtRwId);
 
     if (issueType === "EMPTY_REQUEST") {
       // 1. Update bin volume to maxCapacityLiter (forces capacity to 100% full, showing red on map)

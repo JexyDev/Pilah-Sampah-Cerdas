@@ -94,6 +94,7 @@ app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/petugas-residu", residuRouter);
 app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/rw", rwRouter);
+app.use("/api/v1/rt", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/areas", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
@@ -110,6 +111,8 @@ app.use("/api", kknAttendanceRouter);
 app.use("/api/residu", residuRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/rw", rwRouter);
+app.use("/api/rt", rwRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {

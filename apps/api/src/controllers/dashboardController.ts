@@ -11,7 +11,23 @@ import { dashboardService } from "../services/dashboardService.js";
 export const dashboardController = {
   getKpi: async (req: Request, res: Response) => {
     try {
-      const { wilayah, period } = req.query;
+      let { wilayah, period } = req.query;
+      const user = req.user;
+
+      if (!wilayah && user) {
+        if (user.role === "LURAH" && user.rtRwId) {
+          const { PrismaClient } = await import("@prisma/client");
+          const prisma = new PrismaClient();
+          const userArea = await prisma.rtRwArea.findUnique({
+            where: { id: user.rtRwId },
+            include: { kelurahan: true },
+          });
+          if (userArea?.kelurahan) wilayah = userArea.kelurahan.name;
+        } else if (user.role === "CAMAT") {
+          wilayah = "Kecamatan Coblong";
+        }
+      }
+
       const kpi = await dashboardService.getKpi(wilayah as string, period as string);
       res.status(200).json({
         success: true,

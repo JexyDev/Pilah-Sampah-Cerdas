@@ -4,11 +4,13 @@ import { APP_CONFIG } from "../../config/appConfig";
 const TentangAplikasi: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-6 bg-white rounded-xl shadow-sm">
-      <img
-        src="/logo.png"
-        alt={`${APP_CONFIG.appName} Logo`}
-        className="w-32 h-32 mb-6 object-contain"
-      />
+      <div className="relative group flex items-center justify-center p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white border border-emerald-100/60 shadow-sm transition-all duration-300 mb-6 hover:shadow-md">
+        <img
+          src="/logo.png"
+          alt={`${APP_CONFIG.appName} Logo`}
+          className="h-28 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
       <h1 className="text-3xl font-extrabold text-green-700 mb-2">
         {APP_CONFIG.appName}
       </h1>

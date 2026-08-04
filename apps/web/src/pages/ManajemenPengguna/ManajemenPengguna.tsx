@@ -558,6 +558,23 @@ const ManajemenPengguna: React.FC = () => {
                           </div>
                         </td>
                       )}
+                    </tr>
+                  ) : (
+                    <tr
+                      key={user.id}
+                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        {user.name}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        {user.phone || "-"}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
                           className={`inline-block px-2.5 py-1 ${
                             ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
                               ? "bg-blue-50 text-blue-700 border border-blue-200"
@@ -575,44 +592,40 @@ const ManajemenPengguna: React.FC = () => {
                         >
                           {user.role}
                         </span>
-                      </div>
-                    </td>
-                      <td className="px-6 py-4 text-on-surface-variant font-medium">
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
                         {user.wilayah}
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-on-surface-variant">
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
                         {user.setoran}
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-outline-variant/30 bg-surface-container-lowest">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Aktif" ? "bg-green-600" : "bg-outline-variant"}`}
-                          ></span>
-                          <span
-                            className={
-                              user.status === "Aktif" ? "text-green-700" : "text-on-surface-variant"
-                            }
-                          >
-                            {user.status}
-                          </span>
-                        </div>
+                      <td className="py-3.5 px-4 text-center">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            user.status === "Aktif" || user.status === "ACTIVE"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : "bg-rose-100 text-rose-800 border border-rose-200"
+                          }`}
+                        >
+                          {user.status || "Aktif"}
+                        </span>
                       </td>
                       {!isReadOnly && (
-                        <td className="px-6 py-4 text-center">
+                        <td className="py-3.5 px-4 text-center">
                           <div className="flex justify-center gap-1">
                             <button
                               onClick={() => handleOpenEditModal(user)}
-                              className="w-8 h-8 rounded-md hover:bg-surface-variant text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                               title="Edit"
                             >
-                              <Pencil size={18} />
+                              <Pencil size={15} />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(user)}
-                              className="w-8 h-8 rounded-md hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                               title="Hapus"
                             >
-                              <Trash2 size={18} />
+                              <Trash2 size={15} />
                             </button>
                           </div>
                         </td>

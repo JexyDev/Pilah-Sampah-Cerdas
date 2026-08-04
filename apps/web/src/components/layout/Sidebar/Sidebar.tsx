@@ -289,12 +289,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
       <aside className={`w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50 transition-transform duration-300 ease-in-out transform lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
         {/* Brand Header */}
-        <div className="px-6 py-5 flex items-center justify-center border-b border-outline-variant/35 bg-white">
-          <img
-            src="/logo.png"
-            alt="TrashCare - Sampah Terdata, Lingkungan Tertata"
-            className="h-20 w-auto object-contain mix-blend-multiply"
-          />
+        <div className="px-5 py-4 border-b border-outline-variant/30 bg-slate-50/40 flex items-center justify-center">
+          <div className="relative group w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-gradient-to-b from-emerald-50/70 to-white/90 border border-emerald-100/70 shadow-2xs transition-all duration-300 hover:shadow-xs hover:scale-[1.01]">
+            <img
+              src="/logo.png"
+              alt="TrashCare Logo"
+              className="h-16 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
         </div>
 
         {/* Navigation Menu */}

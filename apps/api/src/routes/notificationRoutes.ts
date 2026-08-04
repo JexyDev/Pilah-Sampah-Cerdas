@@ -139,8 +139,12 @@ router.get("/", authMiddleware, async (req, res) => {
       // 1. Fetch real PENDING BinResetRequests scoped by area/role
       try {
         let reqWhere: any = { status: "PENDING" };
-        if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role) && areaIds.length > 0) {
-          reqWhere.bin = { rtRwId: { in: areaIds } };
+        if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
+          if (areaIds.length > 0) {
+            reqWhere.bin = { rtRwId: { in: areaIds } };
+          } else {
+            reqWhere.bin = { rtRwId: -1 };
+          }
         } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
           reqWhere.bin = { rtRw: { kelurahanId: dbUser.rtRw.kelurahanId } };
         }
@@ -209,8 +213,12 @@ router.get("/", authMiddleware, async (req, res) => {
         let criticalBinNotifs: any[] = [];
         try {
           let binWhere: any = {};
-          if (["RW", "RT", "PETUGAS_RESIDU"].includes(role) && areaIds.length > 0) {
-            binWhere.rtRwId = { in: areaIds };
+          if (["RW", "RT", "PETUGAS_RESIDU"].includes(role)) {
+            if (areaIds.length > 0) {
+              binWhere.rtRwId = { in: areaIds };
+            } else {
+              binWhere.rtRwId = -1;
+            }
           } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
             binWhere.rtRw = { kelurahanId: dbUser.rtRw.kelurahanId };
           }

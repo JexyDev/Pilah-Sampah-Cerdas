@@ -233,8 +233,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>
 
           {showLocation && (
-            <div className="absolute top-11 left-0 w-60 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-2 flex flex-col gap-1 z-50">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase px-3 py-1.5 border-b border-outline-variant/20 tracking-wider">
+            <div className="absolute top-11 left-0 w-64 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-2 flex flex-col gap-1 z-50 max-h-64 overflow-y-auto">
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase px-3 py-1.5 border-b border-outline-variant/20 tracking-wider sticky top-0 bg-white z-10">
                 Pilih RT/RW Wilayah Warga
               </p>
               {displayRegions.map((loc) => (

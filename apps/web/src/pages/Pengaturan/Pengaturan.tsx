@@ -817,7 +817,9 @@ const Pengaturan: React.FC = () => {
         {activeTab === "tentang" && (
           <div className="space-y-6 max-w-4xl">
             <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col items-center justify-center text-center py-12">
-              <img src="/logo.png" alt="TrashCare Logo" className="w-32 h-auto mb-6 object-contain" />
+              <div className="relative group flex items-center justify-center p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white border border-emerald-100/60 shadow-sm transition-all duration-300 mb-6 hover:shadow-md">
+                <img src="/logo.png" alt="TrashCare Logo" className="h-28 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105" />
+              </div>
               <h3 className="text-[24px] font-bold text-on-surface mb-2">{APP_CONFIG.APP_NAME}</h3>
               <p className="text-[16px] text-on-surface-variant mb-6 font-medium">Versi {APP_CONFIG.APP_VERSION}</p>
               
