@@ -329,7 +329,11 @@ export class ResiduService {
 
     if (!targetRwId) {
       const firstRw = await prisma.rtRwArea.findFirst();
-      targetRwId = firstRw?.id || 1;
+      if (firstRw) {
+        targetRwId = firstRw.id;
+      } else {
+        throw new Error("NO_RW_AREA_ASSIGNED");
+      }
     }
 
     const weightKg = Number(data.actualWeightKg) || 0;

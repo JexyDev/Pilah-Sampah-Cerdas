@@ -193,6 +193,27 @@ async function main() {
             status: "Aktif",
           },
         });
+
+        // Seed Dedicated Petugas Residu Account connected 1-to-1 to this RW area
+        const petugasPhone = getNextPhone();
+        const petugasUser = await prisma.user.upsert({
+          where: { phone: petugasPhone },
+          update: { rtRwId: area.id, roleId: roleMap["PETUGAS_RESIDU"] },
+          create: {
+            name: `Petugas Residu ${rwCode} ${kel.name}`,
+            phone: petugasPhone,
+            password: DEFAULT_PASSWORD_HASH,
+            roleId: roleMap["PETUGAS_RESIDU"],
+            rtRwId: area.id,
+            address: `Pos Residu ${rwCode}, Kel. ${kel.name}, Coblong`,
+            status: "Aktif",
+          },
+        });
+
+        await prisma.rtRwArea.update({
+          where: { id: area.id },
+          data: { petugasResiduId: petugasUser.id },
+        });
       }
     }
   }
