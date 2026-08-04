@@ -229,6 +229,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           children: [
             { to: "/manajemen-pengguna", label: "Semua Pengguna" },
             { to: "/manajemen-pengguna?role=ADMIN_DLH", label: "Admin & Eksekutif" },
+            { to: "/manajemen-pengguna?role=CAMAT", label: "Camat" },
+            { to: "/manajemen-pengguna?role=LURAH", label: "Lurah" },
             { to: "/manajemen-pengguna?role=RW", label: "Pengurus RW / RT" },
             { to: "/manajemen-pengguna?role=PETUGAS_RESIDU", label: "Petugas Residu Hilir" },
             { to: "/manajemen-pengguna?role=MAHASISWA_KKN", label: "Mahasiswa KKN" },

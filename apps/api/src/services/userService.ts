@@ -38,6 +38,8 @@ export class UserService {
     if (roleName) {
       if (roleName === "PENGURUS_RW_RT" || roleName === "RW") {
         whereClause.role = { name: { in: ["RW", "RT"] } };
+      } else if (roleName === "ADMIN_DLH" || roleName === "EKSEKUTIF") {
+        whereClause.role = { name: { in: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"] } };
       } else {
         whereClause.role = { name: roleName };
       }

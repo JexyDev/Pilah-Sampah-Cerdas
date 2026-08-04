@@ -316,6 +316,8 @@ const ManajemenPengguna: React.FC = () => {
         {[
           { key: "Semua", label: "Semua Peran", icon: "🌐" },
           { key: "ADMIN_DLH", label: "Admin & Eksekutif", icon: "🏢" },
+          { key: "CAMAT", label: "Camat", icon: "🏛️" },
+          { key: "LURAH", label: "Lurah", icon: "🏢" },
           { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },
           { key: "PETUGAS_RESIDU", label: "Petugas Residu Hilir", icon: "🚚" },
           { key: "MAHASISWA_KKN", label: "Mahasiswa KKN", icon: "🎓" },
