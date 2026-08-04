@@ -18,6 +18,10 @@ abstract class NotificationRepository {
   /// Simpan FCM device token ke server.
   /// POST /api/v1/notifications/device-token
   Future<void> registerDeviceToken(String token);
+
+  /// Hapus FCM device token saat user logout.
+  /// POST /api/v1/notifications/unregister-token
+  Future<void> unregisterDeviceToken(String token);
 }
 
 /// Exception khusus notifikasi.

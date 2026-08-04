@@ -28,8 +28,13 @@ dependencies:
   # Image Picker — untuk galeri dan fallback
   image_picker: ^1.1.2
 
-  # GPS / Geolocation
+  # Image Compression
+  flutter_image_compress: ^2.3.0
+
+  # GPS / Geolocation / Maps
   geolocator: ^13.0.4
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
 
   # Secure Token Storage
   flutter_secure_storage: ^9.2.4
@@ -41,7 +46,7 @@ dependencies:
   connectivity_plus: ^6.1.4
 
   # Local Cache
-  shared_preferences: ^2.5.3
+  shared_preferences: ^2.5.5
 
   # Google Fonts (Poppins)
   google_fonts: ^6.2.1

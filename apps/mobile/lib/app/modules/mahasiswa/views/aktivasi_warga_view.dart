@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/aktivasi_warga_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
 
 class AktivasiWargaView extends ConsumerStatefulWidget {
   const AktivasiWargaView({super.key});
@@ -19,10 +21,20 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final warga = args?['warga'] as Map<String, dynamic>?;
-    final wargaId = warga?['id']?.toString() ?? '';
-    final wargaName = warga?['name']?.toString() ?? 'Warga';
+    final rawArgs = ModalRoute.of(context)?.settings.arguments;
+    String wargaId = '';
+    String wargaName = 'Warga';
+
+    if (rawArgs is Map<String, dynamic>) {
+      final wargaMap = rawArgs['warga'] as Map<String, dynamic>? ?? rawArgs;
+      wargaId = wargaMap['id']?.toString() ?? wargaMap['wargaId']?.toString() ?? wargaMap['binId']?.toString() ?? '';
+      wargaName = wargaMap['name']?.toString() ?? wargaMap['wargaName']?.toString() ?? 'Warga';
+    } else if (rawArgs is WargaDampingan) {
+      wargaId = rawArgs.binId.isNotEmpty ? rawArgs.binId : rawArgs.wargaName;
+      wargaName = rawArgs.wargaName;
+    } else if (rawArgs is String) {
+      wargaId = rawArgs;
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -85,20 +97,121 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   setState(() {
                     _binAnorganikId = qrCode;
                   });
-                  // Submit
-                  final success = await ref.read(aktivasiWargaProvider.notifier).activateBin(wargaId, _binOrganikId, _binAnorganikId);
+
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                    ),
+                  );
+
+                  // Submit bin activation
+                  final success = await ref.read(aktivasiWargaProvider.notifier).activateBin(
+                    wargaId,
+                    _binOrganikId,
+                    _binAnorganikId,
+                  );
+
+                  if (mounted) {
+                    Navigator.of(context, rootNavigator: true).pop(); // Close dialog
+                  }
+
                   if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Aktivasi 2 Bin berhasil!')),
+                    // Invalidate state agar Warga & Tempat Sampah langsung ter-update di Mahasiswa dan Warga
+                    ref.invalidate(mahasiswaControllerProvider);
+                    ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+                    ref.read(aktivasiWargaProvider.notifier).refresh();
+
+                    // Tampilkan Success Modal Dialog Pop-up
+                    await showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (modalCtx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        contentPadding: const EdgeInsets.all(24),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.primaryGreen,
+                                size: 56,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Aktivasi Berhasil!',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Berhasil mengaktifkan tempat sampah milik $wargaName!\n\nWarga kini resmi terdaftar di daftar Warga Dampingan Anda.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(modalCtx);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: const Text(
+                                  'Selesai',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
-                    Navigator.pop(context);
+
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                    return true;
                   } else if (mounted) {
-                    // Retry step 2
+                    final err = ref.read(aktivasiWargaProvider).errorMessage ?? 'Gagal mengaktivasi tempat sampah.';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(err),
+                        backgroundColor: AppColors.dangerRed,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
                     setState(() {
                       _binAnorganikId = '';
                     });
+                    return false;
                   }
-                  return success;
+                  return false;
                 }
               },
             ),

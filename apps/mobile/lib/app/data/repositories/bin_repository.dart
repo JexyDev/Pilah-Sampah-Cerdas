@@ -8,6 +8,9 @@ abstract class BinRepository {
   /// Ambil tong sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);
 
+  /// Ambil semua data tong sampah untuk Peta Monitoring
+  Future<List<BinEntity>> getAllBins();
+
   /// Ambil tong berdasarkan QR serial.
   Future<BinEntity?> getBinByQrSerial(String qrSerial);
 
@@ -25,6 +28,7 @@ abstract class BinRepository {
     required String userId,
     required WasteType detectedType,
     required double estimatedVolume,
+    double? confidence,
     required String householdId,
     required double userLat,
     required double userLng,
@@ -54,6 +58,9 @@ abstract class BinRepository {
     required String userId,
     required String evidencePhotoPath,
   });
+
+  /// Ambil active reset request dari local storage
+  Future<BinResetEntity?> getActiveResetRequest(String userId);
 
   /// Set kapasitas tong setelah aktivasi.
   Future<void> measureBin({

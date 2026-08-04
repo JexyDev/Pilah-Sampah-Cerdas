@@ -157,7 +157,15 @@ class ApiClient {
 
   // ── Force Logout — hapus token & navigate ke Login ──────────────────────────
 
+  DateTime? _lastLogoutTime;
+
   Future<void> _forceLogout() async {
+    final now = DateTime.now();
+    if (_lastLogoutTime != null && now.difference(_lastLogoutTime!).inSeconds < 10) {
+      return; // Cegah eksekusi berulang / SnackBar spam
+    }
+    _lastLogoutTime = now;
+
     _cachedToken = null; // HAPUS CACHE
     // Hapus semua data autentikasi dari secure storage
     await Future.wait([
@@ -170,24 +178,13 @@ class ApiClient {
     // Navigate ke Login dan hapus semua rute sebelumnya
     final navState = navigatorKey.currentState;
     if (navState != null && navState.mounted) {
+      // Hapus snackbar yang mungkin muncul sebelum logout agar tidak nyangkut/ngespam
+      ScaffoldMessenger.of(navState.context).clearSnackBars();
+      
       navState.pushNamedAndRemoveUntil(
         AppRoutes.login,
         (_) => false,
       );
-
-      // Tampilkan SnackBar setelah navigasi selesai
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctx = navigatorKey.currentContext;
-        if (ctx != null) {
-          ScaffoldMessenger.of(ctx).showSnackBar(
-            const SnackBar(
-              content: Text('Sesi Anda telah habis, silakan login kembali.'),
-              backgroundColor: Color(0xFFE74C3C),
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-      });
     }
   }
 

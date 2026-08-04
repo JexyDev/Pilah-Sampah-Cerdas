@@ -23,7 +23,9 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
     if (!_initialized) {
       final warga = ModalRoute.of(context)?.settings.arguments as WargaDampingan?;
       if (warga != null) {
-        ref.read(detailWargaControllerProvider.notifier).setWarga(warga);
+        Future.microtask(() {
+          ref.read(detailWargaControllerProvider.notifier).setWarga(warga);
+        });
       }
       _initialized = true;
     }

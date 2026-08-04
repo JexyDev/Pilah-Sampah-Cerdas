@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/bin_entity.dart';
 import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
+import '../../core/utils/image_compressor.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -25,27 +27,103 @@ class ApiBinRepository implements BinRepository {
 
   @override
   Future<List<BinEntity>> getBinsByHousehold(String householdId) async {
+    final cacheKey = 'cached_bins';
     try {
       final response = await apiClient.dio.get('/bins/my-bins');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
-        return data
+        await apiClient.secureStorage.write(key: cacheKey, value: jsonEncode(data));
+
+        final List<BinEntity> parsedBins = data
             .map((json) => _mapMyBin(json as Map<String, dynamic>))
             .toList();
+
+        // Auto-clean approved/processed reset requests jika volume tong di backend sudah 0L / tidak penuh
+        final allKeys = await apiClient.secureStorage.readAll();
+        for (final entry in allKeys.entries) {
+          if (entry.key.startsWith('active_reset_request_')) {
+            try {
+              final req = _mapResetRequest(jsonDecode(entry.value));
+              final matchingBin = parsedBins.firstWhere(
+                (b) => b.id == req.binId,
+                orElse: () => parsedBins.firstWhere((b) => b.currentVolumeL < b.maxCapacityL, orElse: () => parsedBins.first),
+              );
+              if (matchingBin.currentVolumeL < matchingBin.maxCapacityL) {
+                await apiClient.secureStorage.delete(key: entry.key);
+              }
+            } catch (_) {}
+          }
+        }
+
+        return parsedBins;
       }
       return [];
     } on DioException catch (e) {
       if (e.response?.statusCode == 403) {
         return [];
       }
+      // Fallback to cache on network error
+      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
+      if (cachedStr != null) {
+        final List<dynamic> cachedData = jsonDecode(cachedStr);
+        
+        final allKeys = await apiClient.secureStorage.readAll();
+        final resetRequests = allKeys.entries
+            .where((e) => e.key.startsWith('active_reset_request_'))
+            .map((e) => _mapResetRequest(jsonDecode(e.value)))
+            .toList();
+
+        return cachedData.map((json) {
+          final bin = _mapMyBin(json as Map<String, dynamic>);
+          final isApproved = resetRequests.any(
+            (req) => req.binId == bin.id && req.status == BinResetStatus.approved
+          );
+          if (isApproved) return bin.copyWith(currentVolumeL: 0.0);
+          return bin;
+        }).toList();
+      }
       throw BinException(
         'NETWORK_ERROR',
         'Gagal memuat tong sampah: ${e.message}',
       );
     } catch (e) {
+      // Fallback to cache on other errors
+      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
+      if (cachedStr != null) {
+        final List<dynamic> cachedData = jsonDecode(cachedStr);
+        
+        final allKeys = await apiClient.secureStorage.readAll();
+        final resetRequests = allKeys.entries
+            .where((e) => e.key.startsWith('active_reset_request_'))
+            .map((e) => _mapResetRequest(jsonDecode(e.value)))
+            .toList();
+
+        return cachedData.map((json) {
+          final bin = _mapMyBin(json as Map<String, dynamic>);
+          final isApproved = resetRequests.any(
+            (req) => req.binId == bin.id && req.status == BinResetStatus.approved
+          );
+          if (isApproved) return bin.copyWith(currentVolumeL: 0.0);
+          return bin;
+        }).toList();
+      }
       if (e is BinException) rethrow;
       throw BinException('UNKNOWN_ERROR', e.toString());
+    }
+  }
+
+  @override
+  Future<List<BinEntity>> getAllBins() async {
+    try {
+      final response = await apiClient.dio.get('/bins/my-bins');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] as List<dynamic>;
+        return data.map((json) => _mapMyBin(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 
@@ -81,15 +159,36 @@ class ApiBinRepository implements BinRepository {
     required String imagePath,
   }) async {
     try {
+      // 1. Client-side quota check
+      final todayStr = DateTime.now().toIso8601String().split('T')[0];
+      final quotaKey = 'ai_limit_${userId}_$todayStr';
+      final currentQuotaStr = await apiClient.secureStorage.read(key: quotaKey);
+      int currentQuota = int.tryParse(currentQuotaStr ?? '0') ?? 0;
+
+      if (currentQuota >= 50) {
+        throw const BinException(
+          'AI_DAILY_LIMIT',
+          'Kuota harian AI sudah habis (50/hari).',
+        );
+      }
+
+      // Auto-compress image before upload (Target < 1MB, max 1024x1024)
+      final compressedImagePath = await ImageCompressor.compressImage(
+        imagePath,
+        maxSizeBytes: 1024 * 1024,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(
-          imagePath,
+          compressedImagePath,
           filename: 'waste_${DateTime.now().millisecondsSinceEpoch}.jpg',
         ),
       });
 
       final response = await apiClient.dio.post(
-        '/ai/detect',
+        '/waste/detect',
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -99,6 +198,9 @@ class ApiBinRepository implements BinRepository {
       );
 
       if (response.statusCode == 200) {
+        // Increment quota
+        await apiClient.secureStorage.write(key: quotaKey, value: (currentQuota + 1).toString());
+        
         final data = response.data['data'] as Map<String, dynamic>;
         return AiDetectionEntity(
           detectedType: _parseWasteType(data['detectedType']?.toString()),
@@ -155,20 +257,15 @@ class ApiBinRepository implements BinRepository {
     required String userId,
     required WasteType detectedType,
     required double estimatedVolume,
+    double? confidence,
     required String householdId,
     required double userLat,
     required double userLng,
   }) async {
     try {
-      // Bypass inakurasi GPS bawaan dengan mengirim lokasi persis tong sampah
-      // agar backend tidak melempar LOCATION_OUT_OF_RANGE (>10m).
-      final bin = await getBinByQrSerial(qrCode);
+      // Kirim koordinat user asli agar backend bisa memvalidasi Haversine (<=10m).
       double lat = userLat;
       double lng = userLng;
-      if (bin != null) {
-        lat = bin.lat;
-        lng = bin.lng;
-      }
 
       final response = await apiClient.dio.post(
         '/bins/scan',
@@ -176,6 +273,7 @@ class ApiBinRepository implements BinRepository {
           'qrCode': qrCode,
           'detectedType': detectedType == WasteType.organic ? 'Organik' : 'Anorganik',
           'estimatedVolume': estimatedVolume,
+          'confidence': confidence ?? 0.95,
           'householdId': householdId,
           'userLat': lat,
           'userLng': lng,
@@ -209,7 +307,7 @@ class ApiBinRepository implements BinRepository {
       if (errorCode == 'LOCATION_OUT_OF_RANGE') {
         throw const BinException(
           'LOCATION_OUT_OF_RANGE',
-          'Anda terlalu jauh dari tong sampah (> 10m).',
+          'Anda terlalu jauh dari tempat sampah (> 10m). Harap mendekat.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND') {
@@ -282,16 +380,19 @@ class ApiBinRepository implements BinRepository {
       final errorCode = e.response?.data?['error']?.toString();
       final message = e.response?.data?['message']?.toString();
 
-      if (errorCode == 'NOT_FOUND') {
+      if (errorCode == 'NOT_FOUND' || errorCode == 'BIN_NOT_FOUND') {
         throw const BinException(
           'BIN_NOT_FOUND',
-          'QR Code tong tidak terdaftar di sistem.',
+          'QR Code tempat sampah tidak terdaftar di sistem.',
         );
       }
-      if (errorCode == 'ALREADY_ACTIVATED') {
+      if (errorCode == 'ALREADY_ACTIVATED' ||
+          errorCode == 'BIN_ALREADY_USED' ||
+          (errorCode != null && errorCode.startsWith('BIN_ALREADY_USED')) ||
+          (message != null && message.contains('BIN_ALREADY_USED'))) {
         throw const BinException(
           'ALREADY_ACTIVATED',
-          'Tong ini sudah diaktivasi oleh warga lain.',
+          'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.',
         );
       }
       if (errorCode == 'BAD_REQUEST') {
@@ -338,11 +439,14 @@ class ApiBinRepository implements BinRepository {
       final errorCode = e.response?.data?['error']?.toString();
       final message = e.response?.data?['message']?.toString();
 
-      if (errorCode == 'NOT_FOUND') {
-        throw const BinException('BIN_NOT_FOUND', 'QR Code tong tidak terdaftar di sistem.');
+      if (errorCode == 'NOT_FOUND' || errorCode == 'BIN_NOT_FOUND') {
+        throw const BinException('BIN_NOT_FOUND', 'QR Code tempat sampah tidak terdaftar di sistem.');
       }
-      if (errorCode == 'ALREADY_ACTIVATED') {
-        throw const BinException('ALREADY_ACTIVATED', 'Tong ini sudah diaktivasi oleh warga lain.');
+      if (errorCode == 'ALREADY_ACTIVATED' ||
+          errorCode == 'BIN_ALREADY_USED' ||
+          (errorCode != null && errorCode.startsWith('BIN_ALREADY_USED')) ||
+          (message != null && message.contains('BIN_ALREADY_USED'))) {
+        throw const BinException('ALREADY_ACTIVATED', 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.');
       }
       if (errorCode == 'BIN_CATEGORY_DUPLICATE') {
         throw BinException('BIN_CATEGORY_DUPLICATE', message ?? 'Kategori tong sudah terdaftar.');
@@ -368,10 +472,18 @@ class ApiBinRepository implements BinRepository {
     required String evidencePhotoPath,
   }) async {
     try {
+      // Auto-compress evidence photo before upload (Target < 5MB, max 1920x1080)
+      final compressedEvidencePath = await ImageCompressor.compressImage(
+        evidencePhotoPath,
+        maxSizeBytes: 5 * 1024 * 1024,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+
       final formData = FormData.fromMap({
         'binId': binId,
         'evidence': await MultipartFile.fromFile(
-          evidencePhotoPath,
+          compressedEvidencePath,
           filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
         ),
       });
@@ -384,7 +496,12 @@ class ApiBinRepository implements BinRepository {
 
       if (response.statusCode == 201) {
         final data = response.data['data'] as Map<String, dynamic>;
-        return _mapResetRequest(data);
+        final resetEntity = _mapResetRequest(data);
+        await apiClient.secureStorage.write(
+          key: 'active_reset_request_$userId', 
+          value: jsonEncode(data)
+        );
+        return resetEntity;
       }
       throw const BinException('RESET_FAILED', 'Gagal mengajukan pengosongan tong');
     } on DioException catch (e) {
@@ -423,6 +540,29 @@ class ApiBinRepository implements BinRepository {
       if (e is BinException) rethrow;
       throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
     }
+  }
+
+  @override
+  Future<BinResetEntity?> getActiveResetRequest(String userId) async {
+    try {
+      final cachedStr = await apiClient.secureStorage.read(key: 'active_reset_request_$userId');
+      if (cachedStr != null) {
+        // Cek apakah tong-tong pengguna saat ini sudah kosong/dikirim ulang (< 25L)
+        try {
+          final bins = await getBinsByHousehold(userId);
+          final bool isAnyFull = bins.any((b) => b.isActive && b.currentVolumeL >= b.maxCapacityL);
+          if (!isAnyFull) {
+            // Jika semua tong sudah tidak penuh (misal 0L), berarti pengajuan sudah disetujui/selesai!
+            await apiClient.secureStorage.delete(key: 'active_reset_request_$userId');
+            return null;
+          }
+        } catch (_) {}
+
+        final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+        return _mapResetRequest(data);
+      }
+    } catch (_) {}
+    return null;
   }
 
   // ─── Measure Bin ──────────────────────────────────────────────────────────
@@ -469,28 +609,28 @@ class ApiBinRepository implements BinRepository {
     return 0.0;
   }
 
-  /// Map response dari GET /bins/my (binService.getMyBins shape)
   BinEntity _mapMyBin(Map<String, dynamic> json) {
-    double maxL = _parseDouble(json['maxCapacityLiter']);
+    double maxL = _parseDouble(json['maxCapacityLiter'] ?? json['maxCapacityL'] ?? json['maxCapacity']);
     if (maxL <= 0) maxL = 25.0;
-    final double currentL = _parseDouble(json['currentVolumeLiter']);
+    final double currentL = _parseDouble(json['currentVolumeLiter'] ?? json['currentVolumeL'] ?? json['currentVolume']);
+    final String qrSerial = (json['qrCode'] ?? json['qrSerial'] ?? json['code'] ?? '').toString();
 
-    final String typeStr = (json['category'] ?? json['type'] ?? 'ORGANIC').toString().toUpperCase();
+    final String typeStr = (json['category'] ?? json['type'] ?? json['binType'] ?? 'ORGANIC').toString().toUpperCase();
     final WasteType binType = (typeStr == 'ORGANIC' || typeStr == 'ORGANIK')
         ? WasteType.organic
         : WasteType.nonOrganic;
 
     return BinEntity(
       id: json['id']?.toString() ?? '',
-      qrSerial: json['qrCode']?.toString() ?? '',
+      qrSerial: qrSerial,
       binType: binType,
       currentVolumeL: currentL,
       maxCapacityL: maxL,
-      lat: _parseDouble(json['latitude']),
-      lng: _parseDouble(json['longitude']),
+      lat: _parseDouble(json['latitude'] ?? json['lat']),
+      lng: _parseDouble(json['longitude'] ?? json['lng']),
       householdName: json['householdName']?.toString() ?? '',
-      rt: json['rtRw']?.toString() ?? '',
-      rw: '',
+      rt: json['rtRw']?.toString() ?? json['rt']?.toString() ?? '',
+      rw: json['rw']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       isActive: json['isActive'] as bool? ?? true,
     );
@@ -515,6 +655,7 @@ class ApiBinRepository implements BinRepository {
       id: json['id']?.toString() ?? '',
       binId: json['binId']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',
+      rwId: json['rwId']?.toString() ?? json['rtRwId']?.toString() ?? '',
       status: status,
       evidencePhotoUrl: json['evidencePhotoUrl']?.toString(),
       createdAt: json['createdAt'] != null

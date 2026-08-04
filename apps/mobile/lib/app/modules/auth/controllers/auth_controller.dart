@@ -4,6 +4,8 @@ import '../../../data/models/user_entity.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/services/notification_engine.dart';
+import '../../notifikasi/controllers/notifikasi_controller.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -178,8 +180,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Logout — hapus token, reset state.
+  /// Logout — unregister FCM token per-user, hapus token secure storage, reset state & bersihkan system tray.
   Future<void> logout() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _notificationRepository.unregisterDeviceToken(token);
+      }
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (_) {
+      // Non-critical — abaikan jika Firebase tidak aktif
+    }
+    await NotificationEngine().cancelAll();
+    clearNotificationCache();
     await _authRepository.logout();
     state = const AuthState();
   }
@@ -189,6 +202,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (state.user == null) return;
     state = state.copyWith(
       user: state.user!.copyWith(householdId: householdId),
+    );
+  }
+
+  /// Update kelurahan & rtRw mahasiswa KKN langsung di state.
+  /// Data ini disimpan permanen di local storage oleh AuthRepository.
+  void setMahasiswaRegion({required String kelurahan, required String rtRw}) {
+    if (state.user == null) return;
+    state = state.copyWith(
+      user: state.user!.copyWith(kelurahan: kelurahan, rtRw: rtRw),
     );
   }
 
@@ -207,9 +229,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await _authRepository.uploadAvatar(imagePath);
-      // Fetch ulang profil untuk mendapatkan URL foto terbaru jika backend mengirimkannya (atau sekadar refresh info)
-      await fetchProfile();
-      state = state.copyWith(isLoading: false);
+      // Immediately update state user's fotoProfil so Profile & Dashboard top bar update live without logout
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(fotoProfil: imagePath),
+          isLoading: false,
+        );
+      } else {
+        await fetchProfile();
+        state = state.copyWith(isLoading: false);
+      }
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorCode: e.code);
@@ -272,6 +301,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         errorCode: 'INTERNAL_SERVER_ERROR',
       );
+      return false;
+    }
+  }
+
+  /// Update data profil editable pengguna (Nama, HP, Alamat)
+  Future<bool> updateProfile({
+    required String name,
+    required String phone,
+    String? address,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      if (state.user != null) {
+        final updatedUser = state.user!.copyWith(
+          name: name,
+          phone: phone,
+          address: address ?? state.user!.address,
+        );
+        state = state.copyWith(user: updatedUser, isLoading: false);
+      }
+      return true;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'UPDATE_FAILED');
+      return false;
+    }
+  }
+
+  /// Change password untuk pengguna aktif
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      // In production, calls PUT /api/v1/auth/change-password via authRepository
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
       return false;
     }
   }

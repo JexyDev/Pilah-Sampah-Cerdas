@@ -16,16 +16,25 @@ import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_view.dart';
 import '../modules/mahasiswa/views/monitoring_warga_view.dart';
 import '../modules/mahasiswa/views/mahasiswa_view.dart';
-import '../modules/mahasiswa/views/registrasi_warga_view.dart';
+import '../modules/mahasiswa/views/kelompok_kkn_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
+import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
+import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
+import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
+import '../modules/petugas_residu/views/riwayat_petugas_residu_view.dart';
+import '../modules/petugas_residu/views/ganti_password_petugas_view.dart';
 import 'app_routes.dart';
 
-/// Route generator terpusat.
+import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
+
+/// Peta route terpusat untuk MaterialApp.
 class AppPages {
   AppPages._();
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+  static const String initial = AppRoutes.splash;
+
+  static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.splash:
         return _buildRoute(const SplashView(), settings);
@@ -35,7 +44,7 @@ class AppPages {
         return _buildRoute(const RegisterView(), settings);
       case AppRoutes.forgotPassword:
         return _buildRoute(const ForgotPasswordView(), settings);
-      case AppRoutes.main:
+      case AppRoutes.dashboard:
         return _buildRoute(const DashboardView(), settings);
       case AppRoutes.scan:
         return _buildRoute(const ScanFlowView(), settings);
@@ -49,6 +58,8 @@ class AppPages {
         return _buildRoute(const ResetBinView(), settings);
       case AppRoutes.notifikasi:
         return _buildRoute(const NotifikasiView(), settings);
+      case AppRoutes.mahasiswaNotifikasi:
+        return _buildRoute(const MahasiswaNotifikasiView(), settings);
       case AppRoutes.timbanganResidu:
         return _buildRoute(const TimbanganResiduView(), settings);
       case AppRoutes.tentang:
@@ -59,14 +70,31 @@ class AppPages {
         return _buildRoute(const MonitoringWargaView(), settings);
       case AppRoutes.mahasiswa:
         return _buildRoute(const MahasiswaView(), settings);
-      case AppRoutes.registrasiWarga:
-        return _buildRoute(const RegistrasiWargaView(), settings);
+      case AppRoutes.kelompokKkn:
+        return _buildRoute(const KelompokKknView(), settings);
       case AppRoutes.daftarWarga:
         return _buildRoute(const DaftarWargaView(), settings);
       case AppRoutes.detailWarga:
         return _buildRoute(const DetailWargaView(), settings);
       case AppRoutes.aktivasiWarga:
         return _buildRoute(const AktivasiWargaView(), settings);
+      case AppRoutes.pemanfaatanSampah:
+        return _buildRoute(const PemanfaatanSampahView(), settings);
+      case AppRoutes.editProfilMahasiswa:
+        return _buildRoute(const EditProfilMahasiswaView(), settings);
+      case AppRoutes.pengajuanIzin:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          PengajuanIzinFormView(
+            scheduleId: args?['scheduleId'] as String?,
+            scheduleTitle: args?['scheduleTitle'] as String?,
+          ),
+          settings,
+        );
+      case AppRoutes.riwayatPetugasResidu:
+        return _buildRoute(const RiwayatPetugasResiduView(), settings);
+      case AppRoutes.petugasResiduGantiPassword:
+        return _buildRoute(const GantiPasswordPetugasView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

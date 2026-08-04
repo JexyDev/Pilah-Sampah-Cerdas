@@ -7,6 +7,7 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class DaftarWargaView extends ConsumerStatefulWidget {
   const DaftarWargaView({super.key});
@@ -25,10 +26,38 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     super.dispose();
   }
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list) {
-    if (_searchQuery.isEmpty) return list;
+  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId, String userNim) {
+    // Hanya tampilkan warga yang diaktivasi/didampingi oleh mahasiswa ini (mahasiswaId tidak boleh kosong)
+    var activatedOnly = list.where((w) {
+      if (!w.isActivated) return false;
+      if (w.mahasiswaId.isEmpty) return false;
+      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+    }).map((w) {
+      // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
+      final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';
+      final targetRt = userRtRw.isNotEmpty ? userRtRw : '01/02';
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+          ? w.address
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel';
+      
+      return WargaDampingan(
+        binId: w.binId,
+        wargaName: w.wargaName,
+        address: displayAddr,
+        kelurahan: targetKel,
+        rtRw: targetRt,
+        mahasiswaId: w.mahasiswaId,
+        recentLogs: w.recentLogs,
+        isActivated: w.isActivated,
+        role: w.role,
+        totalPoints: w.totalPoints,
+        apiCorrectPercentage: w.apiCorrectPercentage,
+      );
+    }).toList();
+
+    if (_searchQuery.isEmpty) return activatedOnly;
     final query = _searchQuery.toLowerCase();
-    return list
+    return activatedOnly
         .where((w) =>
             w.wargaName.toLowerCase().contains(query) ||
             w.address.toLowerCase().contains(query))
@@ -38,7 +67,13 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
-    final filtered = _filteredList(state.wargaList);
+    final user = ref.watch(authProvider).user;
+    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRt = user?.rtRw ?? '01/02';
+    final userId = user?.id ?? '';
+    final userNim = user?.nim ?? '';
+    
+    final filtered = _filteredList(state.wargaList, userKel, userRt, userId, userNim);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -47,7 +82,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Warga Dampingan (${state.wargaList.length})',
+          'Warga Dampingan (${filtered.length})',
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
@@ -238,6 +273,31 @@ class _WargaListItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (warga.pendampingName.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFA5D6A7)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.school, size: 12, color: AppColors.primaryGreen),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Pendamping: ${warga.pendampingName}',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Row(
                         children: [

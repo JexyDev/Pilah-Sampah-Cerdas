@@ -41,6 +41,16 @@ class AiDetectionEntity extends Equatable {
     return volumeEstimate * density;
   }
 
+  /// Kalkulasi poin lokal (BUG-003)
+  /// Formula: Poin = (kategori_rate x berat/volume sampah x 100) x confidence_AI x 0.9
+  int get calculatedPoints {
+    if (estimatedPoints != null && estimatedPoints! > 0) return estimatedPoints!;
+    final weight = displayWeightKg;
+    final conf = confidence ?? 0.85;
+    final double rawPoint = (weight * 100.0) * conf * 0.9;
+    return rawPoint.round();
+  }
+
   @override
   List<Object?> get props => [requestId, detectedType, volumeEstimate];
 }

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/values/app_config.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
@@ -9,6 +11,9 @@ import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/location_ping_controller.dart';
+import '../controllers/kkn_location_controller.dart';
+import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class MahasiswaView extends ConsumerStatefulWidget {
   const MahasiswaView({super.key});
@@ -24,6 +29,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
       ref.read(locationPingControllerProvider.notifier).startTracking();
+      ref.read(kknLocationProvider.notifier).startTracking(context);
     });
   }
 
@@ -31,6 +37,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final locationState = ref.watch(locationPingControllerProvider);
+    final kknLocationState = ref.watch(kknLocationProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -51,7 +58,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                           delegate: SliverChildListDelegate([
                             _buildSummaryCards(state),
                             const SizedBox(height: AppDimensions.md),
-                            _buildLocationStatus(locationState),
+                            _buildLocationStatus(locationState, kknLocationState),
                             if (state.wargaNeedReeducation.isNotEmpty) ...[
                               const SizedBox(height: AppDimensions.md),
                               _buildReeducationAlert(state.wargaNeedReeducation),
@@ -60,6 +67,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                             _buildQuickActions(),
                             const SizedBox(height: AppDimensions.lg),
                             _buildWargaSection(state),
+                            const SizedBox(height: 80),
                           ]),
                         ),
                       ),
@@ -73,49 +81,233 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // AppBar (SliverAppBar)
   // ═══════════════════════════════════════════════════════════════════════════
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 3 && hour < 11) return 'Selamat Pagi, 👋';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang, 👋';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore, 👋';
+    return 'Selamat Malam, 👋';
+  }
+
+  Widget _buildHeaderAvatar(String? fotoPath, String name) {
+    if (fotoPath == null || fotoPath.trim().isEmpty) {
+      return Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'M',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      );
+    }
+
+    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
+      return Image.network(
+        fotoPath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : 'M',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+          ),
+        ),
+      );
+    }
+
+    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
+      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+      final file = File(cleanPath);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
+    }
+
+    return Image.network(
+      '${AppConfig.baseUrl}$fotoPath',
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'M',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+        ),
+      ),
+    );
+  }
+
   SliverAppBar _buildAppBar(MahasiswaState state) {
     final dashboard = state.dashboard;
+    final user = ref.watch(authProvider).user;
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
+
+    final name = (user?.name != null && user!.name.trim().isNotEmpty)
+        ? user.name
+        : 'Mahasiswa KKN';
+    final nim = (user?.nim != null && user!.nim.trim().isNotEmpty)
+        ? user.nim
+        : (dashboard != null && dashboard.nim.isNotEmpty ? dashboard.nim : '-');
+    final jurusan = (user?.jurusan != null && user!.jurusan.trim().isNotEmpty)
+        ? user.jurusan
+        : (user?.prodi != null && user!.prodi.trim().isNotEmpty
+            ? user.prodi
+            : (dashboard != null && dashboard.jurusan.isNotEmpty ? dashboard.jurusan : 'Teknik Informatika'));
+    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
+    final rtRw = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
+    final fotoUrl = user?.fotoProfil;
+
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 165,
       pinned: true,
-      backgroundColor: AppColors.primaryGreen,
-      foregroundColor: Colors.white,
-      elevation: 0,
+      backgroundColor: Colors.white,
+      foregroundColor: AppColors.textPrimary,
+      elevation: 0.5,
+      actions: [
+        IconButton(
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.mahasiswaNotifikasi),
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.notifications_outlined, color: AppColors.primaryGreen, size: 24),
+              if (unreadCount > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.dangerRed,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      unreadCount > 99 ? '99+' : '$unreadCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primaryGreen,
-                AppColors.primaryGreen.withValues(alpha: 0.85),
-                AppColors.primaryBlueDark,
-              ],
-            ),
-          ),
+          color: Colors.white,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+              padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    dashboard != null ? 'NIM: ${dashboard.nim}' : 'Mahasiswa KKN',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.editProfilMahasiswa),
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        // Avatar profil gaya halaman Warga (Klik untuk Edit Profil / Lihat Foto)
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundCanvas,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: _buildHeaderAvatar(fotoUrl, name),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _getGreeting(),
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      name,
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.warningYellow,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'MAHASISWA',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 22),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dashboard?.jurusan ?? 'Memuat...',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(height: 12),
+                  // Sub-info NIM, Jurusan & Lokasi
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.badge_outlined, size: 14, color: AppColors.primaryGreen),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'NIM: $nim • $jurusan',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryGreen,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                        const SizedBox(width: 3),
+                        Text(
+                          'Kel. $kelurahan RT $rtRw',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -126,7 +318,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
       ),
       title: const Text(
         'Dashboard KKN',
-        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.textPrimary),
       ),
     );
   }
@@ -137,21 +329,46 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
+    final user = ref.watch(authProvider).user;
+    final userId = user?.id ?? '';
+    final userNim = user?.nim ?? '';
+
+    // Total Warga Dampingan Mahasiswa ini: HANYA warga yang mahasiswaId-nya terikat pada mahasiswa ini
+    final myWargaList = state.wargaList.where((w) {
+      if (w.role != 'WARGA') return false;
+      if (w.mahasiswaId.isEmpty) return false;
+      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+    }).toList();
+
+    final totalWarga = myWargaList.length;
+
+    // Aktif Bin: Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
+    final wargaAktif = myWargaList.where((w) => w.isActivated).length;
+
     return Row(
       children: [
         Expanded(
           child: _SummaryCard(
             icon: Icons.people_alt_rounded,
-            label: 'Warga',
-            value: '${d?.totalRegisteredBins ?? 0}',
+            label: 'Total Warga',
+            value: '$totalWarga',
             color: AppColors.primaryGreen,
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
         Expanded(
           child: _SummaryCard(
+            icon: Icons.verified_user_rounded,
+            label: 'Aktif Bin',
+            value: '$wargaAktif',
+            color: AppColors.primaryBlueDark,
+          ),
+        ),
+        const SizedBox(width: AppDimensions.sm),
+        Expanded(
+          child: _SummaryCard(
             icon: Icons.stars_rounded,
-            label: 'Poin',
+            label: 'Poin KKN',
             value: '${d?.contributionPoints ?? 0}',
             color: AppColors.success,
           ),
@@ -165,11 +382,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // Location Status Widget
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildLocationStatus(LocationPingState locationState) {
-    // In actual implementation, isOn could represent if the student is currently
-    // within the KKN geofence radius.
-    final isOn = locationState.isTracking;
+  Widget _buildLocationStatus(LocationPingState locationState, KknLocationState kknState) {
+    final bool isGpsOk = locationState.gpsEnabled && locationState.permissionGranted && locationState.errorMessage == null;
+    final bool isInsideZone = kknState.isInsideRadius;
+    final bool isOn = locationState.isTracking && isGpsOk && isInsideZone;
     final lastPing = locationState.lastPingTime;
+    final durationMins = (kknState.inZoneDurationSeconds / 60).floor();
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -178,13 +396,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
       ),
       decoration: BoxDecoration(
         color: isOn
-            ? AppColors.success.withValues(alpha: 0.08)
-            : AppColors.warningOrange.withValues(alpha: 0.08),
+            ? AppColors.success.withValues(alpha: 0.1)
+            : AppColors.dangerRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(
           color: isOn
               ? AppColors.success.withValues(alpha: 0.3)
-              : AppColors.warningOrange.withValues(alpha: 0.3),
+              : AppColors.dangerRed.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -193,11 +411,11 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: isOn ? AppColors.success : AppColors.warningOrange,
+              color: isOn ? AppColors.success : AppColors.dangerRed,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: (isOn ? AppColors.success : AppColors.warningOrange)
+                  color: (isOn ? AppColors.success : AppColors.dangerRed)
                       .withValues(alpha: 0.4),
                   blurRadius: 6,
                 ),
@@ -210,28 +428,32 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOn ? 'Berada di Wilayah (Absen Aktif)' : 'Mencari Sinyal / Di Luar Wilayah',
+                  isOn ? 'Status: ZONA AKTIF' : 'Status: ZONA TIDAK AKTIF',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isOn ? AppColors.successDark : AppColors.warningOrange,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Sistem absensi mendeteksi secara otomatis.',
-                  style: const TextStyle(
+                  isOn 
+                      ? 'Anda terdeteksi di dalam zona KKN ($durationMins / 120 Menit).' 
+                      : 'Anda berada di luar zona geofence KKN. Durasi tidak bertambah.',
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSecondary,
+                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
                   ),
                 ),
                 if (lastPing != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     'Terakhir terdeteksi: ${DateFormat('HH:mm').format(lastPing)}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textHint,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isOn
+                          ? AppColors.successDark.withValues(alpha: 0.7)
+                          : AppColors.dangerRed.withValues(alpha: 0.7),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -240,8 +462,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             ),
           ),
           Icon(
-            isOn ? Icons.satellite_alt_rounded : Icons.location_off_rounded,
-            color: isOn ? AppColors.success : AppColors.warningOrange,
+            isOn ? Icons.my_location_rounded : Icons.location_off_rounded,
+            color: isOn ? AppColors.success : AppColors.dangerRed,
             size: 24,
           )
         ],
@@ -330,31 +552,66 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
   Widget _buildQuickActions() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text(
+          'Menu Utama KKN',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: _ActionButton(
+              child: _MenuTileCard(
+                icon: Icons.groups_rounded,
+                title: 'Kelompok KKN',
+                subtitle: 'Lihat tim & DPL',
+                gradientColors: const [Color(0xFF10B981), Color(0xFF059669)],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.kelompokKkn),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
                 icon: Icons.qr_code_scanner_rounded,
-                label: 'Aktivasi Bin',
-                color: AppColors.warningOrange,
+                title: 'Aktivasi Bin QR',
+                subtitle: 'Pindai barcode warga',
+                gradientColors: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
                 onTap: () {
-                  // Arahkan ke Monitoring Warga dengan mode "Aktivasi Bin"
                   Navigator.pushNamed(
                     context, 
                     AppRoutes.monitoringWarga, 
-                    arguments: {'mode': 'aktivasi_bin'},
+                    arguments: 'aktivasi_bin',
                   );
                 },
               ),
             ),
-            const SizedBox(width: AppDimensions.sm),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
-              child: _ActionButton(
-                icon: Icons.groups_rounded,
-                label: 'Lihat Semua Warga',
-                color: AppColors.primaryBlueDark,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.daftarWarga),
+              child: _MenuTileCard(
+                icon: Icons.location_on_rounded,
+                title: 'Absensi GPS KKN',
+                subtitle: 'Presensi 2 jam zona KKN',
+                gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.recycling_rounded,
+                title: 'Pemanfaatan Sampah',
+                subtitle: 'Katalog & olah sampah',
+                gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
               ),
             ),
           ],
@@ -368,7 +625,35 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildWargaSection(MahasiswaState state) {
-    final list = state.wargaList;
+    final user = ref.watch(authProvider).user;
+    final userId = user?.id ?? '';
+    final userNim = user?.nim ?? '';
+    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRt = user?.rtRw ?? '01/02';
+
+    // Hanya tampilkan Warga Dampingan yang diaktivasi oleh mahasiswa login ini (mahasiswaId tidak boleh kosong)
+    final list = state.wargaList.where((w) {
+      if (!w.isActivated) return false;
+      if (w.mahasiswaId.isEmpty) return false;
+      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+    }).map((w) {
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+          ? w.address
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $userRt, Kel. $userKel';
+      return WargaDampingan(
+        binId: w.binId,
+        wargaName: w.wargaName,
+        address: displayAddr,
+        kelurahan: userKel,
+        rtRw: userRt,
+        mahasiswaId: w.mahasiswaId,
+        recentLogs: w.recentLogs,
+        isActivated: w.isActivated,
+        role: w.role,
+        totalPoints: w.totalPoints,
+        apiCorrectPercentage: w.apiCorrectPercentage,
+      );
+    }).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -548,46 +833,99 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
+class _MenuTileCard extends StatelessWidget {
+  const _MenuTileCard({
     required this.icon,
-    required this.label,
-    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.gradientColors,
     required this.onTap,
   });
 
   final IconData icon;
-  final String label;
-  final Color color;
+  final String title;
+  final String subtitle;
+  final List<Color> gradientColors;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
+    final primaryColor = gradientColors.first;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: gradientColors,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 22),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.textHint),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
                   style: const TextStyle(
-                    color: Colors.white,
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -18,6 +18,7 @@ class LocationPingState {
     this.permissionGranted = false,
     this.gpsEnabled = false,
     this.errorMessage,
+    this.detectedZoneArea,
   });
 
   final bool isTracking;
@@ -27,6 +28,7 @@ class LocationPingState {
   final bool permissionGranted;
   final bool gpsEnabled;
   final String? errorMessage;
+  final String? detectedZoneArea;
 
   LocationPingState copyWith({
     bool? isTracking,
@@ -36,6 +38,7 @@ class LocationPingState {
     bool? permissionGranted,
     bool? gpsEnabled,
     String? errorMessage,
+    String? detectedZoneArea,
   }) {
     return LocationPingState(
       isTracking: isTracking ?? this.isTracking,
@@ -45,6 +48,7 @@ class LocationPingState {
       permissionGranted: permissionGranted ?? this.permissionGranted,
       gpsEnabled: gpsEnabled ?? this.gpsEnabled,
       errorMessage: errorMessage,
+      detectedZoneArea: detectedZoneArea ?? this.detectedZoneArea,
     );
   }
 }
@@ -59,8 +63,8 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
   final Ref _ref;
   Timer? _timer;
 
-  /// Interval pengiriman ping: 5 menit.
-  static const Duration pingInterval = Duration(minutes: 5);
+  /// Interval pengiriman ping ke backend: 30 detik (real-time continuous tracking).
+  static const Duration pingInterval = Duration(seconds: 30);
 
   /// Mulai tracking lokasi.
   Future<void> startTracking() async {
@@ -136,13 +140,14 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       );
 
       final repo = _ref.read(kknRepositoryProvider);
-      await repo.sendLocationPing(position.latitude, position.longitude);
+      final poskoArea = await repo.sendLocationPing(position.latitude, position.longitude);
 
       if (mounted) {
         state = state.copyWith(
           lastLatitude: position.latitude,
           lastLongitude: position.longitude,
           lastPingTime: DateTime.now(),
+          detectedZoneArea: poskoArea,
           errorMessage: null,
         );
       }

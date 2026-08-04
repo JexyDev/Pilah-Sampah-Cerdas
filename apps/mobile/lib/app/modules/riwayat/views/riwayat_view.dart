@@ -8,6 +8,11 @@ import '../../riwayat/controllers/riwayat_controller.dart';
 import '../../shared/widgets/skeleton_loading.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/weight_text.dart';
+import '../../shared/controllers/connectivity_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
+
+import 'package:flutter/foundation.dart';
+import 'pemilahan_monitoring_dashboard_view.dart';
 
 /// Halaman riwayat pemilahan — sesuai desain:
 /// Filter tabs, summary kg organik+anorganik, list TERVALIDASI.
@@ -19,10 +24,14 @@ class RiwayatView extends ConsumerStatefulWidget {
 }
 
 class _RiwayatViewState extends ConsumerState<RiwayatView> {
-  int _filterIndex = 0; // 0=Semua, 1=Minggu Ini, 2=Bulan Ini
+  int _categoryFilterIndex = 0; // 0=Semua, 1=Organik, 2=Non-Organik
+  int _timeFilterIndex = 0; // 0=Semua Waktu, 1=Hari Ini, 2=Minggu Ini, 3=Bulan Ini
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return const PemilahanMonitoringDashboardView();
+    }
     final logsAsync = ref.watch(wasteLogsProvider);
 
     return Scaffold(
@@ -30,46 +39,63 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       appBar: AppBar(title: const Text('Riwayat Pemilahan')),
       body: Column(
         children: [
-          // Filter Tabs
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          // Filter Tabs (Seamless canvas background)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
             child: Row(
               children: [
                 _filterTab('Semua', 0),
                 const SizedBox(width: 8),
-                _filterTab('Minggu Ini', 1),
+                _filterTab('Organik', 1),
                 const SizedBox(width: 8),
-                _filterTab('Bulan Ini', 2),
+                _filterTab('Non-Organik', 2),
               ],
             ),
           ),
 
           Expanded(
-            child: logsAsync.when(
-              data: (logs) {
-                final filtered = _applyFilter(logs);
-                return filtered.isEmpty
-                    ? _buildEmpty()
-                    : _buildContent(filtered);
+            child: RefreshIndicator(
+              onRefresh: () async {
+                final isOnline = ref.read(isOnlineProvider);
+                if (!isOnline) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Anda sedang offline'),
+                      backgroundColor: AppColors.dangerRed,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  return;
+                }
+                ref.invalidate(wasteLogsProvider);
+                await Future.delayed(const Duration(milliseconds: 500));
               },
-              loading: () => ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: 4,
-                itemBuilder: (_, __) => const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: SkeletonLoading(
-                    height: 80,
-                    width: double.infinity,
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
+              color: AppColors.primaryGreen,
+              child: logsAsync.when(
+                data: (logs) {
+                  final filtered = _applyFilter(logs);
+                  return filtered.isEmpty
+                      ? _buildEmpty()
+                      : _buildContent(filtered);
+                },
+                loading: () => ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: 4,
+                  itemBuilder: (_, __) => const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: SkeletonLoading(
+                      height: 80,
+                      width: double.infinity,
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
                   ),
                 ),
-              ),
-              error: (_, __) => EmptyState(
-                message: 'Gagal memuat riwayat.',
-                icon: Icons.error_outline_rounded,
-                buttonText: 'Coba Lagi',
-                onButtonPressed: () => ref.invalidate(wasteLogsProvider),
+                error: (_, __) => EmptyState(
+                  message: 'Gagal memuat riwayat. Cek koneksi Anda.',
+                  icon: Icons.error_outline_rounded,
+                  buttonText: 'Coba Lagi',
+                  onButtonPressed: () => ref.invalidate(wasteLogsProvider),
+                ),
               ),
             ),
           ),
@@ -79,48 +105,63 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
   }
 
   List<WasteLogEntity> _applyFilter(List<WasteLogEntity> logs) {
-    final now = DateTime.now();
-    switch (_filterIndex) {
-      case 1: // Minggu ini
-        final start = now.subtract(Duration(days: now.weekday - 1));
-        return logs
-            .where(
-              (l) => l.createdAt.toLocal().isAfter(
-                DateTime(start.year, start.month, start.day),
-              ),
-            )
-            .toList();
-      case 2: // Bulan ini
-        return logs
-            .where(
-              (l) {
-                final localDate = l.createdAt.toLocal();
-                return localDate.month == now.month &&
-                    localDate.year == now.year;
-              },
-            )
-            .toList();
-      default:
-        return logs;
+    List<WasteLogEntity> result = logs;
+
+    // 1. Filter Kategori
+    if (_categoryFilterIndex == 1) {
+      result = result.where((l) => l.wasteType == WasteType.organic).toList();
+    } else if (_categoryFilterIndex == 2) {
+      result = result.where((l) => l.wasteType == WasteType.nonOrganic).toList();
     }
+
+    // 2. Filter Waktu (Dropdown)
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    if (_timeFilterIndex == 1) {
+      // Hari Ini
+      result = result.where((l) => l.createdAt.toLocal().isAfter(todayStart)).toList();
+    } else if (_timeFilterIndex == 2) {
+      // Minggu Ini
+      final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
+      result = result.where((l) => l.createdAt.toLocal().isAfter(weekStart)).toList();
+    } else if (_timeFilterIndex == 3) {
+      // Bulan Ini
+      result = result.where((l) {
+        final local = l.createdAt.toLocal();
+        return local.month == now.month && local.year == now.year;
+      }).toList();
+    }
+
+    return result;
   }
 
   Widget _filterTab(String label, int index) {
-    final bool active = _filterIndex == index;
+    final bool active = _categoryFilterIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _filterIndex = index),
+      onTap: () => setState(() => _categoryFilterIndex = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? AppColors.primaryGreen : Colors.transparent,
+          color: active ? AppColors.primaryGreen : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: active ? null : Border.all(color: AppColors.border),
+          border: Border.all(
+            color: active ? AppColors.primaryGreen : AppColors.border,
+          ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
             color: active ? Colors.white : AppColors.textSecondary,
           ),
         ),
@@ -202,14 +243,45 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, top: 4),
-                child: Text(
-                  entry.key.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.5,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      entry.key.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (entry.key == grouped.keys.first)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _timeFilterIndex,
+                            isDense: true,
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 18),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            items: const [
+                              DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
+                              DropdownMenuItem(value: 1, child: Text('Hari Ini')),
+                              DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
+                              DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setState(() => _timeFilterIndex = val);
+                            },
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               ...entry.value.map(
@@ -314,12 +386,21 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _RiwayatItem extends StatelessWidget {
+class _RiwayatItem extends ConsumerWidget {
   const _RiwayatItem({required this.log});
   final WasteLogEntity log;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final String userLocation = (user != null && user.rtRw.isNotEmpty)
+        ? '${user.rtRw}, Kel. ${user.kelurahan}'
+        : 'RT 04 / RW 02';
+
+    final String displayLocation = (log.kelurahan != null && log.kelurahan!.isNotEmpty && log.kelurahan != 'Lokasi tidak diketahui' && log.kelurahan != 'null')
+        ? log.kelurahan!
+        : (log.binQrSerial != null && log.binQrSerial!.isNotEmpty ? log.binQrSerial! : userLocation);
+
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color color = isOrganic
         ? AppColors.organicColor
@@ -366,6 +447,48 @@ class _RiwayatItem extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      color: AppColors.warningYellow,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '+${log.pointsAwarded} Poin',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.warningYellow,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.textSecondary,
+                      size: 11,
+                    ),
+                    const SizedBox(width: 3),
+                    Flexible(
+                      child: Text(
+                        displayLocation,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     const Icon(

@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/notification_entity.dart';
-import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../controllers/notifikasi_controller.dart';
+import '../controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../poin/poin_view.dart';
 
-/// Halaman daftar notifikasi.
-/// Data dari GET /api/v1/notifications.
-/// Tap item → tandai dibaca (PUT /api/v1/notifications/:id/read).
+/// Halaman daftar notifikasi Warga.
 class NotifikasiView extends ConsumerWidget {
   const NotifikasiView({super.key});
 
@@ -27,7 +27,7 @@ class NotifikasiView extends ConsumerWidget {
       }
     });
 
-    final notifAsync = ref.watch(notificationsProvider);
+    final notifAsync = ref.watch(wargaNotificationsProvider);
     final markState = ref.watch(markReadProvider);
 
     return Scaffold(
@@ -96,7 +96,7 @@ class NotifikasiView extends ConsumerWidget {
             if (list.isEmpty) {
               return const EmptyState(
                 icon: Icons.notifications_off_outlined,
-                message: 'Belum ada notifikasi.\nNotifikasi poin, tong penuh, dan pengajuan\nakan muncul di sini.',
+                message: 'Belum ada notifikasi.\nNotifikasi poin, tempat sampah penuh, dan pengajuan\nakan muncul di sini.',
               );
             }
             return ListView.separated(
@@ -111,10 +111,49 @@ class NotifikasiView extends ConsumerWidget {
                 return _NotificationTile(
                   item: list[index],
                   onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Membuka detail...'), duration: Duration(milliseconds: 500)),
+                    );
+
                     if (!list[index].isRead) {
                       ref
                           .read(markReadProvider.notifier)
                           .markRead(list[index].id);
+                    }
+                    
+                    final type = list[index].type.toLowerCase();
+                    final title = list[index].title.toLowerCase();
+                    
+                    debugPrint('Tapped Notification - Type: $type, Title: $title');
+
+                    if (type.contains('penuh') || 
+                        type.contains('setuju') || 
+                        type.contains('tolak') || 
+                        title.contains('penuh') || 
+                        title.contains('pengajuan') ||
+                        title.contains('kritis')) {
+                      Navigator.pushNamed(context, '/reset-bin');
+                    } else if (type.contains('poin') || 
+                               type.contains('punishment') ||
+                               type.contains('penalti') ||
+                               type.contains('pengurangan') ||
+                               title.contains('poin') || 
+                               title.contains('penalti') ||
+                               title.contains('punishment') ||
+                               title.contains('berkurang') ||
+                               title.contains('potong') ||
+                               title.contains('berhasil') ||
+                               title.contains('sukses') ||
+                               title.contains('setor') ||
+                               title.contains('sampah')) {
+                      // Navigate to PoinView
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PoinView()));
+                    } else {
+                      // Fallback: Jika tidak terdeteksi, lempar saja ke PoinView agar aman untuk QC
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Fallback Route: Tipe tidak dikenali ($type)')),
+                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PoinView()));
                     }
                   },
                 );
@@ -141,7 +180,8 @@ class _NotificationTile extends StatelessWidget {
     final iconColor = _resolveIconColor(item.type);
     final iconBg = _resolveIconBg(item.type);
 
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         color: item.isRead ? Colors.transparent : AppColors.primaryGreen.withValues(alpha: 0.05),

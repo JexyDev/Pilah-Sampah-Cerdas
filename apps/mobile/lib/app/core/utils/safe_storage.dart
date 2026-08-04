@@ -49,4 +49,29 @@ class SafeStorage {
       await prefs.remove(key);
     }
   }
+
+  Future<Map<String, String>> readAll() async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      final map = <String, String>{};
+      for (final k in keys) {
+        final val = prefs.getString(k);
+        if (val != null) map[k] = val;
+      }
+      return map;
+    }
+    try {
+      return await _secureStorage.readAll();
+    } catch (_) {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      final map = <String, String>{};
+      for (final k in keys) {
+        final val = prefs.getString(k);
+        if (val != null) map[k] = val;
+      }
+      return map;
+    }
+  }
 }

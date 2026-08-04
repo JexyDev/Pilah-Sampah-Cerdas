@@ -4,6 +4,15 @@ import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
+import '../../../data/services/notification_engine.dart';
+
+final Set<String> _shownNotifIds = {};
+
+/// Reset cache notifikasi lokal saat logout
+void clearNotificationCache() {
+  _shownNotifIds.clear();
+}
+
 // ─── Notifications List Provider ──────────────────────────────────────────────
 
 /// Provider daftar notifikasi user yang login.
@@ -14,7 +23,69 @@ final notificationsProvider =
   // Pastikan user sudah login
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
-  return repo.getNotifications();
+  final list = await repo.getNotifications();
+
+  // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
+  // Dikunci presisi per ID Mahasiswa & membuang notifikasi Warga jika role adalah Mahasiswa KKN.
+  final userId = user.id;
+  final roleName = user.role.name.toUpperCase();
+  final isMahasiswa = roleName == 'MAHASISWAKKN';
+  final isPetugas = roleName == 'PETUGASRESIDU';
+  final isWarga = roleName == 'WARGA';
+
+  final List<NotificationEntity> filteredList = [];
+
+  for (final notif in list) {
+    final type = notif.type.toUpperCase();
+    final title = notif.title.toLowerCase();
+
+    final isKknNotif = type.contains('KKN') ||
+        type.contains('POIN_KKN') ||
+        type.contains('IZIN') ||
+        type.contains('DPL') ||
+        type.contains('PRESENSI') ||
+        type.contains('AKTIVASI') ||
+        type.contains('PEMANFAATAN') ||
+        title.contains('kkn') ||
+        title.contains('dpl') ||
+        title.contains('posko') ||
+        title.contains('presensi') ||
+        title.contains('aktivasi');
+
+    final isPetugasNotif = type.contains('RESIDU') ||
+        type.contains('TIMBANGAN') ||
+        type.contains('VIOLATION') ||
+        title.contains('timbangan') ||
+        title.contains('residu') ||
+        title.contains('pelanggaran');
+
+    bool isAllowed = false;
+    if (isMahasiswa) {
+      isAllowed = isKknNotif;
+    } else if (isPetugas) {
+      isAllowed = isPetugasNotif;
+    } else if (isWarga) {
+      isAllowed = !isKknNotif && !isPetugasNotif;
+    } else {
+      isAllowed = true;
+    }
+
+    if (!isAllowed) continue;
+    filteredList.add(notif);
+
+    // Otomatis tampilkan di system tray HANYA untuk notifikasi yang lolos filter role user
+    final notifKey = '${userId}_${notif.id}';
+    if (!notif.isRead && !_shownNotifIds.contains(notifKey)) {
+      _shownNotifIds.add(notifKey);
+      NotificationEngine().showGenericNotification(
+        id: notif.id.hashCode,
+        title: notif.title,
+        body: notif.desc,
+      );
+    }
+  }
+
+  return filteredList;
 });
 
 /// Provider jumlah notifikasi yang belum dibaca (badge count).

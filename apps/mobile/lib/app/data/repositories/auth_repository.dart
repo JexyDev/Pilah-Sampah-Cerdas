@@ -47,6 +47,9 @@ abstract class AuthRepository {
     required String token,
     required String newPassword,
   });
+
+  /// Fetch dynamic list of registered Kelurahan & RT/RW from Web Admin roles backend.
+  Future<Map<String, dynamic>> fetchTerritories();
 }
 
 /// Exception khusus untuk auth errors.
