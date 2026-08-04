@@ -774,6 +774,34 @@ class ApiAuthRepository implements AuthRepository {
     List<String> rtRws = [];
     List<Map<String, dynamic>> rtRwListRaw = [];
 
+    // 1. Coba endpoint dedicated baru /wilayah/rw dan /wilayah/rt
+    try {
+      final rwResp = await apiClient.dio.get('/wilayah/rw');
+      if (rwResp.statusCode == 200 && rwResp.data != null) {
+        final list = rwResp.data is List ? rwResp.data as List : (rwResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          final clean = _cleanName(item);
+          if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) {
+            rtRws.add(clean);
+          }
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final rtResp = await apiClient.dio.get('/wilayah/rt');
+      if (rtResp.statusCode == 200 && rtResp.data != null) {
+        final list = rtResp.data is List ? rtResp.data as List : (rtResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          final clean = _cleanName(item);
+          if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) {
+            rtRws.add(clean);
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Coba endpoint /areas/kelurahan
     try {
       final kelResp = await apiClient.dio.get('/areas/kelurahan');
       if (kelResp.statusCode == 200 && kelResp.data != null) {
@@ -787,6 +815,7 @@ class ApiAuthRepository implements AuthRepository {
       }
     } catch (_) {}
 
+    // 3. Coba endpoint /areas/rt-rw
     try {
       final rtRwResp = await apiClient.dio.get('/areas/rt-rw');
       if (rtRwResp.statusCode == 200 && rtRwResp.data != null) {
@@ -795,14 +824,14 @@ class ApiAuthRepository implements AuthRepository {
           if (item is Map<String, dynamic>) {
             final name = _cleanName(item['name']);
             final kel = _cleanName(item['kelurahan']);
-            if (name.isNotEmpty && !name.contains('{')) rtRws.add(name);
+            if (name.isNotEmpty && !name.contains('{') && !rtRws.contains(name)) rtRws.add(name);
             if (kel.isNotEmpty && !kel.contains('{') && !kelurahans.contains(kel)) {
               kelurahans.add(kel);
             }
             rtRwListRaw.add(item);
           } else if (item is String) {
             final clean = _cleanName(item);
-            if (clean.isNotEmpty && !clean.contains('{')) rtRws.add(clean);
+            if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) rtRws.add(clean);
           }
         }
       }
