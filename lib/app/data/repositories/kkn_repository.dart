@@ -54,8 +54,8 @@ abstract class KknRepository {
   /// Mengaktivasi warga by scan (wargaId + qrCode)
   Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude);
 
-  /// Mengaktivasi bin untuk warga
-  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId);
+  /// Mengaktivasi bin untuk warga dengan lokasi GPS (latitude, longitude)
+  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng});
 
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();

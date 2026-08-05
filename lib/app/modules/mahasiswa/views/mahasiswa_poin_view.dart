@@ -191,7 +191,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi bin warga (+15 PTS), dan laporan pemanfaatan daur ulang.',
+              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+15 PTS), dan laporan pemanfaatan daur ulang.',
               style: TextStyle(fontSize: 11, color: AppColors.primaryGreen, height: 1.3),
             ),
           ),
@@ -218,7 +218,7 @@ class MahasiswaPoinView extends ConsumerWidget {
               userId: userId,
               points: 15,
               wasteType: WasteType.nonOrganic,
-              description: 'Aktivasi Bin QR - ${w.wargaName}',
+              description: 'Aktivasi Tempat Sampah - ${w.wargaName}',
               createdAt: DateTime.now().subtract(const Duration(days: 1)),
             ),
           ),

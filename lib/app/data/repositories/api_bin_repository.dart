@@ -6,6 +6,7 @@ import '../models/bin_reset_entity.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
 import '../../core/utils/image_compressor.dart';
+import '../../core/utils/network_exception_helper.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -27,7 +28,7 @@ class ApiBinRepository implements BinRepository {
 
   @override
   Future<List<BinEntity>> getBinsByHousehold(String householdId) async {
-    final cacheKey = 'cached_bins';
+    const cacheKey = 'cached_bins';
     try {
       final response = await apiClient.dio.get('/bins/my-bins');
 
@@ -35,12 +36,30 @@ class ApiBinRepository implements BinRepository {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
         await apiClient.secureStorage.write(key: cacheKey, value: jsonEncode(data));
 
-        final List<BinEntity> parsedBins = data
-            .map((json) => _mapMyBin(json as Map<String, dynamic>))
-            .toList();
-
-        // Auto-clean approved/processed reset requests jika volume tong di backend sudah 0L / tidak penuh
         final allKeys = await apiClient.secureStorage.readAll();
+        final pendingBinIds = <String>{};
+        for (final entry in allKeys.entries) {
+          if (entry.key.startsWith('active_reset_request_')) {
+            try {
+              final reqMap = jsonDecode(entry.value);
+              final status = (reqMap['status']?.toString() ?? 'PENDING').toUpperCase();
+              final binId = reqMap['binId']?.toString();
+              if (status == 'PENDING' && binId != null) {
+                pendingBinIds.add(binId);
+              }
+            } catch (_) {}
+          }
+        }
+
+        final List<BinEntity> parsedBins = data.map((json) {
+          final bin = _mapMyBin(json as Map<String, dynamic>);
+          if (pendingBinIds.contains(bin.id)) {
+            return bin.copyWith(isResetPending: true);
+          }
+          return bin;
+        }).toList();
+
+        // Auto-clean approved/processed reset requests jika volume tong di backend sudah 0L
         for (final entry in allKeys.entries) {
           if (entry.key.startsWith('active_reset_request_')) {
             try {
@@ -49,7 +68,7 @@ class ApiBinRepository implements BinRepository {
                 (b) => b.id == req.binId,
                 orElse: () => parsedBins.firstWhere((b) => b.currentVolumeL < b.maxCapacityL, orElse: () => parsedBins.first),
               );
-              if (matchingBin.currentVolumeL < matchingBin.maxCapacityL) {
+              if (matchingBin.currentVolumeL < matchingBin.maxCapacityL && req.status != BinResetStatus.pending) {
                 await apiClient.secureStorage.delete(key: entry.key);
               }
             } catch (_) {}
@@ -234,11 +253,16 @@ class ApiBinRepository implements BinRepository {
           'Kuota harian AI sudah habis (50/hari).',
         );
       }
+      final serverMsg = e.response?.data?['message']?.toString() ?? e.response?.data?['error']?.toString();
+      if (serverMsg != null && serverMsg.isNotEmpty && !serverMsg.startsWith('This exception')) {
+        throw BinException('AI_ERROR', serverMsg);
+      }
       throw BinException(
         'NETWORK_ERROR',
-        'Gagal terhubung ke server: ${e.message}',
+        NetworkExceptionHelper.getErrorMessage(e),
       );
     } catch (e) {
+      if (e is BinException) rethrow;
       throw BinException(
         'UNKNOWN_ERROR',
         'Terjadi kesalahan sistem: $e',
@@ -290,56 +314,63 @@ class ApiBinRepository implements BinRepository {
       }
       throw const BinException('SCAN_FAILED', 'Gagal memproses setoran');
     } on DioException catch (e) {
-      final errorCode = e.response?.data?['error']?.toString();
+      final resData = e.response?.data;
+      final String? serverMsg = resData is Map ? (resData['message']?.toString() ?? resData['error']?.toString()) : null;
+      final errorCode = resData is Map ? (resData['code']?.toString() ?? resData['error']?.toString()) : null;
 
-      if (errorCode == 'BIN_TYPE_MISMATCH') {
-        throw const BinException(
+      if (errorCode == 'BIN_TYPE_MISMATCH' || (serverMsg != null && serverMsg.toLowerCase().contains('jenis'))) {
+        throw BinException(
           'BIN_TYPE_MISMATCH',
-          'Jenis sampah tidak sesuai tong ini.',
+          serverMsg ?? 'Jenis sampah tidak sesuai tong ini.',
         );
       }
-      if (errorCode == 'BIN_OVERFLOW') {
-        throw const BinException(
+      if (errorCode == 'BIN_OVERFLOW' || (serverMsg != null && serverMsg.toLowerCase().contains('penuh'))) {
+        throw BinException(
           'BIN_OVERFLOW',
-          'Tong sudah penuh! Ajukan pengosongan tong.',
+          serverMsg ?? 'Tong sudah penuh! Ajukan pengosongan tong.',
         );
       }
-      if (errorCode == 'LOCATION_OUT_OF_RANGE') {
-        throw const BinException(
+      if (errorCode == 'LOCATION_OUT_OF_RANGE' || (serverMsg != null && serverMsg.toLowerCase().contains('jauh'))) {
+        throw BinException(
           'LOCATION_OUT_OF_RANGE',
-          'Anda terlalu jauh dari tempat sampah (> 10m). Harap mendekat.',
+          serverMsg ?? 'Anda terlalu jauh dari tempat sampah (> 10m). Harap mendekat.',
         );
       }
-      if (errorCode == 'RESOURCE_NOT_FOUND') {
-        throw const BinException(
+      if (errorCode == 'RESOURCE_NOT_FOUND' || errorCode == 'BIN_NOT_FOUND' || (serverMsg != null && serverMsg.toLowerCase().contains('ditemukan'))) {
+        throw BinException(
           'BIN_NOT_FOUND',
-          'QR Code tong tidak ditemukan.',
+          serverMsg ?? 'QR Code tempat sampah tidak ditemukan di sistem.',
         );
       }
-      if (errorCode == 'BIN_NOT_ACTIVATED') {
-        throw const BinException(
+      if (errorCode == 'BIN_NOT_ACTIVATED' || (serverMsg != null && serverMsg.toLowerCase().contains('aktivasi'))) {
+        throw BinException(
           'BIN_NOT_ACTIVATED',
-          'Tong sampah belum diaktivasi.',
+          serverMsg ?? 'Tong sampah belum diaktivasi.',
         );
       }
-      if (errorCode == 'BIN_NOT_OWNED') {
-        throw const BinException(
+      if (errorCode == 'BIN_NOT_OWNED' || (serverMsg != null && serverMsg.toLowerCase().contains('milik'))) {
+        throw BinException(
           'BIN_NOT_OWNED',
-          'Tong ini bukan milik Anda.',
+          serverMsg ?? 'Tong ini bukan milik Anda.',
         );
       }
       if (errorCode == 'VALIDATION_ERROR') {
-        // householdId kosong atau tidak valid
-        throw const BinException(
+        throw BinException(
           'HOUSEHOLD_REQUIRED',
-          'Data rumah tangga belum tersedia. Coba login ulang.',
+          serverMsg ?? 'Data rumah tangga belum tersedia. Coba login ulang.',
         );
       }
+
+      if (serverMsg != null && serverMsg.isNotEmpty && !serverMsg.startsWith('This exception')) {
+        throw BinException('SCAN_FAILED', serverMsg);
+      }
+
       throw BinException(
         'NETWORK_ERROR',
-        'Gagal terhubung ke server: ${e.message}',
+        NetworkExceptionHelper.getErrorMessage(e),
       );
     } catch (e) {
+      if (e is BinException) rethrow;
       throw BinException(
         'UNKNOWN_ERROR',
         'Terjadi kesalahan sistem: $e',
@@ -620,6 +651,10 @@ class ApiBinRepository implements BinRepository {
         ? WasteType.organic
         : WasteType.nonOrganic;
 
+    final bool isResetPending = json['isResetPending'] == true ||
+        json['resetStatus']?.toString().toUpperCase() == 'PENDING' ||
+        json['status']?.toString().toUpperCase() == 'RESET_PENDING';
+
     return BinEntity(
       id: json['id']?.toString() ?? '',
       qrSerial: qrSerial,
@@ -632,6 +667,7 @@ class ApiBinRepository implements BinRepository {
       rt: json['rtRw']?.toString() ?? json['rt']?.toString() ?? '',
       rw: json['rw']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
+      isResetPending: isResetPending,
       isActive: (json['isActive'] as bool?) ??
           (json['enabled'] as bool?) ??
           (json['status']?.toString().toUpperCase() != 'INACTIVE' &&

@@ -68,11 +68,20 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     );
     try {
       final repo = ref.read(kknRepositoryProvider);
-      final data = await repo.getWargaForAktivasi(
+      var data = await repo.getWargaForAktivasi(
         kelurahan: kelurahan.isEmpty ? null : kelurahan,
         rtRw: rtRw.isEmpty ? null : rtRw,
         search: search.isEmpty ? null : search,
       );
+
+      // Fallback: Jika data kosong karena perbedaan format string kelurahan/rtRw di DB backend,
+      // panggil ulang tanpa parameter region agar data warga binaan tetap muncul.
+      if (data.isEmpty && (kelurahan.isNotEmpty || rtRw.isNotEmpty)) {
+        data = await repo.getWargaForAktivasi(
+          search: search.isEmpty ? null : search,
+        );
+      }
+
       state = state.copyWith(
         isLoading: false,
         wargaList: data,
@@ -144,8 +153,26 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      double lat = 0.0;
+      double lng = 0.0;
+
+      if (PlatformUtils.isMobile) {
+        try {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 10),
+            ),
+          );
+          lat = pos.latitude;
+          lng = pos.longitude;
+        } catch (_) {
+          // Fallback if GPS fails
+        }
+      }
+
       final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.activateBin(wargaId, binOrganikId, binAnorganikId);
+      final isSuccess = await repo.activateBin(wargaId, binOrganikId, binAnorganikId, lat: lat, lng: lng);
 
       if (isSuccess) {
         await refresh(); // Refresh list after success
@@ -153,7 +180,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Gagal mengaktivasi bin warga.',
+          errorMessage: 'Gagal mengaktivasi bin warga. QR Code mungkin sudah diaktivasi sebelumnya.',
         );
         return false;
       }

@@ -25,12 +25,12 @@ class ApiNotificationRepository implements NotificationRepository {
       } on DioException catch (e) {
         if (e.response?.statusCode == 404) {
           try {
-            response = await apiClient.dio.get('/rt/notifications');
+            response = await apiClient.dio.get('/kkn/notifications');
           } on DioException catch (_) {
             try {
-              response = await apiClient.dio.get('/rw/notifications');
+              response = await apiClient.dio.get('/rt/notifications');
             } on DioException catch (_) {
-              response = await apiClient.dio.get('/kkn/notifications');
+              response = await apiClient.dio.get('/rw/notifications');
             }
           }
         } else {
@@ -38,15 +38,32 @@ class ApiNotificationRepository implements NotificationRepository {
         }
       }
 
+      List<NotificationEntity> result = [];
       if (response.statusCode == 200 && response.data != null) {
         final rawData = response.data['data'] ?? response.data['notifications'] ?? response.data;
         if (rawData is List) {
-          return rawData
+          result = rawData
               .map((json) => _mapNotification(json as Map<String, dynamic>))
               .toList();
         }
       }
-      return [];
+
+      // Jika /notifications mengembalikan list kosong, coba fetch dari /kkn/notifications
+      if (result.isEmpty) {
+        try {
+          final kknRes = await apiClient.dio.get('/kkn/notifications');
+          if (kknRes.statusCode == 200 && kknRes.data != null) {
+            final rawKkn = kknRes.data['data'] ?? kknRes.data['notifications'] ?? kknRes.data;
+            if (rawKkn is List) {
+              result = rawKkn
+                  .map((json) => _mapNotification(json as Map<String, dynamic>))
+                  .toList();
+            }
+          }
+        } catch (_) {}
+      }
+
+      return result;
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',

@@ -421,21 +421,43 @@ export class AuthService {
         return authRepository.updateKknWhitelistStatus(userId, status, adminUserId);
     }
     async forgotPassword(phone) {
-        const user = await prisma.user.findUnique({ where: { phone } });
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { phone: phone },
+                    { email: phone }
+                ]
+            }
+        });
         if (!user)
             throw new Error("EMAIL_NOT_FOUND");
         return "123456";
     }
     async resetPassword(phone, token, newPassword) {
-        if (token !== "123456") {
-            throw new Error("INVALID_TOKEN");
-        }
-        const user = await prisma.user.findUnique({ where: { phone } });
-        if (!user)
+        const cleanPhone = (phone || '').replace(/^\+?62/, "0").replace(/\s|-/g, "");
+        const altPhone = cleanPhone.startsWith("0") ? "62" + cleanPhone.substring(1) : cleanPhone;
+        const subPhone = cleanPhone.length > 5 ? cleanPhone.substring(cleanPhone.length - 8) : cleanPhone;
+
+        let user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { phone: phone },
+                    { email: phone },
+                    { phone: cleanPhone },
+                    { phone: altPhone },
+                    { phone: { endsWith: subPhone } },
+                    { phone: { contains: cleanPhone } }
+                ]
+            }
+        });
+
+        if (!user) {
             throw new Error("USER_NOT_FOUND");
+        }
+
         const hashedPassword = await hashPassword(newPassword);
         await prisma.user.update({
-            where: { phone },
+            where: { id: user.id },
             data: { password: hashedPassword },
         });
     }

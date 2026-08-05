@@ -29,9 +29,27 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Background message handler — harus top-level function (bukan method class).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Tidak perlu inisialisasi ulang Firebase di sini jika sudah dilakukan di main()
-  // Notifikasi background ditampilkan otomatis oleh sistem operasi
   debugPrint('[FCM Background] ${message.notification?.title}: ${message.notification?.body}');
+  if (message.notification != null) {
+    try {
+      final title = message.notification?.title ?? 'Notifikasi Baru';
+      final body = message.notification?.body ?? '';
+      final type = message.data['type'] ?? 'SYSTEM';
+      final role = message.data['role'] ?? 'WARGA';
+      final userId = message.data['userId'] ?? 'system';
+      
+      await FirebaseNotificationService().saveNotification(
+        userId: userId,
+        role: role,
+        title: title,
+        desc: body,
+        type: type,
+        id: message.messageId,
+      );
+    } catch (e) {
+      debugPrint('[FCM Background] Save error: $e');
+    }
+  }
 }
 
 /// Entry point aplikasi TrashCare — Mobile (Warga).
@@ -109,14 +127,44 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   void _setupFCMForeground() {
     try {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-        debugPrint('[FCM Foreground] Menerima notifikasi: ${message.notification?.title}');
+        final title = message.notification?.title ??
+            message.data['title']?.toString() ??
+            message.data['header']?.toString() ??
+            'Notifikasi Baru';
+        final body = message.notification?.body ??
+            message.data['desc']?.toString() ??
+            message.data['body']?.toString() ??
+            message.data['message']?.toString() ??
+            '';
+        final type = (message.data['event']?.toString() ??
+                message.data['type']?.toString() ??
+                'INFO')
+            .toUpperCase();
+
+        final titleUpper = title.toUpperCase();
+        final bodyUpper = body.toUpperCase();
+
+        // Blokir sama sekali notifikasi penjemputan & seed dummy dari System Notification Tray
+        if (type.contains('JADWAL') ||
+            type.contains('JEMPUT') ||
+            type.contains('PENGANGKUTAN') ||
+            titleUpper.contains('JADWAL') ||
+            titleUpper.contains('JEMPUT') ||
+            titleUpper.contains('PENGANGKUTAN') ||
+            titleUpper.contains('TERDAPAT TEMPAT SAMPAH WARGA') ||
+            titleUpper.contains('HARUS DIAMBIL') ||
+            bodyUpper.contains('HARUS DIAMBIL') ||
+            bodyUpper.contains('ORG004520')) {
+          debugPrint('[FCM Foreground] Ignored obsolete pickup/seed notification: $title');
+          return;
+        }
+
+        debugPrint('[FCM Foreground] Menerima notifikasi: $title');
 
         // Catat push notification ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
         final user = ref.read(authProvider).user;
-        if (user != null && message.notification != null) {
-          final title = message.notification!.title ?? 'Notifikasi Baru';
-          final body = message.notification!.body ?? '';
-          final type = (message.data['event']?.toString() ?? message.data['type']?.toString() ?? 'INFO').toUpperCase();
+        if (user != null && (title.isNotEmpty || body.isNotEmpty)) {
+          final notifId = message.messageId ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
 
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
@@ -124,7 +172,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             title: title,
             desc: body,
             type: type,
-            id: message.messageId,
+            id: notifId,
           );
 
           LocalNotificationCacheService().addNotification(
@@ -133,24 +181,22 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             title: title,
             desc: body,
             type: type,
-            id: message.messageId,
+            id: notifId,
           );
         }
+
+        // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
+        NotificationEngine().showGenericNotification(
+          id: message.messageId.hashCode,
+          title: title,
+          body: body,
+        );
 
         // Selalu refresh daftar notifikasi seluruh role saat ada push masuk
         ref.invalidate(notificationsProvider);
         ref.invalidate(wargaNotificationsProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.invalidate(petugasResiduNotificationsProvider);
-
-        // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
-        if (message.notification != null) {
-          NotificationEngine().showGenericNotification(
-            id: message.messageId.hashCode,
-            title: message.notification!.title ?? 'Notifikasi Baru',
-            body: message.notification!.body ?? '',
-          );
-        }
 
         // Jika FCM membawa data payload event, invalidate provider terkait
         // agar data di Beranda, Riwayat, dan Poin langsung segar.

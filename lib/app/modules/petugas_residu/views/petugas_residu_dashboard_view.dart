@@ -4,14 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_config.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../data/models/user_entity.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../notifikasi/controllers/notifikasi_controller.dart';
-import '../../../data/models/user_entity.dart';
 import '../controllers/petugas_residu_controller.dart';
 import '../controllers/petugas_residu_notifikasi_controller.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
-import '../widgets/sop_kerja_petugas_widget.dart';
 import 'petugas_notification_view.dart';
 
 class PetugasResiduDashboardView extends ConsumerWidget {
@@ -54,9 +52,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, UserEntity? user, int unreadCount) {
     final name = user?.name ?? 'Petugas Residu';
-    final rtRw = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01 / 02';
-    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final roleName = 'Petugas Residu';
+    const roleName = 'Petugas Residu';
     final fotoUrl = user?.fotoProfil;
 
     return Container(
@@ -93,53 +89,40 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                       _getGreeting(),
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.warningYellow,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            roleName,
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'RT $rtRw • Kel. $kelurahan',
+                      name,
                       style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningOrange,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        roleName,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               // Notifikasi
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
@@ -173,7 +156,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            unreadCount > 99 ? '99+' : "$unreadCount",
+                            unreadCount > 99 ? '99+' : '$unreadCount',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -187,80 +170,6 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAksiCepat(BuildContext context, bool isApproved) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildActionItem(
-            context,
-            icon: Icons.scale_rounded,
-            label: 'Input\nTimbangan',
-            color: AppColors.primaryGreen,
-            onTap: isApproved ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu) : null,
-          ),
-          _buildActionItem(
-            context,
-            icon: Icons.history_rounded,
-            label: 'Riwayat\nBulan Ini',
-            color: AppColors.primaryBlue,
-            onTap: isApproved ? () => Navigator.pushNamed(context, AppRoutes.riwayatPetugasResidu) : null,
-          ),
-          _buildActionItem(
-            context,
-            icon: Icons.assignment_turned_in_rounded,
-            label: 'SOP\nKerja',
-            color: AppColors.warningOrange,
-            onTap: isApproved ? () => SopKerjaPetugasWidget.show(context) : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionItem(BuildContext context, {required IconData icon, required String label, required Color color, VoidCallback? onTap}) {
-    final isDisabled = onTap == null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: isDisabled ? Colors.grey.withValues(alpha: 0.1) : color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: isDisabled ? Colors.grey : color, size: 26),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: isDisabled ? Colors.grey : AppColors.textPrimary,
-              height: 1.2,
-            ),
           ),
         ],
       ),
@@ -416,12 +325,13 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppDimensions.md),
+                  const SizedBox(height: 18),
 
-                  // Kinerja & Matriks
+                  // Kinerja KPI
                   _buildKpiCard(dashboard?.kpiScore ?? 93.8),
-                  const SizedBox(height: AppDimensions.md),
-                  
+                  const SizedBox(height: 18),
+
+                  // Matriks Statistik: Kg Hari Ini & Akumulasi Bin (2 Kolom Rapi)
                   Row(
                     children: [
                       _buildStatCard(
@@ -431,19 +341,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                         icon: Icons.scale_rounded,
                         color: AppColors.primaryGreen,
                       ),
-                      const SizedBox(width: 12),
-                      _buildStatCard(
-                        title: 'Total Entry',
-                        value: '${dashboard?.sudahDiambil ?? 4}',
-                        unit: 'Upload',
-                        icon: Icons.upload_file_rounded,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
+                      const SizedBox(width: 14),
                       _buildStatCard(
                         title: 'Akumulasi Bin',
                         value: '540.2',
@@ -451,26 +349,11 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                         icon: Icons.delete_sweep_rounded,
                         color: AppColors.warningOrange,
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(child: SizedBox()), // Placeholder agar grid tetap rata
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.lg),
+                  const SizedBox(height: 12),
 
-                  // Aksi Cepat
-                  const Text(
-                    'Aksi Cepat',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.sm),
-                  _buildAksiCepat(context, isApproved),
-                  const SizedBox(height: AppDimensions.lg),
-
-                  // Riwayat
+                  // Riwayat Aktivitas Terbaru
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -479,6 +362,11 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                         style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
                       ),
                       TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                         onPressed: () => Navigator.pushNamed(context, AppRoutes.riwayatPetugasResidu),
                         child: const Text(
                           'Lihat Semua',
@@ -490,6 +378,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
                   
                   if (state.historyList.isEmpty)
                     Container(
@@ -508,6 +397,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                     )
                   else
                     ListView.builder(
+                      padding: EdgeInsets.zero,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: state.historyList.length > 5 ? 5 : state.historyList.length,

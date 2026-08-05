@@ -22,29 +22,31 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<List<WargaDampingan>> getWargaDampingan() async {
-    final response = await apiClient.dio.get('/kkn/warga-dampingan');
-    if (response.statusCode == 200) {
-      if (response.data is Map<String, dynamic>) {
-        final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
-        
-        // DEBUGGING LOG UNTUK MELIHAT RESPON ASLI BACKEND
-        if (data.isNotEmpty) {
-          print("=== DEBUG API WARGA ===");
-          print("Warga pertama: ${data[0]['wargaName'] ?? data[0]['name']}");
-          print("mahasiswaId: ${data[0]['mahasiswaId'] ?? data[0]['registeredByStudentId']}");
-          print("status: ${data[0]['status'] ?? data[0]['isActivated']}");
-          print("binOrganikId: ${data[0]['binOrganikId']}");
-          print("Total data: ${data.length}");
-          print("=======================");
+    List<dynamic> rawList = [];
+    try {
+      final response = await apiClient.dio.get('/kkn/warga-dampingan');
+      if (response.statusCode == 200) {
+        if (response.data is Map<String, dynamic>) {
+          rawList = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+        } else if (response.data is List) {
+          rawList = response.data as List<dynamic>;
         }
-
-        return data.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
-      } else {
-        throw Exception("Server merespons dengan format yang tidak valid (Bukan JSON).");
       }
-    } else {
-      throw Exception('Gagal memuat daftar warga dampingan');
+    } catch (_) {
+      rawList = [];
     }
+
+    // Fallback: Jika /kkn/warga-dampingan kosong, ambil data dari /kkn/warga (Warga Penugasan KKN)
+    if (rawList.isEmpty) {
+      try {
+        final aktivasiData = await getWargaForAktivasi();
+        if (aktivasiData.isNotEmpty) {
+          rawList = aktivasiData;
+        }
+      } catch (_) {}
+    }
+
+    return rawList.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override
@@ -194,13 +196,15 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId) async {
+  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng}) async {
     final response = await apiClient.dio.post(
       '/kkn/warga/activate-bin',
       data: {
         'wargaId': wargaId,
         'binOrganikId': binOrganikId,
         'binAnorganikId': binAnorganikId,
+        'latitude': lat ?? 0.0,
+        'longitude': lng ?? 0.0,
       },
     );
     return response.statusCode == 200 || response.statusCode == 201;

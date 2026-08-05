@@ -58,16 +58,30 @@ class PetugasResiduPoinView extends ConsumerWidget {
                   ],
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Icon(Icons.monetization_on_rounded, color: Colors.amber, size: 48),
-                    const SizedBox(height: 10),
-                    const Text('Total Poin Insentif Residu', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    const SizedBox(height: 4),
+                    const Text(
+                      'Total Poin Insentif Residu',
+                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.6), width: 1.5),
+                      ),
+                      child: const Icon(Icons.monetization_on_rounded, color: Colors.amber, size: 48),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       '$totalPoints Pts',
                       style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
@@ -77,6 +91,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                       child: const Text(
                         'Insentif Dihitung Otomatis oleh Server Backend Admin',
                         style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],

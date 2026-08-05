@@ -71,12 +71,66 @@ class NotificationEngine {
 
   Future<void> _scheduleFixedNotifications() async {
     try {
-      // Hapus & batalkan notifikasi jadwal buang sampah lokal (pagi & sore)
       await _flutterLocalNotificationsPlugin.cancel(id: 1);
       await _flutterLocalNotificationsPlugin.cancel(id: 2);
-      debugPrint('[NotificationEngine] Fixed pickup schedules cancelled successfully.');
+
+      final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+
+      // 1. Pengingat Memilah Sampah Pagi (07:00 WIB / rentang 06:00-08:00 WIB)
+      tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 7, 0);
+      if (scheduledPagi.isBefore(now)) {
+        scheduledPagi = scheduledPagi.add(const Duration(days: 1));
+      }
+
+      const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
+        'reminder_pagi_channel',
+        'Pengingat Memilah Sampah Pagi',
+        channelDescription: 'Notifikasi rutin jadwal pemilahan sampah pagi untuk warga',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        color: Color(0xFF0EA5E9),
+      );
+
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        id: 1,
+        title: 'Waktunya Memilah Sampah Pagi! 🌅',
+        body: 'Pengingat warga: Jangan lupa pisahkan sampah Organik & Anorganik sebelum disetor pagi ini.',
+        scheduledDate: scheduledPagi,
+        notificationDetails: const NotificationDetails(android: androidPagi),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+
+      // 2. Pengingat Memilah Sampah Sore (17:00 WIB / rentang 16:00-18:00 WIB)
+      tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 17, 0);
+      if (scheduledSore.isBefore(now)) {
+        scheduledSore = scheduledSore.add(const Duration(days: 1));
+      }
+
+      const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
+        'reminder_sore_channel',
+        'Pengingat Memilah Sampah Sore',
+        channelDescription: 'Notifikasi rutin jadwal pemilahan sampah sore untuk warga',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        color: Color(0xFF0EA5E9),
+      );
+
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        id: 2,
+        title: 'Waktunya Memilah Sampah Sore! 🌆',
+        body: 'Pengingat warga: Cek kembali tempat sampah Anda dan pastikan sampah terpilah dengan benar.',
+        scheduledDate: scheduledSore,
+        notificationDetails: const NotificationDetails(android: androidSore),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+
+      debugPrint('[NotificationEngine] Fixed daily reminders (07:00 & 17:00 WIB) scheduled successfully in background.');
     } catch (e) {
-      debugPrint('[NotificationEngine] Schedule cancel failed: $e');
+      debugPrint('[NotificationEngine] Schedule error: $e');
     }
   }
 

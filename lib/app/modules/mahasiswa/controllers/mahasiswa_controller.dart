@@ -55,9 +55,6 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final repo = _ref.read(kknRepositoryProvider);
-      final user = _ref.read(authProvider).user;
-      final userId = user?.id ?? '';
-      final userNim = user?.nim ?? '';
 
       final results = await Future.wait([
         repo.getDashboard(),
@@ -66,25 +63,10 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
       final rawWarga = results[1] as List<WargaDampingan>;
 
-      // Filter ketat: HANYA warga yang terikat pada akun mahasiswa ini (berdasarkan ID atau NIM)
-      final myWarga = rawWarga.where((w) {
-        if (!w.isActivated) return false;
-        
-        final mhsId = w.mahasiswaId.trim();
-        if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
-          return false;
-        }
-        
-        final matchUserId = userId.isNotEmpty && mhsId == userId;
-        final matchUserNim = userNim.isNotEmpty && mhsId == userNim;
-
-        return matchUserId || matchUserNim;
-      }).toList();
-
       state = state.copyWith(
         isLoading: false,
         dashboard: results[0] as KknDashboardData,
-        wargaList: myWarga,
+        wargaList: rawWarga,
       );
     } catch (e) {
       state = state.copyWith(

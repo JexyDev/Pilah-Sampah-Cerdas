@@ -48,6 +48,12 @@ abstract class AuthRepository {
     required String newPassword,
   });
 
+  /// Ubah kata sandi pengguna aktif.
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  });
+
   /// Fetch dynamic list of registered Kelurahan & RT/RW from Web Admin roles backend.
   Future<Map<String, dynamic>> fetchTerritories();
 }

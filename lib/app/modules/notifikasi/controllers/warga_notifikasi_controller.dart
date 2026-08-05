@@ -28,28 +28,39 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 
   for (final notif in list) {
     final type = notif.type.toUpperCase();
-    final title = notif.title.toLowerCase();
+    final title = notif.title.toUpperCase();
+    final desc = notif.desc.toUpperCase();
 
-    final isKknNotif = type.contains('KKN') ||
-        type.contains('POIN_KKN') ||
-        type.contains('IZIN') ||
+    final isWargaReminder = title.contains('BUANG SAMPAH') || title.contains('PENGINGAT') || type.contains('REMINDER');
+    final isForbidden = type.contains('JEMPUT') ||
+        type.contains('PENGANGKUTAN') ||
+        type.contains('KKN') ||
         type.contains('DPL') ||
+        type.contains('IZIN') ||
         type.contains('PRESENSI') ||
-        type.contains('AKTIVASI') ||
-        title.contains('kkn') ||
-        title.contains('dpl') ||
-        title.contains('posko') ||
-        title.contains('presensi');
-
-    final isPetugasNotif = type.contains('RESIDU') ||
-        type.contains('TIMBANGAN') ||
+        type.contains('PEMANFAATAN') ||
+        type.contains('TIMBANGAN_RESIDU') ||
         type.contains('VIOLATION') ||
-        title.contains('timbangan') ||
-        title.contains('residu') ||
-        title.contains('pelanggaran');
+        type.contains('PELANGGARAN') ||
+        type.contains('WHITELIST') ||
+        title.contains('JEMPUT') ||
+        title.contains('PENGANGKUTAN') ||
+        title.contains('TERDAPAT TEMPAT SAMPAH WARGA') ||
+        title.contains('HARUS DIAMBIL') ||
+        title.contains('KKN') ||
+        title.contains('DPL') ||
+        title.contains('PRESENSI') ||
+        title.contains('TIMBANGAN RESIDU') ||
+        title.contains('WHITELIST') ||
+        desc.contains('JEMPUT') ||
+        desc.contains('PENGANGKUTAN') ||
+        desc.contains('HARUS DIAMBIL') ||
+        desc.contains('PRESENSI GEOFENCE') ||
+        desc.contains('AKUN PETUGAS');
 
-    // Warga hanya menerima notifikasi Warga (Setoran, Poin, Bin, Status Terbina)
-    if (isKknNotif || isPetugasNotif) continue;
+    if (!isWargaReminder && isForbidden) continue;
+    if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) continue;
+
     result.add(notif);
 
     final notifKey = 'warga_${userId}_${notif.id}';
@@ -63,9 +74,19 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     }
   }
 
-  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService (agar push tray & disk store selalu masuk riwayat)
+  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService (hanya notifikasi Warga & tanpa dummy penjemputan)
   final localNotifs = LocalNotificationCacheService().getNotifications(userId, role);
   for (final localItem in localNotifs) {
+    final type = localItem.type.toUpperCase();
+    final title = localItem.title.toUpperCase();
+    final desc = localItem.desc.toUpperCase();
+
+    if (type.contains('JADWAL') || type.contains('JEMPUT') || type.contains('PENGANGKUTAN') ||
+        title.contains('JEMPUT') || title.contains('HARUS DIAMBIL') || desc.contains('HARUS DIAMBIL') ||
+        localItem.id == 'seed-notif-1' || localItem.id == 'seed-notif-3' || desc.contains('ORG004520')) {
+      continue;
+    }
+
     if (!result.any((n) => n.id == localItem.id)) {
       result.insert(0, localItem);
     }
@@ -73,6 +94,16 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 
   final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
   for (final fbItem in firebaseNotifs) {
+    final type = fbItem.type.toUpperCase();
+    final title = fbItem.title.toUpperCase();
+    final desc = fbItem.desc.toUpperCase();
+
+    if (type.contains('JADWAL') || type.contains('JEMPUT') || type.contains('PENGANGKUTAN') ||
+        title.contains('JEMPUT') || title.contains('HARUS DIAMBIL') || desc.contains('HARUS DIAMBIL') ||
+        fbItem.id == 'seed-notif-1' || fbItem.id == 'seed-notif-3' || desc.contains('ORG004520')) {
+      continue;
+    }
+
     if (!result.any((n) => n.id == fbItem.id)) {
       result.insert(0, fbItem);
     }

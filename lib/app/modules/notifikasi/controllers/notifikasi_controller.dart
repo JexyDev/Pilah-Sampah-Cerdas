@@ -5,8 +5,60 @@ import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/notification_engine.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
+import '../../petugas_residu/controllers/petugas_residu_notifikasi_controller.dart';
+import '../../../data/services/firebase_notification_service.dart';
 
 final Set<String> _shownNotifIds = {};
+
+bool _isWargaNotification(NotificationEntity notif) {
+  final type = notif.type.toUpperCase();
+  final title = notif.title.toUpperCase();
+  final desc = notif.desc.toUpperCase();
+
+  // Pengingat Buang Sampah Pagi (07:00) & Sore (16:00) untuk Warga diperbolehkan
+  final isWargaReminder = title.contains('BUANG SAMPAH') || title.contains('PENGINGAT') || type.contains('REMINDER');
+  if (isWargaReminder && !title.contains('HARUS DIAMBIL') && !desc.contains('HARUS DIAMBIL')) {
+    return true;
+  }
+
+  // Dilarang total untuk Warga (Penjemputan Petugas, Mahasiswa KKN & Petugas Residu)
+  final isForbidden = type.contains('JEMPUT') ||
+      type.contains('PENGANGKUTAN') ||
+      type.contains('KKN') ||
+      type.contains('DPL') ||
+      type.contains('IZIN') ||
+      type.contains('PRESENSI') ||
+      type.contains('PEMANFAATAN') ||
+      type.contains('TIMBANGAN_RESIDU') ||
+      type.contains('VIOLATION') ||
+      type.contains('PELANGGARAN') ||
+      type.contains('WHITELIST') ||
+      title.contains('JEMPUT') ||
+      title.contains('PENGANGKUTAN') ||
+      title.contains('TERDAPAT TEMPAT SAMPAH WARGA') ||
+      title.contains('HARUS DIAMBIL') ||
+      title.contains('KKN') ||
+      title.contains('DPL') ||
+      title.contains('PRESENSI') ||
+      title.contains('TIMBANGAN RESIDU') ||
+      title.contains('WHITELIST') ||
+      desc.contains('JEMPUT') ||
+      desc.contains('PENGANGKUTAN') ||
+      desc.contains('HARUS DIAMBIL') ||
+      desc.contains('PRESENSI GEOFENCE') ||
+      desc.contains('AKUN PETUGAS');
+
+  if (isForbidden) return false;
+
+  // Hapus seed notifikasi palsu / dummy lama (seperti seed ORG004520)
+  if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) {
+    return false;
+  }
+
+  return true;
+}
 
 /// Reset cache notifikasi lokal saat logout
 void clearNotificationCache() {
@@ -28,49 +80,12 @@ final notificationsProvider =
   // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
   // Dikunci presisi per ID Mahasiswa & membuang notifikasi Warga jika role adalah Mahasiswa KKN.
   final userId = user.id;
-  final roleName = user.role.name.toUpperCase();
-  final isMahasiswa = roleName == 'MAHASISWAKKN';
-  final isPetugas = roleName == 'PETUGASRESIDU';
-  final isWarga = roleName == 'WARGA';
+  final roleName = user.role.name;
 
   final List<NotificationEntity> filteredList = [];
 
   for (final notif in list) {
-    final type = notif.type.toUpperCase();
-    final title = notif.title.toLowerCase();
-
-    final isKknNotif = type.contains('KKN') ||
-        type.contains('POIN_KKN') ||
-        type.contains('IZIN') ||
-        type.contains('DPL') ||
-        type.contains('PRESENSI') ||
-        type.contains('AKTIVASI') ||
-        type.contains('PEMANFAATAN') ||
-        title.contains('kkn') ||
-        title.contains('dpl') ||
-        title.contains('posko') ||
-        title.contains('presensi') ||
-        title.contains('aktivasi');
-
-    final isPetugasNotif = type.contains('RESIDU') ||
-        type.contains('TIMBANGAN') ||
-        type.contains('VIOLATION') ||
-        title.contains('timbangan') ||
-        title.contains('residu') ||
-        title.contains('pelanggaran');
-
-    bool isAllowed = false;
-    if (isMahasiswa) {
-      isAllowed = isKknNotif;
-    } else if (isPetugas) {
-      isAllowed = isPetugasNotif;
-    } else if (isWarga) {
-      isAllowed = !isKknNotif && !isPetugasNotif;
-    } else {
-      isAllowed = true;
-    }
-
-    if (!isAllowed) continue;
+    if (!_isWargaNotification(notif)) continue;
     filteredList.add(notif);
 
     // Otomatis tampilkan di system tray HANYA untuk notifikasi yang lolos filter role user
@@ -82,6 +97,23 @@ final notificationsProvider =
         title: notif.title,
         body: notif.desc,
       );
+    }
+  }
+
+  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService (hanya notifikasi Warga)
+  final localNotifs = LocalNotificationCacheService().getNotifications(userId, roleName);
+  for (final localItem in localNotifs) {
+    if (!_isWargaNotification(localItem)) continue;
+    if (!filteredList.any((n) => n.id == localItem.id)) {
+      filteredList.insert(0, localItem);
+    }
+  }
+
+  final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, roleName);
+  for (final fbItem in firebaseNotifs) {
+    if (!_isWargaNotification(fbItem)) continue;
+    if (!filteredList.any((n) => n.id == fbItem.id)) {
+      filteredList.insert(0, fbItem);
     }
   }
 
@@ -121,25 +153,46 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
   /// Tandai satu notifikasi sebagai dibaca.
   Future<void> markRead(String id) async {
     state = const MarkReadState(isLoading: true);
+    markMhsMockAsRead(id);
+    markPetugasMockAsRead(id);
+    final user = _ref.read(authProvider).user;
+    if (user != null) {
+      LocalNotificationCacheService().markAsRead(user.id, user.role.name, id);
+      await FirebaseNotificationService().markAsRead(user.id, user.role.name, id);
+    }
     try {
       await _repo.markAsRead(id);
-      // Refresh list supaya badge count dan UI update
+    } catch (_) {
+      // Abaikan error jika ID notifikasi lokal/mock
+    } finally {
+      // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
       _ref.invalidate(notificationsProvider);
+      _ref.invalidate(mahasiswaNotificationsProvider);
+      _ref.invalidate(petugasResiduNotificationsProvider);
       state = const MarkReadState();
-    } on NotificationException catch (e) {
-      state = MarkReadState(errorCode: e.code, errorMessage: e.message);
     }
   }
 
   /// Tandai semua notifikasi sebagai dibaca.
   Future<void> markAllRead() async {
     state = const MarkReadState(isLoading: true);
+    markAllMhsMocksAsRead();
+    markAllPetugasMocksAsRead();
+    final user = _ref.read(authProvider).user;
+    if (user != null) {
+      LocalNotificationCacheService().markAllAsRead(user.id, user.role.name);
+      await FirebaseNotificationService().markAllAsRead(user.id, user.role.name);
+    }
     try {
       await _repo.markAllAsRead();
+    } catch (_) {
+      // Abaikan error jika backend bermasalah
+    } finally {
+      // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
       _ref.invalidate(notificationsProvider);
+      _ref.invalidate(mahasiswaNotificationsProvider);
+      _ref.invalidate(petugasResiduNotificationsProvider);
       state = const MarkReadState();
-    } on NotificationException catch (e) {
-      state = MarkReadState(errorCode: e.code, errorMessage: e.message);
     }
   }
 }

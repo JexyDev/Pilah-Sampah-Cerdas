@@ -13,6 +13,18 @@ class LocalNotificationCacheService {
   /// Key format: '${userId}_${role}' -> `List<NotificationEntity>`
   final Map<String, List<NotificationEntity>> _cache = {};
 
+  String _normalizeRole(String role) {
+    final r = role.toUpperCase().replaceAll('_', '').replaceAll(' ', '');
+    if (r.contains('MAHASISWA') || r.contains('KKN')) return 'MAHASISWA';
+    if (r.contains('PETUGAS') || r.contains('RESIDU')) return 'PETUGAS';
+    if (r.contains('WARGA')) return 'WARGA';
+    return r;
+  }
+
+  String _getCacheKey(String userId, String role) {
+    return '${userId}_${_normalizeRole(role)}';
+  }
+
   /// Tambah notifikasi baru ke cache lokal user
   void addNotification({
     required String userId,
@@ -23,7 +35,7 @@ class LocalNotificationCacheService {
     String? id,
     String? icon,
   }) {
-    final key = '${userId}_${role.toUpperCase()}';
+    final key = _getCacheKey(userId, role);
     final currentList = _cache[key] ?? [];
 
     final newNotif = NotificationEntity(
@@ -45,13 +57,13 @@ class LocalNotificationCacheService {
 
   /// Ambil seluruh notifikasi lokal milik user & role tertentu
   List<NotificationEntity> getNotifications(String userId, String role) {
-    final key = '${userId}_${role.toUpperCase()}';
+    final key = _getCacheKey(userId, role);
     return List.unmodifiable(_cache[key] ?? []);
   }
 
   /// Tandai notifikasi lokal sebagai dibaca
   void markAsRead(String userId, String role, String notifId) {
-    final key = '${userId}_${role.toUpperCase()}';
+    final key = _getCacheKey(userId, role);
     final list = _cache[key];
     if (list == null) return;
 
@@ -65,7 +77,7 @@ class LocalNotificationCacheService {
 
   /// Tandai semua notifikasi lokal user sebagai dibaca
   void markAllAsRead(String userId, String role) {
-    final key = '${userId}_${role.toUpperCase()}';
+    final key = _getCacheKey(userId, role);
     final list = _cache[key];
     if (list == null) return;
 

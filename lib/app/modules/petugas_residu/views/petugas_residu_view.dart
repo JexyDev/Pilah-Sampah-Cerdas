@@ -41,7 +41,7 @@ class PetugasResiduView extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.notifikasi),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.petugasNotifikasi),
           ),
         ],
       ),

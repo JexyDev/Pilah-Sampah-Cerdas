@@ -695,5 +695,24 @@ export class AuthController {
             }
         }
     }
+    async changePassword(req, res) {
+        try {
+            const userId = req.user?.id || req.user?.userId;
+            const { oldPassword, newPassword } = req.body;
+            await authService.changePassword(userId, oldPassword, newPassword);
+            res.status(200).json({ success: true, message: "Kata sandi berhasil diubah" });
+        }
+        catch (error) {
+            if (error.message === "WRONG_OLD_PASSWORD") {
+                res.status(400).json({ success: false, message: "Kata sandi lama Anda salah" });
+            }
+            else if (error.message === "USER_NOT_FOUND") {
+                res.status(404).json({ success: false, message: "User tidak ditemukan" });
+            }
+            else {
+                res.status(500).json({ success: false, message: error.message });
+            }
+        }
+    }
 }
 export const authController = new AuthController();

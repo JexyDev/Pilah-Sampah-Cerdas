@@ -407,21 +407,54 @@ export class AuthService {
         return authRepository.updateKknWhitelistStatus(userId, status, adminUserId);
     }
     async forgotPassword(email) {
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: email },
+                    { phone: email }
+                ]
+            }
+        });
         if (!user)
             throw new Error("EMAIL_NOT_FOUND");
         return "123456";
     }
     async resetPassword(email, token, newPassword) {
-        if (token !== "123456") {
-            throw new Error("INVALID_TOKEN");
-        }
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user)
+        const cleanPhone = (email || '').replace(/^\+?62/, "0").replace(/\s|-/g, "");
+        const altPhone = cleanPhone.startsWith("0") ? "62" + cleanPhone.substring(1) : cleanPhone;
+        const subPhone = cleanPhone.length > 5 ? cleanPhone.substring(cleanPhone.length - 8) : cleanPhone;
+
+        let user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: email },
+                    { phone: email },
+                    { phone: cleanPhone },
+                    { phone: altPhone },
+                    { phone: { endsWith: subPhone } },
+                    { phone: { contains: cleanPhone } }
+                ]
+            }
+        });
+
+        if (!user) {
             throw new Error("USER_NOT_FOUND");
+        }
+
         const hashedPassword = await hashPassword(newPassword);
         await prisma.user.update({
-            where: { email },
+            where: { id: user.id },
+            data: { password: hashedPassword },
+        });
+    }
+    async changePassword(userId, oldPassword, newPassword) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) throw new Error("USER_NOT_FOUND");
+        const isValid = await comparePassword(oldPassword, user.password);
+        if (!isValid) throw new Error("WRONG_OLD_PASSWORD");
+        const hashedPassword = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: userId },
             data: { password: hashedPassword },
         });
     }

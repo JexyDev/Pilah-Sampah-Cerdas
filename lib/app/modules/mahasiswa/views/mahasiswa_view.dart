@@ -578,7 +578,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.qr_code_scanner_rounded,
-                title: 'Aktivasi Bin QR',
+                title: 'Aktivasi Tempat Sampah',
                 subtitle: 'Pindai barcode warga',
                 gradientColors: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
                 onTap: () {
@@ -631,11 +631,17 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final userKel = user?.kelurahan ?? 'Bojongsoang';
     final userRt = user?.rtRw ?? '01/02';
 
-    // Hanya tampilkan Warga Dampingan yang diaktivasi oleh mahasiswa login ini (mahasiswaId tidak boleh kosong)
+    // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa ini
     final list = state.wargaList.where((w) {
       if (!w.isActivated) return false;
-      if (w.mahasiswaId.isEmpty) return false;
-      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+
+      final mhsId = w.mahasiswaId.trim();
+      if (mhsId.isNotEmpty && mhsId.toLowerCase() != 'null' && mhsId.toLowerCase() != 'undefined') {
+        final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
+        if (!matchesUser) return false;
+      }
+
+      return true;
     }).map((w) {
       final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
           ? w.address
@@ -812,10 +818,12 @@ class _SummaryCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
@@ -826,6 +834,8 @@ class _SummaryCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

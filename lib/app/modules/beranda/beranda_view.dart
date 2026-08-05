@@ -130,7 +130,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     builder: (context, ref, _) {
                       return ref.watch(binsProvider).when(
                         data: (bins) {
-                          if (bins.isEmpty) {
+                          final activeBins = bins.where((bin) => bin.isActive).toList();
+                          if (activeBins.isEmpty) {
                             return Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
@@ -140,7 +141,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                               ),
                               child: const Center(
                                 child: Text(
-                                  'Belum ada tempat sampah terdaftar.',
+                                  'Belum ada tempat sampah aktif terdaftar.',
                                   style: TextStyle(color: AppColors.textSecondary),
                                 ),
                               ),
@@ -150,7 +151,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                             scrollDirection: Axis.horizontal,
                             clipBehavior: Clip.none,
                             child: Row(
-                              children: bins.map((bin) {
+                              children: activeBins.map((bin) {
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 12),
                                   child: SizedBox(
@@ -280,7 +281,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     int unreadCount,
   ) {
     final name = user?.name ?? 'Warga';
-    final rtRw = user?.rtRw ?? 'RT 04 / RW 02';
     final roleName = user?.role.displayName ?? 'Warga';
     final fotoUrl = user?.fotoProfil;
     return Container(
@@ -387,7 +387,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            unreadCount > 99 ? '99+' : "$unreadCount",
+                            unreadCount > 99 ? '99+' : '$unreadCount',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -1010,14 +1010,32 @@ class _BerandaBinCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(Icons.delete_rounded, color: color, size: 24),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
-                  shape: BoxShape.circle,
+              if (bin.isResetPending)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningYellow.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
+                  ),
+                  child: const Text(
+                    'PENDING',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.warningYellow,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),

@@ -11,10 +11,10 @@ class AppColors {
   static const Color primaryBlueDark = Color(0xFF0369A1); // Deep Sky Blue
   static const Color primaryBlueLight = Color(0xFFE0F2FE); // Very Light Sky Blue
 
-  // --- Primary Green (Now clean light blue for main brand) ---
+  // --- Primary Color (Clean Sky Blue khas Warga & Petugas Residu) ---
   static const Color primaryGreen = Color(0xFF0EA5E9); // Bright Sky Blue
-  static const Color primaryGreenLight = Color(0xFFF0F9FF); // Soft white-blue
-  static const Color organicColor = Color(0xFF10B981); // Green for organic
+  static const Color primaryGreenLight = Color(0xFFE0F2FE); // Soft Light Blue
+  static const Color organicColor = Color(0xFF10B981); // Green for organic waste
 
   // --- Non-Organic (orange/amber/yellow) ---
   static const Color nonOrganicColor = Color(0xFFF59E0B); // Yellow for non-organic

@@ -121,7 +121,7 @@ class _ForgotPasswordViewState
       setState(() => _currentStep = 2);
       _startResendCountdown();
       _showToast(
-        'OTP telah dikirim ke ${_maskPhone(phone)}',
+        'OTP dikirim ke ${_maskPhone(phone)} (Gunakan Kode OTP Dev: 123456)',
         isError: false,
       );
     }
@@ -141,7 +141,7 @@ class _ForgotPasswordViewState
   // ─── Step 2: Verifikasi OTP ───────────────────────────────────────────────
 
   Future<void> _onVerifyOtp() async {
-    if (!_otpCompleted) {
+    if (!_otpCompleted || _otpValue.length < 6) {
       _showToast('Masukkan 6 digit kode OTP terlebih dahulu');
       return;
     }
@@ -154,7 +154,7 @@ class _ForgotPasswordViewState
     if (ok && mounted) {
       setState(() => _currentStep = 3);
     } else if (mounted) {
-      _showToast('OTP salah atau expired');
+      _showToast('Kode OTP salah atau kedaluwarsa');
     }
   }
 
@@ -176,14 +176,16 @@ class _ForgotPasswordViewState
         );
 
     if (ok && mounted) {
-      _showToast('Kata sandi berhasil diperbarui!', isError: false);
+      _showToast('Kata sandi berhasil diperbarui! Silakan login.', isError: false);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.of(context).pop();
       });
     } else if (mounted) {
       final authState = ref.read(authProvider);
       String errorText = 'Gagal menyetel ulang kata sandi.';
-      if (authState.errorCode == 'INVALID_TOKEN' ||
+      if (authState.errorCode == 'USER_NOT_FOUND') {
+        errorText = 'Nomor telepon tidak terdaftar di sistem.';
+      } else if (authState.errorCode == 'INVALID_TOKEN' ||
           authState.errorCode == 'OTP_INVALID') {
         errorText = 'Kode OTP salah atau sudah kedaluwarsa.';
       } else if (authState.errorCode == 'NETWORK_ERROR') {
@@ -631,7 +633,29 @@ class _ForgotPasswordViewState
             ],
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 16),
+
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlueLight,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryBlueDark),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Mode Pengujian: Masukkan kode OTP 123456 untuk melanjutkan.',
+                  style: TextStyle(fontSize: 11, color: AppColors.primaryBlueDark, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
 
         // OTP Input
         Center(

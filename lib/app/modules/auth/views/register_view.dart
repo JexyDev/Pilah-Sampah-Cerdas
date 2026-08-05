@@ -143,8 +143,9 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   }
 
   String _normalizePhone(String raw) {
-    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
-    if (!phone.startsWith('0') && phone.startsWith('8')) phone = '0$phone';
+    String phone = raw.replaceAll(RegExp(r'[\s\-\+]'), '');
+    if (phone.startsWith('62')) phone = '0${phone.substring(2)}';
+    if (phone.startsWith('8')) phone = '0$phone';
     return phone;
   }
 
@@ -385,7 +386,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 items: const [
                                   DropdownMenuItem(value: 'Warga', child: Text('Warga')),
                                   DropdownMenuItem(value: 'Petugas Residu', child: Text('Petugas Residu')),
-                                  DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa')),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setState(() => _selectedRole = val);

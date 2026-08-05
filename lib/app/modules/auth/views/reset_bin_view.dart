@@ -25,6 +25,7 @@ class ResetBinView extends ConsumerStatefulWidget {
 class _ResetBinViewState extends ConsumerState<ResetBinView> {
   String? _evidencePhotoPath;
   double _compressedKB = 0;
+  final Set<String> _selectedBinIds = {};
 
   String _mapError(String code, String? message) {
     switch (code) {
@@ -97,12 +98,15 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       if (next.isSuccess && !next.isLoading) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            setState(() {
+              _selectedBinIds.clear();
+            });
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
             NotificationEngine().showResetPendingNotification();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Sedang mengajukan riset Tong Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                content: Text('Pengajuan pengosongan berhasil dikirim. Menunggu proses persetujuan RW (PENDING).'),
                 backgroundColor: AppColors.warningYellow,
                 behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 4),
@@ -147,9 +151,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       return _buildSuccess(context, ref, resetState.result!);
     }
 
+    final bool hasPendingRequest = resetState.result != null && resetState.result!.status == BinResetStatus.pending;
     return binsAsync.when(
       data: (bins) {
-        return _buildForm(bins, userId);
+        return _buildForm(bins, userId, isPending: hasPendingRequest);
       },
       loading: () => const AppLoading(),
       error: (_, __) => const Center(child: Text(AppStrings.errorGeneric)),
@@ -182,47 +187,18 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       );
     }
 
+    // Auto select active non-pending bins by default if selection is empty
+    if (_selectedBinIds.isEmpty) {
+      for (final b in bins) {
+        if (b.isActive && !b.isResetPending) {
+          _selectedBinIds.add(b.id);
+        }
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isPending) ...[
-          Container(
-            padding: const EdgeInsets.all(14),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.warningYellow.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.4)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.access_time_rounded, color: AppColors.warningYellow, size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Status: PENDING (Sedang Diproses)',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.warningYellow,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Pengajuan pengosongan Anda sedang dalam antrean petugas. Anda tidak dapat mengajukan ulang hingga pengosongan disetujui.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
         Text('Status Tempat Sampah', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: AppDimensions.sm),
         Expanded(
@@ -233,115 +209,197 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             itemBuilder: (context, index) {
               final BinEntity bin = bins[index];
               final bool isBinActive = bin.isActive;
+              final bool isPendingBin = bin.isResetPending;
+              final bool isSelected = _selectedBinIds.contains(bin.id);
 
-              final Color cardBg = isBinActive ? Colors.white : Colors.grey.shade100;
-              final Color borderColor = isBinActive ? AppColors.border : Colors.grey.shade300;
-              final Color iconColor = !isBinActive
-                  ? Colors.grey.shade400
-                  : (bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen);
-              final Color progressColor = !isBinActive
-                  ? Colors.grey.shade400
-                  : (bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen);
-              final Color textColor = isBinActive ? AppColors.textPrimary : Colors.grey.shade600;
+              Color cardBg;
+              Color borderColor;
+              Color iconColor;
+              Color progressColor;
+              Color textColor;
 
-              return Card(
-                elevation: 0,
-                color: cardBg,
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    color: borderColor,
-                    width: isBinActive ? 1 : 1.5,
+              if (!isBinActive) {
+                cardBg = Colors.grey.shade100;
+                borderColor = Colors.grey.shade300;
+                iconColor = Colors.grey.shade400;
+                progressColor = Colors.grey.shade400;
+                textColor = Colors.grey.shade600;
+              } else if (isPendingBin) {
+                cardBg = AppColors.warningYellow.withValues(alpha: 0.08);
+                borderColor = AppColors.warningYellow;
+                iconColor = AppColors.warningYellow;
+                progressColor = AppColors.warningYellow;
+                textColor = AppColors.textPrimary;
+              } else if (isSelected) {
+                cardBg = AppColors.primaryGreen.withValues(alpha: 0.06);
+                borderColor = AppColors.primaryGreen;
+                iconColor = (bin.binType == WasteType.organic ? AppColors.organicColor : AppColors.nonOrganicColor);
+                progressColor = (bin.binType == WasteType.organic ? AppColors.organicColor : AppColors.nonOrganicColor);
+                textColor = AppColors.textPrimary;
+              } else {
+                cardBg = Colors.white;
+                borderColor = AppColors.border;
+                iconColor = (bin.binType == WasteType.organic ? AppColors.organicColor : AppColors.nonOrganicColor);
+                progressColor = (bin.binType == WasteType.organic ? AppColors.organicColor : AppColors.nonOrganicColor);
+                textColor = AppColors.textPrimary;
+              }
+
+              return InkWell(
+                onTap: () {
+                  if (!isBinActive) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tempat sampah ini dalam status NON-AKTIF dan tidak dapat dipilih.'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  if (isPendingBin) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tempat sampah ini sedang dalam proses pengajuan (PENDING).'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  setState(() {
+                    if (_selectedBinIds.contains(bin.id)) {
+                      _selectedBinIds.remove(bin.id);
+                    } else {
+                      _selectedBinIds.add(bin.id);
+                    }
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Card(
+                  elevation: 0,
+                  color: cardBg,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                      color: borderColor,
+                      width: isSelected ? 2 : (isBinActive ? 1 : 1.5),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppDimensions.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            !isBinActive
-                                ? Icons.do_not_disturb_on_rounded
-                                : (bin.binType == WasteType.organic
-                                    ? Icons.compost_rounded
-                                    : Icons.delete_outline_rounded),
-                            color: iconColor,
-                            size: AppDimensions.iconMd,
-                          ),
-                          const SizedBox(width: AppDimensions.sm),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Tempat Sampah ${bin.binType.displayName}',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: textColor,
-                                        ),
-                                  ),
-                                ),
-                                if (!isBinActive) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade300,
-                                      borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppDimensions.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              !isBinActive
+                                  ? Icons.do_not_disturb_on_rounded
+                                  : (isPendingBin
+                                      ? Icons.access_time_rounded
+                                      : (bin.binType == WasteType.organic
+                                          ? Icons.compost_rounded
+                                          : Icons.delete_outline_rounded)),
+                              color: iconColor,
+                              size: AppDimensions.iconMd,
+                            ),
+                            const SizedBox(width: AppDimensions.sm),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Tempat Sampah ${bin.binType.displayName}',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: textColor,
+                                          ),
                                     ),
-                                    child: const Text(
-                                      'NON-AKTIF',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey,
+                                  ),
+                                  if (!isBinActive) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade300,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'NON-AKTIF',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ] else if (isPendingBin) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.warningYellow.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'PENDING',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.warningYellow,
+                                        ),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                      color: isSelected ? AppColors.primaryGreen : AppColors.textHint,
+                                      size: 22,
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppDimensions.sm),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                        child: LinearProgressIndicator(
-                          value: isBinActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
-                          minHeight: 8,
-                          backgroundColor: isBinActive ? AppColors.border : Colors.grey.shade300,
-                          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            isBinActive
-                                ? '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '
-                                : 'Tempat Sampah Dinonaktifkan di Web — ',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                        const SizedBox(height: AppDimensions.sm),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                          child: LinearProgressIndicator(
+                            value: isBinActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
+                            minHeight: 8,
+                            backgroundColor: isBinActive ? AppColors.border : Colors.grey.shade300,
+                            valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                           ),
-                          WeightText(
-                            bin.currentVolumeL,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
-                          ),
-                          Text(
-                            ' / ',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
-                          ),
-                          WeightText(
-                            bin.maxCapacityL,
-                            fractionDigits: 0,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              !isBinActive
+                                  ? 'Tempat Sampah Dinonaktifkan di Web — '
+                                  : (isPendingBin
+                                      ? 'Pengajuan pengosongan sedang diproses — '
+                                      : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
+                            WeightText(
+                              bin.currentVolumeL,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
+                            Text(
+                              ' / ',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
+                            WeightText(
+                              bin.maxCapacityL,
+                              fractionDigits: 0,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -404,16 +462,16 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 ? () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Sedang mengajukan riset Tong Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                        content: Text('Sedang mengajukan reset Tong Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
                         backgroundColor: AppColors.warningYellow,
                         behavior: SnackBarBehavior.floating,
                         duration: Duration(seconds: 3),
                       ),
                     );
                   }
-                : (_evidencePhotoPath != null)
+                : (_evidencePhotoPath != null && _selectedBinIds.isNotEmpty)
                     ? () {
-                        final binIds = bins.map((b) => b.id).toList();
+                        final binIds = _selectedBinIds.toList();
                         ref.read(resetBinProvider.notifier).submitReset(
                               binIds: binIds,
                               userId: userId,
@@ -423,15 +481,21 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     : null,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: isPending ? AppColors.warningYellow : AppColors.primaryGreen,
+              backgroundColor: isPending
+                  ? AppColors.warningYellow
+                  : (_selectedBinIds.isNotEmpty ? AppColors.primaryGreen : Colors.grey.shade400),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(
-              isPending ? 'Sedang Mengajukan (PENDING)' : 'Ajukan Pengosongan',
+              isPending
+                  ? 'Sedang Mengajukan (PENDING)'
+                  : (_selectedBinIds.isEmpty
+                      ? 'Pilih Tempat Sampah Terlebih Dahulu'
+                      : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isPending ? Colors.white : null,
+                color: isPending || _selectedBinIds.isNotEmpty ? Colors.white : Colors.grey.shade700,
               ),
             ),
           ),

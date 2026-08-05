@@ -1,6 +1,6 @@
 {
-  "name": "Pilah Sampah Cerdas",
-  "short_name": "PSC",
+  "name": "TrashCare",
+  "short_name": "TrashCare",
   "description": "Platform cerdas manajemen pemilahan sampah berbasis AI, Kecamatan Coblong, Kota Bandung.",
   "start_url": ".",
   "display": "standalone",

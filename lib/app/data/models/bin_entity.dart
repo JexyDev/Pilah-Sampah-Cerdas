@@ -16,6 +16,7 @@ class BinEntity extends Equatable {
     required this.rw,
     required this.kelurahan,
     required this.isActive,
+    this.isResetPending = false,
     this.createdAt,
     this.activatedAt,
   });
@@ -33,6 +34,7 @@ class BinEntity extends Equatable {
     String? rw,
     String? kelurahan,
     bool? isActive,
+    bool? isResetPending,
   }) {
     return BinEntity(
       id: id ?? this.id,
@@ -47,6 +49,7 @@ class BinEntity extends Equatable {
       rw: rw ?? this.rw,
       kelurahan: kelurahan ?? this.kelurahan,
       isActive: isActive ?? this.isActive,
+      isResetPending: isResetPending ?? this.isResetPending,
     );
   }
 
@@ -62,6 +65,7 @@ class BinEntity extends Equatable {
   final String rw;
   final String kelurahan;
   final bool isActive;
+  final bool isResetPending;
   final DateTime? createdAt;
   final DateTime? activatedAt;
 

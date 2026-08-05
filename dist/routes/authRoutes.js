@@ -213,4 +213,5 @@ router.get("/kkn/pending", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authCo
 router.patch("/kkn/whitelist/:id", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.approveKkn);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
+router.post("/change-password", authMiddleware, authController.changePassword);
 export default router;

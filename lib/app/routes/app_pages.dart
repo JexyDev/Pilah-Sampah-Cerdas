@@ -27,6 +27,7 @@ import '../modules/petugas_residu/views/ganti_password_petugas_view.dart';
 import 'app_routes.dart';
 
 import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
+import '../modules/petugas_residu/views/petugas_notification_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 class AppPages {
@@ -60,6 +61,8 @@ class AppPages {
         return _buildRoute(const NotifikasiView(), settings);
       case AppRoutes.mahasiswaNotifikasi:
         return _buildRoute(const MahasiswaNotifikasiView(), settings);
+      case AppRoutes.petugasNotifikasi:
+        return _buildRoute(const PetugasNotificationView(), settings);
       case AppRoutes.timbanganResidu:
         return _buildRoute(const TimbanganResiduView(), settings);
       case AppRoutes.tentang:

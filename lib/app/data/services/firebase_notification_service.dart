@@ -14,9 +14,17 @@ class FirebaseNotificationService {
 
   static const String _keyPrefix = 'notif_store_v2_';
 
+  String _normalizeRole(String role) {
+    final r = role.toUpperCase().replaceAll('_', '').replaceAll(' ', '');
+    if (r.contains('MAHASISWA') || r.contains('KKN')) return 'MAHASISWA';
+    if (r.contains('PETUGAS') || r.contains('RESIDU')) return 'PETUGAS';
+    if (r.contains('WARGA')) return 'WARGA';
+    return r;
+  }
+
   /// Format Storage Key: `notif_store_v2_${userId}_${role}`
   String _getStoreKey(String userId, String role) {
-    return '$_keyPrefix${userId}_${role.toUpperCase()}';
+    return '$_keyPrefix${userId}_${_normalizeRole(role)}';
   }
 
   /// Simpan notifikasi baru ke SharedPreferences disk storage

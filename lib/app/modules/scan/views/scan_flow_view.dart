@@ -1534,6 +1534,21 @@ class _ScanFailedDialog extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback? onCancel;
 
+  String _formatErrorMessage(String rawMsg) {
+    if (rawMsg.contains('This exception was thrown') ||
+        rawMsg.contains('validateStatus') ||
+        rawMsg.contains('status code of 400')) {
+      return 'Jenis tempat sampah tidak sesuai atau QR Code tidak dapat diproses. Harap pastikan kategori sampah sesuai dengan tempat sampah.';
+    }
+    if (rawMsg.contains('status code of 404')) {
+      return 'Tempat sampah tidak ditemukan di sistem. Harap pastikan QR Code terdaftar.';
+    }
+    if (rawMsg.contains('status code of 500')) {
+      return 'Server backend sedang mengalami kendala. Harap coba beberapa saat lagi.';
+    }
+    return rawMsg;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -1567,7 +1582,7 @@ class _ScanFailedDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message,
+              _formatErrorMessage(message),
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,

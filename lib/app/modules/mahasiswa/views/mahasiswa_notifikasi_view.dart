@@ -110,7 +110,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                       return typeUpper.contains('IZIN') || typeUpper.contains('DPL') || titleLower.contains('dpl') || titleLower.contains('izin');
                     }
                     if (_selectedFilter == 'Presensi & Posko GPS') {
-                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || titleLower.contains('presensi') || titleLower.contains('posko');
+                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || typeUpper.contains('WELCOME') || typeUpper.contains('KKN') || titleLower.contains('presensi') || titleLower.contains('posko');
                     }
                     if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
                       return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
@@ -213,7 +213,11 @@ class _MahasiswaNotificationCard extends StatelessWidget {
     Color iconBg = AppColors.primaryGreen.withValues(alpha: 0.1);
 
     final type = item.type.toUpperCase();
-    if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
+    if (type.contains('PEMANFAATAN') || type.contains('AI') || type.contains('LAPORAN')) {
+      iconData = Icons.psychology_rounded;
+      iconColor = const Color(0xFF8E24AA);
+      iconBg = const Color(0xFF8E24AA).withValues(alpha: 0.12);
+    } else if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
       iconData = Icons.stars_rounded;
       iconColor = AppColors.warningOrange;
       iconBg = AppColors.warningOrange.withValues(alpha: 0.15);

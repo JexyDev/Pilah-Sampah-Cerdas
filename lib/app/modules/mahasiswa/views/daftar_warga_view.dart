@@ -27,11 +27,17 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   }
 
   List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId, String userNim) {
-    // Hanya tampilkan warga yang diaktivasi/didampingi oleh mahasiswa ini (mahasiswaId tidak boleh kosong)
+    // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa
     var activatedOnly = list.where((w) {
       if (!w.isActivated) return false;
-      if (w.mahasiswaId.isEmpty) return false;
-      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+
+      final mhsId = w.mahasiswaId.trim();
+      if (mhsId.isNotEmpty && mhsId.toLowerCase() != 'null' && mhsId.toLowerCase() != 'undefined') {
+        final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
+        if (!matchesUser) return false;
+      }
+
+      return true;
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
       final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';

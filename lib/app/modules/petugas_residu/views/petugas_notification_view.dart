@@ -1,16 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/petugas_residu_notifikasi_controller.dart';
 
 /// Halaman Notifikasi Khusus Petugas Residu Hilir.
-class PetugasNotificationView extends ConsumerWidget {
+class PetugasNotificationView extends ConsumerStatefulWidget {
   const PetugasNotificationView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PetugasNotificationView> createState() => _PetugasNotificationViewState();
+}
+
+class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationView> {
+  String _selectedFilter = 'Semua';
+  final List<String> _filters = [
+    'Semua',
+    'Input Timbangan',
+    'Pelanggaran & Anomali',
+    'Status Whitelist',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final notifAsync = ref.watch(petugasResiduNotificationsProvider);
     final markState = ref.watch(markReadProvider);
 
@@ -41,43 +53,98 @@ class PetugasNotificationView extends ConsumerWidget {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(petugasResiduNotificationsProvider),
-        child: notifAsync.when(
-          data: (list) {
-            if (list.isEmpty) {
-              return SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.scale_outlined, size: 64, color: AppColors.textSecondary.withValues(alpha: 0.5)),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Belum Ada Notifikasi Timbangan',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+      body: Column(
+        children: [
+          // ─── Filter Chips Bar ──────────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _filters.map((filter) {
+                  final isSel = _selectedFilter == filter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(
+                        filter,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                          color: isSel ? Colors.white : AppColors.textPrimary,
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Konfirmasi log penimbangan residu akan muncul di sini.',
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ],
+                      ),
+                      selected: isSel,
+                      selectedColor: AppColors.primaryGreen,
+                      backgroundColor: AppColors.backgroundCanvas,
+                      onSelected: (val) {
+                        if (val) setState(() => _selectedFilter = filter);
+                      },
                     ),
-                  ),
-                ),
-              );
-            }
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const Divider(height: 1),
 
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final notif = list[index];
+          // ─── Body List Notifikasi ──────────────────────────────────────────
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async => ref.invalidate(petugasResiduNotificationsProvider),
+              child: notifAsync.when(
+                data: (list) {
+                  final filteredList = list.where((n) {
+                    if (_selectedFilter == 'Semua') return true;
+                    final typeUpper = n.type.toUpperCase();
+                    final titleLower = n.title.toLowerCase();
+
+                    if (_selectedFilter == 'Input Timbangan') {
+                      return typeUpper.contains('TIMBANGAN') || typeUpper.contains('RESIDU') || titleLower.contains('timbangan') || titleLower.contains('residu') || titleLower.contains('log');
+                    }
+                    if (_selectedFilter == 'Pelanggaran & Anomali') {
+                      return typeUpper.contains('VIOLATION') || typeUpper.contains('PELANGGARAN') || titleLower.contains('pelanggaran') || titleLower.contains('anomali');
+                    }
+                    if (_selectedFilter == 'Status Whitelist') {
+                      return typeUpper.contains('WHITELIST') || typeUpper.contains('VERIFIKASI') || titleLower.contains('whitelist') || titleLower.contains('akun') || titleLower.contains('tugas');
+                    }
+                    return true;
+                  }).toList();
+
+                  if (filteredList.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.scale_outlined, size: 64, color: AppColors.textSecondary.withValues(alpha: 0.5)),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Belum Ada Notifikasi Petugas',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Konfirmasi log penimbangan & whitelist akan muncul di sini.',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredList.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final notif = filteredList[index];
                 return InkWell(
                   onTap: () async {
                     if (!notif.isRead) {
@@ -159,6 +226,9 @@ class PetugasNotificationView extends ConsumerWidget {
           error: (err, _) => Center(child: Text('Error: $err')),
         ),
       ),
+    ),
+  ],
+),
     );
   }
 }

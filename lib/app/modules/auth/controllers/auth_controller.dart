@@ -335,9 +335,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // In production, calls PUT /api/v1/auth/change-password via authRepository
+      final success = await _authRepository.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
       state = state.copyWith(isLoading: false);
-      return true;
+      return success;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorCode: e.code);
+      return false;
     } catch (_) {
       state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
       return false;

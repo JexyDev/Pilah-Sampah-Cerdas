@@ -82,7 +82,7 @@ class KelompokKknView extends ConsumerWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        colors: [AppColors.primaryGreen, AppColors.successDark],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -95,10 +95,10 @@ class KelompokKknView extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.groups_rounded, color: AppColors.primaryGreen, size: 28),
+                              child: const Icon(Icons.groups_rounded, color: Colors.white, size: 28),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -139,7 +139,7 @@ class KelompokKknView extends ConsumerWidget {
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.school_rounded, color: AppColors.primaryGreen, size: 20),
+                            const Icon(Icons.school_rounded, color: Colors.white, size: 20),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -295,8 +295,8 @@ class KelompokKknView extends ConsumerWidget {
                           ],
                         ),
                         subtitle: Text(
-                          'NIM: ${member.nim.isNotEmpty ? member.nim : "-"} • ${member.jurusan}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          'NIM: ${member.nim.isNotEmpty ? member.nim : "-"}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,

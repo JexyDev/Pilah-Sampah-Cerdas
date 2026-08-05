@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/services/location_service.dart';
+import '../../../data/services/firebase_notification_service.dart';
+import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
 import 'mahasiswa_controller.dart';
+import 'mahasiswa_notifikasi_controller.dart';
 
 class KknLocationState {
   final Position? currentPosition;
@@ -311,7 +314,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final double targetLng = (target?['longitude'] as num?)?.toDouble() ??
         (target?['lng'] as num?)?.toDouble() ??
         107.632145;
-    final double radius = (target?['radius'] as num?)?.toDouble() ?? 5000.0; // 5 KM Radius Default Zona KKN
+    final double rawRadius = (target?['radius'] as num?)?.toDouble() ?? 10.0;
+    // Gunakan radius presisi backend, fallback 10m jika null/<=0
+    final double radius = (rawRadius <= 0) ? 10.0 : rawRadius;
 
     final distance = Geolocator.distanceBetween(
       pos.latitude,
@@ -374,6 +379,24 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           attendanceTime: DateTime.now().toLocal().toString().split('.')[0],
           isInsideRadius: true,
         );
+
+        if (user != null) {
+          await FirebaseNotificationService().saveNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: 'Absensi KKN Berhasil 📍',
+            desc: 'Presensi Geofence KKN di $kelurahan ($rtRw) berhasil tercatat (+10 PTS).',
+            type: 'PRESENSI_KKN_SUKSES',
+          );
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: 'Absensi KKN Berhasil 📍',
+            desc: 'Presensi Geofence KKN di $kelurahan ($rtRw) berhasil tercatat (+10 PTS).',
+            type: 'PRESENSI_KKN_SUKSES',
+          );
+        }
+        ref.invalidate(mahasiswaNotificationsProvider);
         return true;
       }
     } on DioException catch (e) {
