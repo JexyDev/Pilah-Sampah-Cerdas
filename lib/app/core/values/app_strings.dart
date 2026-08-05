@@ -92,7 +92,7 @@ class AppStrings {
   static const String aktivasiSuccess = 'Tong berhasil diaktivasi!';
 
   // --- Reset Tong ---
-  static const String resetTitle = 'Ajukan Pengosongan Tong';
+  static const String resetTitle = 'Ajukan Pengosongan Tempat Sampah';
   static const String resetSubtitle =
       'Foto tong penuh sebagai bukti pengajuan reset';
   static const String resetButton = 'Ajukan Reset';

@@ -632,7 +632,12 @@ class ApiBinRepository implements BinRepository {
       rt: json['rtRw']?.toString() ?? json['rt']?.toString() ?? '',
       rw: json['rw']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
-      isActive: json['isActive'] as bool? ?? true,
+      isActive: (json['isActive'] as bool?) ??
+          (json['enabled'] as bool?) ??
+          (json['status']?.toString().toUpperCase() != 'INACTIVE' &&
+              json['status']?.toString().toUpperCase() != 'NON_AKTIF' &&
+              json['status']?.toString().toUpperCase() != 'DISABLED' &&
+              json['isDeactivated'] != true),
     );
   }
 

@@ -232,80 +232,118 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 const SizedBox(height: AppDimensions.sm),
             itemBuilder: (context, index) {
               final BinEntity bin = bins[index];
+              final bool isBinActive = bin.isActive;
+
+              final Color cardBg = isBinActive ? Colors.white : Colors.grey.shade100;
+              final Color borderColor = isBinActive ? AppColors.border : Colors.grey.shade300;
+              final Color iconColor = !isBinActive
+                  ? Colors.grey.shade400
+                  : (bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen);
+              final Color progressColor = !isBinActive
+                  ? Colors.grey.shade400
+                  : (bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen);
+              final Color textColor = isBinActive ? AppColors.textPrimary : Colors.grey.shade600;
 
               return Card(
                 elevation: 0,
-                color: Colors.white,
+                color: cardBg,
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(
-                    color: AppColors.border,
-                    width: 1,
+                  side: BorderSide(
+                    color: borderColor,
+                    width: isBinActive ? 1 : 1.5,
                   ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              bin.binType == WasteType.organic
-                                  ? Icons.compost_rounded
-                                  : Icons.delete_outline_rounded,
-                              color: bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
-                              size: AppDimensions.iconMd,
-                            ),
-                            const SizedBox(width: AppDimensions.sm),
-                            Expanded(
-                              child: Text(
-                                'Tempat Sampah ${bin.binType.displayName}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            !isBinActive
+                                ? Icons.do_not_disturb_on_rounded
+                                : (bin.binType == WasteType.organic
+                                    ? Icons.compost_rounded
+                                    : Icons.delete_outline_rounded),
+                            color: iconColor,
+                            size: AppDimensions.iconMd,
+                          ),
+                          const SizedBox(width: AppDimensions.sm),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Tempat Sampah ${bin.binType.displayName}',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: textColor,
+                                        ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppDimensions.sm),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                          child: LinearProgressIndicator(
-                            value: bin.capacityPercent.clamp(0.0, 1.0),
-                            minHeight: 8,
-                            backgroundColor: AppColors.border,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              bin.isCritical ? AppColors.dangerRed : AppColors.primaryGreen,
+                                if (!isBinActive) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade300,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'NON-AKTIF',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: AppDimensions.sm),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                        child: LinearProgressIndicator(
+                          value: isBinActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
+                          minHeight: 8,
+                          backgroundColor: isBinActive ? AppColors.border : Colors.grey.shade300,
+                          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                         ),
-                        const SizedBox(height: 4),
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            WeightText(
-                              bin.currentVolumeL,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            Text(
-                              ' / ',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            WeightText(
-                              bin.maxCapacityL,
-                              fractionDigits: 0,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            isBinActive
+                                ? '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '
+                                : 'Tempat Sampah Dinonaktifkan di Web — ',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                          ),
+                          WeightText(
+                            bin.currentVolumeL,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                          ),
+                          Text(
+                            ' / ',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                          ),
+                          WeightText(
+                            bin.maxCapacityL,
+                            fractionDigits: 0,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
               );
             },
           ),
