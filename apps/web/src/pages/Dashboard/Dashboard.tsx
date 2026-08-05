@@ -18,6 +18,7 @@ import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
+import { IconRenderer } from "../../components/common/IconRenderer";
 
 const WILAYAH_OPTIONS: SelectOption[] = [
   { value: "Kecamatan Coblong", label: "Kecamatan Coblong (Semua)", sublabel: "Cakupan Seluruh Kecamatan" },
@@ -2305,7 +2306,9 @@ const Dashboard: React.FC = () => {
                           {u.name}
                         </p>
                         <p className="text-[11px] text-slate-400 font-medium mt-0.5 truncate">
-                          <span className="font-semibold text-slate-600">{roleLabel}</span>
+                          <span className={`inline-block px-1.5 py-0.5 text-[9.5px] font-extrabold rounded-md border ${roleBadgeBg}`}>
+                            {roleLabel}
+                          </span>
                           {u.phone && ` • ${u.phone}`}
                         </p>
                         {u.wilayah && (

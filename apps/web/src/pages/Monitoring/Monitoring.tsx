@@ -136,7 +136,6 @@ const Monitoring: React.FC = () => {
 
   // Drilldown Detail Modal States
   const [selectedMetric, setSelectedMetric] = useState<"RUMAH_TANGGA" | "SAMPAH_TERPILAH" | "TEMPAT_SAMPAH" | "KONDISI_PENUH" | null>(null);
-  const [selectedTrend, setSelectedTrend] = useState<TrendWeek | null>(null);
 
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("Semua Kelurahan");
   const [selectedRtRw, setSelectedRtRw] = useState<string>("Semua RT/RW");
@@ -632,11 +631,11 @@ const Monitoring: React.FC = () => {
                           <div className="text-xs p-1.5 min-w-[200px] font-sans">
                             <div className="border-b border-gray-200 pb-1.5 mb-2">
                               <strong className="text-sm font-extrabold text-slate-900 block">Data Tong Rumah Tangga</strong>
-                              {group.bins[0]?.user?.name && (
-                                <span className="text-[11px] font-bold text-slate-800 block mt-0.5">👤 {group.bins[0].user.name}</span>
+                              {(group.bins[0] as any)?.user?.name && (
+                                <span className="text-[11px] font-bold text-slate-800 block mt-0.5">👤 {(group.bins[0] as any).user.name}</span>
                               )}
-                              {group.bins[0]?.user?.phone && (
-                                <span className="text-[10px] font-bold text-emerald-600 block">📱 {group.bins[0].user.phone}</span>
+                              {(group.bins[0] as any)?.user?.phone && (
+                                <span className="text-[10px] font-bold text-emerald-600 block">📱 {(group.bins[0] as any).user.phone}</span>
                               )}
                             </div>
                             {group.bins.map((bin) => {

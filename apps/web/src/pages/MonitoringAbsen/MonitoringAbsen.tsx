@@ -13,9 +13,7 @@ import api from "../../services/api";
 import toast from "react-hot-toast";
 
 import {
-  KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
-  createHouseIcon,
 } from "../../constants/coblongGeoData";
 
 // Fix Leaflet icons in Vite
@@ -301,7 +299,7 @@ const MonitoringAbsen: React.FC = () => {
           <Marker
             key={`student-${loc.studentId}`}
             position={[lat, lng]}
-            icon={createStudentIcon(status)}
+            icon={createStudentIcon(status as any)}
           >
             <Popup>
               <div className="p-2">

@@ -822,8 +822,9 @@ const Notifikasi: React.FC = () => {
         } else {
           setNotifications(DEFAULT_COBLONG_NOTIFICATIONS);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Using fallback notifications for Coblong:", err);
+        setError("");
         setNotifications(DEFAULT_COBLONG_NOTIFICATIONS);
       } finally {
         setLoading(false);
