@@ -226,6 +226,8 @@ const Leaderboard: React.FC = () => {
   const top3 = currentData.slice(0, 3);
   const rest = currentData.slice(3);
 
+  const [selectedItem, setSelectedItem] = useState<GenericItem | null>(null);
+
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* Header Banner */}
@@ -355,18 +357,19 @@ const Leaderboard: React.FC = () => {
                 return (
                   <div
                     key={u.id}
-                    className={`w-full md:w-60 flex flex-col items-center justify-end relative order-${
+                    onClick={() => setSelectedItem(u)}
+                    className={`w-full md:w-60 flex flex-col items-center justify-end relative cursor-pointer group transition-transform hover:-translate-y-1 order-${
                       isFirst ? "2" : isSecond ? "1" : "3"
                     }`}
                   >
                     <div className="absolute -top-10 z-10 flex flex-col items-center">
-                      <Medal color={medalColor} size={40} className="drop-shadow-md" />
+                      <Medal color={medalColor} size={40} className="drop-shadow-md group-hover:scale-110 transition" />
                       <span className="font-extrabold text-slate-800 bg-white px-2.5 py-0.5 rounded-full text-[11px] shadow-sm border border-slate-200 mt-[-8px]">
                         Juara {u.rank}
                       </span>
                     </div>
                     <div
-                      className={`w-full rounded-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-md flex flex-col justify-end ${heightClass}`}
+                      className={`w-full rounded-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-md flex flex-col justify-end ${heightClass} group-hover:shadow-xl transition`}
                     >
                       <h3 className="font-black text-white text-sm truncate drop-shadow-md">{u.name}</h3>
                       <p className="text-white/90 font-extrabold text-xs mt-1">
@@ -375,6 +378,9 @@ const Leaderboard: React.FC = () => {
                           {system === "system2" ? "Skor" : "Pts"}
                         </span>
                       </p>
+                      <span className="text-[10px] text-white/90 font-extrabold mt-2 underline opacity-0 group-hover:opacity-100 transition">
+                        Lihat Prestasi →
+                      </span>
                     </div>
                   </div>
                 );
@@ -395,7 +401,7 @@ const Leaderboard: React.FC = () => {
               />
             </div>
             <div className="text-xs text-slate-500 font-bold">
-              Menampilkan <span className="font-black text-slate-900">{currentData.length}</span> data
+              Menampilkan <span className="font-black text-slate-900">{currentData.length}</span> data (Klik baris untuk detail)
             </div>
           </div>
 
@@ -440,17 +446,21 @@ const Leaderboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                  {rest.length === 0 ? (
+                  {currentData.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-slate-500">
                         Tidak ada data peringkat yang sesuai dengan kriteria pencarian.
                       </td>
                     </tr>
                   ) : (
-                    rest.map((u) => {
+                    currentData.map((u) => {
                       return (
-                        <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-black text-slate-700">#{u.rank}</td>
+                        <tr
+                          key={u.id}
+                          onClick={() => setSelectedItem(u)}
+                          className="hover:bg-emerald-50/50 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4 font-black text-slate-700 group-hover:text-emerald-700">#{u.rank}</td>
                           <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
                           <td className="py-3.5 px-4 text-slate-600 font-semibold">{u.subtitle || "-"}</td>
                           {extraInfoHeader && (
@@ -473,6 +483,77 @@ const Leaderboard: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Modal Detail Prestasi Peringkat */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
+              <div>
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Trophy size={18} className="text-amber-400" /> Detail Prestasi Peringkat #{selectedItem.rank}
+                </h3>
+                <span className="text-[11px] text-emerald-300 font-mono">{selectedItem.name}</span>
+              </div>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="text-gray-300 hover:text-white p-1 rounded-full transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 to-amber-500 text-slate-950 flex items-center justify-center font-black text-lg shadow-sm">
+                  #{selectedItem.rank}
+                </div>
+                <div>
+                  <h4 className="font-black text-slate-900 text-base">{selectedItem.name}</h4>
+                  <p className="text-[11px] text-slate-500">{selectedItem.subtitle}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Perolehan Poin</span>
+                  <span className="font-mono font-black text-emerald-600 text-base">
+                    {Math.round(selectedItem.points).toLocaleString("id-ID")} Pts
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Peringkat Wilayah</span>
+                  <span className="font-extrabold text-slate-800 text-sm">Rank #{selectedItem.rank} di Coblong</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2">
+                <span className="text-[10px] font-bold text-amber-900 uppercase block">Lencana & Apresiasi Terbuka</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="bg-amber-100 text-amber-900 font-extrabold text-[10px] px-2.5 py-1 rounded-md border border-amber-200 flex items-center gap-1">
+                    ⭐ Pahlawan Coblong
+                  </span>
+                  <span className="bg-emerald-100 text-emerald-900 font-extrabold text-[10px] px-2.5 py-1 rounded-md border border-emerald-200 flex items-center gap-1">
+                    🌱 Pemilah Cerdas 100%
+                  </span>
+                  <span className="bg-blue-100 text-blue-900 font-extrabold text-[10px] px-2.5 py-1 rounded-md border border-blue-200 flex items-center gap-1">
+                    ♻️ Bebas Residu
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+              >
+                Tutup Ringkasan
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
