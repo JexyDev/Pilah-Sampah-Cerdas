@@ -61,49 +61,60 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: const EdgeInsets.all(20),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.scale_rounded,
-                  color: AppColors.primaryGreen,
-                  size: 28,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    item['title']?.toString() ?? item['classification']?.toString() ?? 'Setoran Timbangan',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.scale_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 24,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            _infoRow('Waktu Submit', formattedDate),
-            _infoRow('Lokasi / Alamat', alamat),
-            _infoRow('Berat Fisik', '${item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0} Kg'),
-            _infoRow('Klasifikasi', item['classification']?.toString() ?? item['kategori']?.toString() ?? item['type']?.toString() ?? '-'),
-            _infoRow('Warga', warga),
-            _infoRow('Status Server', item['status']?.toString() ?? 'TERKIRIM'),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlueDark,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Tutup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item['title']?.toString() ?? item['classification']?.toString() ?? 'Setoran Timbangan',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const Divider(height: 24),
+              _infoRow('Waktu Submit', formattedDate),
+              _infoRow('Lokasi / Alamat', alamat),
+              _infoRow('Berat Fisik', '${item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0} Kg'),
+              _infoRow('Klasifikasi', item['classification']?.toString() ?? item['kategori']?.toString() ?? item['type']?.toString() ?? '-'),
+              _infoRow('Warga', warga),
+              _infoRow('Status Server', item['status']?.toString() ?? 'TERKIRIM'),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlueDark,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Tutup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -111,15 +122,22 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
 
   Widget _infoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-          Flexible(
+          SizedBox(
+            width: 115,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
             child: Text(
               value,
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             ),
           ),

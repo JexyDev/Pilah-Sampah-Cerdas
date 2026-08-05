@@ -114,32 +114,30 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     setState(() => _isSubmitting = false);
 
     if (success && mounted) {
-      _showSuccessDialog(weight);
+      await _showSuccessDialog(weight);
+      if (mounted) {
+        _weightController.clear();
+        setState(() {
+          _photoPath = null;
+          _selectedClassification = _classifications.first;
+          _estimatedPoints = 0;
+        });
+
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
     }
   }
 
-  void _handlePostSuccess() {
-    if (Navigator.of(context).canPop()) {
-      Navigator.pop(context);
-    } else {
-      // Jika layar ini digunakan sebagai tab (bukan dipush), maka reset form saja
-      _weightController.clear();
-      setState(() {
-        _photoPath = null;
-        _selectedClassification = _classifications.first;
-        _calculatePoints();
-      });
-    }
-  }
-
-  void _showSuccessDialog(double weight) {
+  Future<void> _showSuccessDialog(double weight) async {
     // Ambil data dashboard untuk akumulasi global (fallback 540.2 jika null)
     final dashboard = ref.read(petugasResiduControllerProvider).dashboard;
     final double baseAccumulation = dashboard?.totalWeightKg ?? 540.2;
     // Total akumulasi = base + weight yang baru saja disubmit
     final double newTotal = baseAccumulation + weight;
 
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
@@ -325,8 +323,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(ctx);
-                      _handlePostSuccess();
+                      Navigator.of(ctx).pop();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1C64F2),
