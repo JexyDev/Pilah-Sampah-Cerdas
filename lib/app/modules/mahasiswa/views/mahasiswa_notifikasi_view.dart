@@ -21,7 +21,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
     'Poin KKN',
     'DPL & Izin',
     'Presensi & Posko GPS',
-    'Aktivasi Bin Warga',
+    'Aktivasi Tempat Sampah Warga',
     'Laporan Pemanfaatan'
   ];
 
@@ -112,8 +112,8 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     if (_selectedFilter == 'Presensi & Posko GPS') {
                       return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || titleLower.contains('presensi') || titleLower.contains('posko');
                     }
-                    if (_selectedFilter == 'Aktivasi Bin Warga') {
-                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi');
+                    if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
+                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
                     }
                     if (_selectedFilter == 'Laporan Pemanfaatan') {
                       return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan');

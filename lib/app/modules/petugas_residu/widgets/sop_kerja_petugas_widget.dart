@@ -104,7 +104,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     icon: Icons.scale_rounded,
                     color: AppColors.primaryGreen,
                     description:
-                        'Tekan menu "Input Timbangan", scan QR Code pada tong/pilih ID Bin, lalu ketik angka bobot (Kg) hasil timbangan fisik secara jujur & presisi.',
+                        'Tekan menu "Input Timbangan", scan QR Code pada tempat sampah/pilih ID Tempat Sampah, lalu ketik angka bobot (Kg) hasil timbangan fisik secara jujur & presisi.',
                     tips: 'Tips: Pastikan jarum timbangan berada di posisi nol sebelum menimbang.',
                   ),
                   const SizedBox(height: 14),
@@ -114,7 +114,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     icon: Icons.report_problem_rounded,
                     color: AppColors.dangerRed,
                     description:
-                        'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tong residu, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
+                        'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tempat sampah residu, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
                     tips: 'Tips: Laporan ini membantu edukasi warga oleh Ketua RT/RW.',
                   ),
                   const SizedBox(height: 14),

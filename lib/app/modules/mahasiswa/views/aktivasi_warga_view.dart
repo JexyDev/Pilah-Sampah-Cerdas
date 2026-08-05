@@ -129,16 +129,16 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                       await FirebaseNotificationService().saveNotification(
                         userId: user.id,
                         role: user.role.name,
-                        title: 'Bin QR Warga Berhasil Dipasang',
-                        desc: 'Aktivasi Bin QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
+                        title: 'Tempat Sampah QR Warga Berhasil Dipasang',
+                        desc: 'Aktivasi Tempat Sampah QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
                         type: 'AKTIVASI_BIN_SUKSES',
                       );
 
                       LocalNotificationCacheService().addNotification(
                         userId: user.id,
                         role: user.role.name,
-                        title: 'Bin QR Warga Berhasil Dipasang',
-                        desc: 'Aktivasi Bin QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
+                        title: 'Tempat Sampah QR Warga Berhasil Dipasang',
+                        desc: 'Aktivasi Tempat Sampah QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
                         type: 'AKTIVASI_BIN_SUKSES',
                       );
                     }

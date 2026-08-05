@@ -212,7 +212,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                 
                 // 3. Subjudul
                 const Text(
-                  'Data residu fisik telah tercatat\ndi Bin Residu Global RT/RW.',
+                  'Data residu fisik telah tercatat\ndi Tempat Sampah Residu Global RT/RW.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -286,7 +286,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Akumulasi Bin Global', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+                            const Text('Akumulasi Tempat Sampah Residu Global', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
                             const SizedBox(height: 2),
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.end,

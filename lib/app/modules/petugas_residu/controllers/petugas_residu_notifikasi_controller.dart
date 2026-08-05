@@ -28,17 +28,9 @@ final petugasResiduNotificationsProvider = FutureProvider<List<NotificationEntit
 
   for (final notif in list) {
     final type = notif.type.toUpperCase();
-    final title = notif.title.toLowerCase();
 
-    final isPetugasType = type.contains('RESIDU') ||
-        type.contains('TIMBANGAN') ||
-        type.contains('VIOLATION') ||
-        title.contains('timbangan') ||
-        title.contains('residu') ||
-        title.contains('pelanggaran') ||
-        title.contains('sukses');
-
-    if (!isPetugasType) continue;
+    final isKknOnly = type.contains('KKN') || type.contains('DPL');
+    if (isKknOnly) continue;
     result.add(notif);
 
     final notifKey = 'petugas_${userId}_${notif.id}';

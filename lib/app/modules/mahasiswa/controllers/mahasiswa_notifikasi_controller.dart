@@ -28,25 +28,9 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 
   for (final notif in list) {
     final type = notif.type.toUpperCase();
-    final title = notif.title.toLowerCase();
 
-    final isMahasiswaType = type.contains('KKN') ||
-        type.contains('POIN_KKN') ||
-        type.contains('IZIN') ||
-        type.contains('DPL') ||
-        type.contains('PRESENSI') ||
-        type.contains('AKTIVASI') ||
-        type.contains('PEMANFAATAN') ||
-        title.contains('kkn') ||
-        title.contains('poin') ||
-        title.contains('dpl') ||
-        title.contains('izin') ||
-        title.contains('sakit') ||
-        title.contains('presensi') ||
-        title.contains('posko') ||
-        title.contains('aktivasi');
-
-    if (!isMahasiswaType) continue;
+    final isPetugasOnly = type.contains('TIMBANGAN_RESIDU') || type.contains('VIOLATION_REPORTED');
+    if (isPetugasOnly) continue;
     result.add(notif);
 
     final notifKey = 'mhs_${userId}_${notif.id}';
