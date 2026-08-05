@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
-import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../auth/controllers/auth_controller.dart';
+
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../../data/services/firebase_notification_service.dart';
 
 final Set<String> _petugasShownNotifIds = {};
 
@@ -13,8 +15,15 @@ final petugasResiduNotificationsProvider = FutureProvider<List<NotificationEntit
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
 
-  final list = await repo.getNotifications();
   final userId = user.id;
+  final role = user.role.name;
+  List<NotificationEntity> list = [];
+  try {
+    list = await repo.getNotifications();
+  } catch (_) {
+    list = [];
+  }
+
   final List<NotificationEntity> result = [];
 
   for (final notif in list) {
@@ -40,6 +49,21 @@ final petugasResiduNotificationsProvider = FutureProvider<List<NotificationEntit
         title: notif.title,
         body: notif.desc,
       );
+    }
+  }
+
+  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService (agar push tray & disk store selalu masuk riwayat)
+  final localNotifs = LocalNotificationCacheService().getNotifications(userId, role);
+  for (final localItem in localNotifs) {
+    if (!result.any((n) => n.id == localItem.id)) {
+      result.insert(0, localItem);
+    }
+  }
+
+  final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
+  for (final fbItem in firebaseNotifs) {
+    if (!result.any((n) => n.id == fbItem.id)) {
+      result.insert(0, fbItem);
     }
   }
 

@@ -7,6 +7,8 @@ import '../../core/utils/image_compressor.dart';
 import '../models/petugas_residu_models.dart';
 import '../providers/api_client.dart';
 import '../services/notification_engine.dart';
+import '../services/local_notification_cache_service.dart';
+import '../services/firebase_notification_service.dart';
 import 'petugas_residu_repository.dart';
 
 class ApiPetugasResiduRepository implements PetugasResiduRepository {
@@ -119,6 +121,25 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
           weightKg: actualWeightKg,
           type: classification,
         );
+
+        // Catat notifikasi ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
+        final userId = response.data?['userId']?.toString() ?? 'petugas_current';
+        await FirebaseNotificationService().saveNotification(
+          userId: userId,
+          role: 'PETUGAS_RESIDU',
+          title: 'Log Timbangan Berhasil Disimpan! ⚖️',
+          desc: 'Log timbangan $classification seberat ${actualWeightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+          type: 'TIMBANGAN_RESIDU',
+        );
+
+        LocalNotificationCacheService().addNotification(
+          userId: userId,
+          role: 'PETUGAS_RESIDU',
+          title: 'Log Timbangan Berhasil Disimpan! ⚖️',
+          desc: 'Log timbangan $classification seberat ${actualWeightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+          type: 'TIMBANGAN_RESIDU',
+        );
+
         return true;
       }
       throw Exception('Failed to submit log: ${response.statusCode}');

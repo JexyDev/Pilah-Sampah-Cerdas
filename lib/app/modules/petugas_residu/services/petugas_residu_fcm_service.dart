@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/repository_providers.dart';
 
 import '../../../data/services/notification_engine.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../controllers/petugas_residu_notifikasi_controller.dart';
 
 class PetugasResiduFcmService {
   PetugasResiduFcmService(this.ref);
@@ -37,13 +40,28 @@ class PetugasResiduFcmService {
         _sendTokenToBackend(newToken);
       });
 
-      // Meneruskan pesan FCM (Push Notification) yang masuk ke NotificationEngine
+      // Meneruskan pesan FCM (Push Notification) yang masuk ke NotificationEngine & Cache
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('[PetugasResiduFCM] Menerima pesan di foreground: ${message.messageId}');
         
         final title = message.notification?.title ?? 'Info Petugas';
         final body = message.notification?.body ?? 'Ada pembaruan data';
+        final type = (message.data['event']?.toString() ?? message.data['type']?.toString() ?? 'TIMBANGAN_RESIDU').toUpperCase();
         
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: 'PETUGAS_RESIDU',
+            title: title,
+            desc: body,
+            type: type,
+            id: message.messageId,
+          );
+        }
+
+        ref.invalidate(petugasResiduNotificationsProvider);
+
         NotificationEngine().showGenericNotification(
           id: message.messageId.hashCode,
           title: title,

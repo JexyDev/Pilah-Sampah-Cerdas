@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/petugas_residu_controller.dart';
@@ -15,7 +16,49 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
   String _dateRange = 'HARI_INI';
   String _typeFilter = 'SEMUA';
 
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '-';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return DateFormat('yyyy-MM-dd HH:mm', 'id_ID').format(dt) + ' WIB';
+    } catch (_) {
+      if (rawStr.contains('T')) {
+        final parts = rawStr.split('T');
+        final datePart = parts[0];
+        final timePart = parts[1].split('.')[0].split('Z')[0];
+        return '$datePart $timePart WIB';
+      }
+      return rawStr;
+    }
+  }
+
+  String _resolveAlamat(Map<String, dynamic> item) {
+    final addr = item['address']?.toString() ??
+        item['alamat']?.toString() ??
+        item['location']?.toString() ??
+        item['lokasi']?.toString() ??
+        item['rtRwName']?.toString() ??
+        item['assignedZone']?.toString();
+    if (addr != null && addr.isNotEmpty && addr != '-') return addr;
+    return 'Wilayah Penugasan Petugas';
+  }
+
+  String _resolveWargaName(Map<String, dynamic> item) {
+    final name = item['wargaName']?.toString() ??
+        item['namaWarga']?.toString() ??
+        item['citizenName']?.toString() ??
+        item['userName']?.toString() ??
+        item['subtitle']?.toString();
+    if (name != null && name.isNotEmpty && name != '-') return name;
+    return 'Warga Binaan (Umum)';
+  }
+
   void _showDetailModal(Map<String, dynamic> item) {
+    final rawDate = item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString();
+    final formattedDate = _formatDateTime(rawDate);
+    final alamat = _resolveAlamat(item);
+    final warga = _resolveWargaName(item);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -42,11 +85,11 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
               ],
             ),
             const Divider(height: 24),
-            _infoRow('Waktu Submit', item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString() ?? '-'),
-            _infoRow('Lokasi / Alamat', item['address']?.toString() ?? item['alamat']?.toString() ?? '-'),
+            _infoRow('Waktu Submit', formattedDate),
+            _infoRow('Lokasi / Alamat', alamat),
             _infoRow('Berat Fisik', '${item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0} Kg'),
-            _infoRow('Klasifikasi', item['classification']?.toString() ?? item['kategori']?.toString() ?? '-'),
-            _infoRow('Warga', item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? '-'),
+            _infoRow('Klasifikasi', item['classification']?.toString() ?? item['kategori']?.toString() ?? item['type']?.toString() ?? '-'),
+            _infoRow('Warga', warga),
             _infoRow('Status Server', item['status']?.toString() ?? 'TERKIRIM'),
             const SizedBox(height: 16),
             SizedBox(
@@ -181,8 +224,8 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                           itemBuilder: (ctx, index) {
                             final item = state.historyList[index];
                             final title = item['title']?.toString() ?? item['classification']?.toString() ?? item['kategori']?.toString() ?? 'Setoran Timbangan';
-                            final subtitle = item['subtitle']?.toString() ?? item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? item['binCode']?.toString() ?? '';
-                            final address = item['address']?.toString() ?? item['alamat']?.toString() ?? '';
+                            final subtitle = _resolveWargaName(item);
+                            final address = _resolveAlamat(item);
                             final weight = item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0;
 
                             return Card(

@@ -97,72 +97,8 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
               color: AppColors.primaryGreen,
               child: notifAsync.when(
                 data: (list) {
-                  // Notifikasi Dinamis Khusus Mahasiswa KKN (5 Kategori Lengkap Sesuai Spesifikasi)
-                  final List<NotificationEntity> combinedList = [
-                    ...list,
-                    // 1. Poin KKN (Individu, Kelompok, Akumulasi)
-                    const NotificationEntity(
-                      id: 'MHS-POIN-01',
-                      type: 'POIN_KKN_INDIVIDU',
-                      title: 'Poin Individu Bertambah (+10 Poin)',
-                      desc: 'Selamat! Poin individu Anda bertambah 10 poin dari kegiatan presensi harian Posko KKN.',
-                      isRead: false,
-                      time: '5 menit lalu',
-                      icon: 'stars',
-                    ),
-                    const NotificationEntity(
-                      id: 'MHS-POIN-02',
-                      type: 'POIN_KKN_KELOMPOK',
-                      title: 'Poin Kelompok KKN Bertambah (+50 Poin)',
-                      desc: 'Akumulasi total poin Kelompok KKN Bojongsoang 01 meningkat menjadi 450 Poin.',
-                      isRead: false,
-                      time: '20 menit lalu',
-                      icon: 'stars',
-                    ),
-                    // 2. DPL & Izin (Disetujui, Ditolak, Update Status)
-                    const NotificationEntity(
-                      id: 'MHS-IZIN-01',
-                      type: 'IZIN_DPL_APPROVED',
-                      title: 'Pengajuan Izin Disetujui DPL',
-                      desc: 'Pengajuan izin kegiatan / sakit Anda telah disetujui oleh DPL (Dr. Ir. Ahmad).',
-                      isRead: false,
-                      time: '1 jam lalu',
-                      icon: 'assignment_turned_in',
-                    ),
-                    // 3. Presensi & Posko GPS (Reminder, Berhasil, Reminder Posko)
-                    const NotificationEntity(
-                      id: 'MHS-GPS-01',
-                      type: 'PRESENSI_GPS_BERHASIL',
-                      title: 'Presensi GPS Posko Berhasil',
-                      desc: 'Anda berada di radius 50m Posko Bojongsoang selama 2 jam. Presensi harian tercatat HADIR.',
-                      isRead: true,
-                      time: '2 jam lalu',
-                      icon: 'location_on',
-                    ),
-                    // 4. Aktivasi Bin Warga (Bin Diaktivasi, QR Dipasang)
-                    const NotificationEntity(
-                      id: 'MHS-AKTIVASI-01',
-                      type: 'AKTIVASI_BIN_SUKSES',
-                      title: 'Bin QR Warga Berhasil Dipasang',
-                      desc: 'Aktivasi Bin QR untuk Warga Binaan (Bpk. Slamet - RT 01) sukses terdaftar.',
-                      isRead: true,
-                      time: '3 jam lalu',
-                      icon: 'qr_code_scanner',
-                    ),
-                    // 5. Laporan Pemanfaatan Sampah (Dikirim, Disetujui, Direvisi)
-                    const NotificationEntity(
-                      id: 'MHS-LAPORAN-01',
-                      type: 'LAPORAN_PEMANFAATAN_STATUS',
-                      title: 'Laporan Pemanfaatan Sampah Disetujui',
-                      desc: 'Laporan program kerja pemanfaatan sampah organik RW 02 telah disetujui oleh DPL.',
-                      isRead: true,
-                      time: 'Kemarin',
-                      icon: 'description',
-                    ),
-                  ];
-
                   // Filter berdasarkan kategori tab chip yang dipilih
-                  final filteredList = combinedList.where((n) {
+                  final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;
                     final typeUpper = n.type.toUpperCase();
                     final titleLower = n.title.toLowerCase();

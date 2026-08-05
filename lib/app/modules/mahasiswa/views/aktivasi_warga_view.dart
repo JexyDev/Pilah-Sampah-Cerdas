@@ -6,6 +6,10 @@ import '../../../core/values/app_dimensions.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../../data/services/firebase_notification_service.dart';
 
 class AktivasiWargaView extends ConsumerStatefulWidget {
   const AktivasiWargaView({super.key});
@@ -119,8 +123,29 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   }
 
                   if (success && mounted) {
+                    // Catat notifikasi ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
+                    final user = ref.read(authProvider).user;
+                    if (user != null) {
+                      await FirebaseNotificationService().saveNotification(
+                        userId: user.id,
+                        role: user.role.name,
+                        title: 'Bin QR Warga Berhasil Dipasang',
+                        desc: 'Aktivasi Bin QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
+                        type: 'AKTIVASI_BIN_SUKSES',
+                      );
+
+                      LocalNotificationCacheService().addNotification(
+                        userId: user.id,
+                        role: user.role.name,
+                        title: 'Bin QR Warga Berhasil Dipasang',
+                        desc: 'Aktivasi Bin QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
+                        type: 'AKTIVASI_BIN_SUKSES',
+                      );
+                    }
+
                     // Invalidate state agar Warga & Tempat Sampah langsung ter-update di Mahasiswa dan Warga
                     ref.invalidate(mahasiswaControllerProvider);
+                    ref.invalidate(mahasiswaNotificationsProvider);
                     ref.read(mahasiswaControllerProvider.notifier).fetchAll();
                     ref.read(aktivasiWargaProvider.notifier).refresh();
 

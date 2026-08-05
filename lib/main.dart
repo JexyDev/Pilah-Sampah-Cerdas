@@ -15,6 +15,13 @@ import 'app/modules/riwayat/controllers/riwayat_controller.dart';
 import 'app/data/services/local_notification_service.dart';
 import 'app/data/services/notification_engine.dart';
 
+import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
+import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
+import 'app/modules/petugas_residu/controllers/petugas_residu_notifikasi_controller.dart';
+import 'app/modules/auth/controllers/auth_controller.dart';
+import 'app/data/services/local_notification_cache_service.dart';
+import 'app/data/services/firebase_notification_service.dart';
+
 /// Global navigator key — digunakan oleh Dio Interceptor untuk
 /// force-navigate ke Login saat sesi habis (refresh token expired).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -101,10 +108,40 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
   void _setupFCMForeground() {
     try {
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         debugPrint('[FCM Foreground] Menerima notifikasi: ${message.notification?.title}');
-        // Selalu refresh daftar notifikasi saat ada push masuk
+
+        // Catat push notification ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
+        final user = ref.read(authProvider).user;
+        if (user != null && message.notification != null) {
+          final title = message.notification!.title ?? 'Notifikasi Baru';
+          final body = message.notification!.body ?? '';
+          final type = (message.data['event']?.toString() ?? message.data['type']?.toString() ?? 'INFO').toUpperCase();
+
+          await FirebaseNotificationService().saveNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: title,
+            desc: body,
+            type: type,
+            id: message.messageId,
+          );
+
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: title,
+            desc: body,
+            type: type,
+            id: message.messageId,
+          );
+        }
+
+        // Selalu refresh daftar notifikasi seluruh role saat ada push masuk
         ref.invalidate(notificationsProvider);
+        ref.invalidate(wargaNotificationsProvider);
+        ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(petugasResiduNotificationsProvider);
 
         // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
         if (message.notification != null) {
