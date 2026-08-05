@@ -26,7 +26,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [dplList, setDplList] = useState<any[]>([]);
   const [loadingDpl, setLoadingDpl] = useState(true);
   const [isDplModalOpen, setIsDplModalOpen] = useState(false);
-  const [dplForm, setDplForm] = useState({ name: "", email: "", phone: "", password: "", nik: "" });
+  const [dplForm, setDplForm] = useState({ name: "", email: "", phone: "", password: "", nip: "" });
   const [submittingDpl, setSubmittingDpl] = useState(false);
 
   // Universitas State (derived statically/dynamically)
@@ -142,12 +142,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         email: dplForm.email,
         phone: dplForm.phone,
         password: dplForm.password,
-        nik: dplForm.nik || `DPL-${Date.now()}`,
+        nip: dplForm.nip || `NIP-${Date.now()}`,
         universityId: "PSC-UNIVERSITY"
       });
       toast.success("Dosen Pembimbing Lapangan (DPL) berhasil didaftarkan!");
       setIsDplModalOpen(false);
-      setDplForm({ name: "", email: "", phone: "", password: "", nik: "" });
+      setDplForm({ name: "", email: "", phone: "", password: "", nip: "" });
       fetchDpls();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal mendaftarkan DPL");
@@ -555,8 +555,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Nomor Induk Pegawai / Dosen"
-                  value={dplForm.nik}
-                  onChange={(e) => setDplForm({ ...dplForm, nik: e.target.value })}
+                  value={dplForm.nip}
+                  onChange={(e) => setDplForm({ ...dplForm, nip: e.target.value })}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>

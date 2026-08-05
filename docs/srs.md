@@ -1,35 +1,38 @@
 # Software Requirement Specification (SRS) — Pilah Sampah Cerdas
 
-## 1. Spesifikasi Autentikasi & Identifikasi Pengguna (No NIK)
-* **FR-AUTH-01 (Identifikasi Tanpa NIK):** Sistem wajib memverifikasi dan mengotentikasi pengguna tanpa menggunakan NIK (Nomor Induk Kependudukan):
-  * **Warga:** Autentikasi menggunakan **Nomor Telepon** (No HP). Tidak ada field NIK atau Email.
-  * **Mahasiswa KKN:** Autentikasi menggunakan **NIM** (Nomor Induk Mahasiswa).
-  * **DPL (Dosen Pembimbing Lapangan):** Autentikasi menggunakan **NIP** (Nomor Induk Pegawai).
-  * **Role Lainnya (RT, RW, Pengangkut, Petugas Residu, Admin):** Default autentikasi menggunakan **Nomor Telepon** (opsional Email untuk Admin).
+## 1. Spesifikasi Autentikasi & Identifikasi Pengguna (No NIK & Universal Phone Auth)
+* **FR-AUTH-01 (Identifikasi Tanpa NIK & No HP Universal):** 
+  * Sistem memverifikasi dan mengautentikasi **100% pengguna dari seluruh role** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** (OTP WhatsApp / Kredensial).
+  * Field NIK **dihapus total** dari seluruh tabel, formulir, dan API.
+  * Metadata profil tambahan: `nim` untuk Mahasiswa KKN, `nip` untuk DPL.
+
+* **FR-AUTH-02 (Guard Akses Read-Only & Scoping Wilayah):**
+  * Middleware `readOnlyGuard` memblokir operasi Tulis (POST, PUT, DELETE) untuk role Admin DLH, Camat, dan Lurah (kecuali approval diskrepansi AI oleh Admin DLH).
+  * Data-Scoping: Admin DLH (Kota Bandung), Camat (Kecamatan Coblong), Lurah (Kelurahan), RW (Wilayah RW).
 
 ---
 
 ## 2. Spesifikasi Fungsional (Functional Requirements)
 
-* **FR-01 (Deteksi AI):** Sistem harus mampu menerima request foto dari Aplikasi Mobile Thin-Client, memproses antrian secara FIFO (First In First Out), dan memprediksi tipe serta volume sampah dalam batas timeout 2000 ms.
-* **FR-02 (Validasi QR, Dual Bins, Kapasitas & Jarak):** 
-  * Setiap rumah Warga terdaftar wajib memiliki **2 tempat sampah** (Organik & Anorganik) dengan QR Code terpisah.
-  * Sistem harus menolak transaksi jika jenis sampah AI tidak sesuai dengan tipe peruntukan tempat sampah (misal: sampah plastik dibuang ke tempat sampah organik).
-  * Sistem menolak transaksi jika volume sisa tempat sampah (maksimal 25L) terlampaui.
-  * Sistem menolak transaksi jika jarak antara lokasi GPS handphone warga saat penyetoran dengan koordinat lokasi tempat sampah terdaftar melebihi 10 meter (Geofencing).
-
-> ⚠️ DEPRECATED (flow lama, digantikan FR-03 & FR-RESET)
-> *Dahulu: Poin dapat ditukarkan langsung melalui katalog reward.*
-> *Digantikan: Fitur Penukaran Reward berstatus `[COMING SOON]`. Poin hanya digunakan untuk Akumulasi & Leaderboard.*
-
-* **FR-03 (Sistem Poin & Leaderboard):** 
-  * Sistem harus mengonversi liter ke kilogram berdasarkan massa jenis (`ORGANIC = 0.4 kg/L`, `NON_ORGANIC = 0.2 kg/L`).
-  * Sistem memberikan 100 poin per kg terpilah. Poin dimasukkan ke akumulasi saldo dan Papan Peringkat (Leaderboard) Warga tingkat RT/RW.
-* **FR-04 (Notifikasi & Monitoring Kapasitas):** Sistem harus memicu status peringatan "Tempat Sampah Penuh" jika kapasitas tempat sampah mencapai >90%.
-* **FR-RESET-01 (Pengajuan Reset Scoped RT/RW):** Warga dapat mengajukan reset pengosongan tempat sampah melampirkan foto bukti. Pengajuan ini **wajib terisolasi hanya dikirimkan kepada pengurus RT dan RW di wilayah tempat tinggal Warga tersebut** (`rt_id` & `rw_id`).
-* **FR-RESET-02 (Halaman Management Reset Web RT/RW):** Sistem wajib menyediakan **Halaman Khusus Management Request Reset Tempat Sampah** di Web Dashboard RT dan RW untuk mereview foto bukti dan melakukan approval (reset kapasitas ke 0 Liter) atau rejection.
-* **FR-05 (Master Data CRUD):** Admin dan Pengurus Kelurahan/Kecamatan dapat mengelola seluruh entitas master data melalui halaman Master Data Web App.
-* **FR-06 (Live Monitoring):** Sistem menyediakan 1 halaman khusus Live Monitoring di Web App yang menampilkan titik tempat sampah real-time di atas peta geospatial, mencakup area RT, RW, dan Kelurahan secara hierarkis.
+* **FR-01 (Deteksi AI & Threshold Confidence):** Sistem menerima request foto sampah dari Aplikasi Mobile, mengklasifikasikan tipe sampah (`ORGANIC` / `NON_ORGANIC`), dan mengembalikan nilai confidence AI (0.0–1.0) dalam timeout 2000 ms.
+* **FR-02 (State Machine & Validasi QR Tempat Sampah):** 
+  * Setiap rumah Warga terdaftar wajib memiliki maksimal **2 tempat sampah** (Organik & Anorganik) dengan QR Code terpisah. Residu tidak dibuatkan tempat sampah di rumah warga.
+  * Alur Status Tempat Sampah: `PRINTED` -> `ASSIGNED_TO_PIC` (Mahasiswa KKN) -> `PENDING_APPROVAL` (Presisi GPS) -> `ACTIVE_BOUND` (Disetujui RW +10 Poin atomik).
+  * Masa Aktif 30 Hari: Tempat sampah aktif di-reset otomatis setiap penyetoran foto + scan QR valid. Jika 30 hari tanpa aktivitas -> status `TIDAK AKTIF`.
+  * Penanganan Tempat Sampah Rusak: RW dapat mengubah status bin menjadi `BROKEN` (QR non-aktif permanen).
+  * Geofencing: Transaksi ditolak jika jarak GPS Warga > 10 meter dari lokasi terdaftar.
+* **FR-03 (Sistem Poin & Rumus Gamifikasi):** 
+  * Liter dikonversi ke Kilogram (`ORGANIC = 0.4 kg/L`, `NON_ORGANIC = 0.2 kg/L`).
+  * Formula Poin: $\text{Poin} = \text{Berat (Kg)} \times 100 \times \text{Confidence AI} \times 0.9$.
+  * Pencatatan poin menggunakan **ledger terpisah** dan berstatus gamifikasi (`redeemable: false`).
+* **FR-04 (Penjemputan, Window Waktu, & Eskalasi Otomatis):** 
+  * Penjemputan dilakukan pada window 06:00–08:00 WIB & 16:00–18:00 WIB.
+  * Foto tempat sampah meluber memicu notifikasi push ke Petugas Residu & RW.
+  * Eskalasi Otomatis: Jika pengangkutan tidak didokumentasikan dalam window waktu, notifikasi otomatis terkirim secara hierarkis (RW -> Lurah -> Camat -> Admin DLH).
+* **FR-05 (Timbangan Fisik Petugas Residu & Rule of Discrepancy):** 
+  * Hasil timbangan sampah diinput manual oleh Petugas Residu dari timbangan fisik industri.
+  * Jika input manual petugas berbeda dari klasifikasi AI (>90% confidence), status setoran menjadi `PENDING_REVIEW` untuk dievaluasi oleh Admin DLH.
+* **FR-06 (Live Monitoring GIS & Fasilitas):** Web Dashboard menyediakan halaman Live Monitoring peta geospasial real-time (timbulan sampah, fasilitas Bata Terawang, Loseda, Rumah Maggot, Bank Sampah).
 
 ---
 
@@ -37,10 +40,6 @@
 * **NFR-01 (Kinerja Antrian):** Mampu menangani hingga 100 request deteksi foto bersamaan menggunakan Redis Concurrent Queue.
 * **NFR-02 (Keamanan):** Batas aman request AI dibatasi maksimal 50 request per user/hari.
 * **NFR-03 (Presisi Geospasial):** Database wajib merekam koordinat GIS (latitude & longitude) lokasi rumah/tempat sampah warga menggunakan tipe DECIMAL(11,8) dengan akurasi hingga 1.1 cm di permukaan bumi.
-* **NFR-04 (Live Update):** Halaman Live Monitoring harus refresh otomatis data tempat sampah setiap 30 detik (polling atau WebSocket).
-* **NFR-05 (Koneksi Internet Wajib):** Aplikasi Mobile **wajib memerlukan koneksi internet aktif** untuk semua fitur inti (deteksi AI, scan QR, riwayat, poin). Tidak ada mode offline. Ketika koneksi terputus, aplikasi menampilkan banner peringatan `NETWORK_UNAVAILABLE` dan menonaktifkan tombol aksi utama.
-* **NFR-06 (Desain Responsif):** Seluruh antarmuka Web Dashboard wajib responsif di semua ukuran layar menggunakan breakpoint standar:
-  * **Mobile (sm):** ≥ 360px — Tampilan tumpuk vertikal, sidebar tersembunyi (bottom navigation bar)
-  * **Tablet (md):** ≥ 768px — Sidebar mini ikon, konten 2 kolom
-  * **Desktop (lg):** ≥ 1280px — Sidebar penuh teks + ikon, konten multi-kolom
-  * **Large Desktop (xl):** ≥ 1536px — Layout lebar penuh dengan panel statistik tambahan
+* **NFR-04 (Live Update):** Halaman Live Monitoring refresh otomatis data tempat sampah setiap 30 detik via polling / WebSocket.
+* **NFR-05 (Koneksi Internet Wajib):** Aplikasi Mobile memerlukan koneksi internet aktif untuk fitur inti. Banner `NETWORK_UNAVAILABLE` muncul saat offline.
+* **NFR-06 (Desain Responsif):** Web App responsif di breakpoint: sm (≥360px), md (≥768px), lg (≥1280px), xl (≥1536px).

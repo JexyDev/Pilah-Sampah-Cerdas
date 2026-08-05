@@ -300,7 +300,7 @@ router.post(
  * @swagger
  * /api/v1/kkn/register-warga:
  *   post:
- *     summary: Membantu pendaftaran akun Warga baru di lapangan (Auth: No HP +62)
+ *     summary: "Membantu pendaftaran akun Warga baru di lapangan (Auth: No HP +62)"
  *     tags: [Mahasiswa KKN]
  *     security:
  *       - bearerAuth: []

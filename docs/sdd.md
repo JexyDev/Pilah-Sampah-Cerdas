@@ -102,13 +102,10 @@ graph TD
     "userId": "user-uuid-01",
     "detectedType": "ORGANIC",
     "estimatedVolume": 4.5,
-<<<<<<< HEAD
     "userLat": -6.90341234,
-    "userLng": 107.61981234
-=======
+    "userLng": 107.61981234,
     "confidence": 0.95,
     "householdId": "household-uuid-01"
->>>>>>> 8bedc82b (fix(mahasiswa-warga): overhaul modul kkn dan penyelarasan api warga)
   }
   ```
 * **Response Success (200 OK):**
