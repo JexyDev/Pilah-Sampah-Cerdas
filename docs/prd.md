@@ -31,11 +31,10 @@ Setiap rumah tangga Warga memiliki maksimal **2 tempat sampah**:
 - 1 Tempat Sampah **Anorganik** (QR Code tersendiri).
 - *Catatan:* Residu **tidak dibuatkan tempat sampah di rumah warga** (residu ditimbang di hilir oleh Petugas Residu).
 
-### 2.2 State Machine Tempat Sampah (Bin Lifecycle)
+### 2.2 State Machine Tempat Sampah (Bin Lifecycle - Otomatis Aktif, Tanpa Approval RW)
 1. **`PRINTED` / `BELUM_DIGUNAKAN`:** QR Code fisik dicetak dan siap didistribusikan.
 2. **`ASSIGNED_TO_PIC` / `DIPEGANG_MAHASISWA`:** Mahasiswa KKN memindai QR pertama kali saat diterjunkan ke lapangan (+ merekam GPS Mahasiswa).
-3. **`PENDING_APPROVAL`:** Mahasiswa membantu pendaftaran warga -> koordinat GPS gawai perekam dikirim & direkam permanen -> status bin menunggu persetujuan RW.
-4. **`ACTIVE_BOUND`:** RW menyetujui -> status aktif terikat ke rumah warga. Poin bonus ditambahkan secara atomik (+10 Poin Warga, +10 Poin Mahasiswa).
+3. **`ACTIVE_BOUND` (Otomatis Langsung Aktif):** Saat pendaftaran warga / scan tempat sampah oleh Mahasiswa KKN atau Warga -> koordinat GPS direkam permanen dan status bin **otomatis langsung berubah menjadi `ACTIVE_BOUND`** (tanpa persetujuan RW, persetujuan/approval QR di-skip). Poin bonus ditambahkan secara atomik (+10 Poin Warga, +10 Poin Mahasiswa).
 5. **Masa Aktif 30 Hari & Reset:** Tempat sampah aktif selama 30 hari. Masa aktif di-reset otomatis setiap kali warga mengunggah foto setoran + memindai QR + disetujui pengambilan.
 6. **`TIDAK AKTIF` (Expired):** Jika 30 hari tanpa aktivitas, status bin berubah menjadi TIDAK AKTIF. Warga tidak bisa melakukan penyetoran dan wajib mengajukan aktivasi ulang yang diverifikasi & disetujui oleh RW.
 7. **`BROKEN`:** Tempat sampah rusak dapat ditandai oleh RW -> QR non-aktif secara permanen.

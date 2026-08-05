@@ -109,7 +109,7 @@ router.get("/warga", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknContr
  * @swagger
  * /api/v1/kkn/warga/activate-by-scan:
  *   post:
- *     summary: Aktivasi tempat sampah warga via scan QR oleh Mahasiswa KKN (Merekam GPS & PENDING_APPROVAL)
+ *     summary: "Aktivasi tempat sampah warga via scan QR oleh Mahasiswa KKN (Merekam GPS & Langsung Otomatis ACTIVE_BOUND)"
  *     tags: [Mahasiswa KKN]
  *     security:
  *       - bearerAuth: []

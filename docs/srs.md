@@ -17,7 +17,7 @@
 * **FR-01 (Deteksi AI & Threshold Confidence):** Sistem menerima request foto sampah dari Aplikasi Mobile, mengklasifikasikan tipe sampah (`ORGANIC` / `NON_ORGANIC`), dan mengembalikan nilai confidence AI (0.0–1.0) dalam timeout 2000 ms.
 * **FR-02 (State Machine & Validasi QR Tempat Sampah):** 
   * Setiap rumah Warga terdaftar wajib memiliki maksimal **2 tempat sampah** (Organik & Anorganik) dengan QR Code terpisah. Residu tidak dibuatkan tempat sampah di rumah warga.
-  * Alur Status Tempat Sampah: `PRINTED` -> `ASSIGNED_TO_PIC` (Mahasiswa KKN) -> `PENDING_APPROVAL` (Presisi GPS) -> `ACTIVE_BOUND` (Disetujui RW +10 Poin atomik).
+  * Alur Status Tempat Sampah: `PRINTED` -> `ASSIGNED_TO_PIC` (Mahasiswa KKN) -> `ACTIVE_BOUND` (Otomatis langsung aktif tanpa persetujuan RW, approval QR di-skip/dihapus, +10 Poin atomik).
   * Masa Aktif 30 Hari: Tempat sampah aktif di-reset otomatis setiap penyetoran foto + scan QR valid. Jika 30 hari tanpa aktivitas -> status `TIDAK AKTIF`.
   * Penanganan Tempat Sampah Rusak: RW dapat mengubah status bin menjadi `BROKEN` (QR non-aktif permanen).
   * Geofencing: Transaksi ditolak jika jarak GPS Warga > 10 meter dari lokasi terdaftar.
