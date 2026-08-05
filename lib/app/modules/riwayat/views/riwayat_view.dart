@@ -39,19 +39,56 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       appBar: AppBar(title: const Text('Riwayat Pemilahan')),
       body: Column(
         children: [
-          // Filter Tabs (Seamless canvas background)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          // Header Bar Filter (Kategori + Filter Waktu Dropdown)
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            color: Colors.white,
             child: Row(
               children: [
-                _filterTab('Semua', 0),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _filterTab('Semua', 0),
+                        const SizedBox(width: 8),
+                        _filterTab('Organik', 1),
+                        const SizedBox(width: 8),
+                        _filterTab('Non-Organik', 2),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                _filterTab('Organik', 1),
-                const SizedBox(width: 8),
-                _filterTab('Non-Organik', 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundCanvas,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: _timeFilterIndex,
+                      isDense: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 18),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      items: const [
+                        DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
+                        DropdownMenuItem(value: 1, child: Text('Hari Ini')),
+                        DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
+                        DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _timeFilterIndex = val);
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+          const Divider(height: 1),
 
           Expanded(
             child: RefreshIndicator(
@@ -105,7 +142,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
   }
 
   List<WasteLogEntity> _applyFilter(List<WasteLogEntity> logs) {
-    List<WasteLogEntity> result = logs;
+    List<WasteLogEntity> result = List.from(logs);
 
     // 1. Filter Kategori
     if (_categoryFilterIndex == 1) {
@@ -119,16 +156,22 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     final todayStart = DateTime(now.year, now.month, now.day);
     if (_timeFilterIndex == 1) {
       // Hari Ini
-      result = result.where((l) => l.createdAt.toLocal().isAfter(todayStart)).toList();
+      result = result.where((l) {
+        final dt = l.createdAt.toLocal();
+        return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+      }).toList();
     } else if (_timeFilterIndex == 2) {
       // Minggu Ini
       final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
-      result = result.where((l) => l.createdAt.toLocal().isAfter(weekStart)).toList();
+      result = result.where((l) {
+        final dt = l.createdAt.toLocal();
+        return !dt.isBefore(weekStart);
+      }).toList();
     } else if (_timeFilterIndex == 3) {
       // Bulan Ini
       result = result.where((l) {
-        final local = l.createdAt.toLocal();
-        return local.month == now.month && local.year == now.year;
+        final dt = l.createdAt.toLocal();
+        return dt.month == now.month && dt.year == now.year;
       }).toList();
     }
 
@@ -255,32 +298,6 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    if (entry.key == grouped.keys.first)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<int>(
-                            value: _timeFilterIndex,
-                            isDense: true,
-                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 18),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                            items: const [
-                              DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
-                              DropdownMenuItem(value: 1, child: Text('Hari Ini')),
-                              DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
-                              DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) setState(() => _timeFilterIndex = val);
-                            },
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -314,9 +331,15 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
   }
 
   Widget _buildEmpty() {
-    return const EmptyState(
-      message: 'Belum ada riwayat pemilahan.',
-      icon: Icons.history_rounded,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
+        SizedBox(height: 80),
+        EmptyState(
+          message: 'Belum ada riwayat pemilahan yang sesuai filter.',
+          icon: Icons.history_rounded,
+        ),
+      ],
     );
   }
 }
