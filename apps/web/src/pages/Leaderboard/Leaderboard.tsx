@@ -73,6 +73,7 @@ const Leaderboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"rank" | "name" | "points" | "subtitle">("rank");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedItem, setSelectedItem] = useState<GenericItem | null>(null);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -224,9 +225,6 @@ const Leaderboard: React.FC = () => {
   };
 
   const top3 = currentData.slice(0, 3);
-  const rest = currentData.slice(3);
-
-  const [selectedItem, setSelectedItem] = useState<GenericItem | null>(null);
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
