@@ -39,51 +39,61 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       appBar: AppBar(title: const Text('Riwayat Pemilahan')),
       body: Column(
         children: [
-          // Header Bar Filter (Kategori + Filter Waktu Dropdown)
+          // Header Bar Filter (Row 1: Chips, Row 2: Dropdown Periode)
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
             color: Colors.white,
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _filterTab('Semua', 0),
-                        const SizedBox(width: 8),
-                        _filterTab('Organik', 1),
-                        const SizedBox(width: 8),
-                        _filterTab('Non-Organik', 2),
-                      ],
-                    ),
-                  ),
+                // Baris 1: Tab Filter Kategori
+                Row(
+                  children: [
+                    _filterTab('Semua', 0),
+                    const SizedBox(width: 8),
+                    _filterTab('Organik', 1),
+                    const SizedBox(width: 8),
+                    _filterTab('Non-Organik', 2),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundCanvas,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<int>(
-                      value: _timeFilterIndex,
-                      isDense: true,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 18),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                      items: const [
-                        DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
-                        DropdownMenuItem(value: 1, child: Text('Hari Ini')),
-                        DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
-                        DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _timeFilterIndex = val);
-                      },
+                const SizedBox(height: 12),
+                // Baris 2: Filter Waktu (Label & Dropdown)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Periode Riwayat',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCanvas,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _timeFilterIndex,
+                          isDense: true,
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 20),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
+                            DropdownMenuItem(value: 1, child: Text('Hari Ini')),
+                            DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
+                            DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) setState(() => _timeFilterIndex = val);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
