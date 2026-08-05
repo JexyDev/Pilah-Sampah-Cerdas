@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/petugas_residu_notifikasi_controller.dart';
 

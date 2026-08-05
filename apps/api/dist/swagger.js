@@ -16,13 +16,54 @@ const options = {
         },
         servers: [
             {
-                url: "http://localhost:3000",
-                description: "Development Server",
+                url: "http://157.10.252.252/api/v1",
+                description: "VPS Production Server (157.10.252.252)",
+            },
+            {
+                url: "http://192.168.1.16:3000/api/v1",
+                description: "Local Wi-Fi Network Server (192.168.1.16)",
+            },
+            {
+                url: "http://localhost:3000/api/v1",
+                description: "Localhost Server",
+            },
+        ],
+        tags: [
+            { name: "Authentication", description: "Login, OTP WhatsApp, Logout, & Session Status" },
+            { name: "Executive & Monitoring (Camat, Lurah, Admin DLH)", description: "API Read-Only Web Monitoring untuk Camat, Lurah, dan Admin DLH" },
+            { name: "Kelurahan & Wilayah", description: "Manajemen Kelurahan (Dago, Sekeloa, dll), RW, & RT Coblong" },
+            { name: "Petugas Residu", description: "API Khusus Petugas Residu (Input Timbangan Manual & Web Monitoring Hilir)" },
+            { name: "DPL", description: "API Monitoring & Evaluasi Dosen Pembimbing Lapangan (DPL)" },
+            { name: "Mahasiswa KKN", description: "API Penugasan, QR Batch, Absensi & Dampingan Mahasiswa KKN" },
+            { name: "Pengurus RW", description: "API Approval Warga, Fasilitas, & Ide Daur Ulang Pengurus RW/RT" },
+            { name: "Bins", description: "Manajemen Tempat Sampah, Status QR, & Aktivasi" },
+            { name: "Users", description: "Manajemen Pengguna & Profil" },
+            { name: "Dashboard", description: "Statistik KPI & Agregasi Wilayah" },
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                    description: "Masukkan JWT Token dari response login (tanpa prefix Bearer)",
+                },
+            },
+        },
+        security: [
+            {
+                bearerAuth: [],
             },
         ],
     },
-    // Path to the API docs (both source TS and compiled JS files)
-    apis: ["./src/routes/*.ts", "./src/routes/*.js", "./dist/routes/*.js"],
+    apis: [
+        "./src/routes/*.ts",
+        "./src/routes/*.js",
+        "./dist/routes/*.js",
+        "apps/api/src/routes/*.ts",
+        "apps/api/src/routes/*.js",
+        "apps/api/dist/routes/*.js"
+    ],
 };
 const swaggerSpec = swaggerJSDoc(options);
 export function setupSwagger(app) {

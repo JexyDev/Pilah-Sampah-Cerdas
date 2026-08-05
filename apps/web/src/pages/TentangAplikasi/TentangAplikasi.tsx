@@ -11,10 +11,13 @@ const TentangAplikasi: React.FC = () => {
           className="h-28 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
         />
       </div>
-      <h1 className="text-3xl font-extrabold text-green-700 mb-2">
+      <h1 className="text-3xl font-extrabold text-green-700 mb-1">
         {APP_CONFIG.appName}
       </h1>
-      <p className="text-gray-500 mb-6 font-medium">
+      <p className="text-sm font-bold text-emerald-600 tracking-wide uppercase mb-3">
+        "{APP_CONFIG.tagline}"
+      </p>
+      <p className="text-gray-500 mb-6 font-medium text-xs">
         Versi {APP_CONFIG.version}
       </p>
       <div className="max-w-2xl text-gray-600 leading-relaxed text-sm">

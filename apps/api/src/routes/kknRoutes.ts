@@ -337,4 +337,57 @@ router.post(
   kknController.createLeaveRequest
 );
 
+// Alias routes matching exact Mahasiswa KKN spec
+router.post(
+  ["/attendance/check-in", "/attendance/checkin"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.recordAttendance
+);
+
+router.get(
+  "/history",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getActivityLog
+);
+
+router.get(
+  ["/kegiatan/:id/lokasi", "/target-lokasi"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  kknAttendanceController.getActivityLocation
+);
+
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
+
+router.get(
+  "/notifications",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  async (req, res) => {
+    try {
+      const userId = req.user!.userId;
+      const notifications = await prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+
+      const formatted = notifications.map((n) => ({
+        id: n.id,
+        title: n.title,
+        desc: n.message,
+        isRead: n.isRead,
+        createdAt: n.createdAt,
+      }));
+
+      res.json({ success: true, data: formatted });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+);
+
 export default router;

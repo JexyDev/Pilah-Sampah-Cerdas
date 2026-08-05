@@ -30,6 +30,9 @@ export default function RekapSetoran() {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Detail Modal State
+  const [selectedDeposit, setSelectedDeposit] = useState<any | null>(null);
+
   // Filters State
   const [filterKategori, setFilterKategori] = useState("ALL");
   const [filterRtRw, setFilterRtRw] = useState("");
@@ -302,7 +305,7 @@ export default function RekapSetoran() {
             <Calendar size={16} className="text-primary" /> Rincian Riwayat Setoran
           </h3>
           <span className="text-xs font-bold text-slate-500">
-            Menampilkan {totalItems === 0 ? 0 : `${startIndex + 1} - ${endIndex}`} dari {totalItems} data
+            Menampilkan {totalItems === 0 ? 0 : `${startIndex + 1} - ${endIndex}`} dari {totalItems} data (Klik baris untuk rincian detail)
           </span>
         </div>
 
@@ -334,8 +337,12 @@ export default function RekapSetoran() {
                 {currentItems.map((item) => {
                   const isOrganik = (item.jenis || "").toLowerCase().includes("organik");
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-black text-slate-800 tracking-tight">
+                    <tr
+                      key={item.id}
+                      onClick={() => setSelectedDeposit(item)}
+                      className="hover:bg-emerald-50/50 transition-colors cursor-pointer group"
+                    >
+                      <td className="py-3.5 px-4 font-black text-slate-800 tracking-tight group-hover:text-emerald-700">
                         {item.id.length > 20 ? `${item.id.substring(0, 16)}...` : item.id}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">{item.warga || "Warga Coblong"}</td>
@@ -357,7 +364,7 @@ export default function RekapSetoran() {
                         {new Date(item.waktu).toLocaleString("id-ID")}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition">
                           <CheckCircle size={12} /> {item.status || "Selesai"}
                         </span>
                       </td>
@@ -418,6 +425,89 @@ export default function RekapSetoran() {
           </div>
         )}
       </div>
+
+      {/* Modal Detail Transaksi Setoran */}
+      {selectedDeposit && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
+              <div>
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Receipt size={18} className="text-emerald-400" /> Detail Transaksi Setoran
+                </h3>
+                <span className="text-[11px] text-emerald-300 font-mono">ID: {selectedDeposit.id}</span>
+              </div>
+              <button
+                onClick={() => setSelectedDeposit(null)}
+                className="text-gray-300 hover:text-white p-1 rounded-full transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">
+                  {selectedDeposit.warga?.[0] || "W"}
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-sm">{selectedDeposit.warga || "Warga Coblong"}</h4>
+                  <p className="text-[11px] text-slate-500">{selectedDeposit.rtRw || "RT 01 / RW 01"} - Kecamatan Coblong</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Kategori Sampah</span>
+                  <span className="font-black text-slate-900 text-sm">{selectedDeposit.jenis || "Organik"}</span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Berat Timbangan</span>
+                  <span className="font-mono font-black text-emerald-700 text-sm">{selectedDeposit.berat} Kg</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Poin Gamifikasi</span>
+                  <span className="font-extrabold text-emerald-600 text-sm">+{Math.round(selectedDeposit.poin)} Poin</span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Verifikasi</span>
+                  <span className="font-extrabold text-emerald-700 text-xs flex items-center gap-1">
+                    <CheckCircle size={13} /> {selectedDeposit.status || "Terverifikasi (Selesai)"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Waktu Pencatatan</span>
+                <span className="font-semibold text-slate-800 block text-xs">
+                  {new Date(selectedDeposit.waktu).toLocaleString("id-ID", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </span>
+                <span className="text-[10px] text-slate-400 block">Metode: Pemindaian QR Code + Verifikasi Fisik Petugas</span>
+              </div>
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setSelectedDeposit(null)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+              >
+                Tutup Detail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

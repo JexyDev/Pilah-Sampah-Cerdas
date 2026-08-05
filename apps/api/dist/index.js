@@ -36,6 +36,7 @@ import kknAttendanceRouter from "./routes/kknAttendanceRoutes.js";
 import pemanfaatanRouter from "./routes/pemanfaatanRoutes.js";
 import pengangkutanRouter from "./routes/pengangkutanRoutes.js";
 import kelompokRouter from "./routes/kelompokRoutes.js";
+import dplRouter from "./routes/dplRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 dotenv.config();
@@ -79,8 +80,10 @@ app.use("/api/v1/bank-sampah", bankSampahRouter);
 app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
+app.use("/api/v1/petugas-residu", residuRouter);
 app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/rw", rwRouter);
+app.use("/api/v1/rt", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/areas", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
@@ -88,6 +91,16 @@ app.use("/api/v1", kknAttendanceRouter);
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
+app.use("/api/v1/dpl", dplRouter);
+// Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
+app.use("/api/v1/user", userRouter);
+app.use("/api/kkn", kknRouter);
+app.use("/api", kknAttendanceRouter);
+app.use("/api/residu", residuRouter);
+app.use("/api/notifications", notificationRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/rw", rwRouter);
+app.use("/api/rt", rwRouter);
 // Global Error Handler Middleware
 app.use((err, req, res, _next) => {
     console.error("Unhandled Global Error:", err);
@@ -114,3 +127,31 @@ websocketService.init(server);
 // Initialize Cron Scheduler Service
 import { cronService } from "./services/cronService.js";
 cronService.start();
+// Auto-sanitize RT/RW names to human names if dummy names exist in DB
+(async () => {
+    try {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const dummyUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { name: { contains: "Ketua RT" } },
+                    { name: { contains: "Ketua RW" } },
+                    { name: { contains: "Lurah " } },
+                    { name: { contains: "Camat " } },
+                    { name: { startsWith: "Asep RW" } },
+                    { name: { startsWith: "Bambang RT" } },
+                ],
+            },
+        });
+        if (dummyUser) {
+            console.log("[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Sanitizing to human names...");
+            const { exec } = await import("child_process");
+            exec("npx tsx scripts/fix-rt-rw-human-names.ts");
+            exec("npx tsx scripts/fix-executive-human-names.ts");
+        }
+    }
+    catch (e) {
+        // Non-blocking catch
+    }
+})();

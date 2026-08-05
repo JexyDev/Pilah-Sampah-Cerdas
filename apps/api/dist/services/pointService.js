@@ -51,6 +51,28 @@ export class PointService {
         });
     }
     /**
+     * Adjust points manually by Admin / RW
+     */
+    async adjustPoints(userId, points, description) {
+        return prisma.$transaction(async (tx) => {
+            const history = await tx.pointHistory.create({
+                data: {
+                    userId,
+                    points,
+                    description: description || "Penyesuaian Poin Manual oleh Admin",
+                },
+            });
+            await tx.notification.create({
+                data: {
+                    userId,
+                    title: "Penyesuaian Poin",
+                    message: `Poin Anda telah disesuaikan sebesar ${points >= 0 ? "+" : ""}${points} poin: ${description}`,
+                },
+            });
+            return history;
+        });
+    }
+    /**
      * Get leaderboard
      */
     async getLeaderboard() {

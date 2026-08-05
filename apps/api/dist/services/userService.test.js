@@ -67,7 +67,6 @@ describe("UserService", () => {
                     id: "user-1",
                     name: "User One",
                     email: "one@psc.id",
-                    nik: "1234567890123456",
                     phone: "+6281122233344",
                     status: "Aktif",
                     role: { name: "WARGA" },
@@ -91,7 +90,6 @@ describe("UserService", () => {
                 name: "User One",
                 email: "one@psc.id",
                 role: "WARGA",
-                nik: "1234567890123456",
                 phone: "+6281122233344",
                 status: "Aktif",
                 wilayah: "RT 01 / RW 01 (Kel. Dago)",
@@ -120,7 +118,6 @@ describe("UserService", () => {
                 password: "password123",
                 phone: "+6281122233344",
                 roleName: "WARGA",
-                nik: "1234567890000000",
             });
             expect(userRepository.findRoleByName).toHaveBeenCalledWith("WARGA");
             expect(userRepository.findByEmail).toHaveBeenCalledWith("new@psc.id");

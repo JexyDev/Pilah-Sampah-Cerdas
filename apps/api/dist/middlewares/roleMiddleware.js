@@ -18,7 +18,27 @@ export const roleMiddleware = (allowedRoles) => {
                 res.status(401).json({ error: "UNAUTHORIZED", message: "User belum terotentikasi" });
                 return;
             }
-            if (!allowedRoles.includes(user.role)) {
+            const normalizeRole = (r) => {
+                const upper = String(r || "").toUpperCase();
+                if (["DLH", "DLH_ADMIN", "ADMIN_DLH", "ADMIN DLH"].includes(upper))
+                    return "ADMIN_DLH";
+                if (["ADMIN_KECAMATAN", "CAMAT", "CAMAT_ADMIN"].includes(upper))
+                    return "CAMAT";
+                if (["ADMIN_KELURAH", "LURAH", "LURAH_ADMIN"].includes(upper))
+                    return "LURAH";
+                if (["SUPER_ADMIN", "SUPERADMIN", "SUPER ADMIN"].includes(upper))
+                    return "SUPER_ADMIN";
+                if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper))
+                    return "DPL";
+                if (["PEMIMPIN", "PIMPINAN"].includes(upper))
+                    return "PEMIMPIN";
+                if (["PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "TASK_FORCE"].includes(upper))
+                    return "PANITIA_TASKFORCE";
+                return upper;
+            };
+            const userRole = normalizeRole(user.role);
+            const normalizedAllowed = allowedRoles.map(normalizeRole);
+            if (!normalizedAllowed.includes(userRole)) {
                 res
                     .status(403)
                     .json({ error: "FORBIDDEN", message: "Anda tidak memiliki akses ke resource ini" });

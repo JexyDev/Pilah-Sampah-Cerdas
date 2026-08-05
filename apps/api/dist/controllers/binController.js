@@ -5,8 +5,10 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
 import { binService } from "../services/binService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
+const prisma = new PrismaClient();
 const scanSchema = z.object({
     qrCode: z.string().min(1, "QR Code diperlukan"),
     detectedType: z.string().min(1, "Jenis sampah terdeteksi diperlukan"),
@@ -15,6 +17,7 @@ const scanSchema = z.object({
     userLat: z.number().min(-90).max(90),
     userLng: z.number().min(-180).max(180),
     aiConfidence: z.number().optional(),
+    confidence: z.number().optional(),
     evidencePhotoUrl: z.string().optional(),
     detections: z
         .array(z.object({
@@ -51,7 +54,13 @@ export class BinController {
                     lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
                     rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
                     kapasitas,
-                    status: bin.status === "BROKEN" ? "Rusak" : kapasitas > 80 ? "Penuh" : kapasitas > 50 ? "Sedang" : "Normal",
+                    status: bin.status === "BROKEN"
+                        ? "Rusak"
+                        : kapasitas > 80
+                            ? "Penuh"
+                            : kapasitas > 50
+                                ? "Sedang"
+                                : "Normal",
                     lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
                     categoryId: bin.categoryId || null,
                     rtRwId: bin.rtRwId || null,
@@ -119,6 +128,30 @@ export class BinController {
             res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Failed to get kelurahans" });
         }
     }
+    async createKelurahan(req, res) {
+        try {
+            const { name } = req.body;
+            if (!name) {
+                res.status(400).json({ success: false, error: "INVALID_INPUT", message: "Nama Kelurahan wajib diisi" });
+                return;
+            }
+            const kelurahan = await binService.createKelurahan(name);
+            res.status(201).json({ success: true, data: kelurahan });
+        }
+        catch (error) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+    async deleteKelurahan(req, res) {
+        try {
+            const { id } = req.params;
+            await binService.deleteKelurahan(id);
+            res.status(200).json({ success: true, message: "Kelurahan berhasil dihapus" });
+        }
+        catch (error) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
     async createArea(req, res) {
         try {
             const { name, kelurahanId, latitude, longitude } = req.body;
@@ -175,8 +208,9 @@ export class BinController {
                 res.status(422).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { qrCode, detectedType, estimatedVolume, householdId, userLat, userLng, aiConfidence, evidencePhotoUrl, detections, } = parsed.data;
-            const result = await binService.processScan(qrCode, userId, householdId, detectedType, estimatedVolume, userLat, userLng, aiConfidence, evidencePhotoUrl, detections);
+            const { qrCode, detectedType, estimatedVolume, householdId, userLat, userLng, aiConfidence, confidence, evidencePhotoUrl, detections, } = parsed.data;
+            const finalConfidence = confidence ?? aiConfidence;
+            const result = await binService.processScan(qrCode, userId, householdId, detectedType, estimatedVolume, userLat, userLng, finalConfidence, evidencePhotoUrl, detections);
             res.status(200).json({
                 success: true,
                 data: result,
@@ -200,10 +234,13 @@ export class BinController {
                     message: "tempat sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
                 });
             }
-            else if (error.message === "LOCATION_OUT_OF_RANGE") {
+            else if (error.message === "LOCATION_OUT_OF_RANGE" ||
+                error.message === "LOCATION_TOO_FAR") {
                 res.status(400).json({
-                    error: "LOCATION_OUT_OF_RANGE",
-                    message: "Lokasi Anda terlalu jauh dari tempat sampah fisik (> 50m).",
+                    success: false,
+                    error: "LOCATION_TOO_FAR",
+                    code: "LOCATION_TOO_FAR",
+                    message: `Posisi Anda terlalu jauh dari lokasi tong sampah (${error.distanceMeters ? error.distanceMeters + "m" : ">10m"}).`,
                     distanceMeters: error.distanceMeters,
                 });
             }
@@ -213,10 +250,12 @@ export class BinController {
                     message: `Tong tidak sesuai! Anda memasukkan sampah ke tong khusus ${error.binType}.`,
                 });
             }
-            else if (error.message === "BIN_OVERFLOW") {
+            else if (error.message === "BIN_OVERFLOW" || error.message === "BIN_FULL") {
                 res.status(400).json({
-                    error: "BIN_OVERFLOW",
-                    message: "Tong penuh! Penyimpanan ditolak karena sisa kapasitas tong tidak mencukupi (Kapasitas Maks: 25 Liter).",
+                    success: false,
+                    code: "BIN_FULL",
+                    error: "BIN_FULL",
+                    message: "Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan. Silakan gunakan QR Tempat Sampah milik Anda yang lain atau ajukan Pengosongan Tempat Sampah.",
                 });
             }
             else {
@@ -398,6 +437,37 @@ export class BinController {
         }
     }
     /**
+     * Get reset request status for user (Mobile)
+     */
+    async getResetRequestStatus(req, res) {
+        try {
+            const userId = req.user.userId;
+            const requests = await prisma.binResetRequest.findMany({
+                where: { userId },
+                orderBy: { createdAt: "desc" },
+                include: { bin: true },
+            });
+            res.status(200).json({
+                success: true,
+                data: requests.map((r) => ({
+                    id: r.id,
+                    binId: r.binId,
+                    qrCode: r.bin.qrCode,
+                    status: r.status,
+                    evidencePhotoUrl: r.evidencePhotoUrl,
+                    createdAt: r.createdAt,
+                    resetRequestStatus: r.status,
+                })),
+            });
+        }
+        catch (error) {
+            console.error("[BinController] getResetRequestStatus error:", error);
+            res
+                .status(500)
+                .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status pengajuan" });
+        }
+    }
+    /**
      * Create a new bin reset request (Warga)
      */
     async createResetRequest(req, res) {
@@ -416,13 +486,18 @@ export class BinController {
         catch (error) {
             console.error("[BinController] createResetRequest error:", error);
             if (error.message === "RESOURCE_NOT_FOUND") {
-                res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+                res
+                    .status(404)
+                    .json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
             }
             else if (error.message === "BIN_NOT_OWNED") {
                 res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
             }
             else if (error.message === "DUPLICATE_REQUEST") {
-                res.status(400).json({ error: "DUPLICATE_REQUEST", message: "Sudah ada pengajuan pengosongan aktif untuk tong ini" });
+                res.status(400).json({
+                    error: "DUPLICATE_REQUEST",
+                    message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+                });
             }
             else {
                 res
@@ -480,9 +555,7 @@ export class BinController {
                 status !== "REJECTED" &&
                 status !== "COMPLETED" &&
                 status !== "ON_PROGRESS") {
-                res
-                    .status(400)
-                    .json({ error: "BAD_REQUEST", message: "status tidak valid" });
+                res.status(400).json({ error: "BAD_REQUEST", message: "status tidak valid" });
                 return;
             }
             const result = await binService.reviewResetRequest(id, status, reviewedById);
@@ -770,13 +843,18 @@ export class BinController {
         catch (error) {
             console.error("[BinController] createResetRequestMobile error:", error);
             if (error.message === "RESOURCE_NOT_FOUND") {
-                res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+                res
+                    .status(404)
+                    .json({ error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
             }
             else if (error.message === "BIN_NOT_OWNED") {
                 res.status(403).json({ error: "BIN_NOT_OWNED", message: "Tempat sampah bukan milik Anda" });
             }
             else if (error.message === "DUPLICATE_REQUEST") {
-                res.status(400).json({ error: "DUPLICATE_REQUEST", message: "Sudah ada pengajuan pengosongan aktif untuk tong ini" });
+                res.status(400).json({
+                    error: "DUPLICATE_REQUEST",
+                    message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+                });
             }
             else {
                 res

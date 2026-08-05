@@ -60,5 +60,6 @@ router.get("/history/:userId", authMiddleware, roleMiddleware(["SUPER_ADMIN", "A
  *       200:
  *         description: Success
  */
+router.post("/adjust", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]), pointController.adjustPoints);
 router.get("/leaderboard", pointController.getLeaderboard);
 export default router;

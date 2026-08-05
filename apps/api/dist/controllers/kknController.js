@@ -127,10 +127,35 @@ export class KknController {
                 });
             }
             await kknService.activateWargaBin(wargaId, binOrganikId, binAnorganikId, latitude != null ? Number(latitude) : undefined, longitude != null ? Number(longitude) : undefined, kknUserId);
-            res.status(200).json({ success: true, message: "Aktivasi bin warga berhasil disatukan" });
+            res.status(200).json({
+                success: true,
+                message: "Tempat sampah berhasil di-binding ke akun Warga di wilayah RT/RW dampingan KKN.",
+            });
         }
         catch (error) {
             console.error("[KknController] activateBin error:", error);
+            res.status(400).json({ success: false, message: error.message });
+        }
+    }
+    async createLeaveRequest(req, res) {
+        try {
+            const studentId = req.user.userId;
+            let fotoBuktiUrl = req.body.fotoBuktiUrl;
+            if (req.file) {
+                fotoBuktiUrl = `/uploads/${req.file.filename}`;
+            }
+            const data = await kknService.createLeaveRequest(studentId, {
+                ...req.body,
+                fotoBuktiUrl,
+            });
+            res.status(201).json({
+                success: true,
+                message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Admin DLH.",
+                data,
+            });
+        }
+        catch (error) {
+            console.error("[KknController] createLeaveRequest error:", error);
             res.status(400).json({ success: false, message: error.message });
         }
     }
@@ -192,6 +217,72 @@ export class KknController {
         catch (error) {
             console.error("[KknController] registerWarga error:", error);
             res.status(400).json({ success: false, message: error.message });
+        }
+    }
+    async getMyGroup(req, res) {
+        try {
+            const kknUserId = req.user.userId;
+            const data = await kknService.getMyGroup(kknUserId);
+            if (!data) {
+                res.status(404).json({
+                    success: false,
+                    message: "Anda belum dimasukkan ke kelompok KKN oleh Admin DLH.",
+                });
+                return;
+            }
+            res.status(200).json({ success: true, data });
+        }
+        catch (error) {
+            console.error("[KknController] getMyGroup error:", error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+    async createPemanfaatanSampah(req, res) {
+        try {
+            const kknUserId = req.user.userId;
+            const data = await kknService.createPemanfaatanSampah(kknUserId, req.body);
+            res.status(201).json({
+                success: true,
+                message: "Laporan pemanfaatan sampah berhasil disimpan dan tercatat di Web Monitoring.",
+                data,
+            });
+        }
+        catch (error) {
+            console.error("[KknController] createPemanfaatanSampah error:", error);
+            res.status(400).json({ success: false, message: error.message });
+        }
+    }
+    async notifyWargaStatus(req, res) {
+        try {
+            const kknUserId = req.user.userId;
+            const { wargaId, statusBimbingan } = req.body;
+            if (!wargaId || !statusBimbingan) {
+                res.status(400).json({
+                    success: false,
+                    message: "wargaId dan statusBimbingan wajib diisi",
+                });
+                return;
+            }
+            await kknService.notifyWargaStatus(kknUserId, wargaId, statusBimbingan);
+            res.status(200).json({
+                success: true,
+                message: "Notifikasi terkirim",
+            });
+        }
+        catch (error) {
+            console.error("[KknController] notifyWargaStatus error:", error);
+            res.status(400).json({ success: false, message: error.message });
+        }
+    }
+    async getActiveZone(req, res) {
+        try {
+            const kknUserId = req.user.userId;
+            const data = await kknService.getActiveZone(kknUserId);
+            res.status(200).json({ success: true, data });
+        }
+        catch (error) {
+            console.error("[KknController] getActiveZone error:", error);
+            res.status(500).json({ success: false, message: error.message });
         }
     }
 }

@@ -18,6 +18,38 @@ const DENSITY = {
     ORGANIC: 0.4, // Organic waste is denser
     NON_ORGANIC: 0.2, // Non-organic is lighter
 };
+// Helper to find local RW/RT and Petugas staff for a given bin area
+async function getStaffForBin(binRtRwId) {
+    if (!binRtRwId)
+        return [];
+    const area = await prisma.rtRwArea.findUnique({
+        where: { id: binRtRwId },
+    });
+    if (!area)
+        return [];
+    const rwPart = area.name
+        .split("/")
+        .map((s) => s.trim())
+        .find((s) => s.startsWith("RW")) || area.name;
+    const matchingAreas = await prisma.rtRwArea.findMany({
+        where: {
+            kelurahanId: area.kelurahanId,
+            name: { contains: rwPart },
+        },
+        select: { id: true },
+    });
+    let areaIds = matchingAreas.map((a) => a.id);
+    if (areaIds.length === 0)
+        areaIds = [binRtRwId];
+    return prisma.user.findMany({
+        where: {
+            rtRwId: { in: areaIds },
+            role: {
+                name: { in: ["RW", "PETUGAS_RESIDU", "RT", "MAHASISWA_KKN"] },
+            },
+        },
+    });
+}
 export class BinService {
     /**
      * Get all bins
@@ -133,9 +165,9 @@ export class BinService {
                 const current = Number(targetBin.currentVolumeLiter);
                 const max = Number(targetBin.maxCapacityLiter);
                 const vol = det.volumeEstimate;
-                if (current + vol > max) {
+                if (current >= max || current >= 25 || current + vol > max) {
                     await binRepository.createOverflowNotification(userId, targetBin.qrCode).catch(() => { });
-                    throw new Error("BIN_OVERFLOW");
+                    throw new Error("BIN_FULL");
                 }
                 const newVolume = current + vol;
                 await binRepository.updateVolume(targetBin.id, newVolume);
@@ -225,10 +257,12 @@ export class BinService {
                         ?.value;
                     multiplier = multVal ? Number(multVal) : 1.0;
                 }
-                const conf = det.confidence || 1.0;
-                const calculatedPoints = Math.round(weightKg * conf * 0.9);
+                const rawConf = det.confidence ?? aiConfidence ?? 1.0;
+                const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
+                const rate = 100 * multiplier;
+                const calculatedPoints = Math.max(1, Math.round(vol * rate * confScale));
                 const requestId = uuidv4();
-                const result = await binRepository.recordScanTransaction(householdId, targetBin.id, targetBin.categoryId || "", weightKg, vol, requestId, userId, calculatedPoints, targetBin.category?.name || "Umum", conf, evidencePhotoUrl);
+                const result = await binRepository.recordScanTransaction(householdId, targetBin.id, targetBin.categoryId || "", weightKg, vol, requestId, userId, calculatedPoints, targetBin.category?.name || "Umum", confScale, evidencePhotoUrl);
                 totalWeightKg += weightKg;
                 totalVolumeLiter += vol;
                 totalPointsAwarded += calculatedPoints;
@@ -267,10 +301,10 @@ export class BinService {
         // 4. Check remaining capacity
         const current = Number(bin.currentVolumeLiter);
         const max = Number(bin.maxCapacityLiter);
-        if (current + estimatedVolume > max) {
+        if (current >= max || current >= 25 || current + estimatedVolume > max) {
             // Create user notification for overflow async
             await binRepository.createOverflowNotification(userId, bin.qrCode).catch(() => { });
-            throw new Error("BIN_OVERFLOW");
+            throw new Error("BIN_FULL");
         }
         // 5. Update Bin current volume
         const newVolume = current + estimatedVolume;
@@ -336,16 +370,10 @@ export class BinService {
             const multVal = (await prisma.systemConfig.findUnique({ where: { key: multKey } }))?.value;
             multiplier = multVal ? Number(multVal) : 1.0;
         }
-        const pointsPerKg = bin.category.pointsPerKg || 10;
-        const conf = aiConfidence || 1.0;
-        const maxPoints = Math.round(weightKg * pointsPerKg * multiplier);
-        let calculatedPoints = 0;
-        if (conf >= 0.9) {
-            calculatedPoints = Math.round(maxPoints * (0.9 * conf));
-        }
-        else {
-            calculatedPoints = -Math.round(maxPoints * (0.9 - conf));
-        }
+        const rawConf = aiConfidence ?? 1.0;
+        const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
+        const rate = 100 * multiplier;
+        const calculatedPoints = Math.max(1, Math.round(estimatedVolume * rate * confScale));
         // 8. Record transaction (WasteLog, PointHistory, Notification)
         const requestId = uuidv4();
         const result = await binRepository.recordScanTransaction(householdId, bin.id, bin.categoryId, weightKg, estimatedVolume, requestId, userId, calculatedPoints, bin.category.name, aiConfidence, evidencePhotoUrl);
@@ -591,6 +619,15 @@ export class BinService {
     async getKelurahans() {
         return binRepository.findKelurahans();
     }
+    async createKelurahan(name) {
+        if (!name || name.trim().length === 0) {
+            throw new Error("NAMA_KELURAHAN_INVALID");
+        }
+        return binRepository.createKelurahan(name.trim());
+    }
+    async deleteKelurahan(id) {
+        return binRepository.deleteKelurahan(id);
+    }
     async createArea(name, kelurahanId, latitude, longitude) {
         return binRepository.createArea(name, kelurahanId, latitude, longitude);
     }
@@ -617,6 +654,20 @@ export class BinService {
                 qrTempatSampahId: { in: binIds },
             },
         });
+        const pendingRequests = await prisma.binResetRequest.findMany({
+            where: {
+                binId: { in: binIds },
+                status: "PENDING",
+            },
+            select: {
+                binId: true,
+                status: true,
+            },
+        });
+        const pendingMap = new Map();
+        pendingRequests.forEach((req) => {
+            pendingMap.set(req.binId, req.status);
+        });
         const lastLogMap = new Map();
         lastLogs.forEach((log) => {
             lastLogMap.set(log.qrTempatSampahId, log._max.createdAt);
@@ -638,6 +689,7 @@ export class BinService {
                     realStatus = "TIDAK_AKTIF";
                 }
             }
+            const resetRequestStatus = pendingMap.get(bin.id) || null;
             return {
                 id: bin.id,
                 qrCode: bin.qrCode,
@@ -645,16 +697,21 @@ export class BinService {
                 currentVolumeLiter: currentVol,
                 maxCapacityLiter: maxVol,
                 kapasitas,
+                isCritical: kapasitas >= 80,
                 rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
                 status: realStatus === "TIDAK_AKTIF"
                     ? "TIDAK AKTIF"
-                    : kapasitas > 80
-                        ? "Penuh"
-                        : kapasitas > 50
-                            ? "Sedang"
-                            : "Normal",
+                    : resetRequestStatus === "PENDING"
+                        ? "Pending Pengosongan"
+                        : kapasitas >= 80
+                            ? "Penuh"
+                            : kapasitas > 50
+                                ? "Sedang"
+                                : "Normal",
                 householdName,
                 realStatus,
+                resetRequestStatus,
+                isPendingReset: resetRequestStatus === "PENDING",
                 isActive: realStatus === "ACTIVE_BOUND",
                 latitude: bin.latitude ? Number(bin.latitude) : null,
                 longitude: bin.longitude ? Number(bin.longitude) : null,
@@ -669,7 +726,7 @@ export class BinService {
         // 1. check if bin exists in DB
         const bin = await prisma.bin.findUnique({
             where: { id: binId },
-            include: { binOwnerships: true }
+            include: { binOwnerships: true },
         });
         if (!bin) {
             throw new Error("RESOURCE_NOT_FOUND");
@@ -683,22 +740,39 @@ export class BinService {
         const existing = await prisma.binResetRequest.findFirst({
             where: {
                 binId,
-                status: "PENDING"
-            }
+                status: "PENDING",
+            },
         });
         if (existing) {
             throw new Error("DUPLICATE_REQUEST");
         }
         const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
-        // Notify all Petugas/Admin
-        const petugasList = request.bin.rtRwId
-            ? await binRepository.findPetugasForArea(request.bin.rtRwId)
-            : [];
-        for (const petugas of petugasList) {
-            await binRepository
-                .createNotification(petugas.id, "Pengajuan Pengosongan Baru", `[REQ-${request.id}] Warga (${request.user.name}) mengajukan pengosongan tong ${request.bin.qrCode} di ${request.bin.rtRw?.name || "Wilayah Umum"}.`)
+        // Notify local RW & Petugas staff
+        const staffList = await getStaffForBin(request.bin?.rtRwId || null);
+        const citizenName = request.user?.name || "Warga";
+        const binQr = request.bin?.qrCode || "Tong";
+        const areaName = request.bin?.rtRw?.name || "Wilayah";
+        for (const staff of staffList) {
+            await prisma.notification
+                .create({
+                data: {
+                    userId: staff.id,
+                    title: "Pengajuan Pengosongan Baru",
+                    message: `Warga (${citizenName}) mengajukan pengosongan tempat sampah ${binQr} di ${areaName}.`,
+                },
+            })
                 .catch(() => { });
         }
+        // Notify citizen
+        await prisma.notification
+            .create({
+            data: {
+                userId,
+                title: "Pengajuan Pengosongan Dikirim",
+                message: `Pengajuan pengosongan tempat sampah ${binQr} berhasil dikirim ke petugas RT/RW.`,
+            },
+        })
+            .catch(() => { });
         return request;
     }
     /**
@@ -755,19 +829,19 @@ export class BinService {
             await binRepository.updateVolume(request.binId, 0.0);
             // Notify Warga
             await binRepository
-                .createNotification(request.userId, "Pengajuan Disetujui", `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong ${request.bin.qrCode} menjadi 0%.`)
+                .createNotification(request.userId, "Pengajuan Disetujui", `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tempat sampah ${request.bin.qrCode} menjadi 0%.`)
                 .catch(() => { });
         }
         else if (status === "REJECTED") {
             // Notify Warga
             await binRepository
-                .createNotification(request.userId, "Pengajuan Ditolak", `Foto bukti pengosongan tong ${request.bin.qrCode} Anda ditolak oleh petugas. Silakan ajukan kembali.`)
+                .createNotification(request.userId, "Pengajuan Ditolak", `Foto bukti pengosongan tempat sampah ${request.bin.qrCode} Anda ditolak oleh petugas. Silakan ajukan kembali.`)
                 .catch(() => { });
         }
         else if (status === "ON_PROGRESS") {
             // Notify Warga
             await binRepository
-                .createNotification(request.userId, "Pengangkutan Sedang Berlangsung", `Petugas sedang menuju lokasi Anda untuk mengosongkan tong ${request.bin.qrCode}.`)
+                .createNotification(request.userId, "Pengangkutan Sedang Berlangsung", `Petugas sedang menuju lokasi Anda untuk mengosongkan tempat sampah ${request.bin.qrCode}.`)
                 .catch(() => { });
         }
         // Log to Audit Trail
@@ -812,10 +886,61 @@ export class BinService {
      * Claim a dispatch task concurrency-safely using FOR UPDATE row lock
      */
     async claimDispatchTask(taskId, petugasUserId) {
-        throw new Error("FEATURE_DEPRECATED_DISPATCH_REMOVED");
+        return prisma.$transaction(async (tx) => {
+            // Row level lock to prevent double claim
+            const tasks = await tx.$queryRaw `
+        SELECT * FROM dispatch_tasks WHERE id = ${taskId} FOR UPDATE
+      `;
+            if (!tasks || tasks.length === 0)
+                throw new Error("DISPATCH_TASK_NOT_FOUND");
+            const task = tasks[0];
+            if (task.status !== "PENDING") {
+                throw new Error("DISPATCH_TASK_ALREADY_CLAIMED");
+            }
+            const updated = await tx.dispatchTask.update({
+                where: { id: taskId },
+                data: {
+                    status: "CLAIMED",
+                    claimedByUserId: petugasUserId,
+                },
+            });
+            return updated;
+        });
     }
+    /**
+     * Route optimization: sort claimed tasks for petugas by Haversine distance
+     */
     async getOptimizedRoute(petugasUserId, lat, lng) {
-        return [];
+        const tasks = await prisma.dispatchTask.findMany({
+            where: {
+                claimedByUserId: petugasUserId,
+                status: "CLAIMED",
+            },
+            include: {
+                bin: {
+                    include: {
+                        rtRw: true,
+                    },
+                },
+            },
+        });
+        // Calculate distance and sort
+        const route = tasks.map((t) => {
+            let distanceMeters = 9999999; // Default if coords are missing
+            if (t.bin.latitude !== null && t.bin.longitude !== null) {
+                distanceMeters = getDistanceMeters(lat, lng, Number(t.bin.latitude), Number(t.bin.longitude));
+            }
+            return {
+                taskId: t.id,
+                binId: t.bin.id,
+                qrCode: t.bin.qrCode,
+                latitude: t.bin.latitude,
+                longitude: t.bin.longitude,
+                distanceMeters,
+                rtRw: t.bin.rtRw?.name || `RT/RW ${t.bin.rtRwId}`,
+            };
+        });
+        return route.sort((a, b) => a.distanceMeters - b.distanceMeters);
     }
     async approveActivation(binIdOrQrCode, adminUserId) {
         const bin = await prisma.bin.findFirst({
@@ -968,14 +1093,7 @@ export class BinService {
         if (!user) {
             throw new Error("USER_NOT_FOUND");
         }
-        const staffList = await prisma.user.findMany({
-            where: {
-                rtRwId: bin.rtRwId,
-                role: {
-                    name: { in: ["RW", "PETUGAS_RESIDU"] },
-                },
-            },
-        });
+        const staffList = await getStaffForBin(bin.rtRwId);
         if (issueType === "EMPTY_REQUEST") {
             // 1. Update bin volume to maxCapacityLiter (forces capacity to 100% full, showing red on map)
             await prisma.bin.update({

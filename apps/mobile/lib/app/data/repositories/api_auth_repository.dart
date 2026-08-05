@@ -243,7 +243,7 @@ class ApiAuthRepository implements AuthRepository {
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw const AuthException('OTP_FAILED', 'Gagal meminta kode OTP');
       }
-    } on DioException catch (e) {
+    } on DioException {
       if (kDebugMode && _mockFonnteOtp != null) {
         // Fallback debug jika backend belum aktif
         return;

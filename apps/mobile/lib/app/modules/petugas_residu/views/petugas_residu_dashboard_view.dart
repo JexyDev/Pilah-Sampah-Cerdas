@@ -6,7 +6,6 @@ import '../../../core/values/app_config.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../../data/models/user_entity.dart';
 import '../controllers/petugas_residu_controller.dart';
 import '../controllers/petugas_residu_notifikasi_controller.dart';

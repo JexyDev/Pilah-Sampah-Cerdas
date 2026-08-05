@@ -230,5 +230,51 @@ export class SuperAdminController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+    async updateBinStatus(req, res) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            if (!status) {
+                res.status(400).json({ success: false, message: "Status wajib diisi" });
+                return;
+            }
+            const adminUserId = req.user.userId;
+            const data = await superAdminService.updateBinStatus(id, status, adminUserId);
+            res.status(200).json({ success: true, data, message: "Status tempat sampah berhasil diperbarui" });
+        }
+        catch (error) {
+            console.error("[SuperAdminController] updateBinStatus error:", error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+    async replaceBrokenBin(req, res) {
+        try {
+            const { id } = req.params;
+            const { newBinId } = req.body;
+            if (!newBinId) {
+                res.status(400).json({ success: false, message: "newBinId wajib diisi" });
+                return;
+            }
+            const adminUserId = req.user.userId;
+            const data = await superAdminService.replaceBrokenBin(id, newBinId, adminUserId);
+            res.status(200).json({ success: true, data, message: "Penggantian tempat sampah rusak berhasil" });
+        }
+        catch (error) {
+            console.error("[SuperAdminController] replaceBrokenBin error:", error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+    async deleteBin(req, res) {
+        try {
+            const { id } = req.params;
+            const adminUserId = req.user.userId;
+            const data = await superAdminService.deleteBin(id, adminUserId);
+            res.status(200).json({ success: true, data, message: "Tempat sampah berhasil dihapus" });
+        }
+        catch (error) {
+            console.error("[SuperAdminController] deleteBin error:", error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }
 export const superAdminController = new SuperAdminController();

@@ -37,7 +37,13 @@ router.get("/next-qr", authMiddleware, binController.getNextQr);
  *     security:
  *       - bearerAuth: []
  */
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createBin);
+router.post("/", authMiddleware, (req, res, next) => {
+    const role = req.user?.role;
+    if (role === "WARGA" || role === "MAHASISWA_KKN") {
+        return binController.registerWargaBin(req, res);
+    }
+    return roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"])(req, res, next);
+}, binController.createBin);
 /**
  * @swagger
  * /api/v1/bins/{id}:
@@ -70,9 +76,63 @@ router.put("/:qrCode/broken", authMiddleware, roleMiddleware(["SUPER_ADMIN", "AD
  *         description: List of RW locations with RT count and bin count
  */
 router.get("/locations", binController.getLocations);
-router.get("/my-bins", authMiddleware, roleMiddleware(["WARGA"]), binController.getMyBins);
-router.get("/areas", binController.getAreas);
+router.get("/my-bins", authMiddleware, binController.getMyBins);
+/**
+ * @swagger
+ * /api/v1/bins/kelurahans:
+ *   get:
+ *     summary: Mendapatkan daftar seluruh Kelurahan (Coblong)
+ *     tags: [Kelurahan & Wilayah]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of registered Kelurahans
+ */
 router.get("/kelurahans", authMiddleware, binController.getKelurahans);
+/**
+ * @swagger
+ * /api/v1/bins/kelurahans:
+ *   post:
+ *     summary: Tambah Kelurahan Baru (Admin DLH / Super Admin)
+ *     tags: [Kelurahan & Wilayah]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Dago
+ *     responses:
+ *       201:
+ *         description: Kelurahan created successfully
+ */
+router.post("/kelurahans", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createKelurahan);
+/**
+ * @swagger
+ * /api/v1/bins/kelurahans/{id}:
+ *   delete:
+ *     summary: Hapus Kelurahan (Admin DLH / Super Admin)
+ *     tags: [Kelurahan & Wilayah]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Kelurahan deleted successfully
+ */
+router.delete("/kelurahans/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.deleteKelurahan);
 router.post("/measure", authMiddleware, binController.measure);
 router.post("/areas", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createArea);
 router.put("/areas/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.updateArea);
@@ -158,15 +218,17 @@ router.get("/:id/status", binController.getStatus);
  *       200:
  *         description: Success
  */
-router.post("/:id/empty", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), binController.emptyBin);
+router.post("/:id/empty", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]), binController.emptyBin);
+router.get("/reset-request/status", authMiddleware, binController.getResetRequestStatus);
+router.get("/reset/my-requests", authMiddleware, binController.getResetRequestStatus);
 router.post("/reset-request", authMiddleware, roleMiddleware(["WARGA"]), binController.createResetRequest);
 router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
-router.put("/reset-request/:id/review", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), binController.reviewResetRequest);
+router.put("/reset-request/:id/review", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]), binController.reviewResetRequest);
 router.post("/qr-batch", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.createQrBatch);
 router.get("/qr-batch", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), binController.getAllQrBatches);
 router.put("/qr-batch/:id/assign", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), binController.assignQrBatch);
-// router.post("/dispatch/:id/claim", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]), binController.claimDispatch);
-// router.get("/dispatch/optimized-route", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]), binController.getOptimizedRoute);
+router.post("/dispatch/:id/claim", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]), binController.claimDispatch);
+router.get("/dispatch/optimized-route", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]), binController.getOptimizedRoute);
 router.put("/:id/approve-activation", authMiddleware, roleMiddleware(["SUPER_ADMIN", "RW"]), binController.approveActivation);
 router.post("/activate", authMiddleware, roleMiddleware(["WARGA", "MAHASISWA_KKN"]), binController.registerWargaBin);
 router.put("/:id/reject-activation", authMiddleware, roleMiddleware(["SUPER_ADMIN", "RW"]), binController.rejectActivation);
@@ -175,6 +237,6 @@ router.post("/:id/report-damage", authMiddleware, roleMiddleware(["WARGA", "RT",
 router.put("/:id/capacity", authMiddleware, roleMiddleware(["WARGA", "SUPER_ADMIN", "RW"]), binController.updateCapacity);
 router.post("/register-warga", authMiddleware, roleMiddleware(["WARGA"]), binController.registerWargaBin);
 router.post("/reset", authMiddleware, roleMiddleware(["WARGA"]), uploadAvatarMiddleware.single("evidence"), binController.createResetRequestMobile);
-router.get("/reset-requests", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), binController.listResetRequests);
-router.put("/reset/:id/approve", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), binController.approveResetRequest);
+router.get("/reset-requests", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]), binController.listResetRequests);
+router.put("/reset/:id/approve", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]), binController.approveResetRequest);
 export default router;

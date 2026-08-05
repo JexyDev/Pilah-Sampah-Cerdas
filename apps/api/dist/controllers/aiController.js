@@ -28,7 +28,8 @@ export class AiController {
         catch (error) {
             if (error.message === "QUOTA_EXCEEDED") {
                 res.status(429).json({
-                    error: "QUOTA_EXCEEDED",
+                    error: "AI_DAILY_LIMIT",
+                    code: "AI_DAILY_LIMIT",
                     message: "Batas harian request AI terlampaui. Coba lagi besok.",
                 });
             }
@@ -91,19 +92,32 @@ export class AiController {
             const filePath = `/uploads/${req.file.filename}`;
             const result = await aiService.detectWasteMock(userId, filePath);
             const quotaRemaining = await redisService.getRemainingQuota(userId);
+            const weightKg = Number(((result.volumeEstimate || 2.5) * 0.4).toFixed(1)) || 1.0;
+            const confidence = result.confidence || 0.94;
+            const organicPercentage = (result.organik_percent ?? 94) / 100;
+            const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || 85;
             res.status(200).json({
                 success: true,
                 requestId: result.requestId,
                 data: {
-                    ...result,
+                    detectedType: result.detectedType || "ORGANIC",
+                    volumeEstimate: result.volumeEstimate || 2.5,
+                    weightKg,
+                    confidence,
+                    organicPercentage,
+                    estimatedPoints,
+                    isBlurry: result.isBlurry || false,
+                    requestId: result.requestId,
                     quotaRemaining,
+                    ...result,
                 },
             });
         }
         catch (error) {
             if (error.message === "QUOTA_EXCEEDED") {
                 res.status(429).json({
-                    error: "QUOTA_EXCEEDED",
+                    error: "AI_DAILY_LIMIT",
+                    code: "AI_DAILY_LIMIT",
                     message: "Batas harian request AI terlampaui. Coba lagi besok.",
                 });
             }

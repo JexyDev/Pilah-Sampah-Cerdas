@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
-import '../../../data/models/bin_entity.dart';
 import '../../scan/controllers/scan_controller.dart';
 
 class UkurKapasitasView extends ConsumerStatefulWidget {

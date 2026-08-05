@@ -63,6 +63,28 @@ export class PointController {
         }
     }
     /**
+     * Adjust points manually
+     */
+    async adjustPoints(req, res) {
+        try {
+            const { userId, points, description } = req.body;
+            if (!userId || points === undefined) {
+                res.status(400).json({ error: "VALIDATION_ERROR", message: "UserId dan jumlah poin wajib diisi" });
+                return;
+            }
+            const result = await pointService.adjustPoints(userId, Number(points), description);
+            res.status(200).json({
+                success: true,
+                data: result,
+                message: "Poin berhasil disesuaikan",
+            });
+        }
+        catch (error) {
+            console.error("Point Adjust Error:", error);
+            res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menyesuaikan poin" });
+        }
+    }
+    /**
      * Convert user points to cash (Saldo E-Wallet)
      */
     async convertPoints(req, res) {

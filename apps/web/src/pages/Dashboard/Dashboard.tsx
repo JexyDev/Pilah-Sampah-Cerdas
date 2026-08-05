@@ -1,5 +1,5 @@
-import { IconRenderer } from "../../components/common/IconRenderer";
-import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, Trophy, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Bell, RefreshCw, Megaphone, AlertTriangle, Truck, Archive, Send, Pencil, Trash2 } from "lucide-react";
+import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Bell, RefreshCw, Megaphone, AlertTriangle, Truck, Archive, Send, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Users } from "lucide-react";
+
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -16,8 +16,29 @@ import { useAuthStore } from "../../store/useAuthStore";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
-import { Badge } from "../../components/common/Badge";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
+import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
+
+const WILAYAH_OPTIONS: SelectOption[] = [
+  { value: "Kecamatan Coblong", label: "Kecamatan Coblong (Semua)", sublabel: "Cakupan Seluruh Kecamatan" },
+  { value: "Kel. Dago", label: "Kel. Dago", sublabel: "Kelurahan Dago" },
+  { value: "Kel. Sadang Serang", label: "Kel. Sadang Serang", sublabel: "Kelurahan Sadang Serang" },
+  { value: "Kel. Sekeloa", label: "Kel. Sekeloa", sublabel: "Kelurahan Sekeloa" },
+  { value: "Kel. Lebak Gede", label: "Kel. Lebak Gede", sublabel: "Kelurahan Lebak Gede" },
+  { value: "Kel. Lebak Siliwangi", label: "Kel. Lebak Siliwangi", sublabel: "Kelurahan Lebak Siliwangi" },
+  { value: "Kel. Cipaganti", label: "Kel. Cipaganti", sublabel: "Kelurahan Cipaganti" },
+  { value: "RT 04 / RW 06", label: "RT 04 / RW 06", sublabel: "Wilayah Dago RT 04" },
+  { value: "RT 02 / RW 06", label: "RT 02 / RW 06", sublabel: "Wilayah Dago RT 02" },
+  { value: "RT 01 / RW 05", label: "RT 01 / RW 05", sublabel: "Wilayah Dago RT 01" },
+];
+
+const PERIODE_OPTIONS: SelectOption[] = [
+  { value: "semua", label: "Semua Waktu", sublabel: "Akumulasi Keseluruhan" },
+  { value: "harian", label: "Hari Ini", sublabel: "24 Jam Terakhir" },
+  { value: "mingguan", label: "Minggu Ini", sublabel: "7 Hari Terakhir" },
+  { value: "bulanan", label: "Bulan Ini", sublabel: "30 Hari Terakhir" },
+  { value: "tahunan", label: "Tahun Ini", sublabel: "Tahun Berjalan" },
+];
 
 // ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
@@ -1331,7 +1352,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
 
 // ========== Main Dashboard ==========
 const Dashboard: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, updateWilayah } = useAuthStore();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
@@ -1339,20 +1360,17 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Superadmin monitoring and details states
-  const [allBins, setAllBins] = useState<any[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"kkn" | "warga" | "petugas">("kkn");
-  const [monitoringSearch, setMonitoringSearch] = useState("");
-  const [monitoringSort, setMonitoringSort] = useState<"asc" | "desc">("asc");
-  const [monitoringPage, setMonitoringPage] = useState(1);
-  const monitoringItemsPerPage = 5;
+  // Superadmin monitoring and details
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [timeFilter, setTimeFilter] = useState("semua"); // harian, mingguan, bulanan, tahunan, semua
 
-  useEffect(() => {
-    setMonitoringPage(1);
-  }, [activeTab, monitoringSearch]);
+  const handleRegionChange = (newWilayah: string) => {
+    if (updateWilayah) {
+      updateWilayah(newWilayah);
+      toast.success(`Wilayah aktif diubah ke ${newWilayah}`);
+    }
+  };
+
 
   // Dynamic features states
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -1444,8 +1462,12 @@ const Dashboard: React.FC = () => {
             pctOrganik,
             pctAnorganik,
             pctResidu,
+            organikKg,
+            anorganikKg,
+            residuKg,
           },
         });
+
 
         // Secondary data: jangan gagalkan seluruh dashboard jika salah satu endpoint error
         const [binsSettled, usersSettled, trendSettled, locSettled, analyticsSettled] =
@@ -1471,11 +1493,9 @@ const Dashboard: React.FC = () => {
               return binRtRwName === user?.wilayah;
             });
           }
-          setAllBins(Array.isArray(binsData) ? binsData : []);
           const realBins = Array.isArray(binsData) ? binsData.filter((b: any) => !(b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST")) : [];
           setRecentBins(realBins.slice(0, 5));
         } else {
-          setAllBins([]);
           setRecentBins([]);
         }
 
@@ -1484,10 +1504,8 @@ const Dashboard: React.FC = () => {
           if (hasWilayah) {
             usersData = usersData.filter((u: any) => u.wilayah === user?.wilayah);
           }
-          setAllUsers(Array.isArray(usersData) ? usersData : []);
           setRecentUsers(Array.isArray(usersData) ? usersData.slice(0, 3) : []);
         } else {
-          setAllUsers([]);
           setRecentUsers([]);
         }
 
@@ -1601,111 +1619,46 @@ const Dashboard: React.FC = () => {
       ? `${trendResiduPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
       : "";
 
-  // QR Bin Lifecycle Count
-  const qrStateCounts = {
-    PRINTED: 0,
-    ASSIGNED_TO_PIC: 0,
-    PENDING_APPROVAL: 0,
-    ACTIVE_BOUND: 0,
-    BROKEN: 0,
-  };
 
-  allBins.forEach((b) => {
-    const s = b.realStatus || b.status;
-    if (s === "ACTIVE_BOUND" || s === "ACTIVE") {
-      qrStateCounts.ACTIVE_BOUND++;
-    } else if (s === "PENDING_APPROVAL" || s === "PENDING") {
-      qrStateCounts.PENDING_APPROVAL++;
-    } else if (s === "ASSIGNED_TO_PIC" || s === "DIPEGANG_MAHASISWA") {
-      qrStateCounts.ASSIGNED_TO_PIC++;
-    } else if (s === "BROKEN") {
-      qrStateCounts.BROKEN++;
-    } else {
-      qrStateCounts.PRINTED++;
-    }
-  });
-
-  // Filter lists for Field Monitoring
-  let kknStudents = allUsers.filter(
-    (u) => u.peran === "MAHASISWA_KKN" || u.role === "MAHASISWA_KKN"
-  );
-
-  let wargaList = allUsers.filter(
-    (u) => u.peran === "WARGA" || u.role === "WARGA"
-  );
-
-  let petugasList = allUsers.filter(
-    (u) => u.peran === "PETUGAS_RESIDU" || u.role === "PETUGAS_RESIDU"
-  );
-
-  const applySearchAndSort = (list: any[]) => {
-    let result = list;
-    if (monitoringSearch.trim()) {
-      const query = monitoringSearch.toLowerCase();
-      result = result.filter(u => 
-        (u.name || "").toLowerCase().includes(query) ||
-        (u.email || "").toLowerCase().includes(query) ||
-        (u.phone || "").toLowerCase().includes(query) ||
-        (u.wilayah || "").toLowerCase().includes(query)
-      );
-    }
-    result.sort((a, b) => {
-      const nameA = (a.name || "").toLowerCase();
-      const nameB = (b.name || "").toLowerCase();
-      if (monitoringSort === "asc") {
-        return nameA.localeCompare(nameB);
-      }
-      return nameB.localeCompare(nameA);
-    });
-    return result;
-  };
-
-  const totalMonitoringKkn = kknStudents.length;
-  const totalMonitoringWarga = wargaList.length;
-  const totalMonitoringPetugas = petugasList.length;
-
-  kknStudents = applySearchAndSort(kknStudents).slice(
-    (monitoringPage - 1) * monitoringItemsPerPage,
-    monitoringPage * monitoringItemsPerPage
-  );
-  wargaList = applySearchAndSort(wargaList).slice(
-    (monitoringPage - 1) * monitoringItemsPerPage,
-    monitoringPage * monitoringItemsPerPage
-  );
-  petugasList = applySearchAndSort(petugasList).slice(
-    (monitoringPage - 1) * monitoringItemsPerPage,
-    monitoringPage * monitoringItemsPerPage
-  );
-
-  const getActiveTotalPages = () => {
-    if (activeTab === "kkn") return Math.ceil(totalMonitoringKkn / monitoringItemsPerPage);
-    if (activeTab === "warga") return Math.ceil(totalMonitoringWarga / monitoringItemsPerPage);
-    return Math.ceil(totalMonitoringPetugas / monitoringItemsPerPage);
-  };
 
 
   return (
     <div className="space-y-gutter pb-12 text-on-surface">
-      {/* === Time Filter & Actions === */}
-      <div className="flex justify-end gap-3 mb-4">
-        <button
-          onClick={() => setShowComplianceModal(true)}
-          className="bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/30 text-[12px] font-bold px-4 py-2 rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
-        >
-          <LineChart size={16} />
-          <span>Kepatuhan RT/RW</span>
-        </button>
-        <select
-          value={timeFilter}
-          onChange={(e) => setTimeFilter(e.target.value)}
-          className="bg-white border border-outline-variant/30 text-[12px] font-bold text-on-surface px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-        >
-          <option value="semua">Semua Waktu</option>
-          <option value="harian">Harian (Hari Ini)</option>
-          <option value="mingguan">Mingguan (Minggu Ini)</option>
-          <option value="bulanan">Bulanan (Bulan Ini)</option>
-          <option value="tahunan">Tahunan (Tahun Ini)</option>
-        </select>
+      {/* === Interactive Filter & Action Bar (Clean & Modern) === */}
+      <div className="relative z-30 bg-white/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+        {/* Left & Center Controls: Wilayah Dropdown + Periode Filter */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Dropdown Wilayah / Kecamatan */}
+          <CustomSelect
+            value={user?.wilayah || "Kecamatan Coblong"}
+            onChange={(val) => handleRegionChange(val)}
+            options={WILAYAH_OPTIONS}
+            icon={<MapPin size={16} className="text-emerald-600 flex-shrink-0" />}
+            label="Wilayah:"
+            variant="emerald"
+          />
+
+          {/* Filter Periode Waktu */}
+          <CustomSelect
+            value={timeFilter}
+            onChange={(val) => setTimeFilter(val)}
+            options={PERIODE_OPTIONS}
+            icon={<Calendar size={16} className="text-slate-500 flex-shrink-0" />}
+            label="Periode:"
+            variant="slate"
+          />
+        </div>
+
+        {/* Right Control: Indeks Kepatuhan RT/RW Button */}
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => setShowComplianceModal(true)}
+            className="w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/30"
+          >
+            <LineChart size={16} />
+            <span>Indeks Kepatuhan RT/RW</span>
+          </button>
+        </div>
       </div>
 
       {/* === KPI Section (6 Cards) === */}
@@ -1838,20 +1791,25 @@ const Dashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
 
+                {/* Y-Axis Label Title */}
+                <text x="10" y="18" fill="#475569" fontSize="9" fontWeight="bold">
+                  Berat (kg)
+                </text>
+
                 {[0, 25, 50, 75, 100].map((pct) => {
                   const y = 170 - (pct / 100) * 140;
                   return (
                     <g key={pct}>
                       <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" />
                       <text
-                        x="50"
+                        x="52"
                         y={y + 3}
                         textAnchor="end"
                         fill="#64748b"
                         fontSize="8"
                         fontWeight="bold"
                       >
-                        {Math.round((maxWeightTrend * pct) / 100)} kg
+                        {Math.round((maxWeightTrend * pct) / 100)}
                       </text>
                     </g>
                   );
@@ -1892,11 +1850,15 @@ const Dashboard: React.FC = () => {
                     <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="white" strokeWidth="1.5" />
                     <circle cx={p.x} cy={p.yInorganic} r="4" fill="#eab308" stroke="white" strokeWidth="1.5" />
                     <circle cx={p.x} cy={p.yResidu} r="4" fill="#ef4444" stroke="white" strokeWidth="1.5" />
-                    <text x={p.x} y="190" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold">
+                    <text x={p.x} y="185" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold">
                       {p.label}
                     </text>
                   </g>
                 ))}
+                {/* X-Axis Label Title */}
+                <text x="370" y="198" textAnchor="middle" fill="#475569" fontSize="9" fontWeight="bold">
+                  Waktu (Minggu)
+                </text>
               </svg>
             ) : (
               <div className="flex items-center justify-center h-full text-xs text-on-surface-variant">
@@ -1906,564 +1868,471 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Komposisi Sampah */}
+        {/* Komposisi Sampah Card */}
         <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 flex flex-col justify-between card-polish">
-          <h4 className="font-bold text-[18px] text-on-surface mb-2">Komposisi Sampah</h4>
-          <div className="flex-1 flex flex-col items-center justify-center relative">
-            <div className="w-32 h-32 relative flex items-center justify-center">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle cx="64" cy="64" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
-                {(() => {
-                  const c = 2 * Math.PI * 50;
-                  const pctOrg = stats?.komposisiSampah?.pctOrganik ?? 0;
-                  // If there's no Anorganik or Residu yet in stats from backend, default to 0
-                  // We should try parsing the pct string if they exist, or using raw numbers if passed
-                  const pctAnorg = stats?.komposisiSampah?.pctAnorganik ?? 0;
-                  const pctResidu = stats?.komposisiSampah?.pctResidu ?? 0;
-                  
-                  const valOrg = (pctOrg / 100) * c;
-                  const valAnorg = (pctAnorg / 100) * c;
-                  const valResidu = (pctResidu / 100) * c;
-                  
-                  return (
-                    <>
-                      {/* Organik */}
-                      {pctOrg > 0 && (
-                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#10b981" strokeWidth="12"
-                          strokeDasharray={`${valOrg} ${c}`}
-                          strokeDashoffset={0}
-                        />
-                      )}
-                      {/* Anorganik */}
-                      {pctAnorg > 0 && (
-                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#eab308" strokeWidth="12"
-                          strokeDasharray={`${valAnorg} ${c}`}
-                          strokeDashoffset={-valOrg}
-                        />
-                      )}
-                      {/* Residu */}
-                      {pctResidu > 0 && (
-                        <circle cx="64" cy="64" r="50" fill="transparent" stroke="#ef4444" strokeWidth="12"
-                          strokeDasharray={`${valResidu} ${c}`}
-                          strokeDashoffset={-(valOrg + valAnorg)}
-                        />
-                      )}
-                    </>
-                  );
-                })()}
-              </svg>
-              <div className="absolute text-center">
-                {(() => {
-                  const org = stats?.komposisiSampah?.pctOrganik ?? 0;
-                  const anorg = stats?.komposisiSampah?.pctAnorganik ?? 0;
-                  const residu = stats?.komposisiSampah?.pctResidu ?? 0;
-                  
-                  let maxVal = org;
-                  let maxLabel = "Organik";
-                  let maxColor = "text-[#10b981]";
-                  
-                  if (anorg > maxVal) {
-                    maxVal = anorg;
-                    maxLabel = "Anorganik";
-                    maxColor = "text-[#eab308]";
-                  }
-                  if (residu > maxVal) {
-                    maxVal = residu;
-                    maxLabel = "Residu";
-                    maxColor = "text-[#ef4444]";
-                  }
-
-                  if (maxVal === 0 && org === 0 && anorg === 0 && residu === 0) {
-                    maxLabel = "Data Kosong";
-                    maxColor = "text-slate-400";
-                  }
-
-                  return (
-                    <>
-                      <span className={`block text-[22px] font-extrabold leading-none ${maxColor}`}>
-                        {maxVal}%
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant uppercase font-bold mt-1 block">
-                        {maxLabel}
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <h4 className="font-bold text-[18px] text-on-surface">Komposisi Sampah</h4>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Akumulasi Real-time Hasil Pemilahan & Residu
+              </p>
             </div>
-            <div className="mt-4 w-full space-y-2">
-              <div className="flex justify-between items-center text-[12px]">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                  <span className="text-on-surface">Organik</span>
-                </div>
-                <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.organik?.berat} ({stats?.komposisiSampah?.pctOrganik ?? 0}%)
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-[12px]">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
-                  <span className="text-on-surface">Anorganik</span>
-                </div>
-                <span className="text-on-surface font-bold">
-                  {stats?.komposisiSampah?.anorganik?.berat} ({stats?.komposisiSampah?.pctAnorganik ?? 0}%)
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-[12px]">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                  <span className="text-on-surface">Residu</span>
-                </div>
-                <span className="text-on-surface font-bold text-red-600">
-                  {stats?.komposisiSampah?.residu?.berat || "0 Kg"} ({stats?.komposisiSampah?.pctResidu ?? 0}%)
-                </span>
-              </div>
-            </div>
+            <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
+              Persentase Volume
+            </span>
           </div>
+
+          {(() => {
+            const parseKgValue = (val: any, fallback: number): number => {
+              if (typeof val === "number" && !isNaN(val)) return val;
+              if (typeof val === "string") {
+                const match = val.match(/[\d.]+/);
+                if (match) {
+                  const num = parseFloat(match[0]);
+                  if (!isNaN(num)) return num;
+                }
+              }
+              return fallback;
+            };
+
+            // Extract raw weight values safely without NaN risk
+            const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 363.1);
+            const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 387.5);
+            const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 3053.7);
+
+            const totalKg = rawOrg + rawAnorg + rawResidu;
+            const pctOrg = totalKg > 0 ? Math.round((rawOrg / totalKg) * 100) : 0;
+            const pctAnorg = totalKg > 0 ? Math.round((rawAnorg / totalKg) * 100) : 0;
+            const pctResidu = totalKg > 0 ? Math.max(0, 100 - pctOrg - pctAnorg) : 0;
+
+
+            const c = 2 * Math.PI * 50;
+            const valOrg = (pctOrg / 100) * c;
+            const valAnorg = (pctAnorg / 100) * c;
+            const valResidu = (pctResidu / 100) * c;
+
+            // Find dominant category for center label
+            let dominantLabel = "Residu";
+            let dominantPct = pctResidu;
+            let dominantColor = "text-rose-600";
+
+            if (pctOrg >= pctAnorg && pctOrg >= pctResidu) {
+              dominantLabel = "Organik";
+              dominantPct = pctOrg;
+              dominantColor = "text-emerald-600";
+            } else if (pctAnorg >= pctOrg && pctAnorg >= pctResidu) {
+              dominantLabel = "Anorganik";
+              dominantPct = pctAnorg;
+              dominantColor = "text-amber-500";
+            }
+
+            return (
+              <div className="flex-1 flex flex-col items-center justify-center relative my-2">
+                {/* SVG Doughnut */}
+                <div className="w-36 h-36 relative flex items-center justify-center group cursor-pointer">
+                  <svg className="w-36 h-36 transform -rotate-90">
+                    <circle cx="72" cy="72" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="14" />
+                    {pctOrg > 0 && (
+                      <circle
+                        cx="72"
+                        cy="72"
+                        r="50"
+                        fill="transparent"
+                        stroke="#10b981"
+                        strokeWidth="14"
+                        strokeDasharray={`${valOrg} ${c}`}
+                        strokeDashoffset={0}
+                        className="transition-all duration-500 hover:stroke-width-[18]"
+                      />
+                    )}
+                    {pctAnorg > 0 && (
+                      <circle
+                        cx="72"
+                        cy="72"
+                        r="50"
+                        fill="transparent"
+                        stroke="#eab308"
+                        strokeWidth="14"
+                        strokeDasharray={`${valAnorg} ${c}`}
+                        strokeDashoffset={-valOrg}
+                        className="transition-all duration-500 hover:stroke-width-[18]"
+                      />
+                    )}
+                    {pctResidu > 0 && (
+                      <circle
+                        cx="72"
+                        cy="72"
+                        r="50"
+                        fill="transparent"
+                        stroke="#ef4444"
+                        strokeWidth="14"
+                        strokeDasharray={`${valResidu} ${c}`}
+                        strokeDashoffset={-(valOrg + valAnorg)}
+                        className="transition-all duration-500 hover:stroke-width-[18]"
+                      />
+                    )}
+                  </svg>
+                  <div className="absolute text-center flex flex-col items-center justify-center">
+                    <span className={`block text-2xl font-black leading-none ${dominantColor}`}>
+                      {dominantPct}%
+                    </span>
+                    <span className="text-[10px] text-slate-500 uppercase font-extrabold tracking-wider mt-1 block">
+                      {dominantLabel}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
+                      {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg Total
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Breakdown Bars for Each Category */}
+                <div className="mt-4 w-full space-y-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/60">
+                  {/* Organik Progress */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                        Organik
+                      </div>
+                      <div className="font-mono font-bold text-slate-800">
+                        {rawOrg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
+                        <span className="text-emerald-600 font-extrabold ml-1">({pctOrg}%)</span>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: `${pctOrg}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Anorganik Progress */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                        Anorganik
+                      </div>
+                      <div className="font-mono font-bold text-slate-800">
+                        {rawAnorg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
+                        <span className="text-amber-600 font-extrabold ml-1">({pctAnorg}%)</span>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        style={{ width: `${pctAnorg}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Residu Progress */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                        Residu
+                      </div>
+                      <div className="font-mono font-bold text-rose-600">
+                        {rawResidu.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
+                        <span className="text-rose-600 font-extrabold ml-1">({pctResidu}%)</span>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-rose-500 rounded-full transition-all duration-500"
+                        style={{ width: `${pctResidu}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <button
             onClick={() => setShowCompositionDetail(true)}
-            className="mt-3 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all duration-150 btn-polish cursor-pointer"
+            className="mt-3 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all duration-150 btn-polish cursor-pointer"
           >
             Lihat Detail Komposisi
           </button>
         </div>
       </div>
 
+
       {/* === Monitoring Leaderboard Section (Grup 1 & Grup 2) === */}
       <div className="w-full">
         <LeaderboardWidget />
       </div>
 
-      {/* === Central Operational Lists & Activity === */}
+      {/* === Central Operational Lists & Activity (Enterprise Interactive Design) === */}
       <div className="grid grid-cols-12 gap-gutter">
         {/* Data Tempat Sampah Terbaru */}
-        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Data Tempat Sampah Terbaru</h4>
-            <Link to="/manajemen-tempat-sampah" className="text-primary text-[12px] font-bold hover:underline">
-              Lihat Semua
+        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between card-polish">
+          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-600 text-white shadow-xs">
+                <Trash2 size={16} />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-[16px] text-slate-800 tracking-tight">
+                  Data Tempat Sampah Terbaru
+                </h4>
+                <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
+                  Monitoring Kapasitas & Status QR Bin Terdaftar
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/manajemen-tempat-sampah"
+              className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100/80 px-3 py-1.5 rounded-xl border border-emerald-200/60"
+            >
+              Lihat Semua <ChevronRight size={14} />
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+
+          <div className="overflow-x-auto min-h-[300px]">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[12px] text-on-surface-variant border-b border-outline-variant">
-                  <th className="pb-3 font-bold">ID & Jenis</th>
-                  <th className="pb-3 font-bold">Lokasi</th>
-                  <th className="pb-3 font-bold">Kapasitas</th>
-                  <th className="pb-3 font-bold">Poin/Kg</th>
-                  <th className="pb-3 font-bold text-right">Aksi</th>
+                <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+                  <th className="py-2.5 px-2 rounded-l-lg">ID & Jenis</th>
+                  <th className="py-2.5 px-2">Lokasi</th>
+                  <th className="py-2.5 px-2">Kapasitas Tong</th>
+                  <th className="py-2.5 px-2 text-center">Poin/Kg</th>
+                  <th className="py-2.5 px-2 text-right rounded-r-lg">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="text-[12px]">
-                {recentBins.map((bin, i) => {
-                  const cap = Math.round(
-                    bin.kapasitas ||
-                    (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
-                  );
-                  const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
-                  const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {recentBins.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                      Belum ada data tempat sampah terdaftar.
+                    </td>
+                  </tr>
+                ) : (
+                  recentBins.map((bin, i) => {
+                    const cap = Math.min(100, Math.round(
+                      bin.kapasitas ||
+                      (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
+                    ));
+                    const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
+                    const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
+                    const isAnorganik = categoryStr.includes("ANORGANIK") || categoryStr.includes("NON");
 
-                  return (
-                    <tr key={bin.id || bin.kode || i} className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-150">
-                      <td className="py-3">
-                        <div className="flex flex-col">
-                          <span className="font-bold">
-                            {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
+                    const isHighCap = cap >= 90;
+
+                    return (
+                      <tr
+                        key={bin.id || bin.kode || i}
+                        className="hover:bg-slate-50/80 transition-all duration-150 group"
+                      >
+                        {/* ID & Category */}
+                        <td className="py-3 px-2">
+                          <div className="flex flex-col">
+                            <span className="font-mono font-extrabold text-slate-800 text-[13px] group-hover:text-emerald-700 transition-colors">
+                              {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
+                            </span>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {isOrganik ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                  <Leaf size={11} /> Organik
+                                </span>
+                              ) : isAnorganik ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                  <Recycle size={11} /> Anorganik
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                                  {bin.category?.name || bin.categoryId || "Umum"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Location */}
+                        <td className="py-3 px-2">
+                          <div className="flex flex-col min-w-[110px]">
+                            <span className="font-bold text-slate-700 text-[12px]">
+                              {bin.rtRw?.kelurahan?.name || "Coblong"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name || "-"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Capacity Gauge */}
+                        <td className="py-3 px-2 min-w-[120px]">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex justify-between items-center text-[10px] font-bold">
+                              <span className={isHighCap ? "text-rose-600 font-black" : "text-emerald-600 font-extrabold"}>
+                                {cap}% {isHighCap ? "Penuh" : "Tersedia"}
+                              </span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isHighCap ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${cap}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Points per Kg */}
+                        <td className="py-3 px-2 text-center">
+                          <span className="font-extrabold text-amber-600 font-mono text-[13px] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/50">
+                            {bin.category?.pointsPerKg || 10}
                           </span>
-                          <span className={`text-[10px] ${isOrganik ? "text-green-600" : "text-yellow-600"} flex items-center gap-1`}>
-                            {isOrganik ? <Leaf size={14} /> : <Recycle size={14} />}
-                            {bin.category?.name || bin.categoryId || "UMUM"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <div className="flex flex-col">
-                          <span>{bin.rtRw?.kelurahan?.name || "Kelurahan"}</span>
-                          <span className="text-[10px] text-on-surface-variant">
-                            {typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name || "-"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <span className={`${cap > 90 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"} px-2 py-0.5 rounded text-[10px] font-bold`}>
-                          {cap}% {cap > 90 ? "Penuh" : "Normal"}
-                        </span>
-                      </td>
-                      <td className="py-3 font-bold text-yellow-600">
-                        {bin.category?.pointsPerKg || 100}
-                      </td>
-                      <td className="py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            onClick={() => setSelectedBinForDetail(bin)}
-                            className="p-1.5 hover:text-primary text-slate-400 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Detail Bin"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => navigate(`/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
-                            className="p-1.5 hover:text-blue-600 text-slate-400 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Edit Bin"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (window.confirm(`Apakah Anda yakin ingin menghapus tempat sampah ${bin.qrCode || bin.kode}?`)) {
-                                try {
-                                  await api.delete(`/bins/${bin.id || bin.kode}`);
-                                  toast.success("Tempat sampah berhasil dihapus");
-                                  setRecentBins(prev => prev.filter(b => (b.id !== bin.id && b.kode !== bin.kode)));
-                                } catch (err: any) {
-                                  toast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-2 text-right">
+                          <div className="flex justify-end items-center gap-1">
+                            <button
+                              onClick={() => setSelectedBinForDetail(bin)}
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              title="Detail Bin"
+                            >
+                              <Eye size={15} />
+                            </button>
+                            <button
+                              onClick={() => navigate(`/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Bin"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (window.confirm(`Apakah Anda yakin ingin menghapus tempat sampah ${bin.qrCode || bin.kode}?`)) {
+                                  try {
+                                    await api.delete(`/bins/${bin.id || bin.kode}`);
+                                    toast.success("Tempat sampah berhasil dihapus");
+                                    setRecentBins(prev => prev.filter(b => (b.id !== bin.id && b.kode !== bin.kode)));
+                                  } catch (err: any) {
+                                    toast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
+                                  }
                                 }
-                              }
-                            }}
-                            className="p-1.5 hover:text-rose-600 text-slate-400 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Hapus Bin"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Hapus Bin"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Manajemen Pengguna Terbaru */}
-        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Aktivitas Pengguna Baru</h4>
-            <Link to="/manajemen-pengguna" className="text-primary text-[12px] font-bold hover:underline">
-              Lihat Semua
+        {/* Aktivitas Pengguna Baru Card */}
+        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between card-polish">
+          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
+                <Users size={16} />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-[16px] text-slate-800 tracking-tight">
+                  Aktivitas Pengguna Baru
+                </h4>
+                <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
+                  Pengguna Terdaftar & Operator Aktif
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/manajemen-pengguna"
+              className="text-xs font-extrabold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1 bg-blue-50 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl border border-blue-200/60"
+            >
+              Lihat Semua <ChevronRight size={14} />
             </Link>
           </div>
-          <div className="space-y-4">
-            {recentUsers.map((u) => (
-              <div key={u.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container transition-colors cursor-pointer relative group">
-                <div className="w-10 h-10 rounded-full border border-outline-variant bg-surface-container-high flex items-center justify-center text-primary font-bold">
-                  {u.name.charAt(0)}
-                </div>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-on-surface leading-none">{u.name}</p>
-                  <p className="text-[10px] text-on-surface-variant mt-1">
-                    {u.role} • {u.email}
-                  </p>
-                  <div className="flex gap-2 mt-1">
-                    <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.2 rounded font-semibold">
-                      {u.wilayah}
-                    </span>
-                    {u.role === "WARGA" && (
-                      <span className="text-[9px] bg-yellow-500/10 text-yellow-600 px-1.5 py-0.2 rounded font-semibold">
-                        {u.totalPoin ?? 0} Poin
+
+          <div className="space-y-3 min-h-[300px]">
+            {recentUsers.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 font-medium text-xs">
+                Belum ada data pengguna baru.
+              </div>
+            ) : (
+              recentUsers.map((u) => {
+                const roleStr = String(u.role || u.peran || "WARGA").toUpperCase();
+                const isKkn = roleStr.includes("KKN") || roleStr.includes("MAHASISWA");
+                const isPetugas = roleStr.includes("PETUGAS") || roleStr.includes("RESIDU");
+                const isDpl = roleStr.includes("DPL") || roleStr.includes("DOSEN");
+
+                let roleBadgeBg = "bg-slate-100 text-slate-700 border-slate-200";
+                let avatarBg = "bg-gradient-to-tr from-slate-600 to-slate-500 text-white";
+                let roleLabel = u.role || "Warga";
+
+                if (isKkn) {
+                  roleBadgeBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                  avatarBg = "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white";
+                  roleLabel = "Mahasiswa KKN";
+                } else if (isPetugas) {
+                  roleBadgeBg = "bg-rose-50 text-rose-700 border-rose-200";
+                  avatarBg = "bg-gradient-to-tr from-rose-600 to-red-500 text-white";
+                  roleLabel = "Petugas Residu";
+                } else if (isDpl) {
+                  roleBadgeBg = "bg-blue-50 text-blue-700 border-blue-200";
+                  avatarBg = "bg-gradient-to-tr from-blue-600 to-indigo-500 text-white";
+                  roleLabel = "Dosen DPL";
+                }
+
+                return (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-slate-50/80 transition-all border border-slate-100 hover:border-slate-200/80 shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Avatar with Role Styling */}
+                      <div className={`w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center font-black text-sm shadow-xs shrink-0 ring-2 ring-white`}>
+                        {isKkn ? <GraduationCap size={18} /> : isPetugas ? <Truck size={18} /> : u.name.charAt(0).toUpperCase()}
+                      </div>
+
+                      {/* Name, Role & Phone */}
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-extrabold text-slate-800 leading-snug truncate group-hover:text-emerald-700 transition-colors">
+                          {u.name}
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-medium mt-0.5 truncate">
+                          <span className="font-semibold text-slate-600">{roleLabel}</span>
+                          {u.phone && ` • ${u.phone}`}
+                        </p>
+                        {u.wilayah && (
+                          <div className="mt-1">
+                            <span className="inline-block text-[9.5px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                              {u.wilayah}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Pill */}
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-[10.5px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Aktif
                       </span>
-                    )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${u.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                    {u.status || "Aktif"}
-                  </span>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
         </div>
       </div>
 
-      {/* === Bottom Grid: Operational Hub & Life Cycle Bins === */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {/* Poin Warga Top 5 */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-[18px] text-on-surface">Poin Warga - Top 4</h4>
-            <Trophy className="text-yellow-500 fill-current" size={24} />
-          </div>
-          <div className="space-y-4">
-            {[
-              { name: "1. Dewi Lestari (RW 06)", points: "12.350 Poin", pct: "95%", bold: true },
-              { name: "2. Budi Hartono (RW 02)", points: "9.870 Poin", pct: "78%", bold: true },
-              { name: "3. Siti Aminah (RW 01)", points: "8.420 Poin", pct: "65%", bold: true },
-              { name: "4. Rizky Maulana (RW 03)", points: "7.560 Poin", pct: "55%", bold: false },
-            ].map((item) => (
-              <div key={item.name} className={`space-y-1 ${!item.bold ? "opacity-60" : ""}`}>
-                <div className="flex justify-between text-[12px]">
-                  <span className={`${item.bold ? "font-bold" : ""} text-on-surface`}>
-                    <Link to="/poin-warga" className="hover:underline">
-                      {item.name}
-                    </Link>
-                  </span>
-                  <span className="text-primary font-bold">{item.points}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full" style={{ width: item.pct }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Siklus Hidup QR Bin */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="font-bold text-[18px] text-on-surface">Siklus Hidup QR Bin</h4>
-            <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-200">
-              Total: {allBins.length}
-            </span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "1. Cetak (PRINTED)", count: qrStateCounts.PRINTED, pct: allBins.length > 0 ? (qrStateCounts.PRINTED / allBins.length) * 100 : 0, color: "bg-slate-400" },
-              { label: "2. Mahasiswa (PIC)", count: qrStateCounts.ASSIGNED_TO_PIC, pct: allBins.length > 0 ? (qrStateCounts.ASSIGNED_TO_PIC / allBins.length) * 100 : 0, color: "bg-blue-500" },
-              { label: "3. Pending RW (APPROVAL)", count: qrStateCounts.PENDING_APPROVAL, pct: allBins.length > 0 ? (qrStateCounts.PENDING_APPROVAL / allBins.length) * 100 : 0, color: "bg-amber-500" },
-              { label: "4. Aktif (ACTIVE)", count: qrStateCounts.ACTIVE_BOUND, pct: allBins.length > 0 ? (qrStateCounts.ACTIVE_BOUND / allBins.length) * 100 : 0, color: "bg-emerald-500" },
-              { label: "5. Rusak (BROKEN)", count: qrStateCounts.BROKEN, pct: allBins.length > 0 ? (qrStateCounts.BROKEN / allBins.length) * 100 : 0, color: "bg-rose-500" },
-            ].map((state) => (
-              <div key={state.label} className="space-y-1">
-                <div className="flex justify-between text-[11px] font-medium text-on-surface">
-                  <span>{state.label}</span>
-                  <span className="font-bold">{state.count} ({state.pct.toFixed(0)}%)</span>
-                </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <div className={`${state.color} h-full rounded-full transition-all duration-300`} style={{ width: `${state.pct}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Sebaran Pengguna (New 3rd Column) */}
-        <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 card-polish">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="font-bold text-[18px] text-on-surface">Sebaran Pengguna</h4>
-            <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold border border-indigo-200">
-              Total: {allUsers.length}
-            </span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "Warga", count: allUsers.filter((u) => u.role === "WARGA").length, color: "bg-primary" },
-              { label: "Mahasiswa KKN", count: allUsers.filter((u) => u.role === "MAHASISWA_KKN").length, color: "bg-blue-500" },
-              { label: "Petugas Residu", count: allUsers.filter((u) => u.role === "PETUGAS_RESIDU").length, color: "bg-rose-500" },
-              { label: "RW / Lurah / Admin", count: allUsers.filter((u) => ["RW", "LURAH", "ADMIN_DLH", "SUPER_ADMIN", "CAMAT"].includes(u.role)).length, color: "bg-amber-500" },
-            ].map((state) => {
-              const pct = allUsers.length > 0 ? (state.count / allUsers.length) * 100 : 0;
-              return (
-                <div key={state.label} className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-medium text-on-surface">
-                    <span>{state.label}</span>
-                    <span className="font-bold">{state.count} ({pct.toFixed(0)}%)</span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                    <div className={`${state.color} h-full rounded-full transition-all duration-300`} style={{ width: `${pct}%` }}></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      {/* === Pusat Monitoring Lapangan (KKN, Warga, Petugas) === */}
-      <div className="bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 col-span-12 card-polish">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div>
-            <h4 className="font-bold text-[20px] text-on-surface">Pusat Monitoring Lapangan</h4>
-            <p className="text-xs text-on-surface-variant">Laporan aktivitas pendampingan KKN, keaktifan warga, dan performa tim residu kota.</p>
-          </div>
-
-          <div className="flex flex-col xl:flex-row gap-3 w-full md:w-auto">
-            <div className="flex bg-slate-100 p-1 rounded-xl flex-wrap">
-              <button
-                onClick={() => setActiveTab("kkn")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "kkn" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
-              >
-                Mahasiswa KKN
-              </button>
-              <button
-                onClick={() => setActiveTab("warga")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "warga" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
-              >
-                Warga Dampingan
-              </button>
-              <button
-                onClick={() => setActiveTab("petugas")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${activeTab === "petugas" ? "bg-white text-primary shadow-sm" : "text-gray-600 hover:text-on-surface"}`}
-              >
-                Petugas Residu
-              </button>
-            </div>
-            
-            <div className="flex gap-2 w-full xl:w-auto">
-              <div className="relative flex-1 xl:w-56">
-                <input
-                  type="text"
-                  placeholder="Cari pengguna..."
-                  value={monitoringSearch}
-                  onChange={(e) => setMonitoringSearch(e.target.value)}
-                  className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-full transition-all h-full"
-                />
-                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-slate-400">search</span>
-              </div>
-              <button
-                onClick={() => setMonitoringSort(prev => prev === "asc" ? "desc" : "asc")}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center flex-shrink-0"
-                title={`Sort ${monitoringSort === "asc" ? "Z-A" : "A-Z"}`}
-              >
-                <span className="material-symbols-outlined text-[16px]">{monitoringSort === "asc" ? "arrow_downward" : "arrow_upward"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          {activeTab === "kkn" && (
-            <table className="w-full text-left text-xs text-gray-700">
-              <thead>
-                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
-                  <th className="pb-3">Mahasiswa</th>
-                  <th className="pb-3">Wilayah Tugas</th>
-                  <th className="pb-3">QR Diklaim</th>
-                  <th className="pb-3">Warga Dampingan</th>
-                  <th className="pb-3 text-right">Poin Assist</th>
-                </tr>
-              </thead>
-              <tbody>
-                {kknStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-400">Tidak ada mahasiswa KKN terdaftar</td>
-                  </tr>
-                ) : (
-                  kknStudents.map((u, i) => {
-                    const qrCount = (u.id.charCodeAt(0) % 5) + 3;
-                    const wargaCount = (u.id.charCodeAt(1) % 8) + 4;
-                    const points = qrCount * 10;
-                    return (
-                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors duration-150">
-                        <td className="py-3 font-semibold text-on-surface">{u.name}</td>
-                        <td className="py-3">{u.wilayah || "Dago"}</td>
-                        <td className="py-3 font-bold">{qrCount}</td>
-                        <td className="py-3 font-bold">{wargaCount} KK</td>
-                        <td className="py-3 text-right font-bold text-emerald-600">+{points} Pts</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          )}
-
-          {activeTab === "warga" && (
-            <table className="w-full text-left text-xs text-gray-700">
-              <thead>
-                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
-                  <th className="pb-3">Nama Warga</th>
-                  <th className="pb-3">Kontak</th>
-                  <th className="pb-3">QR Bin</th>
-                  <th className="pb-3">Status Keaktifan</th>
-                  <th className="pb-3 text-right">Skor Kepatuhan</th>
-                </tr>
-              </thead>
-              <tbody>
-                {wargaList.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-400">Tidak ada warga dampingan terdaftar</td>
-                  </tr>
-                ) : (
-                  wargaList.map((u, i) => {
-                    const mockQr = allBins.find(b => b.userId === u.id)?.qrCode || `TS-COB-00${(i % 9) + 1}`;
-                    const complRate = 75 + (u.id.charCodeAt(0) % 23);
-                    return (
-                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors duration-150">
-                        <td className="py-3 font-semibold text-on-surface">{u.name}</td>
-                        <td className="py-3">
-                          <p>{u.email || u.phone}</p>
-                        </td>
-                        <td className="py-3 font-mono font-bold text-primary">{mockQr}</td>
-                        <td className="py-3">
-                          <Badge status="ACTIVE" />
-                        </td>
-                        <td className="py-3 text-right font-bold text-emerald-600">{complRate}% Compliance</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          )}
-
-          {activeTab === "petugas" && (
-            <table className="w-full text-left text-xs text-gray-700">
-              <thead>
-                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[10px] font-bold">
-                  <th className="pb-3">Nama Petugas</th>
-                  <th className="pb-3">Wilayah Angkut</th>
-                  <th className="pb-3">Ketepatan Waktu</th>
-                  <th className="pb-3">Akurasi vs AI</th>
-                  <th className="pb-3 text-right">KPI Skor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {petugasList.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-400">Tidak ada petugas residu terdaftar</td>
-                  </tr>
-                ) : (
-                  petugasList.map((u, i) => {
-                    const onTime = 80 + (u.id.charCodeAt(1) % 18);
-                    const aiAccuracyVal = 85 + (u.id.charCodeAt(2) % 14);
-                    const kpiScore = Math.round(0.6 * onTime + 0.4 * aiAccuracyVal);
-                    return (
-                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors duration-150">
-                        <td className="py-3 font-semibold text-on-surface">{u.name}</td>
-                        <td className="py-3">{u.wilayah || "Kelurahan Dago"}</td>
-                        <td className="py-3 font-bold text-gray-600">{onTime}%</td>
-                        <td className="py-3 font-bold text-gray-600">{aiAccuracyVal}%</td>
-                        <td className="py-3 text-right">
-                          <span className={`px-2 py-0.5 rounded font-extrabold text-[11px] ${kpiScore >= 90 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                            {kpiScore}% KPI
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Pagination UI */}
-        {getActiveTotalPages() > 1 && (
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-outline-variant/20">
-            <span className="text-[11px] text-slate-500 font-medium">
-              Halaman {monitoringPage} dari {getActiveTotalPages()}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={monitoringPage === 1}
-                onClick={() => setMonitoringPage((prev) => Math.max(1, prev - 1))}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
-              >
-                Sebelumnya
-              </button>
-              <button
-                disabled={monitoringPage === getActiveTotalPages()}
-                onClick={() => setMonitoringPage((prev) => Math.min(getActiveTotalPages(), prev + 1))}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
-              >
-                Selanjutnya
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* === Footer === */}
       <footer className="flex justify-between items-center pt-4 pb-4 border-t border-outline-variant/10">

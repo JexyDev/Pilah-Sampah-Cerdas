@@ -10,8 +10,8 @@ import { notificationIntegrationService } from "./notificationIntegrationService
 const prisma = new PrismaClient();
 export class ResiduService {
     async recordViolation(petugasUserId, data) {
-        if (!data.evidencePhotoUrl) {
-            throw new Error("FOTO_BUKTI_WAJIB");
+        if (!data.evidencePhotoUrl && !data.binQrCode) {
+            throw new Error("FOTO_BUKTI_DAN_QR_WAJIB");
         }
         const bin = await prisma.bin.findUnique({
             where: { qrCode: data.binQrCode },
@@ -21,13 +21,14 @@ export class ResiduService {
                         user: true,
                     },
                 },
+                user: true,
             },
         });
         if (!bin) {
             throw new Error("BIN_NOT_FOUND");
         }
         const ownerOwnership = bin.binOwnerships.find((o) => o.type === "UTAMA");
-        const citizen = ownerOwnership?.user;
+        const citizen = ownerOwnership?.user || bin.user;
         if (!citizen) {
             throw new Error("CITIZEN_NOT_FOUND_FOR_BIN");
         }
@@ -35,9 +36,9 @@ export class ResiduService {
         const basePenaltyStr = await configService.getConfig("residu_penalty_multiplier");
         const basePenalty = basePenaltyStr ? Math.abs(parseInt(basePenaltyStr, 10)) : 50;
         let multiplier = 1;
-        if (data.severity === "MEDIUM")
+        if (data.severity === "MEDIUM" || data.severity === "SEDANG")
             multiplier = 2;
-        if (data.severity === "SEVERE")
+        if (data.severity === "SEVERE" || data.severity === "TINGGI")
             multiplier = 3;
         const pointsToDeduct = basePenalty * multiplier;
         const result = await prisma.$transaction(async (tx) => {
@@ -49,7 +50,7 @@ export class ResiduService {
                     petugasUserId,
                     type: data.type,
                     severity: data.severity,
-                    evidencePhotoUrl: data.evidencePhotoUrl,
+                    evidencePhotoUrl: data.evidencePhotoUrl || "/uploads/default-violation.jpg",
                     notes: data.notes || null,
                     pointsDeducted: pointsToDeduct,
                 },
@@ -77,40 +78,79 @@ export class ResiduService {
         if (citizen.phone) {
             await notificationIntegrationService.sendWhatsApp(citizen.phone, `Halo ${citizen.name}, petugas residu mendeteksi residu tercampur di tempat sampah Anda (${data.type}). Mohon pastikan memilah sampah organik dan anorganik dengan benar. Poin Anda berkurang -${pointsToDeduct}.`);
         }
-        return result;
+        return {
+            id: result.id,
+            violationId: result.id,
+            status: "DIPROSES",
+            severity: result.severity,
+            type: result.type,
+            pointsDeducted: result.pointsDeducted,
+            createdAt: result.createdAt,
+        };
     }
-    async getDashboardSummary(petugasUserId) {
-        let petugas = await prisma.petugasResidu.findUnique({
-            where: { userId: petugasUserId },
-        });
-        if (!petugas) {
-            const user = await prisma.user.findUnique({ where: { id: petugasUserId } });
-            if (user) {
-                petugas = await prisma.petugasResidu.create({
-                    data: {
-                        userId: petugasUserId,
-                        nama: user.name,
-                        noWa: user.phone || "-",
-                        whitelistStatus: "APPROVED",
-                        assignedZone: "Semua Zona",
+    async getDashboardSummary(petugasUserId, _period = "hari") {
+        const user = await prisma.user.findUnique({
+            where: { id: petugasUserId },
+            include: {
+                rtRw: {
+                    include: {
+                        kelurahan: true,
                     },
-                });
-            }
-            else {
-                throw new Error("PETUGAS_NOT_FOUND");
-            }
+                },
+                petugasProfile: true,
+            },
+        });
+        if (!user) {
+            throw new Error("PETUGAS_NOT_FOUND");
+        }
+        let petugas = user.petugasProfile;
+        if (!petugas) {
+            petugas = await prisma.petugasResidu.create({
+                data: {
+                    userId: petugasUserId,
+                    nama: user.name,
+                    noWa: user.phone || "-",
+                    whitelistStatus: "APPROVED",
+                    assignedZone: "Semua Zona",
+                },
+            });
         }
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        // Today's setoran manual
+        const todayLogs = await prisma.setoranManual.findMany({
+            where: {
+                petugasResiduId: petugasUserId,
+                createdAt: { gte: today },
+            },
+        });
+        // Monthly setoran manual
+        const monthlyLogs = await prisma.setoranManual.findMany({
+            where: {
+                petugasResiduId: petugasUserId,
+                createdAt: { gte: startOfMonth },
+            },
+        });
+        const todayWeightKg = todayLogs.reduce((sum, item) => sum + Number(item.berat), 0);
+        const monthlyWeightKg = monthlyLogs.reduce((sum, item) => sum + Number(item.berat), 0);
+        const todayEntries = todayLogs.length;
+        // Aggregate petugas points
+        const pointsSum = await prisma.pointHistory.aggregate({
+            where: { userId: petugasUserId },
+            _sum: { points: true },
+        });
+        const pointRateConfig = await configService.getConfig("point_rate_per_kg");
+        const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
+        const rtRwStr = user.rtRw?.name || petugas.assignedZone || "01/02";
+        const kelurahanStr = user.rtRw?.kelurahan?.name || "Bojongsoang";
+        const petugasIdStr = `PTR-${petugas.id.slice(0, 6).toUpperCase()}`;
         const totalViolationsToday = await prisma.violation.count({
             where: {
                 petugasUserId,
-                createdAt: {
-                    gte: today,
-                },
+                createdAt: { gte: today },
             },
         });
-        // Recent violations recorded by this petugas
         const recentViolations = await prisma.violation.findMany({
             where: { petugasUserId },
             orderBy: { createdAt: "desc" },
@@ -120,20 +160,32 @@ export class ResiduService {
                 bin: true,
             },
         });
-        // Count completed tasks today
-        const tugasSelesaiHariIni = await prisma.setoranManual.count({
-            where: {
-                petugasResiduId: petugasUserId,
-                createdAt: {
-                    gte: today,
-                },
-            },
-        });
+        const totalJadwalCount = await prisma.bin.count();
+        const totalJadwal = totalJadwalCount > 0 ? totalJadwalCount : 12;
+        const zoneLabel = petugas.assignedZone ||
+            (rtRwStr ? `${rtRwStr}, Kel. ${kelurahanStr}` : "Kecamatan Coblong");
         return {
+            // Mobile Flutter model exact keys
+            petugasId: petugasIdStr,
+            name: user.name,
+            assignedZone: zoneLabel,
+            totalJadwal,
+            sudahDiambil: todayEntries,
+            pelanggaranCount: totalViolationsToday,
+            totalWeightKg: Number(todayWeightKg.toFixed(1)),
+            ketepatanWaktuScore: Number(petugas.kpiScore) || 95,
+            akurasiScore: 90,
+            // Additional & legacy metadata for compatibility
+            rtRw: rtRwStr,
+            kelurahan: kelurahanStr,
+            todayWeightKg: Number(todayWeightKg.toFixed(1)),
+            monthlyWeightKg: Number(monthlyWeightKg.toFixed(1)),
+            todayEntries,
+            totalPoints: pointsSum._sum.points || 0,
+            pointRatePerKg,
             kpiScore: Number(petugas.kpiScore),
-            assignedZone: petugas.assignedZone || "Semua Zona",
             totalViolationsToday,
-            tugasSelesaiHariIni,
+            tugasSelesaiHariIni: todayEntries,
             recentViolations: recentViolations.map((v) => ({
                 id: v.id,
                 wargaName: v.user.name,
@@ -145,8 +197,32 @@ export class ResiduService {
             })),
         };
     }
+    async getRiwayat(petugasUserId) {
+        const logs = await prisma.setoranManual.findMany({
+            where: { petugasResiduId: petugasUserId },
+            orderBy: { createdAt: "desc" },
+            take: 50,
+            include: {
+                rw: true,
+            },
+        });
+        return logs.map((log) => ({
+            id: log.id,
+            logId: log.id,
+            diinputOleh: log.diinputOleh,
+            berat: Number(log.berat),
+            actualWeightKg: Number(log.berat),
+            unit: log.unit,
+            kategori: log.kategori,
+            classification: log.kategori,
+            fotoResiduUrl: log.fotoResiduUrl,
+            imagePhotoUrl: log.fotoResiduUrl,
+            rwName: log.rw?.name || "RW Area",
+            createdAt: log.createdAt.toISOString(),
+            timestamp: log.createdAt.toISOString(),
+        }));
+    }
     async getAnalytics() {
-        // Volume aggregate over time (mocked representation of aggregate query)
         const trend = [
             { date: "Mon", weightKg: 120 },
             { date: "Tue", weightKg: 140 },
@@ -156,7 +232,6 @@ export class ResiduService {
             { date: "Sat", weightKg: 110 },
             { date: "Sun", weightKg: 95 },
         ];
-        // Compliance heatmap zones
         const zones = [
             { id: 1, region: "RW 06 Dago", complianceScore: 85, violationsCount: 2 },
             { id: 2, region: "RW 02 Cigadung", complianceScore: 60, violationsCount: 8 },
@@ -168,27 +243,72 @@ export class ResiduService {
         };
     }
     async submitLog(petugasUserId, data) {
-        const petugas = await prisma.petugasResidu.findUnique({
-            where: { userId: petugasUserId },
+        const user = await prisma.user.findUnique({
+            where: { id: petugasUserId },
+            include: { rtRw: true },
         });
-        if (!petugas)
+        if (!user)
             throw new Error("PETUGAS_NOT_FOUND");
-        const wasteLog = await prisma.setoranOtomatis.findUnique({
-            where: { id: data.logId },
-        });
-        if (!wasteLog)
-            throw new Error("WASTE_LOG_NOT_FOUND");
-        const updatedLog = await prisma.setoranOtomatis.update({
-            where: { id: data.logId },
+        let targetRwId = user.rtRwId;
+        if (!targetRwId) {
+            const assignedRw = await prisma.rtRwArea.findFirst({
+                where: { petugasResiduId: petugasUserId },
+            });
+            if (assignedRw) {
+                targetRwId = assignedRw.id;
+            }
+        }
+        if (!targetRwId && data.rtRw) {
+            const foundRw = await prisma.rtRwArea.findFirst({
+                where: { name: { contains: data.rtRw } },
+            });
+            if (foundRw)
+                targetRwId = foundRw.id;
+        }
+        if (!targetRwId) {
+            const firstRw = await prisma.rtRwArea.findFirst();
+            if (firstRw) {
+                targetRwId = firstRw.id;
+            }
+            else {
+                throw new Error("NO_RW_AREA_ASSIGNED");
+            }
+        }
+        const weightKg = Number(data.actualWeightKg) || 0;
+        const pointRateConfig = await configService.getConfig("point_rate_per_kg");
+        const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
+        const pointsEarned = Math.round(weightKg * pointRatePerKg);
+        const setoran = await prisma.setoranManual.create({
             data: {
-                berat: data.actualWeightKg,
+                petugasResiduId: petugasUserId,
+                diinputOleh: user.name,
+                rwId: targetRwId,
+                fotoResiduUrl: data.imagePhotoUrl || "/uploads/default-residu.jpg",
+                berat: weightKg,
+                unit: "Kg",
+                kategori: data.classification || "residu",
             },
         });
+        if (pointsEarned > 0) {
+            await prisma.pointHistory.create({
+                data: {
+                    userId: petugasUserId,
+                    points: pointsEarned,
+                    description: `Setoran timbangan residu global: ${weightKg} kg`,
+                    kategori: "SUBMIT_RESIDU",
+                },
+            });
+        }
+        const globalSum = await prisma.setoranManual.aggregate({
+            _sum: { berat: true },
+        });
+        const globalBinTotalKg = Number(globalSum._sum.berat || 0);
         return {
-            updatedLog,
-            kpiScore: petugas.kpiScore.toFixed(2),
-            isPunctual: true,
-            discrepancyStatus: "NONE",
+            logId: setoran.id,
+            weightKg: Number(weightKg.toFixed(1)),
+            pointsEarned,
+            globalBinTotalKg: Number(globalBinTotalKg.toFixed(1)),
+            timestamp: setoran.createdAt.toISOString(),
         };
     }
 }

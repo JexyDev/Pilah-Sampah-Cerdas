@@ -83,75 +83,227 @@ router.get("/", authMiddleware, async (req, res) => {
         const role = (req.query.role || req.user?.role || "WARGA").toUpperCase();
         const userId = req.user?.userId;
         let formattedNotifications = [];
-        // 1. Try to fetch notifications from DB where the target user's role matches OR userId matches
-        try {
-            const dbNotifications = await prisma.notification.findMany({
-                where: {
-                    userId: userId, // Use userId instead of role to be more precise for the current user
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
+        const isAdminOrPetugas = [
+            "SUPER_ADMIN",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "RT",
+            "PETUGAS_RESIDU",
+            "MAHASISWA_KKN",
+        ].includes(role);
+        // Fetch user details for area scoping
+        let dbUser = null;
+        let areaIds = [];
+        if (userId) {
+            dbUser = await prisma.user.findUnique({
+                where: { id: userId },
+                include: { rtRw: true },
             });
-            // 2. Map notifications to frontend structure
-            formattedNotifications = dbNotifications.map(mapNotification);
-        }
-        catch (dbError) {
-            console.warn("Database connection failed for notifications, falling back to mock seeds:", dbError);
-        }
-        // 3. Fallback: if database is empty or unreachable, provide seed notifications
-        if (formattedNotifications.length === 0) {
-            if (role === "WARGA") {
-                formattedNotifications = [
-                    {
-                        id: "seed-notif-1",
-                        type: "TONG_PENUH",
-                        title: "Kapasitas Tong Kritis",
-                        desc: "Tong Anorganik Anda hampir penuh (92%).",
-                        isRead: false,
-                        time: "2 jam lalu",
-                        icon: "warning",
-                        iconBg: "bg-red-100",
-                        iconColor: "text-red-500",
-                    },
-                    {
-                        id: "seed-notif-2",
-                        type: "POIN_BERTAMBAH",
-                        title: "Poin Bertambah",
-                        desc: "Anda mendapatkan +150 poin dari setoran organik terakhir.",
-                        isRead: true,
-                        time: "1 hari lalu",
-                        icon: "star",
-                        iconBg: "bg-yellow-100",
-                        iconColor: "text-yellow-500",
-                    },
-                    {
-                        id: "seed-notif-3",
-                        type: "INFO",
-                        title: "Jadwal Pengangkutan",
-                        desc: "Pengangkutan wilayah Anda dijadwalkan besok pagi pukul 08.00.",
-                        isRead: true,
-                        time: "2 hari lalu",
-                        icon: "local_shipping",
-                        iconBg: "bg-blue-100",
-                        iconColor: "text-blue-500",
-                    },
-                ];
+            if (dbUser?.rtRwId) {
+                const area = dbUser.rtRw;
+                if (area) {
+                    const rwPart = area.name
+                        .split("/")
+                        .map((s) => s.trim())
+                        .find((s) => s.startsWith("RW")) || area.name;
+                    const matchingAreas = await prisma.rtRwArea.findMany({
+                        where: {
+                            kelurahanId: area.kelurahanId,
+                            name: { contains: rwPart },
+                        },
+                        select: { id: true },
+                    });
+                    areaIds = matchingAreas.map((a) => a.id);
+                }
+                if (areaIds.length === 0)
+                    areaIds = [dbUser.rtRwId];
             }
-            else {
-                formattedNotifications = [
-                    {
-                        id: "seed-notif-admin-1",
-                        type: "TONG_PENUH",
+        }
+        if (isAdminOrPetugas) {
+            // 1. Fetch real PENDING BinResetRequests scoped by area/role
+            try {
+                let reqWhere = { status: "PENDING" };
+                if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
+                    if (areaIds.length > 0) {
+                        reqWhere.bin = { rtRwId: { in: areaIds } };
+                    }
+                    else {
+                        reqWhere.bin = { rtRwId: -1 };
+                    }
+                }
+                else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
+                    reqWhere.bin = { rtRw: { kelurahanId: dbUser.rtRw.kelurahanId } };
+                }
+                const requests = await prisma.binResetRequest.findMany({
+                    where: reqWhere,
+                    include: {
+                        bin: {
+                            include: {
+                                rtRw: true,
+                                category: true,
+                            },
+                        },
+                        user: true,
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 30,
+                });
+                const reqNotifications = requests.map((r) => {
+                    const now = new Date();
+                    const diffMs = now.getTime() - new Date(r.createdAt).getTime();
+                    const diffMins = Math.floor(diffMs / (1000 * 60));
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    let time = "Baru saja";
+                    if (diffDays > 0)
+                        time = `${diffDays} hari lalu`;
+                    else if (diffHours > 0)
+                        time = `${diffHours} jam lalu`;
+                    else if (diffMins > 0)
+                        time = `${diffMins} menit lalu`;
+                    const binCategory = r.bin?.category?.name || "Organik";
+                    const binQr = r.bin?.qrCode || "BIN";
+                    const area = r.bin?.rtRw?.name || "RT 01 / RW 04";
+                    return {
+                        id: `req-${r.id}`,
+                        type: "PENGAJUAN_PENGOSONGAN",
                         title: "Pengajuan Pengosongan Baru",
-                        desc: "Warga (Budi Antoro) mengajukan pengosongan tong Anorganik (BIN-124) di RT 01 / RW 04.",
-                        isRead: false,
-                        time: "10 menit lalu",
+                        desc: `Warga (${r.user?.name || "Warga"}) mengajukan pengosongan tong ${binCategory} (${binQr}) di ${area}. [REQ-${r.id}]`,
+                        isRead: r.status !== "PENDING",
+                        time,
                         icon: "delete_sweep",
                         iconBg: "bg-orange-100",
                         iconColor: "text-orange-500",
-                    },
+                    };
+                });
+                // 2. Active Shift Notification
+                const currentHour = (new Date().getUTCHours() + 7) % 24;
+                const isMorning = currentHour >= 6 && currentHour < 12;
+                const scheduleNotif = {
+                    id: `sched-active-shift-${new Date().toISOString().slice(0, 10)}`,
+                    type: "JADWAL_JEMPUT",
+                    title: isMorning ? "Jadwal Jemput Pagi" : "Jadwal Jemput Sore",
+                    desc: `Terdapat tempat sampah warga yang perlu diangkut pada shift ${isMorning ? "Pagi (06:00 - 08:00 WIB)" : "Sore (16:00 - 18:00 WIB)"}.`,
+                    isRead: false,
+                    time: "Shift Aktif Hari Ini",
+                    icon: "local_shipping",
+                    iconBg: "bg-emerald-100",
+                    iconColor: "text-emerald-600",
+                };
+                // 3. Fetch real full bins (>90% volume capacity) scoped by area/role
+                let criticalBinNotifs = [];
+                try {
+                    let binWhere = {};
+                    if (["RW", "RT", "PETUGAS_RESIDU"].includes(role)) {
+                        if (areaIds.length > 0) {
+                            binWhere.rtRwId = { in: areaIds };
+                        }
+                        else {
+                            binWhere.rtRwId = -1;
+                        }
+                    }
+                    else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
+                        binWhere.rtRw = { kelurahanId: dbUser.rtRw.kelurahanId };
+                    }
+                    const fullBins = await prisma.bin.findMany({
+                        where: binWhere,
+                        include: { rtRw: true, category: true },
+                        take: 10,
+                    });
+                    const realCriticalBins = fullBins.filter((b) => Number(b.maxCapacityLiter) > 0 &&
+                        Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9);
+                    criticalBinNotifs = realCriticalBins.map((b) => {
+                        const pct = Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100);
+                        return {
+                            id: `crit-bin-${b.id}`,
+                            type: "TONG_PENUH",
+                            title: "Kapasitas Tong Kritis",
+                            desc: `Tempat sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rtRw?.name || "Wilayah"} telah mencapai ${pct}%!`,
+                            isRead: false,
+                            time: "Status Real-time",
+                            icon: "warning",
+                            iconBg: "bg-red-100",
+                            iconColor: "text-red-500",
+                        };
+                    });
+                }
+                catch (e) {
+                    console.error("[NotificationRoute] Error fetching critical bins:", e);
+                }
+                // 4. User direct DB notifications
+                let userNotifs = [];
+                if (userId) {
+                    try {
+                        const dbNotifs = await prisma.notification.findMany({
+                            where: { userId },
+                            orderBy: { createdAt: "desc" },
+                            take: 20,
+                        });
+                        userNotifs = dbNotifs.map(mapNotification).filter((n) => {
+                            const t = (n.title || "").toLowerCase();
+                            const d = (n.desc || "").toLowerCase();
+                            const isResetReq = t.includes("pengosongan") ||
+                                d.includes("pengosongan") ||
+                                d.includes("mengajukan") ||
+                                d.includes("[req-");
+                            return !isResetReq;
+                        });
+                    }
+                    catch {
+                        // ignore
+                    }
+                }
+                formattedNotifications = [
+                    scheduleNotif,
+                    ...criticalBinNotifs,
+                    ...reqNotifications,
+                    ...userNotifs,
                 ];
+            }
+            catch (err) {
+                console.error("[NotificationRoute] Error fetching admin notifications:", err);
+            }
+        }
+        else {
+            // Warga user notifications
+            if (userId) {
+                try {
+                    const dbNotifs = await prisma.notification.findMany({
+                        where: { userId },
+                        orderBy: { createdAt: "desc" },
+                        take: 20,
+                    });
+                    formattedNotifications = dbNotifs.map(mapNotification);
+                    // Check if citizen has real bins that are > 90% full
+                    const myBinOwnerships = await prisma.binOwnership.findMany({
+                        where: { userId },
+                        include: { bin: { include: { category: true } } },
+                    });
+                    myBinOwnerships.forEach((bo) => {
+                        const b = bo.bin;
+                        if (b &&
+                            Number(b.maxCapacityLiter) > 0 &&
+                            Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter) > 0.9) {
+                            const pct = Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100);
+                            formattedNotifications.unshift({
+                                id: `my-crit-bin-${b.id}`,
+                                type: "TEMPAT_SAMPAH_PENUH",
+                                title: "Kapasitas Tempat Sampah Kritis",
+                                desc: `Tempat sampah ${b.category?.name || ""} Anda hampir penuh (${pct}%).`,
+                                isRead: false,
+                                time: "Status Real-time",
+                                icon: "warning",
+                                iconBg: "bg-red-100",
+                                iconColor: "text-red-500",
+                            });
+                        }
+                    });
+                }
+                catch {
+                    // ignore
+                }
             }
         }
         res.status(200).json({
@@ -203,15 +355,37 @@ router.post("/device-token", authMiddleware, async (req, res) => {
     try {
         const { token } = req.body;
         const userId = req.user.userId;
-        await prisma.user.update({
-            where: { id: userId },
-            data: { fcmToken: token },
-        });
+        if (token) {
+            // Re-bind token: Remove token from any other user accounts to prevent notification leaks
+            await prisma.user.updateMany({
+                where: { fcmToken: token, id: { not: userId } },
+                data: { fcmToken: null },
+            });
+            await prisma.user.update({
+                where: { id: userId },
+                data: { fcmToken: token },
+            });
+        }
         res.status(200).json({ status: "success", message: "Device token berhasil disimpan" });
     }
     catch (error) {
         console.error("Register Device Token Error:", error);
         res.status(500).json({ status: "error", message: "Gagal menyimpan device token" });
+    }
+});
+// POST /api/v1/notifications/unregister-token
+router.post("/unregister-token", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        await prisma.user.update({
+            where: { id: userId },
+            data: { fcmToken: null },
+        });
+        res.status(200).json({ status: "success", message: "Device token berhasil dihapus" });
+    }
+    catch (error) {
+        console.error("Unregister Device Token Error:", error);
+        res.status(500).json({ status: "error", message: "Gagal menghapus device token" });
     }
 });
 // DELETE /api/v1/notifications/all

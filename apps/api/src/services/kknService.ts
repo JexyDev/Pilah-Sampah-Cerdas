@@ -7,6 +7,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 const prisma = new PrismaClient();
 
@@ -704,6 +705,33 @@ export class KknService {
         },
       });
 
+      // Auto-resolve rtRwId from input RW string or KKN student's assigned area
+      let resolvedRtRwId: number | undefined = data.rtRwId ? Number(data.rtRwId) : undefined;
+
+      if (!resolvedRtRwId && (data.rw || data.rwNumber || data.lokasiRw)) {
+        const rawRwStr = String(data.rw || data.rwNumber || data.lokasiRw);
+        const rwDigits = rawRwStr.match(/\d+/);
+        if (rwDigits) {
+          const rwPadded = rwDigits[0].padStart(2, "0");
+          const matchedArea = await tx.rtRwArea.findFirst({
+            where: {
+              name: { contains: rwPadded },
+            },
+          });
+          if (matchedArea) {
+            resolvedRtRwId = matchedArea.id;
+          }
+        }
+      }
+
+      if (!resolvedRtRwId && kknUserId) {
+        const student = await tx.studentKkn.findUnique({
+          where: { userId: kknUserId },
+          include: { user: true },
+        });
+        resolvedRtRwId = student?.assignedPolygonId || student?.user?.rtRwId || undefined;
+      }
+
       if (!warga) {
         warga = await tx.user.create({
           data: {
@@ -711,10 +739,15 @@ export class KknService {
             phone: data.phone || `08${Math.floor(100000000 + Math.random() * 900000000)}`,
             password: data.password || "password123",
             address: data.address || "-",
-            rtRwId: data.rtRwId ? Number(data.rtRwId) : undefined,
+            rtRwId: resolvedRtRwId,
             roleId: role ? role.id : 1,
             status: "Aktif",
           },
+        });
+      } else if (resolvedRtRwId && !warga.rtRwId) {
+        warga = await tx.user.update({
+          where: { id: warga.id },
+          data: { rtRwId: resolvedRtRwId },
         });
       }
 
@@ -736,6 +769,7 @@ export class KknService {
               status: "PENDING_APPROVAL",
               categoryId: category?.id,
               userId: warga.id,
+              rtRwId: resolvedRtRwId,
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
             },
@@ -745,6 +779,7 @@ export class KknService {
             where: { id: bin.id },
             data: {
               userId: warga.id,
+              rtRwId: resolvedRtRwId,
               status: "PENDING_APPROVAL",
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
@@ -841,7 +876,7 @@ export class KknService {
       longitude: poskoLng,
       poskoLatitude: poskoLat,
       poskoLongitude: poskoLng,
-      radiusMeter: 5000,
+      radiusMeter: 100,
       totalGroupPoints,
       members,
     };
@@ -972,9 +1007,6 @@ export class KknService {
 
     if (warga.fcmToken) {
       try {
-        const { notificationIntegrationService } = await import(
-          "./notificationIntegrationService.js"
-        );
         await notificationIntegrationService.sendPushNotification(
           warga.fcmToken,
           title,
@@ -1015,7 +1047,7 @@ export class KknService {
         kelurahan: null,
         latitude: null,
         longitude: null,
-        radiusMeter: 500,
+        radiusMeter: 100,
         polygonPoints: [],
       };
     }
@@ -1029,7 +1061,7 @@ export class KknService {
       kelurahan: activeArea.kelurahan?.name || "Coblong",
       latitude: lat,
       longitude: lng,
-      radiusMeter: 500,
+      radiusMeter: 100,
       polygonPoints:
         lat && lng
           ? [

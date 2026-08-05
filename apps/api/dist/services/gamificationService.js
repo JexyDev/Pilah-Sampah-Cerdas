@@ -271,7 +271,7 @@ export const gamificationService = {
             // Akurasi/Tingkat keberhasilan penjemputan tanpa batal/escalated
             const successRate = totalClaimed > 0 ? totalCompleted / totalClaimed : 1;
             // Opsi D: Skor Komposit seimbang & minim error
-            const compositeScore = (0.5 * totalCompleted) + (0.3 * slaScore) + (0.2 * successRate * 100);
+            const compositeScore = 0.5 * totalCompleted + 0.3 * slaScore + 0.2 * successRate * 100;
             const totalKg = p.setoranManual.reduce((acc, cur) => acc + Number(cur.berat || 0), 0);
             return {
                 id: p.id,

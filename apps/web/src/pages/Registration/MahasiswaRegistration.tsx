@@ -68,16 +68,16 @@ const MahasiswaRegistration: React.FC = () => {
               <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">No. WhatsApp</label>
-              <input type="text" name="noWa" required value={formData.noWa} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="+628..." />
+              <label className="block text-sm font-medium text-slate-700 mb-1">No. WhatsApp (Format 08)</label>
+              <input type="text" name="noWa" required value={formData.noWa} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="0812xxxxxxxx" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">NIM</label>
-              <input type="text" name="nim" required value={formData.nim} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
+              <input type="text" name="nim" required value={formData.nim} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="10121001" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">No. WhatsApp</label>
-              <input type="text" name="phone" required value={formData.phone} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">No. HP / Telepon (Format 08)</label>
+              <input type="text" name="phone" required value={formData.phone} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="0812xxxxxxxx" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Jurusan</label>

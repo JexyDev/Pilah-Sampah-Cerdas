@@ -534,17 +534,139 @@ export class SuperAdminService {
     }
     async verifyPetugas(petugasId, action) {
         const { notificationIntegrationService: notificationService } = await import("./notificationIntegrationService.js");
-        const petugas = await prisma.petugasResidu.update({
+        let petugasCheck = await prisma.petugasResidu.findUnique({
             where: { id: petugasId },
+            include: { user: true },
+        });
+        if (!petugasCheck) {
+            petugasCheck = await prisma.petugasResidu.findFirst({
+                where: { userId: petugasId },
+                include: { user: true },
+            });
+        }
+        if (!petugasCheck) {
+            throw new Error("Petugas not found");
+        }
+        const petugas = await prisma.petugasResidu.update({
+            where: { id: petugasCheck.id },
             data: { whitelistStatus: action },
             include: { user: true },
         });
+        if (action === "APPROVED") {
+            await prisma.user.update({
+                where: { id: petugas.userId },
+                data: { status: "Aktif" },
+            });
+        }
+        else if (action === "REJECTED") {
+            await prisma.user.update({
+                where: { id: petugas.userId },
+                data: { status: "Inaktif" },
+            });
+        }
         if (petugas.user?.phone && action === "APPROVED") {
             await notificationService
                 .sendWhatsApp(petugas.user.phone, `Akun Petugas Residu Anda telah diverifikasi oleh Administrator dan kini AKTIF.`)
                 .catch((e) => console.error("WA Error:", e));
         }
         return petugas;
+    }
+    /**
+     * Update status of a bin directly
+     */
+    async updateBinStatus(binId, status, adminUserId) {
+        const bin = await prisma.bin.findUnique({ where: { id: binId } });
+        if (!bin) {
+            throw new Error("BIN_NOT_FOUND");
+        }
+        const updated = await prisma.bin.update({
+            where: { id: binId },
+            data: { status },
+        });
+        await prisma.auditTrail.create({
+            data: {
+                action: "UPDATE_BIN_STATUS",
+                userId: adminUserId,
+                newValue: { binId, status },
+            },
+        });
+        return updated;
+    }
+    /**
+     * Replace a broken bin with a new QR Code
+     */
+    async replaceBrokenBin(oldBinId, newBinId, adminUserId) {
+        return prisma.$transaction(async (tx) => {
+            const oldBin = await tx.bin.findUnique({ where: { id: oldBinId } });
+            if (!oldBin) {
+                throw new Error("OLD_BIN_NOT_FOUND");
+            }
+            let newBin = await tx.bin.findUnique({
+                where: { id: newBinId },
+            });
+            if (!newBin) {
+                newBin = await tx.bin.findUnique({
+                    where: { qrCode: newBinId },
+                });
+            }
+            if (!newBin) {
+                throw new Error("NEW_BIN_NOT_FOUND");
+            }
+            // Mark old bin as BROKEN
+            await tx.bin.update({
+                where: { id: oldBin.id },
+                data: { status: "BROKEN" },
+            });
+            // Transfer ownership & active status to new bin
+            const updatedNewBin = await tx.bin.update({
+                where: { id: newBin.id },
+                data: {
+                    status: "ACTIVE_BOUND",
+                    userId: oldBin.userId,
+                    rtRwId: oldBin.rtRwId,
+                    registeredByStudentId: oldBin.registeredByStudentId,
+                },
+            });
+            if (oldBin.userId) {
+                const existingOwnership = await tx.binOwnership.findFirst({
+                    where: { binId: newBin.id, userId: oldBin.userId },
+                });
+                if (!existingOwnership) {
+                    await tx.binOwnership.create({
+                        data: { userId: oldBin.userId, binId: newBin.id, type: "UTAMA" },
+                    });
+                }
+            }
+            await tx.auditTrail.create({
+                data: {
+                    action: "REPLACE_BROKEN_BIN",
+                    userId: adminUserId,
+                    newValue: { oldBinId: oldBin.id, newBinId: newBin.id, ownerId: oldBin.userId },
+                },
+            });
+            return updatedNewBin;
+        });
+    }
+    /**
+     * Delete or soft-delete a QR Code / Bin
+     */
+    async deleteBin(binId, adminUserId) {
+        const bin = await prisma.bin.findUnique({ where: { id: binId } });
+        if (!bin) {
+            throw new Error("BIN_NOT_FOUND");
+        }
+        await prisma.binOwnership.deleteMany({ where: { binId } });
+        await prisma.setoranOtomatis.deleteMany({ where: { qrTempatSampahId: binId } });
+        await prisma.binResetRequest.deleteMany({ where: { binId } });
+        const deleted = await prisma.bin.delete({ where: { id: binId } });
+        await prisma.auditTrail.create({
+            data: {
+                action: "DELETE_BIN",
+                userId: adminUserId,
+                newValue: { binId, qrCode: bin.qrCode },
+            },
+        });
+        return deleted;
     }
 }
 export const superAdminService = new SuperAdminService();

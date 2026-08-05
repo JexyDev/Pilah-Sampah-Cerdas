@@ -16,7 +16,16 @@ export async function getScopingFilters(user) {
     });
     if (!dbUser)
         return {};
-    const role = user.role;
+    const normalizeRole = (r) => {
+        if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(r))
+            return "ADMIN_DLH";
+        if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r))
+            return "CAMAT";
+        if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r))
+            return "LURAH";
+        return r;
+    };
+    const role = normalizeRole(user.role);
     // 1. SUPER_ADMIN, ADMIN_DLH, and CAMAT see all data (CAMAT is read-only checked at route level)
     if (role === "SUPER_ADMIN" || role === "ADMIN_DLH" || role === "CAMAT") {
         return {};
@@ -39,10 +48,11 @@ export async function getScopingFilters(user) {
             wasteLogFilter: { bin: { kelurahanId } },
         };
     }
-    // 3. RW is scoped by RW
+    // 3. RW is scoped strictly by RW number and Kelurahan
     if (role === "RW") {
         const areaName = dbUser.rtRw?.name; // e.g. "RT 02 / RW 06"
-        if (!areaName || !areaName.includes("RW")) {
+        const kelurahanId = dbUser.rtRw?.kelurahanId;
+        if (!areaName || !kelurahanId) {
             return {
                 userFilter: { id: "none" },
                 binFilter: { id: "none" },
@@ -53,20 +63,12 @@ export async function getScopingFilters(user) {
         const rwPart = areaName
             .split("/")
             .map((s) => s.trim())
-            .find((s) => s.startsWith("RW"));
-        if (!rwPart) {
-            return {
-                userFilter: { id: "none" },
-                binFilter: { id: "none" },
-                householdFilter: { id: "none" },
-                wasteLogFilter: { id: "none" },
-            };
-        }
+            .find((s) => s.startsWith("RW")) || areaName;
         return {
-            userFilter: { rtRw: { name: { contains: rwPart } } },
-            binFilter: { rtRw: { name: { contains: rwPart } } },
-            householdFilter: { rtRw: { name: { contains: rwPart } } },
-            wasteLogFilter: { bin: { rtRw: { name: { contains: rwPart } } } },
+            userFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
+            binFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
+            householdFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
+            wasteLogFilter: { bin: { rtRw: { kelurahanId, name: { contains: rwPart } } } },
         };
     }
     // 3b. RT is scoped by their exact RT/RW area

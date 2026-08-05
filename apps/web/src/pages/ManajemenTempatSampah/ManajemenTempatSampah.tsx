@@ -1,4 +1,5 @@
-import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye } from "lucide-react";
+import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -11,7 +12,10 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
-import L from "leaflet";
+import {
+  createMapBinIcon,
+  createHouseIcon,
+} from "../../constants/coblongGeoData";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,28 +25,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom HTML DivIcon for Bins
-const createMapBinIcon = (status: string) => {
-  let color = "#10b981"; // default Normal
-  if (status === "Sedang") color = "#f97316";
-  if (status === "Penuh") color = "#ef4444";
-
-  return L.divIcon({
-    className: "custom-div-icon",
-    html: `<div style="background-color: ${color}; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-  });
-};
-
-const createHouseIcon = () => {
-  return L.divIcon({
-    className: "custom-div-icon",
-    html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 4px; border: 2.5px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">H</div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-  });
-};
 
 const LocationPicker = ({ position, onChange }: { position: [number, number] | null; onChange: (lat: number, lng: number) => void }) => {
   useMapEvents({
@@ -97,6 +79,19 @@ const ManajemenTempatSampah: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, statusFilter, areaFilter, categoryFilter, rowsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(bins.length / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedBins = bins.slice(startIndex, startIndex + rowsPerPage);
+
 
   const fetchBins = async () => {
     try {
@@ -473,7 +468,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 </td>
               </tr>
             ) : bins.length > 0 ? (
-              bins.map((bin) => (
+              paginatedBins.map((bin) => (
                 <tr
                   key={bin.kode}
                   className="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors"
@@ -608,7 +603,60 @@ const ManajemenTempatSampah: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        {/* Interactive Table Pagination Footer Bar */}
+        {bins.length > 0 && (
+          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-xs text-slate-600 font-medium">
+              Menampilkan <span className="font-bold text-slate-900">{startIndex + 1}</span> -{" "}
+              <span className="font-bold text-slate-900">{Math.min(startIndex + rowsPerPage, bins.length)}</span> dari{" "}
+              <span className="font-bold text-slate-900">{bins.length}</span> data tempat sampah
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500 font-semibold">Tampilkan:</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-500"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Halaman Sebelumnya"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-xs font-bold text-slate-800 px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Halaman Selanjutnya"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
 
       {/* Geospatial Map */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 space-y-4">

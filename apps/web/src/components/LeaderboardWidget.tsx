@@ -27,6 +27,7 @@ interface ColumnCardProps {
   barColor: string;
   items: LeaderboardItem[];
   maxPoints: number;
+  unitLabel?: string;
   linkTo?: string;
 }
 
@@ -37,21 +38,58 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   barColor,
   items,
   maxPoints,
+  unitLabel = "Poin",
   linkTo = "/leaderboard",
 }) => {
   const displayItems = items.slice(0, 10);
+  const topScore = maxPoints || displayItems[0]?.points || 100;
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) {
+      return (
+        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 text-amber-950 font-black text-[11px] flex items-center justify-center shadow-xs border border-amber-200 shrink-0">
+          🥇
+        </span>
+      );
+    }
+    if (rank === 2) {
+      return (
+        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-slate-300 to-slate-100 text-slate-800 font-extrabold text-[11px] flex items-center justify-center shadow-xs border border-slate-300 shrink-0">
+          🥈
+        </span>
+      );
+    }
+    if (rank === 3) {
+      return (
+        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-700 to-amber-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-xs border border-amber-600 shrink-0">
+          🥉
+        </span>
+      );
+    }
+    return (
+      <span className="w-6 text-center font-bold text-slate-400 shrink-0 text-xs group-hover:text-emerald-600">
+        {rank}
+      </span>
+    );
+  };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full relative">
       {/* Header */}
       <div className="flex justify-between items-center pb-3 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className={`p-2 rounded-xl ${iconBg} text-white shadow-xs shrink-0 flex items-center justify-center`}>
             {icon}
           </div>
-          <h5 className="font-extrabold text-[14px] text-slate-800 tracking-tight truncate" title={title}>
-            {title}
-          </h5>
+          <div>
+            <h5 className="font-extrabold text-[14px] text-slate-800 tracking-tight truncate" title={title}>
+              {title}
+            </h5>
+            <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">
+              Skala Acuan: Top 1 = <span className="font-bold text-slate-600">{topScore.toLocaleString("id-ID")} {unitLabel}</span>
+            </p>
+          </div>
         </div>
         <Link
           to={linkTo}
@@ -64,17 +102,24 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
 
       {/* Item List */}
       <div className="my-3 flex-1 flex flex-col justify-start space-y-2 min-h-[240px]">
-        {displayItems.map((item) => {
-          const pct = Math.min(100, Math.max(12, (item.points / (maxPoints || 1)) * 100));
+        {displayItems.map((item, idx) => {
+          const rawPct = Math.round((item.points / (topScore || 1)) * 100);
+          const barPct = Math.min(100, Math.max(8, rawPct));
+          const isHovered = hoveredIndex === idx;
+
           return (
             <div
               key={`${item.rank}-${item.name}`}
-              className="flex items-center gap-2 text-xs group hover:bg-slate-50 px-2 py-1 rounded-xl transition-all"
+              onMouseEnter={() => setHoveredIndex(idx)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              className={`flex items-center gap-2.5 text-xs group px-2.5 py-1.5 rounded-xl transition-all duration-150 border ${
+                isHovered
+                  ? "bg-slate-50 border-slate-300/80 shadow-xs scale-[1.01]"
+                  : "bg-white border-transparent"
+              }`}
             >
-              {/* Rank */}
-              <span className="w-5 text-center font-bold text-slate-400 shrink-0 text-xs group-hover:text-emerald-600">
-                {item.rank}
-              </span>
+              {/* Rank Icon / Medal */}
+              {getRankBadge(item.rank)}
 
               {/* Name & Subtitle */}
               <div className="flex-1 min-w-[120px] pr-2">
@@ -88,20 +133,29 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
                 )}
               </div>
 
-              {/* Bar Indicator */}
-              <div className="w-20 sm:w-28 shrink-0 flex items-center justify-end">
-                <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              {/* Interactive Progress Bar & Percentage Ratio */}
+              <div className="w-28 sm:w-36 shrink-0 flex flex-col items-end gap-1">
+                <div className="flex justify-between items-center w-full text-[10px] text-slate-500 font-bold">
+                  <span className="text-slate-400 font-normal">Rasio</span>
+                  <span className="text-slate-700">{rawPct}%</span>
+                </div>
+                <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
                   <div
                     className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
-                    style={{ width: `${pct}%`, backgroundColor: barColor }}
+                    style={{ width: `${barPct}%`, backgroundColor: barColor }}
                   />
                 </div>
               </div>
 
               {/* Points */}
-              <span className="w-16 text-right font-extrabold text-slate-800 text-[13px] shrink-0 font-mono">
-                {item.points.toLocaleString("id-ID")}
-              </span>
+              <div className="w-20 text-right shrink-0">
+                <span className="font-extrabold text-slate-800 text-[13px] font-mono block leading-none">
+                  {item.points.toLocaleString("id-ID")}
+                </span>
+                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
+                  {unitLabel}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -111,7 +165,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
       <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] shrink-0">
         <span className="text-slate-400 font-medium flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Real-time
+          Akumulasi Terverifikasi Real-time
         </span>
         <Link
           to={linkTo}
@@ -123,6 +177,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
     </div>
   );
 };
+
 
 export const LeaderboardWidget: React.FC = () => {
   // Default Full Mock Datasets (matching screenshot)

@@ -14,8 +14,8 @@ export const dplScopeMiddleware = async (req, res, next) => {
         }
         const currentUserId = user.userId || user.id;
         const roleName = String(user.role || "").toUpperCase();
-        // SuperAdmin and Admin DLH can view all DPL data
-        if (["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPERADMIN", "SUPER_ADMIN", "ADMIN"].some((r) => roleName.includes(r))) {
+        // SuperAdmin, Admin DLH, Pemimpin, and Panitia Taskforce can view all DPL data
+        if (["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPERADMIN", "SUPER_ADMIN", "ADMIN", "PEMIMPIN", "PIMPINAN", "PANITIA", "TASKFORCE"].some((r) => roleName.includes(r))) {
             next();
             return;
         }

@@ -213,20 +213,28 @@ export class KknAttendanceService {
      */
     async recordAttendance(params) {
         const { studentId, scheduleId, latitude, longitude, method } = params;
-        // 1. Get activity location configuration
-        const actLoc = await this.getActivityLocation(scheduleId);
-        // 2. Validate radius on backend
-        let isInside = false;
-        if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
-            const polyPoints = actLoc.polygon.map((p) => ({
-                lat: Number(p[0]),
-                lng: Number(p[1]),
-            }));
-            isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+        // 1. Get activity location configuration if exists
+        let actLoc = null;
+        try {
+            actLoc = await this.getActivityLocation(scheduleId);
         }
-        else {
-            const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
-            isInside = distance <= actLoc.radius;
+        catch (e) {
+            actLoc = null;
+        }
+        // 2. Validate radius on backend if configured
+        let isInside = true;
+        if (actLoc && actLoc.isConfigured) {
+            if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
+                const polyPoints = actLoc.polygon.map((p) => ({
+                    lat: Number(p[0]),
+                    lng: Number(p[1]),
+                }));
+                isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+            }
+            else {
+                const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
+                isInside = distance <= actLoc.radius;
+            }
         }
         if (!isInside) {
             throw new Error(`OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`);

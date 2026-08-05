@@ -72,5 +72,18 @@ router.post("/register", authMiddleware, roleMiddleware(["WARGA", "SUPER_ADMIN",
  *         description: Success
  */
 router.get("/me", authMiddleware, householdController.getMyHouseholds);
-router.get("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"]), householdController.getAllHouseholds);
+router.get("/me/bins/summary", authMiddleware, householdController.getBinsSummary);
+router.get("/bins/summary", authMiddleware, householdController.getBinsSummary);
+router.get("/", authMiddleware, roleMiddleware([
+    "SUPER_ADMIN",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "PENGANGKUT",
+    "MAHASISWA_KKN",
+    "WARGA",
+]), householdController.getAllHouseholds);
 export default router;

@@ -30,6 +30,8 @@ export const roleMiddleware = (allowedRoles: string[]) => {
         if (["ADMIN_KELURAH", "LURAH", "LURAH_ADMIN"].includes(upper)) return "LURAH";
         if (["SUPER_ADMIN", "SUPERADMIN", "SUPER ADMIN"].includes(upper)) return "SUPER_ADMIN";
         if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper)) return "DPL";
+        if (["PEMIMPIN", "PIMPINAN"].includes(upper)) return "PEMIMPIN";
+        if (["PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "TASK_FORCE"].includes(upper)) return "PANITIA_TASKFORCE";
         return upper;
       };
       const userRole = normalizeRole(user.role);

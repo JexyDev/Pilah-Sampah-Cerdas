@@ -40,6 +40,14 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import {
+  KELURAHAN_GEODATA,
+  createMapBinIcon,
+  createHouseIcon,
+  createRwZonaIcon,
+  createKelurahanPinIcon,
+} from "../../constants/coblongGeoData";
+
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -48,82 +56,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom HTML DivIcon for Bins
-const createMapBinIcon = (status: string) => {
-  let color = "#10b981"; // default Normal
-  if (status === "Sedang" || status === "waspada") color = "#f59e0b";
-  if (status === "Penuh" || status === "penuh") color = "#ef4444";
+const kelurahanCentroidsMap = Object.values(KELURAHAN_GEODATA).map((kg) => ({
+  name: kg.name,
+  lat: kg.centroid[0],
+  lng: kg.centroid[1],
+  bounds: kg.bounds,
+  color: kg.color,
+  rwCount: kg.rwCount,
+}));
 
-  return L.divIcon({
-    className: "custom-bin-icon",
-    html: `
-      <div style="background-color: ${color}; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </div>
-    `,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-  });
-};
-
-const createHouseIcon = () => {
-  return L.divIcon({
-    className: "custom-house-icon",
-    html: `
-      <div style="background-color: #3b82f6; width: 24px; height: 24px; border-radius: 6px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </div>
-    `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-};
-
-
-const createRwZonaIcon = (rwName: string, patuh: number) => {
-  let color = "#10b981"; // green
-  if (patuh < 60) color = "#ef4444"; // red
-  else if (patuh < 85) color = "#f97316"; // orange
-
-  const match = rwName.match(/(\d+)/);
-  const num = match ? match[1].padStart(2, "0") : "01";
-
-  return L.divIcon({
-    className: "custom-div-icon",
-    html: `
-      <div style="background-color: ${color}; width: 42px; height: 42px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 800; line-height: 1.05;">
-        <span style="font-size: 10px; font-weight: 900;">RW ${num}</span>
-        <span style="font-size: 9px; opacity: 0.95;">${patuh}%</span>
-      </div>
-    `,
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
-  });
-};
-
-const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
-  return L.divIcon({
-    className: "custom-kelurahan-pin-icon",
-    html: `
-      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
-        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
-        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
-      </div>
-    `,
-    iconSize: [130, 36],
-    iconAnchor: [65, 18],
-  });
-};
-
-const kelurahanCentroidsMap: Array<{ name: string; lat: number; lng: number }> = [
-  { name: "Dago", lat: -6.8850, lng: 107.6140 },
-  { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
-  { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
-  { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
-  { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
-  { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
-];
 
 const MapEvents = ({
   setZoom,
@@ -525,6 +466,30 @@ const ManajemenLokasi: React.FC = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            {/* LEVEL 1: RENDER AUTHENTIC KELURAHAN BOUNDARY POLYGONS */}
+            {Object.values(KELURAHAN_GEODATA).map((kg) => {
+              if (
+                selectedKelurahan !== "Semua Kelurahan" &&
+                selectedKelurahan.toLowerCase() !== kg.name.toLowerCase()
+              ) {
+                return null;
+              }
+
+              return (
+                <Polygon
+                  key={`kel-poly-${kg.id}`}
+                  positions={kg.bounds}
+                  pathOptions={{
+                    color: kg.color,
+                    fillColor: kg.color,
+                    fillOpacity: selectedKelurahan === kg.name ? 0.28 : 0.15,
+                    weight: selectedKelurahan === kg.name ? 3 : 2,
+                    dashArray: "6, 6",
+                  }}
+                />
+              );
+            })}
+
             {/* LEVEL 1: RENDER KELURAHAN OVERVIEW MARKERS WHEN "Semua Kelurahan" IS SELECTED */}
             {selectedKelurahan === "Semua Kelurahan" &&
               kelurahanCentroidsMap.map((kel) => {
@@ -558,7 +523,7 @@ const ManajemenLokasi: React.FC = () => {
                             setMapCenter([kel.lat, kel.lng]);
                             setMapZoom(16);
                           }}
-                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition"
+                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition cursor-pointer"
                         >
                           Buka Detail Tempat Sampah →
                         </button>
@@ -568,13 +533,13 @@ const ManajemenLokasi: React.FC = () => {
                 );
               })}
 
-            {/* LEVEL 2: RENDER DETAILED RW ZONA AND MARKERS WHEN A SPECIFIC KELURAHAN IS SELECTED */}
+            {/* LEVEL 2: RENDER DETAILED RW ZONA AND MARKERS (ONLY WHEN ZOOM >= 15 OR KELURAHAN IS SELECTED) */}
             {(() => {
-              if (selectedKelurahan === "Semua Kelurahan") return null;
-              if (mapZoom >= 16) return null;
+              if (selectedKelurahan === "Semua Kelurahan" && mapZoom < 15) return null;
 
               const validLocations = filteredLocations.filter((g) => g.latitude && g.longitude);
               if (validLocations.length === 0) return null;
+
 
               // Setup Voronoi polygons with fallback to Hexagons
               let voronoiPolygons: any = null;
@@ -661,7 +626,7 @@ const ManajemenLokasi: React.FC = () => {
                       pathOptions={{
                         color: polygonColor,
                         fillColor: polygonColor,
-                        fillOpacity: 0.32,
+                        fillOpacity: 0.25,
                         weight: 2,
                         dashArray: "4",
                       }}
@@ -685,7 +650,7 @@ const ManajemenLokasi: React.FC = () => {
                       <Popup>
                         <div className="text-xs p-1 text-center font-sans">
                           <strong className="text-sm font-bold block mb-1 text-slate-800">
-                            Wilayah {group.rw}
+                            Wilayah {group.rw} ({group.kelurahan})
                           </strong>
                           <p className="text-slate-600 mb-1">
                             Tingkat Kepatuhan: <strong className="text-emerald-600">{group.patuh}%</strong>
@@ -701,6 +666,7 @@ const ManajemenLokasi: React.FC = () => {
                 );
               });
             })()}
+
             {mapZoom >= 16 ? (
               <>
                 {/* Active Bins (Grouped by Household) */}

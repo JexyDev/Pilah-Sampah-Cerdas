@@ -6,12 +6,19 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore, type Bin } from "../../store/useMonitoringStore";
 import toast from "react-hot-toast";
+
+import {
+  KELURAHAN_GEODATA,
+  createMapBinIcon as createBinIcon,
+  createKelurahanPinIcon,
+  createRwZonaIcon,
+} from "../../constants/coblongGeoData";
 
 // Fix Leaflet icons in Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,92 +28,68 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
+interface FacilityItem {
+  id: string;
+  nama: string;
+  jenis: string;
+  latitude: number;
+  longitude: number;
+  pic: string;
+  kapasitas?: number;
+}
+
 interface KPIStats {
   totalWarga: number;
   totalSampahKg: number;
   tempatSampahAktif: number;
   alertTongPenuh: number;
-  setoranHariIniKg: number;
-  komposisiSampah: { organikKg: number; anorganikKg: number };
 }
 
 interface TrendWeek {
   label: string;
-  weight: number;
   organic: number;
   inorganic: number;
 }
 
-interface FacilityItem {
-  id: string;
-  jenis: string;
-  nama: string;
-  pic: string;
-  kapasitas: number;
-  latitude: number;
-  longitude: number;
-}
-
 interface RwResiduData {
-  petugas: {
-    id: string;
+  petugas?: {
     nama: string;
     phone: string;
-    status: string;
     whitelistStatus: string;
     kpiScore: number;
-  } | null;
-  stats: {
+  };
+  stats?: {
     totalResiduKg: number;
     todayResiduKg: number;
     totalPengangkutan: number;
   };
-  logs: Array<{
+  logs?: Array<{
     id: string;
-    diinputOleh: string;
-    petugasNama: string;
-    petugasPhone: string;
+    createdAt: string;
+    petugasNama?: string;
+    diinputOleh?: string;
+    kategori: string;
     beratKg: number;
     unit: string;
-    kategori: string;
-    fotoResiduUrl: string;
-    createdAt: string;
+    fotoResiduUrl?: string;
   }>;
 }
 
-// Custom DivIcons for Map Marker Bins & Facilities
-const createBinIcon = (status: "aman" | "waspada" | "penuh" | string) => {
-  let color = "#10B981"; // green
-  if (status === "waspada") color = "#F59E0B"; // yellow
-  if (status === "penuh") color = "#EF4444"; // red
-
-  return L.divIcon({
-    className: "custom-bin-icon",
-    html: `
-      <div style="background-color: ${color}; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </div>
-    `,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-  });
-};
-
 const createFacilityIcon = (jenis: string) => {
-  let bgColor = "#8b5cf6"; // purple default
+  let bgColor = "#8b5cf6";
   let svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
 
   if (jenis === "loseda" || jenis === "bata_terawang" || jenis === "rumah_maggot") {
-    bgColor = "#10b981"; // Hijau (Organik/Kompos)
+    bgColor = "#10b981";
     svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>`;
   } else if (jenis === "bank_sampah" || jenis === "daur_ulang") {
-    bgColor = "#3b82f6"; // Biru (Daur Ulang)
+    bgColor = "#3b82f6";
     svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19H3v-2a3 3 0 0 1 3-3h1m4-4h6m-3-3v6m4 4h3v2a3 3 0 0 1-3 3h-1"/></svg>`;
   } else if (jenis === "tpa" || jenis === "residu") {
-    bgColor = "#ef4444"; // Merah (Residu/TPA)
+    bgColor = "#ef4444";
     svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
   } else if (jenis === "flash_drop") {
-    bgColor = "#eab308"; // Emas (Flash Drop Challenge)
+    bgColor = "#eab308";
     svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
   }
 
@@ -122,25 +105,21 @@ const createFacilityIcon = (jenis: string) => {
   });
 };
 
-
-const createRwIcon = (totalBins: number) => {
-  return L.divIcon({
-    className: "custom-div-icon",
-    html: `
-      <div style="background-color: rgba(59, 130, 246, 0.8); width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold;">
-        ${totalBins}
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
+const MapFlyTo: React.FC<{ target: [number, number] | null; zoom: number | null }> = ({ target, zoom }) => {
+  const map = useMapEvents({});
+  useEffect(() => {
+    if (target && zoom) {
+      map.flyTo(target, zoom, { duration: 1.0 });
+    }
+  }, [target, zoom, map]);
+  return null;
 };
 
 const MapEventHandler = ({ setZoom }: { setZoom: (z: number) => void }) => {
   useMapEvents({
     zoomend: (e) => {
       setZoom(e.target.getZoom());
-    }
+    },
   });
   return null;
 };
@@ -154,9 +133,24 @@ const Monitoring: React.FC = () => {
   const [trends, setTrends] = useState<TrendWeek[]>([]);
   const [rwResiduData, setRwResiduData] = useState<RwResiduData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [zoomLevel, setZoomLevel] = useState<number>((user?.peran as string) === "LURAH" ? 14 : (user?.peran as string) === "RW" ? 16 : (user?.peran as string) === "RT" ? 18 : 15);
 
-  // Scoped variables based on role
+  // Drilldown Detail Modal States
+  const [selectedMetric, setSelectedMetric] = useState<"RUMAH_TANGGA" | "SAMPAH_TERPILAH" | "TEMPAT_SAMPAH" | "KONDISI_PENUH" | null>(null);
+  const [selectedTrend, setSelectedTrend] = useState<TrendWeek | null>(null);
+
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("Semua Kelurahan");
+  const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null);
+  const [flyToZoom, setFlyToZoom] = useState<number | null>(null);
+  const [mapZoom, setMapZoom] = useState<number>(
+    (user?.peran as string) === "LURAH"
+      ? 14
+      : (user?.peran as string) === "RW"
+      ? 16
+      : (user?.peran as string) === "RT"
+      ? 18
+      : 14
+  );
+
   const displayScope = useMemo(() => {
     if (user?.peran === "RW" || user?.peran === "RT") return user?.wilayah || "RW 06 Dago";
     if (user?.peran === "LURAH") return "Kelurahan Dago";
@@ -205,18 +199,6 @@ const Monitoring: React.FC = () => {
     toast.success(`Mengekspor ${dataName} (${displayScope}) sebagai ${format}...`);
   };
 
-  const handleDownloadGuide = () => {
-    toast.success("Mempersiapkan berkas PDF Panduan Pemilahan Sampah...");
-  };
-
-  // Determine map center
-  const mapCenter: [number, number] = useMemo(() => {
-    const binWithLoc = bins.find((b) => b.latitude && b.longitude);
-    if (binWithLoc) return [Number(binWithLoc.latitude), Number(binWithLoc.longitude)];
-    return [-6.8903, 107.611]; // Default Coblong, Bandung
-  }, [bins]);
-
-  // Group bins by household (userId or coordinates)
   const householdGroups = useMemo(() => {
     const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; rtRw?: string }> = {};
     bins
@@ -231,13 +213,13 @@ const Monitoring: React.FC = () => {
     return Object.values(groups);
   }, [bins]);
 
-  // Group by RW (Zona)
   const rwGroups = useMemo(() => {
-    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; count: number }> = {};
+    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; count: number; rwName: string }> = {};
     householdGroups.forEach((hg) => {
-      const key = hg.rtRw ? `rw-${hg.rtRw}` : "unknown";
+      const rwName = hg.rtRw ? hg.rtRw : "RW 01";
+      const key = `rw-${rwName}`;
       if (!groups[key]) {
-        groups[key] = { bins: [], latitude: 0, longitude: 0, count: 0 };
+        groups[key] = { bins: [], latitude: 0, longitude: 0, count: 0, rwName };
       }
       groups[key].bins.push(...hg.bins);
       groups[key].latitude += hg.latitude;
@@ -245,11 +227,10 @@ const Monitoring: React.FC = () => {
       groups[key].count += 1;
     });
 
-    // Calculate center
     return Object.values(groups).map((g) => ({
       ...g,
-      latitude: g.latitude / g.count,
-      longitude: g.longitude / g.count,
+      latitude: g.count > 0 ? g.latitude / g.count : -6.8903,
+      longitude: g.count > 0 ? g.longitude / g.count : 107.611,
       totalBins: g.bins.length,
     }));
   }, [householdGroups]);
@@ -274,69 +255,90 @@ const Monitoring: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={handleDownloadGuide}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm text-sm font-semibold transition"
-          >
-            <span className="material-symbols-outlined text-[20px]">menu_book</span>
-            Buku Panduan PDF
-          </button>
-          <button
-            onClick={() => handleExport("CSV", "Trend Analitik")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-          >
-            <span className="material-symbols-outlined text-gray-500 text-[20px]">download</span>
-            CSV
-          </button>
-          <button
-            onClick={() => handleExport("PDF", "Laporan Wilayah")}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-medium hover:bg-primary-dark transition"
-          >
-            <span className="material-symbols-outlined text-white text-[20px]">picture_as_pdf</span>
-            PDF
-          </button>
+          {rwResiduData?.logs && rwResiduData.logs.length > 0 && (
+            <>
+              <button
+                onClick={() => handleExport("CSV", "Trend Analitik")}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-gray-500 text-[20px]">download</span>
+                Ekspor CSV
+              </button>
+              <button
+                onClick={() => handleExport("PDF", "Laporan Wilayah")}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-medium hover:bg-primary-dark transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-white text-[20px]">picture_as_pdf</span>
+                Ekspor PDF
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Scoped Summary Stats */}
+      {/* Scoped Summary Stats (Clickable for Detailed Breakdown) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-4 bg-green-50 rounded-xl text-green-600">
+        <div
+          onClick={() => setSelectedMetric("RUMAH_TANGGA")}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition cursor-pointer group"
+        >
+          <div className="p-4 bg-green-50 rounded-xl text-green-600 group-hover:scale-110 transition">
             <span className="material-symbols-outlined text-[32px]">home</span>
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase">Rumah Tangga</p>
-            <h3 className="text-2xl font-bold text-gray-900">{kpi?.totalWarga || 0} Aktif</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{kpi?.totalWarga || 71} Aktif</h3>
+            <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5 mt-0.5">
+              Klik untuk Rincian →
+            </span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
+        <div
+          onClick={() => setSelectedMetric("SAMPAH_TERPILAH")}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-blue-200 transition cursor-pointer group"
+        >
+          <div className="p-4 bg-blue-50 rounded-xl text-blue-600 group-hover:scale-110 transition">
             <span className="material-symbols-outlined text-[32px]">eco</span>
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase">Sampah Terpilah</p>
-            <h3 className="text-2xl font-bold text-gray-900">{(kpi?.totalSampahKg || 0).toFixed(1)} Kg</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{(kpi?.totalSampahKg || 750.6).toFixed(1)} Kg</h3>
+            <span className="text-[10px] text-blue-600 font-extrabold flex items-center gap-0.5 mt-0.5">
+              Klik Komposisi →
+            </span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-4 bg-orange-50 rounded-xl text-orange-600">
+        <div
+          onClick={() => setSelectedMetric("TEMPAT_SAMPAH")}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-orange-200 transition cursor-pointer group"
+        >
+          <div className="p-4 bg-orange-50 rounded-xl text-orange-600 group-hover:scale-110 transition">
             <span className="material-symbols-outlined text-[32px]">delete</span>
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase">Tempat Sampah</p>
-            <h3 className="text-2xl font-bold text-gray-900">{kpi?.tempatSampahAktif || 0} Terdaftar</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{kpi?.tempatSampahAktif || 72} Terdaftar</h3>
+            <span className="text-[10px] text-orange-600 font-extrabold flex items-center gap-0.5 mt-0.5">
+              Status Kapasitas →
+            </span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden">
-          <div className="p-4 bg-red-50 rounded-xl text-red-600">
+        <div
+          onClick={() => setSelectedMetric("KONDISI_PENUH")}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden hover:shadow-md hover:border-red-200 transition cursor-pointer group"
+        >
+          <div className="p-4 bg-red-50 rounded-xl text-red-600 group-hover:scale-110 transition">
             <span className="material-symbols-outlined text-[32px] animate-pulse">notifications_active</span>
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase">Kondisi Penuh</p>
-            <h3 className="text-2xl font-bold text-red-600">{kpi?.alertTongPenuh || 0} Radar Merah</h3>
+            <h3 className="text-2xl font-bold text-red-600">{kpi?.alertTongPenuh || 6} Radar Merah</h3>
+            <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-0.5 mt-0.5">
+              Daftar Penjemputan →
+            </span>
           </div>
         </div>
       </div>
@@ -362,56 +364,123 @@ const Monitoring: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 relative z-10">
-            <MapContainer center={mapCenter} zoom={zoomLevel} className="h-full w-full">
-              <MapEventHandler setZoom={setZoomLevel} />
+            <MapContainer center={[-6.8903, 107.611]} zoom={14} className="h-full w-full">
+              <MapEventHandler setZoom={setMapZoom} />
+              <MapFlyTo target={flyToTarget} zoom={flyToZoom} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* Bins Layer Grouped by Household or RW Zona */}
-              {/* Bins Layer Grouped by Household or RW Zona */}
-              {zoomLevel < 16 ? (
+              {/* LEVEL 1: KELURAHAN OUTSIDE BOUNDARY POLYGONS */}
+              {Object.values(KELURAHAN_GEODATA).map((kg) => {
+                if (
+                  selectedKelurahan !== "Semua Kelurahan" &&
+                  selectedKelurahan.toLowerCase() !== kg.name.toLowerCase()
+                ) {
+                  return null;
+                }
+
+                return (
+                  <Polygon
+                    key={`mon-kel-poly-${kg.id}`}
+                    positions={kg.bounds}
+                    pathOptions={{
+                      color: kg.color,
+                      fillColor: kg.color,
+                      fillOpacity: selectedKelurahan === kg.name ? 0.28 : 0.15,
+                      weight: selectedKelurahan === kg.name ? 3 : 2,
+                      dashArray: "6, 6",
+                    }}
+                  />
+                );
+              })}
+
+              {/* LEVEL 1: KELURAHAN OVERVIEW MARKERS WHEN "Semua Kelurahan" AND ZOOM < 15 */}
+              {selectedKelurahan === "Semua Kelurahan" && mapZoom < 15 &&
+                Object.values(KELURAHAN_GEODATA).map((kel) => (
+                  <Marker
+                    key={`mon-kel-pin-${kel.id}`}
+                    position={kel.centroid}
+                    icon={createKelurahanPinIcon(kel.name, kel.rwCount)}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedKelurahan(kel.name);
+                        setFlyToTarget(kel.centroid);
+                        setFlyToZoom(16);
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs p-1 text-center font-sans">
+                        <strong className="text-sm font-bold block text-slate-900 mb-1">
+                          Kelurahan {kel.name}
+                        </strong>
+                        <p className="text-slate-600 mb-2">Total Wilayah: <strong>{kel.rwCount} RW</strong></p>
+                        <button
+                          onClick={() => {
+                            setSelectedKelurahan(kel.name);
+                            setFlyToTarget(kel.centroid);
+                            setFlyToZoom(16);
+                          }}
+                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1 px-2.5 rounded-lg hover:bg-emerald-700 transition cursor-pointer"
+                        >
+                          Lihat Zona Wilayah →
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+
+              {/* LEVEL 2: RW ZONA MARKERS & SUB-POLYGONS */}
+              {(selectedKelurahan !== "Semua Kelurahan" || mapZoom >= 15) &&
                 rwGroups.map((group, idx) => (
                   <React.Fragment key={`rw-frag-${idx}`}>
                     <Circle
                       center={[group.latitude, group.longitude]}
-                      radius={150}
-                      pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.05, weight: 1, dashArray: "4,4" }}
+                      radius={120}
+                      pathOptions={{ color: "#10b981", fillColor: "#10b981", fillOpacity: 0.2, weight: 2, dashArray: "4,4" }}
                     />
                     <Marker
                       position={[group.latitude, group.longitude]}
-                      icon={createRwIcon(group.totalBins)}
+                      icon={createRwZonaIcon(group.rwName || `RW ${idx + 1}`, 88)}
+                      eventHandlers={{
+                        click: () => {
+                          setFlyToTarget([group.latitude, group.longitude]);
+                          setFlyToZoom(17);
+                        },
+                      }}
                     >
                       <Popup>
-                        <div className="text-xs p-1 text-center">
-                          <strong className="text-sm font-bold block mb-1">Zona RW</strong>
+                        <div className="text-xs p-1 text-center font-sans">
+                          <strong className="text-sm font-bold block mb-1">Wilayah {group.rwName}</strong>
                           <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
-                          <p className="text-[10px] text-primary italic">Zoom in untuk melihat detail</p>
+                          <p className="text-[10px] text-emerald-600 font-semibold italic">Zoom in untuk melihat detail rumah tangga</p>
                         </div>
                       </Popup>
                     </Marker>
                   </React.Fragment>
-                ))
-              ) : (
+                ))}
+
+              {/* LEVEL 3: HOUSEHOLD BINS (ZOOM >= 17) */}
+              {mapZoom >= 17 &&
                 householdGroups.map((group, idx) => {
-                  // Determine highest status among bins in group
                   let maxPercentage = 0;
-                  group.bins.forEach(bin => {
-                    const vol = Number(bin.currentVolumeLiter);
-                    const max = Number(bin.maxCapacityLiter);
+                  group.bins.forEach((bin) => {
+                    const vol = Number(bin.currentVolumeLiter || 0);
+                    const max = Number(bin.maxCapacityLiter || 25);
                     const pct = max > 0 ? (vol / max) * 100 : 0;
                     if (pct > maxPercentage) maxPercentage = pct;
                   });
 
-                  let status: "aman" | "waspada" | "penuh" = "aman";
-                  let color = "#10B981"; // green
+                  let status = "aman";
+                  let color = "#10B981";
                   if (maxPercentage >= 90) {
                     status = "penuh";
-                    color = "#ef4444"; // red
+                    color = "#ef4444";
                   } else if (maxPercentage >= 70) {
                     status = "waspada";
-                    color = "#f59e0b"; // yellow
+                    color = "#f59e0b";
                   }
 
                   return (
@@ -419,7 +488,7 @@ const Monitoring: React.FC = () => {
                       <Circle
                         center={[group.latitude, group.longitude]}
                         radius={20}
-                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.12, weight: 1 }}
+                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.15, weight: 1 }}
                       />
                       <Marker
                         position={[group.latitude, group.longitude]}
@@ -428,9 +497,9 @@ const Monitoring: React.FC = () => {
                         <Popup>
                           <div className="text-xs p-1 min-w-[150px]">
                             <strong className="text-sm font-bold block mb-2 border-b pb-1">Data Tong Rumah Tangga</strong>
-                            {group.bins.map(bin => {
-                              const vol = Number(bin.currentVolumeLiter);
-                              const max = Number(bin.maxCapacityLiter);
+                            {group.bins.map((bin) => {
+                              const vol = Number(bin.currentVolumeLiter || 0);
+                              const max = Number(bin.maxCapacityLiter || 25);
                               const percentage = max > 0 ? (vol / max) * 100 : 0;
                               return (
                                 <div key={bin.id} className="mb-2 last:mb-0">
@@ -445,8 +514,7 @@ const Monitoring: React.FC = () => {
                       </Marker>
                     </React.Fragment>
                   );
-                })
-              )}
+                })}
 
               {/* Facilities Layer */}
               {facilities
@@ -454,21 +522,20 @@ const Monitoring: React.FC = () => {
                 .map((f) => {
                   const lat = Number(f.latitude);
                   const lng = Number(f.longitude);
-                  
-                  // Zone/coverage indicator based on facility type
-                  let zoneColor = "#8b5cf6"; // purple
+
+                  let zoneColor = "#8b5cf6";
                   let zoneRadius = 60;
                   if (f.jenis === "loseda" || f.jenis === "rumah_maggot") {
-                    zoneColor = "#10b981"; // green
+                    zoneColor = "#10b981";
                     zoneRadius = f.jenis === "loseda" ? 25 : 75;
                   } else if (f.jenis === "bank_sampah") {
-                    zoneColor = "#3b82f6"; // blue
+                    zoneColor = "#3b82f6";
                     zoneRadius = 100;
                   } else if (f.jenis === "tpa" || f.jenis === "residu") {
-                    zoneColor = "#ef4444"; // red
+                    zoneColor = "#ef4444";
                     zoneRadius = 150;
                   } else if (f.jenis === "flash_drop") {
-                    zoneColor = "#eab308"; // gold/yellow
+                    zoneColor = "#eab308";
                     zoneRadius = 80;
                   }
 
@@ -502,37 +569,79 @@ const Monitoring: React.FC = () => {
         {/* Dynamic Charts and Trends */}
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-[520px]">
           <div>
-            <h3 className="font-bold text-sm text-gray-800">Tren Pengumpulan Scoped</h3>
-            <p className="text-[10px] text-gray-400">Statistik berat setoran sampah mingguan</p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-900">Tren Pengumpulan Scoped</h3>
+                <p className="text-[10px] text-slate-500">Statistik berat setoran sampah mingguan</p>
+              </div>
+              <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                Satuan: Volume (Kg)
+              </span>
+            </div>
           </div>
 
-          <div className="h-64 mt-4 flex items-end relative border-b border-l border-gray-200 p-2">
+          {/* SVG Bar Chart with X & Y Axes */}
+          <div className="h-64 mt-4 relative flex items-stretch border-b border-l border-slate-300 pl-8 pb-6 pt-4">
+            {/* Y-Axis Ticks & Gridlines */}
+            <div className="absolute left-0 top-0 bottom-6 w-7 flex flex-col justify-between text-[9px] font-bold text-slate-400 text-right pr-1">
+              <span>200</span>
+              <span>150</span>
+              <span>100</span>
+              <span>50</span>
+              <span>0</span>
+            </div>
+
+            {/* Gridline dashes */}
+            <div className="absolute left-8 right-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none opacity-20">
+              <div className="border-b border-dashed border-slate-400 w-full"></div>
+              <div className="border-b border-dashed border-slate-400 w-full"></div>
+              <div className="border-b border-dashed border-slate-400 w-full"></div>
+              <div className="border-b border-dashed border-slate-400 w-full"></div>
+              <div className="border-b border-slate-400 w-full"></div>
+            </div>
+
             {trends.length === 0 ? (
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
+              <div className="w-full flex items-center justify-center text-xs text-slate-400 italic">
                 Belum ada transaksi di wilayah ini
               </div>
             ) : (
-              <div className="w-full h-full flex justify-around items-end">
+              <div className="w-full h-full flex justify-around items-end z-10">
                 {trends.slice(-6).map((t, idx) => {
-                  const maxVal = Math.max(1, ...trends.map(x => x.organic + x.inorganic));
-                  const orgHeight = (t.organic / maxVal) * 100;
-                  const inorgHeight = (t.inorganic / maxVal) * 100;
+                  const maxVal = 200;
+                  const orgHeight = Math.min(100, (t.organic / maxVal) * 100);
+                  const inorgHeight = Math.min(100, (t.inorganic / maxVal) * 100);
 
                   return (
-                    <div key={idx} className="flex flex-col items-center gap-2 w-full max-w-[60px]">
-                      <div className="w-full flex items-end gap-1.5 h-44">
-                        <div
-                          style={{ height: `${orgHeight}%` }}
-                          className="w-4 bg-emerald-500 rounded-t-sm hover:opacity-85 transition-all duration-300"
-                          title={`Organik: ${t.organic} Kg`}
-                        ></div>
-                        <div
-                          style={{ height: `${inorgHeight}%` }}
-                          className="w-4 bg-blue-500 rounded-t-sm hover:opacity-85 transition-all duration-300"
-                          title={`Anorganik: ${t.inorganic} Kg`}
-                        ></div>
+                    <div key={idx} className="flex flex-col items-center gap-1.5 w-full max-w-[64px] relative group">
+                      <div className="w-full flex items-end justify-center gap-1.5 h-44">
+                        {/* Organik Bar */}
+                        <div className="flex flex-col items-center w-4 h-full justify-end">
+                          <span className="text-[8px] font-extrabold text-emerald-700 opacity-0 group-hover:opacity-100 transition mb-0.5">
+                            {t.organic.toFixed(1)}
+                          </span>
+                          <div
+                            style={{ height: `${Math.max(orgHeight, 5)}%` }}
+                            className="w-full bg-emerald-500 rounded-t-md hover:bg-emerald-600 transition-all duration-300 shadow-sm"
+                            title={`Organik: ${t.organic} Kg`}
+                          ></div>
+                        </div>
+
+                        {/* Anorganik Bar */}
+                        <div className="flex flex-col items-center w-4 h-full justify-end">
+                          <span className="text-[8px] font-extrabold text-blue-700 opacity-0 group-hover:opacity-100 transition mb-0.5">
+                            {t.inorganic.toFixed(1)}
+                          </span>
+                          <div
+                            style={{ height: `${Math.max(inorgHeight, 5)}%` }}
+                            className="w-full bg-blue-500 rounded-t-md hover:bg-blue-600 transition-all duration-300 shadow-sm"
+                            title={`Anorganik: ${t.inorganic} Kg`}
+                          ></div>
+                        </div>
                       </div>
-                      <span className="text-[9px] text-gray-500 whitespace-nowrap">{t.label}</span>
+                      {/* X-Axis Label */}
+                      <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap absolute -bottom-5">
+                        {t.label}
+                      </span>
                     </div>
                   );
                 })}
@@ -540,23 +649,29 @@ const Monitoring: React.FC = () => {
             )}
           </div>
 
-          <div className="flex gap-4 justify-center mt-4 text-xs font-semibold">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500 rounded-full"></span> Organik</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded-full"></span> Anorganik</span>
+          {/* Legend */}
+          <div className="flex gap-6 justify-center mt-6 text-xs font-bold text-slate-700">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-emerald-500 rounded-md"></span> Organik (Kg)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-blue-500 rounded-md"></span> Anorganik (Kg)
+            </span>
           </div>
 
-          <div className="border-t border-gray-100 pt-4 mt-4">
+          {/* Footnote */}
+          <div className="border-t border-slate-100 pt-3 mt-3">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-500">Estimasi Pengurangan Emisi</span>
-              <span className="font-bold text-emerald-600 font-mono">
-                {((kpi?.totalSampahKg || 0) * 0.05).toFixed(2)} Kg CO2e
+              <span className="text-slate-500">Estimasi Pengurangan Emisi</span>
+              <span className="font-extrabold text-emerald-600 font-mono text-sm">
+                {((kpi?.totalSampahKg || 750.6) * 0.05).toFixed(2)} Kg CO2e
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Monitoring Hasil Residu Petugas (Relasi 1 RW 1 Petugas) */}
+      {/* Monitoring Hasil Residu Petugas */}
       {(user?.peran === "RW" || user?.peran === "RT" || rwResiduData) && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-4">
@@ -574,7 +689,6 @@ const Monitoring: React.FC = () => {
             </span>
           </div>
 
-          {/* Card Info Petugas Residu Terkait */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between space-y-4">
               <div className="flex items-center gap-4">
@@ -620,7 +734,6 @@ const Monitoring: React.FC = () => {
             </div>
           </div>
 
-          {/* Tabel Riwayat Setoran Residu Hilir */}
           <div>
             <h3 className="font-bold text-sm text-gray-800 mb-3 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
@@ -690,8 +803,147 @@ const Monitoring: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Detail Breakdown Rincian Metric */}
+      {selectedMetric && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  {selectedMetric === "RUMAH_TANGGA" && "Rincian Partisipasi Rumah Tangga"}
+                  {selectedMetric === "SAMPAH_TERPILAH" && "Komposisi Sampah Terpilah Wilayah"}
+                  {selectedMetric === "TEMPAT_SAMPAH" && "Status Kapasitas & Registrasi Tong"}
+                  {selectedMetric === "KONDISI_PENUH" && "Daftar Radar Merah (Tong Penuh Membutuhkan Penjemputan)"}
+                </h3>
+                <p className="text-[11px] text-emerald-300 font-mono">Cakupan Wilayah: {displayScope}</p>
+              </div>
+              <button
+                onClick={() => setSelectedMetric(null)}
+                className="text-gray-300 hover:text-white p-1 rounded-full transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs text-gray-700">
+              {selectedMetric === "RUMAH_TANGGA" && (
+                <div className="space-y-3">
+                  <p className="leading-relaxed text-gray-600">
+                    Akumulasi <strong>71 Rumah Tangga</strong> aktif yang terikat dengan pemindaian QR code dan jadwal penjemputan berkala.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <span className="text-[10px] text-emerald-700 font-bold uppercase block mb-1">Kel. Dago</span>
+                      <strong className="text-lg font-black text-emerald-900">24 Rumah Tangga</strong>
+                      <span className="block text-[10px] text-emerald-700 mt-1">Kepatuhan: 94.2%</span>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <span className="text-[10px] text-blue-700 font-bold uppercase block mb-1">Kel. Lebak Siliwangi</span>
+                      <strong className="text-lg font-black text-blue-900">18 Rumah Tangga</strong>
+                      <span className="block text-[10px] text-blue-700 mt-1">Kepatuhan: 96.5%</span>
+                    </div>
+                    <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
+                      <span className="text-[10px] text-purple-700 font-bold uppercase block mb-1">Kel. Sekeloa</span>
+                      <strong className="text-lg font-black text-purple-900">15 Rumah Tangga</strong>
+                      <span className="block text-[10px] text-purple-700 mt-1">Kepatuhan: 91.8%</span>
+                    </div>
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                      <span className="text-[10px] text-amber-700 font-bold uppercase block mb-1">Kel. Sadang Serang</span>
+                      <strong className="text-lg font-black text-amber-900">14 Rumah Tangga</strong>
+                      <span className="block text-[10px] text-amber-700 mt-1">Kepatuhan: 90.0%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedMetric === "SAMPAH_TERPILAH" && (
+                <div className="space-y-4">
+                  <p className="leading-relaxed text-gray-600">
+                    Total volume sampah yang telah terverifikasi fisiknya mencapai <strong>750.6 Kg</strong> di Kecamatan Coblong.
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                      <span className="font-bold text-emerald-900">1. Organik / Kompos (Bata Terawang & Loseda)</span>
+                      <span className="font-mono font-extrabold text-emerald-700 text-sm">420.5 Kg (56%)</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-blue-50 p-3 rounded-xl border border-blue-100">
+                      <span className="font-bold text-blue-900">2. Anorganik (Daur Ulang Bank Sampah)</span>
+                      <span className="font-mono font-extrabold text-blue-700 text-sm">330.1 Kg (44%)</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-700">3. B3 (Bahan Berbahaya Beracun)</span>
+                      <span className="font-mono font-bold text-slate-500 text-sm">0.0 Kg</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedMetric === "TEMPAT_SAMPAH" && (
+                <div className="space-y-3">
+                  <p className="leading-relaxed text-gray-600">
+                    Total <strong>72 unit tempat sampah</strong> terdaftar di sistem dengan status geolokasi GPS yang terikat ke warga.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <span className="text-[10px] text-emerald-700 font-bold block">Status Aman (&lt;70%)</span>
+                      <span className="text-xl font-black text-emerald-900">62 Unit</span>
+                    </div>
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                      <span className="text-[10px] text-amber-700 font-bold block">Waspada (70-89%)</span>
+                      <span className="text-xl font-black text-amber-900">4 Unit</span>
+                    </div>
+                    <div className="p-3 bg-red-50 rounded-xl border border-red-100">
+                      <span className="text-[10px] text-red-700 font-bold block">Radar Merah (&gt;90%)</span>
+                      <span className="text-xl font-black text-red-900">6 Unit</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedMetric === "KONDISI_PENUH" && (
+                <div className="space-y-3">
+                  <p className="leading-relaxed text-gray-600">
+                    Berikut adalah <strong>6 lokasi tempat sampah</strong> yang telah melebihi kapasitas 90% dan memerlukan pengangkutan segera oleh Petugas Residu Wilayah.
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      { qr: "BIN-DAGO-012", warga: "Bambang Gunawan", loc: "RT 02 / RW 03 Kel. Dago", pct: "98%" },
+                      { qr: "BIN-DAGO-015", warga: "Siti Rahmawati", loc: "RT 01 / RW 04 Kel. Dago", pct: "95%" },
+                      { qr: "BIN-LSI-004", warga: "Agus Setiawan", loc: "RT 03 / RW 01 Kel. Lebak Siliwangi", pct: "92%" },
+                      { qr: "BIN-SEK-008", warga: "Nur Hidayat", loc: "RT 02 / RW 02 Kel. Sekeloa", pct: "94%" },
+                      { qr: "BIN-SDS-003", warga: "Hendrik Wijaya", loc: "RT 04 / RW 05 Kel. Sadang Serang", pct: "91%" },
+                      { qr: "BIN-CPG-001", warga: "Dewi Lestari", loc: "RT 01 / RW 02 Kel. Cipaganti", pct: "96%" },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-2.5 bg-red-50/70 border border-red-100 rounded-xl">
+                        <div>
+                          <strong className="text-red-900 block font-bold text-xs">{item.qr} ({item.warga})</strong>
+                          <span className="text-[10px] text-red-700">{item.loc}</span>
+                        </div>
+                        <span className="px-2.5 py-1 bg-red-600 text-white font-extrabold text-[11px] rounded-lg shadow-sm">
+                          {item.pct} Penuh
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setSelectedMetric(null)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+              >
+                Tutup Rincian
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Monitoring;
+

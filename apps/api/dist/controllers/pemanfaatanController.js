@@ -39,7 +39,9 @@ export class PemanfaatanController {
                 volumePupukDipakaiKg: volumePupukDipakaiKg ? parseFloat(volumePupukDipakaiKg) : undefined,
                 bibitTelurGram: bibitTelurGram ? parseFloat(bibitTelurGram) : undefined,
                 hasilKasgotKg: hasilKasgotKg ? parseFloat(hasilKasgotKg) : undefined,
-                volumeBioaktivatorLiter: volumeBioaktivatorLiter ? parseFloat(volumeBioaktivatorLiter) : undefined,
+                volumeBioaktivatorLiter: volumeBioaktivatorLiter
+                    ? parseFloat(volumeBioaktivatorLiter)
+                    : undefined,
                 masaFermentasiHari: masaFermentasiHari ? parseInt(masaFermentasiHari, 10) : undefined,
             });
             res.status(201).json({ success: true, data: result });

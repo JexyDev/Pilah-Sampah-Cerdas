@@ -22,7 +22,18 @@ export class UserService {
             ];
         }
         if (roleName) {
-            whereClause.role = { name: roleName };
+            if (roleName === "PENGURUS_RW_RT") {
+                // Tab "Pengurus RW/RT" → tampilkan RW dan RT
+                whereClause.role = { name: { in: ["RW", "RT"] } };
+            }
+            else if (roleName === "EKSEKUTIF") {
+                // Tab umbrella eksekutif → tampilkan semua admin
+                whereClause.role = { name: { in: ["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"] } };
+            }
+            else {
+                // Tab spesifik (CAMAT, LURAH, ADMIN_DLH, SUPER_ADMIN, dll) → query persis
+                whereClause.role = { name: roleName };
+            }
         }
         if (status) {
             whereClause.status = status;
@@ -56,17 +67,28 @@ export class UserService {
                 });
             }
             const totalPoin = u.pointHistory.reduce((sum, p) => sum + p.points, 0);
+            let pendampingKkn = null;
+            if (u.bins && u.bins.length > 0) {
+                const boundBin = u.bins.find((b) => b.registeredByStudent);
+                if (boundBin && boundBin.registeredByStudent) {
+                    pendampingKkn = {
+                        id: boundBin.registeredByStudent.id,
+                        name: boundBin.registeredByStudent.name,
+                        phone: boundBin.registeredByStudent.phone,
+                    };
+                }
+            }
             return {
                 id: u.id,
                 name: u.name,
                 email: u.phone,
                 phone: u.phone,
                 role: u.role.name,
-                nik: "-",
                 status: u.status,
                 wilayah,
                 setoran: parseFloat(totalSetoranKg.toFixed(1)),
                 totalPoin,
+                pendampingKkn,
                 createdAt: u.createdAt,
                 studentProfile: u.studentProfile
                     ? {
@@ -79,6 +101,12 @@ export class UserService {
                         assignedPolygonId: u.studentProfile.assignedPolygonId,
                         assignedPolygonName: u.studentProfile.assignedPolygon?.name,
                         whitelistStatus: u.studentProfile.whitelistStatus,
+                        kelompok: u.studentProfile.kelompok
+                            ? {
+                                id: u.studentProfile.kelompok.id,
+                                name: u.studentProfile.kelompok.name,
+                            }
+                            : null,
                     }
                     : null,
             };
@@ -158,7 +186,7 @@ export class UserService {
         };
     }
     async updateUser(id, data, currentUser) {
-        const { name, email, password, roleName, nik, status, rtRwId, studentProfile } = data;
+        const { name, email, password, roleName, status, rtRwId, studentProfile } = data;
         const user = await userRepository.findById(id);
         if (!user) {
             throw new Error("USER_NOT_FOUND");
@@ -241,6 +269,13 @@ export class UserService {
                             ? parseInt(studentProfile.assignedPolygonId)
                             : null,
                     },
+                });
+            }
+            if ((u.role.name === "PETUGAS_RESIDU" || roleName === "PETUGAS_RESIDU") && status) {
+                const pStatus = status === "Aktif" || status === "ACTIVE" ? "APPROVED" : "REJECTED";
+                await tx.petugasResidu.updateMany({
+                    where: { userId: id },
+                    data: { whitelistStatus: pStatus },
                 });
             }
             return u;

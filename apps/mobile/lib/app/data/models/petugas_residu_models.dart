@@ -130,7 +130,7 @@ class ResiduBinPickup extends Equatable {
       kelurahan: json['kelurahan']?.toString() ?? '',
       rtRw: json['rtRw']?.toString() ?? '',
       volumePercentage: (json['volumePercent'] as num?)?.toDouble() ?? (json['volumePercentage'] as num?)?.toDouble() ?? 80.0,
-      isPickedUp: json['isPickedUp'] as bool? ?? (json['status']?.toString().toUpperCase() == 'PICKED_UP') ?? false,
+      isPickedUp: json['isPickedUp'] as bool? ?? (json['status']?.toString().toUpperCase() == 'PICKED_UP'),
       lastPickedUpTime: DateTime.tryParse(json['lastPickedUpTime']?.toString() ?? ''),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),

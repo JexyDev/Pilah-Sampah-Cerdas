@@ -42,7 +42,9 @@ export const kelompokController = {
             console.error("[KelompokController] create error:", error);
             res.status(500).json({
                 success: false,
-                message: error.code === "P2002" ? "Nama kelompok sudah digunakan" : error.message || "Failed to create kelompok",
+                message: error.code === "P2002"
+                    ? "Nama kelompok sudah digunakan"
+                    : error.message || "Failed to create kelompok",
             });
         }
     },
@@ -57,7 +59,9 @@ export const kelompokController = {
             console.error("[KelompokController] update error:", error);
             res.status(500).json({
                 success: false,
-                message: error.code === "P2002" ? "Nama kelompok sudah digunakan" : error.message || "Failed to update kelompok",
+                message: error.code === "P2002"
+                    ? "Nama kelompok sudah digunakan"
+                    : error.message || "Failed to update kelompok",
             });
         }
     },

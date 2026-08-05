@@ -786,6 +786,105 @@ export class SuperAdminService {
 
     return deleted;
   }
+
+  /**
+   * Check and purge duplicate or mock dummy user accounts sharing identical phone numbers or invalid dummy profiles.
+   */
+  async checkAndPurgeDuplicateUsers(adminUserId: string) {
+    const allUsers = await prisma.user.findMany({
+      select: { id: true, name: true, phone: true, createdAt: true, roleId: true },
+    });
+
+    const phoneMap = new Map<string, string[]>();
+    for (const u of allUsers) {
+      const cleanPhone = u.phone.trim();
+      if (!phoneMap.has(cleanPhone)) {
+        phoneMap.set(cleanPhone, []);
+      }
+      phoneMap.get(cleanPhone)!.push(u.id);
+    }
+
+    const duplicateUserIds: string[] = [];
+    phoneMap.forEach((ids) => {
+      if (ids.length > 1) {
+        // Keep first registered, mark rest as duplicate
+        duplicateUserIds.push(...ids.slice(1));
+      }
+    });
+
+    if (duplicateUserIds.length > 0) {
+      await prisma.user.deleteMany({
+        where: { id: { in: duplicateUserIds } },
+      });
+
+      await prisma.auditTrail.create({
+        data: {
+          action: "PURGE_DUPLICATE_USERS",
+          userId: adminUserId,
+          newValue: { purgedCount: duplicateUserIds.length, userIds: duplicateUserIds },
+        },
+      });
+    }
+
+    return {
+      totalInspected: allUsers.length,
+      purgedCount: duplicateUserIds.length,
+      purgedUserIds: duplicateUserIds,
+    };
+  }
+
+  /**
+   * Get aggregate Circular Economy utilization report (Pakan Maggot, Kompos Organik, Buruan Sae / Hidroponik)
+   */
+  async getCircularEconomyReport() {
+    const pemanfaatanLogs = await prisma.pemanfaatan.findMany({
+      include: { rw: { include: { kelurahan: true } } },
+    });
+
+    const facilityLogs = await prisma.facilityProductionLog.findMany({
+      include: { facility: true },
+    });
+
+    let totalMaggotKg = 0;
+    let totalKomposKg = 0;
+    let totalBuruanSaeKg = 0;
+
+    for (const log of pemanfaatanLogs) {
+      const prog = (log.program || "").toLowerCase();
+      const val = Number(log.hasil) || 0;
+      if (prog.includes("maggot")) {
+        totalMaggotKg += val;
+      } else if (prog.includes("kompos")) {
+        totalKomposKg += val;
+      } else if (prog.includes("sae") || prog.includes("hidroponik") || prog.includes("kebun")) {
+        totalBuruanSaeKg += val;
+      }
+    }
+
+    for (const flog of facilityLogs) {
+      const type = (flog.jenisOutput || "").toLowerCase();
+      const val = Number(flog.outputKg) || 0;
+      if (type.includes("maggot")) {
+        totalMaggotKg += val;
+      } else if (type.includes("kompos")) {
+        totalKomposKg += val;
+      } else {
+        totalBuruanSaeKg += val;
+      }
+    }
+
+    return {
+      summary: {
+        pakanMaggotKg: Math.round(totalMaggotKg * 100) / 100,
+        komposOrganikKg: Math.round(totalKomposKg * 100) / 100,
+        buruanSaeHidroponikKg: Math.round(totalBuruanSaeKg * 100) / 100,
+        totalUtilizedWasteKg: Math.round((totalMaggotKg + totalKomposKg + totalBuruanSaeKg) * 100) / 100,
+      },
+      pemanfaatanDetails: pemanfaatanLogs,
+      facilityProductionDetails: facilityLogs,
+    };
+  }
 }
 
 export const superAdminService = new SuperAdminService();
+

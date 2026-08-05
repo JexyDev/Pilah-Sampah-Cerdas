@@ -12,6 +12,12 @@ import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, Refre
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
+import {
+  KELURAHAN_GEODATA,
+  createKknMhsIcon as createStudentIcon,
+  createHouseIcon,
+} from "../../constants/coblongGeoData";
+
 // Fix Leaflet icons in Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -20,21 +26,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom Icons for Map markers
-const createStudentIcon = (status: "in_radius" | "out_radius") => {
-  const bgColor = status === "in_radius" ? "#10b981" : "#ef4444"; // green vs red
-
-  return L.divIcon({
-    className: "custom-student-icon",
-    html: `
-      <div style="background-color: ${bgColor}; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-      </div>
-    `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-};
 
 const createActivityMarkerIcon = () => {
   return L.divIcon({

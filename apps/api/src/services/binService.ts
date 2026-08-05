@@ -1061,7 +1061,7 @@ export class BinService {
         .createNotification(
           request.userId,
           "Pengajuan Disetujui",
-          `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong ${request.bin.qrCode} menjadi 0%.`
+          `Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tempat sampah ${request.bin.qrCode} menjadi 0%.`
         )
         .catch(() => {});
     } else if (status === "REJECTED") {
@@ -1070,7 +1070,7 @@ export class BinService {
         .createNotification(
           request.userId,
           "Pengajuan Ditolak",
-          `Foto bukti pengosongan tong ${request.bin.qrCode} Anda ditolak oleh petugas. Silakan ajukan kembali.`
+          `Foto bukti pengosongan tempat sampah ${request.bin.qrCode} Anda ditolak oleh petugas. Silakan ajukan kembali.`
         )
         .catch(() => {});
     } else if (status === "ON_PROGRESS") {
@@ -1079,7 +1079,7 @@ export class BinService {
         .createNotification(
           request.userId,
           "Pengangkutan Sedang Berlangsung",
-          `Petugas sedang menuju lokasi Anda untuk mengosongkan tong ${request.bin.qrCode}.`
+          `Petugas sedang menuju lokasi Anda untuk mengosongkan tempat sampah ${request.bin.qrCode}.`
         )
         .catch(() => {});
     }

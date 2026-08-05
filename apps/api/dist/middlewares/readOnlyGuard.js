@@ -7,6 +7,15 @@
 import { verifyAccessToken } from "../utils/jwtUtils.js";
 export const readOnlyGuard = (req, res, next) => {
     try {
+        // 1. Read operations (GET, HEAD, OPTIONS) are ALWAYS permitted
+        if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+            return next();
+        }
+        // 2. Auth routes (/auth/*) are ALWAYS permitted for all users/roles
+        const reqUrl = (req.originalUrl || req.url || req.path || "").toLowerCase();
+        if (reqUrl.includes("/auth/") || reqUrl.endsWith("/auth")) {
+            return next();
+        }
         let token = "";
         // 1. Try to get token from HttpOnly Cookie (Web Client)
         if (req.cookies && req.cookies.accessToken) {
@@ -24,8 +33,17 @@ export const readOnlyGuard = (req, res, next) => {
         if (token) {
             try {
                 const decoded = verifyAccessToken(token);
-                const role = decoded.role;
-                if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH" || role === "RT") {
+                const normalizeRole = (r) => {
+                    if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(r))
+                        return "ADMIN_DLH";
+                    if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r))
+                        return "CAMAT";
+                    if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r))
+                        return "LURAH";
+                    return r;
+                };
+                const role = normalizeRole(decoded.role);
+                if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
                     const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
                     if (writeMethods.includes(req.method)) {
                         // Exception: ADMIN_DLH can resolve discrepancy
@@ -46,10 +64,16 @@ export const readOnlyGuard = (req, res, next) => {
                             (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") &&
                             (req.originalUrl.includes("/bins/generate-qr") ||
                                 req.originalUrl.includes("/bins/qr-batch"));
+                        // Exception: Any user can manage their notification inbox & profile/password settings
+                        const isUserNotificationAction = req.originalUrl.includes("/notifications") ||
+                            req.originalUrl.includes("/auth/profile") ||
+                            req.originalUrl.includes("/auth/password") ||
+                            req.originalUrl.includes("/auth/change-password");
                         if (!isResolveDiscrepancy &&
                             !isRegisterStaff &&
                             !isKknApproval &&
-                            !isQrBatchManagement) {
+                            !isQrBatchManagement &&
+                            !isUserNotificationAction) {
                             res.status(403).json({
                                 error: "FORBIDDEN",
                                 message: `Role ${role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,

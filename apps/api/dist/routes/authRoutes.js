@@ -64,6 +64,8 @@ const router = Router();
  *         description: Unauthorized (Invalid credentials)
  */
 router.post("/login", loginRateLimiter, authController.login);
+router.post("/request-otp", authController.requestOtp);
+router.post("/verify-otp", authController.verifyOtp);
 /**
  * @swagger
  * /api/v1/auth/refresh:
@@ -202,6 +204,7 @@ router.put("/profile", authMiddleware, authController.updateProfile);
  *         description: User not found
  */
 router.put("/password", authMiddleware, authController.updatePassword);
+router.post("/change-password", authMiddleware, authController.changePassword);
 router.post("/register/admin-dlh", authMiddleware, roleMiddleware(["SUPER_ADMIN"]), authController.registerAdminDlh);
 router.post("/register/camat", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerCamat);
 router.post("/register/lurah", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerLurah);
@@ -210,6 +213,7 @@ router.post("/register/rt", authMiddleware, roleMiddleware(["RW", "ADMIN_DLH"]),
 router.post("/register/dpl", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerDpl);
 router.post("/register/petugas-residu", authController.registerPetugasResidu);
 router.post("/register/warga", authController.registerWarga);
+router.post("/register", authController.registerWarga);
 router.post("/register/mahasiswa-kkn", authController.registerKkn);
 router.get("/kkn/pending", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.getKknPending);
 router.patch("/kkn/whitelist/:id", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.approveKkn);

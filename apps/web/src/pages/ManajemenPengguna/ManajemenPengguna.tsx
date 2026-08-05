@@ -316,6 +316,7 @@ const ManajemenPengguna: React.FC = () => {
         {[
           { key: "Semua", label: "Semua Peran", icon: "🌐" },
           { key: "EKSEKUTIF", label: "Admin & Eksekutif", icon: "🏢" },
+          { key: "DPL", label: "DPL / Pimpinan Panitia", icon: "👨‍🏫" },
           { key: "CAMAT", label: "Camat", icon: "🏛️" },
           { key: "LURAH", label: "Lurah", icon: "🏢" },
           { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },
@@ -362,7 +363,7 @@ const ManajemenPengguna: React.FC = () => {
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
           <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Peran Terfilter</p>
-          <p className="text-base font-extrabold text-blue-700 mt-1 truncate">{selectedRole === "Semua" ? "Seluruh Role (9)" : selectedRole.replace("_", " ")}</p>
+          <p className="text-base font-extrabold text-blue-700 mt-1 truncate">{selectedRole === "Semua" ? "Seluruh Role (10)" : selectedRole.replace("_", " ")}</p>
         </div>
       </div>
 
@@ -384,11 +385,13 @@ const ManajemenPengguna: React.FC = () => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
             >
               <option value="Semua">Semua Peran</option>
               <option value="SUPER_ADMIN">Super Admin</option>
               <option value="ADMIN_DLH">Admin DLH</option>
+              <option value="DPL">Dosen Pembimbing (DPL)</option>
+              <option value="PEMIMPIN">Pimpinan & Panitia Taskforce</option>
               <option value="CAMAT">Camat</option>
               <option value="LURAH">Lurah</option>
               <option value="RW">RW</option>
@@ -397,6 +400,7 @@ const ManajemenPengguna: React.FC = () => {
               <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
             </select>
           </div>
+
           <div>
             <select
               value={selectedStatus}
@@ -780,6 +784,8 @@ const ManajemenPengguna: React.FC = () => {
                 >
                   <option value="SUPER_ADMIN">Super Admin</option>
                   <option value="ADMIN_DLH">Admin DLH</option>
+                  <option value="DPL">Dosen Pembimbing (DPL)</option>
+                  <option value="PEMIMPIN">Pimpinan & Panitia Taskforce</option>
                   <option value="CAMAT">Camat</option>
                   <option value="LURAH">Lurah</option>
                   <option value="RW">RW</option>
@@ -787,6 +793,7 @@ const ManajemenPengguna: React.FC = () => {
                   <option value="WARGA">Warga</option>
                   <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
                 </select>
+
               </div>
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">

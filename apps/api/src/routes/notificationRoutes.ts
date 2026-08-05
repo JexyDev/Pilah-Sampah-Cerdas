@@ -314,9 +314,9 @@ router.get("/", authMiddleware, async (req, res) => {
               );
               formattedNotifications.unshift({
                 id: `my-crit-bin-${b.id}`,
-                type: "TONG_PENUH",
-                title: "Kapasitas Tong Kritis",
-                desc: `Tong ${b.category?.name || ""} Anda hampir penuh (${pct}%).`,
+                type: "TEMPAT_SAMPAH_PENUH",
+                title: "Kapasitas Tempat Sampah Kritis",
+                desc: `Tempat sampah ${b.category?.name || ""} Anda hampir penuh (${pct}%).`,
                 isRead: false,
                 time: "Status Real-time",
                 icon: "warning",

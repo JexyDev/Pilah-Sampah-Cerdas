@@ -88,5 +88,27 @@ export class HouseholdController {
             });
         }
     }
+    /**
+     * Get bins status summary for current user (Beranda Warga)
+     */
+    async getBinsSummary(req, res) {
+        try {
+            const userId = req.user.userId;
+            const summary = await householdService.getBinsSummary(userId);
+            res.status(200).json({
+                success: true,
+                message: "Berhasil mengambil ringkasan tempat sampah",
+                data: summary,
+            });
+        }
+        catch (error) {
+            console.error("[HouseholdController] getBinsSummary error:", error);
+            res.status(500).json({
+                success: false,
+                error: "INTERNAL_SERVER_ERROR",
+                message: "Gagal mengambil ringkasan tempat sampah",
+            });
+        }
+    }
 }
 export const householdController = new HouseholdController();

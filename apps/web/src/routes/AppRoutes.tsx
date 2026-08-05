@@ -39,6 +39,7 @@ import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
 import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
 import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
 import AktivitasMonitoring from "../pages/SuperAdmin/AktivitasMonitoring";
+import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
 import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
 import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
 import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
@@ -48,7 +49,7 @@ import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
 import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
-import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
+import PanduanPage from "../pages/Panduan/PanduanPage";
 import DplDashboardPage from "../pages/dpl/DplDashboardPage";
 
 // Protected Route Wrapper
@@ -199,11 +200,12 @@ const AppRoutes: React.FC = () => {
         <Route
           path="dashboard-dpl"
           element={
-            <ProtectedRoute allowedRoles={["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN", "WARGA", "RW", "LURAH", "CAMAT"]}>
               <DplDashboardPage />
             </ProtectedRoute>
           }
         />
+        <Route path="panduan" element={<PanduanPage />} />
         <Route
           path="manajemen-ekosistem-kkn"
           element={

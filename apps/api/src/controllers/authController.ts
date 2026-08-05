@@ -342,15 +342,20 @@ export class AuthController {
    * Handle Change Password for Petugas Residu / Users
    * POST /api/v1/auth/change-password
    */
+  /**
+   * Handle Change Password for Logged-in User
+   * POST /api/v1/auth/change-password
+   */
   async changePassword(req: Request, res: Response): Promise<void> {
     try {
-      if (!req.user) {
+      const userId = (req as any).user?.userId || (req as any).user?.id;
+      const oldPassword = req.body.oldPassword || req.body.currentPassword;
+      const newPassword = req.body.newPassword;
+
+      if (!userId) {
         res.status(401).json({ success: false, message: "Tidak memiliki akses" });
         return;
       }
-
-      const oldPassword = req.body.oldPassword || req.body.currentPassword;
-      const newPassword = req.body.newPassword;
 
       if (!oldPassword || !newPassword) {
         res.status(400).json({
@@ -360,27 +365,19 @@ export class AuthController {
         return;
       }
 
-      if (typeof newPassword !== "string" || newPassword.length < 6) {
-        res.status(400).json({
-          success: false,
-          message: "Kata sandi baru minimal 6 karakter",
-        });
-        return;
-      }
-
-      await authService.updatePassword(req.user.userId, oldPassword, newPassword);
+      await authService.changePassword(userId, oldPassword, newPassword);
 
       res.status(200).json({
         success: true,
-        message: "Kata sandi berhasil diperbarui",
+        message: "Kata sandi berhasil diubah",
       });
     } catch (error: any) {
-      if (error.message === "USER_NOT_FOUND") {
+      if (error.message === "WRONG_OLD_PASSWORD" || error.message === "INVALID_CREDENTIALS") {
+        res.status(400).json({ success: false, message: "Kata sandi lama Anda salah" });
+      } else if (error.message === "USER_NOT_FOUND") {
         res.status(404).json({ success: false, message: "User tidak ditemukan" });
-      } else if (error.message === "INVALID_CREDENTIALS") {
-        res.status(401).json({ success: false, message: "Kata sandi lama tidak sesuai" });
       } else {
-        res.status(500).json({ success: false, message: "Terjadi kesalahan pada server" });
+        res.status(500).json({ success: false, message: error.message || "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -829,34 +826,32 @@ export class AuthController {
       if (!target || !newPassword) {
         res.status(400).json({
           success: false,
-          code: "VALIDATION_ERROR",
-          message: "Nomor HP (phone) dan password baru (newPassword) diperlukan",
+          message: "Nomor HP dan password baru diperlukan",
         });
         return;
       }
 
       await authService.resetPassword(target, verificationCode, newPassword);
-      res
-        .status(200)
-        .json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
+      res.status(200).json({
+        success: true,
+        message: "Kata sandi berhasil disetel ulang",
+      });
     } catch (error: any) {
-      if (error.message === "INVALID_TOKEN" || error.message === "INVALID_OTP") {
-        res.status(400).json({
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({
           success: false,
-          code: "INVALID_OTP",
-          message: "Kode verifikasi salah atau kedaluwarsa",
+          message: "User tidak ditemukan",
         });
-      } else if (error.message === "USER_NOT_FOUND") {
-        res
-          .status(404)
-          .json({ success: false, code: "USER_NOT_FOUND", message: "User tidak ditemukan" });
       } else {
-        res
-          .status(500)
-          .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+        res.status(500).json({
+          success: false,
+          message: error.message || "Gagal menyetel ulang kata sandi",
+        });
       }
     }
   }
+
+
 
   /**
    * Request OTP via WhatsApp (Fonnte)
@@ -867,7 +862,6 @@ export class AuthController {
       if (!phone) {
         res.status(400).json({
           success: false,
-          code: "VALIDATION_ERROR",
           message: "Nomor WhatsApp (phone) diperlukan",
         });
         return;
@@ -879,8 +873,7 @@ export class AuthController {
       console.error("[Request OTP Error]", error);
       res.status(500).json({
         success: false,
-        code: "INTERNAL_SERVER_ERROR",
-        message: error.message || "Gagal menggirimkan OTP",
+        message: error.message || "Gagal mengirimkan OTP",
       });
     }
   }
@@ -894,7 +887,6 @@ export class AuthController {
       if (!phone || !otp) {
         res.status(400).json({
           success: false,
-          code: "VALIDATION_ERROR",
           message: "Nomor HP dan kode OTP diperlukan",
         });
         return;
@@ -913,26 +905,24 @@ export class AuthController {
 
       res.status(200).json({
         success: true,
-        message: result.message || "OTP berhasil diverifikasi",
         data: result,
       });
     } catch (error: any) {
       if (error.message === "INVALID_OTP") {
         res.status(400).json({
           success: false,
-          code: "INVALID_OTP",
           message: "Kode OTP salah atau kedaluwarsa",
         });
       } else {
         console.error("[Verify OTP Error]", error);
         res.status(500).json({
           success: false,
-          code: "INTERNAL_SERVER_ERROR",
           message: error.message || "Gagal memverifikasi OTP",
         });
       }
     }
   }
+
 }
 
 export const authController = new AuthController();

@@ -302,7 +302,7 @@ export class BinController {
           code: "BIN_FULL",
           error: "BIN_FULL",
           message:
-            "Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan. Silakan gunakan QR Tong Sampah milik Anda yang lain atau ajukan Pengosongan Tong.",
+            "Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan. Silakan gunakan QR Tempat Sampah milik Anda yang lain atau ajukan Pengosongan Tempat Sampah.",
         });
       } else {
         console.error("Bin Scan Error:", error);

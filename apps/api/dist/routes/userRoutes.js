@@ -27,7 +27,18 @@ const router = Router();
  *       200:
  *         description: List of all users
  */
-router.get("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"]), userController.getAll);
+router.get("/", authMiddleware, roleMiddleware([
+    "SUPER_ADMIN",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "PENGANGKUT",
+    "MAHASISWA_KKN",
+    "WARGA",
+]), userController.getAll);
 /**
  * @swagger
  * /api/v1/users:
@@ -85,5 +96,7 @@ router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
  *         schema:
  *           type: string
  */
+import { authController } from "../controllers/authController.js";
+router.put("/profile", authMiddleware, authController.updateProfile);
 router.get("/:id/onboarding-status", authMiddleware, userController.getOnboardingStatus);
 export default router;

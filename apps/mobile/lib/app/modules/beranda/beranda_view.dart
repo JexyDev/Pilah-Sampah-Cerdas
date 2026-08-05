@@ -280,7 +280,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     int unreadCount,
   ) {
     final name = user?.name ?? 'Warga';
-    final rtRw = user?.rtRw ?? 'RT 04 / RW 02';
     final roleName = user?.role.displayName ?? 'Warga';
     final fotoUrl = user?.fotoProfil;
     return Container(

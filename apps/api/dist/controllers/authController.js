@@ -11,6 +11,8 @@ import { authService } from "../services/authService.js";
  */
 function normalizePhone(phone) {
     let p = phone.trim();
+    if (/[a-zA-Z@]/.test(p))
+        return p;
     if (p.startsWith("08"))
         p = "+62" + p.slice(1);
     else if (p.startsWith("62") && !p.startsWith("+"))
@@ -60,14 +62,18 @@ const registerKknSchema = registerStaffSchema.extend({
     nim: z.string().min(1, "NIM diperlukan"),
     jurusan: z.string().min(1, "Jurusan diperlukan"),
     fakultas: z.string().min(1, "Fakultas diperlukan"),
-    noWa: z.string().min(1, "WhatsApp diperlukan"),
+    noWa: z.string().optional(),
     startDate: z
         .string()
-        .refine((val) => !isNaN(Date.parse(val)), "Format tanggal mulai tidak valid"),
+        .optional()
+        .refine((val) => !val || !isNaN(Date.parse(val)), "Format tanggal mulai tidak valid"),
     endDate: z
         .string()
-        .refine((val) => !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
+        .optional()
+        .refine((val) => !val || !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
     assignedPolygonId: z.number().int().optional(),
+    kelurahan: z.string().optional(),
+    rtRw: z.string().optional(),
 });
 const registerPetugasSchema = registerStaffSchema.extend({
     noWa: z.string().min(1, "WhatsApp diperlukan"),
@@ -140,6 +146,13 @@ export class AuthController {
                     success: false,
                     code: "WRONG_PASSWORD",
                     message: "Password salah",
+                });
+            }
+            else if (error.message === "USER_PENDING_APPROVAL") {
+                res.status(401).json({
+                    success: false,
+                    code: "USER_PENDING_APPROVAL",
+                    message: "Akun Anda belum disetujui oleh pengurus RW setempat. Silakan hubungi pengurus RW untuk proses verifikasi & aktivasi.",
                 });
             }
             else if (error.message === "USER_INACTIVE") {
@@ -296,6 +309,50 @@ export class AuthController {
                 res
                     .status(500)
                     .json({ error: "INTERNAL_SERVER_ERROR", message: "Terjadi kesalahan pada server" });
+            }
+        }
+    }
+    /**
+     * Handle Change Password for Petugas Residu / Users
+     * POST /api/v1/auth/change-password
+     */
+    async changePassword(req, res) {
+        try {
+            if (!req.user) {
+                res.status(401).json({ success: false, message: "Tidak memiliki akses" });
+                return;
+            }
+            const oldPassword = req.body.oldPassword || req.body.currentPassword;
+            const newPassword = req.body.newPassword;
+            if (!oldPassword || !newPassword) {
+                res.status(400).json({
+                    success: false,
+                    message: "oldPassword dan newPassword wajib diisi",
+                });
+                return;
+            }
+            if (typeof newPassword !== "string" || newPassword.length < 6) {
+                res.status(400).json({
+                    success: false,
+                    message: "Kata sandi baru minimal 6 karakter",
+                });
+                return;
+            }
+            await authService.updatePassword(req.user.userId, oldPassword, newPassword);
+            res.status(200).json({
+                success: true,
+                message: "Kata sandi berhasil diperbarui",
+            });
+        }
+        catch (error) {
+            if (error.message === "USER_NOT_FOUND") {
+                res.status(404).json({ success: false, message: "User tidak ditemukan" });
+            }
+            else if (error.message === "INVALID_CREDENTIALS") {
+                res.status(401).json({ success: false, message: "Kata sandi lama tidak sesuai" });
+            }
+            else {
+                res.status(500).json({ success: false, message: "Terjadi kesalahan pada server" });
             }
         }
     }
@@ -578,6 +635,10 @@ export class AuthController {
                 req.body.phone = normalizePhone(req.body.phone);
             if (req.body?.noWa)
                 req.body.noWa = normalizePhone(req.body.noWa);
+            if (!req.body?.phone && req.body?.noWa)
+                req.body.phone = req.body.noWa;
+            if (!req.body?.noWa && req.body?.phone)
+                req.body.noWa = req.body.phone;
             if (!req.body?.name && req.body?.nama)
                 req.body.name = req.body.nama;
             const parsed = registerKknSchema.safeParse(req.body);
@@ -587,20 +648,21 @@ export class AuthController {
                     .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, ...userData } = parsed.data;
+            const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, kelurahan, rtRw, ...userData } = parsed.data;
             const kknData = {
                 nim,
                 jurusan,
                 fakultas,
-                noWa,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+                noWa: noWa || userData.phone || "-",
+                startDate: startDate ? new Date(startDate) : new Date(),
+                endDate: endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 assignedPolygonId,
             };
             const result = await authService.registerKkn(userData, kknData);
             res.status(201).json({
                 success: true,
-                data: { id: result.user.id, name: result.user.name, status: result.user.status },
+                message: "Pendaftaran akun Mahasiswa KKN berhasil. Akun Anda sedang menunggu verifikasi (whitelist) Admin DLH.",
+                data: { id: result.user.id, name: result.user.name, role: "MAHASISWA_KKN" },
             });
         }
         catch (error) {
@@ -707,19 +769,112 @@ export class AuthController {
     }
     async resetPassword(req, res) {
         try {
-            const { email, token, newPassword } = req.body;
-            await authService.resetPassword(email, token, newPassword);
-            res.status(200).json({ success: true, message: "Kata sandi berhasil disetel ulang" });
+            const { phone, email, token, otp, newPassword } = req.body;
+            const target = phone || email;
+            const verificationCode = otp || token;
+            if (!target || !newPassword) {
+                res.status(400).json({
+                    success: false,
+                    code: "VALIDATION_ERROR",
+                    message: "Nomor HP (phone) dan password baru (newPassword) diperlukan",
+                });
+                return;
+            }
+            await authService.resetPassword(target, verificationCode, newPassword);
+            res
+                .status(200)
+                .json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
         }
         catch (error) {
-            if (error.message === "INVALID_TOKEN") {
-                res.status(400).json({ success: false, message: "Kode verifikasi salah atau kedaluwarsa" });
+            if (error.message === "INVALID_TOKEN" || error.message === "INVALID_OTP") {
+                res.status(400).json({
+                    success: false,
+                    code: "INVALID_OTP",
+                    message: "Kode verifikasi salah atau kedaluwarsa",
+                });
             }
             else if (error.message === "USER_NOT_FOUND") {
-                res.status(404).json({ success: false, message: "User tidak ditemukan" });
+                res
+                    .status(404)
+                    .json({ success: false, code: "USER_NOT_FOUND", message: "User tidak ditemukan" });
             }
             else {
-                res.status(500).json({ success: false, message: error.message });
+                res
+                    .status(500)
+                    .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+            }
+        }
+    }
+    /**
+     * Request OTP via WhatsApp (Fonnte)
+     */
+    async requestOtp(req, res) {
+        try {
+            const { phone } = req.body;
+            if (!phone) {
+                res.status(400).json({
+                    success: false,
+                    code: "VALIDATION_ERROR",
+                    message: "Nomor WhatsApp (phone) diperlukan",
+                });
+                return;
+            }
+            const result = await authService.requestOtp(phone);
+            res.status(200).json(result);
+        }
+        catch (error) {
+            console.error("[Request OTP Error]", error);
+            res.status(500).json({
+                success: false,
+                code: "INTERNAL_SERVER_ERROR",
+                message: error.message || "Gagal menggirimkan OTP",
+            });
+        }
+    }
+    /**
+     * Verify OTP code
+     */
+    async verifyOtp(req, res) {
+        try {
+            const { phone, otp } = req.body;
+            if (!phone || !otp) {
+                res.status(400).json({
+                    success: false,
+                    code: "VALIDATION_ERROR",
+                    message: "Nomor HP dan kode OTP diperlukan",
+                });
+                return;
+            }
+            const result = await authService.verifyOtp(phone, otp);
+            if (result.accessToken) {
+                res.cookie("accessToken", result.accessToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "strict",
+                    maxAge: 60 * 60 * 1000,
+                });
+            }
+            res.status(200).json({
+                success: true,
+                message: result.message || "OTP berhasil diverifikasi",
+                data: result,
+            });
+        }
+        catch (error) {
+            if (error.message === "INVALID_OTP") {
+                res.status(400).json({
+                    success: false,
+                    code: "INVALID_OTP",
+                    message: "Kode OTP salah atau kedaluwarsa",
+                });
+            }
+            else {
+                console.error("[Verify OTP Error]", error);
+                res.status(500).json({
+                    success: false,
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: error.message || "Gagal memverifikasi OTP",
+                });
             }
         }
     }

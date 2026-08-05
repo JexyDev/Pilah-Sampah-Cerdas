@@ -1,4 +1,4 @@
-import { MapPin, ChevronDown, Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu, Sun, Moon } from "lucide-react";
+import { Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu, Sun, Moon } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -11,7 +11,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
-import api from "../../../services/api";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -20,7 +19,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, updateWilayah } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
@@ -33,7 +32,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   };
 
   // Dropdown visibility states
-  const [showLocation, setShowLocation] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showApps, setShowApps] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -44,33 +42,14 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [ewalletType, setEwalletType] = useState("DANA");
   const [ewalletPhone, setEwalletPhone] = useState("");
   const [showBrosur, setShowBrosur] = useState(false);
-  const [regions, setRegions] = useState<string[]>([]);
 
   // Refs for closing on outside click
-  const locRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const appsRef = useRef<HTMLDivElement>(null);
   const profRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchRegions = async () => {
-      try {
-        const response = await api.get("/dashboard/regions");
-        if (response.data?.success) {
-          setRegions(response.data.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch regions:", error);
-      }
-    };
-    if (user) {
-      fetchRegions();
-    }
-  }, [user]);
-
-  useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (locRef.current && !locRef.current.contains(e.target as Node)) setShowLocation(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node))
         setShowNotifications(false);
       if (appsRef.current && !appsRef.current.contains(e.target as Node)) setShowApps(false);
@@ -141,12 +120,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const headerInfo = getHeaderInfo(location.pathname);
 
-  const handleSelectLocation = (loc: string) => {
-    updateWilayah(loc);
-    setShowLocation(false);
-    toast.success(`Wilayah simulasi berhasil diubah ke ${loc}`);
-  };
-
   const handleLogout = () => {
     logout();
     toast.success("Berhasil keluar sistem");
@@ -197,10 +170,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     },
   ];
 
-  const displayRegions =
-    regions.length > 0
-      ? regions
-      : ["RT 04 / RW 06", "RT 02 / RW 06", "RT 01 / RW 05", "Kecamatan Coblong"];
 
   return (
     <header className="sticky top-0 h-[72px] bg-white border-b border-outline-variant px-container-margin flex items-center justify-between z-40">
@@ -219,37 +188,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
       <div className="flex items-center gap-gutter flex-shrink-0">
-        {/* Location Picker Dropdown */}
-        <div className="relative" ref={locRef}>
-          <div
-            onClick={() => setShowLocation(!showLocation)}
-            className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-lg cursor-pointer hover:bg-surface-container-high transition-all border border-outline-variant/30 select-none"
-          >
-            <MapPin className="text-primary" size={20} />
-            <span className="text-label-md font-bold text-on-surface">
-              {user?.wilayah || "Kecamatan Coblong"}
-            </span>
-            <ChevronDown className="text-on-surface-variant" size={18} />
-          </div>
-
-          {showLocation && (
-            <div className="absolute top-11 left-0 w-64 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-2 flex flex-col gap-1 z-50 max-h-64 overflow-y-auto">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase px-3 py-1.5 border-b border-outline-variant/20 tracking-wider sticky top-0 bg-white z-10">
-                Pilih RT/RW Wilayah Warga
-              </p>
-              {displayRegions.map((loc) => (
-                <button
-                  key={loc}
-                  onClick={() => handleSelectLocation(loc)}
-                  className={`text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-surface-container ${user?.wilayah === loc ? "text-primary bg-primary/5" : "text-on-surface"}`}
-                >
-                  {loc}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Icons */}
         <div className="flex items-center gap-3">
           {/* Notifications Popover */}

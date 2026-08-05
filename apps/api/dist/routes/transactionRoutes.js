@@ -21,7 +21,7 @@ router.get("/deposits", authMiddleware, roleMiddleware([
     "MAHASISWA_KKN",
 ]), transactionController.getDeposits);
 router.get("/my-deposits", authMiddleware, roleMiddleware(["WARGA"]), transactionController.getMyDeposits);
-router.post("/manual", authMiddleware, roleMiddleware(["PETUGAS_RESIDU", "RW", "RT", "SUPER_ADMIN", "ADMIN_DLH"]), uploadAvatarMiddleware.single("image"), transactionController.createManualDeposit);
+router.post("/manual", authMiddleware, roleMiddleware(["PETUGAS_RESIDU", "SUPER_ADMIN"]), uploadAvatarMiddleware.single("image"), transactionController.createManualDeposit);
 router.get("/manual", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), transactionController.getManualDeposits);
 router.get("/:id", authMiddleware, transactionController.getDepositDetails);
 export default router;

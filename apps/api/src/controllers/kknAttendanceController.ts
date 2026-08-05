@@ -94,8 +94,9 @@ export const kknAttendanceController = {
   recordAttendance: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentId = req.user!.userId;
-      const { id } = req.params;
-      const { latitude, longitude, lat, lng, method } = req.body;
+      const { id: paramId } = req.params;
+      const { latitude, longitude, lat, lng, method, scheduleId: bodyScheduleId } = req.body;
+      const id = paramId || bodyScheduleId || req.body.id || "kkn-main-posko";
 
       const finalLat =
         latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
@@ -118,8 +119,8 @@ export const kknAttendanceController = {
 
       const defaultLat = -6.975412;
       const defaultLng = 107.632145;
-      const validLat = (finalLat !== null && !isNaN(finalLat)) ? finalLat : defaultLat;
-      const validLng = (finalLng !== null && !isNaN(finalLng)) ? finalLng : defaultLng;
+      const validLat = finalLat !== null && !isNaN(finalLat) ? finalLat : defaultLat;
+      const validLng = finalLng !== null && !isNaN(finalLng) ? finalLng : defaultLng;
 
       const result = await kknAttendanceService.recordAttendance({
         studentId,
