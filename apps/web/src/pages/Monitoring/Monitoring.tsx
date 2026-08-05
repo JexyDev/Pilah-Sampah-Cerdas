@@ -139,17 +139,55 @@ const Monitoring: React.FC = () => {
   const [selectedTrend, setSelectedTrend] = useState<TrendWeek | null>(null);
 
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("Semua Kelurahan");
+  const [selectedRtRw, setSelectedRtRw] = useState<string>("Semua RT/RW");
   const [activeColorFilter, setActiveColorFilter] = useState<"ALL" | "AMAN" | "WASPADA" | "PENUH" | "ORGANIK" | "DAUR_ULANG" | "RESIDU" | "FLASH_DROP">("ALL");
   const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null);
   const [flyToZoom, setFlyToZoom] = useState<number | null>(null);
+
+  const handleKelurahanSelect = (kelName: string) => {
+    setSelectedKelurahan(kelName);
+    setSelectedRtRw("Semua RT/RW");
+    if (kelName === "Semua Kelurahan") {
+      setFlyToTarget([-6.8903, 107.611]);
+      setFlyToZoom(14);
+    } else {
+      const kg = Object.values(KELURAHAN_GEODATA).find((k) => k.name.toLowerCase() === kelName.toLowerCase());
+      if (kg) {
+        setFlyToTarget(kg.centroid);
+        setFlyToZoom(16);
+      }
+    }
+  };
+
+  const handleRtRwSelect = (rwName: string) => {
+    setSelectedRtRw(rwName);
+    if (rwName === "Semua RT/RW") {
+      if (selectedKelurahan !== "Semua Kelurahan") {
+        const kg = Object.values(KELURAHAN_GEODATA).find((k) => k.name.toLowerCase() === selectedKelurahan.toLowerCase());
+        if (kg) {
+          setFlyToTarget(kg.centroid);
+          setFlyToZoom(16);
+        }
+      } else {
+        setFlyToTarget([-6.8903, 107.611]);
+        setFlyToZoom(14);
+      }
+    } else {
+      const foundGroup = rwGroups.find((g) => g.rwName?.toLowerCase() === rwName.toLowerCase());
+      if (foundGroup) {
+        setFlyToTarget([foundGroup.latitude, foundGroup.longitude]);
+        setFlyToZoom(18);
+      }
+    }
+  };
   const [mapZoom, setMapZoom] = useState<number>(
     (user?.peran as string) === "LURAH"
       ? 14
       : (user?.peran as string) === "RW"
-      ? 16
-      : (user?.peran as string) === "RT"
-      ? 18
-      : 14
+        ? 16
+        : (user?.peran as string) === "RT"
+          ? 18
+          : 14
   );
 
   const displayScope = useMemo(() => {
@@ -169,7 +207,7 @@ const Monitoring: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await fetchBins().catch(() => {});
+      await fetchBins().catch(() => { });
 
       const isRwRole = user?.peran === "RW" || user?.peran === "RT";
       const [kpiRes, trendRes, facRes, rwRes] = await Promise.all([
@@ -347,74 +385,104 @@ const Monitoring: React.FC = () => {
       {/* Map and Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* GIS Map */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[520px]">
-          <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[560px]">
+          <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h3 className="font-bold text-sm text-gray-800">GIS Peta Wilayah</h3>
               <p className="text-[10px] text-gray-400">Monitoring real-time volume tong dan fasilitas lingkungan</p>
             </div>
-            <div className="flex gap-2 text-xs font-semibold flex-wrap justify-end max-w-lg">
-              <button
-                onClick={() => setActiveColorFilter("ALL")}
-                className={`px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                  activeColorFilter === "ALL"
-                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+            
+            {/* Dropdown Location Filter with Auto-Zoom */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <select
+                value={selectedKelurahan}
+                onChange={(e) => handleKelurahanSelect(e.target.value)}
+                className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-xs"
               >
-                Semua Filter
-              </button>
-              <button
-                onClick={() => setActiveColorFilter("AMAN")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                  activeColorFilter === "AMAN"
-                    ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                    : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
-                }`}
+                <option value="Semua Kelurahan">Semua Kelurahan (Coblong)</option>
+                {Object.values(KELURAHAN_GEODATA).map((k) => (
+                  <option key={k.id} value={k.name}>
+                    Kel. {k.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedRtRw}
+                onChange={(e) => handleRtRwSelect(e.target.value)}
+                className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-xs"
               >
-                <span className="w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full"></span> Tong Aman
-              </button>
-              <button
-                onClick={() => setActiveColorFilter("WASPADA")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                  activeColorFilter === "WASPADA"
-                    ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                    : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-                }`}
-              >
-                <span className="w-2.5 h-2.5 bg-amber-500 border border-white rounded-full"></span> Waspada
-              </button>
-              <button
-                onClick={() => setActiveColorFilter("PENUH")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                  activeColorFilter === "PENUH"
-                    ? "bg-rose-600 text-white border-rose-600 shadow-xs animate-pulse"
-                    : "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100"
-                }`}
-              >
-                <span className="w-2.5 h-2.5 bg-rose-500 border border-white rounded-full"></span> Tong Penuh
-              </button>
-              <button
-                onClick={() => setActiveColorFilter("ORGANIK")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                  activeColorFilter === "ORGANIK"
-                    ? "bg-green-700 text-white border-green-700 shadow-xs"
-                    : "bg-green-50 text-green-800 border-green-200 hover:bg-green-100"
-                }`}
-              >
-                <span className="w-2.5 h-2.5 bg-[#10b981] rounded-sm"></span> Organik
-              </button>
-              <button
-                onClick={() => setActiveColorFilter("DAUR_ULANG")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                  activeColorFilter === "DAUR_ULANG"
-                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                    : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
-                }`}
-              >
-                <span className="w-2.5 h-2.5 bg-[#3b82f6] rounded-sm"></span> Daur Ulang
-              </button>
+                <option value="Semua RT/RW">Semua RT / RW</option>
+                {rwGroups.map((g, idx) => (
+                  <option key={idx} value={g.rwName || `RW ${idx + 1}`}>
+                    {g.rwName}
+                  </option>
+                ))}
+              </select>
             </div>
+          </div>
+
+          <div className="px-4 py-2 bg-slate-50 border-b border-gray-100 flex gap-2 text-xs font-semibold flex-wrap justify-end">
+            <button
+              onClick={() => setActiveColorFilter("ALL")}
+              className={`px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
+                activeColorFilter === "ALL"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              Semua Status
+            </button>
+            <button
+              onClick={() => setActiveColorFilter("AMAN")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
+                activeColorFilter === "AMAN"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+              }`}
+            >
+              <span className="w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full"></span> Tong Aman
+            </button>
+            <button
+              onClick={() => setActiveColorFilter("WASPADA")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
+                activeColorFilter === "WASPADA"
+                  ? "bg-amber-500 text-white border-amber-500 shadow-xs"
+                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+              }`}
+            >
+              <span className="w-2.5 h-2.5 bg-amber-500 border border-white rounded-full"></span> Waspada
+            </button>
+            <button
+              onClick={() => setActiveColorFilter("PENUH")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
+                activeColorFilter === "PENUH"
+                  ? "bg-rose-600 text-white border-rose-600 shadow-xs animate-pulse"
+                  : "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100"
+              }`}
+            >
+              <span className="w-2.5 h-2.5 bg-rose-500 border border-white rounded-full"></span> Tong Penuh
+            </button>
+            <button
+              onClick={() => setActiveColorFilter("ORGANIK")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
+                activeColorFilter === "ORGANIK"
+                  ? "bg-green-700 text-white border-green-700 shadow-xs"
+                  : "bg-green-50 text-green-800 border-green-200 hover:bg-green-100"
+              }`}
+            >
+              <span className="w-2.5 h-2.5 bg-[#10b981] rounded-sm"></span> Organik
+            </button>
+            <button
+              onClick={() => setActiveColorFilter("DAUR_ULANG")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
+                activeColorFilter === "DAUR_ULANG"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
+              }`}
+            >
+              <span className="w-2.5 h-2.5 bg-[#3b82f6] rounded-sm"></span> Anorganik / Daur Ulang
+            </button>
           </div>
           <div className="flex-1 relative z-10">
             <MapContainer center={[-6.8903, 107.611]} zoom={14} className="h-full w-full">
@@ -561,17 +629,31 @@ const Monitoring: React.FC = () => {
                         icon={createBinIcon(status)}
                       >
                         <Popup>
-                          <div className="text-xs p-1 min-w-[150px]">
-                            <strong className="text-sm font-bold block mb-2 border-b pb-1">Data Tong Rumah Tangga</strong>
+                          <div className="text-xs p-1.5 min-w-[200px] font-sans">
+                            <div className="border-b border-gray-200 pb-1.5 mb-2">
+                              <strong className="text-sm font-extrabold text-slate-900 block">Data Tong Rumah Tangga</strong>
+                              {group.bins[0]?.user?.name && (
+                                <span className="text-[11px] font-bold text-slate-800 block mt-0.5">👤 {group.bins[0].user.name}</span>
+                              )}
+                              {group.bins[0]?.user?.phone && (
+                                <span className="text-[10px] font-bold text-emerald-600 block">📱 {group.bins[0].user.phone}</span>
+                              )}
+                            </div>
                             {group.bins.map((bin) => {
                               const vol = Number(bin.currentVolumeLiter || 0);
                               const max = Number(bin.maxCapacityLiter || 25);
                               const percentage = max > 0 ? (vol / max) * 100 : 0;
+                              const rawCat = (bin.category?.name || (bin as any).categoryName || "").toUpperCase();
+                              const isOrganic = rawCat.includes("ORGANIC") || rawCat.includes("ORGANIK");
                               return (
-                                <div key={bin.id} className="mb-2 last:mb-0">
-                                  <span className="font-semibold">{bin.category?.name || (bin as any).categoryName || "Tempat Sampah"}</span>
-                                  <span className="block text-gray-500 text-[10px]">QR: {bin.qrCode}</span>
-                                  <span className="block text-gray-700">Terisi: {percentage.toFixed(1)}% ({vol}L / {max}L)</span>
+                                <div key={bin.id} className="mb-2 last:mb-0 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
+                                  <span className={`font-black text-xs block ${isOrganic ? "text-emerald-800" : "text-blue-800"}`}>
+                                    {isOrganic ? "Organik" : "Anorganik"}
+                                  </span>
+                                  <span className="block text-slate-500 font-mono text-[10px] font-semibold">QR: {bin.qrCode || "BIN-124"}</span>
+                                  <span className="block font-black text-slate-800 text-[11px] mt-0.5">
+                                    Terisi: {percentage.toFixed(1)}% ({vol.toFixed(1)}L / {max}L)
+                                  </span>
                                 </div>
                               );
                             })}
