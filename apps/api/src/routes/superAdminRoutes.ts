@@ -33,10 +33,11 @@ router.get("/bins/qr-master", superAdminController.getQrMaster);
 router.post("/bins/generate-qr", superAdminController.generateQrBatch);
 router.get("/audit-trail", roleMiddleware(["SUPER_ADMIN"]), superAdminController.getAuditTrail);
 router.get("/dashboard", superAdminController.getAggregatedDashboard);
-router.get("/approvals/bins", superAdminController.getPendingBins);
-router.put("/approvals/bins/:id/approve", superAdminController.approveBin);
 router.put("/approvals/bins/:id/reject", superAdminController.rejectBin);
 router.get("/approvals/petugas", superAdminController.getPendingPetugas);
 router.put("/approvals/petugas/:id/verify", superAdminController.verifyPetugas);
+router.put("/bins/:id/status", superAdminController.updateBinStatus);
+router.post("/bins/:id/replace", superAdminController.replaceBrokenBin);
+router.delete("/bins/:id", superAdminController.deleteBin);
 
 export default router;
