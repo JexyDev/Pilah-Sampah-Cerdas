@@ -7,7 +7,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Phone, LogIn, ShieldCheck, Sparkles, Trash2, Award } from "lucide-react";
+import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Phone, LogIn, ShieldCheck, Trash2, Award } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 
 // Exact Vector SVG Icon matching the TrashCare logo

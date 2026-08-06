@@ -1,4 +1,4 @@
-import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, Calendar, MapPin, X, Trash2, Pencil } from "lucide-react";
+import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, MapPin, X, Trash2, Pencil, ChevronDown, ChevronUp, Layers, List } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -64,9 +64,15 @@ const JadwalKegiatan: React.FC = () => {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isGroupedView, setIsGroupedView] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  const toggleGroupExpand = (groupKey: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
+  };
 
   const [formData, setFormData] = useState<any>({
     title: "",
@@ -99,13 +105,6 @@ const JadwalKegiatan: React.FC = () => {
     fetchSchedules();
   }, []);
 
-  // Safe date formatter — returns fallback string instead of crashing
-  const safeFormatDate = (dateStr: string | null | undefined, opts: Intl.DateTimeFormatOptions) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "-";
-    return d.toLocaleDateString("id-ID", opts);
-  };
 
   const safeFormatTime = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
@@ -328,19 +327,19 @@ const JadwalKegiatan: React.FC = () => {
               <div className="flex items-center gap-1">
                 <button
                   onClick={prevMonth}
-                  className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"
+                  className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
                 >
                   <ChevronLeft />
                 </button>
                 <button
                   onClick={goToToday}
-                  className="text-[12px] font-bold px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"
+                  className="text-[12px] font-bold px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
                 >
                   Hari Ini
                 </button>
                 <button
                   onClick={nextMonth}
-                  className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"
+                  className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
                 >
                   <ChevronRight />
                 </button>
@@ -348,7 +347,7 @@ const JadwalKegiatan: React.FC = () => {
             </div>
             {["SUPER_ADMIN", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
               <button
-                className="bg-primary text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors active:scale-95 transform shadow-sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus size={14} />
@@ -378,9 +377,24 @@ const JadwalKegiatan: React.FC = () => {
                 const isToday = new Date().toDateString() === day.date.toDateString();
                 const isSelected = selectedDate.toDateString() === day.date.toDateString();
 
+                // Deduplicate schedules for cell pills display
+                const groupedCellSchedules = daySchedules.reduce((acc: any[], curr: any) => {
+                  const titleKey = (curr.title || "(tanpa judul)").trim();
+                  const catKey = (curr.category || "Lainnya").trim();
+                  const existing = acc.find(
+                    (item) => (item.title || "").trim() === titleKey && (item.category || "").trim() === catKey
+                  );
+                  if (existing) {
+                    existing.count += 1;
+                  } else {
+                    acc.push({ ...curr, title: titleKey, category: catKey, count: 1 });
+                  }
+                  return acc;
+                }, []);
+
                 const maxPills = 2;
-                const visibleSchedules = daySchedules.slice(0, maxPills);
-                const hiddenCount = daySchedules.length - maxPills;
+                const visibleSchedules = groupedCellSchedules.slice(0, maxPills);
+                const hiddenCount = groupedCellSchedules.reduce((sum, item, idx) => idx >= maxPills ? sum + item.count : sum, 0);
 
                 return (
                   <div
@@ -418,39 +432,38 @@ const JadwalKegiatan: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Clean Activity Pills (No Dropdown Scrollbar) */}
+                      {/* Clean Aggregated Activity Pills */}
                       <div className="flex flex-col gap-1">
-                        {visibleSchedules.map((s) => {
+                        {visibleSchedules.map((s, idx) => {
                           let colorCls = "bg-blue-50 border-blue-200 text-blue-800";
-                          const titleLower = (s.title || "").toLowerCase();
-                          const catLower = (s.category || "").toLowerCase();
-                          if (
-                            catLower.includes("pengangkutan") ||
-                            titleLower.includes("pengangkutan")
-                          )
+                          const titleLower = s.title.toLowerCase();
+                          const catLower = s.category.toLowerCase();
+                          if (catLower.includes("pengangkutan") || titleLower.includes("pengangkutan"))
                             colorCls = "bg-emerald-50 border-emerald-200 text-emerald-800";
-                          if (
-                            catLower.includes("sosialisasi") ||
-                            titleLower.includes("sosialisasi")
-                          )
+                          else if (catLower.includes("sosialisasi") || titleLower.includes("sosialisasi"))
                             colorCls = "bg-amber-50 border-amber-200 text-amber-800";
-                          if (catLower.includes("rapat") || titleLower.includes("rapat"))
+                          else if (catLower.includes("rapat") || titleLower.includes("rapat"))
                             colorCls = "bg-purple-50 border-purple-200 text-purple-800";
 
                           return (
                             <div
-                              key={s.id}
-                              className={`border text-[10px] font-bold px-2 py-1 rounded-md truncate w-full shadow-2xs hover:scale-[1.02] transition-transform ${colorCls}`}
-                              title={s.title}
+                              key={idx}
+                              className={`border text-[10px] font-bold px-2 py-0.5 rounded-md truncate w-full shadow-2xs transition-transform flex items-center justify-between gap-1 ${colorCls}`}
+                              title={`${s.title} (${s.count} kegiatan)`}
                             >
-                              {s.title || "(tanpa judul)"}
+                              <span className="truncate">{s.title}</span>
+                              {s.count > 1 && (
+                                <span className="bg-white/80 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">
+                                  {s.count}x
+                                </span>
+                              )}
                             </div>
                           );
                         })}
 
                         {hiddenCount > 0 && (
                           <div className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded-md text-center truncate">
-                            +{hiddenCount} agenda lagi
+                            +{hiddenCount} kegiatan lagi
                           </div>
                         )}
                       </div>
@@ -463,29 +476,51 @@ const JadwalKegiatan: React.FC = () => {
         </div>
 
         {/* Right Sidebar: Details */}
-        <aside className="w-[320px] bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
-          <div className="p-5 border-b border-outline-variant/30 bg-surface-container-low/30">
-            <h3 className="text-[16px] font-bold text-on-surface flex items-center gap-2">
-              <CalendarCheck className="text-primary" size={20} />
-              Detail Agenda
-            </h3>
-            <p className="text-[11px] font-extrabold text-emerald-700 mt-1 uppercase tracking-wider">
-              {selectedDate.toLocaleDateString("id-ID", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
+        <aside className="w-[340px] bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
+          <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[15px] font-bold text-slate-900 flex items-center gap-2">
+                <CalendarCheck className="text-emerald-600" size={18} />
+                Detail Agenda
+              </h3>
+              <button
+                onClick={() => setIsGroupedView(!isGroupedView)}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+                title={isGroupedView ? "Tampilkan semua individual" : "Ringkas kegiatan serupa"}
+              >
+                {isGroupedView ? <Layers size={12} /> : <List size={12} />}
+                {isGroupedView ? "Mode Ringkas" : "Mode Semua"}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">
+                {selectedDate.toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+              {(() => {
+                const total = getSchedulesForDay(selectedDate).length;
+                return total > 0 ? (
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                    {total} Agenda
+                  </span>
+                ) : null;
+              })()}
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {loading ? (
-              <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-3">
-                <Loader2 className="animate-spin text-primary" size={32} />
-                <p>Memuat agenda...</p>
+              <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                <Loader2 className="animate-spin text-emerald-600" size={28} />
+                <p className="text-xs">Memuat agenda...</p>
               </div>
             ) : error ? (
-              <div className="p-8 text-center text-error font-medium">{error}</div>
+              <div className="p-6 text-center text-red-500 text-xs font-medium">{error}</div>
             ) : (
               (() => {
                 const daySchedules = getSchedulesForDay(selectedDate);
@@ -521,76 +556,218 @@ const JadwalKegiatan: React.FC = () => {
                   );
                 }
 
-                return daySchedules.map((schedule) => {
-                  const catColor: Record<string, string> = {
-                    Pengangkutan: "bg-green-500",
-                    Sosialisasi: "bg-amber-500",
-                    Rapat: "bg-purple-500",
-                    Lainnya: "bg-blue-500",
-                  };
-                  const barColor = catColor[schedule.category] || "bg-blue-500";
-                  const badgeColor: Record<string, string> = {
-                    Pengangkutan: "bg-green-100 text-green-700",
-                    Sosialisasi: "bg-amber-100 text-amber-700",
-                    Rapat: "bg-purple-100 text-purple-700",
-                    Lainnya: "bg-blue-100 text-blue-700",
-                  };
-                  const badge = badgeColor[schedule.category] || "bg-blue-100 text-blue-700";
+                // If Grouped View is active, group identical activities
+                if (isGroupedView) {
+                  const groupsMap: Record<string, { title: string; category: string; location: string; items: any[] }> = {};
+
+                  daySchedules.forEach((sch) => {
+                    const key = `${(sch.title || "(tanpa judul)").trim()}__${(sch.category || "Lainnya").trim()}`;
+                    if (!groupsMap[key]) {
+                      groupsMap[key] = {
+                        title: sch.title || "(tanpa judul)",
+                        category: sch.category || "Lainnya",
+                        location: sch.location || "Wilayah Coblong",
+                        items: [],
+                      };
+                    }
+                    groupsMap[key].items.push(sch);
+                  });
+
+                  const groupsList = Object.entries(groupsMap);
+
                   return (
-                    <div
-                      key={schedule.id}
-                      className="p-3.5 border border-slate-200/80 rounded-xl bg-white hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden space-y-2"
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${barColor}`}></div>
+                    <div className="flex flex-col gap-3">
+                      {groupsList.map(([groupKey, group]) => {
+                        const count = group.items.length;
+                        const isExpanded = !!expandedGroups[groupKey];
+                        const firstItem = group.items[0];
+                        const lastItem = group.items[group.items.length - 1];
 
-                      {user?.peran === "SUPER_ADMIN" && (
-                        <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => handleEdit(schedule, e)}
-                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="Edit Jadwal"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(schedule.id, e)}
-                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Hapus Jadwal"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      )}
+                        const categoryColors: Record<string, { border: string; badge: string; dot: string }> = {
+                          Pengangkutan: { border: "border-l-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+                          Sosialisasi: { border: "border-l-amber-500", badge: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+                          Rapat: { border: "border-l-purple-500", badge: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-500" },
+                          Lainnya: { border: "border-l-blue-500", badge: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-500" },
+                        };
+                        const catTheme = categoryColors[group.category] || categoryColors.Lainnya;
 
-                      <div className="flex justify-between items-center pl-2">
-                        <span
-                          className={`${badge} text-[10px] px-2.5 py-0.5 rounded-md uppercase tracking-wider font-extrabold`}
-                        >
-                          {schedule.category || "Kegiatan"}
-                        </span>
-                        <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-                          <Clock size={13} />
-                          {schedule.time || safeFormatTime(schedule.date)}
-                        </span>
-                      </div>
-                      <h4 className="text-[14px] font-extrabold text-slate-900 pl-2">
-                        {schedule.title || "(tanpa judul)"}
-                      </h4>
-                      <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 pl-2">
-                        <Calendar size={13} className="text-slate-400" />
-                        {safeFormatDate(schedule.date, {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 pl-2">
-                        <MapPin size={13} className="text-slate-400" />
-                        {schedule.location || "Wilayah Coblong"}
-                      </p>
+                        const startTimeStr = firstItem.time || safeFormatTime(firstItem.date);
+                        const endTimeStr = lastItem.time || safeFormatTime(lastItem.date);
+                        const timeDisplay = count > 1 && startTimeStr !== endTimeStr ? `${startTimeStr} - ${endTimeStr}` : startTimeStr;
+
+                        return (
+                          <div
+                            key={groupKey}
+                            className={`border border-slate-200/80 rounded-xl bg-white hover:border-slate-300 transition-all overflow-hidden border-l-4 ${catTheme.border}`}
+                          >
+                            <div
+                              onClick={() => count > 1 && toggleGroupExpand(groupKey)}
+                              className={`p-3 flex flex-col gap-2 ${count > 1 ? "cursor-pointer hover:bg-slate-50/60" : ""}`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase tracking-wider font-extrabold ${catTheme.badge}`}>
+                                  {group.category}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                    <Clock size={12} className="text-slate-400" />
+                                    {timeDisplay}
+                                  </span>
+                                  {count > 1 && (
+                                    <button className="text-slate-400 hover:text-slate-600 p-0.5">
+                                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="text-[13px] font-extrabold text-slate-900 leading-snug">
+                                    {group.title}
+                                  </h4>
+                                  <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
+                                    <MapPin size={12} className="text-slate-400" />
+                                    {group.location}
+                                  </p>
+                                </div>
+
+                                {count > 1 && (
+                                  <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                                    {count} Sesi
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Single item actions */}
+                              {count === 1 && user?.peran === "SUPER_ADMIN" && (
+                                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 mt-1">
+                                  <button
+                                    onClick={(e) => handleEdit(firstItem, e)}
+                                    className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Pencil size={12} /> Edit
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDelete(firstItem.id, e)}
+                                    className="text-[11px] text-red-500 hover:text-red-600 font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Trash2 size={12} /> Hapus
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Expanded items list */}
+                            {count > 1 && isExpanded && (
+                              <div className="bg-slate-50 border-t border-slate-100 p-2 flex flex-col gap-1.5">
+                                <div className="text-[10px] font-extrabold text-slate-400 px-2 uppercase tracking-wider">
+                                  Rincian Waktu Sesi ({count}):
+                                </div>
+                                {group.items.map((item, idx) => (
+                                  <div
+                                    key={item.id || idx}
+                                    className="bg-white p-2 rounded-lg border border-slate-200/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-1.5 h-1.5 rounded-full ${catTheme.dot}`}></div>
+                                      <span className="font-bold text-slate-700">
+                                        {item.time || safeFormatTime(item.date)}
+                                      </span>
+                                      <span className="text-slate-400">•</span>
+                                      <span className="text-slate-500 truncate max-w-[120px]">
+                                        {item.location || "Wilayah Coblong"}
+                                      </span>
+                                    </div>
+                                    {user?.peran === "SUPER_ADMIN" && (
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={(e) => handleEdit(item, e)}
+                                          className="p-1 text-slate-400 hover:text-emerald-600 rounded"
+                                          title="Edit"
+                                        >
+                                          <Pencil size={12} />
+                                        </button>
+                                        <button
+                                          onClick={(e) => handleDelete(item.id, e)}
+                                          className="p-1 text-slate-400 hover:text-red-500 rounded"
+                                          title="Hapus"
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
-                });
+                }
+
+                // Standard full timeline view
+                return (
+                  <div className="relative pl-3 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    {daySchedules.map((schedule) => {
+                      const categoryColors: Record<string, { badge: string; dot: string }> = {
+                        Pengangkutan: { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+                        Sosialisasi: { badge: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+                        Rapat: { badge: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-500" },
+                        Lainnya: { badge: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-500" },
+                      };
+                      const catTheme = categoryColors[schedule.category] || categoryColors.Lainnya;
+
+                      return (
+                        <div key={schedule.id} className="relative pl-4 group">
+                          {/* Timeline dot */}
+                          <div className={`absolute -left-[14px] top-3.5 w-2.5 h-2.5 rounded-full ring-4 ring-white ${catTheme.dot}`}></div>
+
+                          <div className="p-3 border border-slate-200/80 rounded-xl bg-white hover:border-emerald-400 hover:shadow-sm transition-all relative">
+                            {user?.peran === "SUPER_ADMIN" && (
+                              <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-0.5 rounded-md shadow-2xs">
+                                <button
+                                  onClick={(e) => handleEdit(schedule, e)}
+                                  className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded"
+                                  title="Edit"
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  onClick={(e) => handleDelete(schedule.id, e)}
+                                  className="p-1 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                  title="Hapus"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex justify-between items-center mb-1">
+                              <span className={`text-[9px] px-2 py-0.5 rounded border uppercase tracking-wider font-extrabold ${catTheme.badge}`}>
+                                {schedule.category || "Kegiatan"}
+                              </span>
+                              <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                <Clock size={12} className="text-slate-400" />
+                                {schedule.time || safeFormatTime(schedule.date)}
+                              </span>
+                            </div>
+
+                            <h4 className="text-[13px] font-extrabold text-slate-900 leading-snug">
+                              {schedule.title || "(tanpa judul)"}
+                            </h4>
+                            <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
+                              <MapPin size={12} className="text-slate-400" />
+                              {schedule.location || "Wilayah Coblong"}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
               })()
             )}
           </div>

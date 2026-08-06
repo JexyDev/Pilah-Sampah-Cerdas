@@ -79,8 +79,8 @@ export const Register: React.FC = () => {
   const [nim, setNim] = useState("");
   const [jurusan, setJurusan] = useState("");
   const [fakultas, setFakultas] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(
+  const [startDate] = useState(new Date().toISOString().split("T")[0]);
+  const [endDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
 
