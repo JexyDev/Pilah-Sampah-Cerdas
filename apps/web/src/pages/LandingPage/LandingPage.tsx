@@ -8,7 +8,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { downloadPanduanPdf } from "../../utils/downloadPanduanPdf";
-import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 import "./LandingPage.css";
 
 // Exact Vector SVG Icon matching the user's uploaded logo image (Bin + Recycling Arrow + Green Leaf)
@@ -891,25 +890,6 @@ export const LandingPage: React.FC = () => {
             )}
           </div>
 
-        </div>
-      </section>
-
-      {/* ----------------- ANALYTICS & LEADERBOARD BOARD SECTION ----------------- */}
-      <section id="analytics" className="py-20 bg-slate-50/70 border-b border-slate-200/80">
-        <div className="container-custom space-y-10">
-          <div className="max-w-3xl mx-auto text-center space-y-3">
-            <span className="text-emerald-600 font-extrabold text-xs uppercase tracking-widest px-3 py-1 bg-emerald-100/90 rounded-full border border-emerald-200">
-              REAL-TIME MONITORING &amp; LEADERBOARD
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-              Grafik Analitik &amp; <span className="text-emerald-600">Papan Peringkat</span> Ekosistem
-            </h2>
-            <p className="text-slate-600 text-sm sm:text-base font-medium">
-              Statistik pemilahan sampah, volume terkumpul per kelurahan, serta peringkat keaktifan warga, petugas, RW, kelurahan, dan pendamping akademis KKN di Kecamatan Coblong.
-            </p>
-          </div>
-
-          <AnalyticsOverviewBoard />
         </div>
       </section>
 
