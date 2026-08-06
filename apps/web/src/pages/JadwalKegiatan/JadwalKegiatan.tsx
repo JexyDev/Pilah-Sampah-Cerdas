@@ -12,6 +12,7 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, Polyline, Circle } from "react-leaflet";
 import L from "leaflet";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -61,6 +62,7 @@ const JadwalKegiatan: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState(1);
   const [editId, setEditId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -218,17 +220,22 @@ const JadwalKegiatan: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm("Apakah Anda yakin ingin menghapus jadwal ini?")) return;
-    
+    setDeleteConfirmId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await api.delete(`/schedules/${id}`);
+      await api.delete(`/schedules/${deleteConfirmId}`);
       toast.success("Jadwal berhasil dihapus");
       fetchSchedules();
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menghapus jadwal";
       toast.error(errMsg);
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -943,6 +950,16 @@ const JadwalKegiatan: React.FC = () => {
             </div>
           </div>
         )}
+
+        <ConfirmModal
+          isOpen={!!deleteConfirmId}
+          onClose={() => setDeleteConfirmId(null)}
+          onConfirm={handleConfirmDelete}
+          title="Hapus Jadwal Kegiatan"
+          message="Apakah Anda yakin ingin menghapus jadwal kegiatan ini? Tindakan ini tidak dapat dibatalkan."
+          confirmText="Ya, Hapus Jadwal"
+          type="danger"
+        />
       </main>
     </div>
   );

@@ -19,6 +19,7 @@ import DplDashboardPage from "../dpl/DplDashboardPage";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { IconRenderer } from "../../components/common/IconRenderer";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 const WILAYAH_OPTIONS: SelectOption[] = [
   { value: "Kecamatan Coblong", label: "Kecamatan Coblong (Semua)", sublabel: "Cakupan Seluruh Kecamatan" },
@@ -1379,6 +1380,22 @@ const Dashboard: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
+  const [deleteBinConfirm, setDeleteBinConfirm] = useState<any | null>(null);
+
+  const handleConfirmDeleteBin = async () => {
+    if (!deleteBinConfirm) return;
+    try {
+      await api.delete(`/bins/${deleteBinConfirm.id || deleteBinConfirm.kode}`);
+      toast.success("Tempat sampah berhasil dihapus");
+      setRecentBins((prev) =>
+        prev.filter((b) => b.id !== deleteBinConfirm.id && b.kode !== deleteBinConfirm.kode)
+      );
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
+    } finally {
+      setDeleteBinConfirm(null);
+    }
+  };
 
   useEffect(() => {
     // Skip API load for roles with custom dashboards
@@ -2216,19 +2233,9 @@ const Dashboard: React.FC = () => {
                               <Pencil size={15} />
                             </button>
                             <button
-                              onClick={async () => {
-                                if (window.confirm(`Apakah Anda yakin ingin menghapus tempat sampah ${bin.qrCode || bin.kode}?`)) {
-                                  try {
-                                    await api.delete(`/bins/${bin.id || bin.kode}`);
-                                    toast.success("Tempat sampah berhasil dihapus");
-                                    setRecentBins(prev => prev.filter(b => (b.id !== bin.id && b.kode !== bin.kode)));
-                                  } catch (err: any) {
-                                    toast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
-                                  }
-                                }
-                              }}
+                              onClick={() => setDeleteBinConfirm(bin)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              title="Hapus Bin"
+                              title="Hapus Tempat Sampah"
                             >
                               <Trash2 size={15} />
                             </button>
@@ -2605,6 +2612,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteBinConfirm}
+        onClose={() => setDeleteBinConfirm(null)}
+        onConfirm={handleConfirmDeleteBin}
+        title="Hapus Tempat Sampah"
+        message={`Apakah Anda yakin ingin menghapus tempat sampah ${deleteBinConfirm?.qrCode || deleteBinConfirm?.kode || ""}?`}
+        confirmText="Ya, Hapus"
+        type="danger"
+      />
     </div>
   );
 };
