@@ -28,10 +28,14 @@ jobs:
             npx prisma migrate deploy
             cd ../..
 
-            # Frontend
+            # Frontend (Zero-Downtime Atomic Deployment)
             cd apps/web
             npm install
-            npm run build
+            npx vite build --outDir dist-temp
+            rm -rf dist-old
+            mv dist dist-old 2>/dev/null || true
+            mv dist-temp dist
+            rm -rf dist-old
             cd ../..
 
             # Restart services
