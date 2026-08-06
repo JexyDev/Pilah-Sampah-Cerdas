@@ -1880,18 +1880,23 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Komposisi Sampah Card */}
-        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 flex flex-col justify-between card-polish">
-          <div className="flex justify-between items-center mb-2">
+        {/* Komposisi Sampah Card (Modern Glassmorphism & Interactive) */}
+        <div className="lg:col-span-6 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden group">
+          {/* Subtle Ambient Glow Backdrop */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-gradient-to-br from-emerald-400/10 via-amber-400/10 to-rose-400/10 rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform duration-700" />
+
+          <div className="flex justify-between items-center mb-3 z-10">
             <div>
-              <h4 className="font-bold text-[18px] text-on-surface">Komposisi Sampah</h4>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Akumulasi Real-time Hasil Pemilahan & Residu
+              <h4 className="font-extrabold text-[18px] text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <span>Komposisi Sampah</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800">
+                  Real-time
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Akumulasi Hasil Pemilahan & Timbulan Residu Hilir
               </p>
             </div>
-            <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
-              Persentase Volume
-            </span>
           </div>
 
           {(() => {
@@ -1907,7 +1912,6 @@ const Dashboard: React.FC = () => {
               return fallback;
             };
 
-            // Extract raw weight values safely without NaN risk
             const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 363.1);
             const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 387.5);
             const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 3053.7);
@@ -1917,143 +1921,155 @@ const Dashboard: React.FC = () => {
             const pctAnorg = totalKg > 0 ? Math.round((rawAnorg / totalKg) * 100) : 0;
             const pctResidu = totalKg > 0 ? Math.max(0, 100 - pctOrg - pctAnorg) : 0;
 
-
-            const c = 2 * Math.PI * 50;
+            const c = 2 * Math.PI * 52;
             const valOrg = (pctOrg / 100) * c;
             const valAnorg = (pctAnorg / 100) * c;
             const valResidu = (pctResidu / 100) * c;
 
-            // Find dominant category for center label
             let dominantLabel = "Residu";
             let dominantPct = pctResidu;
-            let dominantColor = "text-rose-600";
+            let dominantColor = "text-rose-600 dark:text-rose-400";
+            let dominantGlow = "shadow-rose-500/20";
 
             if (pctOrg >= pctAnorg && pctOrg >= pctResidu) {
               dominantLabel = "Organik";
               dominantPct = pctOrg;
-              dominantColor = "text-emerald-600";
+              dominantColor = "text-emerald-600 dark:text-emerald-400";
+              dominantGlow = "shadow-emerald-500/20";
             } else if (pctAnorg >= pctOrg && pctAnorg >= pctResidu) {
               dominantLabel = "Anorganik";
               dominantPct = pctAnorg;
-              dominantColor = "text-amber-500";
+              dominantColor = "text-amber-500 dark:text-amber-400";
+              dominantGlow = "shadow-amber-500/20";
             }
 
             return (
-              <div className="flex-1 flex flex-col items-center justify-center relative my-2">
-                {/* SVG Doughnut */}
-                <div className="w-36 h-36 relative flex items-center justify-center group cursor-pointer">
-                  <svg className="w-36 h-36 transform -rotate-90">
-                    <circle cx="72" cy="72" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="14" />
+              <div className="flex-1 flex flex-col items-center justify-between z-10 my-1">
+                {/* SVG Ring Chart with Glowing Center */}
+                <div className="w-44 h-44 relative flex items-center justify-center my-2 group/ring">
+                  <div className={`absolute inset-3 rounded-full bg-white dark:bg-slate-900 shadow-xl ${dominantGlow} transition-all duration-300 group-hover/ring:scale-105`} />
+                  
+                  <svg className="w-44 h-44 transform -rotate-90 relative z-10 drop-shadow-md">
+                    <circle cx="88" cy="88" r="52" fill="transparent" stroke="currentColor" strokeWidth="12" className="text-slate-100 dark:text-slate-800" />
                     {pctOrg > 0 && (
                       <circle
-                        cx="72"
-                        cy="72"
-                        r="50"
+                        cx="88"
+                        cy="88"
+                        r="52"
                         fill="transparent"
                         stroke="#10b981"
-                        strokeWidth="14"
+                        strokeWidth="12"
                         strokeDasharray={`${valOrg} ${c}`}
                         strokeDashoffset={0}
-                        className="transition-all duration-500 hover:stroke-width-[18]"
+                        strokeLinecap="round"
+                        className="transition-all duration-700 hover:stroke-[16] cursor-pointer drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]"
                       />
                     )}
                     {pctAnorg > 0 && (
                       <circle
-                        cx="72"
-                        cy="72"
-                        r="50"
+                        cx="88"
+                        cy="88"
+                        r="52"
                         fill="transparent"
-                        stroke="#eab308"
-                        strokeWidth="14"
+                        stroke="#f59e0b"
+                        strokeWidth="12"
                         strokeDasharray={`${valAnorg} ${c}`}
                         strokeDashoffset={-valOrg}
-                        className="transition-all duration-500 hover:stroke-width-[18]"
+                        strokeLinecap="round"
+                        className="transition-all duration-700 hover:stroke-[16] cursor-pointer drop-shadow-[0_0_6px_rgba(245,158,11,0.4)]"
                       />
                     )}
                     {pctResidu > 0 && (
                       <circle
-                        cx="72"
-                        cy="72"
-                        r="50"
+                        cx="88"
+                        cy="88"
+                        r="52"
                         fill="transparent"
-                        stroke="#ef4444"
-                        strokeWidth="14"
+                        stroke="#f43f5e"
+                        strokeWidth="12"
                         strokeDasharray={`${valResidu} ${c}`}
                         strokeDashoffset={-(valOrg + valAnorg)}
-                        className="transition-all duration-500 hover:stroke-width-[18]"
+                        strokeLinecap="round"
+                        className="transition-all duration-700 hover:stroke-[16] cursor-pointer drop-shadow-[0_0_6px_rgba(244,63,94,0.4)]"
                       />
                     )}
                   </svg>
-                  <div className="absolute text-center flex flex-col items-center justify-center">
-                    <span className={`block text-2xl font-black leading-none ${dominantColor}`}>
+                  <div className="absolute text-center flex flex-col items-center justify-center z-20 pointer-events-none">
+                    <span className={`block text-3xl font-black tracking-tight leading-none ${dominantColor}`}>
                       {dominantPct}%
                     </span>
-                    <span className="text-[10px] text-slate-500 uppercase font-extrabold tracking-wider mt-1 block">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-extrabold tracking-widest mt-1 block">
                       {dominantLabel}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
+                    <span className="text-[9px] text-slate-400 font-bold block mt-0.5 font-mono">
                       {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg Total
                     </span>
                   </div>
                 </div>
 
-                {/* Progress Breakdown Bars for Each Category */}
-                <div className="mt-4 w-full space-y-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/60">
+                {/* Interactive Glassmorphic Progress Breakdown */}
+                <div className="w-full space-y-2.5 bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm shadow-2xs">
                   {/* Organik Progress */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                        Organik
+                  <div className="group/item cursor-pointer">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <div className="flex items-center gap-2 font-extrabold text-slate-700 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-2xs group-hover/item:scale-125 transition-transform" />
+                        <span>Organik</span>
                       </div>
-                      <div className="font-mono font-bold text-slate-800">
+                      <div className="font-mono text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
                         {rawOrg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
-                        <span className="text-emerald-600 font-extrabold ml-1">({pctOrg}%)</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-black ml-1.5 bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-200/50">
+                          {pctOrg}%
+                        </span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                    <div className="h-2.5 w-full bg-slate-200/70 dark:bg-slate-700 rounded-full overflow-hidden p-0.5">
                       <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 rounded-full transition-all duration-700 shadow-sm group-hover/item:brightness-110"
                         style={{ width: `${pctOrg}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Anorganik Progress */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-                        Anorganik
+                  <div className="group/item cursor-pointer">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <div className="flex items-center gap-2 font-extrabold text-slate-700 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 shadow-2xs group-hover/item:scale-125 transition-transform" />
+                        <span>Anorganik / Daur Ulang</span>
                       </div>
-                      <div className="font-mono font-bold text-slate-800">
+                      <div className="font-mono text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
                         {rawAnorg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
-                        <span className="text-amber-600 font-extrabold ml-1">({pctAnorg}%)</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-black ml-1.5 bg-amber-50 dark:bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-200/50">
+                          {pctAnorg}%
+                        </span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                    <div className="h-2.5 w-full bg-slate-200/70 dark:bg-slate-700 rounded-full overflow-hidden p-0.5">
                       <div
-                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400 rounded-full transition-all duration-700 shadow-sm group-hover/item:brightness-110"
                         style={{ width: `${pctAnorg}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Residu Progress */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
-                        Residu
+                  <div className="group/item cursor-pointer">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <div className="flex items-center gap-2 font-extrabold text-slate-700 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-rose-500 to-red-400 shadow-2xs group-hover/item:scale-125 transition-transform" />
+                        <span>Residu TPA</span>
                       </div>
-                      <div className="font-mono font-bold text-rose-600">
+                      <div className="font-mono text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
                         {rawResidu.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
-                        <span className="text-rose-600 font-extrabold ml-1">({pctResidu}%)</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-black ml-1.5 bg-rose-50 dark:bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-200/50">
+                          {pctResidu}%
+                        </span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                    <div className="h-2.5 w-full bg-slate-200/70 dark:bg-slate-700 rounded-full overflow-hidden p-0.5">
                       <div
-                        className="h-full bg-rose-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-rose-600 via-rose-500 to-red-400 rounded-full transition-all duration-700 shadow-sm group-hover/item:brightness-110"
                         style={{ width: `${pctResidu}%` }}
                       />
                     </div>
@@ -2065,7 +2081,7 @@ const Dashboard: React.FC = () => {
 
           <button
             onClick={() => setShowCompositionDetail(true)}
-            className="mt-3 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all duration-150 btn-polish cursor-pointer"
+            className="mt-3 w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all duration-150 btn-polish cursor-pointer"
           >
             Lihat Detail Komposisi
           </button>
