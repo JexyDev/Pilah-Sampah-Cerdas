@@ -790,7 +790,8 @@ const ManajemenPengguna: React.FC = () => {
                   <option value="PANITIA_TASKFORCE">Panitia / Taskforce KKN</option>
                   <option value="CAMAT">Camat</option>
                   <option value="LURAH">Lurah</option>
-                  <option value="RW">RW</option>
+                  <option value="RW">Pengurus RW</option>
+                  <option value="RT">Pengurus RT</option>
                   <option value="PETUGAS_RESIDU">Petugas Residu</option>
                   <option value="WARGA">Warga</option>
                   <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
