@@ -12,6 +12,7 @@ import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore, type Bin } from "../../store/useMonitoringStore";
 import toast from "react-hot-toast";
+import { RefreshCw } from "lucide-react";
 
 import {
   KELURAHAN_GEODATA,
@@ -115,10 +116,24 @@ const MapFlyTo: React.FC<{ target: [number, number] | null; zoom: number | null 
   return null;
 };
 
-const MapEventHandler = ({ setZoom }: { setZoom: (z: number) => void }) => {
+const MapEventHandler = ({
+  setZoom,
+  setSelectedKelurahan,
+  setSelectedRtRw,
+}: {
+  setZoom: (z: number) => void;
+  setSelectedKelurahan: (k: string) => void;
+  setSelectedRtRw: (r: string) => void;
+}) => {
   useMapEvents({
     zoomend: (e) => {
-      setZoom(e.target.getZoom());
+      const z = e.target.getZoom();
+      setZoom(z);
+      if (z <= 14) {
+        // Auto-reset filter kelurahan & RT/RW saat user melakukan Zoom Out ke level kecamatan (<= 14)
+        setSelectedKelurahan("Semua Kelurahan");
+        setSelectedRtRw("Semua RT/RW");
+      }
     },
   });
   return null;
@@ -418,6 +433,20 @@ const Monitoring: React.FC = () => {
                   </option>
                 ))}
               </select>
+
+              {(selectedKelurahan !== "Semua Kelurahan" || selectedRtRw !== "Semua RT/RW") && (
+                <button
+                  onClick={() => {
+                    setSelectedKelurahan("Semua Kelurahan");
+                    setSelectedRtRw("Semua RT/RW");
+                    setFlyToTarget([-6.8903, 107.611]);
+                    setFlyToZoom(14);
+                  }}
+                  className="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition shadow-xs flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw size={12} /> Reset Peta
+                </button>
+              )}
             </div>
           </div>
 
@@ -485,7 +514,11 @@ const Monitoring: React.FC = () => {
           </div>
           <div className="flex-1 relative z-10">
             <MapContainer center={[-6.8903, 107.611]} zoom={14} className="h-full w-full">
-              <MapEventHandler setZoom={setMapZoom} />
+              <MapEventHandler
+                setZoom={setMapZoom}
+                setSelectedKelurahan={setSelectedKelurahan}
+                setSelectedRtRw={setSelectedRtRw}
+              />
               <MapFlyTo target={flyToTarget} zoom={flyToZoom} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
