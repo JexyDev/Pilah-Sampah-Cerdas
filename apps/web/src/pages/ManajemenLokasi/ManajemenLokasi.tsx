@@ -43,7 +43,6 @@ import {
 import {
   KELURAHAN_GEODATA,
   createMapBinIcon,
-  createHouseIcon,
   createRwZonaIcon,
   createKelurahanPinIcon,
 } from "../../constants/coblongGeoData";
@@ -170,7 +169,6 @@ const ManajemenLokasi: React.FC = () => {
 
   const [locations, setLocations] = useState<any[]>([]);
   const [bins, setBins] = useState<any[]>([]);
-  const [households, setHouseholds] = useState<any[]>([]);
   const [kelurahans, setKelurahans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -233,16 +231,15 @@ const ManajemenLokasi: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [locRes, binRes, hhRes, kelRes] = await Promise.all([
+      const [locRes, binRes, kelRes] = await Promise.all([
         api.get("/bins/locations"),
         api.get("/bins"),
-        api.get("/households"),
         api.get("/bins/kelurahans"),
       ]);
-      setLocations(locRes.data.data || []);
-      setBins(binRes.data.data || []);
-      setHouseholds(hhRes.data.data || []);
-      setKelurahans(kelRes.data.data || []);
+
+      if (locRes.data?.success) setLocations(locRes.data.data || []);
+      if (binRes.data?.success) setBins(binRes.data.data || []);
+      if (kelRes.data?.success) setKelurahans(kelRes.data.data || []);
     } catch (err) {
       setError("Gagal memuat data dari server.");
       toast.error("Gagal memuat data lokasi & peta");
@@ -735,40 +732,6 @@ const ManajemenLokasi: React.FC = () => {
                     </React.Fragment>
                   );
                 })}
-
-                {/* Households (Rumah Warga Dampingan) */}
-                {households
-                  .filter((h) => h.latitude && h.longitude)
-                  .map((h) => (
-                    <Marker
-                      key={h.id}
-                      position={[Number(h.latitude), Number(h.longitude)]}
-                      icon={createHouseIcon()}
-                      eventHandlers={{
-                        click: () => {
-                          setMapCenter([Number(h.latitude), Number(h.longitude)]);
-                          setMapZoom(19);
-                        },
-                      }}
-                    >
-                      <Popup>
-                        <div className="text-[12px] font-sans space-y-1.5 p-1 min-w-[200px]">
-                          <div className="border-b border-slate-200 pb-1">
-                            <strong className="text-sm font-bold block text-slate-900">🏠 Rumah {h.user?.name || "Warga"}</strong>
-                            {h.user?.phone && (
-                              <span className="text-[10px] font-bold text-emerald-600 block">📱 {h.user.phone}</span>
-                            )}
-                          </div>
-                          <p className="text-slate-600 text-[11px] leading-tight">
-                            <strong>Alamat:</strong> {h.address}
-                          </p>
-                          <p className="text-slate-600 text-[11px]">
-                            <strong>RT/RW:</strong> {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
-                          </p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
               </>
             ) : null}
           </MapContainer>
