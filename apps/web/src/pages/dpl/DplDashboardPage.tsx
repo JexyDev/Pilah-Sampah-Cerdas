@@ -164,12 +164,6 @@ export const DplDashboardPage: React.FC = () => {
   const [assistedCitizensData, setAssistedCitizensData] = useState<AssistedCitizensResponse | null>(null);
   const [loadingCitizens, setLoadingCitizens] = useState(false);
 
-  // Assessment Form Modal States
-  const [selectedStudentForAssessment, setSelectedStudentForAssessment] = useState<StudentDetail | null>(null);
-  const [assessmentScoreInput, setAssessmentScoreInput] = useState<number>(85);
-  const [assessmentNoteInput, setAssessmentNoteInput] = useState("");
-  const [submittingAssessment, setSubmittingAssessment] = useState(false);
-
   // Rejection Note Modal States
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
@@ -212,33 +206,6 @@ export const DplDashboardPage: React.FC = () => {
       toast.error("Gagal memuat detail warga dibantu");
     } finally {
       setLoadingCitizens(false);
-    }
-  };
-
-  const handleOpenAssessmentModal = (student: StudentDetail) => {
-    setSelectedStudentForAssessment(student);
-    setAssessmentScoreInput(student.assessmentScore || 85);
-    setAssessmentNoteInput("");
-  };
-
-  const handleSubmitAssessment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedStudentForAssessment) return;
-    setSubmittingAssessment(true);
-    try {
-      await dplService.assessStudent(
-        selectedStudentForAssessment.id,
-        assessmentScoreInput,
-        assessmentNoteInput
-      );
-      toast.success(`Penilaian untuk ${selectedStudentForAssessment.name} berhasil disimpan!`);
-      setSelectedStudentForAssessment(null);
-      const updatedStudents = await dplService.getStudents();
-      setStudents(updatedStudents);
-    } catch (err: any) {
-      toast.error("Gagal menyimpan penilaian mahasiswa");
-    } finally {
-      setSubmittingAssessment(false);
     }
   };
 
@@ -836,13 +803,6 @@ export const DplDashboardPage: React.FC = () => {
                           >
                             <QrCode size={13} /> Lihat Portofolio
                           </button>
-                          <button
-                            onClick={() => handleOpenAssessmentModal(st)}
-                            className="px-3 py-1.5 bg-amber-50 text-amber-700 font-semibold rounded-lg hover:bg-amber-100 transition flex items-center gap-1 text-[11px] border border-amber-200/60 cursor-pointer"
-                            title="Beri Penilaian DPL"
-                          >
-                            <Award size={13} /> Penilaian
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1303,63 +1263,7 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 2: FORM PENILAIAN DPL */}
-      {selectedStudentForAssessment && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Form Penilaian Aktivitas DPL</h3>
-                <p className="text-xs text-slate-500">{selectedStudentForAssessment.name} ({selectedStudentForAssessment.jurusan})</p>
-              </div>
-              <button onClick={() => setSelectedStudentForAssessment(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-            </div>
-
-            <form onSubmit={handleSubmitAssessment} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Skor Penilaian (0 - 100):</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={assessmentScoreInput}
-                  onChange={(e) => setAssessmentScoreInput(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg font-bold text-sm outline-none focus:border-emerald-600"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Catatan Evaluasi DPL:</label>
-                <textarea
-                  rows={3}
-                  value={assessmentNoteInput}
-                  onChange={(e) => setAssessmentNoteInput(e.target.value)}
-                  placeholder="Catatan evaluasi keaktifan mahasiswa..."
-                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-emerald-600"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedStudentForAssessment(null)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingAssessment}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition"
-                >
-                  {submittingAssessment ? "Menyimpan..." : "Simpan Penilaian"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* MODAL DRILL-DOWN WARGA DIBANTU */}
 
       {/* MODAL 3: PENOLAKAN IZIN CATATAN */}
       {rejectingRequestId && (
