@@ -1746,11 +1746,11 @@ const Dashboard: React.FC = () => {
       {/* === Charts & Interactive Map Grid === */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
         {/* Trend Setoran Chart */}
-        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 relative overflow-hidden card-polish">
-          <div className="flex justify-between items-center mb-4">
+        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 relative overflow-hidden card-polish flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div className="space-y-1">
               <h4 className="font-bold text-[18px] text-on-surface">
-                Trend Setoran Sampah per Minggu
+                Trend Setoran Sampah (Real-time)
               </h4>
               <div className="flex gap-3 text-[11px] font-bold">
                 <span className="flex items-center gap-1.5">
@@ -1767,47 +1767,52 @@ const Dashboard: React.FC = () => {
             <select
               value={weeks}
               onChange={(e) => setWeeks(parseInt(e.target.value))}
-              className="bg-surface-container px-3 py-1.5 rounded-lg text-[12px] border border-outline-variant/30 text-on-surface focus:outline-none cursor-pointer font-bold"
+              className="bg-surface-container px-3 py-1.5 rounded-lg text-[12px] border border-outline-variant/40 text-on-surface focus:outline-none cursor-pointer font-bold shadow-2xs hover:border-primary/50 transition-all"
             >
+              <option value={1}>Hari Ini (24 Jam)</option>
+              <option value={2}>7 Hari Terakhir</option>
               <option value={4}>4 Minggu Terakhir</option>
               <option value={8}>8 Minggu Terakhir</option>
               <option value={12}>12 Minggu Terakhir</option>
+              <option value={24}>6 Bulan Terakhir</option>
+              <option value={52}>1 Tahun Terakhir</option>
+              <option value={100}>Semua Periode</option>
             </select>
           </div>
-          <div className="h-[220px] w-full relative">
+          <div className="h-[360px] w-full relative">
             {trendPoints.length > 0 ? (
-              <svg className="w-full h-full" viewBox="0 0 700 200">
+              <svg className="w-full h-full" viewBox="0 0 700 320">
                 <defs>
                   <linearGradient id="orgGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
                   </linearGradient>
                   <linearGradient id="inorgGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#eab308" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#eab308" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#eab308" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#eab308" stopOpacity="0.02" />
                   </linearGradient>
                   <linearGradient id="residuGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0.02" />
                   </linearGradient>
                 </defs>
 
                 {/* Y-Axis Label Title */}
-                <text x="10" y="18" fill="#475569" fontSize="9" fontWeight="bold">
+                <text x="10" y="20" fill="#475569" fontSize="10" fontWeight="bold">
                   Berat (kg)
                 </text>
 
                 {[0, 25, 50, 75, 100].map((pct) => {
-                  const y = 170 - (pct / 100) * 140;
+                  const y = 280 - (pct / 100) * 240;
                   return (
                     <g key={pct}>
-                      <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" />
+                      <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" strokeDasharray={pct === 0 ? "none" : "3,3"} />
                       <text
                         x="52"
                         y={y + 3}
                         textAnchor="end"
                         fill="#64748b"
-                        fontSize="8"
+                        fontSize="9"
                         fontWeight="bold"
                       >
                         {Math.round((maxWeightTrend * pct) / 100)}
@@ -1816,7 +1821,7 @@ const Dashboard: React.FC = () => {
                   );
                 })}
 
-                <line x1="60" y1="30" x2="60" y2="170" stroke="#cbd5e1" strokeWidth="1" />
+                <line x1="60" y1="40" x2="60" y2="280" stroke="#cbd5e1" strokeWidth="1.5" />
                 <path d={trendOrganicAreaPath} fill="url(#orgGrad)" />
                 <path d={trendInorganicAreaPath} fill="url(#inorgGrad)" />
                 <path d={trendResiduAreaPath} fill="url(#residuGrad)" />
@@ -1825,7 +1830,7 @@ const Dashboard: React.FC = () => {
                   d={trendOrganicPath}
                   fill="none"
                   stroke="#10b981"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -1833,7 +1838,7 @@ const Dashboard: React.FC = () => {
                   d={trendInorganicPath}
                   fill="none"
                   stroke="#eab308"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -1841,29 +1846,34 @@ const Dashboard: React.FC = () => {
                   d={trendResiduPath}
                   fill="none"
                   stroke="#ef4444"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
 
                 {trendPoints.map((p, i) => (
                   <g key={i}>
-                    <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="white" strokeWidth="1.5" />
-                    <circle cx={p.x} cy={p.yInorganic} r="4" fill="#eab308" stroke="white" strokeWidth="1.5" />
-                    <circle cx={p.x} cy={p.yResidu} r="4" fill="#ef4444" stroke="white" strokeWidth="1.5" />
-                    <text x={p.x} y="185" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold">
+                    {/* Dots & Labels */}
+                    <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx={p.x} cy={p.yInorganic} r="4" fill="#eab308" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx={p.x} cy={p.yResidu} r="4" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+
+                    <text
+                      x={p.x}
+                      y="305"
+                      textAnchor="middle"
+                      fill="#64748b"
+                      fontSize="10"
+                      fontWeight="bold"
+                    >
                       {p.label}
                     </text>
                   </g>
                 ))}
-                {/* X-Axis Label Title */}
-                <text x="370" y="198" textAnchor="middle" fill="#475569" fontSize="9" fontWeight="bold">
-                  Waktu (Minggu)
-                </text>
               </svg>
             ) : (
-              <div className="flex items-center justify-center h-full text-xs text-on-surface-variant">
-                Tidak ada data setoran untuk periode ini
+              <div className="w-full h-full flex items-center justify-center text-xs text-slate-400 italic">
+                Belum ada data trend untuk periode ini
               </div>
             )}
           </div>
