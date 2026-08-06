@@ -326,7 +326,10 @@ export const dashboardService = {
     const result = [];
     const now = new Date();
 
-    for (let i = weeks - 1; i >= 0; i--) {
+    // Jika "Semua Periode" (weeks=100) atau > 12 minggu, gunakan maksimal 12 titik sampel agar visual grafik tidak menumpuk/eror
+    const effectiveWeeks = weeks > 12 ? 12 : weeks;
+
+    for (let i = effectiveWeeks - 1; i >= 0; i--) {
       const endOfWeek = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
       const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
