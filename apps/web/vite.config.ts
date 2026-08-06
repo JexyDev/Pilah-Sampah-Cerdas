@@ -11,4 +11,18 @@ export default defineConfig({
   server: {
     allowedHosts: true,
   },
+  build: {
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('leaflet')) return 'vendor-leaflet';
+            if (id.includes('lucide-react')) return 'vendor-lucide';
+            if (id.includes('react')) return 'vendor-react';
+          }
+        },
+      },
+    },
+  },
 })
