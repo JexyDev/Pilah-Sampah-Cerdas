@@ -20,7 +20,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
     if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '-';
     try {
       final dt = DateTime.parse(rawStr).toLocal();
-      return DateFormat('yyyy-MM-dd HH:mm', 'id_ID').format(dt) + ' WIB';
+      return '${DateFormat('yyyy-MM-dd HH:mm', 'id_ID').format(dt)} WIB';
     } catch (_) {
       if (rawStr.contains('T')) {
         final parts = rawStr.split('T');
@@ -40,7 +40,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
         item['rtRwName']?.toString() ??
         item['assignedZone']?.toString();
     if (addr != null && addr.isNotEmpty && addr != '-') return addr;
-    return 'Wilayah Penugasan Petugas';
+    return '-';
   }
 
   String _resolveWargaName(Map<String, dynamic> item) {
@@ -50,7 +50,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
         item['userName']?.toString() ??
         item['subtitle']?.toString();
     if (name != null && name.isNotEmpty && name != '-') return name;
-    return 'Warga Binaan (Umum)';
+    return '-';
   }
 
   void _showDetailModal(Map<String, dynamic> item) {

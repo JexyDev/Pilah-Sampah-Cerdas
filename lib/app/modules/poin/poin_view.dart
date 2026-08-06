@@ -144,8 +144,17 @@ class PoinView extends ConsumerWidget {
     // Pagi: 06:00 - 08:00
     // Sore: 16:00 - 18:00
     final now = DateTime.now();
+    final isPagiAvailable = now.hour >= 6 && now.hour < 8;
+    final isSoreAvailable = now.hour >= 16 && now.hour < 18;
+    
     final isPagiOver = now.hour >= 8;
     final isSoreOver = now.hour >= 18;
+
+    final statusPagi = isPagiAvailable ? 'Tersedia' : (isPagiOver ? 'Terlewat' : 'Belum Mulai');
+    final colorPagi = isPagiAvailable ? AppColors.primaryGreen : (isPagiOver ? AppColors.dangerRed : Colors.grey);
+
+    final statusSore = isSoreAvailable ? 'Tersedia' : (isSoreOver ? 'Terlewat' : 'Belum Mulai');
+    final colorSore = isSoreAvailable ? AppColors.primaryGreen : (isSoreOver ? AppColors.dangerRed : Colors.grey);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -164,7 +173,7 @@ class PoinView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Status Jadwal Hari Ini',
+            'Jadwal Buang Sampah Pagi dan Sore',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -178,8 +187,8 @@ class PoinView extends ConsumerWidget {
                 child: _ScheduleTimeItem(
                   title: 'Pagi',
                   time: '06:00 - 08:00',
-                  status: isPagiOver ? 'Terlewat' : 'Tersedia',
-                  statusColor: isPagiOver ? AppColors.dangerRed : AppColors.primaryGreen,
+                  status: statusPagi,
+                  statusColor: colorPagi,
                   icon: Icons.wb_sunny_rounded,
                 ),
               ),
@@ -193,8 +202,8 @@ class PoinView extends ConsumerWidget {
                 child: _ScheduleTimeItem(
                   title: 'Sore',
                   time: '16:00 - 18:00',
-                  status: isSoreOver ? 'Terlewat' : 'Tersedia',
-                  statusColor: isSoreOver ? AppColors.dangerRed : AppColors.primaryGreen,
+                  status: statusSore,
+                  statusColor: colorSore,
                   icon: Icons.nights_stay_rounded,
                 ),
               ),
@@ -578,7 +587,7 @@ class _PoinHistoryItem extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '+${item.points}',
+                    '+${item.points.abs()}',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,

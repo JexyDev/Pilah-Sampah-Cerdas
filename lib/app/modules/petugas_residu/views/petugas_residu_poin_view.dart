@@ -152,9 +152,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                   itemBuilder: (ctx, idx) {
                     final item = state.historyList[idx];
                     final rawWeight = item['actualWeightKg'] ?? item['weightKg'] ?? item['weight'] ?? 0.0;
-                    final weight = (rawWeight as num).toDouble();
-                    // Rumus: (Berat * 2) + 10 (Bonus Foto Valid)
-                    final points = (weight * 2).toInt() + 10;
+                    final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),

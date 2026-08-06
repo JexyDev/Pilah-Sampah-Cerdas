@@ -92,11 +92,6 @@ final notificationsProvider =
     final notifKey = '${userId}_${notif.id}';
     if (!notif.isRead && !_shownNotifIds.contains(notifKey)) {
       _shownNotifIds.add(notifKey);
-      NotificationEngine().showGenericNotification(
-        id: notif.id.hashCode,
-        title: notif.title,
-        body: notif.desc,
-      );
     }
   }
 

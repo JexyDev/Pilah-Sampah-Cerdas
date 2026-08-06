@@ -250,6 +250,8 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     } else if (title.contains('poin') || 
                type.contains('transaction_success')) {
       navigatorKey.currentState?.pushNamed('/poin');
+    } else if (title.contains('timbangan') || type.contains('timbangan') || type.contains('residu')) {
+      navigatorKey.currentState?.pushNamed(AppRoutes.riwayatPetugasResidu);
     } else {
       navigatorKey.currentState?.pushNamed(AppRoutes.notifikasi);
     }

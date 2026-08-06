@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/phone_formatter.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
@@ -46,16 +47,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   String _normalizeIdentifier(String raw) {
-    String input = raw.trim().replaceAll(RegExp(r'[\s\-]'), '');
-    final digitsOnly = input.replaceAll(RegExp(r'[^\d]'), '');
-    if (digitsOnly.length >= 10 &&
-        (input.startsWith('0') ||
-            input.startsWith('8') ||
-            input.startsWith('+62') ||
-            input.startsWith('62'))) {
-      if (!input.startsWith('0') && input.startsWith('8')) input = '0$input';
-    }
-    return input;
+    return PhoneFormatter.prepareLoginPhoneInput(raw);
   }
 
   Future<void> _onLogin() async {
@@ -63,12 +55,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final password = _passwordController.text;
 
     if (identifier.isEmpty && password.isEmpty) {
-      _showToast('Nomor telepon/NIM dan kata sandi wajib diisi');
+      _showToast('Nomor Telepon atau NIM, serta Kata Sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (identifier.isEmpty) {
-      _showToast('Nomor telepon/NIM wajib diisi');
+      _showToast('Nomor Telepon atau NIM wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -219,7 +211,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
                               // Field No. Telepon / NIM
                               const Text(
-                                'NOMOR TELEPON / NIM',
+                                'NOMOR TELEPON ATAU NIM',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -239,7 +231,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                   ),
                                 ],
                                 decoration: const InputDecoration(
-                                  hintText: '081234567890 atau NIM Anda',
+                                  hintText: 'Misal: 081234567890 atau 1301190000',
                                   prefixIcon: Icon(
                                     Icons.person_outline_rounded,
                                     color: AppColors.textSecondary,

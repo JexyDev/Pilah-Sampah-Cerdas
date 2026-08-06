@@ -128,10 +128,10 @@ class PetugasResiduView extends ConsumerWidget {
                     const SizedBox(height: AppDimensions.xl),
 
                     // Daftar Residu RT/RW Header
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Daftar Residu RT/RW (Input Timbangan)',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                         ),
@@ -205,7 +205,7 @@ class PetugasResiduView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [AppColors.primaryBlueDark, AppColors.primaryBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

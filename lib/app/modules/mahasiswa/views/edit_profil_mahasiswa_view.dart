@@ -6,6 +6,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 class EditProfilMahasiswaView extends ConsumerStatefulWidget {
   const EditProfilMahasiswaView({super.key});
@@ -87,9 +88,20 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
 
     setState(() => _isSubmittingProfile = true);
 
-    final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
-    final address = _addressController.text.trim();
+    final name = InputSanitizer.sanitize(_nameController.text);
+    final phone = InputSanitizer.sanitize(_phoneController.text);
+    final address = InputSanitizer.sanitize(_addressController.text);
+
+    if (name.isEmpty || phone.isEmpty || address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Field tidak boleh hanya berisi spasi/kosong.'),
+          backgroundColor: AppColors.dangerRed,
+        ),
+      );
+      setState(() => _isSubmittingProfile = false);
+      return;
+    }
 
     // Call auth notifier to update profile
     final success = await ref.read(authProvider.notifier).updateProfile(

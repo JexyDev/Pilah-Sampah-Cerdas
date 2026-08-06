@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/values/app_colors.dart';
 import '../../core/values/app_dimensions.dart';
+import '../shared/controllers/connectivity_controller.dart';
 import 'controllers/petugas_residu_controller.dart';
 
 class TimbanganResiduView extends ConsumerStatefulWidget {
@@ -21,8 +23,14 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   String? _photoPath;
   String _selectedClassification = 'Residu Non-B3';
   bool _isSubmitting = false;
+  SharedPreferences? _prefs;
   
   int _estimatedPoints = 0;
+
+  bool get _canSubmit {
+    final weight = double.tryParse(_weightController.text.trim()) ?? 0.0;
+    return _photoPath != null && weight > 0 && !_isSubmitting;
+  }
 
   final List<String> _classifications = [
     'Residu Non-B3',
@@ -35,6 +43,41 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   void initState() {
     super.initState();
     _weightController.addListener(_calculatePoints);
+    _loadDraft();
+  }
+
+  Future<void> _loadDraft() async {
+    _prefs = await SharedPreferences.getInstance();
+    final weight = _prefs?.getString('draft_weight_residu');
+    final classification = _prefs?.getString('draft_class_residu');
+    final photo = _prefs?.getString('draft_photo_residu');
+
+    if (mounted) {
+      setState(() {
+        if (weight != null) _weightController.text = weight;
+        if (classification != null && _classifications.contains(classification)) {
+          _selectedClassification = classification;
+        }
+        if (photo != null && File(photo).existsSync()) _photoPath = photo;
+        _calculatePoints();
+      });
+    }
+  }
+
+  void _saveDraft() {
+    _prefs?.setString('draft_weight_residu', _weightController.text);
+    _prefs?.setString('draft_class_residu', _selectedClassification);
+    if (_photoPath != null) {
+      _prefs?.setString('draft_photo_residu', _photoPath!);
+    } else {
+      _prefs?.remove('draft_photo_residu');
+    }
+  }
+
+  void _clearDraft() {
+    _prefs?.remove('draft_weight_residu');
+    _prefs?.remove('draft_class_residu');
+    _prefs?.remove('draft_photo_residu');
   }
 
   @override
@@ -59,6 +102,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
         _estimatedPoints = points;
       });
     }
+    _saveDraft();
   }
 
   Future<void> _takePhoto() async {
@@ -92,10 +136,21 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     }
 
     final double? weight = double.tryParse(_weightController.text.trim());
-    if (weight == null || weight <= 0) {
+    if (weight == null || weight <= 0 || weight > 9999) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Berat timbangan harus angka positif (misal: 12.5)!'),
+          content: Text('Berat timbangan tidak valid!'),
+          backgroundColor: AppColors.dangerRed,
+        ),
+      );
+      return;
+    }
+
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
           backgroundColor: AppColors.dangerRed,
         ),
       );
@@ -116,6 +171,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     if (success && mounted) {
       await _showSuccessDialog(weight);
       if (mounted) {
+        _clearDraft();
         _weightController.clear();
         setState(() {
           _photoPath = null;
@@ -131,9 +187,9 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   }
 
   Future<void> _showSuccessDialog(double weight) async {
-    // Ambil data dashboard untuk akumulasi global (fallback 540.2 jika null)
+    // Ambil data dashboard untuk akumulasi global
     final dashboard = ref.read(petugasResiduControllerProvider).dashboard;
-    final double baseAccumulation = dashboard?.totalWeightKg ?? 540.2;
+    final double baseAccumulation = dashboard?.totalWeightKg ?? 0.0;
     // Total akumulasi = base + weight yang baru saja disubmit
     final double newTotal = baseAccumulation + weight;
 
@@ -234,9 +290,9 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   ),
                   child: Column(
                     children: [
-                      Row(
+                      const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.scale_rounded, size: 16, color: AppColors.primaryBlue),
                           SizedBox(width: 8),
                           Text('Berat yang dicatat', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
@@ -434,6 +490,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   if (v == null || v.trim().isEmpty) return 'Berat timbangan wajib diisi';
                   final val = double.tryParse(v);
                   if (val == null || val <= 0) return 'Masukkan angka positif';
+                  if (val > 9999) return 'Maksimal 9999 kg';
                   return null;
                 },
               ),
@@ -451,7 +508,10 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                     .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14))))
                     .toList(),
                 onChanged: (v) {
-                  if (v != null) setState(() => _selectedClassification = v);
+                  if (v != null) {
+                    setState(() => _selectedClassification = v);
+                    _saveDraft();
+                  }
                 },
               ),
               const SizedBox(height: AppDimensions.lg),
@@ -494,9 +554,9 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                             ],
                           ),
                         )
-                      : Column(
+                      : const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.primaryGreen),
                             SizedBox(height: 8),
                             Text('Ketuk untuk Ambil Foto Timbangan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
@@ -543,7 +603,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Estimasi Pendapatan Poin',
+                            'Estimasi Poin Sementara (Dihitung Server)',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                           ),
                           Row(
@@ -586,7 +646,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : _submitLog,
+                  onPressed: _canSubmit ? _submitLog : null,
                   icon: _isSubmitting
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : const Icon(Icons.check_circle_rounded, color: Colors.white),
@@ -596,6 +656,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
+                    disabledBackgroundColor: Colors.grey[300],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),

@@ -480,48 +480,7 @@ class _RiwayatItem extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: AppColors.warningYellow,
-                      size: 13,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '+${log.pointsAwarded} Poin',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.warningYellow,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppColors.textSecondary,
-                      size: 11,
-                    ),
-                    const SizedBox(width: 3),
-                    Flexible(
-                      child: Text(
-                        displayLocation,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(
@@ -542,8 +501,23 @@ class _RiwayatItem extends ConsumerWidget {
               ],
             ),
           ),
-          // Schedule badge
-          _buildScheduleBadge(log.createdAt.toLocal()),
+          // Points & Schedule badge
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '+${log.pointsAwarded.abs()} pts',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.warningYellow,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _buildScheduleBadge(log.createdAt.toLocal()),
+            ],
+          ),
         ],
       ),
     );

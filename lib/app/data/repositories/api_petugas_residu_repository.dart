@@ -42,7 +42,9 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         try {
           final data = jsonDecode(cachedStr) as Map<String, dynamic>;
           return PetugasResiduDashboard.fromJson(data);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
+        }
       }
       rethrow;
     }
@@ -77,7 +79,9 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         try {
           final list = jsonDecode(cachedStr) as List<dynamic>;
           return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
+        }
       }
       rethrow;
     }
@@ -128,7 +132,7 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
           userId: userId,
           role: 'PETUGAS_RESIDU',
           title: 'Log Timbangan Berhasil Disimpan! ⚖️',
-          desc: 'Log timbangan $classification seberat ${actualWeightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+          desc: 'Log timbangan seberat ${actualWeightKg.toStringAsFixed(1)} kg tersimpan.',
           type: 'TIMBANGAN_RESIDU',
         );
 
@@ -136,7 +140,7 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
           userId: userId,
           role: 'PETUGAS_RESIDU',
           title: 'Log Timbangan Berhasil Disimpan! ⚖️',
-          desc: 'Log timbangan $classification seberat ${actualWeightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+          desc: 'Log timbangan seberat ${actualWeightKg.toStringAsFixed(1)} kg tersimpan.',
           type: 'TIMBANGAN_RESIDU',
         );
 
@@ -178,7 +182,9 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         try {
           final list = jsonDecode(cachedStr) as List<dynamic>;
           return list.cast<Map<String, dynamic>>();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
+        }
       }
       rethrow;
     }

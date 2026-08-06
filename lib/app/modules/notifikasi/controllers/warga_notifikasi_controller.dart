@@ -66,11 +66,6 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     final notifKey = 'warga_${userId}_${notif.id}';
     if (!notif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
       _wargaShownNotifIds.add(notifKey);
-      NotificationEngine().showGenericNotification(
-        id: notif.id.hashCode,
-        title: notif.title,
-        body: notif.desc,
-      );
     }
   }
 

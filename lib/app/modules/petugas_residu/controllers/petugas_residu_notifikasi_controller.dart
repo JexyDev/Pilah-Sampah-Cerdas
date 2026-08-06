@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../../data/services/notification_engine.dart';
+
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
@@ -88,11 +88,6 @@ final petugasResiduNotificationsProvider = FutureProvider<List<NotificationEntit
     final notifKey = 'petugas_${userId}_${notif.id}';
     if (!notif.isRead && !_petugasShownNotifIds.contains(notifKey)) {
       _petugasShownNotifIds.add(notifKey);
-      NotificationEngine().showGenericNotification(
-        id: notif.id.hashCode,
-        title: notif.title,
-        body: notif.desc,
-      );
     }
   }
 

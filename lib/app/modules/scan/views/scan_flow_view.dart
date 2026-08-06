@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../data/services/notification_engine.dart' as import_engine;
@@ -667,18 +668,28 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Checkmark hijau
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryGreen,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 36,
+                // Lottie Animasi Koin
+                SizedBox(
+                  width: 120,
+                  height: 120,
+                  child: Lottie.network(
+                    'https://assets2.lottiefiles.com/packages/lf20_touohxv0.json',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -908,12 +919,20 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                               color: AppColors.warningYellow,
                             ),
                           ),
-                          Text(
-                            'Anda mendapat +${result.pointsAwarded} poin',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.warningYellow,
-                            ),
+                          TweenAnimationBuilder<int>(
+                            tween: IntTween(begin: 0, end: result.pointsAwarded),
+                            duration: const Duration(milliseconds: 1500),
+                            curve: Curves.easeOutExpo,
+                            builder: (context, value, child) {
+                              return Text(
+                                'Anda mendapat +$value poin',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.warningYellow,
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),

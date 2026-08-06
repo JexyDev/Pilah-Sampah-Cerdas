@@ -110,7 +110,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<String> getUserLeaderboardRank(String userId) async {
     try {
-      final response = await apiClient.dio.get('/gamification/leaderboard');
+      final response = await apiClient.dio.get('/points/leaderboard');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -122,7 +122,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
         if (userEntry != null) {
           final rank = userEntry['rank'];
-          return '#$rank';
+          return '$rank';
         }
         return '-';
       }

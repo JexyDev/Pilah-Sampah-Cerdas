@@ -84,8 +84,8 @@ class NotificationEngine {
 
       const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
         'reminder_pagi_channel',
-        'Pengingat Memilah Sampah Pagi',
-        channelDescription: 'Notifikasi rutin jadwal pemilahan sampah pagi untuk warga',
+        'Jadwal Buang Sampah Pagi',
+        channelDescription: 'Notifikasi rutin jadwal buang sampah pagi untuk warga',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
@@ -94,8 +94,8 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         id: 1,
-        title: 'Waktunya Memilah Sampah Pagi! 🌅',
-        body: 'Pengingat warga: Jangan lupa pisahkan sampah Organik & Anorganik sebelum disetor pagi ini.',
+        title: 'Jadwal Buang Sampah Pagi! 🌅',
+        body: 'Pengingat warga: Jangan lupa buang sampah Organik & Anorganik pagi ini.',
         scheduledDate: scheduledPagi,
         notificationDetails: const NotificationDetails(android: androidPagi),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -110,8 +110,8 @@ class NotificationEngine {
 
       const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
         'reminder_sore_channel',
-        'Pengingat Memilah Sampah Sore',
-        channelDescription: 'Notifikasi rutin jadwal pemilahan sampah sore untuk warga',
+        'Jadwal Buang Sampah Sore',
+        channelDescription: 'Notifikasi rutin jadwal buang sampah sore untuk warga',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
@@ -120,8 +120,8 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         id: 2,
-        title: 'Waktunya Memilah Sampah Sore! 🌆',
-        body: 'Pengingat warga: Cek kembali tempat sampah Anda dan pastikan sampah terpilah dengan benar.',
+        title: 'Jadwal Buang Sampah Sore! 🌆',
+        body: 'Pengingat warga: Cek kembali tempat sampah Anda dan segera buang sore ini.',
         scheduledDate: scheduledSore,
         notificationDetails: const NotificationDetails(android: androidSore),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/phone_formatter.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/otp_input_widget.dart';
 
@@ -98,24 +100,21 @@ class _ForgotPasswordViewState
   // ─── Normalise ────────────────────────────────────────────────────────────
 
   String _normalizePhone(String raw) {
-    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
-    if (phone.startsWith('+62')) phone = '0${phone.substring(3)}';
-    if (phone.startsWith('62')) phone = '0${phone.substring(2)}';
-    if (phone.startsWith('8')) phone = '0$phone';
-    return phone;
+    return PhoneFormatter.prepareLoginPhoneInput(raw);
   }
 
   // ─── Step 1: Request OTP ──────────────────────────────────────────────────
 
   Future<void> _onRequestOtp() async {
     if (!_formKey1.currentState!.validate()) return;
-
-    final phone = _normalizePhone(_phoneController.text.trim());
+    
+    final phone = InputSanitizer.sanitize(_phoneController.text);
+    final normalizedPhone = _normalizePhone(phone);
     ref.read(authProvider.notifier).clearError();
 
     final bool ok = await ref
         .read(authProvider.notifier)
-        .requestOtp(phone: phone);
+        .requestOtp(phone: normalizedPhone);
 
     if (ok && mounted) {
       setState(() => _currentStep = 2);
@@ -163,7 +162,7 @@ class _ForgotPasswordViewState
   Future<void> _onResetPassword() async {
     if (!_formKey3.currentState!.validate()) return;
 
-    final phone = _normalizePhone(_phoneController.text.trim());
+    final phone = _normalizePhone(InputSanitizer.sanitize(_phoneController.text));
     final newPassword = _newPasswordController.text;
 
     ref.read(authProvider.notifier).clearError();
@@ -521,18 +520,33 @@ class _ForgotPasswordViewState
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s]')),
             ],
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '81234567890',
-              prefixText: '+62 ',
-              prefixStyle: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              prefixIcon: Icon(
-                Icons.phone_outlined,
-                color: AppColors.textSecondary,
-                size: 20,
+              prefixIcon: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                margin: const EdgeInsets.only(right: 8),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('🇮🇩', style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 6),
+                    Text(
+                      '+62',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.textSecondary),
+                  ],
+                ),
               ),
             ),
             validator: (v) {

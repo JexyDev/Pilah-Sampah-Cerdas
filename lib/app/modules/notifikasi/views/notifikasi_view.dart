@@ -250,9 +250,17 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final typeUpper = item.type.toUpperCase();
+    final titleUpper = item.title.toUpperCase();
+    final isPunishment = typeUpper.contains('PUNISHMENT') || 
+                         typeUpper.contains('PENALTI') || 
+                         titleUpper.contains('PENALTI') || 
+                         titleUpper.contains('TERLEWAT') || 
+                         titleUpper.contains('JADWAL BUANG');
+
     final iconData = _resolveIcon(item.icon);
-    final iconColor = _resolveIconColor(item.type);
-    final iconBg = _resolveIconBg(item.type);
+    final iconColor = isPunishment ? const Color(0xFFEF4444) : _resolveIconColor(item.type);
+    final iconBg = isPunishment ? const Color(0xFFFEE2E2) : _resolveIconBg(item.type);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -293,7 +301,7 @@ class _NotificationTile extends StatelessWidget {
                             fontWeight: item.isRead
                                 ? FontWeight.w500
                                 : FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: isPunishment ? const Color(0xFFEF4444) : AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

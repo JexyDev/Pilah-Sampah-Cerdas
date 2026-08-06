@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
 import '../../core/utils/image_compressor.dart';
+import '../../core/utils/phone_formatter.dart';
 import '../../core/values/app_config.dart';
 import '../models/user_entity.dart';
 import 'auth_repository.dart';
@@ -25,13 +26,6 @@ class ApiAuthRepository implements AuthRepository {
   final ApiClient apiClient;
   final SafeStorage secureStorage;
 
-  String _formatPhoneTo08(String raw) {
-    String phone = raw.replaceAll(RegExp(r'[\s\-\+]'), '');
-    if (phone.startsWith('62')) phone = '0${phone.substring(2)}';
-    if (phone.startsWith('8')) phone = '0$phone';
-    return phone;
-  }
-
   // ─── Login ────────────────────────────────────────────────────────────────
 
   @override
@@ -40,7 +34,7 @@ class ApiAuthRepository implements AuthRepository {
     required String password,
   }) async {
     apiClient.clearTokenCache();
-    final cleanPhone = _formatPhoneTo08(phone);
+    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
     try {
       final response = await apiClient.dio.post(
         '/auth/login',
@@ -236,76 +230,16 @@ class ApiAuthRepository implements AuthRepository {
 
   // ─── OTP (Login Warga / Reset Password) ────────────────────────────────────
 
-  static String? _mockFonnteOtp;
-  static String? _lastGeneratedOtp;
-
   @override
   Future<void> requestOtp({required String phone}) async {
     try {
-      final cleanPhone = _formatPhoneTo08(phone);
-      // 1. Generate 6-digit OTP code
-      final generatedOtp = (100000 + Random().nextInt(900000)).toString();
-      _mockFonnteOtp = generatedOtp;
-      _lastGeneratedOtp = generatedOtp;
-
-      // 2. Kirim pesan WhatsApp asli via Fonnte Official API
-      try {
-        final fonnteDio = Dio();
-        final messageText = '[TrashCare] Kode OTP Atur Ulang Kata Sandi Anda adalah: $generatedOtp. Kode ini berlaku selama 5 menit. Dilarang memberikan kode ini kepada siapapun.';
-        final formattedPhone = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
-
-        bool sent = false;
-
-        // Attempt A: FormData dengan target 08...
-        try {
-          final resA = await fonnteDio.post(
-            'https://api.fonnte.com/send',
-            data: FormData.fromMap({
-              'target': cleanPhone,
-              'message': messageText,
-              'countryCode': '62',
-            }),
-            options: Options(
-              headers: {'Authorization': 'mrHbMDmd5sorX6KQexgb'},
-              connectTimeout: const Duration(seconds: 6),
-            ),
-          );
-          debugPrint('[Fonnte WA OTP Attempt A] status=${resA.statusCode}, body=${resA.data}');
-          if (resA.data != null && resA.data['status'] == true) {
-            sent = true;
-          }
-        } catch (eA) {
-          debugPrint('[Fonnte WA OTP Attempt A Error] $eA');
-        }
-
-        // Attempt B: Fallback jika Attempt A gagal / status false, gunakan 628... & formUrlEncoded
-        if (!sent) {
-          try {
-            final resB = await fonnteDio.post(
-              'https://api.fonnte.com/send',
-              data: {
-                'target': formattedPhone,
-                'message': messageText,
-              },
-              options: Options(
-                contentType: Headers.formUrlEncodedContentType,
-                headers: {'Authorization': 'mrHbMDmd5sorX6KQexgb'},
-                connectTimeout: const Duration(seconds: 6),
-              ),
-            );
-            debugPrint('[Fonnte WA OTP Attempt B] status=${resB.statusCode}, body=${resB.data}');
-          } catch (eB) {
-            debugPrint('[Fonnte WA OTP Attempt B Error] $eB');
-          }
-        }
-      } catch (e) {
-        debugPrint('[Fonnte WA OTP Error] $e');
-      }
-
-      // 3. Panggil juga endpoint backend Express jika aktif
-      try {
-        await apiClient.dio.post('/auth/request-otp', data: {'phone': cleanPhone});
-      } catch (_) {}
+      // Hanya panggil endpoint backend Express (menggunakan format 08)
+      // Backend yang akan men-generate OTP dan mengirimkannya via Fonnte.
+      final backendPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
+      await apiClient.dio.post('/auth/request-otp', data: {'phone': backendPhone});
+    } on DioException catch (e) {
+      final message = e.response?.data?['message']?.toString();
+      throw AuthException('OTP_FAILED', message ?? 'Gagal meminta kode OTP');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
@@ -315,19 +249,19 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<UserEntity> verifyOtp({required String phone, required String otp}) async {
     apiClient.clearTokenCache();
-    final cleanPhone = _formatPhoneTo08(phone);
-    
-    // Verifikasi OTP: Terima OTP WA Fonnte, kode dev 123456, 000000, atau 6-digit OTP di mode debug
-    final isValidOtp = (otp == _mockFonnteOtp) ||
-                       (otp == _lastGeneratedOtp) ||
-                       (otp == '123456') ||
-                       (otp == '000000') ||
-                       (kDebugMode && otp.length == 6);
+    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
 
-    if (!isValidOtp) {
-      throw const AuthException('INVALID_OTP', 'Kode OTP yang Anda masukkan salah. Gunakan kode 123456 untuk testing.');
+    // Bypass kode khusus dev
+    if (kDebugMode && (otp == '123456' || otp == '000000')) {
+      return UserEntity(
+        id: 'temp_otp_user',
+        name: 'User',
+        email: '',
+        phone: cleanPhone,
+        role: UserRole.warga,
+      );
     }
-
+    
     try {
       final response = await apiClient.dio.post(
         '/auth/verify-otp',
@@ -351,6 +285,7 @@ class ApiAuthRepository implements AuthRepository {
         return user;
       }
 
+      // Jika berhasil tapi responsnya tidak sesuai format normal, tetap kembalikan fallback
       return UserEntity(
         id: 'temp_otp_user',
         name: 'User',
@@ -358,14 +293,15 @@ class ApiAuthRepository implements AuthRepository {
         phone: cleanPhone,
         role: UserRole.warga,
       );
-    } catch (_) {
-      return UserEntity(
-        id: 'temp_otp_user',
-        name: 'User',
-        email: '',
-        phone: cleanPhone,
-        role: UserRole.warga,
-      );
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 400 || status == 401) {
+        throw const AuthException('INVALID_OTP', 'Kode OTP salah atau sudah kadaluarsa');
+      }
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw AuthException('UNKNOWN_ERROR', e.toString());
     }
   }
 
@@ -627,7 +563,7 @@ class ApiAuthRepository implements AuthRepository {
     required String token,
     required String newPassword,
   }) async {
-    final cleanPhone = _formatPhoneTo08(email);
+    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(email);
     try {
       final response = await apiClient.dio.post(
         '/auth/reset-password',
@@ -635,6 +571,7 @@ class ApiAuthRepository implements AuthRepository {
           'phone': cleanPhone,
           'email': cleanPhone,
           'token': token,
+          'otp': token,
           'newPassword': newPassword,
         },
       );
@@ -642,15 +579,10 @@ class ApiAuthRepository implements AuthRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return;
       }
-      if (kDebugMode) return;
       throw const AuthException('RESET_PASSWORD_FAILED', 'Gagal menyetel ulang kata sandi');
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       final message = e.response?.data?['message']?.toString();
-      if (kDebugMode) {
-        debugPrint('[RESET PASSWORD DEBUG FALLBACK] Handled status $status');
-        return;
-      }
       if (status == 404) {
         throw AuthException('USER_NOT_FOUND', message ?? 'Nomor telepon tidak terdaftar di sistem');
       }
@@ -659,7 +591,6 @@ class ApiAuthRepository implements AuthRepository {
       }
       throw AuthException('RESET_PASSWORD_FAILED', message ?? 'Gagal menyetel ulang kata sandi');
     } catch (e) {
-      if (kDebugMode) return;
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
     }

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
+import '../../../core/values/app_strings.dart';
+import '../../../core/utils/input_sanitizer.dart';
+import '../../../core/utils/phone_formatter.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widgets/searchable_dropdown.dart';
 import '../../../routes/app_routes.dart';
@@ -143,15 +146,12 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   }
 
   String _normalizePhone(String raw) {
-    String phone = raw.replaceAll(RegExp(r'[\s\-\+]'), '');
-    if (phone.startsWith('62')) phone = '0${phone.substring(2)}';
-    if (phone.startsWith('8')) phone = '0$phone';
-    return phone;
+    return PhoneFormatter.prepareLoginPhoneInput(raw);
   }
 
   Future<void> _onRegister() async {
-    final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+    final name = InputSanitizer.sanitize(_nameController.text);
+    final phone = InputSanitizer.sanitize(_phoneController.text);
     final password = _passwordController.text;
 
     if (name.isEmpty) {
@@ -199,18 +199,18 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     };
 
     if (_selectedRole == 'Warga') {
-      data['address'] = _alamatController.text.trim();
+      data['address'] = InputSanitizer.sanitize(_alamatController.text);
       data['rtRw'] = _selectedRtRw;
       data['kelurahan'] = _selectedKelurahan;
     } else if (_selectedRole == 'Mahasiswa') {
-      data['nim'] = _nimController.text.trim();
-      data['fakultas'] = _fakultasController.text.trim();
-      data['prodi'] = _jurusanController.text.trim();
-      data['jurusan'] = _jurusanController.text.trim();
-      data['universitas'] = _universitasController.text.trim();
+      data['nim'] = InputSanitizer.sanitize(_nimController.text);
+      data['fakultas'] = InputSanitizer.sanitize(_fakultasController.text);
+      data['prodi'] = InputSanitizer.sanitize(_jurusanController.text);
+      data['jurusan'] = InputSanitizer.sanitize(_jurusanController.text);
+      data['universitas'] = InputSanitizer.sanitize(_universitasController.text);
       data['jenjang'] = _selectedJenjang;
-      data['kecamatan'] = _kecamatanController.text.trim();
-      data['dplName'] = _dplNameController.text.trim();
+      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
+      data['dplName'] = InputSanitizer.sanitize(_dplNameController.text);
       data['rtRw'] = _selectedRtRw;
       data['kelurahan'] = _selectedKelurahan;
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();

@@ -255,6 +255,17 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     );
                     return;
                   }
+                  if (bin.capacityPercent < 0.70) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tempat sampah belum terisi 70%. Tidak dapat mengajukan pengosongan.'),
+                        backgroundColor: AppColors.dangerRed,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                    return;
+                  }
                   if (isPendingBin) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

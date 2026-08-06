@@ -700,8 +700,21 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         // Minta Kosongkan Bin Ã¢â‚¬â€ outline merah/biru
         Expanded(
           child: GestureDetector(
-            onTap: () => Navigator.of(context).pushNamed(AppRoutes.resetBin),
-            child: Container(
+            onTap: isOnline
+                ? () => Navigator.of(context).pushNamed(AppRoutes.resetBin)
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Koneksi internet diperlukan.'),
+                        backgroundColor: AppColors.dangerRed,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+            child: AnimatedOpacity(
+              opacity: isOnline ? 1.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -730,6 +743,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             ),
           ),
         ),
+      ),
       ],
     );
   }
@@ -878,7 +892,7 @@ class _RiwayatCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Sampah Organik' : 'Sampah Non-Organik',
+                  isOrganic ? 'Sampah Organik' : 'Sampah Non Organik',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -892,48 +906,26 @@ class _RiwayatCard extends ConsumerWidget {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: AppColors.warningYellow,
-                      size: 13,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '+${log.pointsAwarded} Poin',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.warningYellow,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppColors.textSecondary,
-                      size: 12,
-                    ),
-                    const SizedBox(width: 2),
-                    Flexible(
-                      child: Text(
-                        displayLocation,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
-          // Status badge
-          _buildScheduleBadge(log.createdAt.toLocal()),
+          // Points & Schedule badge
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '+${log.pointsAwarded.abs()} pts',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.warningYellow,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _buildScheduleBadge(log.createdAt.toLocal()),
+            ],
+          ),
         ],
       ),
     );

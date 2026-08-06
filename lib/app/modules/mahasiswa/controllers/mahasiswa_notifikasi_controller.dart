@@ -95,11 +95,6 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final notifKey = 'mhs_${userId}_${notif.id}';
     if (!notif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
       _mhsShownNotifIds.add(notifKey);
-      NotificationEngine().showGenericNotification(
-        id: notif.id.hashCode,
-        title: notif.title,
-        body: notif.desc,
-      );
     }
   }
 
