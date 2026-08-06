@@ -28,8 +28,8 @@ router.put(
   gamificationController.approveIdea
 );
 
-router.get("/leaderboard", authMiddleware, gamificationController.getLeaderboard);
-router.get("/leaderboard/all", authMiddleware, gamificationController.getLeaderboard);
-router.get("/leaderboard-kkn", authMiddleware, gamificationController.getLeaderboardKkn);
+router.get("/leaderboard", gamificationController.getLeaderboard);
+router.get("/leaderboard/all", gamificationController.getLeaderboard);
+router.get("/leaderboard-kkn", gamificationController.getLeaderboardKkn);
 
 export default router;

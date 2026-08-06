@@ -43,7 +43,12 @@ api.interceptors.response.use(
     ) {
       localStorage.removeItem("psc_access_token");
       localStorage.removeItem("psc_user");
-      window.location.href = "/login";
+      
+      const publicPaths = ["/", "/login", "/register", "/register-mahasiswa", "/tentang", "/panduan"];
+      const currentPath = window.location.pathname;
+      if (!publicPaths.includes(currentPath)) {
+        window.location.href = "/login";
+      }
     }
     console.error("[API Error]", error.response?.data || error.message);
     return Promise.reject(error);
