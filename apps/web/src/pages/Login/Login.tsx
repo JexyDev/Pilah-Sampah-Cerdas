@@ -64,15 +64,35 @@ const Login: React.FC = () => {
 
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper validation regex
-  const isPhoneValid = (val: string) => /^(?:\+62|08)\d{8,15}$/.test(val);
+  // Helper phone normalizer (+62 format)
+  const normalizePhone = (val: string) => {
+    let trimmed = val.trim();
+    if (trimmed.startsWith("08")) {
+      return "+628" + trimmed.slice(2);
+    }
+    if (trimmed.startsWith("8")) {
+      return "+628" + trimmed.slice(1);
+    }
+    if (trimmed.startsWith("62")) {
+      return "+" + trimmed;
+    }
+    return trimmed;
+  };
+
+  const isPhoneValid = (val: string) => {
+    const normalized = normalizePhone(val);
+    return /^\+628\d{8,12}$/.test(normalized);
+  };
 
   const handleIdentifierBlur = () => {
-    const trimmed = identifier.trim();
-    if (!trimmed) {
+    const normalized = normalizePhone(identifier);
+    if (normalized !== identifier && normalized) {
+      setIdentifier(normalized);
+    }
+    if (!normalized) {
       setIdentifierError("Nomor HP wajib diisi");
-    } else if (!isPhoneValid(trimmed)) {
-      setIdentifierError("Format nomor HP tidak valid (harus diawali +62 atau 08)");
+    } else if (!isPhoneValid(normalized)) {
+      setIdentifierError("Format nomor HP tidak valid (+628xxx)");
     } else {
       setIdentifierError("");
     }
@@ -117,9 +137,9 @@ const Login: React.FC = () => {
     if (e) e.preventDefault();
     if (isStoreLoading || isLocalLoading || showSuccessOverlay) return;
 
-    let idVal = identifier.trim();
-    if (idVal.startsWith("0")) {
-      idVal = "+62" + idVal.slice(1);
+    const idVal = normalizePhone(identifier);
+    if (idVal !== identifier) {
+      setIdentifier(idVal);
     }
     const passVal = password.trim();
     let hasError = false;
@@ -128,7 +148,7 @@ const Login: React.FC = () => {
       setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
     } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid (harus diawali +62 atau 08)");
+      setIdentifierError("Format nomor HP tidak valid (+628xxx)");
       hasError = true;
     }
     
@@ -300,7 +320,7 @@ const Login: React.FC = () => {
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
-                    placeholder="08... atau +62..."
+                    placeholder="+628..."
                     type="text"
                     value={identifier}
                     onChange={(e) => { setIdentifier(e.target.value); if(e.target.value.trim()) setIdentifierError(""); }}
