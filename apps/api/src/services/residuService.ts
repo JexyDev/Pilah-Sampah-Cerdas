@@ -300,8 +300,13 @@ export class ResiduService {
       kelurahan?: string;
       notes?: string;
       logId?: string; // fallback if updating existing log
+      binId?: string; // support binId from mobile
     }
   ) {
+    const weightKg = Number(data.actualWeightKg) || 0;
+    if (weightKg <= 0 || weightKg > 500) {
+      throw new Error("Timbangan tidak valid. Harap masukkan angka antara 0.1 kg hingga 500 kg.");
+    }
     const user = await prisma.user.findUnique({
       where: { id: petugasUserId },
       include: { rtRw: true },
@@ -336,7 +341,6 @@ export class ResiduService {
       }
     }
 
-    const weightKg = Number(data.actualWeightKg) || 0;
     const pointRateConfig = await configService.getConfig("point_rate_per_kg");
     const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
     const pointsEarned = Math.round(weightKg * pointRatePerKg);

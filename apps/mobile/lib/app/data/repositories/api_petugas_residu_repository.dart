@@ -166,10 +166,10 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   @override
   Future<bool> changePassword({required String oldPassword, required String newPassword}) async {
     try {
-      final response = await apiClient.dio.post(
-        '/auth/change-password',
+      final response = await apiClient.dio.put(
+        '/auth/password',
         data: {
-          'oldPassword': oldPassword,
+          'currentPassword': oldPassword,
           'newPassword': newPassword,
         },
       );

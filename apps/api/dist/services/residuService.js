@@ -243,6 +243,10 @@ export class ResiduService {
         };
     }
     async submitLog(petugasUserId, data) {
+        const weightKg = Number(data.actualWeightKg) || 0;
+        if (weightKg <= 0 || weightKg > 500) {
+            throw new Error("Timbangan tidak valid. Harap masukkan angka antara 0.1 kg hingga 500 kg.");
+        }
         const user = await prisma.user.findUnique({
             where: { id: petugasUserId },
             include: { rtRw: true },
@@ -274,7 +278,6 @@ export class ResiduService {
                 throw new Error("NO_RW_AREA_ASSIGNED");
             }
         }
-        const weightKg = Number(data.actualWeightKg) || 0;
         const pointRateConfig = await configService.getConfig("point_rate_per_kg");
         const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
         const pointsEarned = Math.round(weightKg * pointRatePerKg);

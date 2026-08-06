@@ -1,0 +1,274 @@
+/* LandingPage.css - 100% Clean Light Modern Web App Aesthetics (Perfect Navbar Centering & Sharp Logo) */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+html {
+  scroll-behavior: smooth;
+}
+
+:root {
+  --primary-emerald: #059669;
+  --primary-emerald-hover: #047857;
+  --primary-emerald-light: #ecfdf5;
+  --dark-slate: #0f172a;
+  --bg-light: #f8fafc;
+}
+
+.landing-page {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+  background-color: #ffffff;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container-custom {
+  max-width: 1536px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Glass Navbar */
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+/* NAVBAR LINKS ABSOLUTE PERFECT CENTER */
+.nav-links-centered {
+  display: flex;
+  align-items: center;
+  gap: 2.75rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.nav-links-centered button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+  padding: 0.25rem 0;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.nav-links-centered button:hover {
+  color: #059669;
+}
+
+.nav-links-centered button::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2.5px;
+  background-color: #059669;
+  transition: width 0.2s ease;
+  border-radius: 99px;
+}
+
+.nav-links-centered button:hover::after,
+.nav-links-centered button.active::after {
+  width: 100%;
+}
+
+/* FRESH ECO EMERALD BUTTONS */
+.btn-primary-clean {
+  background-color: #059669;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.375rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #059669;
+  white-space: nowrap;
+}
+.btn-primary-clean:hover {
+  background-color: #047857;
+  border-color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+}
+
+.btn-secondary-clean {
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid #cbd5e1;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  white-space: nowrap;
+}
+.btn-secondary-clean:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #059669;
+  transform: translateY(-1px);
+}
+
+.hero-title-main {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  color: #0f172a;
+}
+
+@media (max-width: 1280px) {
+  .hero-title-main {
+    font-size: 2.6rem;
+  }
+}
+
+.text-blue-hero {
+  color: #059669;
+}
+
+.text-green-hero {
+  color: #10b981;
+}
+
+/* EXPANDED WIDESCREEN REAL WEB DASHBOARD CARD */
+.widescreen-dashboard-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+.widescreen-dashboard-card:hover {
+  box-shadow: 0 25px 60px -10px rgba(5, 150, 105, 0.12);
+}
+
+/* BROWSER TOP BAR */
+.browser-top-bar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.65rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* SIDEBAR ITEM MIRROR */
+.real-sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.real-sidebar-nav-item.active {
+  background: #ecfdf5;
+  color: #059669;
+  border-left: 3px solid #059669;
+  font-weight: 700;
+}
+
+.real-sidebar-nav-item:hover:not(.active) {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* PROCESS & WASTE CARDS */
+.waste-cat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  transition: all 0.25s ease;
+}
+
+.waste-cat-card:hover {
+  transform: translateY(-3px);
+  border-color: #059669;
+  box-shadow: 0 10px 20px rgba(5, 150, 105, 0.06);
+}
+
+/* CLEAN LIGHT ABOUT US & WHY US CARDS */
+.about-pillar-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  transition: all 0.25s ease;
+}
+
+.about-pillar-card:hover {
+  transform: translateY(-3px);
+  border-color: #059669;
+  box-shadow: 0 12px 24px -8px rgba(5, 150, 105, 0.1);
+}
+
+.clean-sdg-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  transition: all 0.25s ease;
+}
+
+.clean-sdg-card:hover {
+  border-color: #059669;
+  background: #ecfdf5;
+  transform: translateY(-2px);
+}
+
+.clean-interactive-tab {
+  padding: 0.625rem 1.5rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.clean-interactive-tab.active {
+  background-color: #059669;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+  border-color: #059669;
+}
+
+.clean-interactive-tab:not(.active) {
+  background-color: #ffffff;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.clean-interactive-tab:not(.active):hover {
+  color: #059669;
+  border-color: #059669;
+  background-color: #ecfdf5;
+}

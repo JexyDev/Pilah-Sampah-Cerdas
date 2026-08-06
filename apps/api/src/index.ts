@@ -109,6 +109,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
 app.use("/api", kknAttendanceRouter);
 app.use("/api/residu", residuRouter);
+app.use("/api/petugas-residu", residuRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rw", rwRouter);

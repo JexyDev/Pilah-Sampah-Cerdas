@@ -16,6 +16,7 @@ import Leaderboard from "../pages/Leaderboard/Leaderboard";
 import NotFound from "../pages/NotFound/NotFound";
 import Login from "../pages/Login/Login";
 import MahasiswaRegistration from "../pages/Registration/MahasiswaRegistration";
+import Register from "../pages/Registration/Register";
 
 import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
 import ManajemenMahasiswa from "../pages/ManajemenMahasiswa/ManajemenMahasiswa";
@@ -51,6 +52,7 @@ import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
 import PanduanPage from "../pages/Panduan/PanduanPage";
 import DplDashboardPage from "../pages/dpl/DplDashboardPage";
+import LandingPage from "../pages/LandingPage/LandingPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -65,7 +67,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
 
   if (allowedRoles && !allowedRoles.includes(user.peran)) {
     // Redirect role yang tidak diizinkan kembali ke dashboard
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -92,10 +94,12 @@ const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/register-mahasiswa" element={<MahasiswaRegistration />} />
       <Route
-        path="/"
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <MainLayout />

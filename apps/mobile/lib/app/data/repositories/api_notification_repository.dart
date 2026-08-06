@@ -19,24 +19,7 @@ class ApiNotificationRepository implements NotificationRepository {
   @override
   Future<List<NotificationEntity>> getNotifications() async {
     try {
-      Response response;
-      try {
-        response = await apiClient.dio.get('/notifications');
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 404) {
-          try {
-            response = await apiClient.dio.get('/rt/notifications');
-          } on DioException catch (_) {
-            try {
-              response = await apiClient.dio.get('/rw/notifications');
-            } on DioException catch (_) {
-              response = await apiClient.dio.get('/kkn/notifications');
-            }
-          }
-        } else {
-          rethrow;
-        }
-      }
+      final response = await apiClient.dio.get('/notifications');
 
       if (response.statusCode == 200 && response.data != null) {
         final rawData = response.data['data'] ?? response.data['notifications'] ?? response.data;

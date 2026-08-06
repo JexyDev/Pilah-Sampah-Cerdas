@@ -177,6 +177,7 @@ export class ResiduController {
         kelurahan: req.body.kelurahan,
         notes: req.body.notes,
         logId: req.body.logId,
+        binId: req.body.binId,
       });
 
       res.status(201).json({ success: true, data });

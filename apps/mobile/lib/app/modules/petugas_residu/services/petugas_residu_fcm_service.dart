@@ -80,10 +80,9 @@ class PetugasResiduFcmService {
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.dio.post(
-        '/notifications/fcm-token',
+        '/notifications/device-token',
         data: {
-          'fcmToken': token,
-          'role': 'PETUGAS_RESIDU',
+          'token': token,
         },
       );
       debugPrint('[PetugasResiduFCM] FCM Token registered: ${token.substring(0, 10)}...');
