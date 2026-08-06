@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           title: `Selamat datang kembali, ${user?.name || "Pengguna"} 👋`,
           subtitle:
             user?.peran === "WARGA"
-              ? "Pantau poin Anda, temukan tong terdekat, dan mulai memilah sampah secara pintar."
+              ? "Pantau poin Anda, temukan tempat sampah terdekat, dan mulai memilah sampah secara pintar."
               : "Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.",
         };
       case "/manajemen-pengguna":

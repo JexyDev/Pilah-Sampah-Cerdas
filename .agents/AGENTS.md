@@ -137,7 +137,7 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
   2. Mahasiswa KKN scan pertama kali -> status berubah menjadi `ASSIGNED_TO_PIC` / `DIPEGANG_MAHASISWA` dan merekam koordinat GPS mahasiswa.
   3. Mahasiswa membantu pendaftaran warga -> koordinat GPS gawai perekam wajib dikirim (via sensor GPS mobile) dan direkam permanen -> status bin berubah menjadi `PENDING_APPROVAL`.
   4. RW menyetujui -> status berubah menjadi `ACTIVE_BOUND`. Poin bonus ditambahkan secara atomik (+10 Warga, +10 Mahasiswa).
-- **Kapasitas Tong**: Ditentukan saat registrasi melalui 3 opsi:
+- **Kapasitas Tempat Sampah**: Ditentukan saat registrasi melalui 3 opsi:
   a) Nilai default standar pemerintah (dari `system_configs`).
   b) Estimasi mandiri melalui foto AI.
   c) Input dimensi manual (tinggi, lebar, bentuk, kapasitas liter).
@@ -151,7 +151,7 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
 
 ## 3. Jam Operasional, Penjemputan, & Timbangan
 - **Window Waktu**: Cek & angkut dilakukan pukul **06:00-08:00** dan **16:00-18:00**.
-- **Notifikasi Tong Penuh**: Warga harus mengunggah foto bukti tempat sampah penuh -> memicu notifikasi push ke Petugas & RW dan memberi marker merah di peta.
+- **Notifikasi Tempat Sampah Penuh**: Warga harus mengunggah foto bukti tempat sampah penuh -> memicu notifikasi push ke Petugas & RW dan memberi marker merah di peta.
 - **Eskalasi Otomatis**: Jika petugas tidak mendokumentasikan pengambilan dalam window waktu, notifikasi eskalasi otomatis dikirim secara hierarkis (RW -> Lurah -> Camat -> Admin DLH).
 - **Timbangan Aktual**: Hasil timbangan diinput **secara manual** oleh Petugas Residu dari hasil timbangan industri fisik (bukan IoT/sensor otomatis).
 

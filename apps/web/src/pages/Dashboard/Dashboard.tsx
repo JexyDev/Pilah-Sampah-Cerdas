@@ -2107,7 +2107,7 @@ const Dashboard: React.FC = () => {
                 <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
                   <th className="py-2.5 px-2 rounded-l-lg">ID & Jenis</th>
                   <th className="py-2.5 px-2">Lokasi</th>
-                  <th className="py-2.5 px-2">Kapasitas Tong</th>
+                  <th className="py-2.5 px-2">Kapasitas Tempat Sampah</th>
                   <th className="py-2.5 px-2 text-center">Poin/Kg</th>
                   <th className="py-2.5 px-2 text-right rounded-r-lg">Aksi</th>
                 </tr>

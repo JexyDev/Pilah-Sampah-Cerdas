@@ -159,5 +159,6 @@ docs/<deskripsi-singkat>
 - **Identitas Auth Universal (Saat ini)**: **SELURUH Role (100%)** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** untuk login utama (OTP / kredensial).
 - **NIM & NIP**: Disimpan sebagai data profil/metadata Mahasiswa KKN & DPL.
 - **Petugas Residu**: Memiliki akses ke **Web Monitoring** (`apps/web`) untuk pemantauan data timbulan residu, eskalasi penjemputan, dan laporan warga.
+- **LARANGAN KATA 'TONG' (WAJIB DIIKUTI)**: **DILARANG** menggunakan kata **'tong'** atau **'tong sampah'** di SELURUH antarmuka pengguna (UI), label tabel, notifikasi, komentar kode, maupun dokumentasi. SELALU gunakan istilah **'Tempat Sampah'** (contoh: 'Kapasitas Tempat Sampah', 'Tempat Sampah Organik', 'Tempat Sampah Anorganik').
 
 

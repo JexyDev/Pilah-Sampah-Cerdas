@@ -692,9 +692,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <span className="material-symbols-outlined text-3xl">delete_sweep</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900">1. Pemilahan 2 Tong Bin</h3>
+              <h3 className="text-xl font-black text-slate-900">1. Pemilahan 2 Tempat Sampah</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Setiap rumah tangga berhak mendaftarkan 1 Tong Organik dan 1 Tong Anorganik berlabel QR. Sampah residu dipisahkan dan ditimbang di hilir.
+                Setiap rumah tangga berhak mendaftarkan 1 Tempat Sampah Organik dan 1 Tempat Sampah Anorganik berlabel QR. Sampah residu dipisahkan dan ditimbang di hilir.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-black text-emerald-600">
                 <span>Masa Aktif Bin 30 Hari</span>
@@ -722,7 +722,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-black text-slate-900">3. Pendampingan KKN</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Mahasiswa KKN merekam koordinat GPS lokasi tong saat pendaftaran warga dan membantu sosialisasi pemilahan sampah di wilayah.
+                Mahasiswa KKN merekam koordinat GPS lokasi tempat sampah saat pendaftaran warga dan membantu sosialisasi pemilahan sampah di wilayah.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-black text-emerald-600">
                 <span>Serah Terima Wilayah KKN</span>
