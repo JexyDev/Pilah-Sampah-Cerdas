@@ -786,7 +786,8 @@ const ManajemenPengguna: React.FC = () => {
                   <option value="SUPER_ADMIN">Super Admin</option>
                   <option value="ADMIN_DLH">Admin DLH</option>
                   <option value="DPL">Dosen Pembimbing (DPL)</option>
-                  <option value="PEMIMPIN">Pimpinan & Panitia Taskforce</option>
+                  <option value="PEMIMPIN">Pimpinan</option>
+                  <option value="PANITIA_TASKFORCE">Panitia / Taskforce KKN</option>
                   <option value="CAMAT">Camat</option>
                   <option value="LURAH">Lurah</option>
                   <option value="RW">RW</option>
