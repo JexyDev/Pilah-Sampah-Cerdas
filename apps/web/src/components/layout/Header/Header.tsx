@@ -298,10 +298,16 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           {/* Dark / Light Mode Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all cursor-pointer shadow-2xs border border-outline-variant/30"
+            className="group relative w-10 h-10 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all duration-300 active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/40 overflow-hidden"
             title={theme === "light" ? "Beralih ke Dark Mode" : "Beralih ke Light Mode"}
+            aria-label="Toggle Theme"
           >
-            {theme === "light" ? <Moon size={18} className="text-slate-700" /> : <Sun size={18} className="text-amber-400" />}
+            <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/10 via-transparent to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {theme === "light" ? (
+              <Moon size={18} className="text-slate-700 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300" />
+            ) : (
+              <Sun size={18} className="text-amber-400 group-hover:rotate-90 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+            )}
           </button>
         </div>
 
