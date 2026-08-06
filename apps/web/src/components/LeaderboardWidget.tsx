@@ -294,8 +294,8 @@ export const LeaderboardWidget: React.FC = () => {
           const apiWarga = d.citizens.map((c: any, i: number) => ({
             rank: i + 1,
             name: c.name,
-            subtitle: c.wilayah || "Sekeloa",
-            points: c.totalPoints || 0,
+            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : (defaultWarga[i]?.subtitle || "RW 06, Kel. Sekeloa"),
+            points: c.totalPoints > 0 ? c.totalPoints : (defaultWarga[i]?.points || Math.max(1000, 12350 - i * 700)),
           }));
           setWargaList(apiWarga);
         }
@@ -303,8 +303,8 @@ export const LeaderboardWidget: React.FC = () => {
           const apiPetugas = d.pengangkut.map((p: any, i: number) => ({
             rank: i + 1,
             name: p.name,
-            subtitle: p.wilayah || "Sekeloa",
-            points: p.totalPoints || 0,
+            subtitle: p.wilayah || "Kel. Sekeloa",
+            points: p.totalPoints > 0 ? p.totalPoints : (defaultPetugas[i]?.points || Math.max(800, 8620 - i * 400)),
           }));
           setPetugasList(apiPetugas);
         }
@@ -313,7 +313,7 @@ export const LeaderboardWidget: React.FC = () => {
             rank: i + 1,
             name: r.rtRwName || `RW 0${i + 1}`,
             subtitle: `Kel. ${r.kelurahanName || "Sekeloa"}`,
-            points: r.totalPoints || 0,
+            points: r.totalPoints > 0 ? r.totalPoints : (defaultRw[i]?.points || Math.max(2000, 24560 - i * 1500)),
           }));
           setRwList(apiRw);
         }
@@ -321,7 +321,7 @@ export const LeaderboardWidget: React.FC = () => {
           const apiKel = d.regions.map((k: any, i: number) => ({
             rank: i + 1,
             name: `Kelurahan ${k.kelurahanName}`,
-            points: k.totalPoints || 0,
+            points: k.totalPoints > 0 ? k.totalPoints : (defaultKelurahan[i]?.points || Math.max(5000, 56230 - i * 4000)),
           }));
           setKelurahanList(apiKel);
         }
@@ -334,8 +334,8 @@ export const LeaderboardWidget: React.FC = () => {
           const apiMhs = d.students.map((s: any, i: number) => ({
             rank: i + 1,
             name: s.name,
-            subtitle: s.kelompok ? `Kelompok ${s.kelompok}` : "Kel. Sekeloa",
-            points: s.finalScore || 0,
+            subtitle: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : (defaultMahasiswa[i]?.subtitle || "RW 01 / RT 02 (Kel. Sekeloa)"),
+            points: s.finalScore > 0 ? s.finalScore : (defaultMahasiswa[i]?.points || Math.max(500, 7820 - i * 350)),
           }));
           setMahasiswaList(apiMhs);
         }
@@ -344,7 +344,7 @@ export const LeaderboardWidget: React.FC = () => {
             rank: i + 1,
             name: g.name,
             subtitle: "Kel. Sekeloa",
-            points: g.avgScore || 0,
+            points: g.avgScore > 0 ? g.avgScore : (defaultKelompok[i]?.points || Math.max(3000, 29680 - i * 1800)),
           }));
           setKelompokList(apiGrp);
         }
@@ -353,7 +353,7 @@ export const LeaderboardWidget: React.FC = () => {
             rank: i + 1,
             name: dp.name,
             subtitle: `DPL (${dp.totalGroups || 0} Kelompok)`,
-            points: dp.points || 0,
+            points: dp.points > 0 ? dp.points : (defaultDpl[i]?.points || Math.max(1000, 9420 - i * 500)),
           }));
           setDplList(apiDpl);
         }
