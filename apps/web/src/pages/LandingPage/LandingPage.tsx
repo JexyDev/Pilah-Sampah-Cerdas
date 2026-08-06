@@ -227,8 +227,8 @@ export const LandingPage: React.FC = () => {
             
             {/* Large Spacious Headline */}
             <h1 className="hero-title-main">
-              Sampah <span className="text-blue-hero">Tertata</span>,<br />
-              Lingkungan <span className="text-green-hero">Terdata</span>
+              Sampah <span className="text-blue-hero">Terdata</span>,<br />
+              Lingkungan <span className="text-green-hero">Tertata</span>
             </h1>
 
             <p className="text-slate-600 text-base leading-relaxed font-medium">
