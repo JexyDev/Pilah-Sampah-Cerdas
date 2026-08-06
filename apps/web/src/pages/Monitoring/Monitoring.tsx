@@ -585,8 +585,8 @@ const Monitoring: React.FC = () => {
                   </Marker>
                 ))}
 
-              {/* LEVEL 2: RW ZONA MARKERS & SUB-POLYGONS */}
-              {(selectedKelurahan !== "Semua Kelurahan" || mapZoom >= 15) &&
+              {/* LEVEL 2: RW ZONA MARKERS & SUB-POLYGONS (HIDE WHEN ZOOM >= 17) */}
+              {(selectedKelurahan !== "Semua Kelurahan" || mapZoom >= 15) && mapZoom < 17 &&
                 rwGroups.map((group, idx) => (
                   <React.Fragment key={`rw-frag-${idx}`}>
                     <Circle
