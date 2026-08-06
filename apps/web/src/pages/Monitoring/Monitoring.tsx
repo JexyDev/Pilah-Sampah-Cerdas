@@ -663,7 +663,7 @@ const Monitoring: React.FC = () => {
                         <Popup>
                           <div className="text-xs p-1.5 min-w-[200px] font-sans">
                             <div className="border-b border-gray-200 pb-1.5 mb-2">
-                              <strong className="text-sm font-extrabold text-slate-900 block">Data Tong Rumah Tangga</strong>
+                              <strong className="text-sm font-extrabold text-slate-900 block">Data Tempat Sampah Rumah Tangga</strong>
                               {(group.bins[0] as any)?.user?.name && (
                                 <span className="text-[11px] font-bold text-slate-800 block mt-0.5">👤 {(group.bins[0] as any).user.name}</span>
                               )}

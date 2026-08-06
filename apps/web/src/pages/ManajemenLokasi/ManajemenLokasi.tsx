@@ -709,7 +709,7 @@ const ManajemenLokasi: React.FC = () => {
                         <Popup>
                           <div className="text-[12px] space-y-2 font-sans">
                             <strong className="text-sm font-bold block mb-1 border-b pb-1 text-slate-800">
-                              Data Tong Rumah Tangga
+                              Data Tempat Sampah Rumah Tangga
                             </strong>
                             {group.bins.map((b) => {
                               const vol = Number(b.currentVolumeLiter || 0);
@@ -782,10 +782,10 @@ const ManajemenLokasi: React.FC = () => {
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-[18px] font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-emerald-600" />
-                  Daftar Lokasi (RW)
-                </h3>
+                <h4 className="font-extrabold text-[11px] text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Layers size={13} className="text-emerald-600" />
+                  Kapasitas Tempat Sampah / Zona
+                </h4>
                 <p className="text-[12px] text-slate-500 font-medium mt-0.5">
                   {filteredLocations.length} RW Terdaftar
                 </p>
