@@ -736,7 +736,7 @@ const ManajemenLokasi: React.FC = () => {
                   );
                 })}
 
-                {/* Households */}
+                {/* Households (Rumah Warga Dampingan) */}
                 {households
                   .filter((h) => h.latitude && h.longitude)
                   .map((h) => (
@@ -752,12 +752,19 @@ const ManajemenLokasi: React.FC = () => {
                       }}
                     >
                       <Popup>
-                        <div className="text-[12px] font-sans">
-                          <strong className="text-slate-800">Rumah {h.user?.name || "Warga"}</strong>
-                          <br />
-                          Alamat: {h.address}
-                          <br />
-                          RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
+                        <div className="text-[12px] font-sans space-y-1.5 p-1 min-w-[200px]">
+                          <div className="border-b border-slate-200 pb-1">
+                            <strong className="text-sm font-bold block text-slate-900">🏠 Rumah {h.user?.name || "Warga"}</strong>
+                            {h.user?.phone && (
+                              <span className="text-[10px] font-bold text-emerald-600 block">📱 {h.user.phone}</span>
+                            )}
+                          </div>
+                          <p className="text-slate-600 text-[11px] leading-tight">
+                            <strong>Alamat:</strong> {h.address}
+                          </p>
+                          <p className="text-slate-600 text-[11px]">
+                            <strong>RT/RW:</strong> {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
+                          </p>
                         </div>
                       </Popup>
                     </Marker>
