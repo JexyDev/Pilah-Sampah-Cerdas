@@ -603,22 +603,40 @@ const Monitoring: React.FC = () => {
                     color = "#f59e0b";
                   }
 
-                  const firstBin = group.bins[0];
-                  const titleName = firstBin?.user?.name || `Rumah Tangga ${idx + 1}`;
+                  // Apply Active Color Filter
+                  if (activeColorFilter === "AMAN" && status !== "aman") return null;
+                  if (activeColorFilter === "WASPADA" && status !== "waspada") return null;
+                  if (activeColorFilter === "PENUH" && status !== "penuh") return null;
+                  if (activeColorFilter === "ORGANIK") {
+                    const hasOrganic = group.bins.some((b) => (b.category?.name || (b as any).categoryName || "").toUpperCase().includes("ORGANIC"));
+                    if (!hasOrganic) return null;
+                  }
+                  if (activeColorFilter === "DAUR_ULANG") {
+                    const hasRecycling = group.bins.some((b) => !(b.category?.name || (b as any).categoryName || "").toUpperCase().includes("ORGANIC"));
+                    if (!hasRecycling) return null;
+                  }
 
                   return (
                     <React.Fragment key={`hh-frag-${idx}`}>
+                      <Circle
+                        center={[group.latitude, group.longitude]}
+                        radius={20}
+                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.15, weight: 1 }}
+                      />
                       <Marker
                         position={[group.latitude, group.longitude]}
-                        icon={createHouseholdIcon(status, group.bins.length, titleName)}
+                        icon={createBinIcon(status)}
                       >
                         <Popup>
-                          <div className="text-xs p-1 font-sans w-48">
-                            <strong className="text-sm font-extrabold text-slate-900 block border-b pb-1 mb-2">
-                              {titleName}
-                            </strong>
-                            <div className="mb-2 text-[11px]">
-                              <span className="text-slate-500">Alamat:</span> {firstBin?.user?.address || firstBin?.rtRw || "Jl. Coblong No. 12"}
+                          <div className="text-xs p-1.5 min-w-[200px] font-sans">
+                            <div className="border-b border-gray-200 pb-1.5 mb-2">
+                              <strong className="text-sm font-extrabold text-slate-900 block">Data Tong Rumah Tangga</strong>
+                              {(group.bins[0] as any)?.user?.name && (
+                                <span className="text-[11px] font-bold text-slate-800 block mt-0.5">👤 {(group.bins[0] as any).user.name}</span>
+                              )}
+                              {(group.bins[0] as any)?.user?.phone && (
+                                <span className="text-[10px] font-bold text-emerald-600 block">📱 {(group.bins[0] as any).user.phone}</span>
+                              )}
                             </div>
                             {group.bins.map((bin) => {
                               const vol = Number(bin.currentVolumeLiter || 0);
@@ -696,21 +714,21 @@ const Monitoring: React.FC = () => {
         </div>
 
         {/* Dynamic Charts and Trends */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-[560px]">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-[520px]">
           <div>
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900">Tren Pengumpulan Scoped</h3>
                 <p className="text-[10px] text-slate-500">Statistik berat setoran sampah mingguan</p>
               </div>
-              <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
+              <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
                 Satuan: Volume (Kg)
               </span>
             </div>
           </div>
 
-          {/* SVG Bar Chart with Dynamic Height & Glow */}
-          <div className="h-72 mt-4 relative flex items-stretch border-b border-l border-slate-300/80 pl-9 pb-8 pt-6 bg-slate-50/40 rounded-xl p-3">
+          {/* SVG Bar Chart with X & Y Axes */}
+          <div className="h-72 mt-4 relative flex items-stretch border-b border-l border-slate-300/80 pl-9 pb-8 pt-6 bg-slate-50/50 rounded-xl p-3">
             {/* Y-Axis Ticks & Gridlines */}
             <div className="absolute left-1 top-6 bottom-8 w-7 flex flex-col justify-between text-[10px] font-bold text-slate-400 text-right pr-1">
               <span>250</span>
@@ -781,19 +799,19 @@ const Monitoring: React.FC = () => {
           </div>
 
           {/* Legend */}
-          <div className="flex gap-6 justify-center mt-6 text-xs font-extrabold text-slate-700">
-            <span className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-md shadow-2xs"></span> Organik (Kg)
+          <div className="flex gap-6 justify-center mt-6 text-xs font-bold text-slate-700">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-emerald-500 rounded-md"></span> Organik (Kg)
             </span>
-            <span className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 bg-gradient-to-r from-blue-500 to-blue-400 rounded-md shadow-2xs"></span> Anorganik (Kg)
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-blue-500 rounded-md"></span> Anorganik (Kg)
             </span>
           </div>
 
           {/* Footnote */}
           <div className="border-t border-slate-100 pt-3 mt-3">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-500 font-medium">Estimasi Pengurangan Emisi</span>
+              <span className="text-slate-500">Estimasi Pengurangan Emisi</span>
               <span className="font-extrabold text-emerald-600 font-mono text-sm">
                 {((kpi?.totalSampahKg || 750.6) * 0.05).toFixed(2)} Kg CO2e
               </span>
