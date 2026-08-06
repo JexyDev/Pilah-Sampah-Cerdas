@@ -70,11 +70,12 @@ router.post(
   kknController.inputFacility
 );
 
-router.post(
-  "/location-ping",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.updateLocation
-);
+import { pemanfaatanController } from "../controllers/pemanfaatanController.js";
+
+router.get("/active-zone", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.getActiveZone);
+router.get("/history", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.getHistory);
+router.get("/kelompok/me", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.getKelompokMe);
+router.post("/pengajuan-izin", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.submitPengajuanIzin);
+router.post("/pemanfaatan-sampah", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), pemanfaatanController.create);
 
 export default router;

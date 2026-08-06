@@ -773,6 +773,40 @@ export class AuthController {
       }
     }
   }
+
+  async requestOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        res.status(400).json({ success: false, message: "Nomor telepon wajib diisi" });
+        return;
+      }
+      const code = await authService.requestOtp(phone);
+      res.status(200).json({ success: true, message: "Kode OTP berhasil dikirim", code });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async verifyOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone, otp } = req.body;
+      if (!phone || !otp) {
+        res.status(400).json({ success: false, message: "Nomor telepon dan OTP wajib diisi" });
+        return;
+      }
+      const data = await authService.verifyOtp(phone, otp);
+      res.status(200).json({ success: true, message: "Verifikasi OTP berhasil", data });
+    } catch (error: any) {
+      if (error.message === "INVALID_OTP") {
+        res.status(400).json({ success: false, message: "Kode OTP salah atau sudah kadaluarsa" });
+      } else if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "Nomor telepon belum terdaftar" });
+      } else {
+        res.status(500).json({ success: false, message: error.message });
+      }
+    }
+  }
 }
 
 export const authController = new AuthController();
