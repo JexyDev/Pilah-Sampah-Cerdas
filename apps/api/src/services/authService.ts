@@ -684,7 +684,6 @@ export class AuthService {
       refreshToken,
     };
   }
-
 }
 
 export const authService = new AuthService();

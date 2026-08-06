@@ -19,7 +19,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [isKelompokModalOpen, setIsKelompokModalOpen] = useState(false);
   const [kelompokModalType, setKelompokModalType] = useState<"add" | "edit">("add");
   const [selectedKelompokId, setSelectedKelompokId] = useState<string | null>(null);
-  const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "" });
+  const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "", ketuaStudentId: "" });
+  const [currentKelompokStudents, setCurrentKelompokStudents] = useState<any[]>([]);
   const [submittingKelompok, setSubmittingKelompok] = useState(false);
 
   // DPL State
@@ -82,14 +83,17 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   // Kelompok Submit Handlers
   const handleOpenAddKelompok = () => {
     setKelompokModalType("add");
-    setKelompokForm({ name: "", dplId: "" });
+    setKelompokForm({ name: "", dplId: "", ketuaStudentId: "" });
+    setCurrentKelompokStudents([]);
     setSelectedKelompokId(null);
     setIsKelompokModalOpen(true);
   };
 
   const handleOpenEditKelompok = (k: any) => {
     setKelompokModalType("edit");
-    setKelompokForm({ name: k.name, dplId: k.dpl?.id || "" });
+    const ketuaMhs = k.students?.find((s: any) => s.isKetua);
+    setKelompokForm({ name: k.name, dplId: k.dpl?.id || "", ketuaStudentId: ketuaMhs?.id || "" });
+    setCurrentKelompokStudents(k.students || []);
     setSelectedKelompokId(k.id);
     setIsKelompokModalOpen(true);
   };
@@ -113,10 +117,16 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     setSubmittingKelompok(true);
     try {
       if (kelompokModalType === "add") {
-        await api.post("/kelompok", kelompokForm);
+        const res = await api.post("/kelompok", { name: kelompokForm.name, dplId: kelompokForm.dplId });
+        if (kelompokForm.ketuaStudentId && res.data?.data?.id) {
+          await api.put(`/kelompok/${res.data.data.id}/leader`, { studentId: kelompokForm.ketuaStudentId });
+        }
         toast.success("Kelompok berhasil dibuat!");
       } else {
-        await api.put(`/kelompok/${selectedKelompokId}`, kelompokForm);
+        await api.put(`/kelompok/${selectedKelompokId}`, { name: kelompokForm.name, dplId: kelompokForm.dplId });
+        if (kelompokForm.ketuaStudentId) {
+          await api.put(`/kelompok/${selectedKelompokId}/leader`, { studentId: kelompokForm.ketuaStudentId });
+        }
         toast.success("Kelompok berhasil diperbarui!");
       }
       setIsKelompokModalOpen(false);
@@ -468,6 +478,24 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              {kelompokModalType === "edit" && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ketua Kelompok (Mahasiswa)</label>
+                  <select
+                    value={kelompokForm.ketuaStudentId}
+                    onChange={(e) => setKelompokForm({ ...kelompokForm, ketuaStudentId: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white"
+                  >
+                    <option value="">Pilih Ketua Kelompok</option>
+                    {currentKelompokStudents.map((st) => (
+                      <option key={st.id} value={st.id}>
+                        {st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`} {st.isKetua ? "(Ketua Saat Ini)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex gap-3 justify-end pt-4">
                 <button

@@ -85,6 +85,18 @@ export const kelompokService = {
             where: { id },
         });
     },
+    setLeader: async (kelompokId, studentId) => {
+        // Reset any previous leader in this kelompok
+        await prisma.studentKkn.updateMany({
+            where: { kelompokId },
+            data: { isKetua: false },
+        });
+        // Set the specified student as leader
+        return prisma.studentKkn.update({
+            where: { id: studentId },
+            data: { isKetua: true, kelompokId },
+        });
+    },
     getDplList: async () => {
         let role = await prisma.role.findUnique({ where: { name: "DPL" } });
         if (!role) {

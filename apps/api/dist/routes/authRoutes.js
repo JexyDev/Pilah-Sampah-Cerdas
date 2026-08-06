@@ -66,6 +66,7 @@ const router = Router();
 router.post("/login", loginRateLimiter, authController.login);
 router.post("/request-otp", authController.requestOtp);
 router.post("/verify-otp", authController.verifyOtp);
+router.post("/reset-password", authController.resetPassword);
 /**
  * @swagger
  * /api/v1/auth/refresh:

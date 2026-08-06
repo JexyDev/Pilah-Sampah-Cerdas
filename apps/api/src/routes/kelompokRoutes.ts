@@ -13,8 +13,9 @@ router.get("/dpls", kelompokController.getDpls);
 router.get("/", kelompokController.getAll);
 router.get("/:id", kelompokController.getById);
 
-router.post("/", roleMiddleware(["SUPER_ADMIN"]), kelompokController.create);
-router.put("/:id", roleMiddleware(["SUPER_ADMIN"]), kelompokController.update);
-router.delete("/:id", roleMiddleware(["SUPER_ADMIN"]), kelompokController.delete);
+router.post("/", roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), kelompokController.create);
+router.put("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), kelompokController.update);
+router.put("/:id/leader", roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "DPL"]), kelompokController.setLeader);
+router.delete("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), kelompokController.delete);
 
 export default router;

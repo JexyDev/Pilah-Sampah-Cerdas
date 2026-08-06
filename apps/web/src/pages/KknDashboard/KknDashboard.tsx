@@ -21,6 +21,8 @@ import {
   RefreshCw,
   X,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { KknQrClaim } from "./KknQrClaim";
 import { WargaRegistrationWizard } from "./WargaRegistrationWizard";
@@ -51,9 +53,12 @@ const KknDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedWarga, setSelectedWarga] = useState<any | null>(null);
 
-  // Filters
+  // Filters & Pagination State
   const [filterRtRw, setFilterRtRw] = useState("");
   const [filterSearch, setFilterSearch] = useState("");
+  const [filterCompliance, setFilterCompliance] = useState("ALL"); // ALL, HIGH (>=80), LOW (<80)
+  const [wargaPage, setWargaPage] = useState(1);
+  const wargaRowsPerPage = 7;
 
   // Map Layer & Tooltip States
   const [showRoads, setShowRoads] = useState(true);
@@ -359,20 +364,29 @@ const KknDashboard: React.FC = () => {
       <div className="grid grid-cols-12 gap-6">
         {/* Citizens list */}
         <div className="col-span-8 bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-            <h3 className="font-extrabold text-lg">Daftar Warga Dampingan</h3>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Cari nama / kode bin..."
-                value={filterSearch}
-                onChange={(e) => setFilterSearch(e.target.value)}
-                className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs outline-none focus:border-primary w-44"
-              />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="font-extrabold text-lg text-slate-900">Daftar Warga Dampingan</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Total {wargaList.length} warga terdaftar dalam pemantauan KKN</p>
+            </div>
+
+            {/* Interactive Filters Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari nama / kode..."
+                  value={filterSearch}
+                  onChange={(e) => { setFilterSearch(e.target.value); setWargaPage(1); }}
+                  className="bg-slate-50 border border-slate-200 pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-44 transition-all"
+                />
+              </div>
+
               <select
                 value={filterRtRw}
-                onChange={(e) => setFilterRtRw(e.target.value)}
-                className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs outline-none focus:border-primary cursor-pointer"
+                onChange={(e) => { setFilterRtRw(e.target.value); setWargaPage(1); }}
+                className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium text-slate-700"
               >
                 <option value="">Semua RT/RW</option>
                 {rtRwAreas.map((loc) => (
@@ -381,81 +395,141 @@ const KknDashboard: React.FC = () => {
                   </option>
                 ))}
               </select>
+
+              <select
+                value={filterCompliance}
+                onChange={(e) => { setFilterCompliance(e.target.value); setWargaPage(1); }}
+                className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium text-slate-700"
+              >
+                <option value="ALL">Semua Skor</option>
+                <option value="HIGH">Tinggi (&ge;80 pts)</option>
+                <option value="LOW">Rendah (&lt;80 pts)</option>
+              </select>
+
               <button
                 onClick={handleFilterSubmit}
-                className="bg-primary text-white p-1.5 rounded-lg hover:scale-105 transition-transform cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center"
+                title="Terapkan Filter"
               >
                 <Search className="w-4 h-4" />
               </button>
             </div>
           </div>
 
+          {/* Table Area */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-on-surface-variant border-b border-outline-variant/60 pb-3">
-                  <th className="pb-3 font-bold">Nama & Alamat</th>
-                  <th className="pb-3 text-left font-bold text-on-surface-variant">ID Tong</th>
-                  <th className="pb-3 text-left font-bold text-on-surface-variant">Terdaftar</th>
-                  <th className="pb-3 text-left font-bold text-on-surface-variant">Status</th>
-                  <th className="pb-3 text-left font-bold text-on-surface-variant">Skor Kepatuhan</th>
-                  <th className="pb-3 text-right font-bold">Aksi</th>
+                <tr className="text-slate-500 border-b border-slate-100 pb-3">
+                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Nama & Alamat</th>
+                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">ID Tempat Sampah</th>
+                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Terdaftar</th>
+                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Status</th>
+                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Skor Kepatuhan</th>
+                  <th className="pb-3 text-right font-extrabold uppercase text-[10px] tracking-wider">Aksi</th>
                 </tr>
               </thead>
-              <tbody>
-                {wargaList.length > 0 ? (
-                  wargaList.map((w) => (
-                    <tr
-                      key={w.wargaId}
-                      className="border-b border-outline-variant/30 hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="py-3">
-                        <div className="font-bold text-on-surface">{w.name}</div>
-                        <div className="text-[10px] text-on-surface-variant mt-0.5">
-                          {w.rtRw} • {w.address}
-                        </div>
-                      </td>
-                      <td className="py-3 font-mono font-bold text-primary">{w.binCode}</td>
-                      <td className="py-3 text-on-surface-variant">
-                        {new Date(w.registeredAt).toLocaleDateString("id-ID")}
-                      </td>
-                      <td className="py-3">
-                        {w.binStatus === "PENDING_APPROVAL" ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Menunggu RW</span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">Aktif</span>
-                        )}
-                      </td>
-                      <td className="py-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${w.complianceScore >= 80 ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
-                        >
-                          {w.complianceScore} pts
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <button
-                          onClick={() => handleWargaClick(w.wargaId)}
-                          className="bg-slate-100 hover:bg-primary hover:text-white px-2.5 py-1 rounded-md font-bold transition-all text-[11px] cursor-pointer"
-                        >
-                          Detail
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-6 text-on-surface-variant font-medium"
-                    >
-                      Belum ada warga dampingan terdaftar.
-                    </td>
-                  </tr>
-                )}
+              <tbody className="divide-y divide-slate-100">
+                {(() => {
+                  let filtered = wargaList.filter((w) => {
+                    if (filterCompliance === "HIGH" && w.complianceScore < 80) return false;
+                    if (filterCompliance === "LOW" && w.complianceScore >= 80) return false;
+                    return true;
+                  });
+
+                  const startIndex = (wargaPage - 1) * wargaRowsPerPage;
+                  const paginated = filtered.slice(startIndex, startIndex + wargaRowsPerPage);
+
+                  if (paginated.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-slate-400 font-medium italic">
+                          Tidak ada data warga dampingan yang sesuai dengan filter.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return paginated.map((w) => {
+                    const formattedDate = w.registeredAt && !isNaN(new Date(w.registeredAt).getTime())
+                      ? new Date(w.registeredAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+                      : "Baru Terdaftar";
+
+                    return (
+                      <tr key={w.wargaId} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3">
+                          <div className="font-bold text-slate-800">{w.name}</div>
+                          <div className="text-[10px] text-slate-500 mt-0.5">
+                            {w.rtRw} • {w.address}
+                          </div>
+                        </td>
+                        <td className="py-3 font-mono font-bold text-emerald-600">{w.binCode || "TS-AUTO"}</td>
+                        <td className="py-3 text-slate-500 font-medium">{formattedDate}</td>
+                        <td className="py-3">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Aktif
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${w.complianceScore >= 80 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
+                            {w.complianceScore} pts
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          <button
+                            onClick={() => handleWargaClick(w.wargaId)}
+                            className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] cursor-pointer shadow-2xs"
+                          >
+                            Detail
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {(() => {
+            let filtered = wargaList.filter((w) => {
+              if (filterCompliance === "HIGH" && w.complianceScore < 80) return false;
+              if (filterCompliance === "LOW" && w.complianceScore >= 80) return false;
+              return true;
+            });
+            const totalPages = Math.ceil(filtered.length / wargaRowsPerPage) || 1;
+
+            return (
+              <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs">
+                <span className="text-slate-500 font-medium">
+                  Menampilkan <strong className="text-slate-800">{Math.min(filtered.length, (wargaPage - 1) * wargaRowsPerPage + 1)}</strong> - <strong className="text-slate-800">{Math.min(filtered.length, wargaPage * wargaRowsPerPage)}</strong> dari <strong className="text-slate-800">{filtered.length}</strong> Warga
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={wargaPage === 1}
+                    onClick={() => setWargaPage((p) => Math.max(1, p - 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  <span className="px-3 py-1 bg-slate-100 text-slate-800 font-bold rounded-lg text-xs">
+                    {wargaPage} / {totalPages}
+                  </span>
+
+                  <button
+                    disabled={wargaPage >= totalPages}
+                    onClick={() => setWargaPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Side Panel: Map & Checklist */}

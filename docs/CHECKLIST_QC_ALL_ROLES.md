@@ -179,7 +179,7 @@ Sistem Trashcare mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akse
 - [ ] **25.3 Akses Publik Realtime**: Leaderboard dapat diakses publik, bersifat realtime, dan all-time.
 
 ### Modul 26: Portal RW (RW Verification Center)
-- [ ] **26.1 Approval Activation Bin Pertama**: Approval status bin dari `PENDING_APPROVAL` → `ACTIVE_BOUND` (+10 Poin Warga, +10 Poin Mahasiswa).
+- [ ] **26.1 Langsung Aktifkan Tempat Sampah**: Tempat sampah langsung aktif (`ACTIVE_BOUND`) saat diregistrasikan/dibinding oleh Mahasiswa KKN tanpa perlu approval RW (+10 Poin Warga, +10 Poin Mahasiswa).
 - [ ] **26.2 Re-aktivasi Bin Inaktif**: Approval tempat sampah yang inaktif (>30 hari tanpa aktivitas).
 - [ ] **26.3 Marking Broken Bin**: Penandaan bin rusak (`BROKEN`) sehingga QR deaktif permanen.
 - [ ] **26.4 Approval Ide Daur Ulang**: Review & approval ide daur ulang warga (+50 poin warga & publish ke Social Feed).

@@ -341,7 +341,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                     <input type="radio" name="capacityOption" value="MANUAL" checked={formData.capacityOption === 'MANUAL'} onChange={handleChange} className="text-emerald-600 focus:ring-emerald-500 mr-3" />
                     <div>
                       <span className="block font-medium text-slate-800 text-sm">Input Manual</span>
-                      <span className="text-xs text-slate-500">Ukur sendiri dimensi tong</span>
+                      <span className="text-xs text-slate-500">Ukur sendiri dimensi tempat sampah</span>
                     </div>
                   </label>
                 </div>

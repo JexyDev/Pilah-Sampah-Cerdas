@@ -97,4 +97,20 @@ export const kelompokController = {
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   },
+
+  setLeader: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { studentId } = req.body;
+      if (!studentId) {
+        res.status(400).json({ success: false, message: "studentId wajib diisi" });
+        return;
+      }
+      const updated = await kelompokService.setLeader(id, studentId);
+      res.status(200).json({ success: true, message: "Ketua kelompok berhasil diperbarui", data: updated });
+    } catch (error: any) {
+      console.error("[KelompokController] setLeader error:", error);
+      res.status(500).json({ success: false, message: error.message || "Gagal memperbarui ketua kelompok" });
+    }
+  },
 };

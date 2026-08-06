@@ -206,6 +206,7 @@ const Login: React.FC = () => {
               { phone: "08111111115", pass: "password123", label: "RW 06 Dago", bg: "bg-purple-50 text-purple-600 border-purple-200" },
               { phone: "08111111116", pass: "password123", label: "RT 01 Dago", bg: "bg-amber-50 text-amber-600 border-amber-200" },
               { phone: "+6281300000001", pass: "123456", label: "DPL (Dosen)", bg: "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold" },
+              { phone: "08111111118", pass: "password123", label: "Ketua KKN", bg: "bg-amber-50 text-amber-700 border-amber-300 font-bold" },
               { phone: "08111111118", pass: "password123", label: "Mhs KKN", bg: "bg-teal-50 text-teal-600 border-teal-200" },
               { phone: "08111111117", pass: "password123", label: "Petugas Residu", bg: "bg-orange-50 text-orange-600 border-orange-200" },
               { phone: "0812001001", pass: "password123", label: "Warga", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" },
