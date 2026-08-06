@@ -61,6 +61,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const getHeaderInfo = (pathname: string) => {
     switch (pathname) {
+      case "/dashboard":
       case "/":
         return {
           title: `Selamat datang kembali, ${user?.name || "Pengguna"} 👋`,
