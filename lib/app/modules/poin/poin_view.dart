@@ -144,17 +144,8 @@ class PoinView extends ConsumerWidget {
     // Pagi: 06:00 - 08:00
     // Sore: 16:00 - 18:00
     final now = DateTime.now();
-    final isPagiAvailable = now.hour >= 6 && now.hour < 8;
-    final isSoreAvailable = now.hour >= 16 && now.hour < 18;
-    
     final isPagiOver = now.hour >= 8;
     final isSoreOver = now.hour >= 18;
-
-    final statusPagi = isPagiAvailable ? 'Tersedia' : (isPagiOver ? 'Terlewat' : 'Belum Mulai');
-    final colorPagi = isPagiAvailable ? AppColors.primaryGreen : (isPagiOver ? AppColors.dangerRed : Colors.grey);
-
-    final statusSore = isSoreAvailable ? 'Tersedia' : (isSoreOver ? 'Terlewat' : 'Belum Mulai');
-    final colorSore = isSoreAvailable ? AppColors.primaryGreen : (isSoreOver ? AppColors.dangerRed : Colors.grey);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -173,7 +164,7 @@ class PoinView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Jadwal Buang Sampah Pagi dan Sore',
+            'Status Jadwal Hari Ini',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -187,8 +178,8 @@ class PoinView extends ConsumerWidget {
                 child: _ScheduleTimeItem(
                   title: 'Pagi',
                   time: '06:00 - 08:00',
-                  status: statusPagi,
-                  statusColor: colorPagi,
+                  status: isPagiOver ? 'Terlewat' : 'Tersedia',
+                  statusColor: isPagiOver ? AppColors.dangerRed : AppColors.primaryGreen,
                   icon: Icons.wb_sunny_rounded,
                 ),
               ),
@@ -202,8 +193,8 @@ class PoinView extends ConsumerWidget {
                 child: _ScheduleTimeItem(
                   title: 'Sore',
                   time: '16:00 - 18:00',
-                  status: statusSore,
-                  statusColor: colorSore,
+                  status: isSoreOver ? 'Terlewat' : 'Tersedia',
+                  statusColor: isSoreOver ? AppColors.dangerRed : AppColors.primaryGreen,
                   icon: Icons.nights_stay_rounded,
                 ),
               ),
@@ -228,20 +219,6 @@ class PoinView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (Navigator.canPop(context))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: InkWell(
-                onTap: () => Navigator.pop(context),
-                child: const Row(
-                  children: [
-                    Icon(Icons.arrow_back_rounded, size: 24, color: AppColors.textPrimary),
-                    SizedBox(width: 8),
-                    Text('Kembali', style: TextStyle(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            ),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -559,9 +536,7 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.description.toLowerCase().contains('aktivasi')
-                      ? 'Aktivasi Bin Berhasil'
-                      : (isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik'),
+                  isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -587,7 +562,7 @@ class _PoinHistoryItem extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '+${item.points.abs()}',
+                    '+${item.points}',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,

@@ -3,8 +3,8 @@
 // Sesuai CLAUDE.md — unit test difokuskan pada service/usecase layer.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_app_sampah/app/core/values/app_config.dart';
-import 'package:mobile_app_sampah/app/core/utils/platform_utils.dart';
+import 'package:mobile_app_sampah/config/app_config.dart';
+import 'package:mobile_app_sampah/core/utils/platform_utils.dart';
 
 void main() {
   group('AppConfig', () {

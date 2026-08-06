@@ -35,7 +35,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
   void _submit() async {
     if (!_activateOrganic && !_activateAnorganic) {
-      _showError('Pilih minimal satu jenis tempat sampah untuk diaktivasi.');
+      _showError('Pilih minimal satu jenis tong untuk diaktivasi.');
       return;
     }
 
@@ -44,7 +44,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       if (_orgPanjangCtrl.text.isEmpty ||
           _orgLebarCtrl.text.isEmpty ||
           _orgTinggiCtrl.text.isEmpty) {
-        _showError('Mohon lengkapi dimensi manual Tempat Sampah Organik');
+        _showError('Mohon lengkapi dimensi manual Bin Organik');
         return;
       }
     }
@@ -52,7 +52,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       if (_nonOrgPanjangCtrl.text.isEmpty ||
           _nonOrgLebarCtrl.text.isEmpty ||
           _nonOrgTinggiCtrl.text.isEmpty) {
-        _showError('Mohon lengkapi dimensi manual Tempat Sampah Anorganik');
+        _showError('Mohon lengkapi dimensi manual Bin Anorganik');
         return;
       }
     }
@@ -82,7 +82,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       arguments: {
         'orgCapacity': orgCap,
         'anorgCapacity': anorgCap,
-        'hasOrganic': !_activateOrganic, // Ini berarti kebalikan dari yang diaktifkan, artinya = true jika tidak dicentang (karena sudah punya)
+        'hasOrganic': !_activateOrganic,
         'hasAnorganic': !_activateAnorganic,
       },
     );
@@ -128,7 +128,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Ukur Kapasitas Tempat Sampah'),
+        title: const Text('Ukur Kapasitas Bin'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -136,7 +136,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Masukkan ukuran atau dimensi fisik dari tempat sampah Anda sebelum mengaktifkan barcode.',
+              'Masukkan ukuran atau dimensi fisik dari tong sampah Anda sebelum mengaktifkan barcode.',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
@@ -148,7 +148,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: _buildBinCard(
-                title: 'Tempat Sampah Organik (Hijau)',
+                title: 'Bin Organik (Hijau)',
                 color: AppColors.organicColor,
                 isChecked: _activateOrganic,
                 onChecked: isFirstTime ? null : (val) {
@@ -168,7 +168,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             Padding(
               padding: const EdgeInsets.only(bottom: 32),
               child: _buildBinCard(
-                title: 'Tempat Sampah Anorganik (Kuning)',
+                title: 'Bin Anorganik (Kuning)',
                 color: AppColors.nonOrganicColor,
                 isChecked: _activateAnorganic,
                 onChecked: isFirstTime ? null : (val) {

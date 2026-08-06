@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../core/utils/platform_utils.dart';
-import '../../../core/utils/network_exception_helper.dart';
 
 class AktivasiWargaState {
   final bool isLoading;
@@ -11,7 +10,6 @@ class AktivasiWargaState {
   final String? selectedKelurahan;
   final String? selectedRtRw;
   final String searchQuery;
-  final bool hasFetched;
 
   AktivasiWargaState({
     this.isLoading = false,
@@ -20,7 +18,6 @@ class AktivasiWargaState {
     this.selectedKelurahan,
     this.selectedRtRw,
     this.searchQuery = '',
-    this.hasFetched = false,
   });
 
   AktivasiWargaState copyWith({
@@ -30,7 +27,6 @@ class AktivasiWargaState {
     String? selectedKelurahan,
     String? selectedRtRw,
     String? searchQuery,
-    bool? hasFetched,
     bool clearError = false,
   }) {
     return AktivasiWargaState(
@@ -40,71 +36,65 @@ class AktivasiWargaState {
       selectedKelurahan: selectedKelurahan ?? this.selectedKelurahan,
       selectedRtRw: selectedRtRw ?? this.selectedRtRw,
       searchQuery: searchQuery ?? this.searchQuery,
-      hasFetched: hasFetched ?? this.hasFetched,
     );
   }
 }
 
 class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
-  // Constructor tanpa auto-fetch — view yang bertanggung jawab memanggil
-  // fetchWargaWithRegion() setelah auth state dijamin sudah ada.
-  AktivasiWargaNotifier(this.ref) : super(AktivasiWargaState());
+  AktivasiWargaNotifier(this.ref) : super(AktivasiWargaState()) {
+    fetchWarga();
+  }
 
   final Ref ref;
 
-  /// Fetch dengan kelurahan & rtRw eksplisit dari user yang sudah login.
-  /// Dipanggil dari view setelah auth state terkonfirmasi.
-  Future<void> fetchWargaWithRegion({
-    required String kelurahan,
-    required String rtRw,
-    String search = '',
-  }) async {
+  void setFilter({String? kelurahan, String? rtRw, String? search}) {
     state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      selectedKelurahan: kelurahan,
-      selectedRtRw: rtRw,
-      searchQuery: search,
+      selectedKelurahan: kelurahan ?? state.selectedKelurahan,
+      selectedRtRw: rtRw ?? state.selectedRtRw,
+      searchQuery: search ?? state.searchQuery,
     );
-    try {
-      final repo = ref.read(kknRepositoryProvider);
-      var data = await repo.getWargaForAktivasi(
-        kelurahan: kelurahan.isEmpty ? null : kelurahan,
-        rtRw: rtRw.isEmpty ? null : rtRw,
-        search: search.isEmpty ? null : search,
-      );
+    fetchWarga();
+  }
 
-      // Fallback: Jika data kosong karena perbedaan format string kelurahan/rtRw di DB backend,
-      // panggil ulang tanpa parameter region agar data warga binaan tetap muncul.
-      if (data.isEmpty && (kelurahan.isNotEmpty || rtRw.isNotEmpty)) {
-        data = await repo.getWargaForAktivasi(
-          search: search.isEmpty ? null : search,
-        );
+  Future<void> fetchWarga() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      
+      final Map<String, dynamic> queryParams = {
+        'status': 'UNACTIVATED',
+      };
+      
+      if (state.selectedKelurahan != null && state.selectedKelurahan!.isNotEmpty) {
+        queryParams['kelurahan'] = state.selectedKelurahan;
+      }
+      if (state.selectedRtRw != null && state.selectedRtRw!.isNotEmpty) {
+        queryParams['rtRw'] = state.selectedRtRw;
+      }
+      if (state.searchQuery.isNotEmpty) {
+        queryParams['search'] = state.searchQuery;
       }
 
-      state = state.copyWith(
-        isLoading: false,
-        wargaList: data,
-        hasFetched: true,
+      final response = await apiClient.dio.get(
+        '/kkn/warga',
+        queryParameters: queryParams,
       );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as List<dynamic>? ?? [];
+        state = state.copyWith(isLoading: false, wargaList: data);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Gagal memuat data warga.',
+        );
+      }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Gagal memuat data warga: $e',
-        hasFetched: true,
+        errorMessage: 'Terjadi kesalahan saat memuat data warga.',
       );
     }
-  }
-
-  /// Refresh dengan parameter yang sudah tersimpan di state.
-  Future<void> refresh() async {
-    final kel = state.selectedKelurahan ?? '';
-    final rt = state.selectedRtRw ?? '';
-    await fetchWargaWithRegion(
-      kelurahan: kel,
-      rtRw: rt,
-      search: state.searchQuery,
-    );
   }
 
   Future<bool> activateWarga(String wargaId, String qrCode) async {
@@ -128,23 +118,31 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
         }
       }
 
-      final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.activateWargaByScan(wargaId, qrCode, lat, lng);
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.dio.post(
+        '/kkn/warga/activate-by-scan',
+        data: {
+          'wargaId': wargaId,
+          'qrCode': qrCode,
+          'latitude': lat,
+          'longitude': lng,
+        },
+      );
 
-      if (isSuccess) {
-        await refresh(); // Refresh list after success
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchWarga(); // Refresh list after success
         return true;
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Gagal mengaktivasi warga. Mohon periksa kembali QR Code.',
+          errorMessage: 'Gagal mengaktivasi warga.',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+        errorMessage: 'Terjadi kesalahan saat mengaktivasi.',
       );
       return false;
     }
@@ -153,48 +151,36 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      double lat = 0.0;
-      double lng = 0.0;
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.dio.post(
+        '/kkn/warga/activate-bin',
+        data: {
+          'wargaId': wargaId,
+          'binOrganikId': binOrganikId,
+          'binAnorganikId': binAnorganikId,
+        },
+      );
 
-      if (PlatformUtils.isMobile) {
-        try {
-          final pos = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              timeLimit: Duration(seconds: 10),
-            ),
-          );
-          lat = pos.latitude;
-          lng = pos.longitude;
-        } catch (_) {
-          // Fallback if GPS fails
-        }
-      }
-
-      final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.activateBin(wargaId, binOrganikId, binAnorganikId, lat: lat, lng: lng);
-
-      if (isSuccess) {
-        await refresh(); // Refresh list after success
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchWarga(); // Refresh list after success
         return true;
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Gagal mengaktivasi bin warga. QR Code mungkin sudah diaktivasi sebelumnya.',
+          errorMessage: 'Gagal mengaktivasi bin warga.',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+        errorMessage: 'Terjadi kesalahan saat mengaktivasi bin.',
       );
       return false;
     }
   }
 }
 
-/// autoDispose: state reset setiap kali halaman Aktivasi Bin dibuka baru.
-final aktivasiWargaProvider = StateNotifierProvider.autoDispose<AktivasiWargaNotifier, AktivasiWargaState>((ref) {
+final aktivasiWargaProvider = StateNotifierProvider<AktivasiWargaNotifier, AktivasiWargaState>((ref) {
   return AktivasiWargaNotifier(ref);
 });

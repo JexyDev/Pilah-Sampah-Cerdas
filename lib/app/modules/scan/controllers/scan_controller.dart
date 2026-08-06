@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/ai_detection_entity.dart';
 import '../../../data/models/bin_reset_entity.dart';
@@ -71,14 +70,6 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   final String _userId;
   final String _householdId;
 
-  void setError(String code, String message) {
-    state = state.copyWith(
-      errorCode: code,
-      errorMessage: message,
-      isLoading: false,
-    );
-  }
-
   /// Step 0 → 1 → 2: Upload foto + Deteksi AI (FR-01).
   /// POST /api/v1/waste/detect (multipart)
   Future<void> detectWaste({required String imagePath}) async {
@@ -128,44 +119,11 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // 1. Ambil data tong dari cache/server untuk client-side geofencing
-      final bin = await _binRepository.getBinByQrSerial(qrCode);
-      if (bin != null) {
-        // Hitung jarak Haversine (client-side)
-        final distance = Geolocator.distanceBetween(
-          userLat, userLng,
-          bin.lat, bin.lng,
-        );
-
-        if (distance > 500.0) { // Diperbesar jadi 500m agar tidak mudah error saat QC testing
-          throw const BinException(
-            'LOCATION_OUT_OF_RANGE',
-            'Anda terlalu jauh dari tong sampah (> 500m).',
-          );
-        }
-
-        // Cek kapasitas
-        final double projectedVol = bin.currentVolumeL + state.aiResult!.volumeEstimate;
-        if (bin.currentVolumeL >= bin.maxCapacityL) {
-          throw const BinException(
-            'BIN_OVERFLOW',
-            'Tempat sampah ini sudah penuh (100%)! Silakan ajukan pengosongan.',
-          );
-        } else if (projectedVol > bin.maxCapacityL) {
-          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(0.0, 999.0);
-          throw BinException(
-            'BIN_OVERFLOW',
-            'Kapasitas tong tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
-          );
-        }
-      }
-
       final result = await _binRepository.scanAndCommit(
         qrCode: qrCode,
         userId: _userId,
         detectedType: state.aiResult!.detectedType,
         estimatedVolume: state.aiResult!.volumeEstimate,
-        confidence: state.aiResult!.confidence,
         householdId: _householdId,
         userLat: userLat,
         userLng: userLng,
@@ -331,20 +289,6 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
       state = ResetBinState(result: lastResult);
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
-    }
-  }
-
-  Future<void> checkActiveRequest(String userId) async {
-    state = const ResetBinState(isLoading: true);
-    try {
-      final activeReq = await _binRepository.getActiveResetRequest(userId);
-      if (activeReq != null && activeReq.status == BinResetStatus.pending) {
-        state = ResetBinState(result: activeReq);
-      } else {
-        state = const ResetBinState();
-      }
-    } catch (e) {
-      state = const ResetBinState();
     }
   }
 

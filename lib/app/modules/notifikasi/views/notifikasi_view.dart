@@ -3,31 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/notification_entity.dart';
-import '../controllers/notifikasi_controller.dart';
-import '../controllers/warga_notifikasi_controller.dart';
+import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
-import '../../poin/poin_view.dart';
+import '../../shared/widgets/empty_state.dart';
 
-/// Halaman daftar notifikasi Warga.
-class NotifikasiView extends ConsumerStatefulWidget {
+/// Halaman daftar notifikasi.
+/// Data dari GET /api/v1/notifications.
+/// Tap item → tandai dibaca (PUT /api/v1/notifications/:id/read).
+class NotifikasiView extends ConsumerWidget {
   const NotifikasiView({super.key});
 
   @override
-  ConsumerState<NotifikasiView> createState() => _NotifikasiViewState();
-}
-
-class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
-  String _selectedFilter = 'Semua';
-  final List<String> _filters = [
-    'Semua',
-    'Setoran & Poin',
-    'Kapasitas Tempat Sampah',
-    'Pengajuan Pengosongan',
-    'Pengumuman',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Listener untuk error marking read
     ref.listen<MarkReadState>(markReadProvider, (previous, next) {
       if (next.errorCode != null && !next.isLoading) {
@@ -40,7 +27,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
       }
     });
 
-    final notifAsync = ref.watch(wargaNotificationsProvider);
+    final notifAsync = ref.watch(notificationsProvider);
     final markState = ref.watch(markReadProvider);
 
     return Scaffold(
@@ -50,191 +37,91 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Notifikasi Warga',
+          'Notifikasi',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.done_all_rounded, color: Colors.white),
-            tooltip: 'Tandai Semua Dibaca',
-            onPressed: markState.isLoading
-                ? null
-                : () async {
-                    await ref.read(markReadProvider.notifier).markAllRead();
-                    ref.invalidate(wargaNotificationsProvider);
-                  },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: () => ref.invalidate(wargaNotificationsProvider),
+          notifAsync.maybeWhen(
+            data: (list) {
+              final hasUnread = list.any((n) => !n.isRead);
+              if (!hasUnread) return const SizedBox.shrink();
+              return TextButton(
+                onPressed: markState.isLoading
+                    ? null
+                    : () => ref
+                        .read(markReadProvider.notifier)
+                        .markAllRead(),
+                child: const Text(
+                  'Tandai Semua',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // ─── Filter Chips Bar ──────────────────────────────────────────────
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _filters.map((filter) {
-                  final isSel = _selectedFilter == filter;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(
-                        filter,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                          color: isSel ? Colors.white : AppColors.textPrimary,
-                        ),
-                      ),
-                      selected: isSel,
-                      selectedColor: AppColors.primaryGreen,
-                      backgroundColor: AppColors.backgroundCanvas,
-                      onSelected: (val) {
-                        if (val) setState(() => _selectedFilter = filter);
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-
-          // ─── Body List Notifikasi ──────────────────────────────────────────
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(wargaNotificationsProvider),
-              color: AppColors.primaryGreen,
-              child: notifAsync.when(
-                loading: () => const AppLoading(message: 'Memuat notifikasi...'),
-                error: (e, _) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.wifi_off_rounded,
-                        size: 48,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Gagal memuat notifikasi',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () => ref.invalidate(wargaNotificationsProvider),
-                        child: const Text('Coba Lagi'),
-                      ),
-                    ],
-                  ),
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(notificationsProvider),
+        color: AppColors.primaryGreen,
+        child: notifAsync.when(
+          loading: () => const AppLoading(message: 'Memuat notifikasi...'),
+          error: (e, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 48,
+                  color: AppColors.textHint,
                 ),
-                data: (list) {
-                  final filteredList = list.where((n) {
-                    if (_selectedFilter == 'Semua') return true;
-                    final typeUpper = n.type.toUpperCase();
-                    final titleLower = n.title.toLowerCase();
-
-                    if (_selectedFilter == 'Setoran & Poin') {
-                      return typeUpper.contains('SETOR') || typeUpper.contains('POIN') || titleLower.contains('setor') || titleLower.contains('poin') || titleLower.contains('sampah');
-                    }
-                    if (_selectedFilter == 'Kapasitas Tempat Sampah') {
-                      return typeUpper.contains('KAPASITAS') || typeUpper.contains('TONG') || typeUpper.contains('PENUH') || titleLower.contains('kapasitas') || titleLower.contains('tong') || titleLower.contains('penuh');
-                    }
-                    if (_selectedFilter == 'Pengajuan Pengosongan') {
-                      return typeUpper.contains('RESET') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('PENGAJUAN') || titleLower.contains('pengosongan') || titleLower.contains('reset') || titleLower.contains('pengajuan');
-                    }
-                    if (_selectedFilter == 'Pengumuman') {
-                      return typeUpper.contains('INFO') || typeUpper.contains('ANUM') || titleLower.contains('info') || titleLower.contains('pengumuman');
-                    }
-                    return true;
-                  }).toList();
-
-                  if (filteredList.isEmpty) {
-                    return ListView(
-                      children: const [
-                        SizedBox(height: 100),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.notifications_off_outlined, size: 56, color: AppColors.textHint),
-                              SizedBox(height: 12),
-                              Text(
-                                'Belum Ada Notifikasi Warga',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Notifikasi setoran, poin, & pengajuan akan muncul di sini',
-                                style: TextStyle(fontSize: 12, color: AppColors.textHint),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
-                    itemCount: filteredList.length,
-                    separatorBuilder: (_, __) => const Divider(
-                      height: 1,
-                      indent: 72,
-                      color: AppColors.divider,
-                    ),
-                    itemBuilder: (context, index) {
-                      final item = filteredList[index];
-                      return _NotificationTile(
-                        item: item,
-                        onTap: () {
-                          if (!item.isRead) {
-                            ref
-                                .read(markReadProvider.notifier)
-                                .markRead(item.id);
-                            ref.invalidate(wargaNotificationsProvider);
-                          }
-
-                          final type = item.type.toLowerCase();
-                          final title = item.title.toLowerCase();
-
-                          if (type.contains('penuh') || 
-                              type.contains('setuju') || 
-                              type.contains('tolak') || 
-                              title.contains('penuh') || 
-                              title.contains('pengajuan') ||
-                              title.contains('kritis')) {
-                            Navigator.pushNamed(context, '/reset-bin');
-                          } else if (type.contains('poin') || 
-                                     type.contains('punishment') ||
-                                     type.contains('penalti') ||
-                                     type.contains('pengurangan') ||
-                                     title.contains('poin') || 
-                                     title.contains('penalti') ||
-                                     title.contains('punishment') ||
-                                     title.contains('berkurang') ||
-                                     title.contains('potong') ||
-                                     title.contains('berhasil') ||
-                                     title.contains('sukses') ||
-                                     title.contains('setor') ||
-                                     title.contains('sampah')) {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const PoinView()));
-                          }
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Gagal memuat notifikasi',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => ref.invalidate(notificationsProvider),
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
             ),
           ),
-        ],
+          data: (list) {
+            if (list.isEmpty) {
+              return const EmptyState(
+                icon: Icons.notifications_off_outlined,
+                message: 'Belum ada notifikasi.\nNotifikasi poin, tong penuh, dan pengajuan\nakan muncul di sini.',
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
+              itemCount: list.length,
+              separatorBuilder: (_, __) => const Divider(
+                height: 1,
+                indent: 72,
+                color: AppColors.divider,
+              ),
+              itemBuilder: (context, index) {
+                return _NotificationTile(
+                  item: list[index],
+                  onTap: () {
+                    if (!list[index].isRead) {
+                      ref
+                          .read(markReadProvider.notifier)
+                          .markRead(list[index].id);
+                    }
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -250,20 +137,11 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeUpper = item.type.toUpperCase();
-    final titleUpper = item.title.toUpperCase();
-    final isPunishment = typeUpper.contains('PUNISHMENT') || 
-                         typeUpper.contains('PENALTI') || 
-                         titleUpper.contains('PENALTI') || 
-                         titleUpper.contains('TERLEWAT') || 
-                         titleUpper.contains('JADWAL BUANG');
-
     final iconData = _resolveIcon(item.icon);
-    final iconColor = isPunishment ? const Color(0xFFEF4444) : _resolveIconColor(item.type);
-    final iconBg = isPunishment ? const Color(0xFFFEE2E2) : _resolveIconBg(item.type);
+    final iconColor = _resolveIconColor(item.type);
+    final iconBg = _resolveIconBg(item.type);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return InkWell(
       onTap: onTap,
       child: Container(
         color: item.isRead ? Colors.transparent : AppColors.primaryGreen.withValues(alpha: 0.05),
@@ -301,7 +179,7 @@ class _NotificationTile extends StatelessWidget {
                             fontWeight: item.isRead
                                 ? FontWeight.w500
                                 : FontWeight.w700,
-                            color: isPunishment ? const Color(0xFFEF4444) : AppColors.textPrimary,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

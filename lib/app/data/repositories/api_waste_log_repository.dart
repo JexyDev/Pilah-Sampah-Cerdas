@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/waste_log_entity.dart';
 import '../models/point_history_entity.dart';
@@ -23,37 +22,19 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
   @override
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId) async {
-    final cacheKey = 'cached_waste_logs_$userId';
     try {
       final response = await apiClient.dio.get('/transactions/my-deposits');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
-        
-        await apiClient.secureStorage.write(key: cacheKey, value: jsonEncode(data));
-        
         return data
             .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
-      if (cachedStr != null) {
-        final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
-      }
       throw AppNetworkException(mapDioExceptionToMessage(e));
     } catch (e) {
-      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
-      if (cachedStr != null) {
-        final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
-      }
       if (e is AppNetworkException) rethrow;
       throw AppNetworkException('Kesalahan sistem: $e');
     }
@@ -110,7 +91,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<String> getUserLeaderboardRank(String userId) async {
     try {
-      final response = await apiClient.dio.get('/points/leaderboard');
+      final response = await apiClient.dio.get('/gamification/leaderboard');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -122,7 +103,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
         if (userEntry != null) {
           final rank = userEntry['rank'];
-          return '$rank';
+          return '#$rank';
         }
         return '-';
       }
@@ -137,33 +118,15 @@ class ApiWasteLogRepository implements WasteLogRepository {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {
-    final String rawKategori = (json['wasteType'] ?? json['kategori'] ?? json['type'] ?? '').toString().toUpperCase();
-    final wasteType = (rawKategori == 'ORGANIC' || rawKategori == 'ORGANIK')
+    final String kategori = json['kategori']?.toString().toUpperCase() ?? '';
+    final wasteType = kategori == 'ORGANIC' || kategori == 'ORGANIK'
         ? WasteType.organic
         : WasteType.nonOrganic;
 
-    // berat dari backend: coba weightKg dulu, fallback ke berat/volumeLiter
-    final double weightKg = double.tryParse(
-      json['weightKg']?.toString() ?? 
-      json['berat']?.toString() ?? 
-      json['volumeLiter']?.toString() ?? 
-      '0'
-    ) ?? 0.0;
-    
-    // Ambil poin dari pointsAwarded, poin, atau points
-    final int poin = (json['pointsAwarded'] as num?)?.toInt() ?? 
-        (json['poin'] as num?)?.toInt() ?? 
-        (json['points'] as num?)?.toInt() ?? 0;
-
-    // Ambil lokasi tong jika ada
-    final String rawLoc = json['binLocation']?.toString() ??
-        json['kelurahan']?.toString() ??
-        json['rtRw']?.toString() ??
-        json['alamat']?.toString() ??
-        json['address']?.toString() ??
-        json['location']?.toString() ??
-        '';
-    final String? binLocation = (rawLoc.isEmpty || rawLoc == 'null' || rawLoc == 'Lokasi tidak diketahui') ? null : rawLoc;
+    // berat dari backend adalah string "1.2" (toFixed(1))
+    final double weightKg =
+        double.tryParse(json['berat']?.toString() ?? '0') ?? 0.0;
+    final int poin = (json['poin'] as num?)?.toInt() ?? 0;
 
     // tanggal: coba ISO 8601 dulu (dari my-deposits), fallback "12 Jan 2025"
     DateTime createdAt;
@@ -184,7 +147,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       volumeLiter: weightKg / (wasteType == WasteType.organic ? 0.4 : 0.2),
       pointsAwarded: poin,
       createdAt: createdAt,
-      kelurahan: binLocation,
+      kelurahan: '',
     );
   }
 

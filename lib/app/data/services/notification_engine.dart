@@ -71,67 +71,58 @@ class NotificationEngine {
 
   Future<void> _scheduleFixedNotifications() async {
     try {
+      // Hapus jadwal lama agar tidak dobel jika logic berubah
       await _flutterLocalNotificationsPlugin.cancel(id: 1);
       await _flutterLocalNotificationsPlugin.cancel(id: 2);
 
-      final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-
-      // 1. Pengingat Memilah Sampah Pagi (07:00 WIB / rentang 06:00-08:00 WIB)
-      tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 7, 0);
-      if (scheduledPagi.isBefore(now)) {
-        scheduledPagi = scheduledPagi.add(const Duration(days: 1));
-      }
-
-      const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
-        'reminder_pagi_channel',
-        'Jadwal Buang Sampah Pagi',
-        channelDescription: 'Notifikasi rutin jadwal buang sampah pagi untuk warga',
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'schedule_channel',
+        'Jadwal Penjemputan',
+        channelDescription: 'Notifikasi jadwal operasional penjemputan',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        color: Color(0xFF0EA5E9),
+      );
+      const NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
       );
 
+      // Notifikasi Pagi: 07:00
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         id: 1,
-        title: 'Jadwal Buang Sampah Pagi! 🌅',
-        body: 'Pengingat warga: Jangan lupa buang sampah Organik & Anorganik pagi ini.',
-        scheduledDate: scheduledPagi,
-        notificationDetails: const NotificationDetails(android: androidPagi),
+        title: 'Waktunya Buang Sampah! 🚛',
+        body: 'Petugas akan segera tiba untuk penjemputan pagi (06:00 - 08:00).',
+        scheduledDate: _nextInstanceOfTime(7, 0),
+        notificationDetails: platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
-      // 2. Pengingat Memilah Sampah Sore (17:00 WIB / rentang 16:00-18:00 WIB)
-      tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 17, 0);
-      if (scheduledSore.isBefore(now)) {
-        scheduledSore = scheduledSore.add(const Duration(days: 1));
-      }
-
-      const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
-        'reminder_sore_channel',
-        'Jadwal Buang Sampah Sore',
-        channelDescription: 'Notifikasi rutin jadwal buang sampah sore untuk warga',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF0EA5E9),
-      );
-
+      // Notifikasi Sore: 16:00
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         id: 2,
-        title: 'Jadwal Buang Sampah Sore! 🌆',
-        body: 'Pengingat warga: Cek kembali tempat sampah Anda dan segera buang sore ini.',
-        scheduledDate: scheduledSore,
-        notificationDetails: const NotificationDetails(android: androidSore),
+        title: 'Waktunya Buang Sampah! 🚛',
+        body: 'Petugas akan segera tiba untuk penjemputan sore (16:00 - 18:00).',
+        scheduledDate: _nextInstanceOfTime(16, 0),
+        notificationDetails: platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-
-      debugPrint('[NotificationEngine] Fixed daily reminders (07:00 & 17:00 WIB) scheduled successfully in background.');
+      
+      debugPrint('[NotificationEngine] Scheduled successfully.');
     } catch (e) {
-      debugPrint('[NotificationEngine] Schedule error: $e');
+      debugPrint('[NotificationEngine] Schedule failed: $e');
     }
+  }
+
+  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+    return scheduledDate;
   }
 
   Future<void> showPointsNotification(int points) async {
@@ -184,124 +175,5 @@ class NotificationEngine {
     } catch (e) {
       debugPrint('[NotificationEngine] Failed to show activation notification: $e');
     }
-  }
-
-  Future<void> showPunishmentNotification(int points) async {
-    try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'punishment_channel',
-        'Penalti & Pengurangan Poin',
-        channelDescription: 'Notifikasi penalti karena tidak menyetor sampah',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFFEF4444), // Red color
-      );
-      const NotificationDetails platformDetails = NotificationDetails(
-        android: androidDetails,
-      );
-
-      await _flutterLocalNotificationsPlugin.show(
-        id: 5, // ID untuk notif penalti/punishment
-        title: 'Penalti: Poin Berkurang! ⚠️',
-        body: 'Anda tidak melakukan setor sampah hari ini. Poin Anda berkurang -$points poin.',
-        notificationDetails: platformDetails,
-      );
-    } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show punishment notification: $e');
-    }
-  }
-
-  Future<void> showResetPendingNotification() async {
-    try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'reset_channel',
-        'Pengajuan Pengosongan',
-        channelDescription: 'Notifikasi status pengajuan pengosongan tong',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFFEAB308), // Yellow color
-      );
-      const NotificationDetails platformDetails = NotificationDetails(
-        android: androidDetails,
-      );
-
-      await _flutterLocalNotificationsPlugin.show(
-        id: 6,
-        title: 'Pengajuan Pengosongan Terkirim ⏳',
-        body: 'Pengajuan pengosongan tong sampah Anda sedang diproses oleh petugas.',
-        notificationDetails: platformDetails,
-      );
-    } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show reset notification: $e');
-    }
-  }
-
-  Future<void> showSubmitLogTimbanganNotification({
-    required double weightKg,
-    required String type,
-  }) async {
-    try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'timbangan_channel',
-        'Log Timbangan Residu',
-        channelDescription: 'Notifikasi konfirmasi pengunggahan timbangan residu',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF0D9488), // Teal color
-      );
-      const NotificationDetails platformDetails = NotificationDetails(
-        android: androidDetails,
-      );
-
-      await _flutterLocalNotificationsPlugin.show(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title: 'Log Timbangan Berhasil Disimpan! ⚖️',
-        body: 'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
-        notificationDetails: platformDetails,
-      );
-    } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show timbangan notification: $e');
-    }
-  }
-
-  Future<void> showGenericNotification({
-    required int id,
-    required String title,
-    required String body,
-    Color color = const Color(0xFF0284C7),
-  }) async {
-    try {
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'backend_channel',
-        'Notifikasi Sistem Backend',
-        channelDescription: 'Notifikasi resmi dari backend & atasan',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: color,
-      );
-      final NotificationDetails platformDetails = NotificationDetails(
-        android: androidDetails,
-      );
-
-      await _flutterLocalNotificationsPlugin.show(
-        id: id,
-        title: title,
-        body: body,
-        notificationDetails: platformDetails,
-      );
-    } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show generic notification: $e');
-    }
-  }
-
-  /// Bersihkan seluruh notifikasi di System Tray HP saat logout
-  Future<void> cancelAll() async {
-    try {
-      await _flutterLocalNotificationsPlugin.cancelAll();
-    } catch (_) {}
   }
 }

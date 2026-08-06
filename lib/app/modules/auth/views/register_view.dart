@@ -3,13 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
-import '../../../core/values/app_strings.dart';
-import '../../../core/utils/input_sanitizer.dart';
-import '../../../core/utils/phone_formatter.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../core/widgets/searchable_dropdown.dart';
 import '../../../routes/app_routes.dart';
-import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 /// Layar registrasi Warga baru.
@@ -29,39 +24,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _alamatController = TextEditingController();
+  final _rtRwController = TextEditingController();
+  final _kelurahanController = TextEditingController();
   
   // Mahasiswa fields
   final _nimController = TextEditingController();
   final _jurusanController = TextEditingController();
   final _fakultasController = TextEditingController();
-  final _universitasController = TextEditingController();
-  final _kecamatanController = TextEditingController();
-  final _dplNameController = TextEditingController();
-  String _selectedJenjang = 'S1';
-  String _selectedKelurahan = 'Dago';
-  String _selectedRtRw = '01/02';
   DateTime? _tglMulaiKKN;
   DateTime? _tglSelesaiKKN;
-
-  final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
-  final List<String> _kelurahanList = [];
-  final List<String> _rtRwList = [];
-
-  List<String> get _availableRtList {
-    if (_rtRwList.isEmpty) return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
-    final rts = _rtRwList.map((e) => e.split('/')[0].trim()).toSet().toList()..sort();
-    return rts;
-  }
-
-  List<String> get _availableRwList {
-    if (_rtRwList.isEmpty) return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
-    final rws = _rtRwList
-        .map((e) => e.split('/').length > 1 ? e.split('/')[1].trim() : '01')
-        .toSet()
-        .toList()
-      ..sort();
-    return rws;
-  }
 
   String _selectedRole = 'Warga';
   bool _obscurePassword = true;
@@ -73,63 +44,17 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   Timer? _toastTimer;
 
   @override
-  void initState() {
-    super.initState();
-    _loadDynamicTerritories();
-  }
-
-  String _cleanTerritoryName(dynamic val) {
-    if (val == null) return '';
-    String str = val.toString().trim();
-    if (str.contains('{') && str.contains('name:')) {
-      final match = RegExp(r'name:\s*([\w\s]+?)(?:,|\})', caseSensitive: false).firstMatch(str);
-      if (match != null) str = match.group(1)?.trim() ?? str;
-    }
-    return str.replaceAll(RegExp(r'[\{\}]'), '').trim();
-  }
-
-  Future<void> _loadDynamicTerritories() async {
-    try {
-      final repo = ref.read(authRepositoryProvider);
-      final res = await repo.fetchTerritories();
-      final kelsRaw = (res['kelurahans'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
-      final rtsRaw = (res['rtRws'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
-
-      if (mounted) {
-        setState(() {
-          _kelurahanList.clear();
-          _kelurahanList.addAll(kelsRaw.isNotEmpty ? kelsRaw : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot']);
-          if (_kelurahanList.isNotEmpty && !_kelurahanList.contains(_selectedKelurahan)) {
-            _selectedKelurahan = _kelurahanList.first;
-          }
-
-          _rtRwList.clear();
-          _rtRwList.addAll(rtsRaw.isNotEmpty ? rtsRaw : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04']);
-        });
-      }
-    } catch (_) {
-      if (mounted && _kelurahanList.isEmpty) {
-        setState(() {
-          _kelurahanList.addAll(['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa']);
-          _rtRwList.addAll(['01/01', '01/02', '02/02', '01/03', '02/03']);
-        });
-      }
-    }
-  }
-
-  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _alamatController.dispose();
+    _rtRwController.dispose();
+    _kelurahanController.dispose();
     _nimController.dispose();
     _jurusanController.dispose();
     _fakultasController.dispose();
-    _universitasController.dispose();
-    _kecamatanController.dispose();
-    _dplNameController.dispose();
     _toastTimer?.cancel();
     super.dispose();
   }
@@ -146,12 +71,14 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   }
 
   String _normalizePhone(String raw) {
-    return PhoneFormatter.prepareLoginPhoneInput(raw);
+    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
+    if (!phone.startsWith('0') && phone.startsWith('8')) phone = '0$phone';
+    return phone;
   }
 
   Future<void> _onRegister() async {
-    final name = InputSanitizer.sanitize(_nameController.text);
-    final phone = InputSanitizer.sanitize(_phoneController.text);
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
     if (name.isEmpty) {
@@ -199,26 +126,19 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     };
 
     if (_selectedRole == 'Warga') {
-      data['address'] = InputSanitizer.sanitize(_alamatController.text);
-      data['rtRw'] = _selectedRtRw;
-      data['kelurahan'] = _selectedKelurahan;
+      data['address'] = _alamatController.text.trim();
+      data['rtRw'] = _rtRwController.text.trim();
+      data['kelurahan'] = _kelurahanController.text.trim();
     } else if (_selectedRole == 'Mahasiswa') {
-      data['nim'] = InputSanitizer.sanitize(_nimController.text);
-      data['fakultas'] = InputSanitizer.sanitize(_fakultasController.text);
-      data['prodi'] = InputSanitizer.sanitize(_jurusanController.text);
-      data['jurusan'] = InputSanitizer.sanitize(_jurusanController.text);
-      data['universitas'] = InputSanitizer.sanitize(_universitasController.text);
-      data['jenjang'] = _selectedJenjang;
-      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
-      data['dplName'] = InputSanitizer.sanitize(_dplNameController.text);
-      data['rtRw'] = _selectedRtRw;
-      data['kelurahan'] = _selectedKelurahan;
+      data['nim'] = _nimController.text.trim();
+      data['jurusan'] = _jurusanController.text.trim();
+      data['fakultas'] = _fakultasController.text.trim();
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
-      data['rtRw'] = _selectedRtRw;
-      data['kelurahan'] = _selectedKelurahan;
-      data['assignedZone'] = _selectedKelurahan;
+      data['rtRw'] = _rtRwController.text.trim();
+      data['kelurahan'] = _kelurahanController.text.trim();
+      data['assignedZone'] = _kelurahanController.text.trim();
     }
 
     ref.read(authProvider.notifier).clearError();
@@ -381,11 +301,11 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               _buildLabel('PILIH PERAN'),
                               const SizedBox(height: 6),
                               DropdownButtonFormField<String>(
-                                isExpanded: true,
                                 initialValue: _selectedRole,
                                 items: const [
                                   DropdownMenuItem(value: 'Warga', child: Text('Warga')),
                                   DropdownMenuItem(value: 'Petugas Residu', child: Text('Petugas Residu')),
+                                  DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa')),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setState(() => _selectedRole = val);
@@ -479,227 +399,123 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 const SizedBox(height: 16),
                               ],
 
-                              if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') ...[
-                                _buildLabel('KECAMATAN'),
-                                const SizedBox(height: 6),
-                                SearchableDropdownField<String>(
-                                  labelText: 'Kecamatan',
-                                  hintText: 'Pilih Kecamatan',
-                                  prefixIcon: Icons.map_rounded,
-                                  value: _kecamatanController.text.isNotEmpty ? _kecamatanController.text : 'Coblong',
-                                  items: const [
-                                    DropdownItem(value: 'Coblong', label: 'Kecamatan Coblong', subtitle: 'Kota Bandung'),
+                              if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu') ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildLabel('RT/RW'),
+                                          const SizedBox(height: 6),
+                                          TextFormField(
+                                            controller: _rtRwController,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Contoh: 01/02',
+                                              prefixIcon: Icon(Icons.home_outlined, color: AppColors.textSecondary, size: 20),
+                                            ),
+                                            validator: (v) {
+                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu') && (v == null || v.trim().isEmpty)) {
+                                                return 'Wajib diisi';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildLabel('KELURAHAN'),
+                                          const SizedBox(height: 6),
+                                          TextFormField(
+                                            controller: _kelurahanController,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Kelurahan',
+                                              prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
+                                            ),
+                                            validator: (v) {
+                                              if ((_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu') && (v == null || v.trim().isEmpty)) {
+                                                return 'Wajib diisi';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
-                                  onChanged: (val) {
-                                    if (val != null) setState(() => _kecamatanController.text = val);
-                                  },
                                 ),
                                 const SizedBox(height: 16),
-                                SearchableDropdownField<String>(
-                                  labelText: _selectedRole == 'Mahasiswa' ? 'Kelurahan Dampingan' : 'Kelurahan',
-                                  hintText: 'Pilih Kelurahan',
-                                  prefixIcon: Icons.map_outlined,
-                                  value: _selectedKelurahan,
-                                  items: _kelurahanList
-                                      .map((k) => DropdownItem(value: k, label: 'Kel. $k'))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    if (val != null) setState(() => _selectedKelurahan = val);
-                                  },
-                                ),
-                                 const SizedBox(height: 16),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: SearchableDropdownField<String>(
-                                          labelText: 'RT',
-                                          hintText: 'Pilih RT',
-                                          prefixIcon: Icons.home_outlined,
-                                          value: _selectedRtRw.split('/')[0],
-                                          items: _availableRtList
-                                              .map((rt) => DropdownItem(
-                                                    value: rt,
-                                                    label: 'RT $rt',
-                                                  ))
-                                              .toList(),
-                                          onChanged: (val) {
-                                            if (val != null) {
-                                              final currentRw = _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02';
-                                              setState(() => _selectedRtRw = '$val/$currentRw');
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: SearchableDropdownField<String>(
-                                          labelText: 'RW',
-                                          hintText: 'Pilih RW',
-                                          prefixIcon: Icons.location_city_rounded,
-                                          value: _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02',
-                                          items: _availableRwList
-                                              .map((rw) => DropdownItem(
-                                                    value: rw,
-                                                    label: 'RW $rw',
-                                                  ))
-                                              .toList(),
-                                          onChanged: (val) {
-                                            if (val != null) {
-                                              final currentRt = _selectedRtRw.split('/')[0];
-                                              setState(() => _selectedRtRw = '$currentRt/$val');
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                 const SizedBox(height: 16),
                               ],
 
                               if (_selectedRole == 'Mahasiswa') ...[
-                                _buildLabel('NIM (NOMOR INDUK MAHASISWA)'),
+                                _buildLabel('NIM'),
                                 const SizedBox(height: 6),
                                 TextFormField(
                                   controller: _nimController,
                                   keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
                                   decoration: const InputDecoration(
-                                    hintText: '8-10 digit NIM',
+                                    hintText: 'Nomor Induk Mahasiswa',
                                     prefixIcon: Icon(Icons.badge_outlined, color: AppColors.textSecondary, size: 20),
                                   ),
                                   validator: (v) {
-                                    if (_selectedRole == 'Mahasiswa') {
-                                      if (v == null || v.trim().isEmpty) {
-                                        return 'NIM wajib diisi';
-                                      }
-                                      final clean = v.trim();
-                                      if (clean.length < 8 || clean.length > 10) {
-                                        return 'Format NIM tidak valid (8-10 digit)';
-                                      }
+                                    if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) {
+                                      return 'Wajib diisi';
                                     }
                                     return null;
                                   },
                                 ),
-                                 const SizedBox(height: 16),
-                                 Row(
-                                   children: [
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('UNIVERSITAS'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _universitasController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Perguruan Tinggi',
-                                               prefixIcon: Icon(Icons.apartment_rounded, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                     const SizedBox(width: 16),
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('JENJANG'),
-                                           const SizedBox(height: 6),
-                                           DropdownButtonFormField<String>(
-                                             isExpanded: true,
-                                             initialValue: _selectedJenjang,
-                                             decoration: const InputDecoration(
-                                               prefixIcon: Icon(Icons.workspace_premium_outlined, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             items: _jenjangList.map((j) => DropdownMenuItem(value: j, child: Text(j, overflow: TextOverflow.ellipsis))).toList(),
-                                             onChanged: (val) {
-                                               if (val != null) setState(() => _selectedJenjang = val);
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 16),
-                                 Row(
-                                   children: [
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('NAMA DPL'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _dplNameController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Nama Dosen DPL',
-                                               prefixIcon: Icon(Icons.person_pin_rounded, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 16),
-                                 Row(
-                                   children: [
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('FAKULTAS'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _fakultasController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Fakultas',
-                                               prefixIcon: Icon(Icons.account_balance_outlined, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                     const SizedBox(width: 16),
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('PROGRAM STUDI (PRODI)'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _jurusanController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Program Studi / Prodi',
-                                               prefixIcon: Icon(Icons.school_outlined, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                   ],
-                                 ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildLabel('JURUSAN'),
+                                          const SizedBox(height: 6),
+                                          TextFormField(
+                                            controller: _jurusanController,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Jurusan',
+                                              prefixIcon: Icon(Icons.school_outlined, color: AppColors.textSecondary, size: 20),
+                                            ),
+                                            validator: (v) {
+                                              if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
+                                              return null;
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildLabel('FAKULTAS'),
+                                          const SizedBox(height: 6),
+                                          TextFormField(
+                                            controller: _fakultasController,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Fakultas',
+                                              prefixIcon: Icon(Icons.account_balance_outlined, color: AppColors.textSecondary, size: 20),
+                                            ),
+                                            validator: (v) {
+                                              if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
+                                              return null;
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(
@@ -840,48 +656,36 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               const SizedBox(height: 20),
 
                               // Tombol Daftar
-                              SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: authState.isLoading ? null : _onRegister,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryGreen,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                    shadowColor: AppColors.primaryGreen.withValues(alpha: 0.3),
+                              ElevatedButton(
+                                onPressed: authState.isLoading ? null : _onRegister,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: authState.isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
-                                      : const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.person_add_alt_1_rounded,
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'DAFTAR SEKARANG',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                  elevation: 0,
                                 ),
+                                child: authState.isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.person_add_alt_1_rounded,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text('DAFTAR SEKARANG'),
+                                        ],
+                                      ),
                               ),
                               const SizedBox(height: 16),
 

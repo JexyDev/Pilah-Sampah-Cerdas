@@ -19,51 +19,15 @@ class ApiNotificationRepository implements NotificationRepository {
   @override
   Future<List<NotificationEntity>> getNotifications() async {
     try {
-      Response response;
-      try {
-        response = await apiClient.dio.get('/notifications');
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 404) {
-          try {
-            response = await apiClient.dio.get('/kkn/notifications');
-          } on DioException catch (_) {
-            try {
-              response = await apiClient.dio.get('/rt/notifications');
-            } on DioException catch (_) {
-              response = await apiClient.dio.get('/rw/notifications');
-            }
-          }
-        } else {
-          rethrow;
-        }
-      }
+      final response = await apiClient.dio.get('/notifications');
 
-      List<NotificationEntity> result = [];
-      if (response.statusCode == 200 && response.data != null) {
-        final rawData = response.data['data'] ?? response.data['notifications'] ?? response.data;
-        if (rawData is List) {
-          result = rawData
-              .map((json) => _mapNotification(json as Map<String, dynamic>))
-              .toList();
-        }
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] as List<dynamic>;
+        return data
+            .map((json) => _mapNotification(json as Map<String, dynamic>))
+            .toList();
       }
-
-      // Jika /notifications mengembalikan list kosong, coba fetch dari /kkn/notifications
-      if (result.isEmpty) {
-        try {
-          final kknRes = await apiClient.dio.get('/kkn/notifications');
-          if (kknRes.statusCode == 200 && kknRes.data != null) {
-            final rawKkn = kknRes.data['data'] ?? kknRes.data['notifications'] ?? kknRes.data;
-            if (rawKkn is List) {
-              result = rawKkn
-                  .map((json) => _mapNotification(json as Map<String, dynamic>))
-                  .toList();
-            }
-          }
-        } catch (_) {}
-      }
-
-      return result;
+      return [];
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
@@ -118,48 +82,15 @@ class ApiNotificationRepository implements NotificationRepository {
     }
   }
 
-  // ─── Unregister FCM Device Token ──────────────────────────────────────────
-  @override
-  Future<void> unregisterDeviceToken(String token) async {
-    try {
-      await apiClient.dio.post(
-        '/notifications/unregister-token',
-        data: {'token': token},
-      );
-    } on DioException catch (e) {
-      // Non-critical on logout — log warning only
-      throw NotificationException(
-        'NETWORK_ERROR',
-        'Gagal menghapus device token saat logout: ${e.message}',
-      );
-    }
-  }
-
   // ─── Helper ───────────────────────────────────────────────────────────────
   NotificationEntity _mapNotification(Map<String, dynamic> json) {
-    final rawDesc = json['desc']?.toString() ??
-        json['description']?.toString() ??
-        json['pesan']?.toString() ??
-        json['body']?.toString() ??
-        '';
-
-    final rawTitle = json['title']?.toString() ??
-        json['judul']?.toString() ??
-        json['subject']?.toString() ??
-        'Notifikasi Mahasiswa';
-
-    final rawType = json['type']?.toString() ??
-        json['kategori']?.toString() ??
-        json['category']?.toString() ??
-        'INFO';
-
     return NotificationEntity(
-      id: json['id']?.toString() ?? json['_id']?.toString() ?? json['notificationId']?.toString() ?? '',
-      type: rawType,
-      title: rawTitle,
-      desc: rawDesc,
-      isRead: json['isRead'] as bool? ?? json['read'] as bool? ?? json['is_read'] as bool? ?? false,
-      time: json['time']?.toString() ?? json['createdAt']?.toString() ?? json['timestamp']?.toString() ?? 'Baru saja',
+      id: json['id']?.toString() ?? '',
+      type: json['type']?.toString() ?? 'INFO',
+      title: json['title']?.toString() ?? '',
+      desc: json['desc']?.toString() ?? '',
+      isRead: json['isRead'] as bool? ?? false,
+      time: json['time']?.toString() ?? '',
       icon: json['icon']?.toString() ?? 'info',
     );
   }

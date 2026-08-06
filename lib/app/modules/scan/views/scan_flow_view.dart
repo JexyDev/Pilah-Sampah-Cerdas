@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lottie/lottie.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../data/services/notification_engine.dart' as import_engine;
 
-import '../../../routes/app_routes.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../../data/models/bin_entity.dart';
@@ -339,10 +337,19 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               topRight: Radius.circular(24),
             ),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 14),
               Text(
                 _photoTaken ? 'Foto Siap - Kirim ke AI' : 'Ambil Foto Sampah',
                 style: const TextStyle(
@@ -468,7 +475,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 SizedBox(width: 48),
                 Expanded(
                   child: Text(
-                    'Scan QR Tempat Sampah',
+                    'Scan QR Tong Sampah',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -483,9 +490,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           ),
         ),
 
-        // Banner info jenis sampah terdeteksi + status GPS
+        // Banner kuning info jenis sampah terdeteksi + status GPS
         Container(
-          color: isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor,
+          color: AppColors.warningYellow,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
@@ -499,7 +506,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 child: Text(
                   'Sampah: ${result.detectedType.displayName} '
                   '(${(result.volumeEstimate * (isOrganic ? 0.4 : 0.2)).toStringAsFixed(1)} kg) '
-                  '— Arahkan ke tempat sampah ${result.detectedType.displayName.toUpperCase()}',
+                  '— Arahkan ke tong ${result.detectedType.displayName.toUpperCase()}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -542,6 +549,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
                   
+                  // Validasi jenis tong akan dilakukan dengan aman di sisi backend. 
+                  // Jika tidak cocok, backend melempar BIN_TYPE_MISMATCH dan ditangani dengan benar.
+
                   ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
@@ -565,10 +575,19 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               topRight: Radius.circular(24),
             ),
           ),
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 24),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
               const Row(
                 children: [
                   Icon(
@@ -589,7 +608,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Arahkan kamera ke QR Code pada tempat sampah '
+                'Arahkan kamera ke QR Code pada tong sampah '
                 'untuk memverifikasi lokasi pembuangan Anda.',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
@@ -603,7 +622,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   }
 
   Widget _buildProgressBar(int active) {
-    const steps = ['Identifikasi', 'Verifikasi Lokasi', 'Selesai'];
+    const steps = ['Identifikasi', 'Verifikasi Tong', 'Selesai'];
 
     return Row(
       children: List.generate(steps.length * 2 - 1, (i) {
@@ -668,28 +687,18 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Lottie Animasi Koin
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Lottie.network(
-                    'https://assets2.lottiefiles.com/packages/lf20_touohxv0.json',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 64,
-                        height: 64,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryGreen,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                      );
-                    },
+                // Checkmark hijau
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 36,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -772,7 +781,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Kapasitas tempat sampah
+                // Kapasitas tong
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -786,7 +795,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Total Maks Tempat Sampah',
+                            'Total Maks Tong',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -852,39 +861,6 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (pct >= 1.0)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.dangerRed.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: AppColors.dangerRed.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.warning_rounded,
-                          color: AppColors.dangerRed,
-                          size: 20,
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Tong Penuh, Gunakan Tong Sampah Milik anda yang lain atau aktivasi tong baru',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.dangerRed,
-                              fontWeight: FontWeight.w600,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 // Poin banner
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -919,20 +895,12 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                               color: AppColors.warningYellow,
                             ),
                           ),
-                          TweenAnimationBuilder<int>(
-                            tween: IntTween(begin: 0, end: result.pointsAwarded),
-                            duration: const Duration(milliseconds: 1500),
-                            curve: Curves.easeOutExpo,
-                            builder: (context, value, child) {
-                              return Text(
-                                'Anda mendapat +$value poin',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.warningYellow,
-                                ),
-                              );
-                            },
+                          Text(
+                            'Anda mendapat +${result.pointsAwarded} poin',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.warningYellow,
+                            ),
                           ),
                         ],
                       ),
@@ -972,15 +940,13 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   ) {
     if (errorCode == 'BIN_TYPE_MISMATCH') {
       _showMismatchDialog(context);
-    } else if (errorCode == 'BIN_OVERFLOW') {
-      _showOverflowDialog(context, errorMessage);
     } else if (errorCode == 'IMAGE_UNREADABLE' || errorCode == 'AI_TIMEOUT') {
       _showScanFailedDialog(context, errorMessage, isQrError: false);
     } else {
       // Jika terjadi kesalahan saat scan QR (Step 2)
       final state = ref.read(scanFlowProvider);
       if (state.currentStep == 2 || state.aiResult != null) {
-        _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tempat sampah.', isQrError: true);
+        _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tong sampah.', isQrError: true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -992,36 +958,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     }
   }
 
-  /// Dialog BIN_OVERFLOW — Larangan Scan QR Tong Penuh
-  void _showOverflowDialog(BuildContext context, String? message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _OverflowDialog(
-        message: message ?? 'Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan.',
-        onScanLain: () {
-          Navigator.of(context).pop();
-          ref.read(scanFlowProvider.notifier).clearError();
-        },
-        onAjukanReset: () {
-          Navigator.of(context).pop();
-          ref.read(scanFlowProvider.notifier).reset();
-          Navigator.of(context).pushReplacementNamed(AppRoutes.resetBin);
-        },
-        onKeluar: () {
-          Navigator.of(context).pop();
-          ref.read(scanFlowProvider.notifier).reset();
-          Navigator.of(context).pop();
-        },
-      ),
-    );
-  }
-
-  /// Dialog BIN_TYPE_MISMATCH — "Tidak Sesuai!" dengan info sampah vs tempat sampah
+  /// Dialog BIN_TYPE_MISMATCH — "Tidak Sesuai!" dengan info sampah vs tong
   void _showMismatchDialog(BuildContext context) {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
-    // Tempat sampah yang salah = kebalikan dari yang terdeteksi
+    // Tong yang salah = kebalikan dari yang terdeteksi
     final String tongName = aiResult?.detectedType == WasteType.organic
         ? 'Non-Organik'
         : 'Organik';
@@ -1057,10 +998,6 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           } else {
             ref.read(scanFlowProvider.notifier).reset();
           }
-        },
-        onCancel: () {
-          Navigator.of(context).pop(); // Tutup dialog
-          Navigator.of(context).pop(); // Keluar dari halaman Scan
         },
       ),
     );
@@ -1109,6 +1046,15 @@ class _AiSuccessSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
           Container(
             width: 64,
             height: 64,
@@ -1171,7 +1117,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'REKOMENDASI TEMPAT SAMPAH',
+                            'REKOMENDASI TONG',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -1179,7 +1125,7 @@ class _AiSuccessSheet extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Tempat Sampah ${result.detectedType.displayName}',
+                            'Bin ${result.detectedType.displayName}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -1294,7 +1240,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '+${result.calculatedPoints} Pts',
+                          '+${result.estimatedPoints ?? (isOrganic ? 150 : 100)} Pts',
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -1319,7 +1265,7 @@ class _AiSuccessSheet extends StatelessWidget {
               },
               icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
               label: const Text(
-                'LANJUT SCAN TEMPAT SAMPAH',
+                'LANJUT SCAN TONG SAMPAH',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
@@ -1410,7 +1356,7 @@ class _MismatchDialog extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 16),
-            // SAMPAH vs TEMPAT SAMPAH
+            // SAMPAH vs TONG
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1463,7 +1409,7 @@ class _MismatchDialog extends StatelessWidget {
                         child: Column(
                           children: [
                             const Text(
-                              'TEMPAT SAMPAH',
+                              'TONG',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,
@@ -1503,7 +1449,7 @@ class _MismatchDialog extends StatelessWidget {
                       SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          'Jenis sampah tidak cocok dengan kategori tempat sampah yang dipilih. Harap masukkan sampah ke tempat yang sesuai.',
+                          'Jenis sampah tidak cocok dengan kategori tong yang dipilih. Harap masukkan sampah ke tempat yang sesuai.',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.dangerRed,
@@ -1519,7 +1465,7 @@ class _MismatchDialog extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onScanUlang,
               icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text('SCAN ULANG TEMPAT SAMPAH YANG BENAR'),
+              label: const Text('SCAN ULANG TONG YANG BENAR'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warningOrange,
               ),
@@ -1543,30 +1489,10 @@ class _MismatchDialog extends StatelessWidget {
 // ─── Dialog: Scan Gagal ───────────────────────────────────────────────────────
 
 class _ScanFailedDialog extends StatelessWidget {
-  const _ScanFailedDialog({
-    required this.message, 
-    required this.onRetry,
-    this.onCancel,
-  });
+  const _ScanFailedDialog({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
-  final VoidCallback? onCancel;
-
-  String _formatErrorMessage(String rawMsg) {
-    if (rawMsg.contains('This exception was thrown') ||
-        rawMsg.contains('validateStatus') ||
-        rawMsg.contains('status code of 400')) {
-      return 'Jenis tempat sampah tidak sesuai atau QR Code tidak dapat diproses. Harap pastikan kategori sampah sesuai dengan tempat sampah.';
-    }
-    if (rawMsg.contains('status code of 404')) {
-      return 'Tempat sampah tidak ditemukan di sistem. Harap pastikan QR Code terdaftar.';
-    }
-    if (rawMsg.contains('status code of 500')) {
-      return 'Server backend sedang mengalami kendala. Harap coba beberapa saat lagi.';
-    }
-    return rawMsg;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1601,7 +1527,7 @@ class _ScanFailedDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              _formatErrorMessage(message),
+              message,
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -1615,108 +1541,7 @@ class _ScanFailedDialog extends StatelessWidget {
               label: const Text('COBA ULANG'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.dangerRed,
-                minimumSize: const Size.fromHeight(44),
               ),
-            ),
-            if (onCancel != null) ...[
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: onCancel,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.border),
-                  foregroundColor: AppColors.textSecondary,
-                  minimumSize: const Size.fromHeight(44),
-                ),
-                child: const Text('KELUAR'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Dialog: BIN_OVERFLOW (Tong Sampah Penuh) ──────────────────────────────────
-
-class _OverflowDialog extends StatelessWidget {
-  const _OverflowDialog({
-    required this.message,
-    required this.onScanLain,
-    required this.onAjukanReset,
-    required this.onKeluar,
-  });
-
-  final String message;
-  final VoidCallback onScanLain;
-  final VoidCallback onAjukanReset;
-  final VoidCallback onKeluar;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.dangerRed.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.report_problem_rounded,
-                color: AppColors.dangerRed,
-                size: 36,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Tong Sampah Penuh!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.dangerRed),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: onScanLain,
-                icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                label: const Text('Scan QR Tong Lain', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: OutlinedButton.icon(
-                onPressed: onAjukanReset,
-                icon: const Icon(Icons.cleaning_services_rounded, size: 18, color: AppColors.primaryGreen),
-                label: const Text('Ajukan Pengosongan Tong', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primaryGreen),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: onKeluar,
-              child: const Text('Keluar / Batal', style: TextStyle(color: AppColors.textHint)),
             ),
           ],
         ),

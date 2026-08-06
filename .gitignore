@@ -1,7 +1,0 @@
-node_modules
-.dart_tool/
-.flutter-plugins-dependencies
-build/
-node_modules
-*.py
-*.csv

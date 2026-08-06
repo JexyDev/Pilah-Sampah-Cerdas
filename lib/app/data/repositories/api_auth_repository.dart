@@ -1,10 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
-import '../../core/utils/image_compressor.dart';
-import '../../core/utils/phone_formatter.dart';
 import '../../core/values/app_config.dart';
 import '../models/user_entity.dart';
 import 'auth_repository.dart';
@@ -34,11 +30,10 @@ class ApiAuthRepository implements AuthRepository {
     required String password,
   }) async {
     apiClient.clearTokenCache();
-    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
     try {
       final response = await apiClient.dio.post(
         '/auth/login',
-        data: {'phone': cleanPhone, 'password': password},
+        data: {'phone': phone, 'password': password},
       );
 
       if (response.statusCode == 200) {
@@ -46,10 +41,6 @@ class ApiAuthRepository implements AuthRepository {
         final userMap = data['user'] as Map<String, dynamic>;
         final accessToken = data['accessToken'] as String;
         final refreshToken = data['refreshToken'] as String;
-
-        // DEBUG: lihat apa yang backend kirim saat login
-        debugPrint('[DEBUG LOGIN] userMap keys=${userMap.keys.toList()}');
-        debugPrint('[DEBUG LOGIN] userMap=$userMap');
 
         // Simpan token ke secure storage
         await Future.wait([
@@ -69,25 +60,8 @@ class ApiAuthRepository implements AuthRepository {
 
         var user = _mapUser(userMap);
 
-        // Untuk warga: fetch household (householdId, rtRw, kelurahan)
-        // Untuk mahasiswa/petugas: baca dari local storage dulu
-        if (user.role == UserRole.warga) {
-          user = await _fetchAndAttachHousehold(user);
-        } else if (user.role == UserRole.mahasiswaKkn) {
-          // Cek apakah login response sudah ada kelurahan/rtRw
-          if (user.kelurahan.isEmpty || user.rtRw.isEmpty) {
-            // Baca dari local storage yang mungkin sudah disimpan sebelumnya
-            final localKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
-            final localRt = await secureStorage.read(key: AppConfig.mahasiswaRtRwKey);
-            if ((localKel != null && localKel.isNotEmpty) ||
-                (localRt != null && localRt.isNotEmpty)) {
-              user = user.copyWith(
-                kelurahan: localKel?.isNotEmpty == true ? localKel! : user.kelurahan,
-                rtRw: localRt?.isNotEmpty == true ? localRt! : user.rtRw,
-              );
-            }
-          }
-        }
+        // Langsung fetch householdId setelah login berhasil
+        user = await _fetchAndAttachHousehold(user);
 
         return user;
       }
@@ -120,12 +94,6 @@ class ApiAuthRepository implements AuthRepository {
         throw AuthException(
           'UNAPPROVED_ACCOUNT',
           message ?? 'Akun Anda sedang menunggu persetujuan (approval) dari pihak Admin. Silakan coba login kembali nanti.',
-        );
-      }
-      if (status == 429) {
-        throw AuthException(
-          'TOO_MANY_REQUESTS',
-          message ?? 'Terlalu banyak percobaan login gagal. Silakan tunggu 15 menit.',
         );
       }
       
@@ -233,13 +201,16 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<void> requestOtp({required String phone}) async {
     try {
-      // Hanya panggil endpoint backend Express (menggunakan format 08)
-      // Backend yang akan men-generate OTP dan mengirimkannya via Fonnte.
-      final backendPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
-      await apiClient.dio.post('/auth/request-otp', data: {'phone': backendPhone});
-    } on DioException catch (e) {
-      final message = e.response?.data?['message']?.toString();
-      throw AuthException('OTP_FAILED', message ?? 'Gagal meminta kode OTP');
+      final response = await apiClient.dio.post(
+        '/auth/request-otp',
+        data: {'phone': phone},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw const AuthException('OTP_FAILED', 'Gagal meminta OTP');
+      }
+    } on DioException catch (_) {
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
@@ -249,23 +220,10 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<UserEntity> verifyOtp({required String phone, required String otp}) async {
     apiClient.clearTokenCache();
-    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
-
-    // Bypass kode khusus dev
-    if (kDebugMode && (otp == '123456' || otp == '000000')) {
-      return UserEntity(
-        id: 'temp_otp_user',
-        name: 'User',
-        email: '',
-        phone: cleanPhone,
-        role: UserRole.warga,
-      );
-    }
-    
     try {
       final response = await apiClient.dio.post(
         '/auth/verify-otp',
-        data: {'phone': cleanPhone, 'otp': otp},
+        data: {'phone': phone, 'otp': otp},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -285,14 +243,7 @@ class ApiAuthRepository implements AuthRepository {
         return user;
       }
 
-      // Jika berhasil tapi responsnya tidak sesuai format normal, tetap kembalikan fallback
-      return UserEntity(
-        id: 'temp_otp_user',
-        name: 'User',
-        email: '',
-        phone: cleanPhone,
-        role: UserRole.warga,
-      );
+      throw const AuthException('OTP_VERIFY_FAILED', 'Verifikasi OTP gagal');
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       if (status == 400 || status == 401) {
@@ -354,29 +305,12 @@ class ApiAuthRepository implements AuthRepository {
       final userMap = jsonDecode(userDataStr) as Map<String, dynamic>;
       var user = _mapUser(userMap);
 
-      // Attach householdId dari cache (untuk warga)
+      // Attach householdId dari cache
       final cachedHouseholdId = await secureStorage.read(
         key: AppConfig.householdIdKey,
       );
       if (cachedHouseholdId != null && cachedHouseholdId.isNotEmpty) {
         user = user.copyWith(householdId: cachedHouseholdId);
-      }
-
-      // Untuk mahasiswa KKN: baca kelurahan & rtRw dari local storage
-      if (user.role == UserRole.mahasiswaKkn) {
-        final cachedKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
-        final cachedRt = await secureStorage.read(key: AppConfig.mahasiswaRtRwKey);
-        final hasLocalRegion = (cachedKel != null && cachedKel.isNotEmpty) ||
-                               (cachedRt != null && cachedRt.isNotEmpty);
-        if (hasLocalRegion) {
-          user = user.copyWith(
-            kelurahan: cachedKel?.isNotEmpty == true ? cachedKel! : user.kelurahan,
-            rtRw: cachedRt?.isNotEmpty == true ? cachedRt! : user.rtRw,
-          );
-        } else if (user.kelurahan.isEmpty || user.rtRw.isEmpty) {
-          // Fallback ke API hanya jika lokal belum ada
-          user = await _fetchProfileMe(user);
-        }
       }
 
       return user;
@@ -501,16 +435,8 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<void> uploadAvatar(String imagePath) async {
     try {
-      // Auto-compress avatar before upload (Target < 300KB, max 512x512)
-      final compressedImagePath = await ImageCompressor.compressImage(
-        imagePath,
-        maxSizeBytes: 300 * 1024,
-        maxWidth: 512,
-        maxHeight: 512,
-      );
-
       final formData = FormData.fromMap({
-        'avatar': await MultipartFile.fromFile(compressedImagePath),
+        'avatar': await MultipartFile.fromFile(imagePath),
       });
 
       final response = await apiClient.dio.post(
@@ -563,63 +489,26 @@ class ApiAuthRepository implements AuthRepository {
     required String token,
     required String newPassword,
   }) async {
-    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(email);
     try {
       final response = await apiClient.dio.post(
         '/auth/reset-password',
         data: {
-          'phone': cleanPhone,
-          'email': cleanPhone,
+          'email': email,
           'token': token,
-          'otp': token,
           'newPassword': newPassword,
         },
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return;
+      if (response.statusCode != 200) {
+        throw const AuthException('RESET_PASSWORD_FAILED', 'Gagal menyetel ulang kata sandi');
       }
-      throw const AuthException('RESET_PASSWORD_FAILED', 'Gagal menyetel ulang kata sandi');
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       final message = e.response?.data?['message']?.toString();
-      if (status == 404) {
-        throw AuthException('USER_NOT_FOUND', message ?? 'Nomor telepon tidak terdaftar di sistem');
-      }
       if (status == 400) {
         throw AuthException('INVALID_TOKEN', message ?? 'Kode verifikasi salah atau kedaluwarsa');
       }
-      throw AuthException('RESET_PASSWORD_FAILED', message ?? 'Gagal menyetel ulang kata sandi');
-    } catch (e) {
-      if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
-    }
-  }
-
-  @override
-  Future<bool> changePassword({
-    required String oldPassword,
-    required String newPassword,
-  }) async {
-    try {
-      final response = await apiClient.dio.post(
-        '/auth/change-password',
-        data: {
-          'oldPassword': oldPassword,
-          'newPassword': newPassword,
-        },
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      }
-      throw const AuthException('CHANGE_PASSWORD_FAILED', 'Gagal mengubah kata sandi');
-    } on DioException catch (e) {
-      final status = e.response?.statusCode;
-      final message = e.response?.data?['message']?.toString();
-      if (status == 400) {
-        throw AuthException('WRONG_OLD_PASSWORD', message ?? 'Kata sandi lama Anda salah');
-      }
-      throw AuthException('CHANGE_PASSWORD_FAILED', message ?? 'Gagal mengubah kata sandi');
+      throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('UNKNOWN_ERROR', e.toString());
@@ -629,258 +518,12 @@ class ApiAuthRepository implements AuthRepository {
   // ─── Helper ───────────────────────────────────────────────────────────────
 
   UserEntity _mapUser(Map<String, dynamic> userMap) {
-    // Ekstrak kelurahan & rtRw dari berbagai kemungkinan struktur response:
-    // - Flat: {'kelurahan': 'Bojongsoang', 'rtRw': '01/02'}
-    // - Nested via rtRw object: {'rtRw': {'name': '01/02', 'kelurahan': {'name': 'Bojongsoang'}}}
-    // - Nested via kelompok KKN: {'kelompokKkn': {'kelurahan': ..., 'rtRw': ...}}
-    String kelurahan = '';
-    String rtRw = '';
-
-    // 1. Coba flat field langsung
-    kelurahan = userMap['kelurahan']?.toString() ?? '';
-    rtRw = userMap['rtRw']?.toString() ?? '';
-
-    // 2. Jika rtRw adalah object nested (seperti struktur warga)
-    if (rtRw.isEmpty && userMap['rtRw'] is Map) {
-      final rtRwMap = userMap['rtRw'] as Map<String, dynamic>;
-      rtRw = rtRwMap['name']?.toString() ?? '';
-      if (kelurahan.isEmpty && rtRwMap['kelurahan'] is Map) {
-        final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
-        kelurahan = kelMap['name']?.toString() ?? '';
-      } else if (kelurahan.isEmpty) {
-        kelurahan = rtRwMap['kelurahan']?.toString() ?? '';
-      }
-    }
-
-    // 3. Coba dari studentProfile (response backend VPS /users & /auth/me yang baru di-deploy)
-    final sp = userMap['studentProfile'] is Map ? (userMap['studentProfile'] as Map<String, dynamic>) : null;
-    if (sp != null) {
-      if (kelurahan.isEmpty) kelurahan = sp['kelurahan']?.toString() ?? sp['penugasanKelurahan']?.toString() ?? sp['kelompok']?['kelurahan']?.toString() ?? '';
-      if (rtRw.isEmpty) {
-        if (sp['rtRw'] != null) {
-          rtRw = sp['rtRw'].toString();
-        } else if (sp['penugasanRt'] != null && sp['penugasanRw'] != null) {
-          rtRw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
-        } else if (sp['kelompok']?['rtRw'] != null) {
-          rtRw = sp['kelompok']['rtRw'].toString();
-        }
-      }
-    }
-
-    // 4. Coba dari kelompokKkn (struktur mahasiswa KKN)
-    if ((kelurahan.isEmpty || rtRw.isEmpty) && userMap['kelompokKkn'] is Map) {
-      final kkn = userMap['kelompokKkn'] as Map<String, dynamic>;
-      if (kelurahan.isEmpty) kelurahan = kkn['kelurahan']?.toString() ?? '';
-      if (rtRw.isEmpty) rtRw = kkn['rtRw']?.toString() ?? '';
-    }
-
-    // 5. Coba dari profile nested
-    if ((kelurahan.isEmpty || rtRw.isEmpty) && userMap['profile'] is Map) {
-      final profile = userMap['profile'] as Map<String, dynamic>;
-      if (kelurahan.isEmpty) kelurahan = profile['kelurahan']?.toString() ?? '';
-      if (rtRw.isEmpty) rtRw = profile['rtRw']?.toString() ?? '';
-    }
-
-    final String nim = userMap['nim']?.toString() ?? sp?['nim']?.toString() ?? userMap['profile']?['nim']?.toString() ?? '';
-    final String prodi = userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? '';
-    final String jurusan = userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? '';
-    final String fakultas = userMap['fakultas']?.toString() ?? sp?['fakultas']?.toString() ?? userMap['profile']?['fakultas']?.toString() ?? '';
-    final String universitas = userMap['universitas']?.toString() ?? sp?['universitas']?.toString() ?? userMap['profile']?['universitas']?.toString() ?? '';
-
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       phone: userMap['phone']?.toString() ?? '',
-      email: userMap['email']?.toString(),
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
       fotoProfil: userMap['fotoProfil']?.toString(),
-      kelurahan: kelurahan,
-      rtRw: rtRw,
-      nim: nim,
-      jurusan: jurusan,
-      prodi: prodi,
-      fakultas: fakultas,
-      universitas: universitas,
     );
-  }
-
-  /// Fetch data wilayah mahasiswa dari /auth/me atau fallback ke /kkn/kelompok/me.
-  /// Backend /auth/me tidak return kelurahan/rtRw, tapi /kkn/kelompok/me punya poskoLocation.
-  Future<UserEntity> _fetchProfileMe(UserEntity user) async {
-    // Coba /auth/me dulu (siapa tahu backend nanti update untuk return wilayah)
-    try {
-      final response = await apiClient.dio.get('/auth/me');
-      debugPrint('[DEBUG /auth/me] status=${response.statusCode} data=${response.data}');
-      if (response.statusCode == 200) {
-        // Backend return {success, message, user: {...}} — bukan {data: {...}}
-        final rawData = response.data;
-        Map<String, dynamic> userMap = {};
-        if (rawData is Map) {
-          // Coba key 'user' langsung
-          if (rawData['user'] is Map) {
-            userMap = rawData['user'] as Map<String, dynamic>;
-          } else if (rawData['data'] is Map) {
-            final d = rawData['data'] as Map<String, dynamic>;
-            userMap = d['user'] is Map ? d['user'] as Map<String, dynamic> : d;
-          }
-        }
-        debugPrint('[DEBUG /auth/me] userMap=$userMap');
-        if (userMap.isNotEmpty) {
-          final fetched = _mapUser(userMap);
-          if (fetched.kelurahan.isNotEmpty && fetched.rtRw.isNotEmpty) {
-            debugPrint('[DEBUG /auth/me] Got kelurahan=${fetched.kelurahan} rtRw=${fetched.rtRw}');
-            return user.copyWith(
-              kelurahan: fetched.kelurahan,
-              rtRw: fetched.rtRw,
-            );
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('[DEBUG /auth/me] ERROR: $e');
-    }
-
-    // Fallback: ambil dari /kkn/kelompok/me yang punya poskoLocation
-    try {
-      final kelompokResp = await apiClient.dio.get('/kkn/kelompok/me');
-      debugPrint('[DEBUG /kkn/kelompok/me] status=${kelompokResp.statusCode} data=${kelompokResp.data}');
-      if (kelompokResp.statusCode == 200) {
-        final data = kelompokResp.data;
-        Map<String, dynamic> kelompokData = {};
-        if (data is Map && data['data'] is Map) {
-          kelompokData = data['data'] as Map<String, dynamic>;
-        } else if (data is Map) {
-          kelompokData = data as Map<String, dynamic>;
-        }
-
-        // Coba field kelurahan & rtRw langsung
-        String kel = kelompokData['kelurahan']?.toString() ?? '';
-        String rt = kelompokData['rtRw']?.toString() ?? '';
-
-        // Parse dari poskoLocation: "Kel. Bojongsoang RT 03 / RW 08"
-        if ((kel.isEmpty || rt.isEmpty) && kelompokData['poskoLocation'] is String) {
-          final posko = kelompokData['poskoLocation'] as String;
-          debugPrint('[DEBUG kelompok] poskoLocation=$posko');
-          // Extract kelurahan: teks setelah 'Kel.' atau sebelum 'RT'
-          final kelMatch = RegExp(r'Kel\.\s*([\w\s]+?)(?:\s+RT|\s*$)', caseSensitive: false).firstMatch(posko);
-          if (kelMatch != null && kel.isEmpty) kel = kelMatch.group(1)?.trim() ?? '';
-          // Extract RT/RW: format 'RT XX / RW YY' atau 'XX/YY'
-          final rtMatch = RegExp(r'RT\s*(\d+)\s*/\s*RW\s*(\d+)', caseSensitive: false).firstMatch(posko);
-          if (rtMatch != null && rt.isEmpty) rt = '${rtMatch.group(1)?.padLeft(2,'0')}/${rtMatch.group(2)?.padLeft(2,'0')}';
-        }
-
-        debugPrint('[DEBUG kelompok] parsed kelurahan=$kel rtRw=$rt');
-        if (kel.isNotEmpty || rt.isNotEmpty) {
-          return user.copyWith(
-            kelurahan: kel.isNotEmpty ? kel : user.kelurahan,
-            rtRw: rt.isNotEmpty ? rt : user.rtRw,
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('[DEBUG /kkn/kelompok/me] ERROR: $e');
-    }
-
-    return user;
-  }
-
-  String _cleanName(dynamic val) {
-    if (val == null) return '';
-    if (val is String) {
-      final str = val.trim();
-      if (str.startsWith('{') && str.contains('name:')) {
-        final match = RegExp(r'name:\s*([\w\s]+?)(?:,|\})', caseSensitive: false).firstMatch(str);
-        if (match != null) return match.group(1)?.trim() ?? str;
-      }
-      return str;
-    }
-    if (val is Map) {
-      final n = val['name'] ?? val['nama'] ?? val['title'] ?? val['label'];
-      if (n != null) return _cleanName(n);
-    }
-    return '';
-  }
-
-  @override
-  Future<Map<String, dynamic>> fetchTerritories() async {
-    List<String> kelurahans = [];
-    List<String> rtRws = [];
-    List<Map<String, dynamic>> rtRwListRaw = [];
-
-    // 1. Coba endpoint dedicated baru /wilayah/rw dan /wilayah/rt
-    try {
-      final rwResp = await apiClient.dio.get('/wilayah/rw');
-      if (rwResp.statusCode == 200 && rwResp.data != null) {
-        final list = rwResp.data is List ? rwResp.data as List : (rwResp.data['data'] as List? ?? []);
-        for (final item in list) {
-          final clean = _cleanName(item);
-          if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) {
-            rtRws.add(clean);
-          }
-        }
-      }
-    } catch (_) {}
-
-    try {
-      final rtResp = await apiClient.dio.get('/wilayah/rt');
-      if (rtResp.statusCode == 200 && rtResp.data != null) {
-        final list = rtResp.data is List ? rtResp.data as List : (rtResp.data['data'] as List? ?? []);
-        for (final item in list) {
-          final clean = _cleanName(item);
-          if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) {
-            rtRws.add(clean);
-          }
-        }
-      }
-    } catch (_) {}
-
-    // 2. Coba endpoint /areas/kelurahan
-    try {
-      final kelResp = await apiClient.dio.get('/areas/kelurahan');
-      if (kelResp.statusCode == 200 && kelResp.data != null) {
-        final list = kelResp.data is List ? kelResp.data as List : (kelResp.data['data'] as List? ?? []);
-        for (final item in list) {
-          final clean = _cleanName(item);
-          if (clean.isNotEmpty && !clean.contains('{') && !kelurahans.contains(clean)) {
-            kelurahans.add(clean);
-          }
-        }
-      }
-    } catch (_) {}
-
-    // 3. Coba endpoint /areas/rt-rw
-    try {
-      final rtRwResp = await apiClient.dio.get('/areas/rt-rw');
-      if (rtRwResp.statusCode == 200 && rtRwResp.data != null) {
-        final list = rtRwResp.data is List ? rtRwResp.data as List : (rtRwResp.data['data'] as List? ?? []);
-        for (final item in list) {
-          if (item is Map<String, dynamic>) {
-            final name = _cleanName(item['name']);
-            final kel = _cleanName(item['kelurahan']);
-            if (name.isNotEmpty && !name.contains('{') && !rtRws.contains(name)) rtRws.add(name);
-            if (kel.isNotEmpty && !kel.contains('{') && !kelurahans.contains(kel)) {
-              kelurahans.add(kel);
-            }
-            rtRwListRaw.add(item);
-          } else if (item is String) {
-            final clean = _cleanName(item);
-            if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) rtRws.add(clean);
-          }
-        }
-      }
-    } catch (_) {}
-
-    final validKels = kelurahans.where((k) => k.isNotEmpty && !k.contains('{')).toList();
-    final validRts = rtRws.where((r) => r.isNotEmpty && !r.contains('{')).toList();
-
-    return {
-      'kelurahans': validKels.isNotEmpty
-          ? validKels
-          : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot'],
-      'rtRws': validRts.isNotEmpty
-          ? validRts
-          : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04'],
-      'rawRtRw': rtRwListRaw,
-    };
   }
 }

@@ -1,7 +1,7 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/values/app_assets.dart';
 import '../../core/values/app_colors.dart';
 import '../../core/values/app_config.dart';
 import '../../core/values/app_dimensions.dart';
@@ -21,7 +21,7 @@ import '../../core/utils/scan_guard.dart';
 
 /// Halaman beranda Ã¢â‚¬â€ sesuai desain:
 /// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
-class BerandaView extends ConsumerStatefulWidget {
+class BerandaView extends ConsumerWidget {
   const BerandaView({
     super.key,
     this.onNavigateToHistory,
@@ -30,14 +30,7 @@ class BerandaView extends ConsumerStatefulWidget {
   final VoidCallback? onNavigateToHistory;
 
   @override
-  ConsumerState<BerandaView> createState() => _BerandaViewState();
-}
-
-class _BerandaViewState extends ConsumerState<BerandaView> {
-  bool _hideFullBinAlert = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
     final totalPointsAsync = ref.watch(totalPointsProvider);
     final wasteLogsAsync = ref.watch(wasteLogsProvider);
@@ -61,8 +54,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             SliverToBoxAdapter(
               child: _buildHeader(
                 context,
-                ref,
-                user,
+                user?.name ?? 'Warga',
+                user?.rtRw ?? 'RT 04 / RW 02',
                 isOnline,
                 unreadCount,
               ),
@@ -106,7 +99,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Tempat Sampah Anda',
+                        'Tong Sampah Anda',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -130,8 +123,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     builder: (context, ref, _) {
                       return ref.watch(binsProvider).when(
                         data: (bins) {
-                          final activeBins = bins.where((bin) => bin.isActive).toList();
-                          if (activeBins.isEmpty) {
+                          if (bins.isEmpty) {
                             return Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
@@ -141,7 +133,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                               ),
                               child: const Center(
                                 child: Text(
-                                  'Belum ada tempat sampah aktif terdaftar.',
+                                  'Belum ada tong terdaftar.',
                                   style: TextStyle(color: AppColors.textSecondary),
                                 ),
                               ),
@@ -151,7 +143,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                             scrollDirection: Axis.horizontal,
                             clipBehavior: Clip.none,
                             child: Row(
-                              children: activeBins.map((bin) {
+                              children: bins.map((bin) {
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 12),
                                   child: SizedBox(
@@ -187,7 +179,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         ),
                       ),
                       TextButton(
-                        onPressed: widget.onNavigateToHistory,
+                        onPressed: onNavigateToHistory,
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
@@ -246,43 +238,13 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     );
   }
 
-  Widget _buildHeaderAvatarImage(String? fotoPath) {
-    if (fotoPath == null || fotoPath.isEmpty) {
-      return const Center(
-        child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28),
-      );
-    }
-    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
-      return Image.network(
-        fotoPath,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
-      );
-    }
-    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
-      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
-      final file = File(cleanPath);
-      if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
-      }
-    }
-    return Image.network(
-      '${AppConfig.baseUrl}$fotoPath',
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
-    );
-  }
-
   Widget _buildHeader(
     BuildContext context,
-    WidgetRef ref,
-    UserEntity? user,
+    String name,
+    String rtRw,
     bool isOnline,
     int unreadCount,
   ) {
-    final name = user?.name ?? 'Warga';
-    final roleName = user?.role.displayName ?? 'Warga';
-    final fotoUrl = user?.fotoProfil;
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -307,7 +269,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   border: Border.all(color: AppColors.border),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: _buildHeaderAvatarImage(fotoUrl),
+                child: Image.asset(
+                  AppAssets.logo,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.person, color: AppColors.primaryGreen),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -321,41 +288,50 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         fontSize: 12,
                       ),
                     ),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.warningYellow,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            roleName,
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
+              // RT/RW chip
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.primaryGreen,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      rtRw,
+                      style: const TextStyle(
+                        color: AppColors.primaryGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               // ─── Bell icon with badge ───────────────────────────────
               GestureDetector(
                 onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
@@ -387,7 +363,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            unreadCount > 99 ? '99+' : "$unreadCount",
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -441,14 +417,14 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               _StatItem(
                 icon: Icons.star_border_rounded,
                 iconColor: AppColors.primaryBlue,
-                numericValue: daily,
+                value: daily.toString(),
                 label: 'Hari Ini',
               ),
               _VerticalDivider(),
               _StatItem(
                 icon: Icons.account_balance_wallet_outlined,
                 iconColor: AppColors.primaryGreen,
-                numericValue: totalPoints,
+                value: NumberFormat('#,###').format(totalPoints),
                 label: 'Total Points',
                 valueColor: AppColors.primaryGreen,
               ),
@@ -471,41 +447,46 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     final role = user?.role ?? UserRole.warga;
 
     if (role == UserRole.mahasiswaKkn) {
-      // Mahasiswa KKN Quick Actions (Harmonized with Warga style)
+      // Mahasiswa KKN Quick Actions
       return Row(
         children: [
           Expanded(
             child: GestureDetector(
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen,
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryBlue, Color(0xFF2196F3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      color: AppColors.primaryBlue.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     )
                   ],
                 ),
                 child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.sensors_rounded,
                       color: Colors.white,
-                      size: 28,
+                      size: 30,
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Aktivasi Sampah',
+                      'Aktivasi Bin',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -517,28 +498,39 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             child: GestureDetector(
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.kknAttendance),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryGreen, Color(0xFF66BB6A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
                 ),
                 child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.location_on_rounded,
-                      color: AppColors.primaryGreen,
-                      size: 28,
+                      color: Colors.white,
+                      size: 30,
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Presensi KKN',
+                      'Absen Radius',
                       style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 14,
+                        color: Colors.white,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -549,101 +541,50 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       );
     } else if (role == UserRole.petugasResidu) {
       // Petugas Residu Quick Action: Timbang Residu
-      return Column(
+      return Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.timbanganResidu),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFE65100), Colors.orange],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.scale_rounded,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Input Timbangan Residu',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.timbanganResidu),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE65100), Colors.orange],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.scale_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Input Timbangan Residu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Ringkasan Tong Penuh (Dummy data for UI)
-          if (!_hideFullBinAlert)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.dangerRed.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.dangerRed.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 4.0),
-                    child: Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Peringatan Tong Penuh',
-                          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.dangerRed, fontSize: 14),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Ada 3 tong sampah yang mencapai kapasitas kritis dan perlu segera dikosongkan.',
-                          style: TextStyle(fontSize: 12, color: AppColors.dangerRed),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.dangerRed, size: 20),
-                    onPressed: () {
-                      setState(() {
-                        _hideFullBinAlert = true;
-                      });
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
             ),
+          ),
         ],
       );
     }
@@ -700,21 +641,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         // Minta Kosongkan Bin Ã¢â‚¬â€ outline merah/biru
         Expanded(
           child: GestureDetector(
-            onTap: isOnline
-                ? () => Navigator.of(context).pushNamed(AppRoutes.resetBin)
-                : () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Koneksi internet diperlukan.'),
-                        backgroundColor: AppColors.dangerRed,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-            child: AnimatedOpacity(
-              opacity: isOnline ? 1.0 : 0.5,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.resetBin),
+            child: Container(
               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -743,7 +671,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             ),
           ),
         ),
-      ),
       ],
     );
   }
@@ -762,8 +689,7 @@ class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
     required this.iconColor,
-    this.value = '',
-    this.numericValue,
+    required this.value,
     required this.label,
     this.valueColor,
   });
@@ -771,7 +697,6 @@ class _StatItem extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String value;
-  final int? numericValue;
   final String label;
   final Color? valueColor;
 
@@ -791,31 +716,14 @@ class _StatItem extends StatelessWidget {
               children: [
                 Icon(icon, color: iconColor, size: 26),
                 const SizedBox(height: 4),
-                if (numericValue != null)
-                  TweenAnimationBuilder<int>(
-                    tween: IntTween(begin: 0, end: numericValue!),
-                    duration: const Duration(seconds: 2),
-                    curve: Curves.easeOut,
-                    builder: (context, val, child) {
-                      return Text(
-                        NumberFormat('#,###', 'id_ID').format(val),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: valueColor ?? AppColors.textPrimary,
-                        ),
-                      );
-                    },
-                  )
-                else
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: valueColor ?? AppColors.textPrimary,
-                    ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: valueColor ?? AppColors.textPrimary,
                   ),
+                ),
                 Text(
                   label,
                   style: const TextStyle(
@@ -845,21 +753,12 @@ class _VerticalDivider extends StatelessWidget {
   }
 }
 
-class _RiwayatCard extends ConsumerWidget {
+class _RiwayatCard extends StatelessWidget {
   const _RiwayatCard({required this.log});
   final WasteLogEntity log;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final String userLocation = (user != null && user.rtRw.isNotEmpty)
-        ? '${user.rtRw}, Kel. ${user.kelurahan}'
-        : 'RT 04 / RW 02';
-
-    final String displayLocation = (log.kelurahan != null && log.kelurahan!.isNotEmpty && log.kelurahan != 'Lokasi tidak diketahui')
-        ? log.kelurahan!
-        : (log.binQrSerial != null && log.binQrSerial!.isNotEmpty ? log.binQrSerial! : userLocation);
-
+  Widget build(BuildContext context) {
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color bgColor = isOrganic
         ? AppColors.organicColor
@@ -876,7 +775,7 @@ class _RiwayatCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // Icon Tempat Sampah
+          // Icon tong
           Container(
             width: 44,
             height: 44,
@@ -892,7 +791,7 @@ class _RiwayatCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Sampah Organik' : 'Sampah Non Organik',
+                  isOrganic ? 'Sampah Organik' : 'Sampah Non-Organik',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -906,26 +805,29 @@ class _RiwayatCard extends ConsumerWidget {
                     color: AppColors.textSecondary,
                   ),
                 ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      color: AppColors.warningYellow,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '+${log.pointsAwarded} Poin',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.warningYellow,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          // Points & Schedule badge
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '+${log.pointsAwarded.abs()} pts',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.warningYellow,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              _buildScheduleBadge(log.createdAt.toLocal()),
-            ],
-          ),
+          // Status badge
+          _buildScheduleBadge(log.createdAt.toLocal()),
         ],
       ),
     );
@@ -1002,32 +904,14 @@ class _BerandaBinCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(Icons.delete_rounded, color: color, size: 24),
-              if (bin.isResetPending)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.warningYellow.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
-                  ),
-                  child: const Text(
-                    'PENDING',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.warningYellow,
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
-                    shape: BoxShape.circle,
-                  ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
+                  shape: BoxShape.circle,
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1043,7 +927,7 @@ class _BerandaBinCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            bin.qrSerial,
+            bin.id,
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,

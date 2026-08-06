@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/utils/phone_formatter.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
@@ -46,21 +45,24 @@ class _LoginViewState extends ConsumerState<LoginView> {
     });
   }
 
-  String _normalizeIdentifier(String raw) {
-    return PhoneFormatter.prepareLoginPhoneInput(raw);
+  String _normalizePhone(String raw) {
+    // Normalisasi: hilangkan spasi dan tanda hubung
+    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
+    if (!phone.startsWith('0') && phone.startsWith('8')) phone = '0$phone';
+    return phone;
   }
 
   Future<void> _onLogin() async {
-    final identifier = _phoneController.text.trim();
+    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (identifier.isEmpty && password.isEmpty) {
-      _showToast('Nomor Telepon atau NIM, serta Kata Sandi wajib diisi');
+    if (phone.isEmpty && password.isEmpty) {
+      _showToast('Nomor telepon dan kata sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
-    if (identifier.isEmpty) {
-      _showToast('Nomor Telepon atau NIM wajib diisi');
+    if (phone.isEmpty) {
+      _showToast('Nomor telepon wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -72,11 +74,11 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    final normalized = _normalizeIdentifier(identifier);
+    final normalizedPhone = _normalizePhone(phone);
     ref.read(authProvider.notifier).clearError();
 
     final bool ok = await ref.read(authProvider.notifier).login(
-          phone: normalized,
+          phone: normalizedPhone,
           password: password,
         );
 
@@ -84,16 +86,13 @@ class _LoginViewState extends ConsumerState<LoginView> {
       Navigator.of(context).pushReplacementNamed(AppRoutes.main);
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Coba lagi.';
+      String errorText = 'Nomor telepon atau password salah. Coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
-        errorText =
-            'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
-      } else if (authState.errorCode == 'SERVER_ERROR' ||
-          authState.errorCode == 'INTERNAL_SERVER_ERROR') {
-        errorText =
-            'Server sedang mengalami gangguan sementara, silakan coba beberapa saat lagi.';
+        errorText = 'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
+      } else if (authState.errorCode == 'SERVER_ERROR' || authState.errorCode == 'INTERNAL_SERVER_ERROR') {
+        errorText = 'Server sedang mengalami gangguan sementara, silakan coba beberapa saat lagi.';
       }
       _showToast(errorText);
       _passwordController.clear();
@@ -201,7 +200,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Masukkan nomor HP atau NIM terdaftar Anda',
+                                'Masukkan nomor HP terdaftar Anda',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -209,9 +208,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Field No. Telepon / NIM
+                              // Field No. Telepon
                               const Text(
-                                'NOMOR TELEPON ATAU NIM',
+                                'NOMOR TELEPON',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -222,35 +221,31 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _phoneController,
-                                keyboardType: TextInputType.text,
+                                keyboardType: TextInputType.phone,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9a-zA-Z\+\-\s]'),
+                                    RegExp(r'[0-9\+\-\s]'),
                                   ),
                                 ],
                                 decoration: const InputDecoration(
-                                  hintText: 'Misal: 081234567890 atau 1301190000',
+                                  hintText: '081234567890',
                                   prefixIcon: Icon(
-                                    Icons.person_outline_rounded,
+                                    Icons.phone_outlined,
                                     color: AppColors.textSecondary,
                                     size: 20,
                                   ),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'Nomor telepon atau NIM wajib diisi';
+                                    return 'Nomor telepon wajib diisi';
                                   }
-                                  final clean = v.trim();
-                                  final digits = clean.replaceAll(RegExp(r'[^\d]'), '');
-                                  if (digits.length >= 10 && digits.length <= 13) {
-                                    return null; // Phone number valid
+                                  final digits = v.replaceAll(RegExp(r'[^\d]'), '');
+                                  if (digits.length < 10 || digits.length > 13) {
+                                    return 'Format nomor telepon tidak valid (10-13 digit)';
                                   }
-                                  if (clean.length >= 8 && clean.length <= 10) {
-                                    return null; // NIM valid
-                                  }
-                                  return 'Format tidak valid (12 digit No. HP atau 8-10 digit NIM)';
+                                  return null;
                                 },
                               ),
                               const SizedBox(height: 18),
@@ -322,45 +317,32 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 24),
 
                               // Tombol Masuk
-                              SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: authState.isLoading ? null : _onLogin,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryGreen,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                    shadowColor: AppColors.primaryGreen.withValues(alpha: 0.3),
+                              ElevatedButton(
+                                onPressed: authState.isLoading ? null : _onLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: authState.isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
-                                      : const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.login_rounded, size: 20),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'MASUK SISTEM',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                  elevation: 0,
                                 ),
+                                child: authState.isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.login_rounded, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('MASUK SISTEM'),
+                                        ],
+                                      ),
                               ),
                               const SizedBox(height: 16),
 

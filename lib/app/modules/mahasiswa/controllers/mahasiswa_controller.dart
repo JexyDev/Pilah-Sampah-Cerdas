@@ -2,8 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../../core/utils/network_exception_helper.dart';
-import '../../auth/controllers/auth_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -55,32 +53,26 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final repo = _ref.read(kknRepositoryProvider);
-
       final results = await Future.wait([
         repo.getDashboard(),
         repo.getWargaDampingan(),
       ]);
 
-      final rawWarga = results[1] as List<WargaDampingan>;
-
       state = state.copyWith(
         isLoading: false,
         dashboard: results[0] as KknDashboardData,
-        wargaList: rawWarga,
+        wargaList: results[1] as List<WargaDampingan>,
       );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+        errorMessage: 'Gagal memuat data dashboard: ${e.toString()}',
       );
     }
   }
 
   /// Pull-to-refresh.
   Future<void> refresh() => fetchAll();
-
-  /// Alias for fetchAll
-  Future<void> fetchDashboardData() => fetchAll();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,6 +81,5 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
 final mahasiswaControllerProvider =
     StateNotifierProvider<MahasiswaNotifier, MahasiswaState>((ref) {
-  ref.watch(authProvider.select((s) => s.user?.id));
   return MahasiswaNotifier(ref);
 });

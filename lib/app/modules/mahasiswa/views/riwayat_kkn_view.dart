@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
-import '../controllers/riwayat_kkn_controller.dart';
 
-// Model
+// Mock model
 enum KknHistoryType { aktivasi, gps }
 
 class KknHistoryLog {
@@ -26,73 +24,83 @@ class KknHistoryLog {
   });
 }
 
-class RiwayatKknView extends ConsumerStatefulWidget {
+class RiwayatKknView extends StatefulWidget {
   const RiwayatKknView({super.key});
 
   @override
-  ConsumerState<RiwayatKknView> createState() => _RiwayatKknViewState();
+  State<RiwayatKknView> createState() => _RiwayatKknViewState();
 }
 
-class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
+class _RiwayatKknViewState extends State<RiwayatKknView> {
   int _filterIndex = 0; // 0=Semua, 1=Aktivasi, 2=GPS
+
+  // Mock data
+  late final List<KknHistoryLog> _mockLogs;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('id_ID', null);
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(riwayatKknControllerProvider.notifier).fetchHistory();
-    });
+    final now = DateTime.now();
+    _mockLogs = [
+      KknHistoryLog(
+        title: 'Aktivasi Bin Berhasil',
+        subtitle: 'Keluarga Bapak Budi (Organik & Anorganik)',
+        timestamp: now.subtract(const Duration(hours: 1)),
+        type: KknHistoryType.aktivasi,
+        points: 25,
+      ),
+      KknHistoryLog(
+        title: 'Status Lokasi Aktif',
+        subtitle: 'Berhasil mengirim ping lokasi latar belakang.',
+        timestamp: now.subtract(const Duration(hours: 2)),
+        type: KknHistoryType.gps,
+        isGpsActive: true,
+      ),
+      KknHistoryLog(
+        title: 'Aktivasi Bin Berhasil',
+        subtitle: 'Keluarga Ibu Siti',
+        timestamp: now.subtract(const Duration(hours: 3)),
+        type: KknHistoryType.aktivasi,
+        points: 25,
+      ),
+      KknHistoryLog(
+        title: 'Status Lokasi Gagal',
+        subtitle: 'Gagal mengirim lokasi. GPS dimatikan atau di luar zona KKN.',
+        timestamp: now.subtract(const Duration(days: 1)),
+        type: KknHistoryType.gps,
+        isGpsActive: false,
+      ),
+      KknHistoryLog(
+        title: 'Aktivasi Bin Berhasil',
+        subtitle: 'Keluarga Pak RT',
+        timestamp: now.subtract(const Duration(days: 2)),
+        type: KknHistoryType.aktivasi,
+        points: 25,
+      ),
+    ];
   }
 
-  List<KknHistoryLog> _getFilteredLogs(List<KknHistoryLog> logs) {
+  List<KknHistoryLog> get _filteredLogs {
     if (_filterIndex == 1) {
-      return logs.where((l) => l.type == KknHistoryType.aktivasi).toList();
+      return _mockLogs.where((l) => l.type == KknHistoryType.aktivasi).toList();
     } else if (_filterIndex == 2) {
-      return logs.where((l) => l.type == KknHistoryType.gps).toList();
+      return _mockLogs.where((l) => l.type == KknHistoryType.gps).toList();
     }
-    return logs;
+    return _mockLogs;
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(riwayatKknControllerProvider);
-    final filteredLogs = _getFilteredLogs(state.logs);
-    final totalPoints = state.logs.fold<int>(0, (sum, log) => sum + (log.points ?? 0));
-
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text('Riwayat Aktivitas KKN', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white)),
         backgroundColor: AppColors.primaryGreen,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: Column(
         children: [
-          // Total Points Banner
-          Container(
-            color: AppColors.primaryGreen,
-            width: double.infinity,
-            padding: const EdgeInsets.only(bottom: 24, left: 24, right: 24),
-            child: Column(
-              children: [
-                const Text('Total Poin Terkumpul', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(
-                  '$totalPoints',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
           // Filter Tabs
           Container(
             color: Colors.white,
@@ -108,25 +116,17 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
             ),
           ),
           Expanded(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
-                : state.errorMessage != null
-                    ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: Colors.red)))
-                    : filteredLogs.isEmpty
-                        ? _buildEmpty()
-                        : RefreshIndicator(
-                            color: AppColors.primaryGreen,
-                            onRefresh: () => ref.read(riwayatKknControllerProvider.notifier).refresh(),
-                            child: ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filteredLogs.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final log = filteredLogs[index];
-                                return _buildLogCard(log);
-                              },
-                            ),
-                          ),
+            child: _filteredLogs.isEmpty
+                ? _buildEmpty()
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredLogs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final log = _filteredLogs[index];
+                      return _buildLogCard(log);
+                    },
+                  ),
           ),
         ],
       ),
@@ -258,13 +258,13 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   Widget _buildEmpty() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_rounded, size: 64, color: AppColors.textHint),
-          SizedBox(height: 16),
-          Text(
+          Icon(Icons.history_rounded, size: 64, color: AppColors.border),
+          const SizedBox(height: 16),
+          const Text(
             'Belum ada riwayat aktivitas',
             style: TextStyle(
               fontSize: 16,

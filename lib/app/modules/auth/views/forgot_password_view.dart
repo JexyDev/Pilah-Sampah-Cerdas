@@ -4,8 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../core/utils/phone_formatter.dart';
-import '../../../core/utils/input_sanitizer.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/otp_input_widget.dart';
 
@@ -100,27 +98,30 @@ class _ForgotPasswordViewState
   // ─── Normalise ────────────────────────────────────────────────────────────
 
   String _normalizePhone(String raw) {
-    return PhoneFormatter.prepareLoginPhoneInput(raw);
+    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
+    if (phone.startsWith('+62')) phone = '0${phone.substring(3)}';
+    if (phone.startsWith('62')) phone = '0${phone.substring(2)}';
+    if (phone.startsWith('8')) phone = '0$phone';
+    return phone;
   }
 
   // ─── Step 1: Request OTP ──────────────────────────────────────────────────
 
   Future<void> _onRequestOtp() async {
     if (!_formKey1.currentState!.validate()) return;
-    
-    final phone = InputSanitizer.sanitize(_phoneController.text);
-    final normalizedPhone = _normalizePhone(phone);
+
+    final phone = _normalizePhone(_phoneController.text.trim());
     ref.read(authProvider.notifier).clearError();
 
     final bool ok = await ref
         .read(authProvider.notifier)
-        .requestOtp(phone: normalizedPhone);
+        .requestOtp(phone: phone);
 
     if (ok && mounted) {
       setState(() => _currentStep = 2);
       _startResendCountdown();
       _showToast(
-        'OTP dikirim ke ${_maskPhone(phone)} (Gunakan Kode OTP Dev: 123456)',
+        'OTP telah dikirim ke ${_maskPhone(phone)}',
         isError: false,
       );
     }
@@ -140,7 +141,7 @@ class _ForgotPasswordViewState
   // ─── Step 2: Verifikasi OTP ───────────────────────────────────────────────
 
   Future<void> _onVerifyOtp() async {
-    if (!_otpCompleted || _otpValue.length < 6) {
+    if (!_otpCompleted) {
       _showToast('Masukkan 6 digit kode OTP terlebih dahulu');
       return;
     }
@@ -153,7 +154,7 @@ class _ForgotPasswordViewState
     if (ok && mounted) {
       setState(() => _currentStep = 3);
     } else if (mounted) {
-      _showToast('Kode OTP salah atau kedaluwarsa');
+      _showToast('OTP salah atau expired');
     }
   }
 
@@ -162,7 +163,7 @@ class _ForgotPasswordViewState
   Future<void> _onResetPassword() async {
     if (!_formKey3.currentState!.validate()) return;
 
-    final phone = _normalizePhone(InputSanitizer.sanitize(_phoneController.text));
+    final phone = _normalizePhone(_phoneController.text.trim());
     final newPassword = _newPasswordController.text;
 
     ref.read(authProvider.notifier).clearError();
@@ -175,16 +176,14 @@ class _ForgotPasswordViewState
         );
 
     if (ok && mounted) {
-      _showToast('Kata sandi berhasil diperbarui! Silakan login.', isError: false);
+      _showToast('Kata sandi berhasil diperbarui!', isError: false);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.of(context).pop();
       });
     } else if (mounted) {
       final authState = ref.read(authProvider);
       String errorText = 'Gagal menyetel ulang kata sandi.';
-      if (authState.errorCode == 'USER_NOT_FOUND') {
-        errorText = 'Nomor telepon tidak terdaftar di sistem.';
-      } else if (authState.errorCode == 'INVALID_TOKEN' ||
+      if (authState.errorCode == 'INVALID_TOKEN' ||
           authState.errorCode == 'OTP_INVALID') {
         errorText = 'Kode OTP salah atau sudah kedaluwarsa.';
       } else if (authState.errorCode == 'NETWORK_ERROR') {
@@ -520,33 +519,18 @@ class _ForgotPasswordViewState
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s]')),
             ],
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: '81234567890',
-              prefixIcon: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                margin: const EdgeInsets.only(right: 8),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('🇮🇩', style: TextStyle(fontSize: 18)),
-                    SizedBox(width: 6),
-                    Text(
-                      '+62',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.textSecondary),
-                  ],
-                ),
+              prefixText: '+62 ',
+              prefixStyle: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.phone_outlined,
+                color: AppColors.textSecondary,
+                size: 20,
               ),
             ),
             validator: (v) {
@@ -647,29 +631,7 @@ class _ForgotPasswordViewState
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.primaryBlueLight,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryBlueDark),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Mode Pengujian: Masukkan kode OTP 123456 untuk melanjutkan.',
-                  style: TextStyle(fontSize: 11, color: AppColors.primaryBlueDark, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 28),
 
         // OTP Input
         Center(

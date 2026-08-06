@@ -4,15 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/values/app_colors.dart';
 import '../../routes/app_routes.dart';
+import '../../data/models/bin_entity.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../core/values/app_config.dart';
 import '../scan/controllers/scan_controller.dart';
-import '../mahasiswa/controllers/mahasiswa_controller.dart';
-import '../mahasiswa/controllers/location_ping_controller.dart';
 import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
-/// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tempat Sampah Saya, Keluar.
+/// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tong Saya, Keluar.
 class ProfilView extends ConsumerStatefulWidget {
   const ProfilView({super.key});
 
@@ -42,7 +41,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       final success = await ref.read(authProvider.notifier).uploadAvatar(picked.path);
       if (mounted) {
         if (success) {
-          ref.read(authProvider.notifier).fetchProfile();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Foto profil berhasil diperbarui!'),
@@ -60,35 +58,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
         }
       }
     }
-  }
-
-  Widget _buildAvatarImage(String? fotoPath) {
-    if (fotoPath == null || fotoPath.isEmpty) {
-      return const Icon(
-        Icons.person_rounded,
-        color: AppColors.primaryGreen,
-        size: 48,
-      );
-    }
-    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
-      return Image.network(
-        fotoPath,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
-      );
-    }
-    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
-      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
-      final file = File(cleanPath);
-      if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
-      }
-    }
-    return Image.network(
-      '${AppConfig.baseUrl}$fotoPath',
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
-    );
   }
 
   @override
@@ -114,6 +83,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
               child: Column(
                 children: [
                   const SizedBox(height: 12),
+                  // Avatar rumah dalam lingkaran double
                   // Avatar dengan GestureDetector untuk upload foto
                   GestureDetector(
                     onTap: _pickImage,
@@ -127,9 +97,29 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.border, width: 3),
                             color: AppColors.backgroundCanvas,
+                            image: _profileImage != null
+                                ? DecorationImage(
+                                    image: FileImage(_profileImage!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty
+                                    ? DecorationImage(
+                                        image: NetworkImage(
+                                          user.fotoProfil!.startsWith('http')
+                                              ? user.fotoProfil!
+                                              : '${AppConfig.baseUrl}${user.fotoProfil}',
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: _buildAvatarImage(_profileImage?.path ?? user?.fotoProfil),
+                          child: _profileImage == null && (user?.fotoProfil == null || user!.fotoProfil!.isEmpty)
+                              ? const Icon(
+                                  Icons.person_rounded,
+                                  color: AppColors.primaryGreen,
+                                  size: 48,
+                                )
+                              : null,
                         ),
                         Container(
                           width: 32,
@@ -169,9 +159,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      user?.role == UserRole.mahasiswaKkn
-                          ? 'Mahasiswa KKN'
-                          : (user?.rtRw ?? 'RT 04 / RW 02'),
+                      user?.rtRw ?? 'RT 04 / RW 02',
                       style: const TextStyle(
                         color: AppColors.primaryGreen,
                         fontSize: 12,
@@ -205,94 +193,24 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           bold: true,
                         ),
                         _divider(),
-                        if (user?.role != UserRole.warga && user?.role != UserRole.mahasiswaKkn) ...[
-                          _InfoTile(
-                            Icons.email_outlined,
-                            'Email',
-                            user?.email != null && user!.email!.isNotEmpty ? user.email! : 'Belum diatur',
-                          ),
-                          _divider(),
-                        ],
+                        _InfoTile(
+                          Icons.location_on_outlined,
+                          'Wilayah',
+                          user?.rtRw != null && user!.rtRw.isNotEmpty
+                              ? '${user.rtRw}, Kel. ${user.kelurahan}'
+                              : 'Belum diatur',
+                        ),
+                        _divider(),
                         _InfoTile(
                           Icons.phone_iphone_rounded,
                           'No. Telepon',
-                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : 'Belum diatur',
-                          bold: true,
+                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
                         ),
                         _divider(),
-                        _InfoTile(
-                          Icons.assignment_ind_outlined,
-                          'Peran',
-                          user?.role.displayName ?? '-',
-                        ),
-                        _divider(),
-                        if (user?.role == UserRole.mahasiswaKkn) ...[
-                          _InfoTile(
-                            Icons.school_outlined,
-                            'NIM / Universitas',
-                            (ref.watch(mahasiswaControllerProvider).dashboard?.nim.isNotEmpty == true)
-                                ? 'NIM: ${ref.watch(mahasiswaControllerProvider).dashboard!.nim}'
-                                : 'NIM: 136467959797',
-                            bold: true,
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.account_balance_outlined,
-                            'Jurusan / Prodi',
-                            (ref.watch(mahasiswaControllerProvider).dashboard?.jurusan.isNotEmpty == true)
-                                ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
-                                : 'Elektro',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.location_on_outlined,
-                            'Wilayah / Posko KKN',
-                            (ref.watch(locationPingControllerProvider).detectedZoneArea != null &&
-                                    ref.watch(locationPingControllerProvider).detectedZoneArea!.isNotEmpty)
-                                ? ref.watch(locationPingControllerProvider).detectedZoneArea!
-                                : (user?.kelurahan != null && user!.kelurahan.isNotEmpty
-                                    ? 'Kel. ${user.kelurahan}'
-                                    : 'Belum terdeteksi di zona KKN'),
-                          ),
-                          _divider(),
-                        ] else ...[
-                          _InfoTile(
-                            Icons.map_rounded,
-                            'Kecamatan',
-                            user?.kecamatan != null && user!.kecamatan.isNotEmpty
-                                ? 'Kec. ${user.kecamatan}'
-                                : 'Kec. Coblong',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.map_outlined,
-                            'Kelurahan',
-                            user?.kelurahan != null && user!.kelurahan.isNotEmpty
-                                ? 'Kel. ${user.kelurahan}'
-                                : 'Belum diatur',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.location_city_rounded,
-                            'RW',
-                            user?.rw != null && user!.rw.isNotEmpty
-                                ? 'RW ${user.rw}'
-                                : 'Belum diatur',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.home_outlined,
-                            'RT',
-                            user?.rt != null && user!.rt.isNotEmpty
-                                ? 'RT ${user.rt}'
-                                : 'Belum diatur',
-                          ),
-                          _divider(),
-                        ],
                         _InfoTile(
                           Icons.badge_outlined,
                           'ID Akun',
-                          user != null && user.id.length >= 8 ? user.id.substring(0, 8).toUpperCase() : (user?.id ?? '-'),
+                          user?.id.substring(0, 8).toUpperCase() ?? '-',
                         ),
                       ],
                     ),
@@ -300,12 +218,12 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
 
                   const SizedBox(height: 20),
 
-                  // ─── Tempat Sampah Saya ──────────────────────────────────────
+                  // ─── Tong Saya ──────────────────────────────────────
                   if (user?.role != UserRole.mahasiswaKkn) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _sectionLabel('TEMPAT SAMPAH SAYA'),
+                        _sectionLabel('TONG SAYA'),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -324,7 +242,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                bins.isEmpty ? 'Belum ada tempat sampah terdaftar.' : '${bins.length} Tempat Sampah Terdaftar (Ketuk untuk kelola)',
+                                bins.isEmpty ? 'Belum ada tong terdaftar.' : '${bins.length} Tong Terdaftar (Ketuk untuk kelola)',
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w600,
@@ -353,42 +271,28 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                     child: Column(
                       children: [
-                        if (user?.role == UserRole.mahasiswaKkn) ...[
-                          _MenuTile(
-                            icon: Icons.manage_accounts_rounded,
-                            iconColor: AppColors.primaryGreen,
-                            iconBgColor: AppColors.primaryGreen.withValues(
-                              alpha: 0.1,
-                            ),
-                            label: 'Edit Profil Mahasiswa',
-                            onTap: () => Navigator.of(
-                              context,
-                            ).pushNamed(AppRoutes.editProfilMahasiswa),
-                          ),
-                          const Divider(height: 1, indent: 56),
-                        ],
-                        if (user?.role == UserRole.warga) ...[
-                          // Tambah Tempat Sampah Baru
+                        if (user?.role != UserRole.mahasiswaKkn) ...[
+                          // Tambah Tong Baru
                           _MenuTile(
                             icon: Icons.qr_code_scanner_rounded,
                             iconColor: AppColors.primaryGreen,
                             iconBgColor: AppColors.primaryGreen.withValues(
                               alpha: 0.1,
                             ),
-                            label: 'Tambah Tempat Sampah Baru',
+                            label: 'Tambah Tong Baru',
                             onTap: () => Navigator.of(
                               context,
                             ).pushNamed(AppRoutes.ukurKapasitas),
                           ),
                           const Divider(height: 1, indent: 56),
-                          // Ajukan Pengosongan Tempat Sampah
+                          // Ajukan Pengosongan Tong
                           _MenuTile(
                             icon: Icons.restore_rounded,
                             iconColor: AppColors.warningOrange,
                             iconBgColor: AppColors.warningOrange.withValues(
                               alpha: 0.1,
                             ),
-                            label: 'Ajukan Pengosongan Tempat Sampah',
+                            label: 'Ajukan Pengosongan Tong',
                             onTap: () => Navigator.of(
                               context,
                             ).pushNamed(AppRoutes.resetBin),
@@ -407,7 +311,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             context,
                           ).pushNamed(AppRoutes.tentang),
                         ),
-
+                        const Divider(height: 1, indent: 56),
                         // Keluar
                         _MenuTile(
                           icon: Icons.logout_rounded,
