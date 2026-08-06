@@ -31,9 +31,11 @@ const IdeDaurUlang: React.FC = () => {
   const [foto, setFoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Search & Filter
+  // Search, Filter & Pagination
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const fetchIdes = async () => {
     try {
@@ -291,68 +293,111 @@ const IdeDaurUlang: React.FC = () => {
             ) : ides.length === 0 ? (
               <div className="text-center text-gray-400 py-12">Belum ada ide daur ulang.</div>
             ) : (
-              <div className="space-y-6">
-                {ides.map((ide) => (
-                  <div key={ide.id} className="border border-gray-100 rounded-xl p-5 hover:bg-gray-50 transition group">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-lg">{ide.judul}</h3>
-                        <p className="text-xs text-gray-500">Oleh: {ide.user.name} ({ide.user.role.name}) • {new Date(ide.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {ide.statusApproval === "APPROVED" && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Disetujui</span>}
-                        {ide.statusApproval === "PENDING" && <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">Pending</span>}
-                        {ide.statusApproval === "REJECTED" && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Ditolak</span>}
+              <>
+                <div className="space-y-6">
+                  {ides.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((ide) => (
+                    <div key={ide.id} className="border border-gray-100 rounded-xl p-5 hover:bg-gray-50 transition group">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-lg">{ide.judul}</h3>
+                          <p className="text-xs text-gray-500">Oleh: {ide.user.name} ({ide.user.role.name}) • {new Date(ide.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {ide.statusApproval === "APPROVED" && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Disetujui</span>}
+                          {ide.statusApproval === "PENDING" && <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">Pending</span>}
+                          {ide.statusApproval === "REJECTED" && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Ditolak</span>}
 
-                        {isAdmin && (
-                          <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleEdit(ide)}
-                              className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                              title="Edit Ide"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(ide.id)}
-                              className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors"
-                              title="Hapus Ide"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
+                          {isAdmin && (
+                            <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleEdit(ide)}
+                                className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                title="Edit Ide"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(ide.id)}
+                                className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors"
+                                title="Hapus Ide"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap"><span className="font-semibold text-gray-800">Material: </span>{ide.material}</p>
+                      
+                      {ide.foto && (
+                        <div className="mb-4">
+                          <img src={getImageUrl(ide.foto)} alt={ide.judul} className="rounded-lg max-h-64 object-cover" />
+                        </div>
+                      )}
+
+                      {isRW && ide.statusApproval === "PENDING" && (
+                        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => handleApprove(ide.id)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-sm font-bold transition"
+                          >
+                            <CheckCircle size={18} />
+                            Setujui (+50 Poin)
+                          </button>
+                          <button
+                            onClick={() => handleReject(ide.id)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-bold transition"
+                          >
+                            <XCircle size={18} />
+                            Tolak
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap"><span className="font-semibold text-gray-800">Material: </span>{ide.material}</p>
-                    
-                    {ide.foto && (
-                      <div className="mb-4">
-                        <img src={getImageUrl(ide.foto)} alt={ide.judul} className="rounded-lg max-h-64 object-cover" />
-                      </div>
-                    )}
+                  ))}
+                </div>
 
-                    {isRW && ide.statusApproval === "PENDING" && (
-                      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                {/* Pagination Controls */}
+                {Math.ceil(ides.length / itemsPerPage) > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-slate-100">
+                    <span className="text-xs font-semibold text-slate-500">
+                      Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, ides.length)} dari {ides.length} ide daur ulang
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                      >
+                        ← Sebelum
+                      </button>
+                      {Array.from({ length: Math.ceil(ides.length / itemsPerPage) }, (_, i) => i + 1).map((pg) => (
                         <button
-                          onClick={() => handleApprove(ide.id)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-sm font-bold transition"
+                          key={pg}
+                          type="button"
+                          onClick={() => setCurrentPage(pg)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            currentPage === pg
+                              ? "bg-emerald-600 text-white"
+                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
                         >
-                          <CheckCircle size={18} />
-                          Setujui (+50 Poin)
+                          {pg}
                         </button>
-                        <button
-                          onClick={() => handleReject(ide.id)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-bold transition"
-                        >
-                          <XCircle size={18} />
-                          Tolak
-                        </button>
-                      </div>
-                    )}
+                      ))}
+                      <button
+                        type="button"
+                        disabled={currentPage === Math.ceil(ides.length / itemsPerPage)}
+                        onClick={() => setCurrentPage((p) => Math.min(Math.ceil(ides.length / itemsPerPage), p + 1))}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                      >
+                        Selanjut →
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
