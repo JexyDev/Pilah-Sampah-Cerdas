@@ -365,6 +365,146 @@ export const LeaderboardWidget: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full">
+
+      {/* ----------------- TOP SECTION: 2 BAR CHARTS ----------------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        {/* Chart 1: Kepatuhan Pemilahan per Kelurahan */}
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <span className="material-symbols-outlined text-xl">bar_chart</span>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
+                  Grafik Kepatuhan Pemilahan per Kelurahan
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Persentase kepatuhan dalam pemilahan sampah
+                </p>
+              </div>
+            </div>
+
+            <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center gap-1">
+              <span className="text-[10px] text-emerald-600 font-bold uppercase">Rata-rata</span>
+              <span className="text-emerald-700">81%</span>
+            </div>
+          </div>
+
+          {/* Bar Chart Area */}
+          <div className="pt-4 flex gap-2 items-end">
+            <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-40 text-right select-none shrink-0 pb-5">
+              <span>100%</span>
+              <span>80%</span>
+              <span>60%</span>
+              <span>40%</span>
+              <span>20%</span>
+              <span>0%</span>
+            </div>
+
+            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
+              {[
+                { name: "Kel. Sekeloa", val: 92 },
+                { name: "Kel. Dago", val: 88 },
+                { name: "Kel. Cibeunying", val: 84 },
+                { name: "Kel. Cipedes", val: 79 },
+                { name: "Kel. Lebakgede", val: 74 },
+                { name: "Kel. Tamansari", val: 69 },
+              ].map((d, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                  <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
+                    {d.val}%
+                  </span>
+                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                    <div
+                      className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                      style={{ height: `${d.val}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
+            {["Kel. Sekeloa", "Kel. Dago", "Kel. Cibeunying", "Kel. Cipedes", "Kel. Lebakgede", "Kel. Tamansari"].map((name, idx) => (
+              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Chart 2: Volume Sampah per Kelurahan */}
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-xs">
+                <span className="material-symbols-outlined text-xl">delete</span>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
+                  Grafik Volume Sampah per Kelurahan
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Total volume sampah terkumpul (ton)
+                </p>
+              </div>
+            </div>
+
+            <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
+              <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
+              <span className="text-sky-700">15.6 ton</span>
+            </div>
+          </div>
+
+          {/* Bar Chart Area */}
+          <div className="pt-4 flex gap-2 items-end">
+            <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-40 text-right select-none shrink-0 pb-5">
+              <span>5 ton</span>
+              <span>4</span>
+              <span>3</span>
+              <span>2</span>
+              <span>1</span>
+              <span>0</span>
+            </div>
+
+            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
+              {[
+                { name: "Kel. Sekeloa", val: 3.4 },
+                { name: "Kel. Dago", val: 3.1 },
+                { name: "Kel. Cibeunying", val: 2.8 },
+                { name: "Kel. Cipedes", val: 2.4 },
+                { name: "Kel. Lebakgede", val: 2.1 },
+                { name: "Kel. Tamansari", val: 1.8 },
+              ].map((d, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                  <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
+                    {d.val} ton
+                  </span>
+                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                    <div
+                      className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                      style={{ height: `${(d.val / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
+            {["Kel. Sekeloa", "Kel. Dago", "Kel. Cibeunying", "Kel. Cipedes", "Kel. Lebakgede", "Kel. Tamansari"].map((name, idx) => (
+              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
       {/* GRUP 1 — Top 10 Warga & Wilayah */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
@@ -373,7 +513,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
           <div>
             <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Grup 1 — Top 10 Warga & Wilayah
+              Grup 1 — Top 10 Warga &amp; Wilayah
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">
               Ranking dan performa warga serta wilayah berdasarkan perolehan poin.
@@ -381,7 +521,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
           {/* 1. Top 10 Warga */}
           <ColumnCard
             title="Top 10 Warga"
@@ -436,7 +576,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
           <div>
             <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Grup 2 — Top 10 Akademik & Pendampingan
+              Grup 2 — Top 10 Akademik &amp; Pendampingan
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">
               Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
@@ -444,7 +584,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
           {/* 1. Top 10 Mahasiswa */}
           <ColumnCard
             title="Top 10 Mahasiswa"
