@@ -108,28 +108,29 @@ const ManajemenPengguna: React.FC = () => {
     fetchAreas();
   }, []);
 
-  // Parse RT and RW lists dynamically
+  // Parse RT and RW lists dynamically from backend database
   const uniqueRws = Array.from(
     new Set(
       areas
         .map((a) => {
-          const match = a.name.match(/RW\s+(\d+)/i);
-          return match ? match[1] : null;
+          // Supports "RW 01", "RW 1", "RW01", "RT 01 / RW 06", etc.
+          const match = a.name.match(/RW\s*(\d+)/i);
+          return match ? match[1].replace(/^0+/, "") || "1" : null;
         })
         .filter(Boolean)
     )
-  ).sort() as string[];
+  ).sort((a, b) => parseInt(a) - parseInt(b)) as string[];
 
   const uniqueRts = Array.from(
     new Set(
       areas
         .map((a) => {
-          const match = a.name.match(/RT\s+(\d+)/i);
-          return match ? match[1] : null;
+          const match = a.name.match(/RT\s*(\d+)/i);
+          return match ? match[1].replace(/^0+/, "") || "1" : null;
         })
         .filter(Boolean)
     )
-  ).sort() as string[];
+  ).sort((a, b) => parseInt(a) - parseInt(b)) as string[];
 
   const handleOpenAddModal = () => {
     setModalType("add");
