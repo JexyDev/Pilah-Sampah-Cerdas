@@ -34,4 +34,6 @@ router.put("/approvals/petugas/:id/verify", superAdminController.verifyPetugas);
 router.put("/bins/:id/status", superAdminController.updateBinStatus);
 router.post("/bins/:id/replace", superAdminController.replaceBrokenBin);
 router.delete("/bins/:id", superAdminController.deleteBin);
+router.post("/cleansing/purge-duplicates", roleMiddleware(["SUPER_ADMIN"]), superAdminController.purgeDuplicates);
+router.get("/circular-economy", superAdminController.getCircularEconomyReport);
 export default router;

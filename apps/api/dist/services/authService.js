@@ -7,6 +7,7 @@
 import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 export class AuthService {
@@ -437,21 +438,40 @@ export class AuthService {
             throw new Error("EMAIL_NOT_FOUND");
         return "123456";
     }
-    async resetPassword(rawPhone, _token, newPassword) {
+    async resetPassword(phoneInput, _tokenInput, newPassword) {
         if (!newPassword)
             throw new Error("PASSWORD_REQUIRED");
-        let phone = rawPhone.trim();
-        if (phone.startsWith("08"))
-            phone = "+62" + phone.slice(1);
-        else if (phone.startsWith("62") && !phone.startsWith("+"))
-            phone = "+" + phone;
-        let user = await prisma.user.findUnique({ where: { phone } });
-        if (!user && phone.startsWith("+62")) {
-            user = await prisma.user.findUnique({ where: { phone: "0" + phone.slice(3) } });
-        }
+        const phone = phoneInput.trim();
+        const cleanPhone = phone.replace(/^\+?62/, "0").replace(/\s|-/g, "");
+        const altPhone = cleanPhone.startsWith("0") ? "62" + cleanPhone.substring(1) : cleanPhone;
+        const subPhone = cleanPhone.length > 5 ? cleanPhone.substring(cleanPhone.length - 8) : cleanPhone;
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { phone: phone },
+                    { phone: cleanPhone },
+                    { phone: altPhone },
+                    { phone: { endsWith: subPhone } },
+                ],
+            },
+        });
         if (!user)
             throw new Error("USER_NOT_FOUND");
         const hashedPassword = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+        });
+    }
+    async changePassword(userId, oldPasswordInput, newPasswordInput) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new Error("USER_NOT_FOUND");
+        const isMatch = await comparePassword(oldPasswordInput, user.password);
+        if (!isMatch) {
+            throw new Error("WRONG_OLD_PASSWORD");
+        }
+        const hashedPassword = await hashPassword(newPasswordInput);
         await prisma.user.update({
             where: { id: user.id },
             data: { password: hashedPassword },
@@ -461,11 +481,7 @@ export class AuthService {
      * Request OTP via WhatsApp (Fonnte API)
      */
     async requestOtp(rawPhone) {
-        let phone = rawPhone.trim();
-        if (phone.startsWith("08"))
-            phone = "+62" + phone.slice(1);
-        else if (phone.startsWith("62") && !phone.startsWith("+"))
-            phone = "+" + phone;
+        const phone = formatPhoneNumber(rawPhone);
         // Generate 6-digit random OTP
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
@@ -480,46 +496,35 @@ export class AuthService {
                 used: false,
             },
         });
-        // Send via Fonnte API if FONNTE_TOKEN is set
-        const fonnteToken = process.env.FONNTE_TOKEN;
-        let target = phone.startsWith("+") ? phone.slice(1) : phone;
-        if (target.startsWith("0"))
-            target = "62" + target.slice(1);
-        if (fonnteToken) {
-            try {
-                const body = new URLSearchParams({
-                    target,
-                    message: `Kode OTP TrashCare Anda adalah: ${code}. Kode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.`,
-                });
-                const response = await fetch("https://api.fonnte.com/send", {
-                    method: "POST",
-                    headers: { Authorization: fonnteToken },
-                    body,
-                });
-                const resData = await response.json();
-                console.log(`[Fonnte OTP] Phone: ${target} | Result:`, resData);
-            }
-            catch (err) {
-                console.error("[Fonnte OTP Exception]", err);
-            }
+        // Send via Fonnte API
+        const fonnteToken = process.env.FONNTE_TOKEN || "mrHbMDmd5sorX6KQexgb";
+        const target = phone.startsWith("+") ? phone.slice(1) : phone;
+        try {
+            const body = new URLSearchParams({
+                target,
+                message: `Kode OTP TrashCare Anda adalah: ${code}. Kode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.`,
+            });
+            const response = await fetch("https://api.fonnte.com/send", {
+                method: "POST",
+                headers: { Authorization: fonnteToken },
+                body,
+            });
+            const resData = await response.json();
+            console.log(`[Fonnte OTP] Phone: ${target} | Result:`, resData);
         }
-        else {
-            console.log(`[Dev OTP Mock] Phone: ${target} | Code: ${code}`);
+        catch (err) {
+            console.error("[Fonnte OTP Exception]", err);
         }
         return {
             success: true,
-            message: "Kode OTP berhasil dikirim ke nomor WhatsApp Anda",
+            message: "Kode OTP berhasil dikirimkan via WhatsApp",
         };
     }
     /**
      * Verify OTP code & return tokens if user exists
      */
     async verifyOtp(rawPhone, otp) {
-        let phone = rawPhone.trim();
-        if (phone.startsWith("08"))
-            phone = "+62" + phone.slice(1);
-        else if (phone.startsWith("62") && !phone.startsWith("+"))
-            phone = "+" + phone;
+        const phone = formatPhoneNumber(rawPhone);
         const isMasterOtp = process.env.NODE_ENV !== "production" && (otp === "123456" || otp === "849201");
         if (!isMasterOtp) {
             const record = await prisma.otpCode.findFirst({
@@ -563,14 +568,11 @@ export class AuthService {
             user: {
                 id: user.id,
                 name: user.name,
-                role: user.role.name,
                 phone: user.phone,
-                address: user.address,
-                fotoProfil: user.fotoProfil,
+                role: user.role.name,
             },
             accessToken,
             refreshToken,
-            isNewUser: false,
         };
     }
 }

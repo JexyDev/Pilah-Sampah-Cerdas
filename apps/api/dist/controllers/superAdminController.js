@@ -276,5 +276,26 @@ export class SuperAdminController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+    async purgeDuplicates(req, res) {
+        try {
+            const adminUserId = req.user.userId;
+            const data = await superAdminService.checkAndPurgeDuplicateUsers(adminUserId);
+            res.status(200).json({ success: true, data, message: "Data cleansing pengguna ganda selesai" });
+        }
+        catch (error) {
+            console.error("[SuperAdminController] purgeDuplicates error:", error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+    async getCircularEconomyReport(_req, res) {
+        try {
+            const data = await superAdminService.getCircularEconomyReport();
+            res.status(200).json({ success: true, data });
+        }
+        catch (error) {
+            console.error("[SuperAdminController] getCircularEconomyReport error:", error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }
 export const superAdminController = new SuperAdminController();

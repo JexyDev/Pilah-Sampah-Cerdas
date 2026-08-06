@@ -12,7 +12,7 @@
 export function formatPhoneNumber(phone) {
     if (!phone)
         return "";
-    let cleaned = phone.trim().replace(/[\s-]/g, "");
+    let cleaned = phone.trim().replace(/[^\d+]/g, "");
     if (cleaned.startsWith("0")) {
         cleaned = "+62" + cleaned.slice(1);
     }

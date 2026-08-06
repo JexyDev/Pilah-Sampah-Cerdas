@@ -8,6 +8,7 @@
 import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -573,9 +574,7 @@ export class AuthService {
    * Request OTP via WhatsApp (Fonnte API)
    */
   async requestOtp(rawPhone: string) {
-    let phone = rawPhone.trim();
-    if (phone.startsWith("08")) phone = "+62" + phone.slice(1);
-    else if (phone.startsWith("62") && !phone.startsWith("+")) phone = "+" + phone;
+    const phone = formatPhoneNumber(rawPhone);
 
     // Generate 6-digit random OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -596,8 +595,7 @@ export class AuthService {
 
     // Send via Fonnte API
     const fonnteToken = process.env.FONNTE_TOKEN || "mrHbMDmd5sorX6KQexgb";
-    let target = phone.startsWith("+") ? phone.slice(1) : phone;
-    if (target.startsWith("0")) target = "62" + target.slice(1);
+    const target = phone.startsWith("+") ? phone.slice(1) : phone;
 
     try {
       const body = new URLSearchParams({
@@ -625,9 +623,7 @@ export class AuthService {
    * Verify OTP code & return tokens if user exists
    */
   async verifyOtp(rawPhone: string, otp: string) {
-    let phone = rawPhone.trim();
-    if (phone.startsWith("08")) phone = "+62" + phone.slice(1);
-    else if (phone.startsWith("62") && !phone.startsWith("+")) phone = "+" + phone;
+    const phone = formatPhoneNumber(rawPhone);
 
     const isMasterOtp =
       process.env.NODE_ENV !== "production" && (otp === "123456" || otp === "849201");
