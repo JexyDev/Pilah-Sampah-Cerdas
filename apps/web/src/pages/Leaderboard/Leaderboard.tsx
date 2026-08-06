@@ -21,9 +21,10 @@ import {
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { Badge } from "../../components/common/Badge";
 import { BarChartRace } from "../../components/BarChartRace";
+import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 
 type SystemType = "system1" | "system2";
-type System1Tab = "citizens" | "rtrw" | "pengangkut" | "kelurahan";
+type System1Tab = "citizens" | "rtrw" | "pengangkut" | "kelurahan" | "overview";
 type System2Tab = "students" | "groups";
 
 interface GenericItem {
@@ -305,6 +306,14 @@ const Leaderboard: React.FC = () => {
             >
               <BarChart2 size={15} /> Persaingan Kelurahan
             </button>
+            <button
+              onClick={() => setS1Tab("overview")}
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+                s1Tab === "overview" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <BarChart2 size={15} /> Grafik &amp; Rekap Wilayah
+            </button>
           </>
         ) : (
           <>
@@ -328,7 +337,9 @@ const Leaderboard: React.FC = () => {
         )}
       </div>
 
-      {system === "system1" && s1Tab === "kelurahan" ? (
+      {system === "system1" && s1Tab === "overview" ? (
+        <AnalyticsOverviewBoard />
+      ) : system === "system1" && s1Tab === "kelurahan" ? (
         <BarChartRace />
       ) : (
         <>
