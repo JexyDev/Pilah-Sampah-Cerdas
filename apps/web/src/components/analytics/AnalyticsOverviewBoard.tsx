@@ -285,7 +285,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
         </div>
 
         {/* 4 Columns Leaderboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 min-w-0">
           
           {/* Card 1: Top 10 Warga */}
           <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
@@ -443,7 +443,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
         </div>
 
         {/* 3 Columns Leaderboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
           
           {/* Card 1: Top 10 Mahasiswa */}
           <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">

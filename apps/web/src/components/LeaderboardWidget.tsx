@@ -112,7 +112,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               key={`${item.rank}-${item.name}`}
               onMouseEnter={() => setHoveredIndex(idx)}
               onMouseLeave={() => setHoveredIndex(null)}
-              className={`flex items-center gap-2.5 text-xs group px-2.5 py-1.5 rounded-xl transition-all duration-150 border ${
+              className={`flex items-center gap-1.5 text-xs group px-2 py-1.5 rounded-xl transition-all duration-150 border min-w-0 ${
                 isHovered
                   ? "bg-slate-50 border-slate-300/80 shadow-xs scale-[1.01]"
                   : "bg-white border-transparent"
@@ -122,24 +122,24 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               {getRankBadge(item.rank)}
 
               {/* Name & Subtitle */}
-              <div className="flex-1 min-w-[120px] pr-2">
-                <p className="font-extrabold text-slate-800 text-[13px] leading-snug group-hover:text-emerald-700" title={item.name}>
+              <div className="flex-1 min-w-0 pr-1">
+                <p className="font-extrabold text-slate-800 text-[12px] sm:text-[13px] leading-snug group-hover:text-emerald-700 truncate" title={item.name}>
                   {item.name}
                 </p>
                 {item.subtitle && (
-                  <p className="text-[11px] text-slate-400 leading-tight mt-0.5 font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 leading-tight font-medium truncate">
                     {item.subtitle}
                   </p>
                 )}
               </div>
 
               {/* Interactive Progress Bar & Percentage Ratio */}
-              <div className="w-28 sm:w-36 shrink-0 flex flex-col items-end gap-1">
-                <div className="flex justify-between items-center w-full text-[10px] text-slate-500 font-bold">
-                  <span className="text-slate-400 font-normal">Rasio</span>
+              <div className="w-16 sm:w-24 shrink-0 flex flex-col items-end gap-0.5">
+                <div className="flex justify-between items-center w-full text-[9px] text-slate-500 font-bold">
+                  <span className="text-slate-400 font-normal hidden sm:inline">Rasio</span>
                   <span className="text-slate-700">{rawPct}%</span>
                 </div>
-                <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
                   <div
                     className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
                     style={{ width: `${barPct}%`, backgroundColor: barColor }}
@@ -148,11 +148,11 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
               </div>
 
               {/* Points */}
-              <div className="w-20 text-right shrink-0">
-                <span className="font-extrabold text-slate-800 text-[13px] font-mono block leading-none">
+              <div className="w-14 sm:w-16 text-right shrink-0">
+                <span className="font-extrabold text-slate-800 text-[11px] sm:text-[13px] font-mono block leading-none truncate">
                   {item.points.toLocaleString("id-ID")}
                 </span>
-                <span className="text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
+                <span className="text-[8px] sm:text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
                   {unitLabel}
                 </span>
               </div>
@@ -521,7 +521,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch min-w-0">
           {/* 1. Top 10 Warga */}
           <ColumnCard
             title="Top 10 Warga"
@@ -584,7 +584,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch min-w-0">
           {/* 1. Top 10 Mahasiswa */}
           <ColumnCard
             title="Top 10 Mahasiswa"
