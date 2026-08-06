@@ -135,6 +135,20 @@ router.get("/kelurahans", authMiddleware, binController.getKelurahans);
 
 /**
  * @swagger
+ * /api/v1/bins/areas:
+ *   get:
+ *     summary: Mendapatkan daftar seluruh wilayah RT/RW
+ *     tags: [Kelurahan & Wilayah]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of registered RT/RW areas
+ */
+router.get("/areas", authMiddleware, binController.getAreas);
+
+/**
+ * @swagger
  * /api/v1/bins/kelurahans:
  *   post:
  *     summary: Tambah Kelurahan Baru (Admin DLH / Super Admin)

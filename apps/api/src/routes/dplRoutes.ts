@@ -8,7 +8,7 @@ const router = Router();
 
 // Protect all DPL routes with authentication and role check
 router.use(authMiddleware);
-router.use(roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "SUPERADMIN"]));
+router.use(roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "SUPERADMIN", "SUPER_ADMIN", "PEMIMPIN", "PANITIA_TASKFORCE"]));
 
 /**
  * @swagger
