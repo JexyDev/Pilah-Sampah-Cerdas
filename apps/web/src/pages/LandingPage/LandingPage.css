@@ -272,3 +272,22 @@ html {
   border-color: #059669;
   background-color: #ecfdf5;
 }
+
+/* INTERACTIVE GUIDE & STEPPER STYLES */
+#guide {
+  scroll-margin-top: 80px;
+}
+
+#guide button {
+  cursor: pointer;
+}
+
+#guide .guide-step-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#guide .guide-step-card:hover {
+  transform: translateY(-2px);
+  border-color: #059669;
+}
+

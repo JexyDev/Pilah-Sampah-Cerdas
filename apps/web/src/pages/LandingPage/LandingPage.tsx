@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
+import { downloadPanduanPdf } from "../../utils/downloadPanduanPdf";
 import "./LandingPage.css";
 
 // Exact Vector SVG Icon matching the user's uploaded logo image (Bin + Recycling Arrow + Green Leaf)
@@ -60,6 +61,10 @@ export const LandingPage: React.FC = () => {
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
   const [showApkModal, setShowApkModal] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>("");
+  
+  // Interactive User Guide & Flow state
+  const [guideRoleTab, setGuideRoleTab] = useState<"warga" | "kkn" | "rw" | "petugas" | "dlh" | "dpl" | "superadmin">("warga");
+  const [activeFlowStep, setActiveFlowStep] = useState<number>(1);
 
   const scrollToSection = (id: string) => {
     const element = document.querySelector(id);
@@ -79,7 +84,7 @@ export const LandingPage: React.FC = () => {
 
   // IntersectionObserver to sync URL hash & active menu state on scroll
   useEffect(() => {
-    const sections = ["#about", "#why-us", "#how-it-works", "#what-we-do"];
+    const sections = ["#about", "#why-us", "#how-it-works", "#guide", "#what-we-do"];
     
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
@@ -165,6 +170,12 @@ export const LandingPage: React.FC = () => {
                 Cara Kerja
               </button>
               <button
+                onClick={() => scrollToSection("#guide")}
+                className={activeSection === "#guide" ? "active text-emerald-600 font-extrabold" : ""}
+              >
+                Buku Panduan
+              </button>
+              <button
                 onClick={() => scrollToSection("#what-we-do")}
                 className={activeSection === "#what-we-do" ? "active text-emerald-600 font-extrabold" : ""}
               >
@@ -221,7 +232,7 @@ export const LandingPage: React.FC = () => {
             </h1>
 
             <p className="text-slate-600 text-base leading-relaxed font-medium">
-              Sistem tata kelola sampah terintegrasi untuk Kecamatan Coblong. Menghubungkan Warga, Mahasiswa KKN, RW, dan Petugas Residu dalam satu platform monitoring real-time.
+              Sistem tata kelola sampah terintegrasi dengan pendekatan kegiatan KKN berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan, pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
 
             {/* Quick Stat Highlights */}
@@ -895,7 +906,7 @@ export const LandingPage: React.FC = () => {
             {[
               { icon: "delete", num: "1", title: "Pilah Sampah", desc: "Pilah sampah mandiri sesuai kategori Organik dan Anorganik." },
               { icon: "schedule", num: "2", title: "Window Waktu", desc: "Pengangkutan di window 06:00-08:00 & 16:00-18:00." },
-              { icon: "qr_code_scanner", num: "3", title: "Scan & Angkut", desc: "Petugas melakukan pengangkutan dan memindai kode QR tong." },
+              { icon: "qr_code_scanner", num: "3", title: "Scan & Angkut", desc: "Petugas melakukan pengangkutan dan memindai kode QR Tempat Sampah." },
               { icon: "scale", num: "4", title: "Timbangan Fisik", desc: "Hasil timbangan diinput manual oleh Petugas Residu." },
               { icon: "account_balance_wallet", num: "5", title: "Poin Disetujui RW", desc: "Poin insentif warga bertambah atomik setelah diverifikasi RW." },
             ].map((step) => (
@@ -912,11 +923,538 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ----------------- 04. WHAT WE DO ----------------- */}
+      {/* ----------------- 04. BUKU PANDUAN & ALUR EKOSISTEM INTERAKTIF ----------------- */}
+      <section id="guide" className="py-24 bg-slate-50/70 border-b border-slate-200/80">
+        <div className="container-custom space-y-16">
+          
+          {/* Section Title Header */}
+          <div className="max-w-3xl mx-auto text-center space-y-3">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/90 text-emerald-950 text-xs font-black uppercase tracking-wider">
+              <span className="material-symbols-outlined text-base text-emerald-700">menu_book</span>
+              04. Buku Panduan &amp; Alur Operasional
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+              Panduan Lengkap <span className="text-emerald-600">Alur &amp; Peran</span> Ekosistem
+            </h2>
+            <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed">
+              Memahami siklus tata kelola sampah terintegrasi dari hulu ke hilir serta fitur interaktif untuk tiap peran pengguna di Kecamatan Coblong.
+            </p>
+          </div>
+
+          {/* PART 1: GENERAL ECOSYSTEM FLOW STEPPER */}
+          <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-md space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+              <div>
+                <span className="text-xs font-extrabold text-emerald-700 uppercase tracking-widest">ALUR UMUM EKOSISTEM</span>
+                <h3 className="text-2xl font-black text-slate-900 mt-1">6 Tahap Operasional Dari Hulu ke Hilir</h3>
+              </div>
+              <p className="text-xs text-slate-500 max-w-md font-medium">
+                Klik salah satu langkah di bawah untuk melihat rincian aktivitas dan peran yang terlibat.
+              </p>
+            </div>
+
+            {/* Stepper Navigation Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { step: 1, label: "1. Registrasi & QR", icon: "qr_code_2" },
+                { step: 2, label: "2. Pemilahan Warga", icon: "delete_sweep" },
+                { step: 3, label: "3. Window Penjemputan", icon: "schedule" },
+                { step: 4, label: "4. Timbangan Residu", icon: "scale" },
+                { step: 5, label: "5. Approval RW", icon: "verified" },
+                { step: 6, label: "6. Monitoring & GIS", icon: "analytics" },
+              ].map((item) => (
+                <button
+                  key={item.step}
+                  onClick={() => setActiveFlowStep(item.step)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between h-28 ${
+                    activeFlowStep === item.step
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.02]"
+                      : "bg-slate-50 text-slate-700 border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`w-7 h-7 rounded-xl text-xs font-black flex items-center justify-center ${
+                        activeFlowStep === item.step ? "bg-white text-emerald-700" : "bg-emerald-100 text-emerald-800"
+                      }`}
+                    >
+                      0{item.step}
+                    </span>
+                    <span className="material-symbols-outlined text-xl opacity-90">{item.icon}</span>
+                  </div>
+                  <p className="text-xs font-extrabold leading-tight">{item.label}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Stepper Detail Highlight Box */}
+            <div className="p-6 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-4">
+              {activeFlowStep === 1 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-lg">
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">qr_code_2</span>
+                    Tahap 1: Pendaftaran Warga &amp; Aktivasi QR Tempat Sampah
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    Mahasiswa KKN membawa Tempat Sampah berlabel QR Code (`PRINTED`). Saat pendaftaran warga pendampingan, sensor GPS gawai merekam koordinat lokasi fisik tempat sampah secara permanen. Akun Warga didaftarkan tanpa NIK menggunakan nomor WhatsApp (+62).
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Warga &amp; Mahasiswa KKN</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Status Bin: PRINTED → DIPEGANG_MAHASISWA → PENDING_APPROVAL</span>
+                  </div>
+                </div>
+              )}
+
+              {activeFlowStep === 2 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-lg">
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">delete_sweep</span>
+                    Tahap 2: Pemilahan Mandiri 2 Tempat Sampah
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    Setiap rumah tangga berhak memiliki maksimal 2 tempat sampah (1 Organik dan 1 Anorganik). Warga memilah sampah dari rumah dan mengunggah foto setoran sampah bila tempat sampah penuh. Masa aktif tempat sampah adalah 30 hari dan di-reset otomatis setiap aktivitas setoran.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Warga Rumah Tangga</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Aturan: Maks 2 Tempat Sampah (Organik &amp; Anorganik)</span>
+                  </div>
+                </div>
+              )}
+
+              {activeFlowStep === 3 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-lg">
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">schedule</span>
+                    Tahap 3: Operasional Penjemputan Sesuai Window Waktu
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    Penjemputan dilakukan oleh Petugas Residu secara disiplin pada dua window waktu operasional: **06:00 - 08:00 WIB** dan **16:00 - 18:00 WIB**. Jika petugas belum memproses penjemputan dalam window waktu, notifikasi eskalasi dikirimkan bertahap ke RW hingga Camat.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Petugas Residu</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Jam Operasional: 06:00-08:00 &amp; 16:00-18:00 WIB</span>
+                  </div>
+                </div>
+              )}
+
+              {activeFlowStep === 4 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-lg">
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">scale</span>
+                    Tahap 4: Penimbangan Residu Fisik &amp; Scan QR Code
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    Petugas memindai QR Code Tempat Sampah menggunakan gawai dan memasukkan angka hasil timbangan fisik industri secara manual. Data timbangan dikorelasikan dengan hasil evaluasi AI confidence.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Petugas Residu</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Input Data: Manual Physical Scale Reading</span>
+                  </div>
+                </div>
+              )}
+
+              {activeFlowStep === 5 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-lg">
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">verified</span>
+                    Tahap 5: Verifikasi Pengurus RW &amp; Pencatatan Ledger Poin
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    Pengurus RW memeriksa permohonan pendaftaran &amp; laporan setoran warga. Begitu RW menyetujui, poin insentif bertambah secara atomik (+10 poin Warga &amp; +10 poin Mahasiswa KKN) menggunakan skema ledger terpisah yang aman dari audit.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Pengurus RW &amp; RT</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Reward: +10 Poin Warga, +10 Poin KKN, +50 Ide Daur Ulang</span>
+                  </div>
+                </div>
+              )}
+
+              {activeFlowStep === 6 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-lg">
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">analytics</span>
+                    Tahap 6: Monitoring Visual Real-Time &amp; Pemanfaatan GIS Hilir
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    Dinas Lingkungan Hidup, Camat, dan Lurah memantau statistik timbulan sampah melalui Dashboard Monitoring Read-Only. Sampah terkelola didistribusikan ke fasilitas pemanfaatan wilayah seperti Loseda, Bata Terawang, Maggot BSF, dan Bank Sampah.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Admin DLH, Camat, Lurah, DPL</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Akses: Read-Only Executive Dashboard &amp; Peta GIS</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PART 2: INTERACTIVE ROLE-BASED HANDBOOK */}
+          <div className="space-y-8">
+            <div className="text-center space-y-2">
+              <span className="text-xs font-extrabold text-emerald-700 uppercase tracking-widest">PANDUAN INTERAKTIF PER ROLE</span>
+              <h3 className="text-2xl sm:text-4xl font-black text-slate-900">Pilih Peran Pengguna Untuk Detail Fitur</h3>
+              <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto">
+                Setiap peran dalam aplikasi TrashCare memiliki tanggung jawab, metode autentikasi, dan alur kerja spesifik.
+              </p>
+            </div>
+
+            {/* Interactive Role Tabs Selector */}
+            <div className="flex items-center justify-center flex-wrap gap-2">
+              {[
+                { key: "warga", label: "Warga", icon: "home" },
+                { key: "kkn", label: "Mahasiswa KKN", icon: "school" },
+                { key: "rw", label: "Pengurus RW / RT", icon: "verified_user" },
+                { key: "petugas", label: "Petugas Residu", icon: "local_shipping" },
+                { key: "dlh", label: "Admin DLH / Camat / Lurah", icon: "monitoring" },
+                { key: "dpl", label: "DPL KKN", icon: "supervisor_account" },
+                { key: "superadmin", label: "Super Admin", icon: "admin_panel_settings" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setGuideRoleTab(tab.key as any)}
+                  className={`px-4 py-2.5 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center gap-2 border ${
+                    guideRoleTab === tab.key
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.03]"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 shadow-2xs"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Active Role Content Card */}
+            <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200/80 shadow-lg space-y-8 transition-all">
+              
+              {/* Role Header Info */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <span className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-2xl">
+                        {guideRoleTab === "warga" && "home"}
+                        {guideRoleTab === "kkn" && "school"}
+                        {guideRoleTab === "rw" && "verified_user"}
+                        {guideRoleTab === "petugas" && "local_shipping"}
+                        {guideRoleTab === "dlh" && "monitoring"}
+                        {guideRoleTab === "dpl" && "supervisor_account"}
+                        {guideRoleTab === "superadmin" && "admin_panel_settings"}
+                      </span>
+                    </span>
+                    <div>
+                      <h4 className="text-2xl font-black text-slate-900">
+                        {guideRoleTab === "warga" && "Panduan Peran: Warga / Rumah Tangga"}
+                        {guideRoleTab === "kkn" && "Panduan Peran: Mahasiswa KKN"}
+                        {guideRoleTab === "rw" && "Panduan Peran: Pengurus RW & RT"}
+                        {guideRoleTab === "petugas" && "Panduan Peran: Petugas Residu Hilir"}
+                        {guideRoleTab === "dlh" && "Panduan Peran: Admin DLH, Camat, & Lurah"}
+                        {guideRoleTab === "dpl" && "Panduan Peran: Dosen Pembimbing Lapangan (DPL)"}
+                        {guideRoleTab === "superadmin" && "Panduan Peran: Super Administrator"}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">Kecamatan Coblong, Kota Bandung</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Auth & Access Method Badges */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1.5 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold rounded-xl flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base">phonelink_lock</span>
+                    {guideRoleTab === "warga" ? "WhatsApp OTP (+62) • Tanpa NIK" : "Email & Kredensial Password"}
+                  </span>
+                  <span className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base">security</span>
+                    {guideRoleTab === "dlh" ? "Aksabilitas: Read-Only Scoped Guard" : "Aksabilitas: Operasional & Management"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Role Details Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Left Column: Rules & Key Features */}
+                <div className="lg:col-span-5 space-y-6">
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                    <h5 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-600 text-lg">checklist</span>
+                      Tanggung Jawab Utama &amp; Batasan
+                    </h5>
+                    <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
+                      {guideRoleTab === "warga" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mendaftarkan maksimal 2 Tempat Sampah (1 Organik &amp; 1 Anorganik).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mengunggah bukti foto setoran sampah saat tempat sampah terisi penuh.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Menjaga keaktifan tempat sampah (masa aktif 30 hari, otomatis ter-reset saat setoran disetujui).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mengirimkan ide kreasi daur ulang untuk klaim reward +50 poin tambahan.</span>
+                          </li>
+                        </>
+                      )}
+
+                      {guideRoleTab === "kkn" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memindai batch QR Tempat Sampah awal untuk mengubah status menjadi `DIPEGANG_MAHASISWA`.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Merekam lokasi GPS fisik gawai saat membantu pendaftaran tempat sampah warga.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mendapatkan poin insentif pendampingan (+10 poin) saat registrasi disetujui RW.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mencatat riwayat serah terima (handover) wilayah dampingan antar kelompok KKN.</span>
+                          </li>
+                        </>
+                      )}
+
+                      {guideRoleTab === "rw" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memeriksa dan menyetujui pengajuan registrasi tempat sampah (`PENDING_APPROVAL` → `ACTIVE_BOUND`).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Menandai Tempat Sampah Rusak (`BROKEN`) untuk penonaktifan permanen QR code.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memvalidasi setoran sampah harian dan menambahkan poin atomik ke ledger Warga.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Menginput data fasilitas pengolahan wilayah (Loseda, Bata Terawang, BSF, Bank Sampah).</span>
+                          </li>
+                        </>
+                      )}
+
+                      {guideRoleTab === "petugas" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Menjalankan penjemputan di window jam 06:00-08:00 &amp; 16:00-18:00 WIB.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memindai kode QR Tempat Sampah di lokasi warga menggunakan aplikasi Web Monitoring.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Menginput data hasil timbangan fisik industri secara manual.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Meningkatkan nilai KPI Petugas berdasarkan ketepatan waktu lapor dan akurasi AI.</span>
+                          </li>
+                        </>
+                      )}
+
+                      {guideRoleTab === "dlh" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memantau dashboard eksekutif visual secara Read-Only (Akses Tulis Ditolak 403).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Data scoping otomatis: Admin DLH (Kota), Camat (Kecamatan), Lurah (Kelurahan).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Admin DLH mengevaluasi klaim diskrepansi setoran sampah AI confidence (&gt;90%).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mengevaluasi Skor Kepatuhan &amp; Keandalan wilayah berbasis statistik Median.</span>
+                          </li>
+                        </>
+                      )}
+
+                      {guideRoleTab === "dpl" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memantau progres pendampingan dan sosialisasi kelompok mahasiswa KKN di lokasi.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memeriksa absensi kehadiran dan logbook kegiatan harian mahasiswa.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mengevaluasi laporan capaian aktivasi tempat sampah warga per wilayah dampingan.</span>
+                          </li>
+                        </>
+                      )}
+
+                      {guideRoleTab === "superadmin" && (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Menggenerasi dan mencetak Master QR Code Tempat Sampah batch baru (`PRINTED`).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Mengatur parameter konfigurasi sistem `system_configs` dan batasan operasional.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                            <span>Memantau log audit trail transaksi poin ledger dan perubahan data master.</span>
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Right Column: Visual Interactive Workflow Steps */}
+                <div className="lg:col-span-7 space-y-4">
+                  <h5 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-600 text-lg">alt_route</span>
+                    Langkah Kerja Operasional ({guideRoleTab.toUpperCase()})
+                  </h5>
+
+                  <div className="space-y-3">
+                    {guideRoleTab === "warga" && [
+                      { step: 1, title: "1. Login WhatsApp OTP", desc: "Masuk tanpa NIK dengan nomor HP WhatsApp (+62) untuk mendapatkan kode OTP instan." },
+                      { step: 2, title: "2. Cek Tempat Sampah Aktif", desc: "Lihat status Tempat Sampah Organik & Anorganik yang telah disetujui RW (Masa aktif 30 hari)." },
+                      { step: 3, title: "3. Unggah Foto & Setor Sampah", desc: "Ambil foto bukti tempat sampah penuh dan kirim permohonan pengangkutan." },
+                      { step: 4, title: "4. Terima Poin & Ajukan Ide", desc: "Setelah disetujui RW, poin ledger otomatis bertambah. Tambah poin dengan mengajukan ide daur ulang." },
+                    ].map((s) => (
+                      <div key={s.step} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-3">
+                        <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          0{s.step}
+                        </span>
+                        <div>
+                          <h6 className="font-extrabold text-slate-900 text-xs">{s.title}</h6>
+                          <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {guideRoleTab === "kkn" && [
+                      { step: 1, title: "1. Ambil Batch QR Code Master", desc: "Menerima QR Code Tempat Sampah berstatus `PRINTED` dari Super Admin." },
+                      { step: 2, title: "2. Scan Awal QR Code", desc: "Memindai kode QR untuk mengubah status menjadi `DIPEGANG_MAHASISWA`." },
+                      { step: 3, title: "3. Registrasi Warga & Record GPS", desc: "Mendatangi warga, merekam lokasi GPS gawai, dan mengaitkan QR ke Warga (`PENDING_APPROVAL`)." },
+                      { step: 4, title: "4. Poin Pendampingan & Handover", desc: "Menerima +10 poin atomik saat RW setuju, serta mencatat riwayat serah terima KKN." },
+                    ].map((s) => (
+                      <div key={s.step} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-3">
+                        <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          0{s.step}
+                        </span>
+                        <div>
+                          <h6 className="font-extrabold text-slate-900 text-xs">{s.title}</h6>
+                          <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {guideRoleTab === "rw" && [
+                      { step: 1, title: "1. Buka Portal Approval RW", desc: "Memeriksa daftar pengajuan tempat sampah warga baru (`PENDING_APPROVAL`)." },
+                      { step: 2, title: "2. Verifikasi & Approval", desc: "Klik Setuju (`ACTIVE_BOUND`) untuk mengaktifkan tempat sampah & memicu poin Warga + KKN." },
+                      { step: 3, title: "3. Manajemen Tempat Sampah Rusak", desc: "Tandai tempat sampah fisik yang rusak sebagai `BROKEN` agar QR tidak dapat digunakan lagi." },
+                      { step: 4, title: "4. Input Fasilitas Pengolahan GIS", desc: "Menginput lokasi & data panen berkala Loseda, Bata Terawang, BSF, dan Bank Sampah." },
+                    ].map((s) => (
+                      <div key={s.step} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-3">
+                        <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          0{s.step}
+                        </span>
+                        <div>
+                          <h6 className="font-extrabold text-slate-900 text-xs">{s.title}</h6>
+                          <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {guideRoleTab === "petugas" && [
+                      { step: 1, title: "1. Standby Window Jam Operasional", desc: "Mulai penjemputan pada window jam 06:00-08:00 WIB atau 16:00-18:00 WIB." },
+                      { step: 2, title: "2. Scan QR Tempat Sampah Warga", desc: "Pindai kode QR fisik tempat sampah di lokasi penjemputan warga." },
+                      { step: 3, title: "3. Input Timbangan Fisik Manual", desc: "Masukkan angka hasil penimbangan fisik industri secara akurat ke dalam sistem." },
+                      { step: 4, title: "4. Konfirmasi Selesai & Pantau KPI", desc: "Kirim laporan penjemputan dan pantau skor ketepatan waktu lapor harian." },
+                    ].map((s) => (
+                      <div key={s.step} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-3">
+                        <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          0{s.step}
+                        </span>
+                        <div>
+                          <h6 className="font-extrabold text-slate-900 text-xs">{s.title}</h6>
+                          <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {(guideRoleTab === "dlh" || guideRoleTab === "dpl" || guideRoleTab === "superadmin") && [
+                      { step: 1, title: "1. Login Portal Terotorisasi", desc: "Masuk ke sistem sesuai kewenangan role masing-masing." },
+                      { step: 2, title: "2. Pantau Real-Time Dashboard", desc: "Melihat grafik timbulan residu, peta sebaran fasilitas, dan indikator statistik wilayah." },
+                      { step: 3, title: "3. Evaluasi & Manajemen Data", desc: "Melakukan peninjauan diskrepansi AI, absensi KKN, atau master data QR Code." },
+                      { step: 4, title: "4. Unduh Laporan Lanjutan", desc: "Mengekspor laporan rekapitulasi untuk evaluasi berkala kebersihan Kecamatan Coblong." },
+                    ].map((s) => (
+                      <div key={s.step} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-3">
+                        <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          0{s.step}
+                        </span>
+                        <div>
+                          <h6 className="font-extrabold text-slate-900 text-xs">{s.title}</h6>
+                          <p className="text-[11px] text-slate-600 font-medium leading-relaxed mt-0.5">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Bottom CTA to Download PDF & Full Panduan Page */}
+              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                  <span className="material-symbols-outlined text-emerald-600 text-base">picture_as_pdf</span>
+                  <span>Unduh atau cetak dokumen resmi Buku Panduan Operasional TrashCare format PDF.</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={downloadPanduanPdf}
+                    className="btn-primary-clean text-xs px-6 py-2.5 shadow-md cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-base">download</span>
+                    Unduh Buku Panduan Lengkap (PDF)
+                  </button>
+                  <Link
+                    to="/panduan"
+                    className="btn-secondary-clean text-xs px-4 py-2.5"
+                  >
+                    <span className="material-symbols-outlined text-base">menu_book</span>
+                    Modul Web
+                  </Link>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ----------------- 05. WHAT WE DO ----------------- */}
       <section id="what-we-do" className="py-24 bg-slate-50/50">
         <div className="container-custom space-y-12">
           <div className="text-center space-y-2">
-            <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">04. What</span>
+            <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
             <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir &amp; Fasilitas GIS</h2>
             <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah Kecamatan Coblong</p>
 
@@ -1012,6 +1550,7 @@ export const LandingPage: React.FC = () => {
               <li><button onClick={() => scrollToSection("#about")} className="hover:text-white transition">Tentang Kami</button></li>
               <li><button onClick={() => scrollToSection("#why-us")} className="hover:text-white transition">Mengapa Aplikasi Ini</button></li>
               <li><button onClick={() => scrollToSection("#how-it-works")} className="hover:text-white transition">Cara Kerja</button></li>
+              <li><button onClick={() => scrollToSection("#guide")} className="hover:text-white transition">Buku Panduan</button></li>
               <li><button onClick={() => scrollToSection("#what-we-do")} className="hover:text-white transition">Daur Ulang</button></li>
             </ul>
           </div>

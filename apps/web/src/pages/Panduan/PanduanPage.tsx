@@ -1,10 +1,12 @@
 import React from "react";
 import { BookOpen, FileText, Download, CheckCircle2, Shield, UserCheck } from "lucide-react";
 import toast from "react-hot-toast";
+import { downloadPanduanPdf } from "../../utils/downloadPanduanPdf";
 
 const PanduanPage: React.FC = () => {
   const handleDownloadPdf = () => {
-    toast.success("Mengunduh Buku Panduan Trashcare (PDF)...");
+    toast.success("Membuka dokumen Buku Panduan Trashcare (PDF)...");
+    downloadPanduanPdf();
   };
 
   return (

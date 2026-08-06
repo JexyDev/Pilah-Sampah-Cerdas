@@ -747,7 +747,10 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="p-3.5">Mahasiswa</th>
                     <th className="p-3.5">Kelompok KKN</th>
                     <th className="p-3.5">Kehadiran (%)</th>
-                    <th className="p-3.5">Status Presensi</th>
+                    <th className="p-3.5 text-center">Hadir (H)</th>
+                    <th className="p-3.5 text-center">Sakit (S)</th>
+                    <th className="p-3.5 text-center">Izin (I)</th>
+                    <th className="p-3.5 text-center">Alpha (A)</th>
                     <th className="p-3.5">Rekam Portofolio</th>
                     <th className="p-3.5 text-center">Aksi Portofolio</th>
                   </tr>
@@ -781,13 +784,25 @@ export const DplDashboardPage: React.FC = () => {
                           {st.attendanceRate}%
                         </span>
                       </td>
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-1 font-semibold text-[11px]">
-                          <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded" title="Hadir">{st.attendedCount}H</span>
-                          <span className="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded" title="Sakit">{st.sickCount}S</span>
-                          <span className="text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded" title="Izin">{st.izinCount}I</span>
-                          <span className={`px-1.5 py-0.5 rounded ${st.alphaCount > 0 ? "text-red-700 bg-red-100 font-bold" : "text-slate-500 bg-slate-100"}`} title="Alpha">{st.alphaCount}A</span>
-                        </div>
+                      <td className="p-3.5 text-center font-bold">
+                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block min-w-[28px]">
+                          {st.attendedCount}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-center font-bold">
+                        <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60 inline-block min-w-[28px]">
+                          {st.sickCount}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-center font-bold">
+                        <span className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200/60 inline-block min-w-[28px]">
+                          {st.izinCount}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-center font-bold">
+                        <span className={`px-2 py-0.5 rounded border inline-block min-w-[28px] ${st.alphaCount > 0 ? "text-red-700 bg-red-100 border-red-200" : "text-slate-600 bg-slate-100 border-slate-200/60"}`}>
+                          {st.alphaCount}
+                        </span>
                       </td>
                       <td className="p-3.5 font-bold text-slate-800">
                         <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[11px] border border-emerald-200 inline-flex items-center gap-1">
