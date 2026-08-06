@@ -1591,9 +1591,10 @@ const Dashboard: React.FC = () => {
   const trendPoints = trendData.map((d, i) => {
     // Leave 60px padding on the left for Y-axis labels
     const x = trendData.length > 1 ? 60 + (i / (trendData.length - 1)) * 620 : 350;
-    const yOrganic = 170 - ((d.organic || 0) / maxWeightTrend) * 140;
-    const yInorganic = 170 - ((d.inorganic || 0) / maxWeightTrend) * 140;
-    const yResidu = 170 - ((d.residu || 0) / maxWeightTrend) * 140;
+    // Y-axis spans from Y=40 (top, maxWeight) to Y=280 (bottom, zero) -> height = 240px
+    const yOrganic = 280 - ((d.organic || 0) / maxWeightTrend) * 240;
+    const yInorganic = 280 - ((d.inorganic || 0) / maxWeightTrend) * 240;
+    const yResidu = 280 - ((d.residu || 0) / maxWeightTrend) * 240;
     return { x, yOrganic, yInorganic, yResidu, label: d.label, organic: d.organic, inorganic: d.inorganic, residu: d.residu };
   });
 
@@ -1609,15 +1610,15 @@ const Dashboard: React.FC = () => {
 
   const trendOrganicAreaPath =
     trendPoints.length > 0
-      ? `${trendOrganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
+      ? `${trendOrganicPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
       : "";
   const trendInorganicAreaPath =
     trendPoints.length > 0
-      ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
+      ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
       : "";
   const trendResiduAreaPath =
     trendPoints.length > 0
-      ? `${trendResiduPath} L${trendPoints[trendPoints.length - 1].x},170 L${trendPoints[0].x},170 Z`
+      ? `${trendResiduPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
       : "";
 
 
