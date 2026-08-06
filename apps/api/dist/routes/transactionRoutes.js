@@ -20,6 +20,18 @@ router.get("/deposits", authMiddleware, roleMiddleware([
     "CAMAT",
     "MAHASISWA_KKN",
 ]), transactionController.getDeposits);
+/**
+ * @swagger
+ * /api/v1/transactions/my-deposits:
+ *   get:
+ *     summary: Mengambil riwayat poin dan transaksi setoran sampah milik Warga
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil data transaksi Warga
+ */
 router.get("/my-deposits", authMiddleware, roleMiddleware(["WARGA"]), transactionController.getMyDeposits);
 router.post("/manual", authMiddleware, roleMiddleware(["PETUGAS_RESIDU", "SUPER_ADMIN"]), uploadAvatarMiddleware.single("image"), transactionController.createManualDeposit);
 router.get("/manual", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), transactionController.getManualDeposits);

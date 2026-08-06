@@ -77,7 +77,24 @@ const mapNotification = (n) => {
         iconColor,
     };
 };
-// GET /api/v1/notifications
+/**
+ * @swagger
+ * tags:
+ *   name: Notifications
+ *   description: Manajemen Notifikasi Pengguna & Device Push Token
+ */
+/**
+ * @swagger
+ * /api/v1/notifications:
+ *   get:
+ *     summary: Mendapatkan seluruh notifikasi generik user (Warga / RW / RT / Admin)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil data notifikasi
+ */
 router.get("/", authMiddleware, async (req, res) => {
     try {
         const role = (req.query.role || req.user?.role || "WARGA").toUpperCase();
@@ -319,7 +336,18 @@ router.get("/", authMiddleware, async (req, res) => {
         });
     }
 });
-// PUT /api/v1/notifications/read-all
+/**
+ * @swagger
+ * /api/v1/notifications/read-all:
+ *   put:
+ *     summary: Membaca (tandai selesai) seluruh notifikasi user secara massal
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Semua notifikasi berhasil ditandai dibaca
+ */
 router.put("/read-all", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -334,7 +362,25 @@ router.put("/read-all", authMiddleware, async (req, res) => {
         res.status(500).json({ status: "error", message: "Gagal mengupdate notifikasi" });
     }
 });
-// PUT /api/v1/notifications/:id/read
+/**
+ * @swagger
+ * /api/v1/notifications/{id}/read:
+ *   put:
+ *     summary: Membaca (tandai selesai) notifikasi individual berdasarkan ID
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID Notifikasi
+ *     responses:
+ *       200:
+ *         description: Notifikasi berhasil ditandai dibaca
+ */
 router.put("/:id/read", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;

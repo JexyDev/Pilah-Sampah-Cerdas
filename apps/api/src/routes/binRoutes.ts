@@ -105,6 +105,19 @@ router.put(
  *         description: List of RW locations with RT count and bin count
  */
 router.get("/locations", binController.getLocations);
+
+/**
+ * @swagger
+ * /api/v1/bins/my-bins:
+ *   get:
+ *     summary: Menampilkan daftar tempat sampah milik Warga yang sedang aktif
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil daftar tempat sampah aktif milik Warga
+ */
 router.get("/my-bins", authMiddleware, binController.getMyBins);
 /**
  * @swagger

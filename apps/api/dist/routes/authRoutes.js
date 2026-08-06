@@ -64,8 +64,82 @@ const router = Router();
  *         description: Unauthorized (Invalid credentials)
  */
 router.post("/login", loginRateLimiter, authController.login);
+/**
+ * @swagger
+ * /api/v1/auth/request-otp:
+ *   post:
+ *     summary: Mengirimkan kode OTP via WhatsApp Fonnte ke nomor ponsel warga
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "08123456789"
+ *     responses:
+ *       200:
+ *         description: Kode OTP berhasil dikirimkan via WhatsApp
+ */
 router.post("/request-otp", authController.requestOtp);
+/**
+ * @swagger
+ * /api/v1/auth/verify-otp:
+ *   post:
+ *     summary: Memvalidasi kecocokan kode OTP WhatsApp
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - otp
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "08123456789"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Verifikasi OTP berhasil
+ */
 router.post("/verify-otp", authController.verifyOtp);
+/**
+ * @swagger
+ * /api/v1/auth/reset-password:
+ *   post:
+ *     summary: Menyimpan password baru pasca-lupa password / reset OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - newPassword
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "08123456789"
+ *               newPassword:
+ *                 type: string
+ *                 example: "newpassword123"
+ *     responses:
+ *       200:
+ *         description: Password berhasil diperbarui
+ */
 router.post("/reset-password", authController.resetPassword);
 /**
  * @swagger

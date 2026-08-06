@@ -28,6 +28,18 @@ router.get(
   ]),
   transactionController.getDeposits
 );
+/**
+ * @swagger
+ * /api/v1/transactions/my-deposits:
+ *   get:
+ *     summary: Mengambil riwayat poin dan transaksi setoran sampah milik Warga
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil data transaksi Warga
+ */
 router.get(
   "/my-deposits",
   authMiddleware,
