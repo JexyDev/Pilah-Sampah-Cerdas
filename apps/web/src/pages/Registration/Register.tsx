@@ -211,7 +211,7 @@ export const Register: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-bold text-white">Registrasi Warga Mandiri</p>
-                  <p className="text-[10px] text-emerald-200 font-medium">Dapatkan poin insentif &amp; 2 Tong Sampah</p>
+                  <p className="text-[10px] text-emerald-200 font-medium">Dapatkan poin insentif &amp; 2 Tempat Sampah</p>
                 </div>
               </div>
 

@@ -7,7 +7,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Phone, LogIn, ShieldCheck, Trash2, Award } from "lucide-react";
+import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Phone, LogIn, ShieldCheck, Trash2, Award, Sparkles } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 
 // Exact Vector SVG Icon matching the TrashCare logo
@@ -63,6 +63,39 @@ const Login: React.FC = () => {
   const [passwordError, setPasswordError] = useState("");
 
   const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  const DEMO_ACCOUNTS = [
+    { role: "Super Admin", label: "Super Admin (Full Akses)", phone: "+628111111111", pass: "password123", badge: "bg-indigo-600" },
+    { role: "Admin DLH", label: "Admin DLH Bandung", phone: "+628111111112", pass: "password123", badge: "bg-blue-600" },
+    { role: "Camat", label: "Camat Coblong", phone: "+628111111113", pass: "password123", badge: "bg-purple-600" },
+    { role: "Lurah", label: "Lurah Dago", phone: "+628111111114", pass: "password123", badge: "bg-pink-600" },
+    { role: "RW", label: "Pengurus RW 06", phone: "+628111111115", pass: "password123", badge: "bg-teal-600" },
+    { role: "RT", label: "Pengurus RT 01", phone: "+628111111116", pass: "password123", badge: "bg-cyan-600" },
+    { role: "Petugas Residu", label: "Petugas Residu Hilir", phone: "+628111111117", pass: "password123", badge: "bg-orange-600" },
+    { role: "Mahasiswa KKN", label: "Mahasiswa KKN (Andi)", phone: "+628111111118", pass: "password123", badge: "bg-amber-600" },
+    { role: "Warga", label: "Warga Mandiri (Siti)", phone: "+6282100000001", pass: "password123", badge: "bg-emerald-600" },
+    { role: "DPL KKN", label: "DPL (Dosen Pembimbing)", phone: "+6281300000001", pass: "123456", badge: "bg-rose-600" },
+  ];
+
+  const handleDemoClick = (phone: string, pass: string, autoSubmit = false) => {
+    setIdentifier(phone);
+    setPassword(pass);
+    setIdentifierError("");
+    setPasswordError("");
+    toast.success(`Demo akun terisi: ${phone}`);
+    if (autoSubmit) {
+      setIsLocalLoading(true);
+      login(phone, pass).then((success) => {
+        setIsLocalLoading(false);
+        if (success) {
+          setShowSuccessOverlay(true);
+          setTimeout(() => navigate("/dashboard"), 1200);
+        } else {
+          toast.error("Gagal login dengan akun demo");
+        }
+      });
+    }
+  };
 
   // Helper phone normalizer (+62 format)
   const normalizePhone = (val: string) => {
@@ -366,6 +399,53 @@ const Login: React.FC = () => {
                 )}
               </button>
             </form>
+
+            {/* Quick Demo Login Scrollable Box */}
+            <div className="pt-3 border-t border-slate-100 space-y-2 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                  <Sparkles size={14} className="text-amber-500 animate-pulse" />
+                  <span>Akses Cepat Demo (Semua Role)</span>
+                </div>
+                <span className="text-[10px] text-emerald-600 font-extrabold">1-Click Auto Fill</span>
+              </div>
+
+              {/* Scrollable Container with Custom Scrollbar */}
+              <div className="max-h-44 overflow-y-auto pr-1 space-y-1.5 rounded-xl border border-slate-200/80 p-1.5 bg-slate-50/50">
+                {DEMO_ACCOUNTS.map((acc, i) => (
+                  <div
+                    key={i}
+                    onClick={() => handleDemoClick(acc.phone, acc.pass)}
+                    className="group flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/70 hover:border-emerald-500 hover:bg-emerald-50/60 transition-all cursor-pointer text-left shadow-2xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg ${acc.badge} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs uppercase`}>
+                        {acc.role.slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-slate-900 truncate leading-tight group-hover:text-emerald-700">
+                          {acc.label}
+                        </p>
+                        <p className="text-[10px] font-semibold text-slate-400 truncate">
+                          {acc.phone} • {acc.pass}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDemoClick(acc.phone, acc.pass, true);
+                      }}
+                      className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shrink-0 shadow-2xs cursor-pointer"
+                    >
+                      Login →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
 
           </div>
 

@@ -873,14 +873,14 @@ export const LandingPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-slate-900">Tong Organik #01</p>
+                      <p className="text-sm font-black text-slate-900">Tempat Sampah Organik #01</p>
                       <p className="text-xs text-slate-500 font-medium">Aktif (20L Standar)</p>
                     </div>
                     <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl">25% Terisi</span>
                   </div>
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-slate-900">Tong Anorganik #02</p>
+                      <p className="text-sm font-black text-slate-900">Tempat Sampah Anorganik #02</p>
                       <p className="text-xs text-slate-500 font-medium">Aktif (20L Standar)</p>
                     </div>
                     <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl">50% Terisi</span>
