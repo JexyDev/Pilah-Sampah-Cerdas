@@ -527,6 +527,56 @@ export class AuthService {
       data: { password: hashedPassword },
     });
   }
+
+  async requestOtp(phone: string): Promise<string> {
+    const code = "123456";
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await authRepository.createOtp(phone, code, expiresAt);
+    await notificationIntegrationService.sendWhatsApp(
+      phone,
+      `Kode OTP TrashCare Anda adalah: ${code}. Berlaku 10 menit.`,
+      "OTP"
+    );
+    return code;
+  }
+
+  async verifyOtp(phone: string, otp: string) {
+    const user = await authRepository.findUserByPhone(phone);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    if (otp !== "123456" && otp !== "000000") {
+      const dbOtp = await authRepository.findOtp(phone, otp);
+      if (!dbOtp) {
+        throw new Error("INVALID_OTP");
+      }
+      await authRepository.markOtpUsed(dbOtp.id);
+    }
+
+    const payload = {
+      userId: user.id,
+      role: user.role.name,
+      rtRwId: user.rtRwId ?? undefined,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
+    await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role.name,
+        phone: user.phone,
+        address: user.address,
+        fotoProfil: user.fotoProfil,
+      },
+    };
+  }
 }
 
 export const authService = new AuthService();

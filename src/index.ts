@@ -89,6 +89,7 @@ app.use("/api/v1/bank-sampah", bankSampahRouter);
 app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
+app.use("/api/v1/petugas-residu", residuRouter);
 app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/rw", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);

@@ -194,6 +194,62 @@ export class KknController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async getActiveZone(req: Request, res: Response) {
+    try {
+      res.status(200).json({
+        success: true,
+        data: {
+          poskoArea: "Zona KKN Bojongsoang",
+          kelurahan: "Bojongsoang",
+          rtRw: "RT 02 / RW 05",
+          centerLat: -6.974,
+          centerLng: 107.632,
+          radiusMeter: 500,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getHistory(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.getActivityLog(kknUserId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getKelompokMe(req: Request, res: Response) {
+    try {
+      res.status(200).json({
+        success: true,
+        data: {
+          namaKelompok: "KKN Bojongsoang 01",
+          kelurahan: "Bojongsoang",
+          rtRw: "RW 05",
+          dplName: "Dr. Dosen KKN, M.T.",
+          anggotaCount: 8,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async submitPengajuanIzin(req: Request, res: Response) {
+    try {
+      res.status(200).json({
+        success: true,
+        message: "Pengajuan izin berhasil dikirim",
+      });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();

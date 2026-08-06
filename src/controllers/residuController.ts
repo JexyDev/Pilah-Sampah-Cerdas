@@ -120,6 +120,17 @@ export class ResiduController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async getRiwayat(req: Request, res: Response) {
+    try {
+      const petugasUserId = req.user!.userId;
+      const data = await residuService.getRiwayat(petugasUserId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[ResiduController] getRiwayat error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const residuController = new ResiduController();

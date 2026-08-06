@@ -56,6 +56,12 @@ router.post(
   roleMiddleware(["MAHASISWA_KKN"]),
   kknAttendanceController.recordAttendance
 );
+router.post(
+  "/kkn/attendance/check-in",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.recordAttendance
+);
 
 // Monitoring routes
 router.get(
