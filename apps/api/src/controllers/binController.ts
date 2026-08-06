@@ -229,7 +229,12 @@ export class BinController {
 
       const parsed = scanSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(422).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
+        res.status(400).json({
+          status: "error",
+          error: "VALIDATION_ERROR",
+          message: "QR Code tidak valid atau format data scan tidak sesuai.",
+          details: parsed.error.format(),
+        });
         return;
       }
 
@@ -245,6 +250,16 @@ export class BinController {
         evidencePhotoUrl,
         detections,
       } = parsed.data as any;
+
+      // Validasi QR Code: Harus berupa string valid (minimal 4 karakter)
+      if (!qrCode || typeof qrCode !== "string" || qrCode.trim().length < 4) {
+        res.status(400).json({
+          status: "error",
+          error: "INVALID_QR_FORMAT",
+          message: "QR Code tidak valid atau tempat sampah tidak terdaftar di sistem.",
+        });
+        return;
+      }
 
       const finalConfidence = confidence ?? aiConfidence;
 
@@ -267,9 +282,11 @@ export class BinController {
       });
     } catch (error: any) {
       if (error.message === "BIN_NOT_FOUND") {
-        res
-          .status(404)
-          .json({ error: "RESOURCE_NOT_FOUND", message: "QR Code tempat sampah tidak ditemukan" });
+        res.status(404).json({
+          status: "error",
+          error: "RESOURCE_NOT_FOUND",
+          message: "QR Code tidak valid atau tempat sampah tidak terdaftar di sistem.",
+        });
       } else if (error.message === "BIN_NOT_ACTIVE" || error.message === "NO_ACTIVE_BINS") {
         res.status(400).json({
           error: "BIN_NOT_ACTIVE",
