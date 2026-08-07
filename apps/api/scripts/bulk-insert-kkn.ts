@@ -435,21 +435,30 @@ async function main() {
     // 2. Create or get KelompokKkn with dplId relation
     let kelompok = await prisma.kelompokKkn.findUnique({ where: { name: row.namaKelompok } });
     if (!kelompok) {
-      kelompok = await prisma.kelompokKkn.create({
-        data: {
-          name: row.namaKelompok,
-          kelurahan: row.kelurahan,
-          cakupanRw: row.rwList as any,
-          dplNamaMentah: row.dplNama,
-          dplId: dplUser?.id || undefined,
-        } as any
-      });
-      createdKelompokCount++;
-    } else if (dplUser && !kelompok.dplId) {
-      kelompok = await prisma.kelompokKkn.update({
-        where: { id: kelompok.id },
-        data: { dplId: dplUser.id, dplNamaMentah: row.dplNama }
-      });
+      try {
+        kelompok = await prisma.kelompokKkn.create({
+          data: {
+            name: row.namaKelompok,
+            kelurahan: row.kelurahan,
+            cakupanRw: row.rwList as any,
+            dplNamaMentah: row.dplNama,
+            dplId: dplUser?.id || undefined,
+          } as any
+        });
+        createdKelompokCount++;
+      } catch (e) {
+        kelompok = await prisma.kelompokKkn.findUnique({ where: { name: row.namaKelompok } });
+      }
+    }
+    if (kelompok && dplUser && !kelompok.dplId) {
+      try {
+        kelompok = await prisma.kelompokKkn.update({
+          where: { id: kelompok.id },
+          data: { dplId: dplUser.id, dplNamaMentah: row.dplNama }
+        });
+      } catch (e) {
+        // Ignore update error
+      }
     }
 
     // 2. Lookup primary RW Record in DB for relation
