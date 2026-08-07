@@ -6,14 +6,14 @@ async function main() {
   const groups = await prisma.kelompokKkn.findMany({
     include: {
       _count: {
-        select: { anggota: true }
+        select: { students: true }
       }
     }
   });
 
   console.log(`📌 Total Kelompok KKN di DB sebelum cleanup: ${groups.length}`);
 
-  const emptyGroups = groups.filter(g => g._count.anggota === 0);
+  const emptyGroups = groups.filter(g => g._count.students === 0);
   console.log(`📌 Ditemukan ${emptyGroups.length} kelompok kosong (0 anggota).`);
 
   for (const g of emptyGroups) {
