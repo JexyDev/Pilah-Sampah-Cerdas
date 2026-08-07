@@ -574,7 +574,11 @@ export const HasilPemanfaatan: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={fetchItems}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              fetchItems();
+            }}
             className="mt-2 px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-xs cursor-pointer"
           >
             <RefreshCw size={14} /> Sinkronkan Database Real
