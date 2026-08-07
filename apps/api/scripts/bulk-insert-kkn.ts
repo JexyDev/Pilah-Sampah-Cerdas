@@ -518,21 +518,24 @@ async function main() {
       }
     }
 
-    await prisma.studentKkn.create({
-      data: {
-        userId: user.id,
-        nim: studentNim,
-        jurusan: row.programStudi || 'Belum diisi',
-        fakultas: '-',
-        noWa: row.phoneNormalized,
-        kelompokId: kelompok.id,
-        assignedRwId: rwRecord?.id || undefined,
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
-        isKetua: row.isKetua || false,
-        whitelistStatus: 'APPROVED'
-      } as any
-    });
+    const existingStudent = await prisma.studentKkn.findFirst({ where: { userId: user.id } });
+    if (!existingStudent) {
+      await prisma.studentKkn.create({
+        data: {
+          userId: user.id,
+          nim: studentNim,
+          jurusan: row.programStudi || 'Belum diisi',
+          fakultas: '-',
+          noWa: row.phoneNormalized,
+          kelompokId: kelompok.id,
+          assignedRwId: rwRecord?.id || undefined,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
+          isKetua: row.isKetua || false,
+          whitelistStatus: 'APPROVED'
+        } as any
+      });
+    }
 
     createdUsersCount++;
   }
