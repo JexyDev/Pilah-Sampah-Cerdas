@@ -50,6 +50,7 @@ jobs:
             npx tsx scripts/seed-rt-rw-all.ts || true
             npx tsx scripts/seed-dpl-real.ts || true
             npx tsx scripts/seed-mhs-demo.ts || true
+            npx tsx scripts/bulk-insert-kkn.ts scripts/data_kkn.xlsx --commit || true
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
