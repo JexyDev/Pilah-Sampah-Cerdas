@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="unikomGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2b5c"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer Hexagon -->
+  <polygon points="60,6 108,33 108,87 60,114 12,87 12,33" fill="url(#unikomGrad)" stroke="url(#goldGrad)" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Inner Hexagon Ring -->
+  <polygon points="60,16 98,38 98,82 60,104 22,82 22,38" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/>
+  <!-- Mortarboard / Graduation Cap Icon -->
+  <path d="M60 32 L88 46 L60 60 L32 46 Z" fill="url(#goldGrad)"/>
+  <path d="M42 54 L42 70 C42 76 78 76 78 70 L78 54" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M82 49 L82 72 C82 74 80 76 78 76" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Text UNIKOM -->
+  <text x="60" y="93" font-family="Arial, sans-serif" font-weight="900" font-size="14" fill="#ffffff" text-anchor="middle" letter-spacing="1.5">UNIKOM</text>
+</svg>
