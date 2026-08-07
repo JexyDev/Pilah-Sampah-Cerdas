@@ -19,24 +19,7 @@ class ApiNotificationRepository implements NotificationRepository {
   @override
   Future<List<NotificationEntity>> getNotifications() async {
     try {
-      Response response;
-      try {
-        response = await apiClient.dio.get('/notifications');
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 404) {
-          try {
-            response = await apiClient.dio.get('/kkn/notifications');
-          } on DioException catch (_) {
-            try {
-              response = await apiClient.dio.get('/rt/notifications');
-            } on DioException catch (_) {
-              response = await apiClient.dio.get('/rw/notifications');
-            }
-          }
-        } else {
-          rethrow;
-        }
-      }
+      final response = await apiClient.dio.get('/notifications');
 
       List<NotificationEntity> result = [];
       if (response.statusCode == 200 && response.data != null) {
@@ -46,21 +29,6 @@ class ApiNotificationRepository implements NotificationRepository {
               .map((json) => _mapNotification(json as Map<String, dynamic>))
               .toList();
         }
-      }
-
-      // Jika /notifications mengembalikan list kosong, coba fetch dari /kkn/notifications
-      if (result.isEmpty) {
-        try {
-          final kknRes = await apiClient.dio.get('/kkn/notifications');
-          if (kknRes.statusCode == 200 && kknRes.data != null) {
-            final rawKkn = kknRes.data['data'] ?? kknRes.data['notifications'] ?? kknRes.data;
-            if (rawKkn is List) {
-              result = rawKkn
-                  .map((json) => _mapNotification(json as Map<String, dynamic>))
-                  .toList();
-            }
-          }
-        } catch (_) {}
       }
 
       return result;

@@ -22,25 +22,26 @@ class PetugasResiduView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 2,
+        shadowColor: Colors.black12,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Halo, ${user?.name ?? "Petugas Residu"} 👋',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
             ),
             Text(
               'Wilayah Tugas: ${user?.rtRw.isNotEmpty == true ? "RT ${user!.rtRw}" : (dashboard?.assignedZone ?? "RT 01/RW 02")}',
-              style: const TextStyle(fontSize: 11, color: Colors.white70),
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGreen),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.petugasNotifikasi),
           ),
         ],

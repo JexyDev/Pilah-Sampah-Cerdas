@@ -43,7 +43,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     setState(() => _isSubmitting = false);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Kata sandi Petugas Residu berhasil diperbarui!'),
           backgroundColor: AppColors.primaryGreen,
@@ -54,7 +54,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     } else if (mounted) {
       final errorMsg = ref.read(petugasResiduControllerProvider).errorMessage ??
           'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.';
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMsg),
           backgroundColor: AppColors.dangerRed,
@@ -70,15 +70,16 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
       appBar: AppBar(
         title: const Text(
           'Ganti Kata Sandi',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
         ),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 2,
+        shadowColor: Colors.black12,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryGreen),
           onPressed: () => Navigator.pop(context),
         ),
-        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.md),

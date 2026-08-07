@@ -28,6 +28,37 @@ class _LoginViewState extends ConsumerState<LoginView> {
   Timer? _toastTimer;
 
   @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    String text = _phoneController.text;
+    String clean = text.replaceAll(RegExp(r'[^\d]'), '');
+
+    bool changed = false;
+    if (clean.startsWith('0')) {
+      clean = clean.substring(1);
+      changed = true;
+    } else if (clean.startsWith('62')) {
+      clean = clean.substring(2);
+      changed = true;
+    }
+
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _phoneController.value = TextEditingValue(
+          text: clean,
+          selection: TextSelection.collapsed(offset: clean.length),
+        );
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
@@ -36,7 +67,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   void _showToast(String message) {
-    _toastTimer?.cancel();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     setState(() {
       _toastMessage = message;
       _isToastVisible = true;
@@ -84,7 +116,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
       Navigator.of(context).pushReplacementNamed(AppRoutes.main);
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Coba lagi.';
+      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
@@ -210,9 +242,13 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 24),
 
                               // Field No. Telepon / NIM
-                              const Text(
-                                'NOMOR TELEPON ATAU NIM',
-                                style: TextStyle(
+                              Text(
+                                _phoneController.text.isEmpty
+                                    ? 'NOMOR TELEPON ATAU NIM'
+                                    : (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
+                                        ? 'NOMOR TELEPON'
+                                        : 'NIM',
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textSecondary,
@@ -222,20 +258,55 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _phoneController,
-                                keyboardType: TextInputType.text,
+                                keyboardType: TextInputType.number,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9a-zA-Z\+\-\s]'),
-                                  ),
+                                  FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                decoration: const InputDecoration(
-                                  hintText: 'Misal: 081234567890 atau 1301190000',
-                                  prefixIcon: Icon(
-                                    Icons.person_outline_rounded,
-                                    color: AppColors.textSecondary,
-                                    size: 20,
+                                decoration: InputDecoration(
+                                  hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13) 
+                                      ? '81234567890' 
+                                      : '1301210000',
+                                  prefixIcon: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    margin: const EdgeInsets.only(right: 8),
+                                    decoration: const BoxDecoration(
+                                      border: Border(
+                                        right: BorderSide(color: Color(0xFFE5E7EB)),
+                                      ),
+                                    ),
+                                    child: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
+                                        ? const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text('🇮🇩', style: TextStyle(fontSize: 18)),
+                                              SizedBox(width: 6),
+                                              Text(
+                                                '+62',
+                                                style: TextStyle(
+                                                  color: AppColors.textPrimary,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.badge_outlined, size: 18, color: AppColors.textPrimary),
+                                              SizedBox(width: 6),
+                                              Text(
+                                                'NIM',
+                                                style: TextStyle(
+                                                  color: AppColors.textPrimary,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                   ),
                                 ),
                                 validator: (v) {
@@ -243,6 +314,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                     return 'Nomor telepon atau NIM wajib diisi';
                                   }
                                   final clean = v.trim();
+                                  if (clean.startsWith('0')) {
+                                    return 'Mohon tidak menggunakan awalan 0 atau 62';
+                                  }
                                   final digits = clean.replaceAll(RegExp(r'[^\d]'), '');
                                   if (digits.length >= 10 && digits.length <= 13) {
                                     return null; // Phone number valid

@@ -1,0 +1,20 @@
+d:\TrashCare\mobile\lib\app\data\models\mahasiswa_kkn_models.dart:148 : bin
+d:\TrashCare\mobile\lib\app\data\models\mahasiswa_kkn_models.dart:148 : bin
+d:\TrashCare\mobile\lib\app\data\models\mahasiswa_kkn_models.dart:149 : bin
+d:\TrashCare\mobile\lib\app\data\models\mahasiswa_kkn_models.dart:152 : Belum Ada Bin
+d:\TrashCare\mobile\lib\app\data\services\notification_engine.dart:180 : Aktivasi Bin Berhasil! 🎉
+d:\TrashCare\mobile\lib\app\modules\auth\views\reset_bin_view.dart:321 : Tempat Sampah ${bin.binType.displayName}
+d:\TrashCare\mobile\lib\app\modules\auth\views\reset_bin_view.dart:394 : ${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — 
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\controllers\aktivasi_warga_controller.dart:183 : Gagal mengaktivasi bin warga. QR Code mungkin sudah diaktivasi sebelumnya.
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\views\detail_warga_view.dart:143 : Belum Ada Bin
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\views\detail_warga_view.dart:144 : ID Bin: ${warga.binId}
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\views\mahasiswa_notifikasi_view.dart:116 : bin
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\views\mahasiswa_poin_view.dart:162 : Aktif Bin
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\views\mahasiswa_view.dart:402 : Aktif Bin
+d:\TrashCare\mobile\lib\app\modules\mahasiswa\views\monitoring_warga_view.dart:280 : Cari nama atau ID bin...
+d:\TrashCare\mobile\lib\app\modules\petugas_residu\views\petugas_residu_dashboard_view.dart:432 : Akumulasi Bin
+d:\TrashCare\mobile\lib\app\modules\petugas_residu\views\petugas_residu_view.dart:386 : ${bin.volumePercentage.toInt()}% Vol
+d:\TrashCare\mobile\lib\app\modules\poin\poin_view.dart:122 : Poin akan anda dapatkan setelah Setor Sampah menggunakan Bin yang sesuai.
+d:\TrashCare\mobile\lib\app\modules\poin\poin_view.dart:563 : Aktivasi Bin Berhasil
+d:\TrashCare\mobile\lib\app\modules\profil\kelola_bin_view.dart:125 : ID: ${bin.qrSerial}
+d:\TrashCare\mobile\lib\app\modules\profil\kelola_bin_view.dart:132 : Kapasitas Maksimal: ${bin.maxCapacityL} L

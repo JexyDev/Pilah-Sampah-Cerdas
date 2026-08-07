@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/values/app_colors.dart';
 import '../../core/values/app_config.dart';
 import '../../core/values/app_dimensions.dart';
@@ -101,7 +102,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
 
                   const SizedBox(height: AppDimensions.lg),
 
-                  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Tong Sampah Anda Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Tempat Sampah Anda Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -209,7 +210,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                 .map(
                                   (log) => Padding(
                                     padding: const EdgeInsets.only(
-                                      bottom: AppDimensions.sm,
+                                      bottom: 16.0,
                                     ),
                                     child: _RiwayatCard(log: log),
                                   ),
@@ -253,10 +254,10 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       );
     }
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
-      return Image.network(
-        fotoPath,
+      return CachedNetworkImage(
+        imageUrl: fotoPath,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+        errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
       );
     }
     if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
@@ -266,10 +267,10 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         return Image.file(file, fit: BoxFit.cover);
       }
     }
-    return Image.network(
-      '${AppConfig.baseUrl}$fotoPath',
+    return CachedNetworkImage(
+      imageUrl: '${AppConfig.baseUrl}$fotoPath',
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+      errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
     );
   }
 
@@ -356,9 +357,49 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   ],
                 ),
               ),
-              // ─── Bell icon with badge ───────────────────────────────
-              GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
+              // ─── Online Indicator & Bell icon ───────────────────────────────
+              Row(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isOnline ? Colors.green : Colors.red,
+                            boxShadow: [
+                              if (isOnline)
+                                BoxShadow(
+                                  color: Colors.green.withValues(alpha: 0.4),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isOnline ? 'Online' : 'Offline',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isOnline ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -399,6 +440,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       ),
                   ],
                 ),
+              ),
+              ],
               ),
             ],
           ),
@@ -560,14 +603,14 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFFE65100), Colors.orange],
+                        colors: [AppColors.dangerRed, Color(0xFFB91C1C)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.orange.withValues(alpha: 0.3),
+                          color: AppColors.dangerRed.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         )
@@ -598,7 +641,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             ],
           ),
           const SizedBox(height: 16),
-          // Ringkasan Tong Penuh (Dummy data for UI)
+          // Ringkasan Tempat Sampah Penuh (Dummy data for UI)
           if (!_hideFullBinAlert)
             Container(
               padding: const EdgeInsets.all(16),
@@ -620,12 +663,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Peringatan Tong Penuh',
+                          'Peringatan Tempat Sampah Penuh',
                           style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.dangerRed, fontSize: 14),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Ada 3 tong sampah yang mencapai kapasitas kritis dan perlu segera dikosongkan.',
+                          'Ada 3 tempat sampah yang mencapai kapasitas kritis dan perlu segera dikosongkan.',
                           style: TextStyle(fontSize: 12, color: AppColors.dangerRed),
                         ),
                       ],
@@ -667,7 +710,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+                    colors: [AppColors.organicColor, Color(0xFF388E3C)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -703,7 +746,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             onTap: isOnline
                 ? () => Navigator.of(context).pushNamed(AppRoutes.resetBin)
                 : () {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Koneksi internet diperlukan.'),
                         backgroundColor: AppColors.dangerRed,
@@ -851,14 +894,8 @@ class _RiwayatCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final String userLocation = (user != null && user.rtRw.isNotEmpty)
-        ? '${user.rtRw}, Kel. ${user.kelurahan}'
-        : 'RT 04 / RW 02';
+    // final String displayLocation = ...; (reserved for future location display feature)
 
-    final String displayLocation = (log.kelurahan != null && log.kelurahan!.isNotEmpty && log.kelurahan != 'Lokasi tidak diketahui')
-        ? log.kelurahan!
-        : (log.binQrSerial != null && log.binQrSerial!.isNotEmpty ? log.binQrSerial! : userLocation);
 
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color bgColor = isOrganic

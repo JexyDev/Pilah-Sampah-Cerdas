@@ -4,7 +4,6 @@ import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
-import '../../../data/services/notification_engine.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import '../../petugas_residu/controllers/petugas_residu_notifikasi_controller.dart';
@@ -148,8 +147,6 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
   /// Tandai satu notifikasi sebagai dibaca.
   Future<void> markRead(String id) async {
     state = const MarkReadState(isLoading: true);
-    markMhsMockAsRead(id);
-    markPetugasMockAsRead(id);
     final user = _ref.read(authProvider).user;
     if (user != null) {
       LocalNotificationCacheService().markAsRead(user.id, user.role.name, id);
@@ -171,8 +168,6 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
   /// Tandai semua notifikasi sebagai dibaca.
   Future<void> markAllRead() async {
     state = const MarkReadState(isLoading: true);
-    markAllMhsMocksAsRead();
-    markAllPetugasMocksAsRead();
     final user = _ref.read(authProvider).user;
     if (user != null) {
       LocalNotificationCacheService().markAllAsRead(user.id, user.role.name);

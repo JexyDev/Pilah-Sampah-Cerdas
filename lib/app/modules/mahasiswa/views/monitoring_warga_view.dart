@@ -277,7 +277,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Cari nama atau ID bin...',
+                    hintText: 'Cari nama atau ID tempat sampah...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -332,7 +332,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedKelurahan,
+                              initialValue: _selectedKelurahan,
                               decoration: const InputDecoration(labelText: 'Kelurahan', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
                               items: kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
                               onChanged: (val) {
@@ -348,7 +348,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedRtRw,
+                              initialValue: _selectedRtRw,
                               decoration: const InputDecoration(labelText: 'RT/RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
                               items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
                               onChanged: (val) {
@@ -775,7 +775,7 @@ class _CustomXYChartPainter extends CustomPainter {
     }
 
     // Draw X and Y Axes
-    canvas.drawLine(Offset(paddingLeft, paddingTop), Offset(paddingLeft, size.height - paddingBottom), paintAxis);
+    canvas.drawLine(const Offset(paddingLeft, paddingTop), Offset(paddingLeft, size.height - paddingBottom), paintAxis);
     canvas.drawLine(Offset(paddingLeft, size.height - paddingBottom), Offset(size.width - paddingRight, size.height - paddingBottom), paintAxis);
 
     if (data.isEmpty) return;

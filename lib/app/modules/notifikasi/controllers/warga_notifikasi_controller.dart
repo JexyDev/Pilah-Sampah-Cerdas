@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../../data/services/notification_engine.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';

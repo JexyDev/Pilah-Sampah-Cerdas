@@ -37,6 +37,35 @@ class KelompokKknView extends ConsumerWidget {
       ],
     );
 
+    // Deduplicate members by name
+    final uniqueMembers = <String, KelompokMemberData>{};
+    for (final m in kelompokData.members) {
+      final key = m.name.toLowerCase().trim();
+      if (!uniqueMembers.containsKey(key) || m.isLeader) {
+        uniqueMembers[key] = m;
+      }
+    }
+    // Ensure ONLY ONE leader exists to fix the double KETUA badge bug (First found wins)
+    bool hasFoundLeader = false;
+    final membersToDisplay = <KelompokMemberData>[];
+    
+    for (final m in uniqueMembers.values) {
+      if (m.isLeader && !hasFoundLeader) {
+        membersToDisplay.add(m);
+        hasFoundLeader = true;
+      } else if (m.isLeader && hasFoundLeader) {
+        // Strip the leader status from the secondary member
+        membersToDisplay.add(m.copyWith(isLeader: false));
+      } else {
+        membersToDisplay.add(m);
+      }
+    }
+    membersToDisplay.sort((a, b) {
+      if (a.isLeader && !b.isLeader) return -1;
+      if (!a.isLeader && b.isLeader) return 1;
+      return 0;
+    });
+
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
@@ -210,7 +239,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Penjumlahan poin individu ${kelompokData.members.length} anggota kelompok',
+                              'Penjumlahan poin individu ${membersToDisplay.length} anggota kelompok',
                               style: const TextStyle(fontSize: 11, color: Colors.black45),
                             ),
                           ],
@@ -236,7 +265,7 @@ class KelompokKknView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${kelompokData.members.length} Orang',
+                        '${membersToDisplay.length} Orang',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                       ),
                     ),
@@ -248,10 +277,11 @@ class KelompokKknView extends ConsumerWidget {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: kelompokData.members.length,
+                  itemCount: membersToDisplay.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final member = kelompokData.members[index];
+                    final member = membersToDisplay[index];
+                    final isCurrentUser = user != null && (member.name.toLowerCase().trim() == user.name.toLowerCase().trim());
                     return Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -292,10 +322,28 @@ class KelompokKknView extends ConsumerWidget {
                                   ),
                                 ),
                               ),
+                            if (isCurrentUser)
+                              Container(
+                                margin: const EdgeInsets.only(left: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                                ),
+                                child: const Text(
+                                  'ANDA',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                         subtitle: Text(
-                          'NIM: ${member.nim.isNotEmpty ? member.nim : "-"}',
+                          member.nim.isNotEmpty ? member.nim : '-',
                           style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                         ),
                         trailing: Column(

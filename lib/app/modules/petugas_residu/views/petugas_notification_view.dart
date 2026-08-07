@@ -31,14 +31,15 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
       appBar: AppBar(
         title: const Text(
           'Notifikasi Petugas Residu',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
         ),
-        backgroundColor: AppColors.primaryGreen,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: AppColors.primaryGreen),
+        elevation: 2,
+        shadowColor: Colors.black12,
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all_rounded, color: Colors.white),
+            icon: const Icon(Icons.done_all_rounded, color: AppColors.primaryGreen),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: markState.isLoading
                 ? null

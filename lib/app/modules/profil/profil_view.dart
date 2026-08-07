@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/values/app_colors.dart';
 import '../../routes/app_routes.dart';
 import '../auth/controllers/auth_controller.dart';
@@ -43,7 +44,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       if (mounted) {
         if (success) {
           ref.read(authProvider.notifier).fetchProfile();
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Foto profil berhasil diperbarui!'),
               backgroundColor: AppColors.primaryGreen,
@@ -51,7 +52,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
           );
         } else {
           final error = ref.read(authProvider).errorCode ?? 'Gagal mengunggah foto';
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Upload gagal: $error'),
               backgroundColor: AppColors.dangerRed,
@@ -71,10 +72,10 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       );
     }
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
-      return Image.network(
-        fotoPath,
+      return CachedNetworkImage(
+        imageUrl: fotoPath,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
+        errorWidget: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
       );
     }
     if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
@@ -84,10 +85,10 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
         return Image.file(file, fit: BoxFit.cover);
       }
     }
-    return Image.network(
-      '${AppConfig.baseUrl}$fotoPath',
+    return CachedNetworkImage(
+      imageUrl: '${AppConfig.baseUrl}$fotoPath',
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
+      errorWidget: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
     );
   }
 
@@ -229,19 +230,20 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                         if (user?.role == UserRole.mahasiswaKkn) ...[
                           _InfoTile(
                             Icons.school_outlined,
-                            'NIM / Universitas',
+                            'NIM',
                             (ref.watch(mahasiswaControllerProvider).dashboard?.nim.isNotEmpty == true)
-                                ? 'NIM: ${ref.watch(mahasiswaControllerProvider).dashboard!.nim}'
-                                : 'NIM: 136467959797',
+                                ? ref.watch(mahasiswaControllerProvider).dashboard!.nim
+                                : '136467959797',
                             bold: true,
                           ),
                           _divider(),
                           _InfoTile(
                             Icons.account_balance_outlined,
-                            'Jurusan / Prodi',
+                            'Fakultas',
                             (ref.watch(mahasiswaControllerProvider).dashboard?.jurusan.isNotEmpty == true)
                                 ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
-                                : 'Elektro',
+                                : 'Teknik Informatika',
+                            bold: true,
                           ),
                           _divider(),
                           _InfoTile(

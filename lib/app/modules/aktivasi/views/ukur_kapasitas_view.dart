@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
-import '../../../data/models/bin_entity.dart';
 import '../../scan/controllers/scan_controller.dart';
 
 class UkurKapasitasView extends ConsumerStatefulWidget {
@@ -89,7 +88,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,
@@ -270,7 +269,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 child: RadioListTile<String>(
                   title: const Text('Standar', style: TextStyle(fontSize: 13)),
                   value: 'Standar',
+                  // ignore: deprecated_member_use
                   groupValue: mode,
+                  // ignore: deprecated_member_use
                   onChanged: onModeChanged,
                   contentPadding: EdgeInsets.zero,
                   activeColor: color,
@@ -280,7 +281,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 child: RadioListTile<String>(
                   title: const Text('Manual (Dimensi)', style: TextStyle(fontSize: 13)),
                   value: 'Manual',
+                  // ignore: deprecated_member_use
                   groupValue: mode,
+                  // ignore: deprecated_member_use
                   onChanged: onModeChanged,
                   contentPadding: EdgeInsets.zero,
                   activeColor: color,
@@ -291,7 +294,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           const SizedBox(height: 12),
           if (mode == 'Standar')
             DropdownButtonFormField<String>(
-              value: standardSize,
+              initialValue: standardSize,
               decoration: InputDecoration(
                 labelText: 'Ukuran Kapasitas (Kg)',
                 border: OutlineInputBorder(

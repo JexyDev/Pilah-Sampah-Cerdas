@@ -64,9 +64,25 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
   final Ref _ref;
 
   Future<void> refreshAll() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    final repo = _ref.read(petugasResiduRepositoryProvider);
+    
+    // 1. Load from cache first
+    final cachedDash = await repo.getCachedDashboard();
+    final cachedJadwal = await repo.getCachedJadwalHarian();
+    final cachedHistory = await repo.getCachedHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter);
+    
+    if (cachedDash != null || cachedJadwal != null || cachedHistory != null) {
+      state = state.copyWith(
+        dashboard: cachedDash ?? state.dashboard,
+        jadwalList: cachedJadwal ?? state.jadwalList,
+        historyList: cachedHistory ?? state.historyList,
+      );
+    } else {
+      state = state.copyWith(isLoading: true, clearError: true);
+    }
+    
+    // 2. Fetch fresh from network
     try {
-      final repo = _ref.read(petugasResiduRepositoryProvider);
       final results = await Future.wait([
         repo.getDashboard(),
         repo.getJadwalHarian(),
@@ -80,10 +96,15 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
         historyList: results[2] as List<Map<String, dynamic>>,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Gagal memuat data Petugas Residu: $e',
-      );
+      if (cachedDash != null) {
+        // We have cache, silently ignore error
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Gagal memuat data Petugas Residu: $e',
+        );
+      }
     }
   }
 
@@ -102,6 +123,8 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    double? latitude,
+    double? longitude,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -111,6 +134,8 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
         actualWeightKg: actualWeightKg,
         classification: classification,
         photoPath: photoPath,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       if (success) {
@@ -127,16 +152,29 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
 
 
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
-    state = state.copyWith(
-      selectedDateRange: dateRange ?? state.selectedDateRange,
-      selectedTypeFilter: type ?? state.selectedTypeFilter,
-      isLoading: true,
-    );
+    final newDateRange = dateRange ?? state.selectedDateRange;
+    final newTypeFilter = type ?? state.selectedTypeFilter;
+    
+    final repo = _ref.read(petugasResiduRepositoryProvider);
+    final cachedList = await repo.getCachedHistory(dateRange: newDateRange, type: newTypeFilter);
+    if (cachedList != null && cachedList.isNotEmpty) {
+      state = state.copyWith(
+        selectedDateRange: newDateRange,
+        selectedTypeFilter: newTypeFilter,
+        historyList: cachedList,
+      );
+    } else {
+      state = state.copyWith(
+        selectedDateRange: newDateRange,
+        selectedTypeFilter: newTypeFilter,
+        isLoading: true,
+      );
+    }
+    
     try {
-      final repo = _ref.read(petugasResiduRepositoryProvider);
       final list = await repo.getHistory(
-        dateRange: state.selectedDateRange,
-        type: state.selectedTypeFilter,
+        dateRange: newDateRange,
+        type: newTypeFilter,
       );
       state = state.copyWith(isLoading: false, historyList: list);
     } catch (e) {

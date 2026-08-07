@@ -180,7 +180,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Gagal mengaktivasi bin warga. QR Code mungkin sudah diaktivasi sebelumnya.',
+          errorMessage: 'Gagal mengaktivasi tempat sampah warga. QR Code mungkin sudah diaktivasi sebelumnya.',
         );
         return false;
       }

@@ -165,7 +165,7 @@ class NotificationEngine {
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'activation_channel',
         'Aktivasi Berhasil',
-        channelDescription: 'Notifikasi aktivasi tong sampah',
+        channelDescription: 'Notifikasi aktivasi tempat sampah',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
@@ -177,8 +177,8 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: 4, // ID untuk notif aktivasi
-        title: 'Aktivasi Bin Berhasil! 🎉',
-        body: 'Selamat! Tong Anda sudah aktif. Anda mendapatkan +$points poin.',
+        title: 'Aktivasi Tempat Sampah Berhasil! 🎉',
+        body: 'Selamat! Tempat Sampah Anda sudah aktif. Anda mendapatkan +$points poin.',
         notificationDetails: platformDetails,
       );
     } catch (e) {
@@ -230,7 +230,7 @@ class NotificationEngine {
       await _flutterLocalNotificationsPlugin.show(
         id: 6,
         title: 'Pengajuan Pengosongan Terkirim ⏳',
-        body: 'Pengajuan pengosongan tong sampah Anda sedang diproses oleh petugas.',
+        body: 'Pengajuan pengosongan tempat sampah Anda sedang diproses oleh petugas.',
         notificationDetails: platformDetails,
       );
     } catch (e) {
@@ -295,6 +295,42 @@ class NotificationEngine {
       );
     } catch (e) {
       debugPrint('[NotificationEngine] Failed to show generic notification: $e');
+    }
+  }
+
+  Future<void> showOngoingKKNNotification(String message) async {
+    try {
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'kkn_location_channel',
+        'Pantauan Lokasi KKN',
+        channelDescription: 'Notifikasi persisten saat pemantauan lokasi aktif',
+        importance: Importance.low,
+        priority: Priority.low,
+        icon: '@mipmap/ic_launcher',
+        ongoing: true, // Tidak bisa di-swipe (harus di-cancel oleh sistem)
+        autoCancel: false,
+        color: Color(0xFF2196F3), // Blue
+      );
+      const NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: 999, // ID khusus untuk tracking persisten
+        title: 'Pemantauan GPS Aktif 📍',
+        body: message,
+        notificationDetails: platformDetails,
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show ongoing notification: $e');
+    }
+  }
+
+  Future<void> cancelOngoingKKNNotification() async {
+    try {
+      await _flutterLocalNotificationsPlugin.cancel(id: 999);
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to cancel ongoing notification: $e');
     }
   }
 

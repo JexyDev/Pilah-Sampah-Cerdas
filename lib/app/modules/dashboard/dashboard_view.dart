@@ -5,7 +5,7 @@ import '../../core/values/app_colors.dart';
 import '../../core/values/app_dimensions.dart';
 import '../../core/utils/responsive_utils.dart';
 import '../shared/controllers/connectivity_controller.dart';
-import '../shared/widgets/offline_banner.dart';
+// OfflineBanner dihapus karena diganti SnackBar
 import '../beranda/beranda_view.dart';
 import '../riwayat/views/riwayat_view.dart';
 import '../poin/poin_view.dart';
@@ -67,10 +67,18 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     // Dengarkan perubahan status koneksi untuk notifikasi "Internet kembali pulih"
     ref.listen<bool>(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Internet kembali pulih'),
             backgroundColor: AppColors.primaryGreen,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else if (prev == true && next == false) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anda sedang offline. Koneksi internet terputus.'),
+            backgroundColor: AppColors.dangerRed,
             duration: Duration(seconds: 3),
           ),
         );
@@ -94,7 +102,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       backgroundColor: AppColors.backgroundCanvas,
       body: Column(
         children: [
-          const OfflineBanner(),
+
           Expanded(child: screens[_selectedIndex]),
         ],
       ),
@@ -156,35 +164,49 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       child: SizedBox(
         height: AppDimensions.bottomNavHeight,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _navItem(
-              0, 
-              Icons.home_rounded, 
-              Icons.home_outlined, 
-              role == UserRole.petugasResidu ? 'Beranda' : 'Home'
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _navItem(
+                    0, 
+                    Icons.home_rounded, 
+                    Icons.home_outlined, 
+                    role == UserRole.petugasResidu ? 'Beranda' : 'Home'
+                  ),
+                  _navItem(
+                    1,
+                    role == UserRole.mahasiswaKkn ? Icons.stars_rounded : Icons.history_rounded,
+                    role == UserRole.mahasiswaKkn ? Icons.stars_outlined : Icons.history_outlined,
+                    role == UserRole.mahasiswaKkn ? 'Poin KKN' : (role == UserRole.petugasResidu ? 'Riwayat' : 'History'),
+                  ),
+                ],
+              ),
             ),
-            _navItem(
-              1,
-              role == UserRole.mahasiswaKkn ? Icons.stars_rounded : Icons.history_rounded,
-              role == UserRole.mahasiswaKkn ? Icons.stars_outlined : Icons.history_outlined,
-              role == UserRole.mahasiswaKkn ? 'Poin KKN' : (role == UserRole.petugasResidu ? 'Riwayat' : 'History'),
-            ),
-            if (isWarga || isPetugas) const SizedBox(width: 60),
-            _navItem(
-              3,
-              role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
-              (role == UserRole.petugasResidu ? Icons.monetization_on_rounded : Icons.stars_rounded),
-              role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
-              (role == UserRole.petugasResidu ? Icons.monetization_on_outlined : Icons.stars_outlined),
-              role == UserRole.mahasiswaKkn ? 'Monitoring' : 
-              (role == UserRole.petugasResidu ? 'Poin' : 'Poin'),
-            ),
-            _navItem(
-              4,
-              Icons.person_rounded,
-              Icons.person_outline_rounded,
-              role == UserRole.petugasResidu ? 'Profil' : 'Profile',
+            if (isWarga || isPetugas) const SizedBox(width: 64), // Perfect FAB hole
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _navItem(
+                    3,
+                    role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
+                    (role == UserRole.petugasResidu ? Icons.monetization_on_rounded : Icons.stars_rounded),
+                    role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
+                    (role == UserRole.petugasResidu ? Icons.monetization_on_outlined : Icons.stars_outlined),
+                    role == UserRole.mahasiswaKkn ? 'Monitoring' : 
+                    (role == UserRole.petugasResidu ? 'Poin' : 'Poin'),
+                  ),
+                  _navItem(
+                    4,
+                    Icons.person_rounded,
+                    Icons.person_outline_rounded,
+                    role == UserRole.petugasResidu ? 'Profil' : 'Profile',
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -229,7 +251,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       backgroundColor: AppColors.backgroundCanvas,
       body: Column(
         children: [
-          const OfflineBanner(),
+
           Expanded(
             child: Row(
               children: [

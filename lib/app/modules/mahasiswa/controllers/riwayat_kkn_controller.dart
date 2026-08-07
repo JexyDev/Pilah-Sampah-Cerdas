@@ -34,10 +34,31 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
   final Ref ref;
 
   Future<void> fetchHistory() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    final repo = ref.read(kknRepositoryProvider);
+    
+    // 1. Tampilkan cache jika ada
+    final cachedData = await repo.getCachedActivityLog();
+    if (cachedData != null && cachedData.isNotEmpty) {
+      final List<KknHistoryLog> parsedLogs = cachedData.map((e) {
+        final Map<String, dynamic> data = e as Map<String, dynamic>;
+        final typeStr = data['type']?.toString().toLowerCase() ?? '';
+        final type = typeStr == 'gps' ? KknHistoryType.gps : KknHistoryType.aktivasi;
+        return KknHistoryLog(
+          title: data['title']?.toString() ?? 'Riwayat Aktivitas',
+          subtitle: data['subtitle']?.toString() ?? '',
+          timestamp: DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now(),
+          type: type,
+          points: data['points'] != null ? int.tryParse(data['points'].toString()) : null,
+          isGpsActive: data['isGpsActive'] as bool?,
+        );
+      }).toList();
+      state = state.copyWith(logs: parsedLogs);
+    } else {
+      state = state.copyWith(isLoading: true, errorMessage: null);
+    }
+    
     try {
-      final repo = ref.read(kknRepositoryProvider);
-      final rawData = await repo.getKknHistory();
+      final rawData = await repo.getActivityLog();
       
       final List<KknHistoryLog> parsedLogs = rawData.map((e) {
         final Map<String, dynamic> data = e as Map<String, dynamic>;
@@ -58,10 +79,14 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
 
       state = state.copyWith(isLoading: false, logs: parsedLogs);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Gagal memuat riwayat: $e',
-      );
+      if (cachedData != null) {
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Gagal memuat riwayat: $e',
+        );
+      }
     }
   }
 

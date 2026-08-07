@@ -8,15 +8,6 @@ import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
 
 final Set<String> _petugasShownNotifIds = {};
-final Set<String> _petugasReadMockIds = {};
-
-void markPetugasMockAsRead(String id) {
-  _petugasReadMockIds.add(id);
-}
-
-void markAllPetugasMocksAsRead() {
-  _petugasReadMockIds.addAll(['petugas_welcome_01', 'petugas_welcome_02']);
-}
 
 bool _isPetugasResiduNotification(NotificationEntity notif) {
   final type = notif.type.toUpperCase();
@@ -108,31 +99,6 @@ final petugasResiduNotificationsProvider = FutureProvider<List<NotificationEntit
     if (!result.any((n) => n.id == fbItem.id)) {
       result.insert(0, fbItem);
     }
-  }
-
-  // Jika result masih kosong (belum ada notifikasi baru dari server/FCM),
-  // sediakan notifikasi default Petugas Residu agar layar selalu aktif.
-  if (result.isEmpty) {
-    result.addAll([
-      NotificationEntity(
-        id: 'petugas_welcome_01',
-        type: 'TIMBANGAN_RESIDU',
-        title: 'Konfirmasi Log Input Timbangan Residu',
-        desc: 'Log penimbangan sampah residu global RT/RW berhasil dicatat dan diverifikasi.',
-        isRead: _petugasReadMockIds.contains('petugas_welcome_01'),
-        time: 'Baru saja',
-        icon: 'scale_rounded',
-      ),
-      const NotificationEntity(
-        id: 'petugas_welcome_02',
-        type: 'WHITELIST_PETUGAS',
-        title: 'Status Akun Petugas Residu Hilir Aktif',
-        desc: 'Akun Petugas Residu Hilir Anda telah terdaftar & disetujui di wilayah tugas RT/RW.',
-        isRead: true,
-        time: '1 jam lalu',
-        icon: 'verified_user_rounded',
-      ),
-    ]);
   }
 
   return result;

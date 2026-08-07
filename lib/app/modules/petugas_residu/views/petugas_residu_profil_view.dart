@@ -1,15 +1,108 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/values/app_config.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/petugas_residu_controller.dart';
 
-class PetugasResiduProfilView extends ConsumerWidget {
+class PetugasResiduProfilView extends ConsumerStatefulWidget {
   const PetugasResiduProfilView({super.key});
 
-  void _confirmLogout(BuildContext context, WidgetRef ref) {
+  @override
+  ConsumerState<PetugasResiduProfilView> createState() => _PetugasResiduProfilViewState();
+}
+
+class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilView> {
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false;
+  File? _localImage;
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image != null) {
+        setState(() {
+          _localImage = File(image.path);
+          _isUploading = true;
+        });
+        
+        final success = await ref.read(authProvider.notifier).uploadAvatar(image.path);
+        
+        if (mounted) {
+          setState(() => _isUploading = false);
+          if (success) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Foto profil berhasil diperbarui!'), backgroundColor: AppColors.primaryGreen),
+            );
+          } else {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Gagal mengunggah foto.'), backgroundColor: AppColors.dangerRed),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Widget _buildAvatar(String? fotoPath, String name) {
+    if (_localImage != null) {
+      return Image.file(_localImage!, fit: BoxFit.cover, width: 80, height: 80);
+    }
+    
+    if (fotoPath == null || fotoPath.isEmpty) {
+      return Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'P',
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+        ),
+      );
+    }
+
+    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
+      return CachedNetworkImage(
+        imageUrl: fotoPath,
+        fit: BoxFit.cover,
+        width: 80,
+        height: 80,
+        errorWidget: (_, __, ___) => Center(
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : 'P',
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+          ),
+        ),
+      );
+    }
+
+    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\')) {
+      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+      final file = File(cleanPath);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover, width: 80, height: 80);
+      }
+    }
+
+    return CachedNetworkImage(
+      imageUrl: '${AppConfig.baseUrl}$fotoPath',
+      fit: BoxFit.cover,
+      width: 80,
+      height: 80,
+      errorWidget: (_, __, ___) => Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'P',
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+        ),
+      ),
+    );
+  }
+
+  void _confirmLogout() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -25,7 +118,7 @@ class PetugasResiduProfilView extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(ctx).pop();
               await ref.read(authProvider.notifier).logout();
-              if (context.mounted) {
+              if (mounted) {
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   AppRoutes.login,
                   (route) => false,
@@ -41,7 +134,7 @@ class PetugasResiduProfilView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final state = ref.watch(petugasResiduControllerProvider);
     final dashboard = state.dashboard;
@@ -51,11 +144,12 @@ class PetugasResiduProfilView extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(
           'Profil & Pengaturan',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
         ),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 2,
+        shadowColor: Colors.black12,
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -78,12 +172,33 @@ class PetugasResiduProfilView extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
-                    child: Text(
-                      user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'P',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                  GestureDetector(
+                    onTap: _isUploading ? null : _pickAndUploadImage,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: _isUploading
+                              ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
+                              : _buildAvatar(user?.fotoProfil, user?.name ?? 'Petugas'),
+                        ),
+                        if (!_isUploading)
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -209,7 +324,7 @@ class PetugasResiduProfilView extends ConsumerWidget {
                       child: const Icon(Icons.logout_rounded, color: AppColors.dangerRed, size: 20),
                     ),
                     title: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.dangerRed)),
-                    onTap: () => _confirmLogout(context, ref),
+                    onTap: _confirmLogout,
                   ),
                 ],
               ),

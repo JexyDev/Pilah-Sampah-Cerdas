@@ -1,22 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../../data/services/notification_engine.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
 
 final Set<String> _mhsShownNotifIds = {};
-final Set<String> _mhsReadMockIds = {};
-
-void markMhsMockAsRead(String id) {
-  _mhsReadMockIds.add(id);
-}
-
-void markAllMhsMocksAsRead() {
-  _mhsReadMockIds.addAll(['kkn_welcome_01', 'kkn_welcome_02', 'kkn_welcome_03']);
-}
 
 bool _isMahasiswaNotification(NotificationEntity notif) {
   final type = notif.type.toUpperCase();
@@ -115,40 +105,6 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     if (!result.any((n) => n.id == fbItem.id)) {
       result.insert(0, fbItem);
     }
-  }
-
-  // Jika result masih kosong (belum ada notifikasi baru dari server/FCM),
-  // tambahkan notifikasi panduan awal Mahasiswa KKN agar layar selalu berfungsi aktif.
-  if (result.isEmpty) {
-    result.addAll([
-      NotificationEntity(
-        id: 'kkn_welcome_01',
-        type: 'PEMANFAATAN_SAMPAH_AI',
-        title: 'Laporan Pemanfaatan Sampah AI Selesai',
-        desc: 'Hasil deteksi visi komputer AI & pemanfaatan daur ulang sampah sukses terverifikasi.',
-        isRead: _mhsReadMockIds.contains('kkn_welcome_01'),
-        time: 'Baru saja',
-        icon: 'analytics_rounded',
-      ),
-      NotificationEntity(
-        id: 'kkn_welcome_02',
-        type: 'AKTIVASI_TEMPAT_SAMPAH',
-        title: 'Aktivasi Tempat Sampah Warga Binaan',
-        desc: 'Tempat Sampah QR Warga Binaan Bojongsoang sukses terdaftar.',
-        isRead: _mhsReadMockIds.contains('kkn_welcome_02'),
-        time: '30 menit lalu',
-        icon: 'qr_code_scanner_rounded',
-      ),
-      NotificationEntity(
-        id: 'kkn_welcome_03',
-        type: 'PRESENSI_KKN',
-        title: 'Presensi Geofence KKN (2 Jam)',
-        desc: 'Durasi presensi zona KKN terhitung otomatis di lokasi penugasan.',
-        isRead: true,
-        time: '2 jam lalu',
-        icon: 'location_on_rounded',
-      ),
-    ]);
   }
 
   return result;

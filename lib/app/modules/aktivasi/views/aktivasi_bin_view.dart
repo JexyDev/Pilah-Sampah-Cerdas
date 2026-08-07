@@ -97,7 +97,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     if (permission == LocationPermission.deniedForever ||
         permission == LocationPermission.denied) {
       if (mounted && showDialogs) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
             backgroundColor: AppColors.dangerRed,
@@ -131,7 +131,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           success = false;
         } else {
           _qrAnorganik = detected;
-          _bothBinsDetected = true; // Kedua/satu tong berhasil di-scan
+          _bothBinsDetected = true; // Kedua/satu tempat sampah berhasil di-scan
         }
       }
     });
@@ -140,7 +140,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,
@@ -156,6 +156,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     double? lng;
 
     final user = ref.read(authProvider).user;
+    if (!mounted) return;
+    
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final double orgCapacity = args?['orgCapacity'] ?? 20.0;
     final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
@@ -201,10 +203,10 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           anorgCapacity: anorgCapacity,
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
-      // Refresh semua data yang terpengaruh setelah tong baru diaktivasi
+      // Refresh semua data yang terpengaruh setelah tempat sampah baru diaktivasi
       ref.invalidate(binsProvider);
       ref.invalidate(notificationsProvider);
-      // Refresh profil agar data tong di halaman Profil ikut segar
+      // Refresh profil agar data tempat sampah di halaman Profil ikut segar
       await ref.read(authProvider.notifier).fetchProfile();
     }
   }
@@ -236,7 +238,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
     ref.listen(aktivasiBinProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,
@@ -296,7 +298,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           // ── Area Scanner ──────────────────────────────────────────
           Expanded(
             child: _bothBinsDetected
-                // Setelah kedua tong terdeteksi — tampil konfirmasi
+                // Setelah kedua tempat sampah terdeteksi — tampil konfirmasi
                 ? Container(
                     color: const Color(0xFF3D4A3F),
                     child: Center(

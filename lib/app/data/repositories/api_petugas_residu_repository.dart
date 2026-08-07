@@ -21,6 +21,21 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   static const _cacheKeyHistory = 'petugas_residu_history_cache';
 
   @override
+  Future<PetugasResiduDashboard?> getCachedDashboard() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString(_cacheKeyDashboard);
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      try {
+        final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+        return PetugasResiduDashboard.fromJson(data);
+      } catch (e) {
+        debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<PetugasResiduDashboard> getDashboard() async {
     try {
       final response = await apiClient.dio.get('/petugas-residu/dashboard');
@@ -51,40 +66,41 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   }
 
   @override
-  Future<List<ResiduBinPickup>> getJadwalHarian({String? kelurahan, String? rtRw}) async {
-    try {
-      final Map<String, dynamic> queryParams = {};
-      if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
-      if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
-
-      final response = await apiClient.dio.get('/petugas-residu/jadwal-harian', queryParameters: queryParams);
-      if (response.statusCode == 200 && response.data != null) {
-        final List<dynamic> list = response.data is Map<String, dynamic>
-            ? (response.data['data'] as List<dynamic>? ?? [])
-            : (response.data as List<dynamic>? ?? []);
-        
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
-
-        if (list.isNotEmpty) {
-          return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
-        }
-        return [];
+  Future<List<ResiduBinPickup>?> getCachedJadwalHarian({String? kelurahan, String? rtRw}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString(_cacheKeyJadwal);
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      try {
+        final list = jsonDecode(cachedStr) as List<dynamic>;
+        return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+      } catch (e) {
+        debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
       }
-      throw Exception('Invalid response');
-    } catch (e) {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedStr = prefs.getString(_cacheKeyJadwal);
-      if (cachedStr != null && cachedStr.isNotEmpty) {
-        try {
-          final list = jsonDecode(cachedStr) as List<dynamic>;
-          return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
-        } catch (e) {
-          debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
-        }
-      }
-      rethrow;
     }
+    return null;
+  }
+
+  @override
+  Future<List<ResiduBinPickup>> getJadwalHarian({String? kelurahan, String? rtRw}) async {
+    final Map<String, dynamic> queryParams = {};
+    if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
+    if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
+
+    final response = await apiClient.dio.get('/petugas-residu/jadwal-harian', queryParameters: queryParams);
+    if (response.statusCode == 200 && response.data != null) {
+      final List<dynamic> list = response.data is Map<String, dynamic>
+          ? (response.data['data'] as List<dynamic>? ?? [])
+          : (response.data as List<dynamic>? ?? []);
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
+
+      if (list.isNotEmpty) {
+        return list.map((e) => ResiduBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    }
+    throw Exception('Invalid response');
   }
 
   @override
@@ -93,6 +109,8 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final compressedPhotoPath = await ImageCompressor.compressImage(
@@ -114,6 +132,8 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
         ),
         'isGlobalBin': true,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       });
       debugPrint('[ApiPetugasResiduRepository] Sending request to /petugas-residu/submit-log...');
 
@@ -154,6 +174,21 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   }
 
   @override
+  Future<List<Map<String, dynamic>>?> getCachedHistory({String? dateRange, String? type}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString(_cacheKeyHistory);
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      try {
+        final list = jsonDecode(cachedStr) as List<dynamic>;
+        return list.cast<Map<String, dynamic>>();
+      } catch (e) {
+        debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type}) async {
     try {
       final response = await apiClient.dio.get('/petugas-residu/riwayat', queryParameters: {
@@ -176,16 +211,6 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
       }
       throw Exception('Invalid response');
     } catch (e) {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedStr = prefs.getString(_cacheKeyHistory);
-      if (cachedStr != null && cachedStr.isNotEmpty) {
-        try {
-          final list = jsonDecode(cachedStr) as List<dynamic>;
-          return list.cast<Map<String, dynamic>>();
-        } catch (e) {
-          debugPrint('[ApiPetugasResiduRepository] Cache error: $e');
-        }
-      }
       rethrow;
     }
   }
@@ -193,10 +218,10 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   @override
   Future<bool> changePassword({required String oldPassword, required String newPassword}) async {
     try {
-      final response = await apiClient.dio.post(
-        '/auth/change-password',
+      final response = await apiClient.dio.put(
+        '/auth/password',
         data: {
-          'oldPassword': oldPassword,
+          'currentPassword': oldPassword,
           'newPassword': newPassword,
         },
       );

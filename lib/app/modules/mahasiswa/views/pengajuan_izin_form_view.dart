@@ -50,7 +50,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto surat/bukti izin wajib diunggah!'),
           backgroundColor: AppColors.dangerRed,
@@ -86,7 +86,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       if (errMsg.contains('404') || errMsg.contains('network') || errMsg.contains('connection')) {
         setState(() => _isSuccess = true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengirim: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -147,9 +147,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.amber.shade300),
               ),
-              child: Column(
+              child: const Column(
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.access_time_rounded, color: Colors.amber, size: 20),
                       SizedBox(width: 8),
@@ -159,8 +159,8 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Pengajuan izin/sakit Anda telah dikirimkan ke DPL (Dosen Pembimbing Lapangan) untuk diverifikasi. Anda akan mendapat notifikasi setelah diproses.',
                     style: TextStyle(fontSize: 12, color: Colors.black87),
                   ),
@@ -210,9 +210,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.08),
+                  color: AppColors.primaryBlue.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [

@@ -132,6 +132,27 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.delete_outline_rounded,
+                                          size: 14, color: Colors.white70),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          warga.binId.isEmpty || warga.binId == 'Belum Ada Bin'
+                                              ? 'Belum Ada Tempat Sampah'
+                                              : 'ID Tempat Sampah: ${warga.binId}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),

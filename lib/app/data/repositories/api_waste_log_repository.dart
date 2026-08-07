@@ -22,6 +22,23 @@ class ApiWasteLogRepository implements WasteLogRepository {
   // Response: { success: true, data: [{ id, tanggal, warga, kategori, berat, poin, createdAt }] }
 
   @override
+  Future<List<WasteLogEntity>?> getCachedWasteLogs(String userId) async {
+    final cacheKey = 'cached_waste_logs_$userId';
+    try {
+      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
+      if (cachedStr != null) {
+        final List<dynamic> cachedData = jsonDecode(cachedStr);
+        return cachedData
+            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
+            .toList();
+      }
+    } catch (e) {
+      // Abaikan error saat membaca cache
+    }
+    return null;
+  }
+
+  @override
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId) async {
     final cacheKey = 'cached_waste_logs_$userId';
     try {
@@ -38,22 +55,8 @@ class ApiWasteLogRepository implements WasteLogRepository {
       }
       return [];
     } on DioException catch (e) {
-      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
-      if (cachedStr != null) {
-        final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
-      }
       throw AppNetworkException(mapDioExceptionToMessage(e));
     } catch (e) {
-      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
-      if (cachedStr != null) {
-        final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
-      }
       if (e is AppNetworkException) rethrow;
       throw AppNetworkException('Kesalahan sistem: $e');
     }
@@ -155,7 +158,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
         (json['poin'] as num?)?.toInt() ?? 
         (json['points'] as num?)?.toInt() ?? 0;
 
-    // Ambil lokasi tong jika ada
+    // Ambil lokasi tempat sampah jika ada
     final String rawLoc = json['binLocation']?.toString() ??
         json['kelurahan']?.toString() ??
         json['rtRw']?.toString() ??

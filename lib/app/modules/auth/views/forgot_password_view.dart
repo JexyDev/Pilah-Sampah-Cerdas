@@ -50,6 +50,37 @@ class _ForgotPasswordViewState
   Timer? _toastTimer;
 
   @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    String text = _phoneController.text;
+    String clean = text.replaceAll(RegExp(r'[^\d]'), '');
+
+    bool changed = false;
+    if (clean.startsWith('0')) {
+      clean = clean.substring(1);
+      changed = true;
+    } else if (clean.startsWith('62')) {
+      clean = clean.substring(2);
+      changed = true;
+    }
+
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _phoneController.value = TextEditingValue(
+          text: clean,
+          selection: TextSelection.collapsed(offset: clean.length),
+        );
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     _newPasswordController.dispose();
@@ -501,9 +532,13 @@ class _ForgotPasswordViewState
           ),
           const SizedBox(height: 24),
 
-          const Text(
-            'NOMOR TELEPON',
-            style: TextStyle(
+          Text(
+            _phoneController.text.isEmpty
+                ? 'NOMOR TELEPON ATAU NIM'
+                : (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
+                    ? 'NOMOR TELEPON'
+                    : 'NIM',
+            style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
@@ -513,15 +548,17 @@ class _ForgotPasswordViewState
           const SizedBox(height: 6),
           TextFormField(
             controller: _phoneController,
-            keyboardType: TextInputType.phone,
+            keyboardType: TextInputType.number,
             autocorrect: false,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _onRequestOtp(),
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s]')),
+              FilteringTextInputFormatter.digitsOnly,
             ],
             decoration: InputDecoration(
-              hintText: '81234567890',
+              hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
+                  ? '81234567890'
+                  : '1301210000',
               prefixIcon: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 margin: const EdgeInsets.only(right: 8),

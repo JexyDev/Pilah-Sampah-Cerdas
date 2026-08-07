@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/waste_log_entity.dart';
@@ -123,9 +124,9 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Foto Bukti Setoran'),
-                                  content: Image.network(
-                                    entry.photoUrl ?? 'https://via.placeholder.com/300?text=Foto+Bukti+Pemilahan',
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
+                                  content: CachedNetworkImage(
+                                    imageUrl: entry.photoUrl ?? 'https://via.placeholder.com/300?text=Foto+Bukti+Pemilahan',
+                                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
                                   ),
                                   actions: [
                                     TextButton(

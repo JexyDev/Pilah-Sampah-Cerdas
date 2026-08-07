@@ -3,7 +3,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/bin_entity.dart';
 
-/// Badge status kapasitas tong (Safe / Warning / Critical).
+/// Badge status kapasitas tempat sampah (Safe / Warning / Critical).
 class BinStatusBadge extends StatelessWidget {
   const BinStatusBadge({super.key, required this.status});
 

@@ -31,7 +31,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
     // Listener untuk error marking read
     ref.listen<MarkReadState>(markReadProvider, (previous, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage ?? 'Gagal menandai notifikasi'),
             backgroundColor: AppColors.dangerRed,
@@ -112,6 +112,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
               onRefresh: () async => ref.invalidate(wargaNotificationsProvider),
               color: AppColors.primaryGreen,
               child: notifAsync.when(
+                skipLoadingOnReload: true,
                 loading: () => const AppLoading(message: 'Memuat notifikasi...'),
                 error: (e, _) => Center(
                   child: Column(

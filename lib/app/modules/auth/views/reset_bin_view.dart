@@ -34,7 +34,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       case 'RESOURCE_NOT_FOUND':
         return 'Tempat sampah tidak ditemukan.';
       case 'DUPLICATE_REQUEST':
-        return 'Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini. Tunggu sampai diproses petugas.';
+        return 'Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini. Silakan tunggu hingga diproses oleh petugas.';
       case 'BIN_NOT_OWNED':
         return 'Tempat sampah ini bukan milik Anda.';
       case 'VALIDATION_ERROR':
@@ -58,7 +58,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal memilih foto: $e')),
         );
       }
@@ -86,7 +86,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     // Error listener
     ref.listen(resetBinProvider, (_, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,
@@ -104,7 +104,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
             NotificationEngine().showResetPendingNotification();
-            ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Pengajuan pengosongan berhasil dikirim. Menunggu proses persetujuan RW (PENDING).'),
                 backgroundColor: AppColors.warningYellow,
@@ -247,7 +247,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               return InkWell(
                 onTap: () {
                   if (!isBinActive) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah ini dalam status NON-AKTIF dan tidak dapat dipilih.'),
                         duration: Duration(seconds: 2),
@@ -256,7 +256,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     return;
                   }
                   if (bin.capacityPercent < 0.70) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah belum terisi 70%. Tidak dapat mengajukan pengosongan.'),
                         backgroundColor: AppColors.dangerRed,
@@ -267,7 +267,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     return;
                   }
                   if (isPendingBin) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah ini sedang dalam proses pengajuan (PENDING).'),
                         duration: Duration(seconds: 2),
@@ -471,9 +471,9 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           child: ElevatedButton(
             onPressed: isPending
                 ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Sedang mengajukan reset Tong Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                        content: Text('Sedang mengajukan reset Tempat Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
                         backgroundColor: AppColors.warningYellow,
                         behavior: SnackBarBehavior.floating,
                         duration: Duration(seconds: 3),

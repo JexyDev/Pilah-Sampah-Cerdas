@@ -45,9 +45,9 @@ class TentangAplikasiView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 AppConfig.appName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primaryGreen,

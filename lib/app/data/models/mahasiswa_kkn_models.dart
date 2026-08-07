@@ -128,8 +128,8 @@ class WargaDampingan extends Equatable {
   double get errorPercentage =>
       totalActivities > 0 ? (incorrectCount / totalActivities) * 100 : 0.0;
 
-  /// Apakah warga membutuhkan edukasi ulang (threshold > 30% kesalahan)
-  bool get needsReeducation => errorPercentage > 30;
+  /// Apakah warga membutuhkan edukasi ulang (threshold < 80% pemilahan benar)
+  bool get needsReeducation => totalActivities > 0 && correctPercentage < 80;
 
   /// Tanggal terakhir warga aktif membuang sampah
   DateTime? get lastActiveDate {
@@ -144,11 +144,13 @@ class WargaDampingan extends Equatable {
             .toList() ??
         [];
 
-    final String extractedBinId = json['binId']?.toString() ??
-        json['id']?.toString() ??
-        json['wargaId']?.toString() ??
-        json['userId']?.toString() ??
-        '';
+    String extractedBinId = json['binId']?.toString() ?? '';
+    if (extractedBinId.isEmpty && json['bin'] != null && json['bin']['qrCode'] != null) {
+      extractedBinId = json['bin']['qrCode'].toString();
+    }
+    if (extractedBinId.isEmpty) {
+      extractedBinId = 'Belum Ada Tempat Sampah';
+    }
 
     String extractMhsId() {
       final candidates = [
@@ -246,7 +248,7 @@ class RegisterWargaRequest {
   /// Opsional: Alamat warga
   final String? address;
 
-  /// Opsional: QR Code tong sampah
+  /// Opsional: QR Code tempat sampah
   final String? qrCode;
 
   /// Opsional: ID RT/RW
@@ -414,7 +416,27 @@ class KelompokMemberData extends Equatable {
   }
 
   @override
-  List<Object?> get props => [userId, nim, individualPoints, fakultas];
+  List<Object?> get props => [userId, nim, individualPoints, fakultas, isLeader, name, jurusan];
+
+  KelompokMemberData copyWith({
+    String? userId,
+    String? nim,
+    String? name,
+    String? jurusan,
+    String? fakultas,
+    int? individualPoints,
+    bool? isLeader,
+  }) {
+    return KelompokMemberData(
+      userId: userId ?? this.userId,
+      nim: nim ?? this.nim,
+      name: name ?? this.name,
+      jurusan: jurusan ?? this.jurusan,
+      fakultas: fakultas ?? this.fakultas,
+      individualPoints: individualPoints ?? this.individualPoints,
+      isLeader: isLeader ?? this.isLeader,
+    );
+  }
 }
 
 class KelompokKknData extends Equatable {

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../data/models/bin_entity.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart';
 
 /// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
 /// Header Putih Bersih, Total Poin KKN + Status Ranking, Stats 3 Kolom,
@@ -24,6 +24,9 @@ class MahasiswaPoinView extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+          if (user != null) {
+            ref.invalidate(pointHistoryProvider);
+          }
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
@@ -48,15 +51,13 @@ class MahasiswaPoinView extends ConsumerWidget {
                   // ── 4. Judul & List Riwayat Poin ────────────────────
                   const Text(
                     'Riwayat Perolehan Poin KKN',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 12),
-
-                  _buildPoinHistoryList(mhsState, user?.id ?? ''),
+                  if (user != null)
+                    _buildPoinHistoryList(ref.watch(pointHistoryProvider))
+                  else
+                    const SizedBox.shrink(),
                   const SizedBox(height: 40),
                 ]),
               ),
@@ -158,7 +159,7 @@ class MahasiswaPoinView extends ConsumerWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _StatCard(
-            title: 'Aktif Bin',
+            title: 'Tempat Sampah Aktif',
             value: '$wargaCount Warga',
             icon: Icons.qr_code_scanner_rounded,
             color: AppColors.primaryBlueDark,
@@ -200,58 +201,64 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildPoinHistoryList(MahasiswaState mhsState, String userId) {
-    // Generate Poin History items dari aktivitas Mahasiswa
-    final List<PointHistoryEntity> mockHistory = [
-      if (mhsState.dashboard != null && mhsState.dashboard!.contributionPoints > 0)
-        PointHistoryEntity(
-          id: 'PH-GPS-01',
-          userId: userId,
-          points: 10,
-          wasteType: WasteType.organic,
-          description: 'Presensi Otomatis 2 Jam Zona KKN',
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+  Widget _buildPoinHistoryList(AsyncValue<List<PointHistoryEntity>> asyncHistory) {
+    return asyncHistory.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGreen),
         ),
-      ...mhsState.wargaList.where((w) => w.isActivated).take(5).map(
-            (w) => PointHistoryEntity(
-              id: 'PH-BIN-${w.binId}',
-              userId: userId,
-              points: 15,
-              wasteType: WasteType.nonOrganic,
-              description: 'Aktivasi Tempat Sampah - ${w.wargaName}',
-              createdAt: DateTime.now().subtract(const Duration(days: 1)),
-            ),
-          ),
-    ];
-
-    if (mockHistory.isEmpty) {
-      return Container(
+      ),
+      error: (err, _) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
         ),
-        child: const Column(
+        child: Column(
           children: [
-            Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
-            SizedBox(height: 8),
+            const Icon(Icons.error_outline, size: 40, color: AppColors.dangerRed),
+            const SizedBox(height: 8),
             Text(
-              'Belum ada riwayat perolehan poin.',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+              'Gagal memuat riwayat poin.\n$err',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ],
         ),
-      );
-    }
+      ),
+      data: (history) {
+        if (history.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
+                SizedBox(height: 8),
+                Text(
+                  'Belum ada riwayat perolehan poin.',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          );
+        }
 
-    return Column(
-      children: mockHistory
-          .map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _PoinHistoryItem(item: item),
-              ))
-          .toList(),
+        return Column(
+          children: history
+              .map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _PoinHistoryItem(item: item),
+                  ))
+              .toList(),
+        );
+      },
     );
   }
 }

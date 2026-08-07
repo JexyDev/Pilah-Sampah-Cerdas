@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 
-/// Widget QR Scanner terpusat — scan QR tong & aktivasi bin.
+/// Widget QR Scanner terpusat — scan QR tempat sampah & aktivasi bin.
 ///
 /// - Android/iOS: MobileScanner dengan permission request runtime
 /// - Web/Desktop: Input manual fallback

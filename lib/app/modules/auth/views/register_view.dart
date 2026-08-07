@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
-import '../../../core/values/app_strings.dart';
 import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/utils/phone_formatter.dart';
 import '../../../core/values/app_colors.dart';
@@ -76,6 +75,32 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   void initState() {
     super.initState();
     _loadDynamicTerritories();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    String text = _phoneController.text;
+    String clean = text.replaceAll(RegExp(r'[^\d]'), '');
+
+    bool changed = false;
+    if (clean.startsWith('0')) {
+      clean = clean.substring(1);
+      changed = true;
+    } else if (clean.startsWith('62')) {
+      clean = clean.substring(2);
+      changed = true;
+    }
+
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _phoneController.value = TextEditingValue(
+          text: clean,
+          selection: TextSelection.collapsed(offset: clean.length),
+        );
+      });
+    } else {
+      setState(() {});
+    }
   }
 
   String _cleanTerritoryName(dynamic val) {
@@ -429,28 +454,49 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _phoneController,
-                                keyboardType: TextInputType.phone,
+                                keyboardType: TextInputType.number,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9\+\-\s]'),
-                                  ),
+                                  FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                decoration: const InputDecoration(
-                                  hintText: '081234567890',
-                                  prefixIcon: Icon(
-                                    Icons.phone_outlined,
-                                    color: AppColors.textSecondary,
-                                    size: 20,
+                                decoration: InputDecoration(
+                                  hintText: '81234567890',
+                                  prefixIcon: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    margin: const EdgeInsets.only(right: 8),
+                                    decoration: const BoxDecoration(
+                                      border: Border(
+                                        right: BorderSide(color: Color(0xFFE5E7EB)),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('🇮🇩', style: TextStyle(fontSize: 18)),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          '+62',
+                                          style: TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'Nomor telepon wajib diisi';
                                   }
+                                  final clean = v.trim();
+                                  if (clean.startsWith('0')) {
+                                    return 'Mohon tidak menggunakan awalan 0 atau 62';
+                                  }
                                   final digits =
-                                      v.replaceAll(RegExp(r'[^\d]'), '');
+                                      clean.replaceAll(RegExp(r'[^\d]'), '');
                                   if (digits.length < 10 || digits.length > 13) {
                                     return 'Format nomor telepon tidak valid (10-13 digit)';
                                   }

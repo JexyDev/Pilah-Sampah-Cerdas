@@ -34,13 +34,13 @@ class KelolaBinView extends ConsumerWidget {
       body: binsAsync.when(
         data: (bins) {
           if (bins.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
-                  const SizedBox(height: 16),
-                  const Text(
+                  Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
+                  SizedBox(height: 16),
+                  Text(
                     'Belum ada tempat sampah terdaftar.',
                     style: TextStyle(color: AppColors.textSecondary),
                   ),

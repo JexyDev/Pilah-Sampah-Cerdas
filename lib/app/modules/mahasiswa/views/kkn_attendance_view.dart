@@ -14,14 +14,16 @@ class KknAttendanceView extends ConsumerStatefulWidget {
 }
 
 class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
-  String? _selectedScheduleId = 'SCH-TODAY';
-  String? _selectedScheduleTitle = 'Kegiatan KKN Posko';
+  final String _selectedScheduleId = 'SCH-TODAY';
+  final String _selectedScheduleTitle = 'Kegiatan KKN Posko';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(kknLocationProvider.notifier).startTracking(context);
+      final notifier = ref.read(kknLocationProvider.notifier);
+      notifier.startTracking(context);
+      notifier.setActiveSchedule(_selectedScheduleId);
     });
   }
 
@@ -44,13 +46,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (_selectedScheduleId != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                locationNotifier.setActiveSchedule(_selectedScheduleId!);
-              },
-            )
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              locationNotifier.setActiveSchedule(_selectedScheduleId);
+            },
+          )
         ],
       ),
       body: Padding(
@@ -74,7 +75,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
-            _selectedScheduleTitle ?? 'Kegiatan KKN Posko',
+            _selectedScheduleTitle,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
         ),
@@ -85,7 +86,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.dangerRed.withOpacity(0.1),
+              color: AppColors.dangerRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -210,8 +211,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                       const Text('Target Lokasi:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       Text(
                         activity != null
-                            ? '${(activity['latitude'] as double).toStringAsFixed(5)}, ${(activity['longitude'] as double).toStringAsFixed(5)}'
-                            : '-',
+                            ? '${((activity['latitude'] as num?)?.toDouble() ?? -6.96772).toStringAsFixed(5)}, ${((activity['longitude'] as num?)?.toDouble() ?? 107.65906).toStringAsFixed(5)}'
+                            : '-6.96772, 107.65906',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -224,7 +225,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                     children: [
                       const Text('Radius Toleransi:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       Text(
-                        activity != null ? '${activity['radius']} meter' : '-',
+                        activity != null ? '${activity['radius'] ?? 500} meter' : '500 meter',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -375,7 +376,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
             height: 52,
             child: ElevatedButton(
               onPressed: state.isEligibleForAttendance
-                  ? () => _showWilayahDialog(notifier)
+                  ? () => _showWilayahDialog(notifier, state)
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
@@ -388,20 +389,18 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   Icon(Icons.location_on_rounded, size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'Absen Sekarang (Pilih Wilayah)',
+                    'Absen Sekarang (Kirim ke DPL)',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
-          if (!state.isEligibleForAttendance) ...[
+          if (!state.isInsideRadius) ...[
             const SizedBox(height: 8),
-            Text(
-              !state.isInsideRadius
-                  ? 'Tombol absen dinonaktifkan karena Anda berada di luar radius lokasi.'
-                  : 'Tombol absen dinonaktifkan hingga Anda berada di dalam zona selama 2 jam berturut-turut.',
-              style: const TextStyle(fontSize: 11, color: AppColors.dangerRed, fontStyle: FontStyle.italic),
+            const Text(
+              'Tombol absen dinonaktifkan karena Anda berada di luar radius lokasi.',
+              style: TextStyle(fontSize: 11, color: AppColors.dangerRed, fontStyle: FontStyle.italic),
               textAlign: TextAlign.center,
             ),
           ],
@@ -417,8 +416,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   context,
                   AppRoutes.pengajuanIzin,
                   arguments: {
-                    'scheduleId': _selectedScheduleId ?? 'SCH-TODAY',
-                    'scheduleTitle': _selectedScheduleTitle ?? 'Kegiatan KKN Posko',
+                    'scheduleId': _selectedScheduleId,
+                    'scheduleTitle': _selectedScheduleTitle,
                   },
                 );
               },
@@ -439,11 +438,14 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
     );
   }
 
-  void _showWilayahDialog(KknLocationNotifier notifier) {
-    final kodeZonaCtrl = TextEditingController(text: 'ZONA-KKN-01');
-    final rtRwCtrl = TextEditingController(text: '001/002');
-    String selectedKelurahan = 'Bojongsoang';
-    final kelurahanList = ['Bojongsoang', 'Sukapura', 'Mengger', 'Dayeuhkolot', 'Cipagalo'];
+  void _showWilayahDialog(KknLocationNotifier notifier, KknLocationState state) {
+    final activity = state.activeActivity;
+    final activityTitle = activity?['title']?.toString() ?? 'Kegiatan KKN';
+    
+    final kodeZonaCtrl = TextEditingController(text: activity?['kodeZona']?.toString() ?? 'ZONA-KKN-TERKUNCI');
+    final rtRwCtrl = TextEditingController(text: activity?['rtRw']?.toString() ?? 'Sesuai Penugasan');
+    final selectedKelurahan = activity?['kelurahan']?.toString() ?? 'Bojongsoang';
+    
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
@@ -473,7 +475,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Pilih Wilayah & Kode Zona',
+                          'Data Wilayah Terkunci API',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -487,54 +489,48 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Pilih wilayah pendampingan tempat Anda bertugas hari ini:',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    Text(
+                      'Anda berada di zona: $activityTitle.\nData wilayah telah disesuaikan dengan koordinat GPS Anda.',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: selectedKelurahan,
+                    TextFormField(
+                      initialValue: selectedKelurahan,
+                      readOnly: true,
+                      enabled: false,
                       decoration: InputDecoration(
-                        labelText: 'Kelurahan',
+                        labelText: 'Kelurahan (Terkunci)',
                         prefixIcon: const Icon(Icons.location_city_rounded),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
                       ),
-                      items: kelurahanList
-                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setModalState(() => selectedKelurahan = val);
-                        }
-                      },
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: rtRwCtrl,
+                      readOnly: true,
+                      enabled: false,
                       decoration: InputDecoration(
-                        labelText: 'RT / RW (Format: 001/002)',
-                        hintText: '001/002',
+                        labelText: 'RT / RW (Terkunci)',
                         prefixIcon: const Icon(Icons.tag_rounded),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
                       ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'RT/RW wajib diisi';
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: kodeZonaCtrl,
+                      readOnly: true,
+                      enabled: false,
                       decoration: InputDecoration(
-                        labelText: 'Kode / Nama Zona Posko',
-                        hintText: 'ZONA-KKN-01',
+                        labelText: 'Kode Zona (Terkunci)',
                         prefixIcon: const Icon(Icons.pin_drop_rounded),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
                       ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Kode Zona wajib diisi';
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 20),
                     SizedBox(

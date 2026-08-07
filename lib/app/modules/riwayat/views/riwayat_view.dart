@@ -9,7 +9,6 @@ import '../../shared/widgets/skeleton_loading.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/weight_text.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-import '../../auth/controllers/auth_controller.dart';
 
 import 'package:flutter/foundation.dart';
 import 'pemilahan_monitoring_dashboard_view.dart';
@@ -105,7 +104,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
               onRefresh: () async {
                 final isOnline = ref.read(isOnlineProvider);
                 if (!isOnline) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Anda sedang offline'),
                       backgroundColor: AppColors.dangerRed,
@@ -242,86 +241,95 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       grouped.putIfAbsent(key, () => []).add(log);
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Summary row
-        Row(
-          children: [
-            Expanded(
-              child: _SummaryCard(
-                icon: Icons.delete_rounded,
-                iconColor: AppColors.organicColor,
-                bgColor: AppColors.organicColor.withValues(alpha: 0.12),
-                label: 'Organik',
-                valueWidget: WeightText(
-                  organicKg,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                value: '',
-                valueColor: AppColors.organicColor,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _SummaryCard(
-                icon: Icons.delete_rounded,
-                iconColor: AppColors.nonOrganicColor,
-                bgColor: AppColors.nonOrganicColor.withValues(alpha: 0.12),
-                label: 'Anorganik',
-                valueWidget: WeightText(
-                  nonOrganicKg,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                value: '',
-                valueColor: AppColors.nonOrganicColor,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+    final List<dynamic> flatList = [];
+    flatList.add('SUMMARY');
+    for (final entry in grouped.entries) {
+      flatList.add(entry.key);
+      flatList.addAll(entry.value);
+    }
 
-        // Grouped entries
-        ...grouped.entries.map(
-          (entry) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: flatList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == flatList.length) {
+          return const SizedBox(height: 80);
+        }
+        final item = flatList[index];
+
+        if (item == 'SUMMARY') {
+          return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8, top: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      entry.key.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                        letterSpacing: 0.5,
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryCard(
+                      icon: Icons.delete_rounded,
+                      iconColor: AppColors.organicColor,
+                      bgColor: AppColors.organicColor.withValues(alpha: 0.12),
+                      label: 'Organik',
+                      valueWidget: WeightText(
+                        organicKg,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
+                      value: '',
+                      valueColor: AppColors.organicColor,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SummaryCard(
+                      icon: Icons.delete_rounded,
+                      iconColor: AppColors.nonOrganicColor,
+                      bgColor: AppColors.nonOrganicColor.withValues(alpha: 0.12),
+                      label: 'Anorganik',
+                      valueWidget: WeightText(
+                        nonOrganicKg,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      value: '',
+                      valueColor: AppColors.nonOrganicColor,
+                    ),
+                  ),
+                ],
               ),
-              ...entry.value.map(
-                (log) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _RiwayatItem(log: log),
-                ),
-              ),
+              const SizedBox(height: 16),
             ],
-          ),
-        ),
-        const SizedBox(height: 80),
-      ],
+          );
+        } else if (item is String) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  item.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else if (item is WasteLogEntity) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _RiwayatItem(log: item),
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -425,14 +433,7 @@ class _RiwayatItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final String userLocation = (user != null && user.rtRw.isNotEmpty)
-        ? '${user.rtRw}, Kel. ${user.kelurahan}'
-        : 'RT 04 / RW 02';
-
-    final String displayLocation = (log.kelurahan != null && log.kelurahan!.isNotEmpty && log.kelurahan != 'Lokasi tidak diketahui' && log.kelurahan != 'null')
-        ? log.kelurahan!
-        : (log.binQrSerial != null && log.binQrSerial!.isNotEmpty ? log.binQrSerial! : userLocation);
+    // final String displayLocation = ...; (reserved for future location display feature)
 
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color color = isOrganic

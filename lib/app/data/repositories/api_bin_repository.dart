@@ -59,7 +59,7 @@ class ApiBinRepository implements BinRepository {
           return bin;
         }).toList();
 
-        // Auto-clean approved/processed reset requests jika volume tong di backend sudah 0L
+        // Auto-clean approved/processed reset requests jika volume tempat sampah di backend sudah 0L
         for (final entry in allKeys.entries) {
           if (entry.key.startsWith('active_reset_request_')) {
             try {
@@ -104,7 +104,7 @@ class ApiBinRepository implements BinRepository {
       }
       throw BinException(
         'NETWORK_ERROR',
-        'Gagal memuat tong sampah: ${e.message}',
+        'Gagal memuat tempat sampah: ${e.message}',
       );
     } catch (e) {
       // Fallback to cache on other errors
@@ -321,13 +321,13 @@ class ApiBinRepository implements BinRepository {
       if (errorCode == 'BIN_TYPE_MISMATCH' || (serverMsg != null && serverMsg.toLowerCase().contains('jenis'))) {
         throw BinException(
           'BIN_TYPE_MISMATCH',
-          serverMsg ?? 'Jenis sampah tidak sesuai tong ini.',
+          serverMsg ?? 'Jenis sampah tidak sesuai tempat sampah ini.',
         );
       }
       if (errorCode == 'BIN_OVERFLOW' || (serverMsg != null && serverMsg.toLowerCase().contains('penuh'))) {
         throw BinException(
           'BIN_OVERFLOW',
-          serverMsg ?? 'Tong sudah penuh! Ajukan pengosongan tong.',
+          serverMsg ?? 'Tempat Sampah sudah penuh! Ajukan pengosongan tempat sampah.',
         );
       }
       if (errorCode == 'LOCATION_OUT_OF_RANGE' || (serverMsg != null && serverMsg.toLowerCase().contains('jauh'))) {
@@ -345,13 +345,13 @@ class ApiBinRepository implements BinRepository {
       if (errorCode == 'BIN_NOT_ACTIVATED' || (serverMsg != null && serverMsg.toLowerCase().contains('aktivasi'))) {
         throw BinException(
           'BIN_NOT_ACTIVATED',
-          serverMsg ?? 'Tong sampah belum diaktivasi.',
+          serverMsg ?? 'Tempat Sampah sampah belum diaktivasi.',
         );
       }
       if (errorCode == 'BIN_NOT_OWNED' || (serverMsg != null && serverMsg.toLowerCase().contains('milik'))) {
         throw BinException(
           'BIN_NOT_OWNED',
-          serverMsg ?? 'Tong ini bukan milik Anda.',
+          serverMsg ?? 'Tempat Sampah ini bukan milik Anda.',
         );
       }
       if (errorCode == 'VALIDATION_ERROR') {
@@ -379,7 +379,7 @@ class ApiBinRepository implements BinRepository {
   }
 
   // ─── Activate Bin ─────────────────────────────────────────────────────────
-  // Mengaktivasi tong sampah kosong menjadi milik warga melalui HTTP POST.
+  // Mengaktivasi tempat sampah kosong menjadi milik warga melalui HTTP POST.
 
   @override
   Future<BinEntity> activateBin({
@@ -406,7 +406,7 @@ class ApiBinRepository implements BinRepository {
         }
         return _mapMyBin(data as Map<String, dynamic>);
       }
-      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tong sampah');
+      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tempat sampah');
     } on DioException catch (e) {
       final errorCode = e.response?.data?['error']?.toString();
       final message = e.response?.data?['message']?.toString();
@@ -465,7 +465,7 @@ class ApiBinRepository implements BinRepository {
           return data.map((e) => _mapMyBin(e as Map<String, dynamic>)).toList();
         }
       }
-      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tong sampah');
+      throw const BinException('ACTIVATION_FAILED', 'Gagal mengaktivasi tempat sampah');
     } on DioException catch (e) {
       final errorCode = e.response?.data?['error']?.toString();
       final message = e.response?.data?['message']?.toString();
@@ -480,7 +480,7 @@ class ApiBinRepository implements BinRepository {
         throw const BinException('ALREADY_ACTIVATED', 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.');
       }
       if (errorCode == 'BIN_CATEGORY_DUPLICATE') {
-        throw BinException('BIN_CATEGORY_DUPLICATE', message ?? 'Kategori tong sudah terdaftar.');
+        throw BinException('BIN_CATEGORY_DUPLICATE', message ?? 'Kategori tempat sampah sudah terdaftar.');
       }
       if (errorCode == 'BAD_REQUEST') {
         throw BinException('BAD_REQUEST', message ?? 'Permintaan tidak valid.');
@@ -542,19 +542,19 @@ class ApiBinRepository implements BinRepository {
       if (errorCode == 'DUPLICATE_REQUEST') {
         throw BinException(
           'DUPLICATE_REQUEST',
-          message ?? 'Sudah ada pengajuan pengosongan aktif untuk tong ini.',
+          message ?? 'Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini.',
         );
       }
       if (errorCode == 'BIN_NOT_OWNED') {
         throw const BinException(
           'BIN_NOT_OWNED',
-          'Tong ini bukan milik Anda.',
+          'Tempat Sampah ini bukan milik Anda.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND') {
         throw const BinException(
           'BIN_NOT_FOUND',
-          'Tong tidak ditemukan.',
+          'Tempat Sampah tidak ditemukan.',
         );
       }
       if (errorCode == 'VALIDATION_ERROR') {
@@ -578,12 +578,12 @@ class ApiBinRepository implements BinRepository {
     try {
       final cachedStr = await apiClient.secureStorage.read(key: 'active_reset_request_$userId');
       if (cachedStr != null) {
-        // Cek apakah tong-tong pengguna saat ini sudah kosong/dikirim ulang (< 25L)
+        // Cek apakah tong-tempat sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
         try {
           final bins = await getBinsByHousehold(userId);
           final bool isAnyFull = bins.any((b) => b.isActive && b.currentVolumeL >= b.maxCapacityL);
           if (!isAnyFull) {
-            // Jika semua tong sudah tidak penuh (misal 0L), berarti pengajuan sudah disetujui/selesai!
+            // Jika semua tempat sampah sudah tidak penuh (misal 0L), berarti pengajuan sudah disetujui/selesai!
             await apiClient.secureStorage.delete(key: 'active_reset_request_$userId');
             return null;
           }

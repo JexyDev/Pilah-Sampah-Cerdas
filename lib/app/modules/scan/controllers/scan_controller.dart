@@ -10,7 +10,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 // ─── Bins Provider ────────────────────────────────────────────────────────────
 
-/// Provider daftar tong sampah pribadi warga yang login.
+/// Provider daftar tempat sampah pribadi warga yang login.
 /// Memanggil GET /api/v1/bins/my — backend filter by ownerUserId dari JWT.
 /// householdId parameter tidak digunakan lagi (dikirim kosong).
 final binsProvider = FutureProvider<List<BinEntity>>((ref) async {
@@ -18,7 +18,7 @@ final binsProvider = FutureProvider<List<BinEntity>>((ref) async {
   // Pastikan user sudah login sebelum fetch
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
-  // Hanya role warga yang memiliki akses tong sampah pribadi
+  // Hanya role warga yang memiliki akses tempat sampah pribadi
   if (user.role != UserRole.warga) return [];
   return repo.getBinsByHousehold('');
 });
@@ -128,7 +128,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // 1. Ambil data tong dari cache/server untuk client-side geofencing
+      // 1. Ambil data tempat sampah dari cache/server untuk client-side geofencing
       final bin = await _binRepository.getBinByQrSerial(qrCode);
       if (bin != null) {
         // Hitung jarak Haversine (client-side)
@@ -140,7 +140,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         if (distance > 500.0) { // Diperbesar jadi 500m agar tidak mudah error saat QC testing
           throw const BinException(
             'LOCATION_OUT_OF_RANGE',
-            'Anda terlalu jauh dari tong sampah (> 500m).',
+            'Anda terlalu jauh dari tempat sampah (> 500m).',
           );
         }
 
@@ -155,7 +155,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
           final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(0.0, 999.0);
           throw BinException(
             'BIN_OVERFLOW',
-            'Kapasitas tong tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
+            'Kapasitas tempat sampah tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
           );
         }
       }

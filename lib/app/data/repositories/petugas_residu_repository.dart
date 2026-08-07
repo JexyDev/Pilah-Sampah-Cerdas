@@ -1,9 +1,11 @@
 import '../models/petugas_residu_models.dart';
 
 abstract class PetugasResiduRepository {
+  Future<PetugasResiduDashboard?> getCachedDashboard();
   /// Ambil ringkasan dashboard Petugas Residu
   Future<PetugasResiduDashboard> getDashboard();
 
+  Future<List<ResiduBinPickup>?> getCachedJadwalHarian({String? kelurahan, String? rtRw});
   /// Ambil daftar tempat sampah dalam assignedZone dengan volume >= 70%
   Future<List<ResiduBinPickup>> getJadwalHarian({String? kelurahan, String? rtRw});
 
@@ -13,9 +15,11 @@ abstract class PetugasResiduRepository {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    double? latitude,
+    double? longitude,
   });
 
-
+  Future<List<Map<String, dynamic>>?> getCachedHistory({String? dateRange, String? type});
   /// Ambil riwayat gabungan setoran manual & violation milik petugas
   Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type});
 

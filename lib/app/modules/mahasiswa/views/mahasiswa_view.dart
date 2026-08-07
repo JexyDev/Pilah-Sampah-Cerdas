@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/values/app_config.dart';
 import '../../../core/values/app_colors.dart';
@@ -14,6 +15,7 @@ import '../controllers/location_ping_controller.dart';
 import '../controllers/kkn_location_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../shared/controllers/connectivity_controller.dart';
 
 class MahasiswaView extends ConsumerStatefulWidget {
   const MahasiswaView({super.key});
@@ -29,7 +31,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
       ref.read(locationPingControllerProvider.notifier).startTracking();
-      ref.read(kknLocationProvider.notifier).startTracking(context);
+      final kknNotifier = ref.read(kknLocationProvider.notifier);
+      kknNotifier.startTracking(context);
+      kknNotifier.setActiveSchedule('SCH-TODAY');
     });
   }
 
@@ -41,7 +45,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
-      body: state.isLoading
+      body: state.isLoading && state.dashboard == null
           ? const AppLoading(message: 'Memuat dashboard KKN...')
           : state.errorMessage != null
               ? _buildError(state.errorMessage!)
@@ -59,10 +63,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                             _buildSummaryCards(state),
                             const SizedBox(height: AppDimensions.md),
                             _buildLocationStatus(locationState, kknLocationState),
-                            if (state.wargaNeedReeducation.isNotEmpty) ...[
-                              const SizedBox(height: AppDimensions.md),
-                              _buildReeducationAlert(state.wargaNeedReeducation),
-                            ],
                             const SizedBox(height: AppDimensions.lg),
                             _buildQuickActions(),
                             const SizedBox(height: AppDimensions.lg),
@@ -104,10 +104,10 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     }
 
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
-      return Image.network(
-        fotoPath,
+      return CachedNetworkImage(
+        imageUrl: fotoPath,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Center(
+        errorWidget: (_, __, ___) => Center(
           child: Text(
             name.isNotEmpty ? name[0].toUpperCase() : 'M',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
@@ -124,10 +124,10 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
       }
     }
 
-    return Image.network(
-      '${AppConfig.baseUrl}$fotoPath',
+    return CachedNetworkImage(
+      imageUrl: '${AppConfig.baseUrl}$fotoPath',
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Center(
+      errorWidget: (_, __, ___) => Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : 'M',
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
@@ -140,6 +140,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final dashboard = state.dashboard;
     final user = ref.watch(authProvider).user;
     final unreadCount = ref.watch(unreadNotificationCountProvider);
+    final isOnline = ref.watch(isOnlineProvider);
 
     final name = (user?.name != null && user!.name.trim().isNotEmpty)
         ? user.name
@@ -157,12 +158,53 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
-      expandedHeight: 165,
+      expandedHeight: 195,
       pinned: true,
       backgroundColor: Colors.white,
       foregroundColor: AppColors.textPrimary,
       elevation: 0.5,
       actions: [
+        // Online Indicator
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isOnline ? Colors.green : Colors.red,
+                    boxShadow: [
+                      if (isOnline)
+                        BoxShadow(
+                          color: Colors.green.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isOnline ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isOnline ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         IconButton(
           onPressed: () => Navigator.pushNamed(context, AppRoutes.mahasiswaNotifikasi),
           icon: Stack(
@@ -264,6 +306,17 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$nim • $jurusan',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                         ),
@@ -282,29 +335,16 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.badge_outlined, size: 14, color: AppColors.primaryGreen),
+                        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primaryGreen),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'NIM: $nim • $jurusan',
+                            'Kel. $kelurahan • RT/RW $rtRw',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primaryGreen,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                        const SizedBox(width: 3),
-                        Text(
-                          'Kel. $kelurahan RT $rtRw',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -359,7 +399,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         Expanded(
           child: _SummaryCard(
             icon: Icons.verified_user_rounded,
-            label: 'Aktif Bin',
+            label: 'Tempat Sampah Aktif',
             value: '$wargaAktif',
             color: AppColors.primaryBlueDark,
           ),
@@ -407,20 +447,10 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: isOn ? AppColors.success : AppColors.dangerRed,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (isOn ? AppColors.success : AppColors.dangerRed)
-                      .withValues(alpha: 0.4),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
+          Icon(
+            isOn ? Icons.location_on_rounded : Icons.location_off_rounded,
+            color: isOn ? AppColors.success : AppColors.dangerRed,
+            size: 20,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -472,81 +502,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Reeducation Alert
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  Widget _buildReeducationAlert(List<WargaDampingan> wargaList) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: AppColors.warningYellow.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(
-          color: AppColors.warningYellow.withValues(alpha: 0.4),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.warningOrange, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Perlu Edukasi Ulang',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.warningOrange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...wargaList.take(3).map((w) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        w.wargaName,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.dangerRed.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                      ),
-                      child: Text(
-                        '${w.errorPercentage.toStringAsFixed(0)}% salah',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.dangerRed,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-          if (wargaList.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                '+${wargaList.length - 3} warga lainnya',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // Quick Actions
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -570,7 +525,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 icon: Icons.groups_rounded,
                 title: 'Kelompok KKN',
                 subtitle: 'Lihat tim & DPL',
-                gradientColors: const [Color(0xFF10B981), Color(0xFF059669)],
+                gradientColors: const [AppColors.primaryBlueLight, AppColors.primaryBlue],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.kelompokKkn),
               ),
             ),
@@ -580,7 +535,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 icon: Icons.qr_code_scanner_rounded,
                 title: 'Aktivasi Tempat Sampah',
                 subtitle: 'Pindai barcode warga',
-                gradientColors: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                gradientColors: const [AppColors.primaryBlue, AppColors.primaryBlueDark],
                 onTap: () {
                   Navigator.pushNamed(
                     context, 
@@ -600,7 +555,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 icon: Icons.location_on_rounded,
                 title: 'Absensi GPS KKN',
                 subtitle: 'Presensi 2 jam zona KKN',
-                gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                gradientColors: const [Color(0xFF38BDF8), AppColors.primaryBlue],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
               ),
             ),
@@ -608,9 +563,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.recycling_rounded,
-                title: 'Pemanfaatan Sampah',
-                subtitle: 'Katalog & olah sampah',
-                gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                title: 'Kegiatan Mahasiswa',
+                subtitle: 'Individu & Pemanfaatan',
+                gradientColors: const [Color(0xFF0284C7), Color(0xFF0C4A6E)],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
               ),
             ),

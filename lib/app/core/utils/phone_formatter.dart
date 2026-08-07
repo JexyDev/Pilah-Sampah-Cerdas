@@ -1,12 +1,7 @@
 class PhoneFormatter {
-  /// Memformat input untuk Login (Sesuai aturan: kirim apa adanya "08...", bersihkan simbol).
-  /// TIDAK melakukan konversi paksa ke +62 atau format lain.
+  /// Memformat input untuk Login (Sesuai aturan baru: WAJIB format "+62" disamakan dengan OTP).
   static String prepareLoginPhoneInput(String raw) {
-    if (raw.contains('@')) {
-      return raw.trim();
-    }
-    // Hanya sisakan angka dan tanda + (jika ada)
-    return raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
+    return convertToInternationalFormat(raw);
   }
 
   /// Memformat input untuk OTP (Sesuai aturan: WAJIB format "+62").
@@ -28,13 +23,12 @@ class PhoneFormatter {
       phone = '+$phone';
     } else if (phone.startsWith('8')) {
       phone = '+62$phone';
-    } else if (phone.startsWith('+62')) {
+    } else if (phone.startsWith('+62') || phone.startsWith('+')) {
       // Biarkan
-    } else if (phone.startsWith('+')) {
-      // Biarkan (jika kode negara lain)
     } else {
-      // Jika aneh (e.g., 212...), asumsikan prepend +62
-      phone = '+62$phone';
+      // Kemungkinan ini adalah NIM (misal: 130119...) atau format lain.
+      // Kita kembalikan as-is saja agar tidak rusak, biar backend yang validasi.
+      return phone;
     }
 
     return phone;

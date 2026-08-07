@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/petugas_residu_controller.dart';
 
 class PetugasResiduPoinView extends ConsumerWidget {
   const PetugasResiduPoinView({super.key});
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,17 +28,12 @@ class PetugasResiduPoinView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text(
-          'Poin & Insentif Petugas',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-        ),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 2,
+        shadowColor: Colors.black12,
+        title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
@@ -62,7 +68,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                   children: [
                     const Text(
                       'Total Poin Insentif Residu',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
@@ -151,7 +157,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                   itemCount: state.historyList.length,
                   itemBuilder: (ctx, idx) {
                     final item = state.historyList[idx];
-                    final rawWeight = item['actualWeightKg'] ?? item['weightKg'] ?? item['weight'] ?? 0.0;
+                    // final rawWeight = item['actualWeightKg'] ?? item['weightKg'] ?? item['weight'] ?? 0.0;
                     final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
 
                     return Card(
@@ -171,7 +177,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         subtitle: Text(
-                          item['timestamp']?.toString() ?? '',
+                          _formatDateTime(item['timestamp']?.toString()),
                           style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                         trailing: Text(

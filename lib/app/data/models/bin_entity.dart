@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../core/values/app_config.dart';
 
-/// Entitas tong sampah — sesuai sdd.md §2 tabel `bins`.
+/// Entitas tempat sampah — sesuai sdd.md §2 tabel `bins`.
 class BinEntity extends Equatable {
   const BinEntity({
     required this.id,
@@ -75,7 +75,7 @@ class BinEntity extends Equatable {
   /// Volume sisa dalam liter.
   double get remainingVolumeL => maxCapacityL - currentVolumeL;
 
-  /// Status kapasitas tong sesuai threshold srs.md FR-04.
+  /// Status kapasitas tempat sampah sesuai threshold srs.md FR-04.
   BinStatus get status {
     if (capacityPercent >= AppConfig.binCriticalThresholdPercent) {
       return BinStatus.critical;
@@ -102,5 +102,5 @@ enum WasteType {
   final String apiValue;
 }
 
-/// Status kapasitas tong.
+/// Status kapasitas tempat sampah.
 enum BinStatus { safe, warning, critical }

@@ -92,7 +92,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
-      body: state.isLoading
+      body: state.isLoading && state.wargaList.isEmpty
           ? const AppLoading(message: 'Memuat daftar warga...')
           : Column(
               children: [

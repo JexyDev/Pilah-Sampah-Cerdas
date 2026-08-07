@@ -160,10 +160,12 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             // Background kamera simulasi
             _buildCameraBackground(state.currentStep),
             // Content sesuai step
+            _buildStepContent(context, state, isOnline),
             if (state.isLoading)
-              const Center(child: AppLoading())
-            else
-              _buildStepContent(context, state, isOnline),
+              Container(
+                color: Colors.black54,
+                child: const Center(child: AppLoading()),
+              ),
           ],
         ),
       ),
@@ -420,7 +422,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Gagal membuka galeri: $e')),
                           );
                         }
@@ -820,9 +822,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
+                          const Row(
                             children: [
-                              const Text(
+                              Text(
                                 'Maks ',
                                 style: TextStyle(
                                   fontSize: 10,
@@ -832,7 +834,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                               WeightText(
                                 maxVol,
                                 fractionDigits: 0,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,
                                 ),
@@ -873,7 +875,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Tong Penuh, Gunakan Tong Sampah Milik anda yang lain atau aktivasi tong baru',
+                            'Tempat Sampah Penuh, Gunakan Tempat Sampah Milik anda yang lain atau aktivasi tempat sampah baru',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.dangerRed,
@@ -982,7 +984,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       if (state.currentStep == 2 || state.aiResult != null) {
         _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tempat sampah.', isQrError: true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage ?? 'Terjadi kesalahan.'),
             backgroundColor: AppColors.dangerRed,
@@ -992,7 +994,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     }
   }
 
-  /// Dialog BIN_OVERFLOW — Larangan Scan QR Tong Penuh
+  /// Dialog BIN_OVERFLOW — Larangan Scan QR Tempat Sampah Penuh
   void _showOverflowDialog(BuildContext context, String? message) {
     showDialog(
       context: context,
@@ -1095,6 +1097,11 @@ class _AiSuccessSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isOrganic = result.detectedType == WasteType.organic;
+    final double orgPct = result.organicPercentage ?? (isOrganic ? 0.85 : 0.15);
+    final double anorgPct = 1.0 - orgPct;
+    final double primaryPct = isOrganic ? orgPct : anorgPct;
+    final bool isCorrect = primaryPct >= 0.80;
+
     return SafeArea(
       top: false,
       child: Container(
@@ -1235,39 +1242,53 @@ class _AiSuccessSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Org',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      'Organik: ${(orgPct * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.organicColor,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: result.organicPercentage ?? (isOrganic ? 0.85 : 0.15),
-                          minHeight: 8,
-                          backgroundColor: AppColors.nonOrganicColor,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.organicColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      'Anorg',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      'Anorganik: ${(anorgPct * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.nonOrganicColor,
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isCorrect ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isCorrect ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                        color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isCorrect ? 'Pemilahan Benar' : 'Pemilahan Kurang Benar',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Divider(height: 1, color: AppColors.border),
@@ -1637,7 +1658,7 @@ class _ScanFailedDialog extends StatelessWidget {
   }
 }
 
-// ─── Dialog: BIN_OVERFLOW (Tong Sampah Penuh) ──────────────────────────────────
+// ─── Dialog: BIN_OVERFLOW (Tempat Sampah Penuh) ──────────────────────────────────
 
 class _OverflowDialog extends StatelessWidget {
   const _OverflowDialog({
@@ -1676,7 +1697,7 @@ class _OverflowDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Tong Sampah Penuh!',
+              'Tempat Sampah Penuh!',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.dangerRed),
             ),
             const SizedBox(height: 8),
@@ -1692,7 +1713,7 @@ class _OverflowDialog extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onScanLain,
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                label: const Text('Scan QR Tong Lain', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text('Scan QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

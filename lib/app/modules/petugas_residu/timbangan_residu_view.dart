@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/values/app_colors.dart';
 import '../../core/values/app_dimensions.dart';
+import '../../data/services/location_service.dart';
 import '../shared/controllers/connectivity_controller.dart';
 import 'controllers/petugas_residu_controller.dart';
 
@@ -21,6 +23,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   final _weightController = TextEditingController();
   
   String? _photoPath;
+  Position? _currentLocation;
   String _selectedClassification = 'Residu Non-B3';
   bool _isSubmitting = false;
   SharedPreferences? _prefs;
@@ -110,14 +113,21 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
       final picker = ImagePicker();
       final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
       if (file != null) {
+        if (!mounted) return;
+        final locPermission = await LocationService.instance.checkAndRequestPermission(context);
+        Position? loc;
+        if (locPermission == LocationPermission.whileInUse || locPermission == LocationPermission.always) {
+          loc = await LocationService.instance.getCurrentLocation();
+        }
         setState(() {
           _photoPath = file.path;
+          _currentLocation = loc;
           _calculatePoints();
         });
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.dangerRed),
       );
     }
@@ -126,7 +136,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   Future<void> _submitLog() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto bukti timbangan residu wajib diambil!'),
           backgroundColor: AppColors.dangerRed,
@@ -137,7 +147,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
     final double? weight = double.tryParse(_weightController.text.trim());
     if (weight == null || weight <= 0 || weight > 9999) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Berat timbangan tidak valid!'),
           backgroundColor: AppColors.dangerRed,
@@ -148,7 +158,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
     final isOnline = ref.read(isOnlineProvider);
     if (!isOnline) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
           backgroundColor: AppColors.dangerRed,
@@ -160,11 +170,13 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     setState(() => _isSubmitting = true);
 
     final success = await ref.read(petugasResiduControllerProvider.notifier).submitLog(
-          binId: 'bin_residu',
-          actualWeightKg: weight,
-          classification: _selectedClassification,
-          photoPath: _photoPath!,
-        );
+      binId: 'GLOBAL_BIN_RT_RW', 
+      actualWeightKg: weight,
+      classification: _selectedClassification,
+      photoPath: _photoPath!,
+      latitude: _currentLocation?.latitude,
+      longitude: _currentLocation?.longitude,
+    );
 
     setState(() => _isSubmitting = false);
 
@@ -344,17 +356,17 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                           children: [
                             const Text('Akumulasi Tempat Sampah Residu Global', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
                             const SizedBox(height: 2),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  newTotal.toStringAsFixed(1),
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen, height: 1),
-                                ),
-                                const SizedBox(width: 4),
-                                const Text('Kg', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
-                              ],
-                            ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    newTotal.toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen, height: 1),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text('Kg', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                ],
+                              ),
                           ],
                         ),
                       ),
@@ -411,9 +423,12 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Input Timbangan Residu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        title: const Text('Input Timbangan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.primaryGreen)),
+        centerTitle: true,
+        elevation: 2,
+        shadowColor: Colors.black12,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryGreen,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.md),
@@ -463,7 +478,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Bin Residu Global RT/RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('Tempat Sampah Residu Global RT/RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           Text('Tercatat di Audit Trail Monitoring RT/RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                         ],
                       ),
@@ -522,7 +537,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
               GestureDetector(
                 onTap: _takePhoto,
                 child: Container(
-                  height: 170,
+                  height: 200, // Make camera area taller for better view
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -551,6 +566,29 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                                   child: const Icon(Icons.edit, color: Colors.white, size: 20),
                                 ),
                               ),
+                              if (_currentLocation != null)
+                                Positioned(
+                                  left: 12,
+                                  bottom: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.location_on, color: Colors.greenAccent, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'GPS Tercatat: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
+                                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         )
@@ -661,7 +699,6 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
             ],
           ),
         ),

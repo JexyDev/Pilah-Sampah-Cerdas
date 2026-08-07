@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mahasiswa_kkn_models.dart';
 import '../providers/api_client.dart';
 import 'kkn_repository.dart';
@@ -9,15 +11,58 @@ class ApiKknRepository implements KknRepository {
 
   final ApiClient apiClient;
 
+  static const _cacheKeyDashboard = 'kkn_dashboard_cache';
+  static const _cacheKeyWarga = 'kkn_warga_cache';
+  static const _cacheKeyActivityLog = 'kkn_activity_log_cache';
+
+  @override
+  Future<KknDashboardData?> getCachedDashboard() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString(_cacheKeyDashboard);
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      try {
+        final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+        return KknDashboardData.fromJson(data);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   @override
   Future<KknDashboardData> getDashboard() async {
-    final response = await apiClient.dio.get('/kkn/dashboard');
-    if (response.statusCode == 200) {
-      final data = response.data['data'] as Map<String, dynamic>? ?? {};
-      return KknDashboardData.fromJson(data);
-    } else {
+    try {
+      final response = await apiClient.dio.get('/kkn/dashboard');
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>? ?? {};
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
+        return KknDashboardData.fromJson(data);
+      }
+      throw Exception('Invalid response');
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_cacheKeyDashboard);
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+          return KknDashboardData.fromJson(data);
+        } catch (_) {}
+      }
       throw Exception('Gagal memuat data dashboard KKN');
     }
+  }
+
+  @override
+  Future<List<WargaDampingan>?> getCachedWargaDampingan() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString(_cacheKeyWarga);
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      try {
+        final list = jsonDecode(cachedStr) as List<dynamic>;
+        return list.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
+      } catch (_) {}
+    }
+    return null;
   }
 
   @override
@@ -46,6 +91,20 @@ class ApiKknRepository implements KknRepository {
       } catch (_) {}
     }
 
+    if (rawList.isNotEmpty) {
+       final prefs = await SharedPreferences.getInstance();
+       await prefs.setString(_cacheKeyWarga, jsonEncode(rawList));
+    } else {
+       final prefs = await SharedPreferences.getInstance();
+       final cachedStr = prefs.getString(_cacheKeyWarga);
+       if (cachedStr != null && cachedStr.isNotEmpty) {
+         try {
+           final list = jsonDecode(cachedStr) as List<dynamic>;
+           return list.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
+         } catch (_) {}
+       }
+    }
+
     return rawList.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
   }
 
@@ -58,11 +117,38 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<List<dynamic>?> getCachedActivityLog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString(_cacheKeyActivityLog);
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      try {
+        final list = jsonDecode(cachedStr) as List<dynamic>;
+        return list;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  @override
   Future<List<dynamic>> getActivityLog() async {
-    final response = await apiClient.dio.get('/kkn/activity-log');
-    if (response.statusCode == 200) {
-      return response.data['data'] as List<dynamic>? ?? [];
-    } else {
+    try {
+      final response = await apiClient.dio.get('/kkn/activity-log');
+      if (response.statusCode == 200) {
+        final list = response.data['data'] as List<dynamic>? ?? [];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKeyActivityLog, jsonEncode(list));
+        return list;
+      }
+      throw Exception('Invalid response');
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_cacheKeyActivityLog);
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          final list = jsonDecode(cachedStr) as List<dynamic>;
+          return list;
+        } catch (_) {}
+      }
       throw Exception('Gagal memuat log aktivitas KKN');
     }
   }

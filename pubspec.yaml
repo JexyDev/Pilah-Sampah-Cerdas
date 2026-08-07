@@ -65,6 +65,9 @@ dependencies:
   lottie: ^3.5.1
   http_parser: ^4.1.2
 
+  path_provider: any
+  path: any
+  cached_network_image: ^3.4.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

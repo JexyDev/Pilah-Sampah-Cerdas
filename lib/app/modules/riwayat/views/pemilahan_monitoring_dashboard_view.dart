@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/waste_log_entity.dart';
 import '../controllers/riwayat_controller.dart';
@@ -88,7 +89,7 @@ class _PemilahanMonitoringDashboardViewState
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
-                                headingRowColor: MaterialStateProperty.all(
+                                headingRowColor: WidgetStateProperty.all(
                                   const Color(0xFFF8FAFC),
                                 ),
                                 columnSpacing: 24,
@@ -135,9 +136,9 @@ class _PemilahanMonitoringDashboardViewState
                                               context: context,
                                               builder: (ctx) => AlertDialog(
                                                 title: const Text('Foto Bukti Pemilahan'),
-                                                content: Image.network(
-                                                  item.photoUrl ?? 'https://via.placeholder.com/300?text=Bukti+Sampah',
-                                                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
+                                                content: CachedNetworkImage(
+                                                  imageUrl: item.photoUrl ?? 'https://via.placeholder.com/300?text=Bukti+Sampah',
+                                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
                                                 ),
                                                 actions: [
                                                   TextButton(

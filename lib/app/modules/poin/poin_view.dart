@@ -119,7 +119,7 @@ class PoinView extends ConsumerWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Poin akan anda dapatkan setelah Setor Sampah menggunakan Bin yang sesuai.',
+                            'Poin akan anda dapatkan setelah Setor Sampah menggunakan Tempat Sampah yang sesuai.',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.primaryGreen,
@@ -482,7 +482,7 @@ class _ScheduleTimeItem extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.backgroundCanvas,
             shape: BoxShape.circle,
           ),
@@ -560,7 +560,7 @@ class _PoinHistoryItem extends StatelessWidget {
               children: [
                 Text(
                   item.description.toLowerCase().contains('aktivasi')
-                      ? 'Aktivasi Bin Berhasil'
+                      ? 'Aktivasi Tempat Sampah Berhasil'
                       : (isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik'),
                   style: const TextStyle(
                     fontSize: 13,

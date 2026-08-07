@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_config.dart';
 import '../../../core/values/app_dimensions.dart';
@@ -12,8 +14,48 @@ import '../controllers/petugas_residu_notifikasi_controller.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
 import 'petugas_notification_view.dart';
 
-class PetugasResiduDashboardView extends ConsumerWidget {
+import '../../shared/controllers/connectivity_controller.dart';
+
+class PetugasResiduDashboardView extends ConsumerStatefulWidget {
   const PetugasResiduDashboardView({super.key});
+
+  @override
+  ConsumerState<PetugasResiduDashboardView> createState() => _PetugasResiduDashboardViewState();
+}
+
+class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashboardView> with WidgetsBindingObserver {
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Silent reload on first load
+    Future.microtask(() => ref.read(petugasResiduControllerProvider.notifier).refreshAll());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Silent reload on resume
+      ref.read(petugasResiduControllerProvider.notifier).refreshAll();
+    }
+  }
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return '';
+    }
+  }
 
   Widget _buildHeaderAvatarImage(String? fotoPath) {
     if (fotoPath == null || fotoPath.isEmpty) {
@@ -22,10 +64,10 @@ class PetugasResiduDashboardView extends ConsumerWidget {
       );
     }
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
-      return Image.network(
-        fotoPath,
+      return CachedNetworkImage(
+        imageUrl: fotoPath,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+        errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
       );
     }
     if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
@@ -35,10 +77,10 @@ class PetugasResiduDashboardView extends ConsumerWidget {
         return Image.file(file, fit: BoxFit.cover);
       }
     }
-    return Image.network(
-      '${AppConfig.baseUrl}$fotoPath',
+    return CachedNetworkImage(
+      imageUrl: '${AppConfig.baseUrl}$fotoPath',
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+      errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
     );
   }
 
@@ -123,6 +165,50 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              // Online Indicator
+              Consumer(
+                builder: (context, ref, child) {
+                  final isOnline = ref.watch(isOnlineProvider);
+                  return Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isOnline ? Colors.green : Colors.red,
+                            boxShadow: [
+                              if (isOnline)
+                                BoxShadow(
+                                  color: Colors.green.withValues(alpha: 0.4),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isOnline ? 'Online' : 'Offline',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isOnline ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               // Notifikasi
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
@@ -268,7 +354,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final state = ref.watch(petugasResiduControllerProvider);
     final unreadCount = ref.watch(petugasUnreadNotificationCountProvider);
@@ -343,7 +429,7 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                       ),
                       const SizedBox(width: 14),
                       _buildStatCard(
-                        title: 'Akumulasi Bin',
+                        title: 'Akumulasi Tempat Sampah',
                         value: '540.2',
                         unit: 'Kg Global',
                         icon: Icons.delete_sweep_rounded,
@@ -407,6 +493,9 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                         final title = item['title']?.toString() ?? item['classification']?.toString() ?? item['kategori']?.toString() ?? 'Setoran Timbangan';
                         final subtitle = item['subtitle']?.toString() ?? item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? item['binCode']?.toString() ?? '';
                         final weight = item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0;
+                        
+                        final rawDate = item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString();
+                        final formattedDate = _formatDateTime(rawDate);
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
@@ -434,9 +523,22 @@ class PetugasResiduDashboardView extends ConsumerWidget {
                               title,
                               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                             ),
-                            subtitle: Text(
-                              subtitle,
-                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (subtitle.isNotEmpty) ...[
+                                  Text(
+                                    subtitle,
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                  const SizedBox(height: 4),
+                                ],
+                                if (formattedDate.isNotEmpty)
+                                  Text(
+                                    formattedDate,
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+                                  ),
+                              ],
                             ),
                             trailing: Text(
                               '$weight Kg',
