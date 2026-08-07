@@ -48,11 +48,18 @@ async function main() {
     const nameKey = s.user.name.trim().toLowerCase();
     const nimVal = nimByName.get(nameKey);
     if (nimVal && s.nim !== nimVal) {
-      await prisma.studentKkn.update({
-        where: { id: s.id },
-        data: { nim: nimVal }
-      });
-      updatedCount++;
+      try {
+        const existingNim = await prisma.studentKkn.findFirst({ where: { nim: nimVal } });
+        if (!existingNim) {
+          await prisma.studentKkn.update({
+            where: { id: s.id },
+            data: { nim: nimVal }
+          });
+          updatedCount++;
+        }
+      } catch (e) {
+        // Skip duplicate NIM constraint error
+      }
     }
   }
 
