@@ -9,10 +9,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Frontend Web (GitHub Actions)
+        run: |
+          cd apps/web
+          npm install --silent
+          npm run build
+
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Execute Remote Deploy via SSH
+      - name: Deploy Backend & Prepare VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
@@ -41,18 +55,34 @@ jobs:
             echo "=== 3. Restarting PM2 Backend ==="
             ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 restart psc-backend || pm2 restart all || true
 
-            echo "=== 4. Building Frontend Web (apps/web) ==="
-            cd ~/Pilah-Sampah-Cerdas/apps/web
-            npm install --silent
-            npm run build
+            echo "=== 4. Preparing Frontend Web Root ==="
+            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
+            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/assets /var/www/pilah-sampah-cerdas/frontend/dist/assets /tmp/frontend-dist/*
+            echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /tmp/frontend-dist
+          EOF
 
-            echo "=== 5. Deploying Frontend to Web Root ==="
-            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/assets /var/www/pilah-sampah-cerdas/frontend/dist/assets
-            echo "$VPS_PASS" | sudo -S cp -r dist/* /var/www/html/
-            echo "$VPS_PASS" | sudo -S cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
+      - name: Upload Frontend Dist to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -r apps/web/dist/* "$VPS_USER@$VPS_HOST":/tmp/frontend-dist/
 
+      - name: Finalize Web Deployment
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+            echo "=== 5. Moving Uploaded Files to Web Root ==="
+            echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
+            echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
+            echo "$VPS_PASS" | sudo -S rm -rf /tmp/frontend-dist
+            
             echo "=== 6. PM2 Status ==="
+            export PATH=$PATH:/usr/local/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
             pm2 status || true
           EOF
 
