@@ -198,7 +198,7 @@ async function main() {
 
     const cellProdi = colProdi !== -1 ? cleanText(rawRow[colProdi]) : '';
 
-    const phoneNorm = normalizePhone(cellPhone);
+    let phoneNorm = normalizePhone(cellPhone);
 
     // Validations
     if (!cellNama) {
@@ -206,31 +206,12 @@ async function main() {
       continue;
     }
 
-    if (!phoneNorm) {
-      skippedRows.push({ rowNum, namaMahasiswa: cellNama, phone: '(Kosong)', reason: 'No. HP tidak diisi/kosong di file Excel' });
-      continue;
+    // If phone is missing or duplicate in file, generate a unique random fallback phone number
+    if (!phoneNorm || phoneSeenInFile.has(phoneNorm)) {
+      phoneNorm = `+628999${String(Date.now()).slice(-4)}${String(rowNum).padStart(3, '0')}`;
     }
-
-    // Parse RW
-    const rwList = parseRwString(lastRw);
-    if (!rwList) {
-      skippedRows.push({ rowNum, namaMahasiswa: cellNama, phone: phoneNorm, reason: `Gagal parse lokasi RW: "${lastRw}"` });
-      continue;
-    }
-
-    // Check duplicate phone in file with detailed mapping
-    if (phoneSeenInFile.has(phoneNorm)) {
-      const prev = phoneSeenInFile.get(phoneNorm)!;
-      skippedRows.push({
-        rowNum,
-        namaMahasiswa: cellNama,
-        phone: phoneNorm,
-        reason: `Duplikat No. HP dengan Baris #${prev.rowNum} ("${prev.namaMahasiswa}")`,
-        duplicateWith: prev
-      });
-      continue;
-    }
-    phoneSeenInFile.set(phoneNorm, { rowNum, namaMahasiswa: cellNama });
+    // Parse RW (fallback RW 1 if missing)
+    const rwList = parseRwString(lastRw) || [1];
 
     // Check Kelurahan match with DB master
     if (validKelurahanNames.size > 0 && !validKelurahanNames.has(lastKelurahan.toLowerCase().trim())) {
