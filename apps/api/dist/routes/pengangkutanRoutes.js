@@ -9,7 +9,7 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
 router.get("/", authMiddleware, roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -19,7 +19,7 @@ router.get("/", authMiddleware, roleMiddleware([
     "MAHASISWA_KKN",
 ]), pengangkutanController.getAll);
 router.get("/:id", authMiddleware, roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -28,7 +28,7 @@ router.get("/:id", authMiddleware, roleMiddleware([
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
 ]), pengangkutanController.getById);
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), pengangkutanController.create);
-router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), pengangkutanController.update);
-router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]), pengangkutanController.delete);
+router.post("/", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), pengangkutanController.create);
+router.put("/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), pengangkutanController.update);
+router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]), pengangkutanController.delete);
 export default router;

@@ -26,4 +26,4 @@
 | H.1 | Peta DPL Hapus/Hidden | FE Web | ✅ DONE | Peta di DPL dibatalkan/tidak ditampilkan |
 | I.1 | Rekapitulasi Pemanfaatan Ketua Kelompok | FE & BE | ✅ DONE | Restriksi submit hanya untuk Ketua Kelompok |
 | J.1 | Role Baru PEMIMPIN & PANITIA_TASKFORCE | BE & FE | ✅ DONE | Enum role & RBAC middleware |
-| L.1 | Rule Engine Point Config | BE & FE | ✅ DONE | Modul konfigurasi poin Super Admin (`ManageConfigs`) |
+| L.1 | Rule Engine Point Config | BE & FE | ✅ DONE | Modul konfigurasi poin SUPER USER (`ManageConfigs`) |

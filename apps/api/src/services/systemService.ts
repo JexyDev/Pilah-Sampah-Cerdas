@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 
 export const systemService = {
   /**
-   * Get all audit trail logs (Super Admin only view)
+   * Get all audit trail logs (SUPER USER only view)
    */
   getAuditTrails: async () => {
     return prisma.auditTrail.findMany({

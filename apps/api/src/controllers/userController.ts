@@ -97,7 +97,7 @@ export const userController = {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Super Admin yang dapat membuat akun Admin DLH, Camat, atau Lurah",
+          message: "Hanya SUPER USER yang dapat membuat akun Admin DLH, Camat, atau Lurah",
         });
       } else if (error.message === "ROLE_NOT_FOUND") {
         res.status(400).json({
@@ -139,7 +139,7 @@ export const userController = {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Super Admin yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
+          message: "Hanya SUPER USER yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
         });
       } else if (error.message === "USER_NOT_FOUND") {
         res
@@ -151,11 +151,23 @@ export const userController = {
           error: "VALIDATION_ERROR",
           message: `Role '${req.body.roleName}' tidak ditemukan`,
         });
+      } else if (error.message === "PHONE_CONFLICT" || error.code === "P2002") {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "Nomor telepon sudah terdaftar di sistem",
+        });
+      } else if (error.message === "RW_ALREADY_HAS_PETUGAS_RESIDU") {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Wilayah RW tersebut sudah memiliki Petugas Residu aktif",
+        });
       } else {
         res.status(500).json({
           success: false,
           error: "INTERNAL_SERVER_ERROR",
-          message: "Gagal memperbarui pengguna",
+          message: error.message || "Gagal memperbarui pengguna",
         });
       }
     }

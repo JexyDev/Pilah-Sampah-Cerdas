@@ -53,7 +53,7 @@ Jumlah Skenario: 22
     },
     {
       "id": "MASKED_UUID",
-      "name": "Super Admin",
+      "name": "SUPER USER",
       "email": "admin@pilahsampah.id",
       "role": "ADMIN",
       "nik": "-",

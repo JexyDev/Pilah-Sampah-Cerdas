@@ -10,7 +10,7 @@ const router = Router();
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   uploadAvatarMiddleware.single("foto"),
   ideDaurUlangController.submitIde.bind(ideDaurUlangController)
 );
@@ -34,7 +34,7 @@ router.get(
 router.put(
   "/:id/approve",
   authMiddleware,
-  roleMiddleware(["RW", "RT", "SUPER_ADMIN"]),
+  roleMiddleware(["RW", "RT", "SUPER_USER"]),
   ideDaurUlangController.approve.bind(ideDaurUlangController)
 );
 
@@ -42,7 +42,7 @@ router.put(
 router.put(
   "/:id/reject",
   authMiddleware,
-  roleMiddleware(["RW", "RT", "SUPER_ADMIN"]),
+  roleMiddleware(["RW", "RT", "SUPER_USER"]),
   ideDaurUlangController.reject.bind(ideDaurUlangController)
 );
 
@@ -50,7 +50,7 @@ router.put(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   uploadAvatarMiddleware.single("foto"),
   ideDaurUlangController.updateIde.bind(ideDaurUlangController)
 );
@@ -59,7 +59,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   ideDaurUlangController.deleteIde.bind(ideDaurUlangController)
 );
 

@@ -121,7 +121,7 @@ export class CronService {
                 include: {
                     bin: {
                         include: {
-                            rtRw: {
+                            rw: {
                                 include: {
                                     kelurahan: true,
                                 },
@@ -133,10 +133,10 @@ export class CronService {
             for (const task of pendingTasks) {
                 // Escalate hierarchy: RW -> Lurah -> Camat -> Admin DLH
                 // 1. RW Notification
-                await this.notifyHierarchy("RW", task.bin.rtRwId, task.bin.qrCode);
+                await this.notifyHierarchy("RW", task.bin.rwId, task.bin.qrCode);
                 // 2. Lurah Notification
-                if (task.bin.rtRw?.kelurahanId) {
-                    await this.notifyHierarchy("LURAH", task.bin.rtRw.kelurahanId, task.bin.qrCode);
+                if (task.bin.rw?.kelurahanId) {
+                    await this.notifyHierarchy("LURAH", task.bin.rw.kelurahanId, task.bin.qrCode);
                 }
                 // 3. Camat Notification (removed since no kecamatan)
                 // 4. Admin DLH Notification (global)

@@ -7,61 +7,181 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────────
+// ROLE & PERMISSION (RBAC Dinamis)
+// ─────────────────────────────────────────────
+
 model Role {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique @map("nama")
-  createdAt DateTime @default(now()) @map("dibuat_pada")
-  updatedAt DateTime @updatedAt @map("diperbarui_pada")
-  users     User[]
+  id          Int          @id @default(autoincrement())
+  name        String       @unique @map("nama")
+  createdAt   DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt   DateTime     @updatedAt @map("diperbarui_pada")
+  users       User[]
+  permissions Permission[]
 
   @@map("peran")
 }
 
+/** Hak akses per role per resource — dikelola via UI SUPER USER */
+model Permission {
+  id        Int      @id @default(autoincrement())
+  roleId    Int      @map("id_peran")
+  resource  String   @map("resource")
+  canView   Boolean  @default(false) @map("bisa_lihat")
+  canCreate Boolean  @default(false) @map("bisa_buat")
+  canEdit   Boolean  @default(false) @map("bisa_edit")
+  canDelete Boolean  @default(false) @map("bisa_hapus")
+  updatedAt DateTime @updatedAt @map("diperbarui_pada")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resource])
+  @@map("hak_akses")
+}
+
+// ─────────────────────────────────────────────
+// HIERARKI WILAYAH
+// ─────────────────────────────────────────────
+
+model Provinsi {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique @map("nama")
+  createdAt  DateTime    @default(now()) @map("dibuat_pada")
+  updatedAt  DateTime    @updatedAt @map("diperbarui_pada")
+  kabupatens Kabupaten[]
+
+  @@map("provinsi")
+}
+
+model Kabupaten {
+  id         Int        @id @default(autoincrement())
+  provinsiId Int        @map("id_provinsi")
+  name       String     @map("nama")
+  createdAt  DateTime   @default(now()) @map("dibuat_pada")
+  updatedAt  DateTime   @updatedAt @map("diperbarui_pada")
+  provinsi   Provinsi   @relation(fields: [provinsiId], references: [id], onDelete: Cascade)
+  kecamatans Kecamatan[]
+
+  @@unique([provinsiId, name])
+  @@map("kabupaten")
+}
+
+model Kecamatan {
+  id          Int         @id @default(autoincrement())
+  kabupatenId Int         @map("id_kabupaten")
+  name        String      @map("nama")
+  createdAt   DateTime    @default(now()) @map("dibuat_pada")
+  updatedAt   DateTime    @updatedAt @map("diperbarui_pada")
+  kabupaten   Kabupaten   @relation(fields: [kabupatenId], references: [id], onDelete: Cascade)
+  kelurahans  Kelurahan[]
+
+  @@unique([kabupatenId, name])
+  @@map("kecamatan")
+}
+
+model Kelurahan {
+  id          String    @id @default(uuid())
+  kecamatanId Int?      @map("id_kecamatan")
+  name        String    @unique @map("nama")
+  createdAt   DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt   DateTime  @updatedAt @map("diperbarui_pada")
+  kecamatan   Kecamatan? @relation(fields: [kecamatanId], references: [id])
+  bins        Bin[]
+  rws         Rw[]
+
+  @@map("kelurahan")
+}
+
+/** RW — pengganti RtRwArea, relasi ke Kelurahan */
+model Rw {
+  id              Int                  @id @default(autoincrement())
+  kelurahanId     String               @map("id_kelurahan")
+  name            String               @map("nama")
+  latitude        Decimal?             @db.Decimal(11, 8)
+  longitude       Decimal?             @db.Decimal(11, 8)
+  petugasResiduId String?              @unique @map("id_petugas_residu")
+  createdAt       DateTime             @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime             @updatedAt @map("diperbarui_pada")
+  kelurahan       Kelurahan            @relation(fields: [kelurahanId], references: [id])
+  petugasResidu   User?                @relation("RwPetugasResidu", fields: [petugasResiduId], references: [id])
+  rts             Rt[]
+  users           User[]
+  bins            Bin[]
+  facilities      Facility[]
+  studentsKkn     StudentKkn[]
+  pemanfaatan     Pemanfaatan[]
+  households      Household[]
+  setoranManual   SetoranManual[]
+  handovers       KknHandoverHistory[]
+
+  @@unique([kelurahanId, name])
+  @@map("rw")
+}
+
+/** RT — tabel baru, relasi ke Rw */
+model Rt {
+  id        Int      @id @default(autoincrement())
+  rwId      Int      @map("id_rw")
+  name      String   @map("nama")
+  createdAt DateTime @default(now()) @map("dibuat_pada")
+  updatedAt DateTime @updatedAt @map("diperbarui_pada")
+  rw        Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+  users     User[]
+
+  @@unique([rwId, name])
+  @@map("rt")
+}
+
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+
 model User {
-  id                 String               @id @default(uuid())
-  name               String               @map("nama")
-  password           String               @map("kata_sandi")
-  fcmToken           String?              @map("token_fcm")
-  roleId             Int                  @map("id_peran")
-  createdAt          DateTime             @default(now()) @map("dibuat_pada")
-  updatedAt          DateTime             @updatedAt @map("diperbarui_pada")
-  fotoProfil         String?              @map("foto_profil")
-  rtRwId             Int?                 @map("id_rt_rw")
-  status             String               @default("Aktif")
-  address            String?              @map("alamat")
-  phone              String               @unique @map("no_telepon")
-  mustChangePassword Boolean              @default(false) @map("harus_ganti_password")
-  wargaSubtype       String?              @map("subtipe_warga")
-  bankSampahLedger   BankSampahLedger?
-  aiRequestLogs      AiRequestLog[]
-  picBatches         QrBatch[]            @relation("PicBatches")
-  ideDaurUlang       IdeDaurUlang[]
-  auditLogs          AuditTrail[]
-  attendances        ActivityAttendance[] @relation("StudentAttendance")
-  dplKelompok        KelompokKkn[]        @relation("DplKelompok")
-  binOwnerships      BinOwnership[]
-  locations          StudentLocation[]    @relation("StudentLocations")
-  studentProfile     StudentKkn?
-  notifications      Notification[]
-  wargaViolations    Violation[]          @relation("WargaViolations")
-  recordedViolations Violation[]          @relation("RecordedViolations")
-  requestedResets    BinResetRequest[]    @relation("RequestedResets")
-  reviewedResets     BinResetRequest[]    @relation("ReviewedResets")
-  role               Role                 @relation(fields: [roleId], references: [id])
-  rtRw               RtRwArea?            @relation(fields: [rtRwId], references: [id])
-  petugasProfile     PetugasResidu?
-  pointHistory       PointHistory[]
-  fromHandovers      KknHandoverHistory[] @relation("FromStudentHandovers")
-  toHandovers        KknHandoverHistory[] @relation("ToStudentHandovers")
-  households         Household[]
-  setoranManual      SetoranManual[]      @relation("PetugasSetoranManual")
-  setoranOtomatis    SetoranOtomatis[]
-  refreshTokens      RefreshToken[]
-  registeredBins     Bin[]                @relation("StudentRegisteredBins")
-  bins               Bin[]                @relation("UserBins")
-  claimedTasks       DispatchTask[]       @relation("ClaimedTasks")
-  rtRwAreaOwned      RtRwArea?            @relation("RwPetugasResidu")
-  studentLeaveRequests StudentLeaveRequest[] @relation("StudentLeaveRequests")
+  id                    String               @id @default(uuid())
+  name                  String               @map("nama")
+  password              String               @map("kata_sandi")
+  fcmToken              String?              @map("token_fcm")
+  roleId                Int                  @map("id_peran")
+  createdAt             DateTime             @default(now()) @map("dibuat_pada")
+  updatedAt             DateTime             @updatedAt @map("diperbarui_pada")
+  fotoProfil            String?              @map("foto_profil")
+  rwId                  Int?                 @map("id_rw")
+  rtId                  Int?                 @map("id_rt")
+  status                String               @default("Aktif")
+  address               String?              @map("alamat")
+  phone                 String               @unique @map("no_telepon")
+  mustChangePassword    Boolean              @default(false) @map("harus_ganti_password")
+  wargaSubtype          String?              @map("subtipe_warga")
+  bankSampahLedger      BankSampahLedger?
+  aiRequestLogs         AiRequestLog[]
+  picBatches            QrBatch[]            @relation("PicBatches")
+  ideDaurUlang          IdeDaurUlang[]
+  auditLogs             AuditTrail[]
+  attendances           ActivityAttendance[] @relation("StudentAttendance")
+  dplKelompok           KelompokKkn[]        @relation("DplKelompok")
+  binOwnerships         BinOwnership[]
+  locations             StudentLocation[]    @relation("StudentLocations")
+  studentProfile        StudentKkn?
+  notifications         Notification[]
+  wargaViolations       Violation[]          @relation("WargaViolations")
+  recordedViolations    Violation[]          @relation("RecordedViolations")
+  requestedResets       BinResetRequest[]    @relation("RequestedResets")
+  reviewedResets        BinResetRequest[]    @relation("ReviewedResets")
+  role                  Role                 @relation(fields: [roleId], references: [id])
+  rw                    Rw?                  @relation(fields: [rwId], references: [id])
+  rt                    Rt?                  @relation(fields: [rtId], references: [id])
+  petugasProfile        PetugasResidu?
+  pointHistory          PointHistory[]
+  fromHandovers         KknHandoverHistory[] @relation("FromStudentHandovers")
+  toHandovers           KknHandoverHistory[] @relation("ToStudentHandovers")
+  households            Household[]
+  setoranManual         SetoranManual[]      @relation("PetugasSetoranManual")
+  setoranOtomatis       SetoranOtomatis[]
+  refreshTokens         RefreshToken[]
+  registeredBins        Bin[]                @relation("StudentRegisteredBins")
+  bins                  Bin[]                @relation("UserBins")
+  claimedTasks          DispatchTask[]       @relation("ClaimedTasks")
+  rwOwned               Rw?                  @relation("RwPetugasResidu")
+  studentLeaveRequests  StudentLeaveRequest[] @relation("StudentLeaveRequests")
   reviewedLeaveRequests StudentLeaveRequest[] @relation("ReviewedLeaveRequests")
 
   @@map("pengguna")
@@ -89,55 +209,28 @@ model OtpCode {
   @@map("kode_otp")
 }
 
-model Kelurahan {
-  id        String     @id @default(uuid())
-  name      String     @unique @map("nama")
-  createdAt DateTime   @default(now()) @map("dibuat_pada")
-  updatedAt DateTime   @updatedAt @map("diperbarui_pada")
-  bins      Bin[]
-  rtRwAreas RtRwArea[]
-
-  @@map("kelurahan")
-}
-
-model RtRwArea {
-  id              Int                  @id @default(autoincrement())
-  kelurahanId     String               @map("id_kelurahan")
-  name            String               @map("nama")
-  createdAt       DateTime             @default(now()) @map("dibuat_pada")
-  updatedAt       DateTime             @updatedAt @map("diperbarui_pada")
-  petugasResiduId String?              @unique @map("id_petugas_residu")
-  latitude        Decimal?             @db.Decimal(11, 8)
-  longitude       Decimal?             @db.Decimal(11, 8)
-  facilities      Facility[]
-  studentsKkn     StudentKkn[]
-  pemanfaatan     Pemanfaatan[]
-  users           User[]
-  handovers       KknHandoverHistory[]
-  households      Household[]
-  setoranManual   SetoranManual[]
-  bins            Bin[]
-  kelurahan       Kelurahan            @relation(fields: [kelurahanId], references: [id])
-  petugasResidu   User?                @relation("RwPetugasResidu", fields: [petugasResiduId], references: [id])
-
-  @@unique([kelurahanId, name])
-  @@map("wilayah_rt_rw")
-}
+// ─────────────────────────────────────────────
+// RUMAH TANGGA
+// ─────────────────────────────────────────────
 
 model Household {
   id        String   @id @default(uuid())
   userId    String   @map("id_pengguna")
   address   String
-  rtRwId    Int      @map("id_rt_rw")
+  rwId      Int      @map("id_rw")
   latitude  Decimal  @db.Decimal(11, 8)
   longitude Decimal  @db.Decimal(11, 8)
   createdAt DateTime @default(now()) @map("dibuat_pada")
   updatedAt DateTime @updatedAt @map("diperbarui_pada")
   user      User     @relation(fields: [userId], references: [id])
-  rtRw      RtRwArea @relation(fields: [rtRwId], references: [id])
+  rw        Rw       @relation(fields: [rwId], references: [id])
 
   @@map("rumah_tangga")
 }
+
+// ─────────────────────────────────────────────
+// SAMPAH & TEMPAT SAMPAH
+// ─────────────────────────────────────────────
 
 model WasteCategory {
   id          String   @id @default(uuid())
@@ -172,7 +265,7 @@ model Bin {
   categoryId            String?           @map("id_kategori")
   maxCapacityLiter      Decimal           @default(25.0) @map("maks_kapasitas_liter") @db.Decimal(5, 2)
   currentVolumeLiter    Decimal           @default(0.0) @map("volume_sekarang_liter") @db.Decimal(5, 2)
-  rtRwId                Int?              @map("id_rt_rw")
+  rwId                  Int?              @map("id_rw")
   kelurahanId           String?           @map("id_kelurahan")
   createdAt             DateTime          @default(now()) @map("dibuat_pada")
   updatedAt             DateTime          @updatedAt @map("diperbarui_pada")
@@ -192,16 +285,20 @@ model Bin {
   violations            Violation[]
   binResetRequests      BinResetRequest[]
   setoranOtomatis       SetoranOtomatis[]
+  dispatchTasks         DispatchTask[]
   qrBatch               QrBatch?          @relation(fields: [qrBatchId], references: [id])
   category              WasteCategory?    @relation(fields: [categoryId], references: [id])
   kelurahan             Kelurahan?        @relation(fields: [kelurahanId], references: [id])
   registeredByStudent   User?             @relation("StudentRegisteredBins", fields: [registeredByStudentId], references: [id])
   user                  User?             @relation("UserBins", fields: [userId], references: [id])
-  rtRw                  RtRwArea?         @relation(fields: [rtRwId], references: [id])
-  dispatchTasks         DispatchTask[]
+  rw                    Rw?               @relation(fields: [rwId], references: [id])
 
-  @@map("tong_sampah")
+  @@map("tempat_sampah")
 }
+
+// ─────────────────────────────────────────────
+// KKN
+// ─────────────────────────────────────────────
 
 model StudentKkn {
   id                String       @id @default(uuid())
@@ -212,7 +309,7 @@ model StudentKkn {
   noWa              String       @map("no_wa")
   startDate         DateTime     @map("tanggal_mulai")
   endDate           DateTime     @map("tanggal_selesai")
-  assignedPolygonId Int?         @map("id_poligon_ditugaskan")
+  assignedRwId      Int?         @map("id_rw_ditugaskan")
   whitelistStatus   String       @default("PENDING") @map("status_whitelist")
   createdAt         DateTime     @default(now()) @map("dibuat_pada")
   updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
@@ -221,10 +318,93 @@ model StudentKkn {
   isKetua           Boolean      @default(false) @map("is_ketua")
   kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id])
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignedPolygon   RtRwArea?    @relation(fields: [assignedPolygonId], references: [id])
+  assignedRw        Rw?          @relation(fields: [assignedRwId], references: [id])
 
   @@map("mahasiswa_kkn")
 }
+
+model KelompokKkn {
+  id            String       @id @default(uuid())
+  name          String       @unique @map("nama")
+  kelurahan     String?      @map("kelurahan")
+  cakupanRw     Json?        @map("cakupan_rw")
+  dplNamaMentah String?      @map("dpl_nama_mentah")
+  dplId         String?      @map("id_dpl")
+  createdAt     DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt     DateTime     @updatedAt @map("diperbarui_pada")
+  dpl           User?        @relation("DplKelompok", fields: [dplId], references: [id])
+  students      StudentKkn[]
+  schedules     Schedule[]
+
+  @@map("kelompok_kkn")
+}
+
+model KknHandoverHistory {
+  id           String   @id @default(uuid())
+  fromUserId   String   @map("id_pengguna_dari")
+  toUserId     String   @map("id_pengguna_ke")
+  rwId         Int      @map("id_rw")
+  notes        String?
+  handoverDate DateTime @default(now()) @map("tanggal_serah_terima")
+  fromUser     User     @relation("FromStudentHandovers", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser       User     @relation("ToStudentHandovers", fields: [toUserId], references: [id], onDelete: Cascade)
+  rw           Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+
+  @@map("riwayat_serah_terima_kkn")
+}
+
+model ActivityAttendance {
+  id         String    @id @default(uuid())
+  studentId  String    @map("id_mahasiswa")
+  scheduleId String    @map("id_jadwal")
+  attendedAt DateTime  @default(now()) @map("waktu_absen")
+  method     String    @map("metode")
+  latitude   Decimal   @map("latitude") @db.Decimal(11, 8)
+  longitude  Decimal   @map("longitude") @db.Decimal(11, 8)
+  checkOutAt DateTime? @map("waktu_checkout")
+  status     String    @default("DALAM_RADIUS") @map("status")
+  schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  student    User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, scheduleId])
+  @@map("kehadiran_kegiatan")
+}
+
+model StudentLocation {
+  id         String   @id @default(uuid())
+  studentId  String   @map("id_mahasiswa")
+  latitude   Decimal  @db.Decimal(11, 8)
+  longitude  Decimal  @db.Decimal(11, 8)
+  recordedAt DateTime @default(now()) @map("direkam_pada")
+  student    User     @relation("StudentLocations", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([recordedAt])
+  @@map("lokasi_mahasiswa")
+}
+
+model StudentLeaveRequest {
+  id              String    @id @default(uuid())
+  studentId       String    @map("id_mahasiswa")
+  type            String    @map("tipe")
+  reason          String    @map("alasan")
+  evidenceUrl     String?   @map("url_bukti")
+  startDate       DateTime  @map("tanggal_mulai")
+  endDate         DateTime  @map("tanggal_selesai")
+  status          String    @default("PENDING") @map("status")
+  reviewedById    String?   @map("id_pereview")
+  reviewedAt      DateTime? @map("direview_pada")
+  rejectionReason String?   @map("alasan_penolakan")
+  createdAt       DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime  @updatedAt @map("diperbarui_pada")
+  student         User      @relation("StudentLeaveRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  reviewedBy      User?     @relation("ReviewedLeaveRequests", fields: [reviewedById], references: [id])
+
+  @@map("pengajuan_izin_mahasiswa")
+}
+
+// ─────────────────────────────────────────────
+// PETUGAS RESIDU
+// ─────────────────────────────────────────────
 
 model PetugasResidu {
   id              String   @id @default(uuid())
@@ -243,6 +423,10 @@ model PetugasResidu {
   @@map("petugas_residu")
 }
 
+// ─────────────────────────────────────────────
+// FASILITAS & PRODUKSI
+// ─────────────────────────────────────────────
+
 model Facility {
   id             String                  @id @default(uuid())
   jenis          FacilityType
@@ -255,10 +439,10 @@ model Facility {
   longitude      Decimal                 @db.Decimal(11, 8)
   createdAt      DateTime                @default(now()) @map("dibuat_pada")
   updatedAt      DateTime                @updatedAt @map("diperbarui_pada")
-  rtRwId         Int?                    @map("id_rt_rw")
+  rwId           Int?                    @map("id_rw")
   statusApproval String                  @default("PENDING") @map("status_persetujuan")
   productionLogs FacilityProductionLog[]
-  rtRw           RtRwArea?               @relation(fields: [rtRwId], references: [id])
+  rw             Rw?                     @relation(fields: [rwId], references: [id])
 
   @@map("fasilitas")
 }
@@ -274,6 +458,92 @@ model FacilityProductionLog {
   facility        Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
 
   @@map("catatan_produksi_fasilitas")
+}
+
+// ─────────────────────────────────────────────
+// SETORAN SAMPAH
+// ─────────────────────────────────────────────
+
+model SetoranOtomatis {
+  id                 String   @id @default(uuid())
+  wargaId            String   @map("warga_id")
+  fotoSampahUrl      String   @map("foto_sampah_url")
+  hasilKlasifikasiAi String   @map("hasil_klasifikasi_ai")
+  confidenceAi       Decimal  @map("confidence_ai") @db.Decimal(5, 2)
+  berat              Decimal  @map("berat") @db.Decimal(10, 2)
+  unit               String   @default("Kg") @map("unit")
+  poin               Decimal  @map("poin") @db.Decimal(10, 2)
+  qrTempatSampahId   String   @map("qr_tempat_sampah_id")
+  lokasiGps          String?  @map("lokasi_gps")
+  createdAt          DateTime @default(now()) @map("created_at")
+  bin                Bin      @relation(fields: [qrTempatSampahId], references: [id], onDelete: Cascade)
+  warga              User     @relation(fields: [wargaId], references: [id], onDelete: Cascade)
+
+  @@map("setoran_otomatis")
+}
+
+model SetoranManual {
+  id              String   @id @default(uuid())
+  petugasResiduId String   @map("petugas_residu_id")
+  diinputOleh     String   @map("diinput_oleh")
+  rwId            Int      @map("rw_id")
+  fotoResiduUrl   String   @map("foto_residu_url")
+  berat           Decimal  @map("berat") @db.Decimal(10, 2)
+  unit            String   @default("Kg") @map("unit")
+  lokasiGps       String?  @map("lokasi_gps")
+  kategori        String   @default("residu") @map("kategori")
+  createdAt       DateTime @default(now()) @map("created_at")
+  petugas         User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
+  rw              Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+
+  @@map("setoran_manual")
+}
+
+// ─────────────────────────────────────────────
+// PEMANFAATAN SAMPAH
+// ─────────────────────────────────────────────
+
+model Pemanfaatan {
+  id                      String   @id @default(uuid())
+  rwId                    Int      @map("id_rw")
+  nomorCaraPemanfaatan    String   @unique @map("nomor_cara_pemanfaatan")
+  program                 String   @map("program")
+  teknologi               String   @map("teknologi")
+  bahanBaku               String   @map("bahan_baku")
+  volumeBahanBaku         Decimal  @map("volume_bahan_baku") @db.Decimal(10, 2)
+  unitBahanBaku           String   @map("unit_bahan_baku")
+  hasil                   Decimal  @map("hasil") @db.Decimal(10, 2)
+  unitHasil               String   @map("unit_hasil")
+  fotoDokumentasiUrl      String   @map("foto_dokumentasi_url")
+  tanggalPencatatan       DateTime @map("tanggal_pencatatan")
+  jenisKomoditas          String?  @map("jenis_komoditas")
+  luasLahanM2             Decimal? @map("luas_lahan_m2") @db.Decimal(8, 2)
+  volumePupukDipakaiKg    Decimal? @map("volume_pupuk_dipakai_kg") @db.Decimal(10, 2)
+  bibitTelurGram          Decimal? @map("bibit_telur_gram") @db.Decimal(8, 2)
+  hasilKasgotKg           Decimal? @map("hasil_kasgot_kg") @db.Decimal(10, 2)
+  volumeBioaktivatorLiter Decimal? @map("volume_bioaktivator_liter") @db.Decimal(8, 2)
+  masaFermentasiHari      Int?     @map("masa_fermentasi_hari")
+  createdAt               DateTime @default(now()) @map("dibuat_pada")
+  rw                      Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+
+  @@map("pemanfaatan_sampah")
+}
+
+// ─────────────────────────────────────────────
+// GAMIFIKASI & POIN
+// ─────────────────────────────────────────────
+
+model PointHistory {
+  id          String   @id @default(uuid())
+  userId      String   @map("id_pengguna")
+  points      Int
+  description String
+  createdAt   DateTime @default(now()) @map("dibuat_pada")
+  kategori    String   @default("REDUKSI_TONASE") @map("kategori")
+  redeemable  Boolean  @default(false)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("riwayat_poin")
 }
 
 model BankSampahLedger {
@@ -317,6 +587,10 @@ model FlashDropEvent {
 
   @@map("aksi_drop_sampah")
 }
+
+// ─────────────────────────────────────────────
+// SISTEM & MONITORING
+// ─────────────────────────────────────────────
 
 model SystemConfig {
   key       String   @id
@@ -375,19 +649,6 @@ model AiRequestLog {
   @@map("catatan_permintaan_ai")
 }
 
-model PointHistory {
-  id          String   @id @default(uuid())
-  userId      String   @map("id_pengguna")
-  points      Int
-  description String
-  createdAt   DateTime @default(now()) @map("dibuat_pada")
-  kategori    String   @default("REDUKSI_TONASE") @map("kategori")
-  redeemable  Boolean  @default(false)
-  user        User     @relation(fields: [userId], references: [id])
-
-  @@map("riwayat_poin")
-}
-
 model Notification {
   id        String   @id @default(uuid())
   userId    String   @map("id_pengguna")
@@ -400,9 +661,13 @@ model Notification {
   @@map("notifikasi")
 }
 
+// ─────────────────────────────────────────────
+// PENGANGKUTAN & DISPATCH
+// ─────────────────────────────────────────────
+
 model BinResetRequest {
   id               String   @id @default(uuid())
-  binId            String   @map("id_tong")
+  binId            String   @map("id_tempat_sampah")
   userId           String   @map("id_pengguna")
   evidencePhotoUrl String   @map("url_foto_bukti")
   status           String   @default("PENDING")
@@ -413,7 +678,7 @@ model BinResetRequest {
   reviewedBy       User?    @relation("ReviewedResets", fields: [reviewedById], references: [id])
   bin              Bin      @relation(fields: [binId], references: [id])
 
-  @@map("pengajuan_aktivasi_tong")
+  @@map("pengajuan_aktivasi_tempat_sampah")
 }
 
 model Schedule {
@@ -429,6 +694,8 @@ model Schedule {
   longitude   Decimal?             @db.Decimal(11, 8)
   polygon     Json?
   radius      Int?                 @default(100)
+  kelompokId  String?              @map("id_kelompok")
+  kelompok    KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
   attendances ActivityAttendance[]
 
   @@map("jadwal")
@@ -436,7 +703,7 @@ model Schedule {
 
 model BinOwnership {
   id        String        @id @default(uuid())
-  binId     String        @map("id_tong")
+  binId     String        @map("id_tempat_sampah")
   userId    String        @map("id_pengguna")
   type      OwnershipType @map("tipe_kepemilikan")
   createdAt DateTime      @default(now()) @map("dibuat_pada")
@@ -444,12 +711,12 @@ model BinOwnership {
   bin       Bin           @relation(fields: [binId], references: [id], onDelete: Cascade)
 
   @@unique([binId, userId])
-  @@map("kepemilikan_tong")
+  @@map("kepemilikan_tempat_sampah")
 }
 
 model DispatchTask {
   id              String         @id @default(uuid())
-  binId           String         @map("id_tong")
+  binId           String         @map("id_tempat_sampah")
   status          DispatchStatus @default(PENDING)
   claimedByUserId String?        @map("id_pengguna_mengklaim")
   createdAt       DateTime       @default(now()) @map("dibuat_pada")
@@ -459,6 +726,10 @@ model DispatchTask {
 
   @@map("tugas_penjemputan")
 }
+
+// ─────────────────────────────────────────────
+// PETERNAKAN & MAGGOT
+// ─────────────────────────────────────────────
 
 model Peternakan {
   id            String                  @id @default(uuid())
@@ -485,10 +756,14 @@ model MaggotDistributionLog {
   @@map("catatan_distribusi_maggot")
 }
 
+// ─────────────────────────────────────────────
+// PELANGGARAN
+// ─────────────────────────────────────────────
+
 model Violation {
   id               String   @id @default(uuid())
   userId           String   @map("id_pengguna")
-  binId            String?  @map("id_tong")
+  binId            String?  @map("id_tempat_sampah")
   petugasUserId    String   @map("id_pengguna_petugas")
   type             String
   severity         String
@@ -503,124 +778,9 @@ model Violation {
   @@map("pelanggaran")
 }
 
-model KknHandoverHistory {
-  id           String   @id @default(uuid())
-  fromUserId   String   @map("id_pengguna_dari")
-  toUserId     String   @map("id_pengguna_ke")
-  rtRwId       Int      @map("id_rt_rw")
-  notes        String?
-  handoverDate DateTime @default(now()) @map("tanggal_serah_terima")
-  fromUser     User     @relation("FromStudentHandovers", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser       User     @relation("ToStudentHandovers", fields: [toUserId], references: [id], onDelete: Cascade)
-  rtRw         RtRwArea @relation(fields: [rtRwId], references: [id], onDelete: Cascade)
-
-  @@map("riwayat_serah_terima_kkn")
-}
-
-model ActivityAttendance {
-  id         String    @id @default(uuid())
-  studentId  String    @map("id_mahasiswa")
-  scheduleId String    @map("id_jadwal")
-  attendedAt DateTime  @default(now()) @map("waktu_absen")
-  method     String    @map("metode")
-  latitude   Decimal   @map("latitude") @db.Decimal(11, 8)
-  longitude  Decimal   @map("longitude") @db.Decimal(11, 8)
-  checkOutAt DateTime? @map("waktu_checkout")
-  status     String    @default("DALAM_RADIUS") @map("status")
-  schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  student    User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([studentId, scheduleId])
-  @@map("kehadiran_kegiatan")
-}
-
-model StudentLocation {
-  id         String   @id @default(uuid())
-  studentId  String   @map("id_mahasiswa")
-  latitude   Decimal  @db.Decimal(11, 8)
-  longitude  Decimal  @db.Decimal(11, 8)
-  recordedAt DateTime @default(now()) @map("direkam_pada")
-  student    User     @relation("StudentLocations", fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([recordedAt])
-  @@map("lokasi_mahasiswa")
-}
-
-model SetoranOtomatis {
-  id                 String   @id @default(uuid())
-  wargaId            String   @map("warga_id")
-  fotoSampahUrl      String   @map("foto_sampah_url")
-  hasilKlasifikasiAi String   @map("hasil_klasifikasi_ai")
-  confidenceAi       Decimal  @map("confidence_ai") @db.Decimal(5, 2)
-  berat              Decimal  @map("berat") @db.Decimal(10, 2)
-  unit               String   @default("Kg") @map("unit")
-  poin               Decimal  @map("poin") @db.Decimal(10, 2)
-  qrTempatSampahId   String   @map("qr_tempat_sampah_id")
-  lokasiGps          String?  @map("lokasi_gps")
-  createdAt          DateTime @default(now()) @map("created_at")
-  bin                Bin      @relation(fields: [qrTempatSampahId], references: [id], onDelete: Cascade)
-  warga              User     @relation(fields: [wargaId], references: [id], onDelete: Cascade)
-
-  @@map("setoran_otomatis")
-}
-
-model SetoranManual {
-  id              String   @id @default(uuid())
-  petugasResiduId String   @map("petugas_residu_id")
-  diinputOleh     String   @map("diinput_oleh")
-  rwId            Int      @map("rw_id")
-  fotoResiduUrl   String   @map("foto_residu_url")
-  berat           Decimal  @map("berat") @db.Decimal(10, 2)
-  unit            String   @default("Kg") @map("unit")
-  lokasiGps       String?  @map("lokasi_gps")
-  kategori        String   @default("residu") @map("kategori")
-  createdAt       DateTime @default(now()) @map("created_at")
-  petugas         User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
-  rw              RtRwArea @relation(fields: [rwId], references: [id], onDelete: Cascade)
-
-  @@map("setoran_manual")
-}
-
-model KelompokKkn {
-  id            String       @id @default(uuid())
-  name          String       @unique @map("nama")
-  kelurahan     String?      @map("kelurahan")
-  cakupanRw     Json?        @map("cakupan_rw")
-  dplNamaMentah String?      @map("dpl_nama_mentah")
-  dplId         String?      @map("id_dpl")
-  createdAt DateTime     @default(now()) @map("dibuat_pada")
-  updatedAt DateTime     @updatedAt @map("diperbarui_pada")
-  dpl       User?        @relation("DplKelompok", fields: [dplId], references: [id])
-  students  StudentKkn[]
-
-  @@map("kelompok_kkn")
-}
-
-model Pemanfaatan {
-  id                   String   @id @default(uuid())
-  rwId                 Int      @map("id_rw")
-  nomorCaraPemanfaatan String   @unique @map("nomor_cara_pemanfaatan")
-  program              String   @map("program")
-  teknologi            String   @map("teknologi")
-  bahanBaku            String   @map("bahan_baku")
-  volumeBahanBaku      Decimal  @map("volume_bahan_baku") @db.Decimal(10, 2)
-  unitBahanBaku        String   @map("unit_bahan_baku")
-  hasil                Decimal  @map("hasil") @db.Decimal(10, 2)
-  unitHasil            String   @map("unit_hasil")
-  fotoDokumentasiUrl   String   @map("foto_dokumentasi_url")
-  tanggalPencatatan    DateTime @map("tanggal_pencatatan")
-  jenisKomoditas       String?  @map("jenis_komoditas")
-  luasLahanM2          Decimal? @map("luas_lahan_m2") @db.Decimal(8, 2)
-  volumePupukDipakaiKg Decimal? @map("volume_pupuk_dipakai_kg") @db.Decimal(10, 2)
-  bibitTelurGram       Decimal? @map("bibit_telur_gram") @db.Decimal(8, 2)
-  hasilKasgotKg        Decimal? @map("hasil_kasgot_kg") @db.Decimal(10, 2)
-  volumeBioaktivatorLiter Decimal? @map("volume_bioaktivator_liter") @db.Decimal(8, 2)
-  masaFermentasiHari   Int?     @map("masa_fermentasi_hari")
-  createdAt            DateTime @default(now()) @map("dibuat_pada")
-  rw                   RtRwArea @relation(fields: [rwId], references: [id], onDelete: Cascade)
-
-  @@map("pemanfaatan_sampah")
-}
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
 
 enum BinStatus {
   PRINTED
@@ -652,24 +812,3 @@ enum DispatchStatus {
   COMPLETED
   ESCALATED
 }
-
-model StudentLeaveRequest {
-  id              String    @id @default(uuid())
-  studentId       String    @map("id_mahasiswa")
-  type            String    @map("tipe")
-  reason          String    @map("alasan")
-  evidenceUrl     String?   @map("url_bukti")
-  startDate       DateTime  @map("tanggal_mulai")
-  endDate         DateTime  @map("tanggal_selesai")
-  status          String    @default("PENDING") @map("status")
-  reviewedById    String?   @map("id_pereview")
-  reviewedAt      DateTime? @map("direview_pada")
-  rejectionReason String?   @map("alasan_penolakan")
-  createdAt       DateTime  @default(now()) @map("dibuat_pada")
-  updatedAt       DateTime  @updatedAt @map("diperbarui_pada")
-  student         User      @relation("StudentLeaveRequests", fields: [studentId], references: [id], onDelete: Cascade)
-  reviewedBy      User?     @relation("ReviewedLeaveRequests", fields: [reviewedById], references: [id])
-
-  @@map("pengajuan_izin_mahasiswa")
-}
-

@@ -21,7 +21,7 @@ Sistem Trashcare mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akse
 | 6 | **Lurah** | No HP (+62) + Password | Se-Kelurahan | **Read-Only** (Strict Guard 403 write attempt) |
 | 7 | **Camat** | No HP (+62) + Password | Se-Kecamatan | **Read-Only** (Strict Guard 403 write attempt) |
 | 8 | **Admin DLH** | No HP (+62) + Password | Se-Kota | **Read-Only** (Kecuali Approval Diskrepansi AI) |
-| 9 | **Super Admin** | No HP (+62) + Password | System Wide (Se-Kota) | Akses Penuh (Raw Data, System Config, Admin CRUD, Bulk KKN) |
+| 9 | **SUPER USER** | No HP (+62) + Password | System Wide (Se-Kota) | Akses Penuh (Raw Data, System Config, Admin CRUD, Bulk KKN) |
 
 
 ---
@@ -266,7 +266,7 @@ Sistem Trashcare mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akse
 | AC-01 | Monitoring Scoping | Akses dashboard monitoring se-Kecamatan | Visualisasi data mencakup seluruh Kelurahan di Kecamatan | [ ] |
 | AC-02 | Read-Only Guard | Mengirim request ubah data via API/UI | Akses ditolak dengan respon `HTTP 403 Forbidden` | [ ] |
 
-### 3.10 Role: SUPER ADMIN
+### 3.10 Role: SUPER USER
 | ID Test | Fitur / Modul | Skenario Pengujian | Ekspektasi Hasil | Status |
 |---|---|---|---|---|
 | SA-01 | Akses Data Mentah | Mengakses menu Aktivitas Pemilahan Sampah (Audit Log) | Menampilkan log transaksi mentah seluruh kota | [ ] |

@@ -6,13 +6,15 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Polyline, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, Calendar, MapPin, Search, Users, Activity, CheckCircle2, RefreshCw, Plus, Trash2, X, Pencil } from "lucide-react";
+import { Loader2, Calendar, MapPin, Search, Activity, RefreshCw, Plus, Trash2, X, Pencil } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { Pagination } from "../../components/common/Pagination";
 
 import {
+  KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
 } from "../../constants/coblongGeoData";
 
@@ -23,7 +25,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
-
 
 const createActivityMarkerIcon = () => {
   return L.divIcon({
@@ -38,6 +39,22 @@ const createActivityMarkerIcon = () => {
   });
 };
 
+const createActivePresenceIcon = (studentName: string) => {
+  const initial = (studentName || "M").charAt(0).toUpperCase();
+  return L.divIcon({
+    className: "custom-active-student-presence",
+    html: `
+      <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <div style="position: absolute; width: 44px; height: 44px; border-radius: 50%; background-color: #10b981; opacity: 0.35; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 2.5px solid white; box-shadow: 0 4px 14px rgba(16,185,129,0.5); font-weight: 900; font-size: 13px;">
+          ${initial}
+        </div>
+      </div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+  });
+};
 
 interface StudentLoc {
   id: string;
@@ -61,18 +78,20 @@ interface AttendanceRecord {
   id: string;
   studentId: string;
   scheduleId: string;
-  attendedAt: string;
+  attendedAt: string; // Tm (Absen Masuk)
+  completedAt?: string; // Ts (Absen Pulang)
   method: "OTOMATIS" | "MANUAL";
   latitude: string;
   longitude: string;
   status: string;
-  currentStatus: "MASIH_DI_LOKASI" | "SUDAH_MENINGGALKAN_RADIUS" | "TIDAK_TERDETEKSI";
+  currentStatus: "MASIH_DI_LOKASI" | "SUDAH_MENINGGALKAN_RADIUS" | "TIDAK_TERDETEKSI" | "BELUM_ABSEN" | "DI_LOKASI_BELUM_ABSEN" | string;
   student: {
     id: string;
     name: string;
     studentProfile?: {
       nim: string;
       jurusan: string;
+      isKetua?: boolean;
     };
   };
 }
@@ -90,6 +109,22 @@ interface ScheduleActivity {
   polygon?: [number, number][];
 }
 
+const calculateDurationMinutes = (tmStr?: string, tsStr?: string) => {
+  if (!tmStr) return 0;
+  const tm = new Date(tmStr).getTime();
+  const ts = tsStr ? new Date(tsStr).getTime() : new Date().getTime();
+  if (isNaN(tm) || isNaN(ts)) return 0;
+  return Math.max(0, Math.floor((ts - tm) / (1000 * 60)));
+};
+
+const formatDurationText = (minutes: number) => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} Menit`;
+  if (m === 0) return `${h} Jam`;
+  return `${h} Jam ${m} Menit`;
+};
+
 // Component to dynamically set map center and zoom
 const ChangeMapView: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
@@ -97,51 +132,6 @@ const ChangeMapView: React.FC<{ center: [number, number]; zoom: number }> = ({ c
     map.setView(center, zoom);
   }, [center, zoom, map]);
   return null;
-};
-
-// Map component for picking coordinates in Modal
-const LocationPickerMap: React.FC<{
-  points: [number, number][];
-  onChange: (points: [number, number][]) => void;
-  radius: number;
-}> = ({ points, onChange, radius }) => {
-  const defaultCenter: [number, number] = [-6.8915, 107.6107];
-  const MapEvents = () => {
-    useMapEvents({
-      click(e) {
-        onChange([...points, [e.latlng.lat, e.latlng.lng]]);
-      },
-    });
-    return null;
-  };
-
-  return (
-    <MapContainer center={points.length > 0 ? points[0] : defaultCenter} zoom={15} className="w-full h-full">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <MapEvents />
-      {points.length === 1 && (
-        <>
-          <Marker position={points[0]} icon={createActivityMarkerIcon()} />
-          <Circle center={points[0]} radius={radius} pathOptions={{ color: "#006d37", fillColor: "#006d37", fillOpacity: 0.2 }} />
-        </>
-      )}
-      {points.length === 2 && (
-        <>
-          {points.map((p, i) => <Marker key={i} position={p} icon={createActivityMarkerIcon()} />)}
-          <Polyline positions={points} pathOptions={{ color: "#006d37", dashArray: "4,4" }} />
-        </>
-      )}
-      {points.length >= 3 && (
-        <>
-          {points.map((p, i) => <Marker key={i} position={p} icon={createActivityMarkerIcon()} />)}
-          <Polygon positions={points} pathOptions={{ color: "#10b981", fillColor: "#10b981", fillOpacity: 0.3 }} />
-        </>
-      )}
-    </MapContainer>
-  );
 };
 
 const MonitoringAbsen: React.FC = () => {
@@ -153,18 +143,20 @@ const MonitoringAbsen: React.FC = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   
+  // Dynamic minimum attendance duration threshold configured by DPL (default 4 Hours)
+  const minHoursRequired = Number(localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalStep, setModalStep] = useState(1);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [formData, setFormData] = useState<Partial<ScheduleActivity>>({ radius: 100 });
   const [selectedPos, setSelectedPos] = useState<[number, number][]>([]);
 
   // Map settings
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8915, 107.6107]); // Coblong
-  const [mapZoom, setMapZoom] = useState<number>(15);
+  const [mapZoom] = useState<number>(15);
 
   const fetchSchedules = async () => {
     try {
@@ -194,12 +186,7 @@ const MonitoringAbsen: React.FC = () => {
       if (scheduleId) {
         const schedule = schedules.find(s => s.id === scheduleId);
         if (schedule && schedule.latitude && schedule.longitude) {
-          const lat = Number(schedule.latitude);
-          const lng = Number(schedule.longitude);
-          if (!isNaN(lat) && !isNaN(lng)) {
-            setMapCenter([lat, lng]);
-            setMapZoom(17);
-          }
+          setMapCenter([Number(schedule.latitude), Number(schedule.longitude)]);
         }
       }
     } catch (err: any) {
@@ -211,106 +198,68 @@ const MonitoringAbsen: React.FC = () => {
 
   useEffect(() => {
     fetchSchedules();
-    fetchAttendanceAndLocations();
   }, []);
 
   useEffect(() => {
     if (selectedScheduleId) {
       fetchAttendanceAndLocations(selectedScheduleId);
-      const interval = setInterval(() => {
-        fetchAttendanceAndLocations(selectedScheduleId);
-      }, 15000);
-      return () => clearInterval(interval);
     }
-  }, [selectedScheduleId, schedules]);
+  }, [selectedScheduleId]);
 
   const activeSchedule = useMemo(() => {
-    return schedules.find(s => s.id === selectedScheduleId);
-  }, [selectedScheduleId, schedules]);
+    return schedules.find((s) => s.id === selectedScheduleId);
+  }, [schedules, selectedScheduleId]);
 
   const filteredSchedules = useMemo(() => {
-    if (!searchQuery.trim()) return schedules;
-    const query = searchQuery.toLowerCase();
-    return schedules.filter(s => s.title.toLowerCase().includes(query) || s.category.toLowerCase().includes(query));
+    return schedules.filter((s) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        s.title.toLowerCase().includes(query) ||
+        (s.location && s.location.toLowerCase().includes(query)) ||
+        (s.category && s.category.toLowerCase().includes(query))
+      );
+    });
   }, [schedules, searchQuery]);
 
+  const totalPages = Math.ceil(filteredSchedules.length / itemsPerPage) || 1;
   const paginatedSchedules = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredSchedules.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredSchedules, currentPage]);
-  
-  const totalPages = Math.ceil(filteredSchedules.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredSchedules.slice(start, start + itemsPerPage);
+  }, [filteredSchedules, currentPage, itemsPerPage]);
 
-  const mapElements = useMemo(() => {
-    if (!activeSchedule) return null;
-    const items = [];
-    if (activeSchedule.latitude && activeSchedule.longitude) {
-      const lat = Number(activeSchedule.latitude);
-      const lng = Number(activeSchedule.longitude);
-      const rad = Number(activeSchedule.radius || 100);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        items.push(
-          <Circle
-            key="activity-circle"
-            center={[lat, lng]}
-            radius={rad}
-            pathOptions={{ color: "#006d37", fillColor: "#006d37", fillOpacity: 0.15 }}
-          />
-        );
-        items.push(
-          <Marker
-            key="activity-marker"
-            position={[lat, lng]}
-            icon={createActivityMarkerIcon()}
-          >
-            <Popup>
-              <div className="p-2">
-                <h4 className="font-bold text-primary">{activeSchedule.title}</h4>
-                <p className="text-xs text-gray-600 mt-1">{activeSchedule.location || "-"}</p>
-                <p className="text-xs font-semibold text-gray-500">Radius: {rad}m</p>
-              </div>
-            </Popup>
-          </Marker>
-        );
-      }
-    }
-    studentLocations.forEach(loc => {
+  // Active student markers with glowing pulse for currently clocked-in students
+  const activeStudentMarkers = useMemo(() => {
+    const items: React.ReactNode[] = [];
+    studentLocations.forEach((loc) => {
       const lat = Number(loc.latitude);
       const lng = Number(loc.longitude);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        let status: "in_radius" | "out_radius" = "out_radius";
-        if (activeSchedule && activeSchedule.latitude && activeSchedule.longitude) {
-          const sLat = Number(activeSchedule.latitude);
-          const sLng = Number(activeSchedule.longitude);
-          const rad = Number(activeSchedule.radius || 100);
-          const R = 6371e3;
-          const phi1 = (lat * Math.PI) / 180;
-          const phi2 = (sLat * Math.PI) / 180;
-          const deltaPhi = ((sLat - lat) * Math.PI) / 180;
-          const deltaLambda = ((sLng - lng) * Math.PI) / 180;
-          const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-                    Math.cos(phi1) * Math.cos(phi2) *
-                    Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          const distance = R * c;
-          if (distance <= rad) status = "in_radius";
-        }
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        const studentRecord = attendance.find((a) => a.studentId === loc.studentId);
+        const isActivePresence = studentRecord && Boolean(studentRecord.attendedAt) && !studentRecord.completedAt;
+
         items.push(
           <Marker
             key={`student-${loc.studentId}`}
             position={[lat, lng]}
-            icon={createStudentIcon(status as any)}
+            icon={isActivePresence ? createActivePresenceIcon(loc.student.name) : createStudentIcon("in_radius" as any)}
           >
             <Popup>
-              <div className="p-2">
-                <h4 className="font-bold text-gray-800">{loc.student.name}</h4>
-                <p className="text-xs text-gray-500">NIM: {loc.student.studentProfile?.nim || "-"}</p>
-                <p className="text-xs text-gray-500 mt-1">Update: {new Date(loc.recordedAt).toLocaleTimeString("id-ID")}</p>
-                <div className="mt-2 text-xs">
-                  <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${status === "in_radius" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
-                    {status === "in_radius" ? "Dalam Radius" : "Di Luar Radius"}
-                  </span>
+              <div className="p-2 font-sans space-y-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="font-extrabold text-slate-900 text-xs">{loc.student.name}</span>
+                  {isActivePresence && (
+                    <span className="bg-emerald-100 text-emerald-800 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-emerald-300">
+                      SEDANG BERADA DI LAPANGAN
+                    </span>
+                  )}
                 </div>
+                <p className="text-[11px] text-slate-500 font-mono">NIM: {loc.student.studentProfile?.nim || "-"}</p>
+                <p className="text-[11px] text-slate-500">Update GPS: {new Date(loc.recordedAt).toLocaleTimeString("id-ID")}</p>
+                {isActivePresence && studentRecord?.attendedAt && (
+                  <div className="mt-2 p-1.5 bg-emerald-50 rounded-lg border border-emerald-200 text-[10px] text-emerald-800 font-extrabold">
+                    ⏱️ Tm: {new Date(studentRecord.attendedAt).toLocaleTimeString("id-ID")} | Durasi: {formatDurationText(calculateDurationMinutes(studentRecord.attendedAt))}
+                  </div>
+                )}
               </div>
             </Popup>
           </Marker>
@@ -318,7 +267,7 @@ const MonitoringAbsen: React.FC = () => {
       }
     });
     return items;
-  }, [activeSchedule, studentLocations]);
+  }, [studentLocations, attendance]);
 
   const handleOpenAddModal = () => {
     setModalMode("add");
@@ -346,7 +295,6 @@ const MonitoringAbsen: React.FC = () => {
     } else {
       setSelectedPos([]);
     }
-    setModalStep(1);
     setIsModalOpen(true);
   };
 
@@ -367,10 +315,6 @@ const MonitoringAbsen: React.FC = () => {
     e.preventDefault();
     if (!formData.title || !formData.date) {
       toast.error("Harap isi semua field wajib");
-      return;
-    }
-    if (!selectedPos) {
-      toast.error("Harap tentukan titik lokasi pada peta");
       return;
     }
 
@@ -417,61 +361,143 @@ const MonitoringAbsen: React.FC = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {mapElements}
+
+            {/* Kelurahan Boundary Polygons */}
+            {Object.values(KELURAHAN_GEODATA).map((kg) => (
+              <Polygon
+                key={`kkn-kel-poly-${kg.id}`}
+                positions={kg.bounds}
+                pathOptions={{
+                  color: kg.color,
+                  fillColor: kg.color,
+                  fillOpacity: 0.16,
+                  weight: 2,
+                }}
+              >
+                <Popup>
+                  <div className="text-xs p-1 font-sans">
+                    <strong className="font-bold block text-slate-900 mb-1">
+                      Kelurahan {kg.name}
+                    </strong>
+                  </div>
+                </Popup>
+              </Polygon>
+            ))}
+
+            {/* Active Schedule Zone Marker & Circle */}
+            {activeSchedule && activeSchedule.latitude && activeSchedule.longitude && (
+              <>
+                <Marker
+                  position={[Number(activeSchedule.latitude), Number(activeSchedule.longitude)]}
+                  icon={createActivityMarkerIcon()}
+                />
+                <Circle
+                  center={[Number(activeSchedule.latitude), Number(activeSchedule.longitude)]}
+                  radius={Number(activeSchedule.radius || 100)}
+                  pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.2 }}
+                />
+              </>
+            )}
+
+            {/* Active Student Presence Markers */}
+            {activeStudentMarkers}
           </MapContainer>
         </div>
 
-        {/* Panel Bawah: Detail Kehadiran (Menimpa Peta) */}
-        {selectedScheduleId && activeSchedule && (
-          <div className="absolute bottom-4 left-4 right-4 z-20 bg-white/95 backdrop-blur-md border border-outline-variant/40 rounded-xl shadow-lg p-5 flex flex-col max-h-[40vh]">
-            <div className="flex justify-between items-center mb-4 border-b pb-2">
+        {/* Panel Bawah: Detail Presensi & Durasi Tm - Ts */}
+        {activeSchedule && (
+          <div className="bg-white/95 backdrop-blur-md border-t border-slate-200 z-20 p-4 shadow-lg max-h-64 flex flex-col">
+            <div className="flex justify-between items-center mb-3">
               <div>
-                <h3 className="text-sm font-bold text-on-surface">Status Kehadiran: {activeSchedule.title}</h3>
-                <p className="text-[11px] text-on-surface-variant flex items-center gap-1">
-                  <Users size={12} /> {attendance.length} Mahasiswa Terdata
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900">
+                    Rekap Presensi & Keberadaan Lapangan
+                  </h3>
+                  <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
+                    Syarat Minimum: {minHoursRequired} Jam (\(\Delta T = T_s - T_m\))
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  {attendance.length} Mahasiswa Terdata • {attendance.filter((a) => Boolean(a.attendedAt) && !a.completedAt).length} Sedang Berada di Lapangan
                 </p>
               </div>
-              <button 
+              <button  
                 onClick={() => fetchAttendanceAndLocations(selectedScheduleId)}
-                className={`p-1.5 rounded-lg hover:bg-surface-container transition-colors ${refreshing ? "animate-spin text-primary" : "text-on-surface-variant"}`}
+                className={`p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer ${
+                  refreshing ? "animate-spin text-blue-600" : "text-slate-500"
+                }`}
                 title="Refresh Data"
               >
                 <RefreshCw size={16} />
               </button>
             </div>
-            
-            <div className="overflow-y-auto flex-1 pr-2">
+
+            <div className="overflow-y-auto flex-1 pr-1">
               {attendance.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {attendance.map((rec) => {
-                    const attendedTime = new Date(rec.attendedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-                    let statusBadge = "bg-gray-100 text-gray-700";
-                    if (rec.currentStatus === "MASIH_DI_LOKASI") statusBadge = "bg-emerald-100 text-emerald-800 font-bold";
-                    else if (rec.currentStatus === "SUDAH_MENINGGALKAN_RADIUS") statusBadge = "bg-rose-100 text-rose-800 font-bold";
+                    const isAttended = Boolean(rec.attendedAt);
+                    const isCompleted = Boolean(rec.completedAt);
+                    const isActivePresence = isAttended && !isCompleted;
+                    const durationMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+                    const isDurationSufficient = durationMins >= minHoursRequired * 60;
+
+                    let statusBadge = "bg-slate-100 text-slate-700";
+                    let statusText = rec.currentStatus?.replace(/_/g, " ") || "Belum Absen";
+
+                    if (isActivePresence) {
+                      statusBadge = "bg-emerald-100 text-emerald-800 font-black border border-emerald-300";
+                      statusText = "🟢 SEDANG BERADA DI LAPANGAN";
+                    } else if (isCompleted) {
+                      statusBadge = isDurationSufficient
+                        ? "bg-blue-100 text-blue-800 font-bold border border-blue-300"
+                        : "bg-amber-100 text-amber-800 font-bold border border-amber-300";
+                      statusText = isDurationSufficient ? "SELESAI (DURASI TERPENUHI)" : `DURASI KURANG (< ${minHoursRequired} JAM)`;
+                    }
 
                     return (
-                      <div key={rec.id} className="border border-outline-variant/30 rounded-lg p-3 bg-white shadow-sm flex flex-col justify-between">
+                      <div
+                        key={rec.id}
+                        className="border border-slate-200 rounded-xl p-3 bg-white shadow-2xs flex flex-col justify-between"
+                      >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h4 className="text-xs font-bold text-on-surface line-clamp-1">{rec.student.name}</h4>
-                            <p className="text-[10px] text-on-surface-variant">{rec.student.studentProfile?.nim || "-"}</p>
+                            <h4 className="text-xs font-black text-slate-900 line-clamp-1">
+                              {rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()}
+                            </h4>
+                            <p className="text-[10px] text-slate-400 font-mono font-semibold">
+                              NIM: {rec.student.studentProfile?.nim || "-"}
+                            </p>
                           </div>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${statusBadge}`}>
-                            {rec.currentStatus.replace(/_/g, " ")}
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full whitespace-nowrap ${statusBadge}`}>
+                            {statusText}
                           </span>
                         </div>
-                        <div className="text-[10px] flex justify-between items-center text-on-surface-variant">
-                          <span className="flex items-center gap-1 text-primary"><CheckCircle2 size={10} /> Hadir {attendedTime}</span>
-                          <span className="uppercase font-bold">{rec.method}</span>
+
+                        <div className="mt-2 pt-2 border-t border-slate-100 text-[10.5px] flex flex-col gap-1 text-slate-600">
+                          {isAttended ? (
+                            <>
+                              <div className="flex justify-between items-center">
+                                <span>Tm (Masuk): <strong>{new Date(rec.attendedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</strong></span>
+                                <span>Ts (Pulang): <strong>{rec.completedAt ? new Date(rec.completedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "Aktif"}</strong></span>
+                              </div>
+                              <div className="flex justify-between items-center text-emerald-700 font-extrabold">
+                                <span>Durasi (\(\Delta T\)):</span>
+                                <span>{formatDurationText(durationMins)}</span>
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-slate-400 italic">Belum melakukan absensi</span>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="text-center py-6 text-on-surface-variant text-xs flex flex-col items-center gap-2">
-                  <Activity size={24} className="text-outline-variant" />
-                  Belum ada data kehadiran.
+                <div className="text-center py-6 text-slate-400 text-xs flex flex-col items-center gap-2">
+                  <Activity size={24} className="text-slate-300" />
+                  Belum ada data kehadiran pada kegiatan ini.
                 </div>
               )}
             </div>
@@ -480,271 +506,187 @@ const MonitoringAbsen: React.FC = () => {
       </div>
 
       {/* Kiri: Daftar Kegiatan */}
-      <div className="w-[420px] bg-white border-l border-outline-variant/40 flex flex-col shrink-0 overflow-hidden z-20 shadow-[4px_0_15px_rgba(0,0,0,0.03)]">
-        <div className="p-5 border-b border-outline-variant/30 bg-surface-container-low/30">
+      <div className="w-[420px] bg-white border-l border-slate-200 flex flex-col shrink-0 overflow-hidden z-20 shadow-lg">
+        <div className="p-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-base font-bold text-on-surface">Kegiatan KKN</h3>
-              <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mt-0.5">
+              <h3 className="text-base font-black text-slate-800">Kegiatan KKN</h3>
+              <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mt-0.5">
                 {schedules.length} Jadwal Tersedia
               </p>
             </div>
             <button
               onClick={handleOpenAddModal}
-              className="bg-primary hover:bg-primary/90 text-white font-bold text-[11px] py-2 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm uppercase tracking-wider cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-colors shadow-xs uppercase tracking-wider cursor-pointer"
             >
               <Plus size={16} />
               Tambah
             </button>
           </div>
-          
+
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
               placeholder="Cari kegiatan..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="pl-9 pr-4 py-1.5 border border-outline rounded-lg text-xs w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-surface"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs w-full focus:outline-none focus:border-blue-500 bg-slate-50 focus:bg-white transition-all font-semibold"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-surface-container-lowest p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {paginatedSchedules.length > 0 ? (
-            paginatedSchedules.map(schedule => (
-              <div 
+            paginatedSchedules.map((schedule) => (
+              <div
                 key={schedule.id}
                 onClick={() => setSelectedScheduleId(schedule.id)}
-                className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${selectedScheduleId === schedule.id ? 'border-primary shadow-md bg-primary/5' : 'border-outline-variant/50 bg-white hover:border-primary/50'}`}
+                className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                  selectedScheduleId === schedule.id
+                    ? "border-blue-500 shadow-md bg-blue-50/40 ring-1 ring-blue-500"
+                    : "border-slate-200/80 bg-white hover:border-slate-300"
+                }`}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="text-sm font-bold text-on-surface">{schedule.title}</h4>
-                    <span className="text-[9px] font-bold px-2 py-0.5 mt-1 inline-block rounded bg-primary-container text-on-primary-container">
+                    <h4 className="text-sm font-black text-slate-800">{schedule.title}</h4>
+                    <span className="text-[9px] font-extrabold px-2 py-0.5 mt-1 inline-block rounded-md bg-blue-100 text-blue-800 uppercase">
                       {schedule.category}
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={(e) => handleOpenEditModal(e, schedule)} className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"><Pencil size={14} /></button>
-                    <button onClick={(e) => handleDelete(e, schedule.id)} className="text-error hover:bg-error/10 p-1.5 rounded transition-colors"><Trash2 size={14} /></button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={(e) => handleOpenEditModal(e, schedule)}
+                      className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, schedule.id)}
+                      className="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-on-surface-variant space-y-1">
-                  <p className="flex items-center gap-1.5"><Calendar size={12}/> {new Date(schedule.date).toLocaleDateString("id-ID")} {schedule.time}</p>
-                  <p className="flex items-center gap-1.5"><MapPin size={12}/> {schedule.location || "Lokasi belum diatur"}</p>
+                <div className="mt-3 text-xs text-slate-500 space-y-1 font-medium">
+                  <p className="flex items-center gap-1.5">
+                    <Calendar size={13} className="text-slate-400" />{" "}
+                    {new Date(schedule.date).toLocaleDateString("id-ID")} {schedule.time}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <MapPin size={13} className="text-slate-400" />{" "}
+                    {schedule.location || "Lokasi belum diatur"}
+                  </p>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-center text-xs text-on-surface-variant pt-8">Tidak ada kegiatan ditemukan</p>
+            <p className="text-center text-xs text-slate-400 pt-8">Tidak ada kegiatan ditemukan</p>
           )}
         </div>
-        
+
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="p-3 border-t border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              className="px-3 py-1 bg-white border border-outline-variant/50 rounded text-xs font-bold disabled:opacity-50"
-            >
-              Prev
-            </button>
-            <span className="text-xs text-on-surface-variant font-medium">
-              Halaman {currentPage} dari {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              className="px-3 py-1 bg-white border border-outline-variant/50 rounded text-xs font-bold disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+        {filteredSchedules.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredSchedules.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         )}
       </div>
 
       {/* Modal Add/Edit */}
       {isModalOpen && (
-        <div className="absolute inset-0 bg-on-surface/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-lg w-[480px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 max-h-[90vh]">
-            <div className="p-5 border-b border-outline-variant/30 flex justify-between items-start bg-surface-container-lowest shrink-0">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-[480px] max-w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div className="flex items-center gap-3">
-                <div className="bg-surface-container p-2 rounded-lg text-on-surface-variant">
+                <div className="bg-blue-50 text-blue-600 p-2 rounded-xl border border-blue-200">
                   <MapPin size={20} />
                 </div>
-                <div>
-                  <h3 className="text-[18px] font-bold text-on-surface">{modalMode === "add" ? "Detail Zona Baru" : "Edit Zona"}</h3>
-                  <p className="text-[12px] text-on-surface-variant">
-                    {selectedPos.length >= 3 ? `Polygon • ${selectedPos.length} titik` : `Radius • 1 titik`}
-                  </p>
-                </div>
+                <h3 className="font-extrabold text-slate-800 text-base">
+                  {modalMode === "add" ? "Tambah Kegiatan KKN" : "Edit Kegiatan KKN"}
+                </h3>
               </div>
               <button
-                className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer"
-                onClick={() => { setIsModalOpen(false); setFormData({ radius: 100 }); setSelectedPos([]); }}
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex flex-col gap-4">
-              {modalStep === 1 ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-[13px] text-on-surface-variant mb-2">
-                    Pilih area absensi untuk kegiatan ini:
-                  </p>
-                  <div className="h-[280px] rounded-lg overflow-hidden border border-outline-variant z-0 relative">
-                    <LocationPickerMap
-                      points={selectedPos}
-                      onChange={(pts) => setSelectedPos(pts)}
-                      radius={formData.radius || 100}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPos([])}
-                      className="absolute bottom-4 right-4 z-[999] bg-white border border-outline-variant shadow-md text-[11px] font-bold text-on-surface-variant px-3 py-1.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
-                    >
-                      Reset Titik
-                    </button>
-                  </div>
-                  {selectedPos.length === 1 && (
-                    <div className="flex flex-col gap-1.5 mt-2">
-                      <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Radius Absensi (m)</label>
-                      <input
-                        type="number"
-                        value={formData.radius}
-                        onChange={(e) => setFormData({ ...formData, radius: Number(e.target.value) })}
-                        className="px-4 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary text-[14px] w-full"
-                        placeholder="100"
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Nama Kegiatan <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.title || ""}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
-                      placeholder="Nama Kegiatan"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Nama Lokasi <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.location || ""}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
-                      placeholder="Nama Lokasi"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Waktu Mulai <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={formData.date ? formData.date.slice(0, 16) : ""}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
-                    />
-                  </div>
-                  
-                  {/* Mocked fields from screenshot to look good */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Batas Waktu Absen <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px]"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Status Zona <span className="text-error">*</span>
-                    </label>
-                    <select className="px-4 py-2.5 border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-[14px] bg-white">
-                      <option>🟢 Aktif</option>
-                      <option>🔴 Tidak Aktif</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mt-2">
-                    <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Rule Engine</h4>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[12px] font-semibold text-on-surface flex items-center gap-2">
-                          <span className="text-error">⛔</span> Jika Tidak Hadir
-                        </label>
-                        <select className="px-4 py-2 border border-outline-variant rounded-lg text-[13px] bg-white">
-                          <option>Pilih kegiatan...</option>
-                          <option>Potong Poin (-5)</option>
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[12px] font-semibold text-on-surface flex items-center gap-2">
-                          <span className="text-error">⛔</span> Jika Terlambat
-                        </label>
-                        <select className="px-4 py-2 border border-outline-variant rounded-lg text-[13px] bg-white">
-                          <option>Pilih kegiatan...</option>
-                          <option>Potong Poin (-2)</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs font-semibold">
+              <div>
+                <label className="block text-slate-700 mb-1">Judul Kegiatan</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title || ""}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Sosialisasi Pemilahan Sampah..."
+                  className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-500 text-xs"
+                />
+              </div>
 
-            <div className="p-5 border-t border-outline-variant/30 bg-surface-container-lowest flex justify-end gap-3 shrink-0">
-              {modalStep === 1 ? (
-                <>
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer"
-                    onClick={() => { setIsModalOpen(false); setFormData({ radius: 100 }); setSelectedPos([]); }}
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-[14px] font-bold bg-[#0f172a] text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    disabled={selectedPos.length === 2 || selectedPos.length === 0}
-                    onClick={() => setModalStep(2)}
-                  >
-                    <MapPin size={16} /> Lanjut Isi Detail
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-[14px] font-bold text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer"
-                    onClick={() => setModalStep(1)}
-                  >
-                    Kembali
-                  </button>
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-[14px] font-bold bg-[#0f172a] text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
-                    onClick={handleSubmit}
-                  >
-                    <CheckCircle2 size={16} /> Buat Zona
-                  </button>
-                </>
-              )}
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.date || ""}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-500 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 mb-1">Waktu</label>
+                  <input
+                    type="text"
+                    value={formData.time || ""}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    placeholder="08.00 - 12.00 WIB"
+                    className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 mb-1">Lokasi Kegiatan</label>
+                <input
+                  type="text"
+                  value={formData.location || ""}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Balai RW 03, Cipaganti"
+                  className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-500 text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 font-extrabold cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold cursor-pointer shadow-xs"
+                >
+                  Simpan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

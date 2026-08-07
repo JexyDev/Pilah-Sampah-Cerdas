@@ -112,7 +112,7 @@ router.get("/", authMiddleware, async (req, res) => {
     let formattedNotifications: any[] = [];
 
     const isAdminOrPetugas = [
-      "SUPER_ADMIN",
+      "SUPER_USER",
       "ADMIN_DLH",
       "CAMAT",
       "LURAH",
@@ -128,11 +128,11 @@ router.get("/", authMiddleware, async (req, res) => {
     if (userId) {
       dbUser = await prisma.user.findUnique({
         where: { id: userId },
-        include: { rtRw: true },
+        include: { rw: true },
       });
 
-      if (dbUser?.rtRwId) {
-        const area = dbUser.rtRw;
+      if (dbUser?.rwId) {
+        const area = dbUser.rw;
         if (area) {
           const rwPart =
             area.name
@@ -140,7 +140,7 @@ router.get("/", authMiddleware, async (req, res) => {
               .map((s) => s.trim())
               .find((s) => s.startsWith("RW")) || area.name;
 
-          const matchingAreas = await prisma.rtRwArea.findMany({
+          const matchingAreas = await prisma.rw.findMany({
             where: {
               kelurahanId: area.kelurahanId,
               name: { contains: rwPart },
@@ -149,7 +149,7 @@ router.get("/", authMiddleware, async (req, res) => {
           });
           areaIds = matchingAreas.map((a) => a.id);
         }
-        if (areaIds.length === 0) areaIds = [dbUser.rtRwId];
+        if (areaIds.length === 0) areaIds = [dbUser.rwId];
       }
     }
 
@@ -159,12 +159,12 @@ router.get("/", authMiddleware, async (req, res) => {
         let reqWhere: any = { status: "PENDING" };
         if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
           if (areaIds.length > 0) {
-            reqWhere.bin = { rtRwId: { in: areaIds } };
+            reqWhere.bin = { rwId: { in: areaIds } };
           } else {
-            reqWhere.bin = { rtRwId: -1 };
+            reqWhere.bin = { rwId: -1 };
           }
-        } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
-          reqWhere.bin = { rtRw: { kelurahanId: dbUser.rtRw.kelurahanId } };
+        } else if (role === "LURAH" && dbUser?.rw?.kelurahanId) {
+          reqWhere.bin = { rw: { kelurahanId: dbUser.rw.kelurahanId } };
         }
 
         const requests = await prisma.binResetRequest.findMany({
@@ -172,7 +172,7 @@ router.get("/", authMiddleware, async (req, res) => {
           include: {
             bin: {
               include: {
-                rtRw: true,
+                rw: true,
                 category: true,
               },
             },
@@ -195,7 +195,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
           const binCategory = r.bin?.category?.name || "Organik";
           const binQr = r.bin?.qrCode || "BIN";
-          const area = r.bin?.rtRw?.name || "RT 01 / RW 04";
+          const area = r.bin?.rw?.name || "RT 01 / RW 04";
 
           return {
             id: `req-${r.id}`,
@@ -233,17 +233,17 @@ router.get("/", authMiddleware, async (req, res) => {
           let binWhere: any = {};
           if (["RW", "RT", "PETUGAS_RESIDU"].includes(role)) {
             if (areaIds.length > 0) {
-              binWhere.rtRwId = { in: areaIds };
+              binWhere.rwId = { in: areaIds };
             } else {
-              binWhere.rtRwId = -1;
+              binWhere.rwId = -1;
             }
-          } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
-            binWhere.rtRw = { kelurahanId: dbUser.rtRw.kelurahanId };
+          } else if (role === "LURAH" && dbUser?.rw?.kelurahanId) {
+            binWhere.rw = { kelurahanId: dbUser.rw.kelurahanId };
           }
 
           const fullBins = await prisma.bin.findMany({
             where: binWhere,
-            include: { rtRw: true, category: true },
+            include: { rw: true, category: true },
             take: 10,
           });
           const realCriticalBins = fullBins.filter(
@@ -259,7 +259,7 @@ router.get("/", authMiddleware, async (req, res) => {
               id: `crit-bin-${b.id}`,
               type: "TONG_PENUH",
               title: "Kapasitas Tong Kritis",
-              desc: `Tempat sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rtRw?.name || "Wilayah"} telah mencapai ${pct}%!`,
+              desc: `Tempat sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rw?.name || "Wilayah"} telah mencapai ${pct}%!`,
               isRead: false,
               time: "Status Real-time",
               icon: "warning",
@@ -475,3 +475,4 @@ router.delete("/all", authMiddleware, async (req, res) => {
 });
 
 export default router;
+

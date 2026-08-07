@@ -352,7 +352,7 @@ const JadwalKegiatan: React.FC = () => {
                 </button>
               </div>
             </div>
-            {["SUPER_ADMIN", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
+            {["SUPER_USER", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
               <button
                 className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
                 onClick={() => setIsModalOpen(true)}
@@ -545,7 +545,7 @@ const JadwalKegiatan: React.FC = () => {
                           Belum ada agenda dijadwalkan pada tanggal ini.
                         </p>
                       </div>
-                      {["SUPER_ADMIN", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
+                      {["SUPER_USER", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
                         <button
                           onClick={() => {
                             const year = selectedDate.getFullYear();
@@ -647,7 +647,7 @@ const JadwalKegiatan: React.FC = () => {
                               </div>
 
                               {/* Single item actions */}
-                              {count === 1 && user?.peran === "SUPER_ADMIN" && (
+                              {count === 1 && user?.peran === "SUPER_USER" && (
                                 <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 mt-1">
                                   <button
                                     onClick={(e) => handleEdit(firstItem, e)}
@@ -686,7 +686,7 @@ const JadwalKegiatan: React.FC = () => {
                                         {item.location || "Wilayah Coblong"}
                                       </span>
                                     </div>
-                                    {user?.peran === "SUPER_ADMIN" && (
+                                    {user?.peran === "SUPER_USER" && (
                                       <div className="flex items-center gap-1">
                                         <button
                                           onClick={(e) => handleEdit(item, e)}
@@ -733,7 +733,7 @@ const JadwalKegiatan: React.FC = () => {
                           <div className={`absolute -left-[14px] top-3.5 w-2.5 h-2.5 rounded-full ring-4 ring-white ${catTheme.dot}`}></div>
 
                           <div className="p-3 border border-slate-200/80 rounded-xl bg-white hover:border-emerald-400 hover:shadow-sm transition-all relative">
-                            {user?.peran === "SUPER_ADMIN" && (
+                            {user?.peran === "SUPER_USER" && (
                               <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-0.5 rounded-md shadow-2xs">
                                 <button
                                   onClick={(e) => handleEdit(schedule, e)}

@@ -95,8 +95,8 @@ describe("readOnlyGuard middleware tests", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("should allow any operations for SUPER_ADMIN", () => {
-    const token = generateAccessToken({ userId: "sa-1", role: "SUPER_ADMIN" });
+  it("should allow any operations for SUPER_USER", () => {
+    const token = generateAccessToken({ userId: "sa-1", role: "SUPER_USER" });
     const req = {
       method: "POST",
       originalUrl: "/api/v1/users",

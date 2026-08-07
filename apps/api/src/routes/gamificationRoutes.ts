@@ -24,7 +24,7 @@ router.get("/recycle-ideas", authMiddleware, gamificationController.getIdeas);
 router.put(
   "/recycle-ideas/:id/approve",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
   gamificationController.approveIdea
 );
 

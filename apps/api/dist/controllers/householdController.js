@@ -9,7 +9,7 @@ import { householdService } from "../services/householdService.js";
 // Validation Schema for Registration
 const registerSchema = z.object({
     address: z.string().min(5, "Alamat terlalu pendek"),
-    rtRwId: z.number().int().positive("Area RT/RW tidak valid"),
+    rwId: z.number().int().positive("Area RT/RW tidak valid"),
     latitude: z.number().min(-90).max(90, "Latitude tidak valid"),
     longitude: z.number().min(-180).max(180, "Longitude tidak valid"),
 });
@@ -27,9 +27,9 @@ export class HouseholdController {
                 res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { address, rtRwId, latitude, longitude } = parsed.data;
+            const { address, rwId, latitude, longitude } = parsed.data;
             // 2. Call Service
-            const household = await householdService.registerHousehold(userId, address, rtRwId, latitude, longitude);
+            const household = await householdService.registerHousehold(userId, address, rwId, latitude, longitude);
             // 3. Return response
             res.status(201).json({
                 message: "Registrasi rumah tangga berhasil",

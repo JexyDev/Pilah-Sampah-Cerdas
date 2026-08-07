@@ -6,7 +6,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-export class SuperAdminService {
+export class superUserService {
     /**
      * Get dynamic status of a bin based on the 30-day inactivity rule
      */
@@ -47,7 +47,7 @@ export class SuperAdminService {
             },
             include: {
                 user: true,
-                rtRw: { include: { kelurahan: true } },
+                rw: { include: { kelurahan: true } },
                 setoranOtomatis: {
                     orderBy: { createdAt: "desc" },
                     take: 1,
@@ -66,7 +66,7 @@ export class SuperAdminService {
                 qrCode: b.qrCode,
                 owner: b.user ? b.user.name : "-",
                 ownerEmail: b.user ? b.user.email || "-" : "-",
-                wilayah: b.rtRw ? `${b.rtRw.name} (Kel. ${b.rtRw.kelurahan.name})` : "-",
+                wilayah: b.rw ? `${b.rw.name} (Kel. ${b.rw.kelurahan.name})` : "-",
                 lastActivity: lastLog || b.createdAt,
                 notes: latestRequest ? latestRequest.evidencePhotoUrl : "", // temporary use or custom notes field
                 status: "INACTIVE",
@@ -128,7 +128,7 @@ export class SuperAdminService {
      * Handover KKN Student PIC duties
      */
     async handoverKkn(data, adminUserId) {
-        const { fromUserId, toUserId, rtRwId, notes } = data;
+        const { fromUserId, toUserId, rwId, notes } = data;
         const fromUser = await prisma.user.findUnique({
             where: { id: fromUserId },
             include: { role: true },
@@ -147,11 +147,11 @@ export class SuperAdminService {
             // 1. Update StudentKkn assignment
             await tx.studentKkn.update({
                 where: { userId: toUserId },
-                data: { assignedPolygonId: rtRwId },
+                data: { assignedRwId: rwId },
             });
             await tx.studentKkn.update({
                 where: { userId: fromUserId },
-                data: { assignedPolygonId: null },
+                data: { assignedRwId: null },
             });
             // 2. Reassign QR Batches
             await tx.qrBatch.updateMany({
@@ -163,7 +163,7 @@ export class SuperAdminService {
                 data: {
                     fromUserId,
                     toUserId,
-                    rtRwId,
+                    rwId,
                     notes,
                 },
             });
@@ -172,7 +172,7 @@ export class SuperAdminService {
                 data: {
                     action: "KKN_HANDOVER",
                     userId: adminUserId,
-                    newValue: { fromUserId, toUserId, rtRwId, notes },
+                    newValue: { fromUserId, toUserId, rwId, notes },
                 },
             });
             return history;
@@ -186,7 +186,7 @@ export class SuperAdminService {
             include: {
                 fromUser: true,
                 toUser: true,
-                rtRw: { include: { kelurahan: true } },
+                rw: { include: { kelurahan: true } },
             },
             orderBy: { handoverDate: "desc" },
         });
@@ -205,7 +205,7 @@ export class SuperAdminService {
         return prisma.bin.findMany({
             where,
             include: {
-                rtRw: { include: { kelurahan: true } },
+                rw: { include: { kelurahan: true } },
                 qrBatch: true,
                 user: true,
                 category: true,
@@ -217,7 +217,7 @@ export class SuperAdminService {
      * Generate a batch of QR Codes
      */
     async generateQrBatch(data, adminUserId) {
-        const { totalQr, categoryId, rtRwId } = data;
+        const { totalQr, categoryId, rwId } = data;
         // Find all QR batches in the database starting with "BATCH-"
         const allBatches = await prisma.qrBatch.findMany({
             where: {
@@ -281,7 +281,7 @@ export class SuperAdminService {
                 binsData.push({
                     qrCode,
                     categoryId: (categoryId || null),
-                    rtRwId: (rtRwId || null),
+                    rwId: (rwId || null),
                     status: "PRINTED",
                     qrBatchId: batch.id,
                 });
@@ -294,7 +294,7 @@ export class SuperAdminService {
                 data: {
                     action: "GENERATE_QR_BATCH",
                     userId: adminUserId,
-                    newValue: { batchCode: computedBatchCode, totalQr, categoryId, rtRwId },
+                    newValue: { batchCode: computedBatchCode, totalQr, categoryId, rwId },
                 },
             });
             return batch;
@@ -375,15 +375,15 @@ export class SuperAdminService {
         const users = await prisma.user.findMany({
             where: { role: { name: "WARGA" } },
             include: {
-                rtRw: { include: { kelurahan: true } },
+                rw: { include: { kelurahan: true } },
                 setoranOtomatis: true,
             },
         });
         const regionScores = {};
         users.forEach((u) => {
-            if (!u.rtRw)
+            if (!u.rw)
                 return;
-            const rtRwName = `${u.rtRw.name} (Kel. ${u.rtRw.kelurahan.name})`;
+            const rtRwName = `${u.rw.name} (Kel. ${u.rw.kelurahan.name})`;
             const totalLogs = u.setoranOtomatis.length;
             if (totalLogs === 0)
                 return;
@@ -412,9 +412,9 @@ export class SuperAdminService {
         // 4. Agregasi Berat Sampah per Kelurahan (Median)
         const kelurahanWeights = {};
         users.forEach((u) => {
-            if (!u.rtRw)
+            if (!u.rw)
                 return;
-            const kelurahanName = u.rtRw.kelurahan.name;
+            const kelurahanName = u.rw.kelurahan.name;
             const totalWeight = u.setoranOtomatis.reduce((sum, l) => sum + Number(l.berat), 0);
             if (totalWeight > 0) {
                 if (!kelurahanWeights[kelurahanName]) {
@@ -623,7 +623,7 @@ export class SuperAdminService {
                 data: {
                     status: "ACTIVE_BOUND",
                     userId: oldBin.userId,
-                    rtRwId: oldBin.rtRwId,
+                    rwId: oldBin.rwId,
                     registeredByStudentId: oldBin.registeredByStudentId,
                 },
             });
@@ -759,4 +759,4 @@ export class SuperAdminService {
         };
     }
 }
-export const superAdminService = new SuperAdminService();
+export const superUserService = new superUserService();

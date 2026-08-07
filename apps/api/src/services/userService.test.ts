@@ -85,10 +85,10 @@ describe("UserService", () => {
           phone: "+6281122233344",
           status: "Aktif",
           role: { name: "WARGA" },
-          rtRw: { name: "RT 01 / RW 01", kelurahan: { name: "Dago" } },
+          rw: { name: "RT 01 / RW 01", kelurahan: { name: "Dago" } },
           households: [
             {
-              rtRw: null,
+              rw: null,
             },
           ],
           setoranOtomatis: [{ berat: 2.5 }, { berat: 1.5 }],
@@ -101,7 +101,7 @@ describe("UserService", () => {
 
       const result = await userService.getAllUsers(
         {},
-        { userId: "mock-user-id", role: "SUPER_ADMIN" }
+        { userId: "mock-user-id", role: "SUPER_USER" }
       );
 
       expect(userRepository.findMany).toHaveBeenCalledWith({});
@@ -185,3 +185,4 @@ describe("UserService", () => {
     });
   });
 });
+

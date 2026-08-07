@@ -34,7 +34,7 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
 
     // DEV BYPASS
     if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
-      // Mock admin is SUPER_ADMIN, which has write access
+      // Mock admin is SUPER_USER, which has write access
       return next();
     }
 

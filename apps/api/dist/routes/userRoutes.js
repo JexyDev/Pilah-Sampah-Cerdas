@@ -28,7 +28,7 @@ const router = Router();
  *         description: List of all users
  */
 router.get("/", authMiddleware, roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -48,7 +48,7 @@ router.get("/", authMiddleware, roleMiddleware([
  *     security:
  *       - bearerAuth: []
  */
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), userController.createUser);
+router.post("/", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), userController.createUser);
 /**
  * @swagger
  * /api/v1/users/{id}:
@@ -64,7 +64,7 @@ router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), u
  *         schema:
  *           type: string
  */
-router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), userController.deleteUser);
+router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), userController.deleteUser);
 /**
  * @swagger
  * /api/v1/users/{id}:
@@ -80,7 +80,7 @@ router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"
  *         schema:
  *           type: string
  */
-router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), userController.updateUser);
+router.put("/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), userController.updateUser);
 /**
  * @swagger
  * /api/v1/users/{id}/onboarding-status:

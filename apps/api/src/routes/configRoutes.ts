@@ -15,13 +15,13 @@ const router = Router();
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   configController.getAll
 );
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   configController.update
 );
 

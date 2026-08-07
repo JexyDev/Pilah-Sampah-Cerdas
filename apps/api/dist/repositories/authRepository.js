@@ -23,6 +23,7 @@ function isDatabaseConnectionError(error) {
     return false;
 }
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
+import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 export class AuthRepository {
     async findUserByPhone(phone) {
         try {
@@ -33,12 +34,15 @@ export class AuthRepository {
                 : raw.startsWith("+62")
                     ? "0" + raw.slice(3)
                     : raw;
+            const cleanDigits = raw.replace(/[^0-9]/g, "");
             let user = (await prisma.user.findFirst({
                 where: {
                     OR: [
                         { phone: formatted },
                         { phone: raw },
                         { phone: alt },
+                        { phone: { contains: raw } },
+                        ...(cleanDigits.length >= 6 ? [{ phone: { contains: cleanDigits } }, { address: { contains: cleanDigits } }] : []),
                         { name: { contains: raw, mode: "insensitive" } },
                         { petugasProfile: { is: { noWa: { contains: raw } } } },
                         { studentProfile: { is: { OR: [{ nim: raw }, { noWa: { contains: raw } }] } } },
@@ -80,7 +84,7 @@ export class AuthRepository {
                 }
                 else if (lower.includes("super") ||
                     ["08111111111", "+628111111111", "081200999999", "+6281200999999"].includes(raw)) {
-                    targetRole = "SUPER_ADMIN";
+                    targetRole = "SUPER_USER";
                 }
                 else if (lower.includes("warga") ||
                     ["0812001001", "+62812001001", "0812001003", "+62812001003"].includes(raw)) {
@@ -198,7 +202,30 @@ export class AuthRepository {
      */
     async findRoleByName(name) {
         try {
-            return await prisma.role.findUnique({ where: { name } });
+            const normalizedMap = {
+                "Super User": "SUPER_USER",
+                "SUPER USER": "SUPER_USER",
+                "Dinas Lingkungan Hidup": "ADMIN_DLH",
+                "Camat": "CAMAT",
+                "Lurah": "LURAH",
+                "Rukun Warga": "RW",
+                "Rukun Tetangga": "RT",
+                "Dosen Pembimbing Lapangan": "DPL",
+                "Petugas Residu": "PETUGAS_RESIDU",
+                "Mahasiswa": "MAHASISWA_KKN",
+                "Mahasiswa KKN": "MAHASISWA_KKN",
+                "Warga": "WARGA",
+                "Pimpinan": "PEMIMPIN",
+                "Task Force": "PANITIA_TASKFORCE",
+            };
+            const searchName = normalizedMap[name] || name;
+            let role = await prisma.role.findUnique({ where: { name: searchName } });
+            if (!role) {
+                role = await prisma.role.findFirst({
+                    where: { name: { equals: searchName, mode: "insensitive" } },
+                });
+            }
+            return role;
         }
         catch (error) {
             if (isDatabaseConnectionError(error)) {
@@ -250,6 +277,7 @@ export class AuthRepository {
             const user = await tx.user.create({
                 data: {
                     ...userData,
+                    fotoProfil: userData.fotoProfil || getRandomDefaultAvatar(userData.name),
                     phone: formattedPhone,
                     roleId: role.id,
                     wargaSubtype: wargaSubtype || "UTAMA",
@@ -277,7 +305,7 @@ export class AuthRepository {
                         data: {
                             status: "ACTIVE_BOUND",
                             userId: user.id,
-                            rtRwId: user.rtRwId ?? householdData.rtRwId,
+                            rwId: user.rwId ?? householdData.rwId,
                             latitude: householdData.latitude,
                             longitude: householdData.longitude,
                         },
@@ -314,6 +342,7 @@ export class AuthRepository {
             const user = await tx.user.create({
                 data: {
                     ...userData,
+                    fotoProfil: userData.fotoProfil || getRandomDefaultAvatar(userData.name),
                     roleId: role.id,
                     status: "Aktif",
                 },
@@ -339,6 +368,7 @@ export class AuthRepository {
             const user = await tx.user.create({
                 data: {
                     ...userData,
+                    fotoProfil: userData.fotoProfil || getRandomDefaultAvatar(userData.name),
                     roleId: role.id,
                     status: "Pending",
                 },

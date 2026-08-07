@@ -15,7 +15,7 @@ export class KknService {
   async getDashboardStats(userId: string) {
     let student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { assignedPolygon: true },
+      include: { assignedRw: true },
     });
 
     if (!student) {
@@ -32,7 +32,7 @@ export class KknService {
             endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             whitelistStatus: "APPROVED",
           },
-          include: { assignedPolygon: true },
+          include: { assignedRw: true },
         });
       } else {
         throw new Error("STUDENT_NOT_FOUND");
@@ -62,11 +62,11 @@ export class KknService {
     });
     const contributionPoints = pointsSum._sum.points || 0;
 
-    const poskoLat = student.assignedPolygon?.latitude
-      ? Number(student.assignedPolygon.latitude)
+    const poskoLat = student.assignedRw?.latitude
+      ? Number(student.assignedRw.latitude)
       : -6.975412;
-    const poskoLng = student.assignedPolygon?.longitude
-      ? Number(student.assignedPolygon.longitude)
+    const poskoLng = student.assignedRw?.longitude
+      ? Number(student.assignedRw.longitude)
       : 107.632145;
 
     return {
@@ -76,13 +76,13 @@ export class KknService {
         fakultas: student.fakultas,
         whitelistStatus: student.whitelistStatus,
         endDate: student.endDate,
-        assignedArea: student.assignedPolygon?.name || "Area KKN Bojongsoang",
+        assignedArea: student.assignedRw?.name || "Area KKN Bojongsoang",
         latitude: poskoLat,
         longitude: poskoLng,
         radiusMeter: 5000,
       },
       poskoLocation: {
-        name: student.assignedPolygon?.name || "Kel. Bojongsoang RT 03 / RW 08",
+        name: student.assignedRw?.name || "Kel. Bojongsoang RT 03 / RW 08",
         latitude: poskoLat,
         longitude: poskoLng,
         radiusMeter: 5000,
@@ -108,7 +108,7 @@ export class KknService {
     };
   }
 
-  async getRegisteredWarga(kknUserId: string, filters: { rtRwId?: number; search?: string }) {
+  async getRegisteredWarga(kknUserId: string, filters: { rwId?: number; search?: string }) {
     // We get warga whose bins belong to batches assigned to this KKN PIC
     const bins = await prisma.bin.findMany({
       where: {
@@ -120,7 +120,7 @@ export class KknService {
       include: {
         user: {
           include: {
-            rtRw: true,
+            rw: true,
             households: true,
             pointHistory: true,
             wargaViolations: true,
@@ -139,15 +139,15 @@ export class KknService {
         ? Number(b.latitude)
         : household?.latitude
           ? Number(household.latitude)
-          : u.rtRw?.latitude
-            ? Number(u.rtRw.latitude)
+          : u.rw?.latitude
+            ? Number(u.rw.latitude)
             : -6.891234;
       const lng = b.longitude
         ? Number(b.longitude)
         : household?.longitude
           ? Number(household.longitude)
-          : u.rtRw?.longitude
-            ? Number(u.rtRw.longitude)
+          : u.rw?.longitude
+            ? Number(u.rw.longitude)
             : 107.610123;
 
       const recentLogs = u.setoranOtomatis.map((log: any) => ({
@@ -164,7 +164,7 @@ export class KknService {
         wargaName: u.name,
         name: u.name,
         phone: u.phone,
-        address: u.address || (u.rtRw?.name ? `RT ${u.rtRw.name}` : "Alamat belum diisi"),
+        address: u.address || (u.rw?.name ? `RT ${u.rw.name}` : "Alamat belum diisi"),
         latitude: lat,
         longitude: lng,
         lat: lat,
@@ -172,7 +172,7 @@ export class KknService {
         isActivated: true,
         recentLogs,
         // for filters
-        rtRwId: u.rtRwId,
+        rwId: u.rwId,
       };
     });
 
@@ -180,8 +180,8 @@ export class KknService {
     let result = list.filter((item): item is NonNullable<typeof item> => item !== null);
 
     // apply filters
-    if (filters.rtRwId) {
-      result = result.filter((item) => item.rtRwId === filters.rtRwId);
+    if (filters.rwId) {
+      result = result.filter((item) => item.rwId === filters.rwId);
     }
     if (filters.search) {
       const s = filters.search.toLowerCase();
@@ -197,7 +197,7 @@ export class KknService {
     const warga = (await prisma.user.findUnique({
       where: { id: wargaId },
       include: {
-        rtRw: true,
+        rw: true,
         setoranOtomatis: {
           take: 5,
           orderBy: { createdAt: "desc" },
@@ -237,15 +237,15 @@ export class KknService {
       ? Number(household.latitude)
       : defaultBin?.latitude
         ? Number(defaultBin.latitude)
-        : warga.rtRw?.latitude
-          ? Number(warga.rtRw.latitude)
+        : warga.rw?.latitude
+          ? Number(warga.rw.latitude)
           : -6.891234;
     const lng = household?.longitude
       ? Number(household.longitude)
       : defaultBin?.longitude
         ? Number(defaultBin.longitude)
-        : warga.rtRw?.longitude
-          ? Number(warga.rtRw.longitude)
+        : warga.rw?.longitude
+          ? Number(warga.rw.longitude)
           : 107.610123;
 
     const recentLogs =
@@ -265,7 +265,7 @@ export class KknService {
       email: warga.email,
       phone: warga.phone,
       address: household?.address || warga.address || "Alamat belum diisi",
-      rtRw: warga.rtRw?.name || "Belum diset",
+      rw: warga.rw?.name || "Belum diset",
       latitude: lat,
       longitude: lng,
       lat: lat,
@@ -286,47 +286,47 @@ export class KknService {
     filters: {
       status?: string;
       kelurahan?: string;
-      rtRwId?: number;
-      rtRw?: string;
+      rwId?: number;
+      rw?: string;
       search?: string;
     }
   ) {
-    let studentRtRwId: number | undefined = filters.rtRwId;
+    let studentRwId: number | undefined = filters.rwId;
     let studentKelurahanName: string | undefined = filters.kelurahan;
 
-    if (!studentRtRwId && !studentKelurahanName) {
+    if (!studentRwId && !studentKelurahanName) {
       const student = await prisma.studentKkn.findUnique({
         where: { userId: kknUserId },
         include: {
-          assignedPolygon: {
+          assignedRw: {
             include: { kelurahan: true },
           },
           user: true,
         },
       });
 
-      if (student?.assignedPolygon) {
-        studentRtRwId = student.assignedPolygon.id;
-        studentKelurahanName = student.assignedPolygon.kelurahan?.name;
-      } else if (student?.user?.rtRwId) {
-        studentRtRwId = student.user.rtRwId;
+      if (student?.assignedRw) {
+        studentRwId = student.assignedRw.id;
+        studentKelurahanName = student.assignedRw.kelurahan?.name;
+      } else if (student?.user?.rwId) {
+        studentRwId = student.user.rwId;
       }
     }
 
     const where: any = { role: { name: "WARGA" } };
 
-    if (studentRtRwId || studentKelurahanName) {
+    if (studentRwId || studentKelurahanName) {
       const orConditions: any[] = [];
-      if (studentRtRwId) {
-        orConditions.push({ rtRwId: studentRtRwId });
-        orConditions.push({ households: { some: { rtRwId: studentRtRwId } } });
+      if (studentRwId) {
+        orConditions.push({ rwId: studentRwId });
+        orConditions.push({ households: { some: { rwId: studentRwId } } });
       }
       if (studentKelurahanName) {
         orConditions.push({
-          households: { some: { rtRw: { kelurahan: { name: studentKelurahanName } } } },
+          households: { some: { rw: { kelurahan: { name: studentKelurahanName } } } },
         });
         orConditions.push({
-          rtRw: { kelurahan: { name: studentKelurahanName } },
+          rw: { kelurahan: { name: studentKelurahanName } },
         });
       }
       orConditions.push({ registeredBins: { some: { registeredByStudentId: kknUserId } } });
@@ -346,8 +346,8 @@ export class KknService {
     const warga = await prisma.user.findMany({
       where,
       include: {
-        rtRw: { include: { kelurahan: true } },
-        households: { include: { rtRw: { include: { kelurahan: true } } } },
+        rw: { include: { kelurahan: true } },
+        households: { include: { rw: { include: { kelurahan: true } } } },
         binOwnerships: { include: { bin: { include: { category: true, qrBatch: true } } } },
         setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
       },
@@ -356,8 +356,8 @@ export class KknService {
     return warga.map((w: any) => {
       const household = w.households?.[0];
       const kelName =
-        w.rtRw?.kelurahan?.name || household?.rtRw?.kelurahan?.name || filters.kelurahan || "";
-      const rtRwName = w.rtRw?.name || household?.rtRw?.name || filters.rtRw || "";
+        w.rw?.kelurahan?.name || household?.rw?.kelurahan?.name || filters.kelurahan || "";
+      const rtRwName = w.rw?.name || household?.rw?.name || filters.rw || "";
 
       const binOrganik = w.binOwnerships?.find(
         (bo: any) =>
@@ -397,15 +397,15 @@ export class KknService {
         ? Number(household.latitude)
         : primaryBin?.latitude
           ? Number(primaryBin.latitude)
-          : w.rtRw?.latitude
-            ? Number(w.rtRw.latitude)
+          : w.rw?.latitude
+            ? Number(w.rw.latitude)
             : -6.891234;
       const lng = household?.longitude
         ? Number(household.longitude)
         : primaryBin?.longitude
           ? Number(primaryBin.longitude)
-          : w.rtRw?.longitude
-            ? Number(w.rtRw.longitude)
+          : w.rw?.longitude
+            ? Number(w.rw.longitude)
             : 107.610123;
 
       return {
@@ -419,7 +419,7 @@ export class KknService {
           w.address ||
           (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
-        rtRw: rtRwName,
+        rw: rtRwName,
         role: "WARGA",
         latitude: lat,
         longitude: lng,
@@ -597,7 +597,7 @@ export class KknService {
     });
   }
 
-  async handover(fromKknUserId: string, toKknUserId: string, rtRwId: number, notes?: string) {
+  async handover(fromKknUserId: string, toKknUserId: string, rwId: number, notes?: string) {
     return prisma.$transaction(async (tx) => {
       const batches = await tx.qrBatch.findMany({
         where: { assignedPicUserId: fromKknUserId },
@@ -614,7 +614,7 @@ export class KknService {
         data: {
           fromUserId: fromKknUserId,
           toUserId: toKknUserId,
-          rtRwId,
+          rwId,
           notes,
         },
       });
@@ -627,7 +627,7 @@ export class KknService {
     kknUserId: string,
     data: {
       userId: string;
-      rtRwId: number;
+      rwId: number;
       nama: string;
       jenis: any;
       longitude: number;
@@ -642,7 +642,7 @@ export class KknService {
         pic: data.userId, // Warga's name or ID
         latitude: data.latitude,
         longitude: data.longitude,
-        rtRwId: data.rtRwId,
+        rwId: data.rwId,
         foto: data.foto,
         statusApproval: "PENDING",
       },
@@ -706,30 +706,30 @@ export class KknService {
       });
 
       // Auto-resolve rtRwId from input RW string or KKN student's assigned area
-      let resolvedRtRwId: number | undefined = data.rtRwId ? Number(data.rtRwId) : undefined;
+      let resolvedRwId: number | undefined = data.rwId ? Number(data.rwId) : undefined;
 
-      if (!resolvedRtRwId && (data.rw || data.rwNumber || data.lokasiRw)) {
+      if (!resolvedRwId && (data.rw || data.rwNumber || data.lokasiRw)) {
         const rawRwStr = String(data.rw || data.rwNumber || data.lokasiRw);
         const rwDigits = rawRwStr.match(/\d+/);
         if (rwDigits) {
           const rwPadded = rwDigits[0].padStart(2, "0");
-          const matchedArea = await tx.rtRwArea.findFirst({
+          const matchedArea = await tx.rw.findFirst({
             where: {
               name: { contains: rwPadded },
             },
           });
           if (matchedArea) {
-            resolvedRtRwId = matchedArea.id;
+            resolvedRwId = matchedArea.id;
           }
         }
       }
 
-      if (!resolvedRtRwId && kknUserId) {
+      if (!resolvedRwId && kknUserId) {
         const student = await tx.studentKkn.findUnique({
           where: { userId: kknUserId },
           include: { user: true },
         });
-        resolvedRtRwId = student?.assignedPolygonId || student?.user?.rtRwId || undefined;
+        resolvedRwId = student?.assignedRwId || student?.user?.rwId || undefined;
       }
 
       if (!warga) {
@@ -739,15 +739,15 @@ export class KknService {
             phone: data.phone || `08${Math.floor(100000000 + Math.random() * 900000000)}`,
             password: data.password || "password123",
             address: data.address || "-",
-            rtRwId: resolvedRtRwId,
+            rwId: resolvedRwId,
             roleId: role ? role.id : 1,
             status: "Aktif",
           },
         });
-      } else if (resolvedRtRwId && !warga.rtRwId) {
+      } else if (resolvedRwId && !warga.rwId) {
         warga = await tx.user.update({
           where: { id: warga.id },
-          data: { rtRwId: resolvedRtRwId },
+          data: { rwId: resolvedRwId },
         });
       }
 
@@ -769,7 +769,7 @@ export class KknService {
               status: "PENDING_APPROVAL",
               categoryId: category?.id,
               userId: warga.id,
-              rtRwId: resolvedRtRwId,
+              rwId: resolvedRwId,
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
             },
@@ -779,7 +779,7 @@ export class KknService {
             where: { id: bin.id },
             data: {
               userId: warga.id,
-              rtRwId: resolvedRtRwId,
+              rwId: resolvedRwId,
               status: "PENDING_APPROVAL",
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
@@ -813,7 +813,7 @@ export class KknService {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: {
-        assignedPolygon: true,
+        assignedRw: true,
         kelompok: {
           include: {
             dpl: true,
@@ -860,18 +860,18 @@ export class KknService {
 
     const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
 
-    const poskoLat = student.assignedPolygon?.latitude
-      ? Number(student.assignedPolygon.latitude)
+    const poskoLat = student.assignedRw?.latitude
+      ? Number(student.assignedRw.latitude)
       : -6.975412;
-    const poskoLng = student.assignedPolygon?.longitude
-      ? Number(student.assignedPolygon.longitude)
+    const poskoLng = student.assignedRw?.longitude
+      ? Number(student.assignedRw.longitude)
       : 107.632145;
 
     return {
       groupId: group.id,
       groupName: group.name,
       dosenPembimbing: group.dpl?.name || "Dr. Ir. Ahmad Sudrajat, M.T.",
-      poskoLocation: student.assignedPolygon?.name || "Kel. Bojongsoang RT 03 / RW 08",
+      poskoLocation: student.assignedRw?.name || "Kel. Bojongsoang RT 03 / RW 08",
       latitude: poskoLat,
       longitude: poskoLng,
       poskoLatitude: poskoLat,
@@ -940,10 +940,10 @@ export class KknService {
       include: { user: true },
     });
 
-    const userRtRw = student?.user?.rtRwId;
+    const userRtRw = student?.user?.rwId;
     let targetRwId = userRtRw;
     if (!targetRwId) {
-      const firstRw = await prisma.rtRwArea.findFirst();
+      const firstRw = await prisma.rw.findFirst();
       targetRwId = firstRw ? firstRw.id : 1;
     }
 
@@ -1024,12 +1024,12 @@ export class KknService {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: {
-        assignedPolygon: {
+        assignedRw: {
           include: { kelurahan: true },
         },
         user: {
           include: {
-            rtRw: {
+            rw: {
               include: { kelurahan: true },
             },
           },
@@ -1037,7 +1037,7 @@ export class KknService {
       },
     });
 
-    const activeArea = student?.assignedPolygon || student?.user?.rtRw;
+    const activeArea = student?.assignedRw || student?.user?.rw;
 
     if (!activeArea) {
       return {
@@ -1076,3 +1076,5 @@ export class KknService {
 }
 
 export const kknService = new KknService();
+
+

@@ -16,7 +16,7 @@ const PoinWarga: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { user } = useAuthStore();
-  const isAuthorizedToAdjust = ["SUPER_ADMIN", "ADMIN_DLH", "RW"].includes(user?.peran || "");
+  const isAuthorizedToAdjust = ["SUPER_USER", "ADMIN_DLH", "RW"].includes(user?.peran || "");
 
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [adjustPointsVal, setAdjustPointsVal] = useState(50);
@@ -98,21 +98,21 @@ const PoinWarga: React.FC = () => {
         bg: "bg-yellow-100",
         color: "text-yellow-700",
         border: "border-yellow-200",
-        medal: "ðŸ¥‡",
+        medal: "🥇",
       };
     if (rank === 2)
       return {
         bg: "bg-gray-100",
         color: "text-gray-600",
         border: "border-gray-200",
-        medal: "ðŸ¥ˆ",
+        medal: "🥈",
       };
     if (rank === 3)
       return {
         bg: "bg-orange-100",
         color: "text-orange-700",
         border: "border-orange-200",
-        medal: "ðŸ¥‰",
+        medal: "🥉",
       };
     return {
       bg: "bg-surface-container",
@@ -197,8 +197,18 @@ const PoinWarga: React.FC = () => {
                     key={l.id}
                     className={`flex flex-col items-center p-3 rounded-xl border ${mc.border} ${mc.bg} ${pos === 1 ? "ring-2 ring-yellow-300 scale-105" : ""} transition-all`}
                   >
-                    <span className="text-2xl mb-1">{mc.medal}</span>
-                    <p className="text-[13px] font-bold text-center truncate w-full text-center">
+                    <div className="relative mb-2">
+                      <img
+                        src={l.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
+                        alt={l.nama}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                        onError={(e: any) => {
+                          e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
+                        }}
+                      />
+                      <span className="absolute -bottom-1 -right-1 text-base">{mc.medal}</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-center truncate w-full">
                       {l.nama}
                     </p>
                     <p className="text-[10px] text-on-surface-variant">{l.rtRw}</p>
@@ -236,10 +246,22 @@ const PoinWarga: React.FC = () => {
                     onClick={() => handleViewDetail(leader)}
                   >
                     <div className="flex items-center gap-4">
-                      <div
-                        className={`w-9 h-9 rounded-full ${mc.bg} ${mc.color} flex items-center justify-center font-bold text-sm border ${mc.border} shrink-0`}
-                      >
-                        {leader.rank <= 3 ? mc.medal : `#${leader.rank}`}
+                      <div className="relative shrink-0">
+                        <img
+                          src={leader.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
+                          alt={leader.nama}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                          onError={(e: any) => {
+                            e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
+                          }}
+                        />
+                        {leader.rank <= 3 ? (
+                          <span className="absolute -top-1 -right-1 text-xs">{mc.medal}</span>
+                        ) : (
+                          <span className="absolute -bottom-1 -right-1 text-[9px] font-bold bg-slate-800 text-white px-1 rounded-full">
+                            #{leader.rank}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <p className="text-[14px] font-bold text-on-surface">{leader.nama}</p>
@@ -281,7 +303,7 @@ const PoinWarga: React.FC = () => {
               onClick={() => setShowAll(true)}
               className="mt-4 w-full py-2 text-[12px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-green-50 transition-colors"
             >
-              Tampilkan {filteredLeaders.length - 10} warga lainnya â†’
+              Tampilkan {filteredLeaders.length - 10} warga lainnya →
             </button>
           )}
         </section>
@@ -302,18 +324,19 @@ const PoinWarga: React.FC = () => {
             <div className="p-4 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
               {/* Header profil */}
               <div className="flex items-center gap-3">
-                <div
-                  className={`w-12 h-12 rounded-full ${medalColor(selectedUser.rank).bg} ${medalColor(selectedUser.rank).color} flex items-center justify-center text-xl font-bold border ${medalColor(selectedUser.rank).border}`}
-                >
-                  {selectedUser.rank <= 3
-                    ? medalColor(selectedUser.rank).medal
-                    : selectedUser.nama?.charAt(0)?.toUpperCase()}
-                </div>
+                <img
+                  src={selectedUser.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
+                  alt={selectedUser.nama}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-primary/30 shadow-sm"
+                  onError={(e: any) => {
+                    e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
+                  }}
+                />
                 <div>
                   <p className="font-bold text-on-surface text-[16px]">{selectedUser.nama}</p>
                   <p className="text-[12px] text-on-surface-variant">{selectedUser.rtRw}</p>
-                  <p className="text-[11px] font-bold text-primary">
-                    Peringkat #{selectedUser.rank}
+                  <p className="text-[11px] font-bold text-primary flex items-center gap-1">
+                    Peringkat #{selectedUser.rank} {medalColor(selectedUser.rank).medal}
                   </p>
                 </div>
               </div>

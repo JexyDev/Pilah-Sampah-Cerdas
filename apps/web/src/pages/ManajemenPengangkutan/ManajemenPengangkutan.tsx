@@ -8,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import toast from "react-hot-toast";
+import { Pagination } from "../../components/common/Pagination";
 import { 
   Loader2, 
   Pencil, 
@@ -119,7 +120,7 @@ export const ManajemenPengangkutan: React.FC = () => {
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -211,7 +212,7 @@ export const ManajemenPengangkutan: React.FC = () => {
       if (usersRes.data && usersRes.data.success) {
         const officers = usersRes.data.data
           .filter((u: any) =>
-            ["PETUGAS_RESIDU", "PENGANGKUT", "RW", "SUPER_ADMIN"].includes(u.peran || u.roleName)
+            ["PETUGAS_RESIDU", "PENGANGKUT", "RW", "SUPER_USER"].includes(u.peran || u.roleName)
           )
           .map((u: any) => ({
             id: u.id,
@@ -627,38 +628,14 @@ export const ManajemenPengangkutan: React.FC = () => {
 
                 {/* Pagination Controls */}
                 {filteredTasks.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-                    <div>
-                      Menampilkan{" "}
-                      <span className="font-bold text-gray-800">
-                        {(currentPage - 1) * itemsPerPage + 1}
-                      </span>{" "}
-                      -{" "}
-                      <span className="font-bold text-gray-800">
-                        {Math.min(currentPage * itemsPerPage, filteredTasks.length)}
-                      </span>{" "}
-                      dari <span className="font-bold text-gray-800">{filteredTasks.length}</span> data
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
-                      >
-                        ‹ Sebelumnya
-                      </button>
-                      <span className="px-3 py-1.5 font-bold text-gray-700 bg-gray-100 rounded-lg">
-                        Halaman {currentPage} dari {totalTaskPages}
-                      </span>
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalTaskPages))}
-                        disabled={currentPage === totalTaskPages}
-                        className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
-                      >
-                        Berikutnya ›
-                      </button>
-                    </div>
-                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalTaskPages}
+                    totalItems={filteredTasks.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                  />
                 )}
               </>
             )}
@@ -806,38 +783,14 @@ export const ManajemenPengangkutan: React.FC = () => {
 
               {/* Requests Pagination Controls */}
               {filteredRequests.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-                  <div>
-                    Menampilkan{" "}
-                    <span className="font-bold text-gray-800">
-                      {(currentPage - 1) * itemsPerPage + 1}
-                    </span>{" "}
-                    -{" "}
-                    <span className="font-bold text-gray-800">
-                      {Math.min(currentPage * itemsPerPage, filteredRequests.length)}
-                    </span>{" "}
-                    dari <span className="font-bold text-gray-800">{filteredRequests.length}</span> data
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                      ‹ Sebelumnya
-                    </button>
-                    <span className="px-3 py-1.5 font-bold text-gray-700 bg-gray-100 rounded-lg">
-                      Halaman {currentPage} dari {totalRequestPages}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalRequestPages))}
-                      disabled={currentPage === totalRequestPages}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white font-semibold text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                      Berikutnya ›
-                    </button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalRequestPages}
+                  totalItems={filteredRequests.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
               )}
             </>
           )}
@@ -863,7 +816,7 @@ export const ManajemenPengangkutan: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {!editingTask ? (
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Tempat Sampah (Bin)</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Tempat Sampah</label>
                   <select
                     value={selectedBinId}
                     onChange={(e) => setSelectedBinId(e.target.value)}

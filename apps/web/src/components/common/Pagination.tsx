@@ -1,0 +1,183 @@
+/**
+ * Component: Pagination
+ * Standardized Pagination component for TrashCare Data Tables
+ * 
+ * Features:
+ * - Items per page selector ("Tampilkan 10 data per halaman")
+ * - Item range info ("Menampilkan 1–10 dari 26 data")
+ * - Numbered page buttons with active state matching TrashCare theme
+ * - Chevron Previous/Next navigation
+ */
+
+import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+export interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems?: number;
+  itemsPerPage?: number;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
+  itemsPerPageOptions?: number[];
+  className?: string;
+}
+
+export const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  itemsPerPage = 10,
+  onPageChange,
+  onItemsPerPageChange,
+  itemsPerPageOptions = [10, 25, 50, 100],
+  className = "",
+}) => {
+  const safeTotalPages = Math.max(1, totalPages || 1);
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), safeTotalPages);
+
+  // Generate array of page numbers with ellipsis for large page counts
+  const getPageNumbers = (): (number | string)[] => {
+    if (safeTotalPages <= 7) {
+      return Array.from({ length: safeTotalPages }, (_, i) => i + 1);
+    }
+
+    if (safeCurrentPage <= 3) {
+      return [1, 2, 3, 4, "...", safeTotalPages];
+    }
+
+    if (safeCurrentPage >= safeTotalPages - 2) {
+      return [
+        1,
+        "...",
+        safeTotalPages - 3,
+        safeTotalPages - 2,
+        safeTotalPages - 1,
+        safeTotalPages,
+      ];
+    }
+
+    return [
+      1,
+      "...",
+      safeCurrentPage - 1,
+      safeCurrentPage,
+      safeCurrentPage + 1,
+      "...",
+      safeTotalPages,
+    ];
+  };
+
+  const startItem =
+    totalItems === 0
+      ? 0
+      : (safeCurrentPage - 1) * itemsPerPage + 1;
+  const endItem =
+    totalItems !== undefined
+      ? Math.min(safeCurrentPage * itemsPerPage, totalItems)
+      : safeCurrentPage * itemsPerPage;
+
+  return (
+    <div
+      className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-3.5 px-4 bg-white border-t border-slate-100/80 rounded-b-2xl font-sans text-xs text-slate-600 ${className}`}
+    >
+      {/* Left: Items Per Page Selector */}
+      <div className="flex items-center gap-2 font-medium">
+        {onItemsPerPageChange && (
+          <>
+            <span>Tampilkan</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                onItemsPerPageChange(Number(e.target.value));
+                onPageChange(1);
+              }}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-800 font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 cursor-pointer transition"
+            >
+              {itemsPerPageOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+            <span>data per halaman</span>
+          </>
+        )}
+      </div>
+
+      {/* Right: Info & Page Buttons */}
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-end">
+        {totalItems !== undefined && (
+          <span className="text-slate-500 font-medium">
+            Menampilkan{" "}
+            <span className="font-extrabold text-slate-800">
+              {startItem}–{endItem}
+            </span>{" "}
+            dari{" "}
+            <span className="font-extrabold text-emerald-700">
+              {totalItems} data
+            </span>
+          </span>
+        )}
+
+        {/* Page Buttons */}
+        <div className="flex items-center gap-1">
+          {/* Previous Button */}
+          <button
+            type="button"
+            onClick={() => onPageChange(safeCurrentPage - 1)}
+            disabled={safeCurrentPage <= 1}
+            className="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 text-slate-600 flex items-center justify-center disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-600 disabled:cursor-not-allowed transition shadow-2xs"
+            title="Halaman Sebelumnya"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {/* Numbered Buttons */}
+          {getPageNumbers().map((p, idx) => {
+            if (typeof p === "string") {
+              return (
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="w-8 h-8 flex items-center justify-center text-slate-400 font-bold select-none"
+                >
+                  ...
+                </span>
+              );
+            }
+
+            const isCurrent = p === safeCurrentPage;
+
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPageChange(p)}
+                className={`w-8 h-8 rounded-lg font-extrabold transition shadow-2xs cursor-pointer ${
+                  isCurrent
+                    ? "bg-emerald-600 text-white border border-emerald-600 shadow-emerald-600/20"
+                    : "bg-white text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
+                }`}
+              >
+                {p}
+              </button>
+            );
+          })}
+
+          {/* Next Button */}
+          <button
+            type="button"
+            onClick={() => onPageChange(safeCurrentPage + 1)}
+            disabled={safeCurrentPage >= safeTotalPages}
+            className="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 text-slate-600 flex items-center justify-center disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-600 disabled:cursor-not-allowed transition shadow-2xs"
+            title="Halaman Selanjutnya"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Pagination;

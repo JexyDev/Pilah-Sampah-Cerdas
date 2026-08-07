@@ -2,16 +2,16 @@
 
 ## 1. Pendahuluan
 ### 1.1 Deskripsi Produk
-**Pilah Sampah Cerdas (TrashCare)** adalah sistem pemilahan sampah cerdas terintegrasi untuk Kecamatan Coblong, Kota Bandung. Platform ini mengotomatisasi pendataan, pemilahan dengan AI, pemantauan kapasitas tempat sampah, serta penimbangan residu secara akurat. Produk ini menghubungkan Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, dan Super Admin dalam satu ekosistem terpadu.
+**Pilah Sampah Cerdas (TrashCare)** adalah sistem pemilahan sampah cerdas terintegrasi untuk Kecamatan Coblong, Kota Bandung. Platform ini mengotomatisasi pendataan, pemilahan dengan AI, pemantauan kapasitas tempat sampah, serta penimbangan residu secara akurat. Produk ini menghubungkan Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, dan SUPER USER dalam satu ekosistem terpadu.
 
 ### 1.2 Platform & Arsitektur Akses Role
 - **Aplikasi Mobile (Thin Client - Flutter):** Digunakan secara terbatas oleh role **Warga**, **Mahasiswa KKN**, dan **Petugas Residu**. Berfokus pada aksi lapangan cepat (Scan QR tempat sampah, Deteksi AI, Foto Bukti, Location Ping KKN, & Input Setoran/Residu).
-- **Aplikasi Web (Superset Dashboard - React/Vite):** Digunakan oleh **RW, Lurah, Camat, Admin DLH, Super Admin**, serta **Petugas Residu** dan role lainnya sebagai superset untuk monitoring visual, dasbor analitik, GIS geospasial, dan manajemen data.
+- **Aplikasi Web (Superset Dashboard - React/Vite):** Digunakan oleh **RW, Lurah, Camat, Admin DLH, SUPER USER**, serta **Petugas Residu** dan role lainnya sebagai superset untuk monitoring visual, dasbor analitik, GIS geospasial, dan manajemen data.
   - *Read-Only Guard:* Role Admin DLH, Camat, dan Lurah dibatasi secara ketat menjadi **Read-Only** (monitoring visual & scoping wilayah), kecuali fitur approval diskrepansi AI khusus Admin DLH.
 
 ### 1.3 Standar Identifikasi & Autentikasi User (Tanpa NIK & Universal Phone Auth)
 Seluruh identifikasi dan autentikasi pengguna di platform **bebas NIK**:
-* **Universal Auth Identifier:** **SELURUH Role (100%)** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** untuk login utama (OTP WhatsApp / Kredensial).
+* **Universal Auth Identifier:** **SELURUH Role (100%)** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, SUPER USER) menggunakan **Nomor Telepon (+62)** untuk login utama (OTP WhatsApp / Kredensial).
 * **NIM & NIP:** Disimpan sebagai data profil / metadata tambahan untuk Mahasiswa KKN (`nim`) & DPL (`nip`).
 * **NIK:** DIHAPUS TOTAL dari seluruh tabel database, UI, endpoint API, dan formulir aplikasi.
 

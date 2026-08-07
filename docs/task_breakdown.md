@@ -8,7 +8,7 @@
 
 ### 1.2 Target Pengguna & Platform Role Scoping
 1. **Aplikasi Mobile (Thin-Client):** Digunakan eksklusif oleh **Warga**, **Mahasiswa KKN**, dan **Petugas Residu**.
-2. **Aplikasi Web (Superset Dashboard):** Digunakan oleh **Super Admin, Admin Kecamatan, Admin Kelurahan, DPL, Pengangkut, Petugas RW, Petugas RT**, serta **Warga, Mahasiswa KKN, Petugas Residu** (untuk monitoring visual & analytics).
+2. **Aplikasi Web (Superset Dashboard):** Digunakan oleh **SUPER USER, Admin Kecamatan, Admin Kelurahan, DPL, Pengangkut, Petugas RW, Petugas RT**, serta **Warga, Mahasiswa KKN, Petugas Residu** (untuk monitoring visual & analytics).
 
 ---
 

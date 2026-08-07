@@ -12,7 +12,7 @@
 ### 1.1 Login & Autentikasi Pengguna
 - [ ] **Langkah Tes**:
   1. Buka URL `/login`.
-  2. Masukkan Email/No HP dan Password valid (misal: Super Admin / RW / Mahasiswa).
+  2. Masukkan Email/No HP dan Password valid (misal: SUPER USER / RW / Mahasiswa).
   3. Klik tombol **"Masuk"**.
 - [ ] **Ekspektasi Visual & System**:
   - Loading indicator tampil pada tombol saat API dipanggil.
@@ -388,7 +388,7 @@
 
 ### 20.1 View Audit Log & Filter Timestamp
 - [ ] **Langkah Tes**:
-  1. Login sebagai **Super Admin** → Akses `/aktivitas-pemilahan`.
+  1. Login sebagai **SUPER USER** → Akses `/aktivitas-pemilahan`.
   2. Terapkan filter rentang waktu & tipe aksi.
 - [ ] **Ekspektasi Visual & System**:
   - Menampilkan log aktivitas mentah seluruh sistem.
@@ -409,7 +409,7 @@
 
 ### 21.2 Rule Engine / System Configuration
 - [ ] **Langkah Tes**:
-  1. Akses `/super-admin` atau menu Rule Engine.
+  1. Akses `/super-user` atau menu Rule Engine.
   2. Ubah parameter global (misal: Masa Aktif Bin 30 hari, AI Confidence Threshold 90%).
 - [ ] **Ekspektasi Visual & System**:
   - Parameter global tersimpan & langsung berdampak pada backend logic.
@@ -423,9 +423,9 @@
 | 1. Autentikasi & Sesi | 4 Skenario | Semua Role | [ ] Pass / [ ] Fail |
 | 2. Dashboard & Analitik | 3 Skenario | Semua Role (Scoped) | [ ] Pass / [ ] Fail |
 | 3. Setoran & Input Manual | 2 Skenario | Petugas, Warga | [ ] Pass / [ ] Fail |
-| 4. Manajemen Pengguna | 2 Skenario | Super Admin, Admin | [ ] Pass / [ ] Fail |
-| 5. Tempat Sampah & QR | 2 Skenario | RW, Super Admin | [ ] Pass / [ ] Fail |
-| 6. Manajemen Lokasi | 2 Skenario | Super Admin | [ ] Pass / [ ] Fail |
+| 4. Manajemen Pengguna | 2 Skenario | SUPER USER, Admin | [ ] Pass / [ ] Fail |
+| 5. Tempat Sampah & QR | 2 Skenario | RW, SUPER USER | [ ] Pass / [ ] Fail |
+| 6. Manajemen Lokasi | 2 Skenario | SUPER USER | [ ] Pass / [ ] Fail |
 | 7. Peta GIS & Polygon | 2 Skenario | Semua Role | [ ] Pass / [ ] Fail |
 | 8. Portal RW | 2 Skenario | RW | [ ] Pass / [ ] Fail |
 | 9. Pengangkutan & Eskalasi | 2 Skenario | Petugas Pengangkut | [ ] Pass / [ ] Fail |
@@ -433,11 +433,11 @@
 | 11. Ekosistem & Presensi KKN | 3 Skenario | Mahasiswa, DPL | [ ] Pass / [ ] Fail |
 | 12. Pemanfaatan Buruan Sae | 1 Skenario | RW, Mahasiswa | [ ] Pass / [ ] Fail |
 | 13. Leaderboard Publik | 2 Skenario | Publik / Semua Role | [ ] Pass / [ ] Fail |
-| 14. Rekap & Export Data | 2 Skenario | Admin, Super Admin | [ ] Pass / [ ] Fail |
+| 14. Rekap & Export Data | 2 Skenario | Admin, SUPER USER | [ ] Pass / [ ] Fail |
 | 15. Laporan & Analitik | 1 Skenario | Camat, Lurah, DLH | [ ] Pass / [ ] Fail |
 | 16. Notifikasi System | 1 Skenario | Semua Role | [ ] Pass / [ ] Fail |
 | 17. Ide Daur Ulang | 1 Skenario | Admin, Warga | [ ] Pass / [ ] Fail |
 | 18. Jadwal Kegiatan | 1 Skenario | Admin, RW | [ ] Pass / [ ] Fail |
-| 19. Kategori Sampah | 1 Skenario | Super Admin | [ ] Pass / [ ] Fail |
-| 20. Audit Log Immutable | 1 Skenario | Super Admin | [ ] Pass / [ ] Fail |
+| 19. Kategori Sampah | 1 Skenario | SUPER USER | [ ] Pass / [ ] Fail |
+| 20. Audit Log Immutable | 1 Skenario | SUPER USER | [ ] Pass / [ ] Fail |
 | 21. Profil & Rule Engine | 2 Skenario | Semua Role / Admin | [ ] Pass / [ ] Fail |

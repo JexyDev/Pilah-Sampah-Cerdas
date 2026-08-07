@@ -458,7 +458,8 @@ export const PemanfaatanSampah: React.FC = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
-                  <th className="py-3 px-4 rounded-l-xl">Program & Teknologi</th>
+                  <th className="py-3 px-4 rounded-l-xl">Program</th>
+                  <th className="py-3 px-4">Teknologi</th>
                   <th className="py-3 px-4">Bahan Baku</th>
                   <th className="py-3 px-4 text-center">Volume (Kg)</th>
                   <th className="py-3 px-4 text-center">Hasil Pemanfaatan (Kg)</th>
@@ -488,23 +489,26 @@ export const PemanfaatanSampah: React.FC = () => {
                     progLabel = "Pupuk Organik Cair";
                   }
 
+                  const rawTekno = item.teknologi || "Pengolahan Mandiri";
+                  const teknoFormatted = rawTekno.replace(/permentasi/gi, "Fermentasi");
+
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-all group">
-                      {/* Program & Teknologi */}
+                      {/* Program */}
                       <td className="py-3.5 px-4 align-middle">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center gap-1 text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-md border w-fit ${badgeBg}`}>
-                            {progLabel}
-                          </span>
-                          <span className="text-[11px] text-slate-500 font-medium pl-0.5">
-                            {item.teknologi || "Pengolahan Mandiri"}
-                          </span>
-                        </div>
+                        <span className={`inline-flex items-center gap-1 text-[10.5px] font-extrabold px-2.5 py-1 rounded-lg border ${badgeBg}`}>
+                          {progLabel}
+                        </span>
+                      </td>
+
+                      {/* Teknologi */}
+                      <td className="py-3.5 px-4 align-middle font-bold text-slate-700">
+                        {teknoFormatted}
                       </td>
 
                       {/* Bahan Baku */}
                       <td className="py-3.5 px-4 align-middle">
-                        <span className="font-bold text-slate-700">{item.bahanBaku || "Organik"}</span>
+                        <span className="font-semibold text-slate-600">{item.bahanBaku || "Organik"}</span>
                       </td>
 
                       {/* Volume */}
@@ -540,22 +544,29 @@ export const PemanfaatanSampah: React.FC = () => {
                         })}
                       </td>
 
-                      {/* Bukti Foto */}
+                      {/* Bukti Foto (Dengan Validasi Foto Rusak / Kosong) */}
                       <td className="py-3.5 px-4 text-center align-middle">
-                        {item.fotoDokumentasiUrl ? (
+                        {item.fotoDokumentasiUrl && item.fotoDokumentasiUrl.trim() !== "" ? (
                           <button
                             onClick={() => setPreviewPhotoUrl(item.fotoDokumentasiUrl)}
-                            className="inline-block hover:scale-105 transition-transform cursor-pointer"
-                            title="Klik untuk memperbesar"
+                            className="inline-block hover:scale-105 transition-transform cursor-pointer group/img"
+                            title="Klik untuk memperbesar foto"
                           >
                             <img
                               src={item.fotoDokumentasiUrl}
                               alt="Bukti Dokumentasi"
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs mx-auto"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop&q=80";
+                              }}
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs mx-auto group-hover/img:border-emerald-500"
                             />
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400 font-medium">-</span>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80">
+                            Tanpa Foto
+                          </span>
                         )}
                       </td>
 

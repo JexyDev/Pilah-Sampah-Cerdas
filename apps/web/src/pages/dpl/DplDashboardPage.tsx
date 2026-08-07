@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  Award,
   QrCode,
   CalendarCheck,
   AlertTriangle,
@@ -16,7 +15,10 @@ import {
   Sparkles,
   ChevronRight,
   RefreshCw,
+  Users,
+  Clock,
 } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -98,6 +100,13 @@ const createBinPinIcon = (status: string) => {
     iconAnchor: [14, 14],
   });
 };
+const formatCakupanRw = (cakupanRw: any): string => {
+  if (Array.isArray(cakupanRw)) return cakupanRw.join(", ");
+  if (typeof cakupanRw === "string") return cakupanRw;
+  if (typeof cakupanRw === "number") return String(cakupanRw);
+  return "-";
+};
+
 import toast from "react-hot-toast";
 import {
   dplService,
@@ -154,10 +163,50 @@ export const DplDashboardPage: React.FC = () => {
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
 
+  const [minAttendanceHours, setMinAttendanceHours] = useState<number>(() => {
+    return Number(localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
+  });
+
+  const handleMinHoursChange = (hours: number) => {
+    setMinAttendanceHours(hours);
+    localStorage.setItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS", String(hours));
+    toast.success(`Durasi minimal absensi diset ${hours} Jam (Tm - Ts)`);
+  };
+
   const [kelompokPage, setKelompokPage] = useState(1);
   const [mahasiswaPage, setMahasiswaPage] = useState(1);
   const [approvalPage, setApprovalPage] = useState(1);
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 10;
+
+  const [chartGroupMode, setChartGroupMode] = useState<"KELURAHAN" | "KELOMPOK">("KELURAHAN");
+
+  const kelurahanChartData = useMemo(() => {
+    const palette = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#6366f1", "#f97316"];
+    const map: Record<string, { name: string; studentCount: number; groupCount: number }> = {};
+    groups.forEach((g) => {
+      const kel = g.kelurahan || "Lainnya";
+      if (!map[kel]) {
+        map[kel] = { name: kel, studentCount: 0, groupCount: 0 };
+      }
+      map[kel].studentCount += g.studentCount || 0;
+      map[kel].groupCount += 1;
+    });
+    return Object.values(map).map((item, idx) => ({
+      name: `Kel. ${item.name}`,
+      value: item.studentCount,
+      groupCount: item.groupCount,
+      color: palette[idx % palette.length],
+    }));
+  }, [groups]);
+
+  const kelompokChartData = useMemo(() => {
+    const palette = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#6366f1", "#f97316"];
+    return groups.map((g, idx) => ({
+      name: g.name,
+      value: g.studentCount || 6,
+      color: palette[idx % palette.length],
+    }));
+  }, [groups]);
 
   // Drill-down Modal States
   const [selectedStudentForCitizens, setSelectedStudentForCitizens] = useState<StudentDetail | null>(null);
@@ -190,7 +239,7 @@ export const DplDashboardPage: React.FC = () => {
       setMapCoverage(mapData || null);
     } catch (err: any) {
       console.error("Failed loading DPL dashboard data:", err);
-      toast.error("Gagal memuat data Dashboard DPL");
+      toast.error("Gagal memuat data Dashboard KKN");
     } finally {
       setLoading(false);
     }
@@ -238,11 +287,11 @@ export const DplDashboardPage: React.FC = () => {
   }, [groups, searchQuery]);
 
   const paginatedKelompok = useMemo(() => {
-    const start = (kelompokPage - 1) * 6;
-    return filteredKelompok.slice(start, start + 6);
+    const start = (kelompokPage - 1) * ITEMS_PER_PAGE;
+    return filteredKelompok.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredKelompok, kelompokPage]);
 
-  const totalKelompokPages = Math.max(1, Math.ceil(filteredKelompok.length / 6));
+  const totalKelompokPages = Math.max(1, Math.ceil(filteredKelompok.length / ITEMS_PER_PAGE));
 
   // Filtered & Paginated Students
   const filteredStudents = useMemo(() => {
@@ -286,18 +335,17 @@ export const DplDashboardPage: React.FC = () => {
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
   const totalAllStudents = Math.max(students.length, groups.reduce((acc, g) => acc + (g.studentCount || 0), 0));
-  const totalActivatedBins = Math.max(0, groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0));
   const avgOverallAttendance =
     groups.length > 0
-      ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 85), 0) / groups.length)
-      : 85;
+      ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length)
+      : 0;
 
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-600 font-medium">Memuat Data Panel Bimbingan DPL...</p>
+        <p className="text-sm text-slate-600 font-medium">Memuat Data Dashboard KKN...</p>
       </div>
     );
   }
@@ -329,7 +377,7 @@ export const DplDashboardPage: React.FC = () => {
             className="p-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700 cursor-pointer"
             title="Refresh Data"
           >
-            <RefreshCw size={14} /> Refresh
+            <RefreshCw size={14} />
           </button>
           {alerts && alerts.pendingApprovalsCount > 0 && (
             <button
@@ -343,69 +391,9 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* === Interactive Search, Filter & Tab Navigation Bar === */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
-        {/* Left: Quick Tab Navigation Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
-          <button
-            onClick={() => setActiveTab("OVERVIEW")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "OVERVIEW"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Ringkasan 📊
-          </button>
-          <button
-            onClick={() => setActiveTab("KELOMPOK")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "KELOMPOK"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Kelompok KKN 👥
-          </button>
-          <button
-            onClick={() => setActiveTab("MAHASISWA")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "MAHASISWA"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Mahasiswa 🎓
-          </button>
-          <button
-            onClick={() => setActiveTab("APPROVAL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer relative ${
-              activeTab === "APPROVAL"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Persetujuan Izin 📝
-            {alerts && alerts.pendingApprovalsCount > 0 && (
-              <span className="ml-1.5 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                {alerts.pendingApprovalsCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("MAP")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "MAP"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Peta Sebaran 🗺️
-          </button>
-        </div>
-
-        {/* Right: Modern Search Input & Filter dropdown */}
-        <div className="flex items-center gap-2 flex-1 max-w-md">
+      {/* === Search & Filter Controls Bar === */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3.5">
+        <div className="flex items-center gap-2.5 w-full sm:max-w-xl">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
@@ -428,7 +416,7 @@ export const DplDashboardPage: React.FC = () => {
           <select
             value={selectedGroupFilter}
             onChange={(e) => setSelectedGroupFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="">Semua Kelompok</option>
             {groups.map((g) => (
@@ -436,6 +424,24 @@ export const DplDashboardPage: React.FC = () => {
                 {g.name}
               </option>
             ))}
+          </select>
+        </div>
+
+        {/* Dynamic DPL Attendance Duration Control (Tm - Ts) */}
+        <div className="flex items-center gap-2 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200/80 shadow-2xs">
+          <Clock size={16} className="text-emerald-600 shrink-0" />
+          <span className="text-xs font-extrabold text-emerald-950 whitespace-nowrap">
+            Durasi Minimal Absensi
+          </span>
+          <select
+            value={minAttendanceHours}
+            onChange={(e) => handleMinHoursChange(Number(e.target.value))}
+            className="bg-white border border-emerald-300 rounded-lg text-xs font-black text-emerald-800 px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+          >
+            <option value={2}>2 Jam</option>
+            <option value={4}>4 Jam (Standar DPL)</option>
+            <option value={6}>6 Jam</option>
+            <option value={8}>8 Jam</option>
           </select>
         </div>
       </div>
@@ -447,68 +453,145 @@ export const DplDashboardPage: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kecamatan</p>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">1 <span className="text-[10px] font-normal text-slate-500">(Coblong)</span></h3>
+            <h3 className="text-base font-extrabold text-slate-900 mt-1">
+              {groups.length > 0 ? 1 : 0} <span className="text-[10px] font-normal text-slate-500">{groups.length > 0 ? "(Coblong)" : ""}</span>
+            </h3>
           </div>
 
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kelurahan</p>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">{new Set(groups.map(g => g.kelurahan)).size || 6}</h3>
+            <h3 className="text-base font-extrabold text-slate-900 mt-1">
+              {new Set(groups.map((g) => g.kelurahan).filter(Boolean)).size}
+            </h3>
           </div>
 
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <p className="text-[10px] text-slate-400 font-bold uppercase">Total Mahasiswa</p>
             <h3 className="text-base font-extrabold text-emerald-700 mt-1">
-              {totalAllStudents || (groups.length > 0 ? groups.length * 6 : 192)} Orang
+              {students.length > 0 ? students.length : totalAllStudents} Orang
             </h3>
           </div>
 
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <p className="text-[10px] text-slate-400 font-bold uppercase">Kelompok KKN</p>
-            <h3 className="text-base font-extrabold text-blue-700 mt-1">{groups.length || 32} Kelompok</h3>
+            <h3 className="text-base font-extrabold text-blue-700 mt-1">{groups.length} Kelompok</h3>
           </div>
 
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total DPL</p>
-            <h3 className="text-base font-extrabold text-purple-700 mt-1">12 Dosen</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase">Tempat Sampah Teraktivasi</p>
+            <h3 className="text-base font-extrabold text-emerald-700 mt-1">
+              {mapCoverage?.bins?.length || groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0) || 128} Unit
+            </h3>
           </div>
         </div>
       </div>
 
-      {/* Card Group 2 (E.5): Metrik Agregat Kehadiran & Capaian */}
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Metrik Kehadiran & Capaian Lapangan</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-              <CalendarCheck size={20} />
+      {/* Card Group 2 (E.5): Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Metrik Kehadiran Wilayah */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4">
+          <div>
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
+            <h3 className="text-base font-extrabold text-slate-900">Total Kehadiran KKN Wilayah</h3>
+            <p className="text-xs text-slate-500 mt-1">Agregasi persentase kehadiran mahasiswa di Kecamatan Coblong.</p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-emerald-50/70 border border-emerald-200/80 p-4 rounded-xl">
+            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-extrabold shadow-sm">
+              <CalendarCheck size={24} />
             </div>
             <div>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase">Total Kehadiran KKN</p>
-              <h3 className="text-lg font-bold text-slate-900">{avgOverallAttendance}% <span className="text-xs font-normal text-slate-500">(Rata-rata)</span></h3>
+              <span className="text-2xl font-black text-emerald-900">
+                {groups.length > 0 ? avgOverallAttendance : 0}%
+              </span>
+              <p className="text-[11px] text-emerald-700 font-bold">Rata-Rata Tingkat Wilayah</p>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <QrCode size={20} />
-            </div>
+          <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center justify-between font-medium">
+            <span>Cakupan Pengawasan:</span>
+            <span className="font-bold text-slate-800">{groups.length} Kelompok KKN</span>
+          </div>
+        </div>
+
+        {/* Right: Pie Chart Sebaran Mahasiswa per Kelompok KKN / Kelurahan */}
+        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <div>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase">Tempat Sampah Terpasang</p>
-              <h3 className="text-lg font-bold text-slate-900">
-                {totalActivatedBins || (groups.length > 0 ? groups.length * 4 : 128)} <span className="text-xs font-normal text-slate-500">Tempat Sampah</span>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sebaran Lapangan</h4>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {chartGroupMode === "KELURAHAN" ? "Sebaran Mahasiswa per Kelurahan" : "Sebaran Mahasiswa per Kelompok KKN"}
               </h3>
             </div>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+                <button
+                  onClick={() => setChartGroupMode("KELURAHAN")}
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    chartGroupMode === "KELURAHAN"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Per Kelurahan
+                </button>
+                <button
+                  onClick={() => setChartGroupMode("KELOMPOK")}
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    chartGroupMode === "KELOMPOK"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Per Kelompok ({groups.length})
+                </button>
+              </div>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full whitespace-nowrap">
+                Total {students.length > 0 ? students.length : totalAllStudents} Mahasiswa
+              </span>
+            </div>
           </div>
 
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-              <Award size={20} />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase">Pengajuan Izin Pending</p>
-              <h3 className="text-lg font-bold text-slate-900">{alerts?.pendingApprovalsCount || 0} <span className="text-xs font-normal text-slate-500">Berkas</span></h3>
-            </div>
+          <div className="h-[210px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartGroupMode === "KELURAHAN" ? kelurahanChartData : kelompokChartData}
+                  cx="35%"
+                  cy="50%"
+                  innerRadius={48}
+                  outerRadius={75}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {(chartGroupMode === "KELURAHAN" ? kelurahanChartData : kelompokChartData).map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  contentStyle={{ backgroundColor: "#0f172a", borderRadius: "10px", color: "#fff", fontSize: "12px", border: "none" }}
+                  formatter={(val: any, name: any, item: any) => [
+                    `${val} Mahasiswa ${item.payload?.groupCount ? `(${item.payload.groupCount} Kelompok)` : ""}`,
+                    `${name}`
+                  ]}
+                />
+                <Legend
+                  verticalAlign="middle"
+                  align="right"
+                  layout="vertical"
+                  iconType="circle"
+                  wrapperStyle={{
+                    maxHeight: "180px",
+                    overflowY: "auto",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    color: "#334155",
+                    paddingRight: "6px",
+                    width: "55%",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -570,7 +653,7 @@ export const DplDashboardPage: React.FC = () => {
                       <h4 className="text-sm font-bold text-slate-900 mt-1">{grp.name}</h4>
                     </div>
                     <span className="text-[10px] text-slate-500 font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded">
-                      RW {grp.cakupanRw?.join(", ") || "-"}
+                      RW {formatCakupanRw(grp.cakupanRw)}
                     </span>
                   </div>
 
@@ -636,7 +719,7 @@ export const DplDashboardPage: React.FC = () => {
                     <h3 className="text-base font-bold text-slate-900 mt-2">{grp.name}</h3>
                   </div>
                   <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                    RW: {grp.cakupanRw?.join(", ") || "-"}
+                    RW: {formatCakupanRw(grp.cakupanRw)}
                   </span>
                 </div>
 
@@ -646,8 +729,8 @@ export const DplDashboardPage: React.FC = () => {
                     <p className="font-bold text-slate-800">{grp.studentCount} Mahasiswa</p>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Aktivasi Tong</p>
-                    <p className="font-bold text-blue-600">{grp.activatedBinsCount} Tong</p>
+                    <p className="text-slate-400 text-[10px]">Aktivasi Tempat Sampah</p>
+                    <p className="font-bold text-blue-600">{grp.activatedBinsCount} Tempat Sampah</p>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                     <p className="text-slate-400 text-[10px]">Rata Kehadiran</p>
@@ -699,7 +782,7 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 3: MAHASISWA & DAMPAK WARGA */}
+      {/* VIEW 3: MAHASISWA & PORTOFOLIO */}
       {activeTab === "MAHASISWA" && (
         <div className="space-y-4">
           {/* Controls Filter & Search */}
@@ -718,23 +801,29 @@ export const DplDashboardPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter size={15} className="text-slate-400" />
-              <select
-                value={selectedGroupFilter}
-                onChange={(e) => {
-                  setSelectedGroupFilter(e.target.value);
-                  setMahasiswaPage(1);
-                }}
-                className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none w-full sm:w-auto"
-              >
-                <option value="">Semua Kelompok Bimbingan</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.name}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <span className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-2 rounded-lg border border-emerald-200/80 flex items-center gap-1.5 whitespace-nowrap">
+                <Users size={14} className="text-emerald-600" />
+                {groups.length} Kelompok KKN
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Filter size={15} className="text-slate-400" />
+                <select
+                  value={selectedGroupFilter}
+                  onChange={(e) => {
+                    setSelectedGroupFilter(e.target.value);
+                    setMahasiswaPage(1);
+                  }}
+                  className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none w-full sm:w-auto cursor-pointer"
+                >
+                  <option value="">Semua Kelompok KKN</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.name}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -751,8 +840,7 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="p-3.5 text-center">Sakit (S)</th>
                     <th className="p-3.5 text-center">Izin (I)</th>
                     <th className="p-3.5 text-center">Alpha (A)</th>
-                    <th className="p-3.5">Rekam Portofolio</th>
-                    <th className="p-3.5 text-center">Aksi Portofolio</th>
+                    <th className="p-3.5 text-center">Portofolio</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -804,11 +892,6 @@ export const DplDashboardPage: React.FC = () => {
                           {st.alphaCount}
                         </span>
                       </td>
-                      <td className="p-3.5 font-bold text-slate-800">
-                        <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[11px] border border-emerald-200 inline-flex items-center gap-1">
-                          <FileCheck size={12} /> Portofolio Aktif
-                        </span>
-                      </td>
                       <td className="p-3.5 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -825,7 +908,7 @@ export const DplDashboardPage: React.FC = () => {
 
                   {paginatedStudents.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-6 text-center text-slate-400 italic text-xs">
+                      <td colSpan={8} className="p-6 text-center text-slate-400 italic text-xs">
                         Tidak ada data mahasiswa bimbingan yang cocok.
                       </td>
                     </tr>
@@ -1262,7 +1345,7 @@ export const DplDashboardPage: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600">
-                      <div><span className="text-slate-400 block text-[10px]">Kode QR Bin</span> <strong className="text-slate-800">{c.qrCode}</strong></div>
+                      <div><span className="text-slate-400 block text-[10px]">Kode QR Tempat Sampah</span> <strong className="text-slate-800">{c.qrCode}</strong></div>
                       <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800">{c.totalSetoranCount}x Setor</strong></div>
                       <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700">{c.totalKg} Kg</strong></div>
                     </div>

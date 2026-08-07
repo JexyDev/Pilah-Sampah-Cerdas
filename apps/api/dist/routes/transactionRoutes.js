@@ -11,7 +11,7 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 const router = Router();
 router.get("/deposits", authMiddleware, roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "RW",
     "RT",
@@ -33,7 +33,7 @@ router.get("/deposits", authMiddleware, roleMiddleware([
  *         description: Berhasil mengambil data transaksi Warga
  */
 router.get("/my-deposits", authMiddleware, roleMiddleware(["WARGA"]), transactionController.getMyDeposits);
-router.post("/manual", authMiddleware, roleMiddleware(["PETUGAS_RESIDU", "SUPER_ADMIN"]), uploadAvatarMiddleware.single("image"), transactionController.createManualDeposit);
-router.get("/manual", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), transactionController.getManualDeposits);
+router.post("/manual", authMiddleware, roleMiddleware(["PETUGAS_RESIDU", "SUPER_USER"]), uploadAvatarMiddleware.single("image"), transactionController.createManualDeposit);
+router.get("/manual", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), transactionController.getManualDeposits);
 router.get("/:id", authMiddleware, transactionController.getDepositDetails);
 export default router;

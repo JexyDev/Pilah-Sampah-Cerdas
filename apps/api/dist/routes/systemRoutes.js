@@ -12,7 +12,7 @@ const router = Router();
 /**
  * Trigger manual database backup (Admin only)
  */
-router.post("/backup", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), async (req, res) => {
+router.post("/backup", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), async (req, res) => {
     try {
         const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
         res.status(200).json({
@@ -31,7 +31,7 @@ router.post("/backup", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH
 /**
  * Optimize system cache (Admin only)
  */
-router.post("/clear-cache", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), async (req, res) => {
+router.post("/clear-cache", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), async (req, res) => {
     try {
         res.status(200).json({
             success: true,
@@ -47,9 +47,9 @@ router.post("/clear-cache", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMI
     }
 });
 /**
- * Get all audit trails (Super Admin only view)
+ * Get all audit trails (SUPER USER only view)
  */
-router.get("/audit-trail", authMiddleware, roleMiddleware(["SUPER_ADMIN"]), systemController.getAuditTrails);
+router.get("/audit-trail", authMiddleware, roleMiddleware(["SUPER_USER"]), systemController.getAuditTrails);
 /**
  * Social Feed management
  */

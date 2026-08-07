@@ -207,16 +207,18 @@ const ManajemenMahasiswa: React.FC = () => {
       return;
     }
 
-    const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "Wilayah RT/RW", "Status"];
+    const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "DPL Pembimbing", "Wilayah RT/RW", "Status"];
     const csvRows = [headers.join(",")];
 
     filteredMahasiswas.forEach((m) => {
+      const dplName = m.studentProfile?.kelompok?.dplName || m.studentProfile?.kelompok?.dpl?.name || m.studentProfile?.kelompok?.dplNamaMentah || "-";
       const row = [
         `"${m.name || ""}"`,
         `"${m.studentProfile?.nim || ""}"`,
         `"${m.studentProfile?.fakultas || "UNIKOM"}"`,
         `"${m.phone || ""}"`,
         `"${m.studentProfile?.kelompok?.name || "-"}"`,
+        `"${dplName}"`,
         `"${m.rtRw?.name || "-"}"`,
         `"${m.status || "Aktif"}"`,
       ];
@@ -238,10 +240,10 @@ const ManajemenMahasiswa: React.FC = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedMahasiswas = filteredMahasiswas.slice(startIndex, startIndex + rowsPerPage);
 
-  if (user?.peran !== "SUPER_ADMIN") {
+  if (user?.peran !== "SUPER_USER") {
     return (
       <div className="p-8 text-center text-rose-600 font-bold bg-white rounded-2xl m-6 border border-rose-200">
-        Akses Ditolak. Halaman ini khusus Super Admin.
+        Akses Ditolak. Halaman ini khusus SUPER USER.
       </div>
     );
   }
@@ -352,10 +354,12 @@ const ManajemenMahasiswa: React.FC = () => {
               <thead>
                 <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
                   <th className="py-3.5 px-4 w-14 text-center">No</th>
-                  <th className="py-3.5 px-4">Nama & NIM</th>
-                  <th className="py-3.5 px-4">Universitas / Fakultas</th>
-                  <th className="py-3.5 px-4">No. WhatsApp</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">Program Studi</th>
+                  <th className="py-3.5 px-4">NIM</th>
+                  <th className="py-3.5 px-4">No. HP</th>
                   <th className="py-3.5 px-4">Kelompok KKN</th>
+                  <th className="py-3.5 px-4">DPL Pembimbing</th>
                   <th className="py-3.5 px-4">Wilayah Tugas</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
@@ -364,7 +368,7 @@ const ManajemenMahasiswa: React.FC = () => {
               <tbody className="divide-y divide-slate-100 text-xs font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={10} className="py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="animate-spin text-primary" size={32} />
                         <p className="font-bold text-xs">Memuat data mahasiswa KKN...</p>
@@ -373,7 +377,7 @@ const ManajemenMahasiswa: React.FC = () => {
                   </tr>
                 ) : paginatedMahasiswas.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
+                    <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
                       Tidak ada data mahasiswa yang cocok dengan kriteria pencarian.
                     </td>
                   </tr>
@@ -392,10 +396,12 @@ const ManajemenMahasiswa: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] font-mono text-slate-400">NIM: {mhs.studentProfile?.nim || "-"}</p>
                       </td>
                       <td className="py-3.5 px-4 text-slate-700 font-semibold">
-                        {mhs.studentProfile?.fakultas || "UNIKOM"}
+                        {mhs.studentProfile?.jurusan || mhs.studentProfile?.fakultas || "UNIKOM"}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                        {mhs.studentProfile?.nim || "-"}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">
                         <a
@@ -413,11 +419,18 @@ const ManajemenMahasiswa: React.FC = () => {
                           {mhs.studentProfile?.kelompok?.name || "Belum Plotting"}
                         </span>
                       </td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-700">
+                        {mhs.studentProfile?.kelompok?.dplName ||
+                         mhs.studentProfile?.kelompok?.dpl?.name ||
+                         mhs.studentProfile?.kelompok?.dplNamaMentah || (
+                          <span className="text-slate-400 italic">Belum Plotting</span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {mhs.rtRw?.name ? (
+                        {mhs.studentProfile?.kelompok?.wilayahPenugasan || mhs.rtRw?.name || mhs.wilayah ? (
                           <span className="flex items-center gap-1">
                             <MapPin size={13} className="text-primary" />
-                            {mhs.rtRw.name}
+                            {mhs.studentProfile?.kelompok?.wilayahPenugasan || mhs.rtRw?.name || mhs.wilayah}
                           </span>
                         ) : (
                           <span className="text-slate-400 italic">Belum diset</span>
@@ -537,8 +550,19 @@ const ManajemenMahasiswa: React.FC = () => {
                     <span className="font-bold text-blue-600">{selectedStudentDetail.studentProfile?.kelompok?.name || "Belum Plotting"}</span>
                   </div>
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-bold block mb-0.5">DPL Pembimbing</span>
+                    <span className="font-bold text-indigo-600">
+                      {selectedStudentDetail.studentProfile?.kelompok?.dplName ||
+                       selectedStudentDetail.studentProfile?.kelompok?.dpl?.name ||
+                       selectedStudentDetail.studentProfile?.kelompok?.dplNamaMentah ||
+                       "Belum Plotting"}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 col-span-2">
                     <span className="text-slate-400 font-bold block mb-0.5">Wilayah Tugas</span>
-                    <span className="font-bold text-emerald-600">{selectedStudentDetail.rtRw?.name || "-"}</span>
+                    <span className="font-bold text-emerald-600">
+                      {selectedStudentDetail.studentProfile?.kelompok?.wilayahPenugasan || selectedStudentDetail.rtRw?.name || selectedStudentDetail.wilayah || "-"}
+                    </span>
                   </div>
                 </div>
               </div>

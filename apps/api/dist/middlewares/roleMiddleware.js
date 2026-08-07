@@ -26,8 +26,8 @@ export const roleMiddleware = (allowedRoles) => {
                     return "CAMAT";
                 if (["ADMIN_KELURAH", "LURAH", "LURAH_ADMIN"].includes(upper))
                     return "LURAH";
-                if (["SUPER_ADMIN", "SUPERADMIN", "SUPER ADMIN"].includes(upper))
-                    return "SUPER_ADMIN";
+                if (["SUPER_USER", "superUser", "SUPER USER"].includes(upper))
+                    return "SUPER_USER";
                 if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper))
                     return "DPL";
                 if (["PEMIMPIN", "PIMPINAN"].includes(upper))

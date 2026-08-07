@@ -7,7 +7,7 @@ const router = Router();
 
 // Protect all routes within this router
 router.use(authMiddleware);
-router.use(roleMiddleware(["SUPER_ADMIN"])); // Only Super Admin
+router.use(roleMiddleware(["SUPER_USER"])); // Only SUPER USER
 
 router.get("/", adminMahasiswaController.getAll);
 router.post("/", adminMahasiswaController.create);

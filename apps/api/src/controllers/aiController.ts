@@ -287,6 +287,35 @@ export class AiController {
         .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  /**
+   * Mock AI classification for BantuWargaForm and other features
+   */
+  async classifyMock(req: Request, res: Response): Promise<void> {
+    try {
+      let imageUrl = req.body.imageUrl || "";
+      if (req.file) {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+      
+      // Simulate AI processing delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          confidence: Math.floor(Math.random() * (99 - 90 + 1) + 90),
+          estimatedVolumeLiter: 50,
+          detectedCategory: "ORGANIK",
+          imageUrl
+        }
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
 }
 
 export const aiController = new AiController();

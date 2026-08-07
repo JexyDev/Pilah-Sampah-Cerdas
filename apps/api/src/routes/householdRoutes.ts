@@ -42,7 +42,7 @@ const router = Router();
  *               address:
  *                 type: string
  *                 example: Jl. Titiran Dalam No. 10
- *               rtRwId:
+ *               rwId:
  *                 type: integer
  *                 example: 1
  *               latitude:
@@ -65,7 +65,7 @@ const router = Router();
 router.post(
   "/register",
   authMiddleware,
-  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]),
+  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]),
   householdController.register
 );
 
@@ -89,7 +89,7 @@ router.get(
   "/",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -104,3 +104,4 @@ router.get(
 );
 
 export default router;
+

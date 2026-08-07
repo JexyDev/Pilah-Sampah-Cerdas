@@ -2,6 +2,9 @@
  * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ *
+ * Wilayah routes — hierarki Provinsi → Kabupaten → Kecamatan → Kelurahan → RW → RT
+ * Semua endpoint menggunakan relasi FK real di database.
  */
 
 import { Router } from "express";
@@ -11,108 +14,108 @@ import { binController } from "../controllers/binController.js";
 const prisma = new PrismaClient();
 const router = Router();
 
-// Legacy route for drop-down list of RT/RW combined
-router.get("/rt-rw", binController.getAreas);
+// ─────────────────────────────────────────────
+// HIERARKI WILAYAH (cascading dropdown)
+// ─────────────────────────────────────────────
 
-// 1. GET /api/v1/wilayah/kecamatan
+/** GET /api/v1/wilayah/provinsi */
+router.get("/provinsi", async (req, res) => {
+  try {
+    const data = await prisma.provinsi.findMany({ orderBy: { name: "asc" } });
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/** GET /api/v1/wilayah/kabupaten?provinsiId= */
+router.get("/kabupaten", async (req, res) => {
+  try {
+    const { provinsiId } = req.query;
+    const where: any = {};
+    if (provinsiId) where.provinsiId = Number(provinsiId);
+    const data = await prisma.kabupaten.findMany({
+      where,
+      orderBy: { name: "asc" },
+    });
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/** GET /api/v1/wilayah/kecamatan?kabupatenId= */
 router.get("/kecamatan", async (req, res) => {
   try {
-    res.json({
-      success: true,
-      data: [{ id: "coblong", name: "Kecamatan Coblong" }],
+    const { kabupatenId } = req.query;
+    const where: any = {};
+    if (kabupatenId) where.kabupatenId = Number(kabupatenId);
+    const data = await prisma.kecamatan.findMany({
+      where,
+      orderBy: { name: "asc" },
     });
+    res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// 2. GET /api/v1/wilayah/kelurahan
+/** GET /api/v1/wilayah/kelurahan?kecamatanId= */
 router.get("/kelurahan", async (req, res) => {
   try {
-    const kelurahans = await prisma.kelurahan.findMany({
+    const { kecamatanId } = req.query;
+    const where: any = {};
+    if (kecamatanId) where.kecamatanId = Number(kecamatanId);
+    const data = await prisma.kelurahan.findMany({
+      where,
+      include: { kecamatan: { select: { name: true } } },
       orderBy: { name: "asc" },
     });
-    res.json({ success: true, data: kelurahans });
+    res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// 3. GET /api/v1/wilayah/rw (Kusus RW)
+/** GET /api/v1/wilayah/rw?kelurahanId= */
 router.get("/rw", async (req, res) => {
   try {
-    const { kelurahan_id, kelurahan_name } = req.query;
+    const { kelurahanId, kelurahan_id } = req.query;
+    const id = (kelurahanId || kelurahan_id) as string | undefined;
     const where: any = {};
-    if (kelurahan_id) {
-      where.kelurahanId = String(kelurahan_id);
-    } else if (kelurahan_name) {
-      where.kelurahan = { name: { contains: String(kelurahan_name), mode: "insensitive" } };
-    }
-
-    const areas = await prisma.rtRwArea.findMany({
+    if (id) where.kelurahanId = id;
+    const data = await prisma.rw.findMany({
       where,
-      include: { kelurahan: true },
+      include: { kelurahan: { select: { name: true } } },
       orderBy: { name: "asc" },
     });
-
-    const rwMap = new Map();
-    for (const area of areas) {
-      const match = area.name.match(/RW\s*(\d+)/i);
-      const rwNum = match ? match[1].padStart(2, "0") : null;
-      const rwLabel = rwNum ? `RW ${rwNum}` : area.name;
-
-      if (!rwMap.has(rwLabel)) {
-        rwMap.set(rwLabel, {
-          id: area.id,
-          rw: rwLabel,
-          name: area.name,
-          kelurahanId: area.kelurahanId,
-          kelurahanName: area.kelurahan?.name || "",
-        });
-      }
-    }
-
-    res.json({
-      success: true,
-      data: Array.from(rwMap.values()),
-    });
+    res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// 4. GET /api/v1/wilayah/rt (Khusus RT)
+/** GET /api/v1/wilayah/rt?rwId= */
 router.get("/rt", async (req, res) => {
   try {
-    const { rw_id, rw_name } = req.query;
-    let baseArea = null;
-
-    if (rw_id) {
-      baseArea = await prisma.rtRwArea.findUnique({ where: { id: Number(rw_id) } });
-    } else if (rw_name) {
-      baseArea = await prisma.rtRwArea.findFirst({
-        where: { name: { contains: String(rw_name), mode: "insensitive" } },
-      });
+    const { rwId, rw_id } = req.query;
+    const id = (rwId || rw_id) as string | undefined;
+    if (!id) {
+      res.status(400).json({ success: false, message: "Parameter rwId diperlukan" });
+      return;
     }
-
-    const rtList = Array.from({ length: 10 }, (_, i) => {
-      const rtNum = String(i + 1).padStart(2, "0");
-      return {
-        id: baseArea ? baseArea.id : i + 1,
-        rt: `RT ${rtNum}`,
-        name: `RT ${rtNum}`,
-        rwId: baseArea ? baseArea.id : null,
-        rwName: baseArea ? baseArea.name : rw_name ? String(rw_name) : "RW",
-      };
+    const data = await prisma.rt.findMany({
+      where: { rwId: Number(id) },
+      include: { rw: { select: { name: true } } },
+      orderBy: { name: "asc" },
     });
-
-    res.json({
-      success: true,
-      data: rtList,
-    });
+    res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// Legacy alias — untuk backward compat komponen lama yang pakai /rt-rw
+router.get("/rt-rw", binController.getAreas);
 
 export default router;

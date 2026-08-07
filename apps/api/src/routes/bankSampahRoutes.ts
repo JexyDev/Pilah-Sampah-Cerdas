@@ -15,7 +15,7 @@ const router = Router();
 router.post(
   "/transactions",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
   bankSampahController.addTransaction
 );
 

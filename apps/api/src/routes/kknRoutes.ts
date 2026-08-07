@@ -338,6 +338,18 @@ router.post(
 );
 
 // Alias routes matching exact Mahasiswa KKN spec
+/**
+ * @swagger
+ * /api/v1/kkn/attendance/check-in:
+ *   post:
+ *     summary: Absensi check-in KKN (Alternatif)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil check-in
+ */
 router.post(
   ["/attendance/check-in", "/attendance/checkin"],
   authMiddleware,
@@ -345,6 +357,18 @@ router.post(
   kknAttendanceController.recordAttendance
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/history:
+ *   get:
+ *     summary: Riwayat aktivitas lapangan
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logbook kegiatan
+ */
 router.get(
   "/history",
   authMiddleware,
@@ -352,10 +376,28 @@ router.get(
   kknController.getActivityLog
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/kegiatan/{id}/lokasi:
+ *   get:
+ *     summary: Mendapatkan lokasi kegiatan (Target Lokasi)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lokasi target kegiatan
+ */
 router.get(
   ["/kegiatan/:id/lokasi", "/target-lokasi"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
   kknAttendanceController.getActivityLocation
 );
 

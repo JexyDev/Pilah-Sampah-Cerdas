@@ -20,7 +20,7 @@ async function main() {
 
   for (const user of users) {
     const role = user.role?.name;
-    if (!["LURAH", "CAMAT", "ADMIN_DLH", "SUPER_ADMIN"].includes(role || "")) continue;
+    if (!["LURAH", "CAMAT", "ADMIN_DLH", "SUPER_USER"].includes(role || "")) continue;
 
     let targetName = user.name;
 
@@ -28,8 +28,8 @@ async function main() {
       targetName = "Drs. H. Ahmad Sudrajat, M.Si";
     } else if (role === "ADMIN_DLH") {
       targetName = "Ir. Bambang Triyono";
-    } else if (role === "SUPER_ADMIN") {
-      targetName = "Super Admin DLH";
+    } else if (role === "SUPER_USER") {
+      targetName = "SUPER USER DLH";
     } else if (role === "LURAH") {
       const kelName = user.rtRw?.kelurahan?.name || "";
       targetName = lurahNames[kelName] || "Bpk. M. Ridwan";

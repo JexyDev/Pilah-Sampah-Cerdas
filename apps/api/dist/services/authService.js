@@ -35,7 +35,7 @@ export class AuthService {
         const payload = {
             userId: user.id,
             role: user.role.name,
-            rtRwId: user.rtRwId ?? undefined,
+            rwId: user.rwId ?? undefined,
         };
         // Generate tokens
         const accessToken = generateAccessToken(payload);
@@ -72,7 +72,7 @@ export class AuthService {
         const payload = {
             userId: tokenRecord.user.id,
             role: tokenRecord.user.role.name,
-            rtRwId: tokenRecord.user.rtRwId ?? undefined,
+            rwId: tokenRecord.user.rwId ?? undefined,
         };
         const newAccessToken = generateAccessToken(payload);
         return {
@@ -250,7 +250,7 @@ export class AuthService {
     async resolveRtRwId(rtRw, kelurahan) {
         // If rtRw is numeric string, try parsing directly
         if (rtRw && !isNaN(Number(rtRw))) {
-            const existingById = await prisma.rtRwArea.findUnique({ where: { id: Number(rtRw) } });
+            const existingById = await prisma.rw.findUnique({ where: { id: Number(rtRw) } });
             if (existingById)
                 return existingById.id;
         }
@@ -265,7 +265,7 @@ export class AuthService {
             }
         }
         if (rtRw) {
-            const areaMatch = await prisma.rtRwArea.findFirst({
+            const areaMatch = await prisma.rw.findFirst({
                 where: {
                     ...whereClause,
                     name: { contains: rtRw, mode: "insensitive" },
@@ -276,14 +276,14 @@ export class AuthService {
         }
         // If kelurahan matched but rtRw didn't match specific string, get first area in kelurahan
         if (whereClause.kelurahanId) {
-            const areaInKel = await prisma.rtRwArea.findFirst({
+            const areaInKel = await prisma.rw.findFirst({
                 where: { kelurahanId: whereClause.kelurahanId },
             });
             if (areaInKel)
                 return areaInKel.id;
         }
         // Fallback: pick the first registered official RtRwArea in system
-        const defaultArea = await prisma.rtRwArea.findFirst({
+        const defaultArea = await prisma.rw.findFirst({
             orderBy: { id: "asc" },
         });
         if (!defaultArea) {
@@ -321,15 +321,15 @@ export class AuthService {
             password: hashedPassword,
             status: finalStatus,
         }, householdData, qrCode, wargaSubtype);
-        if (userData.rtRwId) {
+        if (userData.rwId) {
             import("./polygonService.js").then(({ polygonService }) => {
-                polygonService.regenerateRtRwPolygon(userData.rtRwId).catch(console.error);
+                polygonService.regenerateRtRwPolygon(userData.rwId).catch(console.error);
             });
         }
         const accessToken = generateAccessToken({
             userId: user.id,
             role: "WARGA",
-            rtRwId: user.rtRwId ?? undefined,
+            rwId: user.rwId ?? undefined,
         });
         const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
         await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
@@ -339,7 +339,7 @@ export class AuthService {
                 name: user.name,
                 phone: user.phone,
                 role: "WARGA",
-                rtRwId: user.rtRwId,
+                rwId: user.rwId,
                 fotoProfil: user.fotoProfil,
             },
             accessToken,
@@ -363,18 +363,18 @@ export class AuthService {
     async registerPetugasResidu(userData, petugasData) {
         const { hashPassword } = await import("../utils/hashUtils.js");
         const hashedPassword = await hashPassword(userData.password);
-        if (userData.rtRwId) {
+        if (userData.rwId) {
             const existingPetugas = await prisma.user.findFirst({
                 where: {
-                    rtRwId: userData.rtRwId,
+                    rwId: userData.rwId,
                     role: { name: "PETUGAS_RESIDU" },
                 },
                 include: {
-                    rtRw: true,
+                    rw: true,
                 },
             });
             if (existingPetugas) {
-                const rwName = existingPetugas.rtRw?.name || `RW ID ${userData.rtRwId}`;
+                const rwName = existingPetugas.rw?.name || `RW ID ${userData.rwId}`;
                 throw new Error(`Pendaftaran Ditolak: ${rwName} sudah memiliki Petugas Residu aktif.`);
             }
         }
@@ -559,7 +559,7 @@ export class AuthService {
         const payload = {
             userId: user.id,
             role: user.role.name,
-            rtRwId: user.rtRwId ?? undefined,
+            rwId: user.rwId ?? undefined,
         };
         const accessToken = generateAccessToken(payload);
         const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);

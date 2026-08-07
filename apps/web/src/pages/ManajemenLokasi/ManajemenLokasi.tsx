@@ -20,7 +20,6 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import * as turf from "@turf/turf";
 import L from "leaflet";
 import {
   ChevronDown,
@@ -84,11 +83,13 @@ const MapEvents = ({
   return null;
 };
 
-const MapUpdater = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
+const MapFlyTo = ({ target }: { target: { center: [number, number]; zoom: number; timestamp: number } | null }) => {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, zoom, { duration: 1.5 });
-  }, [center, zoom, map]);
+    if (target) {
+      map.flyTo(target.center, target.zoom, { duration: 1.2 });
+    }
+  }, [target, map]);
   return null;
 };
 
@@ -97,12 +98,14 @@ const ModalMapInteractive = ({
   inputMode,
   markerPosition,
   polygonPoints,
+  kelurahanBounds,
   onMarkerChange,
   onAddPolygonPoint,
 }: {
   inputMode: "marker" | "polygon";
   markerPosition: [number, number] | null;
   polygonPoints: [number, number][];
+  kelurahanBounds?: [number, number][];
   onMarkerChange: (lat: number, lng: number) => void;
   onAddPolygonPoint: (lat: number, lng: number) => void;
 }) => {
@@ -118,7 +121,24 @@ const ModalMapInteractive = ({
 
   return (
     <>
-      {inputMode === "marker" && markerPosition && <Marker position={markerPosition} />}
+      {/* Background guide: Authentic Kelurahan LapakGIS Boundary Polygon */}
+      {kelurahanBounds && (
+        <Polygon
+          positions={kelurahanBounds}
+          pathOptions={{
+            color: "#059669",
+            fillColor: "#10b981",
+            fillOpacity: 0.15,
+            weight: 2,
+            dashArray: "5, 5",
+          }}
+        />
+      )}
+
+      {/* Primary GPS Location Marker */}
+      {markerPosition && <Marker position={markerPosition} />}
+
+      {/* Drawn Custom Sub-Polygon */}
       {inputMode === "polygon" && (
         <>
           {polygonPoints.map((pt, idx) => (
@@ -151,17 +171,7 @@ const ModalMapInteractive = ({
   );
 };
 
-const generateHexagon = (lat: number, lng: number, radius = 0.003) => {
-  const points: [number, number][] = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i;
-    points.push([
-      lat + radius * Math.cos(angle),
-      lng + radius * Math.sin(angle) * 1.5,
-    ]);
-  }
-  return points;
-};
+
 
 const ManajemenLokasi: React.FC = () => {
   const { user } = useAuthStore();
@@ -212,6 +222,7 @@ const ManajemenLokasi: React.FC = () => {
           ? 18
           : 15
   );
+  const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
 
   // Group bins by household (userId or coordinates)
   const householdGroups = useMemo(() => {
@@ -296,21 +307,16 @@ const ManajemenLokasi: React.FC = () => {
     setModalType("edit");
     setEditingId(loc.id);
     setNewAreaName(loc.rw);
-    setNewAreaKelurahanId(kelurahans.find((k) => k.name === loc.kelurahan)?.id || "");
+    setNewAreaKelurahanId(kelurahans.find((k) => k.name.toLowerCase() === (loc.kelurahan || "").toLowerCase())?.id || "");
 
     const initialLat = loc.latitude ? loc.latitude.toString() : "-6.8895";
     const initialLng = loc.longitude ? loc.longitude.toString() : "107.6108";
     setAreaLat(initialLat);
     setAreaLng(initialLng);
 
-    // Generate initial polygon vertices if location lat/lng exist
-    if (loc.latitude && loc.longitude) {
-      const initHex = generateHexagon(Number(loc.latitude), Number(loc.longitude), 0.002);
-      setPolygonPoints(initHex);
-    } else {
-      setPolygonPoints([]);
-    }
-    setInputMode("polygon");
+    // Default to Single Marker mode on authentic OpenStreetMap coordinate (no fake artificial polygon)
+    setPolygonPoints([]);
+    setInputMode("marker");
     setIsAddModalOpen(true);
   };
 
@@ -366,13 +372,14 @@ const ManajemenLokasi: React.FC = () => {
     }
   };
 
-  const formatRegionName = (name: string) => {
+  const formatRegionName = (name: string, kelurahan?: string) => {
     const rtMatch = name.match(/RT\s*(\d+)/i);
     const rwMatch = name.match(/RW\s*(\d+)/i);
+    const kel = kelurahan ? `Kel. ${kelurahan}` : "Kec. Coblong";
     if (rtMatch && rwMatch) {
-      return `RT: ${rtMatch[1]}, RW: ${rwMatch[1]}, Kec: Coblong`;
+      return `RT ${rtMatch[1]} / RW ${rwMatch[1]} (${kel})`;
     }
-    return `${name}, Kec: Coblong`;
+    return `${name} (${kel})`;
   };
 
   const uniqueRts = useMemo(() => {
@@ -388,10 +395,15 @@ const ManajemenLokasi: React.FC = () => {
     ).sort() as string[];
   }, [locations]);
 
+  const coblongKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
+
   const filteredLocations = locations.filter((loc) => {
+    const isCoblongKelurahan = coblongKelurahans.some((k) => k.toLowerCase() === (loc.kelurahan || "").toLowerCase());
+    if (!isCoblongKelurahan && selectedKelurahan === "Semua Kelurahan") return false;
+
     const matchesSearch = loc.rw.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesKelurahan =
-      selectedKelurahan === "Semua Kelurahan" || loc.kelurahan === selectedKelurahan;
+      selectedKelurahan === "Semua Kelurahan" || loc.kelurahan.toLowerCase() === selectedKelurahan.toLowerCase();
     const matchesRt =
       selectedRt === "Semua RT" || loc.rw.toLowerCase().includes(`rt ${selectedRt.toLowerCase()}`);
     return matchesSearch && matchesKelurahan && matchesRt;
@@ -406,8 +418,11 @@ const ManajemenLokasi: React.FC = () => {
 
   const handleLocationClick = (loc: any) => {
     if (loc.latitude && loc.longitude) {
-      setMapCenter([Number(loc.latitude), Number(loc.longitude)]);
+      const lat = Number(loc.latitude);
+      const lng = Number(loc.longitude);
+      setMapCenter([lat, lng]);
       setMapZoom(17);
+      setFlyTarget({ center: [lat, lng], zoom: 17, timestamp: Date.now() });
     } else {
       const rwBins = bins.filter((b) => b.rtRw === loc.rw && b.latitude && b.longitude);
       if (rwBins.length > 0) {
@@ -415,6 +430,7 @@ const ManajemenLokasi: React.FC = () => {
         const avgLng = rwBins.reduce((sum, b) => sum + Number(b.longitude), 0) / rwBins.length;
         setMapCenter([avgLat, avgLng]);
         setMapZoom(17);
+        setFlyTarget({ center: [avgLat, avgLng], zoom: 17, timestamp: Date.now() });
       } else {
         toast.error("Tidak ada koordinat terdaftar untuk lokasi ini");
       }
@@ -431,7 +447,7 @@ const ManajemenLokasi: React.FC = () => {
             <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
               <Layers className="w-4 h-4 text-emerald-600" />
               <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                Kapasitas Tong / Zona
+                Kapasitas Tempat Sampah / Zona
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -457,13 +473,13 @@ const ManajemenLokasi: React.FC = () => {
             scrollWheelZoom={true}
             style={{ height: "100%", width: "100%" }}
           >
-            <MapUpdater center={mapCenter} zoom={mapZoom} />
+            <MapFlyTo target={flyTarget} />
             <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedKelurahan} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {/* LEVEL 1: RENDER AUTHENTIC KELURAHAN BOUNDARY POLYGONS */}
+            {/* LEVEL 1: RENDER AUTHENTIC HIGH-PRECISION LAPAKGIS KELURAHAN BOUNDARY POLYGONS */}
             {Object.values(KELURAHAN_GEODATA).map((kg) => {
               if (
                 selectedKelurahan !== "Semua Kelurahan" &&
@@ -479,9 +495,8 @@ const ManajemenLokasi: React.FC = () => {
                   pathOptions={{
                     color: kg.color,
                     fillColor: kg.color,
-                    fillOpacity: selectedKelurahan === kg.name ? 0.28 : 0.15,
-                    weight: selectedKelurahan === kg.name ? 3 : 2,
-                    dashArray: "6, 6",
+                    fillOpacity: selectedKelurahan.toLowerCase() === kg.name.toLowerCase() ? 0.32 : 0.18,
+                    weight: selectedKelurahan.toLowerCase() === kg.name.toLowerCase() ? 3 : 2.2,
                   }}
                 />
               );
@@ -501,8 +516,7 @@ const ManajemenLokasi: React.FC = () => {
                     eventHandlers={{
                       click: () => {
                         setSelectedKelurahan(kel.name);
-                        setMapCenter([kel.lat, kel.lng]);
-                        setMapZoom(16);
+                        setFlyTarget({ center: [kel.lat, kel.lng], zoom: 16, timestamp: Date.now() });
                       },
                     }}
                   >
@@ -517,8 +531,7 @@ const ManajemenLokasi: React.FC = () => {
                         <button
                           onClick={() => {
                             setSelectedKelurahan(kel.name);
-                            setMapCenter([kel.lat, kel.lng]);
-                            setMapZoom(16);
+                            setFlyTarget({ center: [kel.lat, kel.lng], zoom: 16, timestamp: Date.now() });
                           }}
                           className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition cursor-pointer"
                         >
@@ -530,141 +543,69 @@ const ManajemenLokasi: React.FC = () => {
                 );
               })}
 
-            {/* LEVEL 2: RENDER DETAILED RW ZONA AND MARKERS (ONLY WHEN ZOOM >= 15 OR KELURAHAN IS SELECTED) */}
+            {/* LEVEL 2: RENDER DETAILED RW MARKERS (WHEN KELURAHAN SELECTED OR ZOOM >= 17) */}
             {(() => {
-              if (selectedKelurahan === "Semua Kelurahan" && mapZoom < 15) return null;
+              if (selectedKelurahan === "Semua Kelurahan" && mapZoom < 17) return null;
 
               const validLocations = filteredLocations.filter((g) => g.latitude && g.longitude);
               if (validLocations.length === 0) return null;
 
+              return validLocations.map((group, idx) => (
+                <Marker
+                  key={`rw-marker-${group.rw}-${idx}`}
+                  position={[group.latitude, group.longitude]}
+                  icon={createRwZonaIcon(group.rw, group.patuh)}
+                  eventHandlers={{
+                    click: () => {
+                      setMapCenter([group.latitude, group.longitude]);
+                      setMapZoom(17);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs p-2 text-left font-sans min-w-[260px] sm:min-w-[300px]">
+                      <strong className="text-sm font-black block mb-2 text-slate-900 border-b pb-1.5 text-center">
+                        Wilayah {group.rw.includes(`(${group.kelurahan})`) ? group.rw : `${group.rw} (${group.kelurahan})`}
+                      </strong>
 
-              // Setup Voronoi polygons with fallback to Hexagons
-              let voronoiPolygons: any = null;
-
-              const points = turf.featureCollection(
-                validLocations.map((g, i) => {
-                  const jitterLng = (Math.random() - 0.5) * 0.0001;
-                  const jitterLat = (Math.random() - 0.5) * 0.0001;
-                  return turf.point([g.longitude + jitterLng, g.latitude + jitterLat], { id: i });
-                })
-              );
-
-              if (validLocations.length === 1) {
-                points.features.push(
-                  turf.point([validLocations[0].longitude + 0.05, validLocations[0].latitude + 0.05])
-                );
-                points.features.push(
-                  turf.point([validLocations[0].longitude - 0.05, validLocations[0].latitude - 0.05])
-                );
-              } else if (validLocations.length === 2) {
-                points.features.push(
-                  turf.point([validLocations[0].longitude + 0.05, validLocations[0].latitude + 0.05])
-                );
-              }
-
-              const bbox = turf.bbox(points);
-              const lngDiff = Math.max(Math.abs(bbox[2] - bbox[0]), 0.02);
-              const latDiff = Math.max(Math.abs(bbox[3] - bbox[1]), 0.02);
-              const expandedBbox = [
-                bbox[0] - lngDiff * 1.5,
-                bbox[1] - latDiff * 1.5,
-                bbox[2] + lngDiff * 1.5,
-                bbox[3] + latDiff * 1.5,
-              ] as [number, number, number, number];
-
-              try {
-                voronoiPolygons = turf.voronoi(points, { bbox: expandedBbox });
-              } catch (e) {
-                console.error("Voronoi error:", e);
-              }
-
-              return validLocations.map((group, idx) => {
-                const rwBins = bins.filter((b) => b.rtRw === group.rw);
-                let maxPercentage = 0;
-                rwBins.forEach((bin) => {
-                  const vol = Number(bin.currentVolumeLiter || 0);
-                  const max = Number(bin.maxCapacityLiter || 25);
-                  const pct = max > 0 ? (vol / max) * 100 : 0;
-                  if (pct > maxPercentage) maxPercentage = pct;
-                });
-
-                let polygonColor = "#10b981"; // Aman < 70%
-                if (maxPercentage >= 90) polygonColor = "#ef4444"; // Penuh > 90%
-                else if (maxPercentage >= 70) polygonColor = "#f59e0b"; // Siaga 70-90%
-
-                let positions: [number, number][] = [];
-                if (voronoiPolygons && voronoiPolygons.features) {
-                  const pt = turf.point([group.longitude, group.latitude]);
-                  const feature = voronoiPolygons.features.find((f: any) => {
-                    if (!f) return false;
-                    try {
-                      return turf.booleanPointInPolygon(pt, f);
-                    } catch (err) {
-                      return false;
-                    }
-                  });
-
-                  const matchedFeature = feature || voronoiPolygons.features[idx];
-
-                  if (matchedFeature && matchedFeature.geometry && matchedFeature.geometry.coordinates) {
-                    const coords = matchedFeature.geometry.coordinates[0];
-                    positions = coords.map((c: any) => [c[1], c[0]]);
-                  }
-                }
-
-                if (positions.length === 0) {
-                  positions = generateHexagon(group.latitude, group.longitude, 0.004);
-                }
-
-                return (
-                  <React.Fragment key={`zone-frag-${idx}`}>
-                    <Polygon
-                      positions={positions}
-                      pathOptions={{
-                        color: polygonColor,
-                        fillColor: polygonColor,
-                        fillOpacity: 0.25,
-                        weight: 2,
-                        dashArray: "4",
-                      }}
-                      eventHandlers={{
-                        click: () => {
-                          setMapCenter([group.latitude, group.longitude]);
-                          setMapZoom(17);
-                        },
-                      }}
-                    />
-                    <Marker
-                      position={[group.latitude, group.longitude]}
-                      icon={createRwZonaIcon(group.rw, group.patuh)}
-                      eventHandlers={{
-                        click: () => {
-                          setMapCenter([group.latitude, group.longitude]);
-                          setMapZoom(17);
-                        },
-                      }}
-                    >
-                      <Popup>
-                        <div className="text-xs p-1 text-center font-sans">
-                          <strong className="text-sm font-bold block mb-1 text-slate-800">
-                            Wilayah {group.rw} ({group.kelurahan})
-                          </strong>
-                          <p className="text-slate-600 mb-1">
-                            Tingkat Kepatuhan: <strong className="text-emerald-600">{group.patuh}%</strong>
-                          </p>
-                          <p className="text-slate-600 mb-2">{group.titikCount} Tempat Sampah</p>
-                          <p className="text-[10px] text-emerald-600 font-semibold italic">
-                            Klik untuk zoom ke detail rumah tangga
-                          </p>
+                      <div className="space-y-1.5 my-2 text-xs text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Ketua RW:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.ketuaRwName || "Belum ditugaskan"}</span>
                         </div>
-                      </Popup>
-                    </Marker>
-                  </React.Fragment>
-                );
-              });
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Petugas Residu:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.petugasResiduName || "Belum ditugaskan"}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Mahasiswa KKN:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.mahasiswaKknName || "Tidak ada"}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Lurah {group.kelurahan ? `(${group.kelurahan})` : ""}:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.lurahName || "Belum ditugaskan"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between text-slate-600 my-1 px-1 text-xs">
+                        <span>Tingkat Kepatuhan:</span>
+                        <strong className="text-emerald-600 font-black text-sm">{group.patuh}%</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-600 mb-2 px-1 text-xs">
+                        <span>Tempat Sampah:</span>
+                        <strong className="text-slate-800 font-black">{group.titikCount} Tempat Sampah</strong>
+                      </div>
+
+                      <p className="text-[11px] text-emerald-600 font-bold italic text-center pt-1.5 border-t border-slate-100">
+                        Klik untuk zoom ke detail rumah tangga
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ));
             })()}
 
-            {mapZoom >= 16 ? (
+            {mapZoom >= 14 ? (
               <>
                 {/* Active Bins (Grouped by Household) */}
                 {householdGroups.map((group, idx) => {
@@ -852,7 +793,7 @@ const ManajemenLokasi: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="text-[13px] font-bold text-slate-800 leading-tight">
-                        {formatRegionName(loc.rw)}
+                        {formatRegionName(loc.rw, loc.kelurahan)}
                       </h4>
                       <p className="text-[11px] font-medium text-slate-500 mt-0.5">
                         {loc.rtCount} RT • {loc.titikCount} Tempat Sampah
@@ -1066,18 +1007,16 @@ const ManajemenLokasi: React.FC = () => {
                     style={{ height: "100%", width: "100%" }}
                   >
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapUpdater
-                      center={
-                        areaLat && areaLng
-                          ? [Number(areaLat), Number(areaLng)]
-                          : [-6.8903, 107.611]
-                      }
-                      zoom={16}
-                    />
                     <ModalMapInteractive
                       inputMode={inputMode}
                       markerPosition={areaLat && areaLng ? [Number(areaLat), Number(areaLng)] : null}
                       polygonPoints={polygonPoints}
+                      kelurahanBounds={(() => {
+                        const curKel = kelurahans.find((k) => k.id === newAreaKelurahanId);
+                        if (!curKel) return undefined;
+                        const kg = Object.values(KELURAHAN_GEODATA).find((g) => g.name.toLowerCase() === curKel.name.toLowerCase());
+                        return kg?.bounds;
+                      })()}
                       onMarkerChange={(lat, lng) => {
                         setAreaLat(lat.toFixed(7));
                         setAreaLng(lng.toFixed(7));

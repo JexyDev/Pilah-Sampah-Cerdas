@@ -17,7 +17,7 @@ router.get(
   "/deposits",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "RW",
     "RT",
@@ -50,7 +50,7 @@ router.get(
 router.post(
   "/manual",
   authMiddleware,
-  roleMiddleware(["PETUGAS_RESIDU", "SUPER_ADMIN"]),
+  roleMiddleware(["PETUGAS_RESIDU", "SUPER_USER"]),
   uploadAvatarMiddleware.single("image"),
   transactionController.createManualDeposit
 );
@@ -58,7 +58,7 @@ router.post(
 router.get(
   "/manual",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
   transactionController.getManualDeposits
 );
 

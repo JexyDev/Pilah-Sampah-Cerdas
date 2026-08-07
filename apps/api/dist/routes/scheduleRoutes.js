@@ -9,8 +9,74 @@ import { scheduleController } from "../controllers/scheduleController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
+/**
+ * @swagger
+ * tags:
+ *   name: Schedules
+ *   description: API Manajemen Jadwal (Absensi KKN, Pengangkutan, dll)
+ */
+/**
+ * @swagger
+ * /api/v1/schedules:
+ *   get:
+ *     summary: Mendapatkan semua jadwal
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan list jadwal
+ */
 router.get("/", authMiddleware, scheduleController.getAllSchedules);
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), scheduleController.createSchedule);
-router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN"]), scheduleController.deleteSchedule);
-router.put("/:id", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), scheduleController.updateSchedule);
+/**
+ * @swagger
+ * /api/v1/schedules:
+ *   post:
+ *     summary: Membuat jadwal baru
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Jadwal berhasil dibuat
+ */
+router.post("/", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), scheduleController.createSchedule);
+/**
+ * @swagger
+ * /api/v1/schedules/{id}:
+ *   delete:
+ *     summary: Menghapus jadwal
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Jadwal berhasil dihapus
+ */
+router.delete("/:id", authMiddleware, roleMiddleware(["SUPER_USER"]), scheduleController.deleteSchedule);
+/**
+ * @swagger
+ * /api/v1/schedules/{id}:
+ *   put:
+ *     summary: Update jadwal
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Jadwal berhasil diupdate
+ */
+router.put("/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"]), scheduleController.updateSchedule);
 export default router;

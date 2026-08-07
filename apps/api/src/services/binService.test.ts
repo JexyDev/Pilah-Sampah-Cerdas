@@ -31,9 +31,9 @@ vi.mock("../repositories/binRepository.js", () => {
       findKelurahans: vi.fn(),
       createArea: vi.fn(),
       findRtRwById: vi.fn(),
-      getUserRtRwId: vi.fn(),
-      getUserHouseholdRtRwId: vi.fn(),
-      findBinsByRtRwId: vi.fn(),
+      getUserrwId: vi.fn(),
+      getUserHouseholdrwId: vi.fn(),
+      findBinsByrwId: vi.fn(),
       createBin: vi.fn(),
       updateBin: vi.fn(),
       deleteBin: vi.fn(),
@@ -81,7 +81,7 @@ describe("BinService", () => {
       const mockBinInput = {
         qrCode: "QR-NEW",
         categoryId: "cat-1",
-        rtRwId: "123",
+        rwId: "123",
         maxCapacityLiter: "30.0",
         latitude: "-6.123",
         longitude: "106.123",
@@ -99,7 +99,7 @@ describe("BinService", () => {
       expect(binRepository.createBin).toHaveBeenCalledWith({
         qrCode: "QR-NEW",
         categoryId: "cat-1",
-        rtRwId: 123,
+        rwId: 123,
         kelurahanId: 456,
         latitude: -6.123,
         longitude: 106.123,
@@ -110,3 +110,4 @@ describe("BinService", () => {
     });
   });
 });
+

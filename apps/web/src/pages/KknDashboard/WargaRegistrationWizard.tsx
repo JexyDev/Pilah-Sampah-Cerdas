@@ -13,6 +13,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [gpsError, setGpsError] = useState("");
+  const [rtRwList, setRtRwList] = useState<{ id: string | number; name: string }[]>([]);
 
   const [formData, setFormData] = useState({
     qrCodeOrganic: '',
@@ -52,6 +53,19 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
     } else {
       setGpsError("Peramban Anda tidak mendukung GPS.");
     }
+
+    // Fetch real RT/RW
+    const fetchAreas = async () => {
+      try {
+        const res = await api.get("/areas/rt-rw");
+        if (res.data?.success) {
+          setRtRwList(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load RT/RW areas", err);
+      }
+    };
+    fetchAreas();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -231,7 +245,20 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">ID Wilayah RT/RW</label>
-                  <input type="number" name="rtRwId" required value={formData.rtRwId} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Contoh: 6 (Lihat Master Data)" />
+                  <select 
+                    name="rtRwId" 
+                    required 
+                    value={formData.rtRwId} 
+                    onChange={handleChange} 
+                    className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="" disabled>Pilih RT / RW</option>
+                    {rtRwList.map((area: any) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name} {area.kelurahan?.name ? `- ${area.kelurahan.name}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

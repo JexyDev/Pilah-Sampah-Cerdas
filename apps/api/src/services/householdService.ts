@@ -17,12 +17,12 @@ export class HouseholdService {
   async registerHousehold(
     userId: string,
     address: string,
-    rtRwId: number,
+    rwId: number,
     latitude: number,
     longitude: number
   ) {
     // 1. Check if user already has a household in this specific RT/RW (to avoid duplicates)
-    const existing = await householdRepository.findHouseholdByUserAndArea(userId, rtRwId);
+    const existing = await householdRepository.findHouseholdByUserAndArea(userId, rwId);
     if (existing) {
       throw new Error("HOUSEHOLD_ALREADY_EXISTS");
     }
@@ -31,7 +31,7 @@ export class HouseholdService {
     const household = await householdRepository.createHousehold({
       userId,
       address,
-      rtRwId,
+      rwId,
       latitude,
       longitude,
     });
@@ -75,7 +75,7 @@ export class HouseholdService {
       },
       include: {
         category: true,
-        rtRw: true,
+        rw: true,
       },
     });
 
@@ -110,3 +110,5 @@ export class HouseholdService {
 }
 
 export const householdService = new HouseholdService();
+
+

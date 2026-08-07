@@ -33,7 +33,7 @@ export const gamificationService = {
                         id: true,
                         name: true,
                         phone: true,
-                        rtRw: true,
+                        rw: true,
                     },
                 },
             },
@@ -108,7 +108,7 @@ export const gamificationService = {
                 id: true,
                 name: true,
                 wargaSubtype: true,
-                rtRw: {
+                rw: {
                     select: {
                         name: true,
                         kelurahan: {
@@ -130,7 +130,7 @@ export const gamificationService = {
                 id: u.id,
                 name: u.name,
                 wargaSubtype: u.wargaSubtype,
-                wilayah: u.rtRw ? `${u.rtRw.name} (Kel. ${u.rtRw.kelurahan.name})` : "N/A",
+                wilayah: u.rw ? `${u.rw.name} (Kel. ${u.rw.kelurahan.name})` : "N/A",
                 totalPoints,
             };
         })
@@ -139,7 +139,7 @@ export const gamificationService = {
         // 2. Region-Based Leaderboard (Kelurahan)
         const kelurahans = await prisma.kelurahan.findMany({
             include: {
-                rtRwAreas: {
+                rws: {
                     include: {
                         users: {
                             include: {
@@ -155,7 +155,7 @@ export const gamificationService = {
         const kelurahanLeaderboard = kelurahans
             .map((k) => {
             let totalKg = 0;
-            k.rtRwAreas.forEach((area) => {
+            k.rws.forEach((area) => {
                 area.users.forEach((u) => {
                     totalKg += u.setoranOtomatis.reduce((acc, cur) => acc + Number(cur.berat || 0), 0);
                 });
@@ -169,7 +169,7 @@ export const gamificationService = {
             .sort((a, b) => b.totalPoints - a.totalPoints)
             .slice(0, 10);
         // 3. RT/RW Leaderboard
-        const rtRwAreas = await prisma.rtRwArea.findMany({
+        const rws = await prisma.rw.findMany({
             include: {
                 kelurahan: { select: { name: true } },
                 users: {
@@ -179,14 +179,14 @@ export const gamificationService = {
                 },
             },
         });
-        const rtRwLeaderboard = rtRwAreas
+        const rtRwLeaderboard = rws
             .map((area) => {
             let totalKg = 0;
             area.users.forEach((u) => {
                 totalKg += u.setoranOtomatis.reduce((acc, cur) => acc + Number(cur.berat || 0), 0);
             });
             return {
-                rtRwId: area.id,
+                rwId: area.id,
                 rtRwName: area.name,
                 kelurahanName: area.kelurahan.name,
                 totalPoints: totalKg,
@@ -202,7 +202,7 @@ export const gamificationService = {
                 name: true,
                 studentProfile: {
                     select: {
-                        assignedPolygon: {
+                        assignedRw: {
                             select: {
                                 name: true,
                                 kelurahan: { select: { name: true } },
@@ -219,7 +219,7 @@ export const gamificationService = {
             const ownPoints = m.pointHistory.reduce((acc, cur) => acc + cur.points, 0);
             // Points earned by their dampingan (warga in their rtRwArea)
             let dampinganPoints = 0;
-            const area = m.studentProfile?.assignedPolygon;
+            const area = m.studentProfile?.assignedRw;
             // Simplified: Since we don't eager-load users in the area to save queries, we only use ownPoints.
             // For a full implementation, we could sum points of all users in area.
             return {
@@ -244,7 +244,7 @@ export const gamificationService = {
             select: {
                 id: true,
                 name: true,
-                rtRw: { select: { name: true } },
+                rw: { select: { name: true } },
                 setoranManual: { select: { berat: true } },
                 claimedTasks: {
                     select: {
@@ -276,7 +276,7 @@ export const gamificationService = {
             return {
                 id: p.id,
                 name: p.name,
-                wilayah: p.rtRw?.name || "Semua Area",
+                wilayah: p.rw?.name || "Semua Area",
                 totalCompleted,
                 avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(1)),
                 successRatePercent: parseFloat((successRate * 100).toFixed(1)),
@@ -289,7 +289,7 @@ export const gamificationService = {
         return {
             citizens: citizenLeaderboard,
             regions: kelurahanLeaderboard,
-            rtRw: rtRwLeaderboard,
+            rw: rtRwLeaderboard,
             mahasiswa: mahasiswaLeaderboard,
             pengangkut: pengangkutLeaderboard,
         };

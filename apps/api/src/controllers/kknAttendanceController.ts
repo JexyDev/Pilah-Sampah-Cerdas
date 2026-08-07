@@ -163,7 +163,7 @@ export const kknAttendanceController = {
 
   getActiveStudentsLocations: async (req: Request, res: Response): Promise<void> => {
     try {
-      // Read-only monitoring allowed for SUPER_ADMIN, ADMIN_DLH, CAMAT, LURAH, RW
+      // Read-only monitoring allowed for SUPER_USER, ADMIN_DLH, CAMAT, LURAH, RW
       const result = await kknAttendanceService.getActiveStudentsLocations();
       res.status(200).json({
         success: true,

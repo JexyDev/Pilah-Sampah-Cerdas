@@ -40,7 +40,7 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/kpi", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]), dashboardController.getKpi);
+router.get("/kpi", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]), dashboardController.getKpi);
 /**
  * @swagger
  * /api/v1/dashboard/transactions:
@@ -53,7 +53,7 @@ router.get("/kpi", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "
  *       200:
  *         description: Success
  */
-router.get("/transactions", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]), dashboardController.getTransactions);
+router.get("/transactions", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]), dashboardController.getTransactions);
 /**
  * @swagger
  * /api/v1/dashboard/summary:
@@ -79,7 +79,7 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
  *       200:
  *         description: Success
  */
-router.get("/analytics", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]), dashboardController.getAnalytics);
+router.get("/analytics", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]), dashboardController.getAnalytics);
 /**
  * @swagger
  * /api/v1/dashboard/export-dataset:
@@ -92,7 +92,7 @@ router.get("/analytics", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_D
  *       200:
  *         description: CSV/Excel dataset file download
  */
-router.get("/export-dataset", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]), dashboardController.exportDataset);
+router.get("/export-dataset", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]), dashboardController.exportDataset);
 /**
  * @swagger
  * /api/v1/dashboard/regions:

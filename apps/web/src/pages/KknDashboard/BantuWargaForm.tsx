@@ -31,8 +31,12 @@ export const BantuWargaForm = ({ onSuccess }: { onSuccess: () => void }) => {
     if (formData.capacityOption === "MANUAL") {
       maxCapacityLiter = Number(formData.manualCapacity);
     } else if (formData.capacityOption === "AI") {
-       // Mock AI inference
-       maxCapacityLiter = 50; 
+      try {
+        const aiRes = await api.post("/ai/classify", {});
+        maxCapacityLiter = aiRes.data?.data?.estimatedVolumeLiter || 50;
+      } catch (e) {
+        maxCapacityLiter = 50;
+      }
     }
 
     try {

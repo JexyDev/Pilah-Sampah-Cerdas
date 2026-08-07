@@ -37,7 +37,7 @@ describe("Portals A & B Service Integration Tests", () => {
             where: { role: { name: "PETUGAS_RESIDU" } },
             include: { petugasProfile: true },
         });
-        rtRwArea = await prisma.rtRwArea.findFirst();
+        rtRwArea = await prisma.rw.findFirst();
         const timestamp = Date.now();
         // Create a QR batch assigned to KKN PIC
         qrBatch = await prisma.qrBatch.create({
@@ -56,7 +56,7 @@ describe("Portals A & B Service Integration Tests", () => {
                 qrCode: `ORG-TEST-${timestamp}`,
                 categoryId: category.id,
                 maxCapacityLiter: 25.0,
-                rtRwId: rtRwArea.id,
+                rwId: rtRwArea.id,
                 status: "PRINTED",
                 qrBatchId: qrBatch.id,
             },
@@ -68,7 +68,7 @@ describe("Portals A & B Service Integration Tests", () => {
                 qrCode: `ANO-TEST-${timestamp}`,
                 categoryId: catIno.id,
                 maxCapacityLiter: 25.0,
-                rtRwId: rtRwArea.id,
+                rwId: rtRwArea.id,
                 status: "PRINTED",
                 qrBatchId: qrBatch.id,
             },
@@ -87,11 +87,11 @@ describe("Portals A & B Service Integration Tests", () => {
                 name: "Warga Test KKN",
                 phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
                 password: "password123",
-                rtRwId: rtRwArea.id,
+                rwId: rtRwArea.id,
                 address: "Jl. Dago Giri No. 12",
             }, {
                 address: "Jl. Dago Giri No. 12",
-                rtRwId: rtRwArea.id,
+                rwId: rtRwArea.id,
                 latitude: -6.88923,
                 longitude: 107.6105,
             }, testBin.qrCode, "UTAMA");

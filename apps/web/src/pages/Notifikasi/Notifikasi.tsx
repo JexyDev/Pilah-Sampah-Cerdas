@@ -46,7 +46,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
           });
         }
 
-        const formattedBins = (Array.isArray(rawBins) ? rawBins : []).map((b: any, idx: number) => {
+        const formattedBins = (Array.isArray(rawBins) ? rawBins : []).map((b: any) => {
           let resolvedOwner = b.user?.name || b.assignedPic?.name || b.qrBatch?.assignedPic?.name;
           let resolvedPhone = b.user?.phone || b.assignedPic?.phone || b.qrBatch?.assignedPic?.phone;
           let resolvedAddress =
@@ -54,23 +54,10 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
             b.user?.households?.[0]?.address ||
             (b.rtRw?.name ? `Wilayah ${b.rtRw.name}, Dago` : "Kecamatan Coblong, Bandung");
 
-          // If no direct user link, inspect household or fallback to distinct real warga names
           if (!resolvedOwner) {
-            const fallbackNames = [
-              "Cecep Hidayat",
-              "Kang Maman",
-              "Mang Ujang",
-              "Pak Oyon",
-              "Kang Dedi",
-              "Mang Koko",
-              "Ibu Ratna",
-              "Bapak Ahmad",
-              "Andi Firmansyah",
-              "Bella Saphira",
-            ];
-            resolvedOwner = fallbackNames[idx % fallbackNames.length];
-            resolvedPhone = `08120010${(idx % 20 + 1).toString().padStart(2, "0")}`;
-            resolvedAddress = `Jl. Titiran Dalam No. ${idx + 1}, RT 0${(idx % 4) + 1} / RW 06`;
+            resolvedOwner = "Warga Binaan";
+            resolvedPhone = "-";
+            resolvedAddress = "Alamat belum didaftarkan";
           }
 
           return {
@@ -90,8 +77,8 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
           else if (b.rtRwId) areaSet.add(`RW 0${b.rtRwId}`);
         });
         setAreas(Array.from(areaSet));
-      } catch (err) {
-        console.error("Gagal memuat detail pengangkutan warga:", err);
+      } catch (_err) {
+        // Gagal memuat data pengangkutan; tampilkan state kosong
       } finally {
         setLoading(false);
       }
@@ -494,7 +481,7 @@ const NotificationModal = ({
   };
 
   const isAdminOrPetugas = [
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -750,57 +737,6 @@ const NotificationModal = ({
   );
 };
 
-const DEFAULT_COBLONG_NOTIFICATIONS = [
-  {
-    id: "notif-001",
-    title: "Jadwal Jemput Sore",
-    desc: "Terdapat tempat sampah warga yang perlu diangkut pada shift Sore (16:00 - 18:00 WIB).",
-    time: "SHIFT AKTIF HARI INI",
-    type: "JADWAL_JEMPUT",
-    category: "CRITICAL",
-    isRead: false,
-    icon: "Bell",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-700",
-  },
-  {
-    id: "notif-002",
-    title: "Peringatan Tong Penuh (Radar Merah)",
-    desc: "Tempat Sampah Anorganik BIN-DGO-002 (Warga: Pak Oyon) di RT 03 / RW 01 Kel. Dago sudah 94% penuh dan membutuhkan pengosongan.",
-    time: "15 MENIT LALU",
-    type: "TONG_PENUH",
-    category: "CRITICAL",
-    isRead: false,
-    icon: "AlertTriangle",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-700",
-  },
-  {
-    id: "notif-003",
-    title: "Setoran Sampah Terverifikasi",
-    desc: "Setoran Organik 3.5 Kg oleh Budi Santoso (RT 01/RW 02 Kel. Sekeloa) telah diverifikasi & poin +45 Pts ditambahkan.",
-    time: "1 JAM LALU",
-    type: "POIN_BERTAMBAH",
-    category: "INFO",
-    isRead: true,
-    icon: "CheckCircle",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-700",
-  },
-  {
-    id: "notif-004",
-    title: "Laporan Residu Hilir Petugas",
-    desc: "Petugas Residu telah menginput data timbulan residu non-daur ulang sebesar 14.2 Kg untuk area RW 03 Kel. Cipaganti.",
-    time: "3 JAM LALU",
-    type: "INFO_SISTEM",
-    category: "INFO",
-    isRead: true,
-    icon: "Info",
-    iconBg: "bg-indigo-100",
-    iconColor: "text-indigo-700",
-  },
-];
-
 const Notifikasi: React.FC = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -817,15 +753,15 @@ const Notifikasi: React.FC = () => {
     const fetchNotifications = async () => {
       try {
         const response = await api.get(`/notifications?role=${role}`);
-        if (response.data?.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        if (response.data?.data && Array.isArray(response.data.data)) {
           setNotifications(response.data.data);
         } else {
-          setNotifications(DEFAULT_COBLONG_NOTIFICATIONS);
+          setNotifications([]);
         }
       } catch (err: any) {
-        console.warn("Using fallback notifications for Coblong:", err);
-        setError("");
-        setNotifications(DEFAULT_COBLONG_NOTIFICATIONS);
+        console.error("Gagal mengambil notifikasi dari API:", err);
+        setError("Gagal memuat notifikasi");
+        setNotifications([]);
       } finally {
         setLoading(false);
       }

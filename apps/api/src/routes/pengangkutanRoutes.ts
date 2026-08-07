@@ -15,7 +15,7 @@ router.get(
   "/",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -31,7 +31,7 @@ router.get(
   "/:id",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -46,21 +46,21 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
   pengangkutanController.create
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
   pengangkutanController.update
 );
 
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   pengangkutanController.delete
 );
 

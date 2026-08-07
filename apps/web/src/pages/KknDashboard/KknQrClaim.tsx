@@ -40,7 +40,7 @@ export const KknQrClaim = ({ onClaimSuccess }: { onClaimSuccess: () => void }) =
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-      <h3 className="font-bold text-lg mb-4">Langkah 1: Scan & Klaim QR Bin Baru</h3>
+      <h3 className="font-bold text-lg mb-4">Langkah 1: Scan & Klaim QR Tempat Sampah Baru</h3>
       <p className="text-sm text-gray-500 mb-4">Wajib memindai QR fisik dan mendapatkan koordinat GPS sebelum dapat meregistrasikan warga.</p>
       
       <form onSubmit={handleClaim} className="flex flex-col md:flex-row gap-4">

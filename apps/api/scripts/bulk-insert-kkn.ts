@@ -261,7 +261,7 @@ async function main() {
     });
   }
 
-  // Check Tab 2 (Data Ketua) if present in workbook
+  // Check Tab Data Ketua if present in workbook
   const ketuaSheetName = workbook.SheetNames.find((s: string) => s.toLowerCase().includes('ketua'));
   let ketuaCount = 0;
   if (ketuaSheetName) {
@@ -273,7 +273,7 @@ async function main() {
       const kRowStr = JSON.stringify(kRow).toLowerCase();
       for (const row of cleanedRows) {
         const phoneSub = row.phoneNormalized.replace('+62', '');
-        const nameSub = row.namaMahasiswa.toLowerCase();
+        const nameSub = row.namaMahasiswa.toLowerCase().trim();
         if (kRowStr.includes(phoneSub) || (nameSub.length >= 4 && kRowStr.includes(nameSub))) {
           row.isKetua = true;
           const nimMatch = JSON.stringify(kRow).match(/\b\d{7,14}\b/);
@@ -286,6 +286,31 @@ async function main() {
       }
     }
     console.log(`   -> Total ${ketuaCount} Mahasiswa berhasil ditandai sebagai Ketua Kelompok.`);
+  }
+
+  // Check Tab Data Keseluruhan Peserta if present for NIM matching
+  const pesertaSheetName = workbook.SheetNames.find((s: string) => s.toLowerCase().includes('keseluruhan') || s.toLowerCase().includes('peserta'));
+  let nimCount = 0;
+  if (pesertaSheetName) {
+    console.log(`📌 Tab Peserta Terdeteksi: "${pesertaSheetName}" -> Mencocokkan NIM Mahasiswa...`);
+    const pesertaSheet = workbook.Sheets[pesertaSheetName];
+    const pesertaRawRows: any[] = xlsxLib.utils.sheet_to_json(pesertaSheet, { header: 1, defval: '' });
+
+    for (const pRow of pesertaRawRows) {
+      const pRowStr = JSON.stringify(pRow).toLowerCase();
+      for (const row of cleanedRows) {
+        const phoneSub = row.phoneNormalized.replace('+62', '');
+        const nameSub = row.namaMahasiswa.toLowerCase().trim();
+        if (pRowStr.includes(phoneSub) || (nameSub.length >= 4 && pRowStr.includes(nameSub))) {
+          const nimMatch = JSON.stringify(pRow).match(/\b\d{7,14}\b/);
+          if (nimMatch && !row.nim) {
+            row.nim = nimMatch[0];
+            nimCount++;
+          }
+        }
+      }
+    }
+    console.log(`   -> Total ${nimCount} NIM Mahasiswa berhasil dicocokkan dari tab peserta.`);
   }
 
   const uniqueKelompok = new Set(cleanedRows.map(r => r.namaKelompok)).size;
@@ -397,7 +422,32 @@ async function main() {
       }
     }
 
-    // 1. Create or get KelompokKkn
+    // 1. Lookup DPL User for relation
+    let dplUser = null;
+    if (row.dplNama) {
+      const dplTokens = [
+        "Umi Narimawati", "Agus Riyanto", "Raeni Dwi Santy", "Linna Ismawati", "Adam Mukharil",
+        "Hanhan Maulana", "Alif Finandhita", "Richi Dwi Agustia", "Wartika", "Rangga Sidik",
+        "Wendi Zarman", "Iyan Andriana", "Amilia Widya", "Ayub Subandi", "Siswanti Zuraida",
+        "Muhammad Aksan", "Hery Dwi Yulianto", "Myrna Dwi Rahmatya", "John Adler", "Agus Mulyana",
+        "Sri Dewi Anggadini", "Tatang Supriyadi", "Henike Primawati", "Manap Solihat", "Olih Solihin",
+        "Tatik Fidowaty", "Wahyudi", "Arif Try Cahyadi", "Cherry Dharmawan", "Rini Maulina",
+        "Nungki Heriyati", "Fenny Febriant"
+      ];
+      for (const token of dplTokens) {
+        if (row.dplNama.toLowerCase().includes(token.toLowerCase())) {
+          dplUser = await prisma.user.findFirst({
+            where: {
+              role: { name: 'DPL' },
+              name: { contains: token, mode: 'insensitive' }
+            }
+          });
+          if (dplUser) break;
+        }
+      }
+    }
+
+    // 2. Create or get KelompokKkn with dplId relation
     let kelompok = await prisma.kelompokKkn.findUnique({ where: { name: row.namaKelompok } });
     if (!kelompok) {
       kelompok = await prisma.kelompokKkn.create({
@@ -406,34 +456,66 @@ async function main() {
           kelurahan: row.kelurahan,
           cakupanRw: row.rwList as any,
           dplNamaMentah: row.dplNama,
+          dplId: dplUser?.id || undefined,
         } as any
       });
       createdKelompokCount++;
+    } else if (dplUser && !kelompok.dplId) {
+      kelompok = await prisma.kelompokKkn.update({
+        where: { id: kelompok.id },
+        data: { dplId: dplUser.id, dplNamaMentah: row.dplNama }
+      });
     }
 
-    // 2. Hash password (username = password = normalized phone)
-    const hashedPassword = await bcrypt.hash(row.phoneNormalized, 10);
+    // 2. Lookup primary RW Record in DB for relation
+    const primaryRwNum = row.rwList[0];
+    const kelurahanDb = await prisma.kelurahan.findFirst({ where: { name: row.kelurahan } });
+    let rwRecord = null;
+    if (kelurahanDb && primaryRwNum) {
+      rwRecord = await prisma.rw.findFirst({
+        where: {
+          kelurahanId: kelurahanDb.id,
+          name: { contains: `RW ${primaryRwNum}`, mode: "insensitive" },
+        },
+      });
+    }
 
-    // 3. Create User with mustChangePassword = true
+    // 3. Hash password (prefer NIM, fallback phone)
+    const loginSecret = row.nim || row.phoneNormalized;
+    const hashedPassword = await bcrypt.hash(loginSecret, 10);
+
+    // 4. Create User with mustChangePassword = true
+    const userName = row.isKetua ? `👑 ${row.namaMahasiswa} (Ketua Kelompok)` : row.namaMahasiswa;
     const user = await prisma.user.create({
       data: {
-        name: row.namaMahasiswa,
+        name: userName,
         phone: row.phoneNormalized,
         password: hashedPassword,
         roleId: kknRole.id,
         status: 'Aktif',
         mustChangePassword: true,
+        address: row.nim ? `NIM: ${row.nim} | ${row.programStudi}` : row.programStudi,
       } as any
     });
 
-    // 4. Create StudentKkn profile
+    // 5. Create StudentKkn profile with NIM uniqueness check
+    let studentNim = row.nim ? String(row.nim).trim() : null;
+    if (studentNim) {
+      const existingNim = await prisma.studentKkn.findFirst({ where: { nim: studentNim } });
+      if (existingNim) {
+        studentNim = null; // Set null if NIM already registered in DB to ensure idempotency
+      }
+    }
+
     await prisma.studentKkn.create({
       data: {
         userId: user.id,
-        nim: row.nim ? String(row.nim) : "",
+        nim: studentNim,
         jurusan: row.programStudi || 'Belum diisi',
         fakultas: '-',
         noWa: row.phoneNormalized,
+        kelompokId: kelompok.id,
+        assignedRwId: rwRecord?.id || undefined,
         startDate: new Date(),
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
         isKetua: row.isKetua || false,

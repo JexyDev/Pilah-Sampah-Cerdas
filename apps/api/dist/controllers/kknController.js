@@ -56,9 +56,9 @@ export class KknController {
     async getRegisteredWarga(req, res) {
         try {
             const kknUserId = req.user.userId;
-            const rtRwId = req.query.rtRwId ? parseInt(req.query.rtRwId, 10) : undefined;
+            const rwId = req.query.rwId ? parseInt(req.query.rwId, 10) : undefined;
             const search = req.query.search;
-            const data = await kknService.getRegisteredWarga(kknUserId, { rtRwId, search });
+            const data = await kknService.getRegisteredWarga(kknUserId, { rwId, search });
             res.status(200).json({ success: true, data });
         }
         catch (error) {
@@ -84,9 +84,9 @@ export class KknController {
             const kknUserId = req.user.userId;
             const status = req.query.status;
             const kelurahan = req.query.kelurahan;
-            const rtRwId = req.query.rtRw ? parseInt(req.query.rtRw, 10) : undefined;
+            const rwId = req.query.rw ? parseInt(req.query.rw, 10) : undefined;
             const search = req.query.search;
-            const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rtRwId, search });
+            const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rwId, search });
             res.status(200).json({ success: true, data });
         }
         catch (error) {
@@ -173,8 +173,8 @@ export class KknController {
     async handover(req, res) {
         try {
             const kknUserId = req.user.userId;
-            const { toKknUserId, rtRwId, notes } = req.body;
-            const data = await kknService.handover(kknUserId, toKknUserId, Number(rtRwId), notes);
+            const { toKknUserId, rwId, notes } = req.body;
+            const data = await kknService.handover(kknUserId, toKknUserId, Number(rwId), notes);
             res.status(200).json({ success: true, data });
         }
         catch (error) {

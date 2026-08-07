@@ -6,19 +6,19 @@ const prisma = new PrismaClient();
 /**
  * Helper to retrieve all RtRwArea IDs under the same RW number and Kelurahan.
  */
-async function getRwAreaIds(rtRwId: number, role?: string): Promise<number[]> {
+async function getRwAreaIds(rwId: number, role?: string): Promise<number[]> {
   if (role === "RT") {
-    return [rtRwId];
+    return [rwId];
   }
 
-  const area = await prisma.rtRwArea.findUnique({ where: { id: rtRwId } });
-  if (!area) return [rtRwId];
+  const area = await prisma.rw.findUnique({ where: { id: rwId } });
+  if (!area) return [rwId];
 
   const match = area.name.match(/RW\s*(\d+)/i);
   const rwNum = match ? match[1].padStart(2, "0") : null;
   const rawNum = match ? parseInt(match[1]).toString() : null;
 
-  const matchingAreas = await prisma.rtRwArea.findMany({
+  const matchingAreas = await prisma.rw.findMany({
     where: {
       kelurahanId: area.kelurahanId,
       OR: [
@@ -30,14 +30,14 @@ async function getRwAreaIds(rtRwId: number, role?: string): Promise<number[]> {
     select: { id: true },
   });
 
-  return matchingAreas.length > 0 ? matchingAreas.map((a) => a.id) : [rtRwId];
+  return matchingAreas.length > 0 ? matchingAreas.map((a) => a.id) : [rwId];
 }
 
 export const rwService = {
-  getDashboard: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getDashboard: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     const bins = await prisma.bin.findMany({
-      where: { rtRwId: { in: areaIds } },
+      where: { rwId: { in: areaIds } },
       include: {
         category: true,
         user: { select: { name: true, address: true, phone: true } },
@@ -76,11 +76,11 @@ export const rwService = {
     };
   },
 
-  getPendingBins: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getPendingBins: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.bin.findMany({
       where: {
-        rtRwId: { in: areaIds },
+        rwId: { in: areaIds },
         status: "PENDING_APPROVAL",
       },
       include: {
@@ -93,8 +93,8 @@ export const rwService = {
     });
   },
 
-  approveBin: async (binId: string, rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  approveBin: async (binId: string, rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.$transaction(async (tx) => {
       const bin = await tx.bin.findUnique({
         where: { id: binId },
@@ -105,7 +105,7 @@ export const rwService = {
         throw new Error("Bin tidak ditemukan atau status bukan PENDING_APPROVAL");
       }
 
-      if (!bin.rtRwId || !areaIds.includes(bin.rtRwId)) {
+      if (!bin.rwId || !areaIds.includes(bin.rwId)) {
         throw new Error("Bin ini tidak berada di wilayah RW Anda");
       }
 
@@ -167,10 +167,10 @@ export const rwService = {
     });
   },
 
-  rejectBin: async (binId: string, reason: string, rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  rejectBin: async (binId: string, reason: string, rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     const binCheck = await prisma.bin.findUnique({ where: { id: binId } });
-    if (!binCheck || !binCheck.rtRwId || !areaIds.includes(binCheck.rtRwId)) {
+    if (!binCheck || !binCheck.rwId || !areaIds.includes(binCheck.rwId)) {
       throw new Error("Bin tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
@@ -189,19 +189,19 @@ export const rwService = {
     return bin;
   },
 
-  getPendingPetugas: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getPendingPetugas: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.petugasResidu.findMany({
       where: {
         OR: [{ whitelistStatus: "PENDING" }, { user: { status: "Pending" } }],
-        user: { rtRwId: { in: areaIds } },
+        user: { rwId: { in: areaIds } },
       },
       include: { user: true },
     });
   },
 
-  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     let petugasCheck = await prisma.petugasResidu.findUnique({
       where: { id: petugasId },
       include: { user: true },
@@ -215,7 +215,7 @@ export const rwService = {
     if (!petugasCheck) {
       throw new Error("Petugas tidak ditemukan");
     }
-    if (!petugasCheck.user?.rtRwId || !areaIds.includes(petugasCheck.user.rtRwId)) {
+    if (!petugasCheck.user?.rwId || !areaIds.includes(petugasCheck.user.rwId)) {
       throw new Error("Petugas tidak terdaftar di wilayah RW Anda");
     }
 
@@ -248,18 +248,18 @@ export const rwService = {
     return petugas;
   },
 
-  getInactiveBins: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getInactiveBins: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.bin.findMany({
-      where: { rtRwId: { in: areaIds }, status: "INACTIVE" },
+      where: { rwId: { in: areaIds }, status: "INACTIVE" },
       include: { user: true, category: true },
     });
   },
 
-  markBinBroken: async (binId: string, userId: string, rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  markBinBroken: async (binId: string, userId: string, rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     const binCheck = await prisma.bin.findUnique({ where: { id: binId } });
-    if (!binCheck || !binCheck.rtRwId || !areaIds.includes(binCheck.rtRwId)) {
+    if (!binCheck || !binCheck.rwId || !areaIds.includes(binCheck.rwId)) {
       throw new Error("Bin tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
@@ -279,12 +279,12 @@ export const rwService = {
     return bin;
   },
 
-  getPendingIde: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getPendingIde: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.ideDaurUlang.findMany({
       where: {
         statusApproval: "PENDING",
-        user: { rtRwId: { in: areaIds } },
+        user: { rwId: { in: areaIds } },
       },
       include: { user: true },
     });
@@ -294,17 +294,17 @@ export const rwService = {
     ideId: string,
     action: "APPROVED" | "REJECTED",
     rwUserId: string,
-    rtRwId: number,
+    rwId: number,
     userRole?: string
   ) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.$transaction(async (tx) => {
       const ideCheck = await tx.ideDaurUlang.findUnique({
         where: { id: ideId },
         include: { user: true },
       });
 
-      if (!ideCheck || !ideCheck.user.rtRwId || !areaIds.includes(ideCheck.user.rtRwId)) {
+      if (!ideCheck || !ideCheck.user.rwId || !areaIds.includes(ideCheck.user.rwId)) {
         throw new Error("Ide tidak ditemukan atau milik warga di luar wilayah RW Anda");
       }
 
@@ -338,17 +338,17 @@ export const rwService = {
     });
   },
 
-  getPendingFacilities: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getPendingFacilities: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
-      where: { rtRwId: { in: areaIds }, statusApproval: "PENDING" },
+      where: { rwId: { in: areaIds }, statusApproval: "PENDING" },
     });
   },
 
-  verifyFacility: async (facilityId: string, action: "APPROVED" | "REJECTED", rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  verifyFacility: async (facilityId: string, action: "APPROVED" | "REJECTED", rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
-    if (!facilityCheck || !facilityCheck.rtRwId || !areaIds.includes(facilityCheck.rtRwId)) {
+    if (!facilityCheck || !facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId)) {
       throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
@@ -358,10 +358,10 @@ export const rwService = {
     });
   },
 
-  getFacilities: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getFacilities: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
-      where: { rtRwId: { in: areaIds }, statusApproval: "APPROVED" },
+      where: { rwId: { in: areaIds }, statusApproval: "APPROVED" },
       include: { productionLogs: true },
     });
   },
@@ -372,12 +372,12 @@ export const rwService = {
     outputKg: number,
     jenisOutput: string,
     periode: string,
-    rtRwId: number,
+    rwId: number,
     userRole?: string
   ) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+    const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
-    if (!facilityCheck || !facilityCheck.rtRwId || !areaIds.includes(facilityCheck.rtRwId)) {
+    if (!facilityCheck || !facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId)) {
       throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
@@ -392,14 +392,14 @@ export const rwService = {
     });
   },
 
-  getResiduMonitoring: async (rtRwId: number, userRole?: string) => {
-    const areaIds = await getRwAreaIds(rtRwId, userRole);
+  getResiduMonitoring: async (rwId: number, userRole?: string) => {
+    const areaIds = await getRwAreaIds(rwId, userRole);
 
     // 1. Cari petugas residu yang ditugaskan / terdaftar di RW ini
     const petugasUser = await prisma.user.findFirst({
       where: {
         role: { name: "PETUGAS_RESIDU" },
-        rtRwId: { in: areaIds },
+        rwId: { in: areaIds },
       },
       include: { petugasProfile: true },
     });
@@ -409,7 +409,7 @@ export const rwService = {
       where: {
         OR: [
           { rwId: { in: areaIds } },
-          { petugas: { rtRwId: { in: areaIds } } },
+          { petugas: { rwId: { in: areaIds } } },
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -457,3 +457,4 @@ export const rwService = {
     };
   },
 };
+

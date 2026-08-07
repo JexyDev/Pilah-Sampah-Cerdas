@@ -4,16 +4,16 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
-import { superAdminService } from "../services/superAdminService.js";
-export class SuperAdminController {
+import { superUserService } from "../services/superUserService.js";
+export class superUserController {
     async getInactiveBins(req, res) {
         try {
             const { search } = req.query;
-            const data = await superAdminService.getInactiveBins({ search: search });
+            const data = await superUserService.getInactiveBins({ search: search });
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getInactiveBins error:", error);
+            console.error("[superUserController] getInactiveBins error:", error);
             res
                 .status(500)
                 .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -23,11 +23,11 @@ export class SuperAdminController {
         try {
             const { id } = req.params;
             const adminUserId = req.user.userId;
-            await superAdminService.reactivateBin(id, adminUserId);
+            await superUserService.reactivateBin(id, adminUserId);
             res.status(200).json({ success: true, message: "Tempat sampah berhasil diaktifkan kembali" });
         }
         catch (error) {
-            console.error("[SuperAdminController] reactivateBin error:", error);
+            console.error("[superUserController] reactivateBin error:", error);
             if (error.message === "BIN_NOT_FOUND") {
                 res
                     .status(404)
@@ -52,13 +52,13 @@ export class SuperAdminController {
                 return;
             }
             const adminUserId = req.user.userId;
-            const result = await superAdminService.handoverKkn({ fromUserId, toUserId, rtRwId: parseInt(rtRwId), notes }, adminUserId);
+            const result = await superUserService.handoverKkn({ fromUserId, toUserId, rwId: parseInt(rtRwId), notes }, adminUserId);
             res
                 .status(200)
                 .json({ success: true, data: result, message: "Handover tugas KKN berhasil diselesaikan" });
         }
         catch (error) {
-            console.error("[SuperAdminController] handoverKkn error:", error);
+            console.error("[superUserController] handoverKkn error:", error);
             if (error.message === "FROM_USER_INVALID" || error.message === "TO_USER_INVALID") {
                 res.status(400).json({
                     success: false,
@@ -75,11 +75,11 @@ export class SuperAdminController {
     }
     async getKknHandoverHistory(req, res) {
         try {
-            const data = await superAdminService.getKknHandoverHistory();
+            const data = await superUserService.getKknHandoverHistory();
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getKknHandoverHistory error:", error);
+            console.error("[superUserController] getKknHandoverHistory error:", error);
             res
                 .status(500)
                 .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -88,14 +88,14 @@ export class SuperAdminController {
     async getQrMaster(req, res) {
         try {
             const { search, status } = req.query;
-            const data = await superAdminService.getQrMaster({
+            const data = await superUserService.getQrMaster({
                 search: search,
                 status: status,
             });
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getQrMaster error:", error);
+            console.error("[superUserController] getQrMaster error:", error);
             res
                 .status(500)
                 .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -111,18 +111,18 @@ export class SuperAdminController {
                 return;
             }
             const adminUserId = req.user.userId;
-            const batch = await superAdminService.generateQrBatch({
+            const batch = await superUserService.generateQrBatch({
                 batchCode: batchCode || undefined,
                 totalQr: parseInt(totalQr),
                 categoryId: categoryId || undefined,
-                rtRwId: rtRwId ? parseInt(rtRwId) : undefined,
+                rwId: rtRwId ? parseInt(rtRwId) : undefined,
             }, adminUserId);
             res
                 .status(201)
                 .json({ success: true, data: batch, message: "Batch QR Code berhasil digenerate" });
         }
         catch (error) {
-            console.error("[SuperAdminController] generateQrBatch error:", error);
+            console.error("[superUserController] generateQrBatch error:", error);
             if (error.message === "BATCH_CODE_EXISTS") {
                 res
                     .status(409)
@@ -138,7 +138,7 @@ export class SuperAdminController {
     async getAuditTrail(req, res) {
         try {
             const { action, userId, startDate, endDate, search } = req.query;
-            const data = await superAdminService.getAuditTrail({
+            const data = await superUserService.getAuditTrail({
                 action: action,
                 userId: userId,
                 startDate: startDate,
@@ -148,7 +148,7 @@ export class SuperAdminController {
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getAuditTrail error:", error);
+            console.error("[superUserController] getAuditTrail error:", error);
             res
                 .status(500)
                 .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -156,11 +156,11 @@ export class SuperAdminController {
     }
     async getAggregatedDashboard(req, res) {
         try {
-            const data = await superAdminService.getAggregatedDashboard();
+            const data = await superUserService.getAggregatedDashboard();
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getAggregatedDashboard error:", error);
+            console.error("[superUserController] getAggregatedDashboard error:", error);
             res
                 .status(500)
                 .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -168,11 +168,11 @@ export class SuperAdminController {
     }
     async getPendingBins(req, res) {
         try {
-            const data = await superAdminService.getPendingBins();
+            const data = await superUserService.getPendingBins();
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getPendingBins error:", error);
+            console.error("[superUserController] getPendingBins error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -180,11 +180,11 @@ export class SuperAdminController {
         try {
             const { id } = req.params;
             const adminUserId = req.user.userId;
-            const data = await superAdminService.approveBin(id, adminUserId);
+            const data = await superUserService.approveBin(id, adminUserId);
             res.status(200).json({ success: true, data, message: "Bin berhasil diaktifkan" });
         }
         catch (error) {
-            console.error("[SuperAdminController] approveBin error:", error);
+            console.error("[superUserController] approveBin error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -196,21 +196,21 @@ export class SuperAdminController {
                 res.status(400).json({ success: false, message: "Alasan penolakan wajib diisi" });
                 return;
             }
-            const data = await superAdminService.rejectBin(id, reason);
+            const data = await superUserService.rejectBin(id, reason);
             res.status(200).json({ success: true, data, message: "Pengajuan bin ditolak" });
         }
         catch (error) {
-            console.error("[SuperAdminController] rejectBin error:", error);
+            console.error("[superUserController] rejectBin error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
     async getPendingPetugas(req, res) {
         try {
-            const data = await superAdminService.getPendingPetugas();
+            const data = await superUserService.getPendingPetugas();
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getPendingPetugas error:", error);
+            console.error("[superUserController] getPendingPetugas error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -222,11 +222,11 @@ export class SuperAdminController {
                 res.status(400).json({ success: false, message: "Aksi tidak valid" });
                 return;
             }
-            const data = await superAdminService.verifyPetugas(id, action);
+            const data = await superUserService.verifyPetugas(id, action);
             res.status(200).json({ success: true, data, message: "Verifikasi petugas berhasil" });
         }
         catch (error) {
-            console.error("[SuperAdminController] verifyPetugas error:", error);
+            console.error("[superUserController] verifyPetugas error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -239,11 +239,11 @@ export class SuperAdminController {
                 return;
             }
             const adminUserId = req.user.userId;
-            const data = await superAdminService.updateBinStatus(id, status, adminUserId);
+            const data = await superUserService.updateBinStatus(id, status, adminUserId);
             res.status(200).json({ success: true, data, message: "Status tempat sampah berhasil diperbarui" });
         }
         catch (error) {
-            console.error("[SuperAdminController] updateBinStatus error:", error);
+            console.error("[superUserController] updateBinStatus error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -256,11 +256,11 @@ export class SuperAdminController {
                 return;
             }
             const adminUserId = req.user.userId;
-            const data = await superAdminService.replaceBrokenBin(id, newBinId, adminUserId);
+            const data = await superUserService.replaceBrokenBin(id, newBinId, adminUserId);
             res.status(200).json({ success: true, data, message: "Penggantian tempat sampah rusak berhasil" });
         }
         catch (error) {
-            console.error("[SuperAdminController] replaceBrokenBin error:", error);
+            console.error("[superUserController] replaceBrokenBin error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -268,34 +268,34 @@ export class SuperAdminController {
         try {
             const { id } = req.params;
             const adminUserId = req.user.userId;
-            const data = await superAdminService.deleteBin(id, adminUserId);
+            const data = await superUserService.deleteBin(id, adminUserId);
             res.status(200).json({ success: true, data, message: "Tempat sampah berhasil dihapus" });
         }
         catch (error) {
-            console.error("[SuperAdminController] deleteBin error:", error);
+            console.error("[superUserController] deleteBin error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
     async purgeDuplicates(req, res) {
         try {
             const adminUserId = req.user.userId;
-            const data = await superAdminService.checkAndPurgeDuplicateUsers(adminUserId);
+            const data = await superUserService.checkAndPurgeDuplicateUsers(adminUserId);
             res.status(200).json({ success: true, data, message: "Data cleansing pengguna ganda selesai" });
         }
         catch (error) {
-            console.error("[SuperAdminController] purgeDuplicates error:", error);
+            console.error("[superUserController] purgeDuplicates error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
     async getCircularEconomyReport(_req, res) {
         try {
-            const data = await superAdminService.getCircularEconomyReport();
+            const data = await superUserService.getCircularEconomyReport();
             res.status(200).json({ success: true, data });
         }
         catch (error) {
-            console.error("[SuperAdminController] getCircularEconomyReport error:", error);
+            console.error("[superUserController] getCircularEconomyReport error:", error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
 }
-export const superAdminController = new SuperAdminController();
+export const superUserController = new superUserController();

@@ -9,6 +9,6 @@ import { bankSampahController } from "../controllers/bankSampahController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
-router.post("/transactions", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]), bankSampahController.addTransaction);
+router.post("/transactions", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]), bankSampahController.addTransaction);
 router.get("/ledger/:userId", authMiddleware, bankSampahController.getLedger);
 export default router;

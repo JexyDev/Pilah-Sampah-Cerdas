@@ -15,7 +15,7 @@ export class TransactionService {
                     select: {
                         name: true,
                         phone: true,
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },
@@ -40,7 +40,7 @@ export class TransactionService {
             include: {
                 bin: {
                     include: {
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },
@@ -62,7 +62,7 @@ export class TransactionService {
                 },
                 bin: {
                     include: {
-                        rtRw: true,
+                        rw: true,
                     },
                 },
             },
@@ -72,7 +72,7 @@ export class TransactionService {
         return prisma.$transaction(async (tx) => {
             let finalRwId = rwId;
             if (!finalRwId) {
-                const area = await tx.rtRwArea.findFirst({
+                const area = await tx.rw.findFirst({
                     where: { petugasResiduId: petugasResiduId },
                 });
                 if (!area)

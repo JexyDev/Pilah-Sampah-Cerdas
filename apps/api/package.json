@@ -57,6 +57,6 @@
     "vitest": "^4.1.10"
   },
   "prisma": {
-    "seed": "tsx prisma/seed_demo_bandung.ts"
+    "seed": "tsx prisma/seed.ts"
   }
 }

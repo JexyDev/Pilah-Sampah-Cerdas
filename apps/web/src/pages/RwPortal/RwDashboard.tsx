@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Building2, 
   Sprout, 
@@ -11,22 +11,53 @@ import {
   Truck
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
+import api from "../../utils/api";
 import toast from "react-hot-toast";
 
 export const RwDashboard: React.FC = () => {
   const { user } = useAuthStore();
-  
+  const [facilities, setFacilities] = useState<any[]>([]);
+  const [rwSummary, setRwSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const [maggotHarvest, setMaggotHarvest] = useState({
     weight: "",
     durationDays: "7"
   });
 
+  useEffect(() => {
+    const fetchRwData = async () => {
+      try {
+        setLoading(true);
+        const [facRes, dashRes] = await Promise.all([
+          api.get("/facilities").catch(() => ({ data: [] })),
+          api.get("/rw/dashboard").catch(() => ({ data: null })),
+        ]);
+        setFacilities(Array.isArray(facRes.data) ? facRes.data : facRes.data?.data || []);
+        setRwSummary(dashRes.data || null);
+      } catch (err) {
+        console.error("Gagal memuat data dashboard RW:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRwData();
+  }, []);
+
+  const countByJenis = (jenis: string) => {
+    return facilities.filter((f: any) => f.jenis === jenis || f.type === jenis).length;
+  };
+
   const handleMaggotSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!maggotHarvest.weight) return;
-    toast.success(`Berhasil mencatat panen maggot sebesar  kg!`);
+    toast.success(`Berhasil mencatat panen maggot sebesar ${maggotHarvest.weight} kg!`);
     setMaggotHarvest({ weight: "", durationDays: "7" });
   };
+
+  const warningCount = rwSummary?.warningBins || 0;
+  const fullCount = rwSummary?.fullBins || 0;
+  const totalBins = rwSummary?.totalBins || 0;
 
   return (
     <div className="space-y-6">
@@ -38,42 +69,48 @@ export const RwDashboard: React.FC = () => {
             Dashboard RW (Fasilitas & GIS)
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Wilayah: {user?.address || "RW 00"} • Kelurahan Dago
+            Wilayah: {user?.address || "RW 00"} • Kecamatan Coblong
           </p>
         </div>
       </div>
 
-      {/* Insight & Rekomendasi (Khusus RW) */}
+      {/* Insight & Rekomendasi (Khusus RW - Real Metrics) */}
       <div className="bg-indigo-50/80 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-indigo-100 card-polish">
         <div className="flex justify-between items-center mb-4">
           <h4 className="font-bold text-[18px] text-indigo-900 flex items-center gap-2">
             <Lightbulb className="text-indigo-600 w-5 h-5" />
-            Insight & Rekomendasi AI
+            Insight & Stat Wilayah Real
           </h4>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="bg-white p-4 rounded-xl border border-indigo-50 text-xs shadow-sm">
-            <span className="font-bold text-indigo-800 block mb-1">Peningkatan Setoran Anorganik</span>
-            <p className="text-slate-600">Minggu ini terdapat kenaikan sampah anorganik 15% di RT 02. Disarankan melakukan sosialisasi pemilahan plastik ulang.</p>
+            <span className="font-bold text-indigo-800 block mb-1">Total Tempat Sampah Aktif</span>
+            <p className="text-slate-600">
+              {loading ? "Memuat..." : `Terdapat ${totalBins} tempat sampah terdaftar & terikat di wilayah kerja RW Anda.`}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-indigo-50 text-xs shadow-sm">
-            <span className="font-bold text-amber-600 block mb-1">tempat sampah Hampir Penuh</span>
-            <p className="text-slate-600">Ada 3 tempat sampah di area Anda yang mendekati kapasitas maksimal (80%). Petugas diinfokan untuk menjemput sore ini.</p>
+            <span className="font-bold text-amber-600 block mb-1">Status Kapasitas (&gt;70%)</span>
+            <p className="text-slate-600">
+              {loading ? "Memuat..." : fullCount > 0 || warningCount > 0 ? `Ada ${fullCount} tempat sampah penuh (>=90%) dan ${warningCount} mendekati kapasitas.` : "Seluruh tempat sampah wilayah dalam kondisi kapasitas aman."}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-indigo-50 text-xs shadow-sm">
-            <span className="font-bold text-emerald-600 block mb-1">Gamifikasi Partisipasi</span>
-            <p className="text-slate-600">Warga atas nama Budi Setiawan sedang aktif. Pertimbangkan approval ide daur ulangnya untuk memotivasi warga lain.</p>
+            <span className="font-bold text-emerald-600 block mb-1">Fasilitas Pengolahan</span>
+            <p className="text-slate-600">
+              {loading ? "Memuat..." : `Total ${facilities.length} fasilitas terdata di wilayah Anda (Bata Terawang, Loseda, Rumah Maggot, Bank Sampah).`}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Statistik Fasilitas */}
+      {/* Statistik Fasilitas Real */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { title: "Bata Terawang", count: 24, trend: "+3 minggu ini", icon: Database, color: "text-amber-600", bg: "bg-amber-100" },
-          { title: "Loseda", count: 56, trend: "+12 minggu ini", icon: Sprout, color: "text-emerald-600", bg: "bg-emerald-100" },
-          { title: "Rumah Maggot", count: 4, trend: "Stabil", icon: Recycle, color: "text-blue-600", bg: "bg-blue-100" },
-          { title: "Bank Sampah", count: 2, trend: "Aktif", icon: Factory, color: "text-indigo-600", bg: "bg-indigo-100" },
+          { title: "Bata Terawang", count: countByJenis("bata_terawang"), trend: "Terdata di DB", icon: Database, color: "text-amber-600", bg: "bg-amber-100" },
+          { title: "Loseda", count: countByJenis("loseda"), trend: "Terdata di DB", icon: Sprout, color: "text-emerald-600", bg: "bg-emerald-100" },
+          { title: "Rumah Maggot", count: countByJenis("rumah_maggot"), trend: "Terdata di DB", icon: Recycle, color: "text-blue-600", bg: "bg-blue-100" },
+          { title: "Bank Sampah", count: countByJenis("bank_sampah"), trend: "Terdata di DB", icon: Factory, color: "text-indigo-600", bg: "bg-indigo-100" },
         ].map((item, idx) => (
           <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
             <div className={`w-12 h-12 ${item.bg} rounded-xl flex items-center justify-center shrink-0`}>
@@ -81,7 +118,7 @@ export const RwDashboard: React.FC = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 font-semibold">{item.title}</p>
-              <h3 className="text-2xl font-black text-gray-800">{item.count}</h3>
+              <h3 className="text-2xl font-black text-gray-800">{loading ? "..." : item.count}</h3>
               <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5">
                 <TrendingUp className="w-3 h-3" /> {item.trend}
               </p>

@@ -19,7 +19,7 @@ apps/api/src/
 ## 2. Aturan Autentikasi & Autorisasi (RBAC)
 
 ### 2.1 Identitas Auth Universal (Phone Number +62)
-- **Kredensial Utama:** SELURUH role (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** untuk login / penerimaan OTP WhatsApp.
+- **Kredensial Utama:** SELURUH role (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, SUPER USER) menggunakan **Nomor Telepon (+62)** untuk login / penerimaan OTP WhatsApp.
 - **NIM & NIP:** Digunakan sebagai data profil / metadata Mahasiswa KKN (NIM) dan DPL (NIP).
 - **Penghapusan NIK:** Sesuai Aturan AGENTS.md #9, NIK **dihapus total** dari seluruh tabel database & endpoint API.
 

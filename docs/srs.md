@@ -2,7 +2,7 @@
 
 ## 1. Spesifikasi Autentikasi & Identifikasi Pengguna (No NIK & Universal Phone Auth)
 * **FR-AUTH-01 (Identifikasi Tanpa NIK & No HP Universal):** 
-  * Sistem memverifikasi dan mengautentikasi **100% pengguna dari seluruh role** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** (OTP WhatsApp / Kredensial).
+  * Sistem memverifikasi dan mengautentikasi **100% pengguna dari seluruh role** (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, SUPER USER) menggunakan **Nomor Telepon (+62)** (OTP WhatsApp / Kredensial).
   * Field NIK **dihapus total** dari seluruh tabel, formulir, dan API.
   * Metadata profil tambahan: `nim` untuk Mahasiswa KKN, `nip` untuk DPL.
 

@@ -52,8 +52,8 @@ const registerWargaSchema = z.object({
     address: z.string().optional(),
     qrCode: z.string().optional(),
     wargaSubtype: z.enum(["UTAMA", "TAMBAHAN"]).optional(),
-    rtRwId: z.number().int().optional(),
-    rtRw: z.string().optional(), // string "01/02" from mobile
+    rwId: z.number().int().optional(),
+    rw: z.string().optional(), // string "01/02" from mobile
     kelurahan: z.string().optional(), // kelurahan name from mobile
     latitude: z.number().optional(),
     longitude: z.number().optional(),
@@ -71,14 +71,14 @@ const registerKknSchema = registerStaffSchema.extend({
         .string()
         .optional()
         .refine((val) => !val || !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
-    assignedPolygonId: z.number().int().optional(),
+    assignedRwId: z.number().int().optional(),
     kelurahan: z.string().optional(),
-    rtRw: z.string().optional(),
+    rw: z.string().optional(),
 });
 const registerPetugasSchema = registerStaffSchema.extend({
     noWa: z.string().min(1, "WhatsApp diperlukan"),
     assignedZone: z.string().optional(),
-    rtRw: z.string().optional(),
+    rw: z.string().optional(),
     kelurahan: z.string().optional(),
 });
 export class AuthController {
@@ -489,7 +489,7 @@ export class AuthController {
                 password: z.string().min(6),
                 phone: z.string().min(1),
                 address: z.string().optional(),
-                rtRwId: z.number().int(),
+                rwId: z.number().int(),
             })
                 .safeParse(req.body);
             if (!rwParsed.success) {
@@ -515,7 +515,7 @@ export class AuthController {
                 password: z.string().min(6),
                 phone: z.string().min(1),
                 address: z.string().optional(),
-                rtRwId: z.number().int(),
+                rwId: z.number().int(),
             })
                 .safeParse(req.body);
             if (!rwParsed.success) {
@@ -578,17 +578,17 @@ export class AuthController {
                     .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { qrCode, wargaSubtype, rtRwId, rtRw, kelurahan, latitude, longitude, nama: _nama, noWa: _noWa, ...userData } = parsed.data;
+            const { qrCode, wargaSubtype, rwId, rw: rwName, kelurahan, latitude, longitude, nama: _nama, noWa: _noWa, ...userData } = parsed.data;
             void _nama;
             void _noWa;
-            // Resolve rtRwId from string if needed
-            let resolvedRtRwId = rtRwId;
-            if (!resolvedRtRwId) {
-                resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
+            // Resolve rwId from string if needed
+            let resolvedRwId = rwId;
+            if (!resolvedRwId) {
+                resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
             }
             const householdData = {
                 address: userData.address || "",
-                rtRwId: resolvedRtRwId,
+                rwId: resolvedRwId,
                 latitude: latitude || 0,
                 longitude: longitude || 0,
             };
@@ -607,7 +607,7 @@ export class AuthController {
                 }
                 catch { }
             }
-            const result = await authService.registerWarga({ ...userData, rtRwId: resolvedRtRwId }, householdData, qrCode || undefined, wargaSubtype, scannerUser);
+            const result = await authService.registerWarga({ ...userData, rwId: resolvedRwId }, householdData, qrCode || undefined, wargaSubtype, scannerUser);
             res.status(201).json({
                 success: true,
                 data: {
@@ -646,7 +646,7 @@ export class AuthController {
                     .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, kelurahan, rtRw, ...userData } = parsed.data;
+            const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedRwId, kelurahan, rw: rwName, ...userData } = parsed.data;
             const kknData = {
                 nim,
                 jurusan,
@@ -654,7 +654,7 @@ export class AuthController {
                 noWa: noWa || userData.phone || "-",
                 startDate: startDate ? new Date(startDate) : new Date(),
                 endDate: endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                assignedPolygonId,
+                assignedRwId,
             };
             const result = await authService.registerKkn(userData, kknData);
             res.status(201).json({
@@ -688,17 +688,17 @@ export class AuthController {
                     .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { noWa, assignedZone, rtRw, kelurahan, ...userData } = parsed.data;
-            let resolvedRtRwId;
-            if (rtRw || kelurahan) {
-                resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
+            const { noWa, assignedZone, rw: rwName, kelurahan, ...userData } = parsed.data;
+            let resolvedRwId;
+            if (rwName || kelurahan) {
+                resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
             }
             const petugasData = {
                 nama: userData.name,
                 noWa,
                 assignedZone,
             };
-            const result = await authService.registerPetugasResidu({ ...userData, rtRwId: resolvedRtRwId }, petugasData);
+            const result = await authService.registerPetugasResidu({ ...userData, rwId: resolvedRwId }, petugasData);
             res.status(201).json({ success: true, data: { id: result.user.id, name: result.user.name } });
         }
         catch (error) {

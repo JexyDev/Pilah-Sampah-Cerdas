@@ -11,9 +11,9 @@ export class PengangkutanService {
         if (filters?.status) {
             whereClause.status = filters.status;
         }
-        if (filters?.rtRwId) {
+        if (filters?.rwId) {
             whereClause.bin = {
-                rtRwId: filters.rtRwId,
+                rwId: filters.rwId,
             };
         }
         return prisma.dispatchTask.findMany({
@@ -21,7 +21,7 @@ export class PengangkutanService {
             include: {
                 bin: {
                     include: {
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },
@@ -42,7 +42,7 @@ export class PengangkutanService {
             include: {
                 bin: {
                     include: {
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },
@@ -80,7 +80,7 @@ export class PengangkutanService {
             include: {
                 bin: {
                     include: {
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },
@@ -118,7 +118,7 @@ export class PengangkutanService {
             include: {
                 bin: {
                     include: {
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },

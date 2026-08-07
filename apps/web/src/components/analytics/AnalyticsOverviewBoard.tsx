@@ -13,126 +13,16 @@ import React, { useState, useEffect } from "react";
 import api from "../../services/api";
 
 export const AnalyticsOverviewBoard: React.FC = () => {
-  // Data Bar Chart 1: Kepatuhan Pemilahan per Kelurahan
-  const kepatuhanData = [
-    { name: "Kel. Sekeloa", val: 92 },
-    { name: "Kel. Dago", val: 88 },
-    { name: "Kel. Cibeunying", val: 84 },
-    { name: "Kel. Cipedes", val: 79 },
-    { name: "Kel. Lebakgede", val: 74 },
-    { name: "Kel. Tamansari", val: 69 },
-  ];
-
-  // Data Bar Chart 2: Volume Sampah per Kelurahan (Ton)
-  const volumeData = [
-    { name: "Kel. Sekeloa", val: 3.4 },
-    { name: "Kel. Dago", val: 3.1 },
-    { name: "Kel. Cibeunying", val: 2.8 },
-    { name: "Kel. Cipedes", val: 2.4 },
-    { name: "Kel. Lebakgede", val: 2.1 },
-    { name: "Kel. Tamansari", val: 1.8 },
-  ];
-
-  // Default Mock Datasets
-  const defaultWarga = [
-    { rank: 1, name: "Dewi Lestari", sub: "RW 06, Kel. Sekeloa", score: "12.350", pct: 100 },
-    { rank: 2, name: "Budi Hartono", sub: "RW 02, Kel. Dago", score: "9.870", pct: 80 },
-    { rank: 3, name: "Siti Aminah", sub: "RW 01, Kel. Sekeloa", score: "8.420", pct: 68 },
-    { rank: 4, name: "Rizky Maulana", sub: "RW 03, Kel. Cibeunying", score: "7.560", pct: 61 },
-    { rank: 5, name: "Ahmad Fauzi", sub: "RW 02, Kel. Dago", score: "7.120", pct: 57 },
-    { rank: 6, name: "Tuti Handayani", sub: "RW 04, Kel. Cibeunying", score: "6.780", pct: 54 },
-    { rank: 7, name: "Rina Marlina", sub: "RW 01, Kel. Dago", score: "6.450", pct: 52 },
-    { rank: 8, name: "Hendra Wijaya", sub: "RW 05, Kel. Cipedes", score: "6.230", pct: 50 },
-    { rank: 9, name: "Yurniarti", sub: "RW 06, Kel. Sekeloa", score: "5.890", pct: 47 },
-    { rank: 10, name: "Agus Setiawan", sub: "RW 03, Kel. Cibeunying", score: "5.430", pct: 44 },
-  ];
-
-  const defaultPetugas = [
-    { rank: 1, name: "Dedi Kurniawan", sub: "Kel. Sekeloa", score: "8.620", pct: 100 },
-    { rank: 2, name: "Agus Salim", sub: "Kel. Dago", score: "7.540", pct: 87 },
-    { rank: 3, name: "Iwan Setiawan", sub: "Kel. Cibeunying", score: "6.980", pct: 81 },
-    { rank: 4, name: "Asep Saepudin", sub: "Kel. Cipedes", score: "6.450", pct: 74 },
-    { rank: 5, name: "Tedi Hermawan", sub: "Kel. Cibeunying", score: "6.120", pct: 71 },
-    { rank: 6, name: "Ujang Rohman", sub: "Kel. Dago", score: "5.780", pct: 67 },
-    { rank: 7, name: "Rahmat Hidayat", sub: "Kel. Sekeloa", score: "5.430", pct: 63 },
-    { rank: 8, name: "Deni Surya", sub: "Kel. Cipedes", score: "5.190", pct: 60 },
-    { rank: 9, name: "Yayan Sopyan", sub: "Kel. Dago", score: "4.860", pct: 56 },
-    { rank: 10, name: "Cecep Maulana", sub: "Kel. Sekeloa", score: "4.520", pct: 52 },
-  ];
-
-  const defaultRw = [
-    { rank: 1, name: "RW 01", sub: "Kel. Sekeloa", score: "24.560", pct: 100 },
-    { rank: 2, name: "RW 02", sub: "Kel. Dago", score: "21.870", pct: 89 },
-    { rank: 3, name: "RW 06", sub: "Kel. Sekeloa", score: "19.420", pct: 79 },
-    { rank: 4, name: "RW 03", sub: "Kel. Cibeunying", score: "18.230", pct: 74 },
-    { rank: 5, name: "RW 04", sub: "Kel. Cibeunying", score: "16.870", pct: 68 },
-    { rank: 6, name: "RW 05", sub: "Kel. Cipedes", score: "15.430", pct: 62 },
-    { rank: 7, name: "RW 07", sub: "Kel. Cipedes", score: "13.980", pct: 56 },
-    { rank: 8, name: "RW 08", sub: "Kel. Dago", score: "12.570", pct: 51 },
-    { rank: 9, name: "RW 09", sub: "Kel. Sekeloa", score: "10.620", pct: 43 },
-    { rank: 10, name: "RW 10", sub: "Kel. Cibeunying", score: "9.340", pct: 38 },
-  ];
-
-  const defaultKelurahan = [
-    { rank: 1, name: "Kelurahan Sekeloa", score: "56.230", pct: 100 },
-    { rank: 2, name: "Kelurahan Dago", score: "49.780", pct: 88 },
-    { rank: 3, name: "Kelurahan Cibeunying", score: "45.120", pct: 80 },
-    { rank: 4, name: "Kelurahan Cipedes", score: "37.860", pct: 67 },
-    { rank: 5, name: "Kelurahan Lebakgede", score: "29.780", pct: 52 },
-    { rank: 6, name: "Kelurahan Sukajadi", score: "33.540", pct: 59 },
-    { rank: 7, name: "Kelurahan Pasirkaliki", score: "26.480", pct: 47 },
-    { rank: 8, name: "Kelurahan Tamansari", score: "23.160", pct: 41 },
-    { rank: 9, name: "Kelurahan Sukapura", score: "20.340", pct: 36 },
-    { rank: 10, name: "Kelurahan Pasirlayung", score: "18.540", pct: 32 },
-  ];
-
-  const defaultMahasiswa = [
-    { rank: 1, name: "Andi Firmansyah", sub: "RW 01 / RT 02 (Kel. Sekeloa)", score: "7.820", pct: 100 },
-    { rank: 2, name: "Bella Saphira", sub: "RW 01 / RT 01 (Kel. Dago)", score: "7.120", pct: 91 },
-    { rank: 3, name: "Ciko Jeriko", sub: "RW 02 / RT 01 (Kel. Sekeloa)", score: "6.880", pct: 88 },
-    { rank: 4, name: "Dinda Aprilia", sub: "RW 03 / RT 02 (Kel. Cibeunying)", score: "6.230", pct: 79 },
-    { rank: 5, name: "Fajar Ramadhan", sub: "RW 04 / RT 01 (Kel. Cibeunying)", score: "5.940", pct: 75 },
-    { rank: 6, name: "Gina Nuraini", sub: "RW 06 / RT 02 (Kel. Sekeloa)", score: "5.780", pct: 73 },
-    { rank: 7, name: "Muhammad Rayhan", sub: "RW 05 / RT 01 (Kel. Cipedes)", score: "5.640", pct: 72 },
-    { rank: 8, name: "Nabila Zahran", sub: "RW 07 / RT 01 (Kel. Cipedes)", score: "5.210", pct: 66 },
-    { rank: 9, name: "Rifki Ardiansyah", sub: "RW 08 / RT 01 (Kel. Dago)", score: "4.980", pct: 63 },
-    { rank: 10, name: "Putri Melati", sub: "RW 09 / RT 02 (Kel. Sekeloa)", score: "4.750", pct: 60 },
-  ];
-
-  const defaultKelompok = [
-    { rank: 1, name: "Kelompok A", sub: "Kel. Sekeloa", score: "29.680", pct: 100 },
-    { rank: 2, name: "Kelompok B", sub: "Kel. Dago", score: "26.430", pct: 89 },
-    { rank: 3, name: "Kelompok C", sub: "Kel. Cibeunying", score: "24.150", pct: 81 },
-    { rank: 4, name: "Kelompok D", sub: "Kel. Cipedes", score: "21.760", pct: 73 },
-    { rank: 5, name: "Kelompok E", sub: "Kel. Dago", score: "20.340", pct: 68 },
-    { rank: 6, name: "Kelompok F", sub: "Kel. Sekeloa", score: "19.120", pct: 64 },
-    { rank: 7, name: "Kelompok G", sub: "Kel. Cibeunying", score: "17.350", pct: 58 },
-    { rank: 8, name: "Kelompok H", sub: "Kel. Cipedes", score: "15.820", pct: 53 },
-    { rank: 9, name: "Kelompok I", sub: "Kel. Dago", score: "14.300", pct: 48 },
-    { rank: 10, name: "Kelompok J", sub: "Kel. Sekeloa", score: "12.870", pct: 43 },
-  ];
-
-  const defaultDpl = [
-    { rank: 1, name: "Dr. Ir. Rudi Hermawan, M.T.", score: "9.420", pct: 100 },
-    { rank: 2, name: "Dr. Siti Rahmawati, M.Si.", score: "8.730", pct: 92 },
-    { rank: 3, name: "Prof. Dr. Andi Setiawan, M.Sc.", score: "7.980", pct: 84 },
-    { rank: 4, name: "Dr. Nunik Kurniasih, S.T., M.T.", score: "7.120", pct: 75 },
-    { rank: 5, name: "Dr. Dedi Supriadi, M.Pd.", score: "6.540", pct: 69 },
-    { rank: 6, name: "Dr. Yulia Puspitasari, M.Kom.", score: "5.980", pct: 63 },
-    { rank: 7, name: "Dr. Asep Hidayat, S.E., M.M.", score: "5.620", pct: 59 },
-    { rank: 8, name: "Dr. Bambang Irawan, M.Sc.", score: "5.230", pct: 55 },
-    { rank: 9, name: "Dr. Rina Marlina, S.T., M.T.", score: "4.890", pct: 51 },
-    { rank: 10, name: "Dr. Hendra Wijaya, M.Pd.", score: "4.520", pct: 47 },
-  ];
-
   // Dynamic API states
-  const [topWarga, setTopWarga] = useState(defaultWarga);
-  const [topPetugas, setTopPetugas] = useState(defaultPetugas);
-  const [topRw, setTopRw] = useState(defaultRw);
-  const [topKelurahan, setTopKelurahan] = useState(defaultKelurahan);
-  const [topMahasiswa, setTopMahasiswa] = useState(defaultMahasiswa);
-  const [topKelompok, setTopKelompok] = useState(defaultKelompok);
-  const [topDpl, setTopDpl] = useState(defaultDpl);
+  const [kepatuhanData, setKepatuhanData] = useState<{ name: string; val: number }[]>([]);
+  const [volumeData, setVolumeData] = useState<{ name: string; val: number }[]>([]);
+  const [topWarga, setTopWarga] = useState<any[]>([]);
+  const [topPetugas, setTopPetugas] = useState<any[]>([]);
+  const [topRw, setTopRw] = useState<any[]>([]);
+  const [topKelurahan, setTopKelurahan] = useState<any[]>([]);
+  const [topMahasiswa, setTopMahasiswa] = useState<any[]>([]);
+  const [topKelompok, setTopKelompok] = useState<any[]>([]);
+  const [topDpl, setTopDpl] = useState<any[]>([]);
 
   useEffect(() => {
     fetchLiveLeaderboards();
@@ -144,64 +34,91 @@ export const AnalyticsOverviewBoard: React.FC = () => {
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
         if (d.citizens && d.citizens.length > 0) {
-          const topVal = d.citizens[0].totalPoints > 0 ? d.citizens[0].totalPoints : 12350;
+          const topVal = d.citizens[0].totalPoints || 1;
           setTopWarga(
             d.citizens.map((c: any, i: number) => {
-              const val = c.totalPoints > 0 ? c.totalPoints : Math.max(1000, 12350 - i * 700);
+              const val = c.totalPoints || 0;
               return {
                 rank: i + 1,
                 name: c.name,
-                sub: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : (defaultWarga[i]?.sub || "RW 06, Kel. Sekeloa"),
+                sub: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : "-",
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+        } else {
+          setTopWarga([]);
         }
+
         if (d.pengangkut && d.pengangkut.length > 0) {
-          const topVal = d.pengangkut[0].totalPoints > 0 ? d.pengangkut[0].totalPoints : 8620;
+          const topVal = d.pengangkut[0].totalPoints || 1;
           setTopPetugas(
             d.pengangkut.map((p: any, i: number) => {
-              const val = p.totalPoints > 0 ? p.totalPoints : Math.max(800, 8620 - i * 400);
+              const val = p.totalPoints || 0;
               return {
                 rank: i + 1,
                 name: p.name,
-                sub: p.wilayah || "Kel. Sekeloa",
+                sub: p.wilayah || "-",
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+        } else {
+          setTopPetugas([]);
         }
+
         if (d.rtRw && d.rtRw.length > 0) {
-          const topVal = d.rtRw[0].totalPoints > 0 ? d.rtRw[0].totalPoints : 24560;
+          const topVal = d.rtRw[0].totalPoints || 1;
           setTopRw(
             d.rtRw.map((r: any, i: number) => {
-              const val = r.totalPoints > 0 ? r.totalPoints : Math.max(2000, 24560 - i * 1500);
+              const val = r.totalPoints || 0;
               return {
                 rank: i + 1,
                 name: r.rtRwName || `RW 0${i + 1}`,
-                sub: `Kel. ${r.kelurahanName || "Sekeloa"}`,
+                sub: `Kel. ${r.kelurahanName || "-"}`,
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+        } else {
+          setTopRw([]);
         }
+
         if (d.regions && d.regions.length > 0) {
-          const topVal = d.regions[0].totalPoints > 0 ? d.regions[0].totalPoints : 56230;
+          const topVal = d.regions[0].totalPoints || 1;
           setTopKelurahan(
             d.regions.map((k: any, i: number) => {
-              const val = k.totalPoints > 0 ? k.totalPoints : Math.max(5000, 56230 - i * 4000);
+              const val = k.totalPoints || 0;
               return {
                 rank: i + 1,
-                name: `Kelurahan ${k.kelurahanName}`,
+                name: `Kel. ${k.kelurahanName}`,
                 sub: "",
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+
+          setVolumeData(
+            d.regions.map((k: any) => ({
+              name: `Kel. ${k.kelurahanName}`,
+              val: parseFloat((Number(k.totalPoints || 0)).toFixed(1)),
+            }))
+          );
+
+          setKepatuhanData(
+            d.regions.map((k: any) => ({
+              name: `Kel. ${k.kelurahanName}`,
+              val: Math.min(100, Math.round((Number(k.totalPoints || 0)))),
+            }))
+          );
+        } else {
+          setTopKelurahan([]);
+          setVolumeData([]);
+          setKepatuhanData([]);
         }
       }
 
@@ -209,49 +126,57 @@ export const AnalyticsOverviewBoard: React.FC = () => {
       if (resKkn.data?.success && resKkn.data.data) {
         const d = resKkn.data.data;
         if (d.students && d.students.length > 0) {
-          const topVal = d.students[0].finalScore > 0 ? d.students[0].finalScore : 7820;
+          const topVal = d.students[0].finalScore || 1;
           setTopMahasiswa(
             d.students.map((s: any, i: number) => {
-              const val = s.finalScore > 0 ? s.finalScore : Math.max(500, 7820 - i * 350);
+              const val = s.finalScore || 0;
               return {
                 rank: i + 1,
                 name: s.name,
-                sub: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : (defaultMahasiswa[i]?.sub || "RW 01 / RT 02 (Kel. Sekeloa)"),
+                sub: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : "-",
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+        } else {
+          setTopMahasiswa([]);
         }
+
         if (d.groups && d.groups.length > 0) {
-          const topVal = d.groups[0].avgScore > 0 ? d.groups[0].avgScore : 29680;
+          const topVal = d.groups[0].avgScore || 1;
           setTopKelompok(
             d.groups.map((g: any, i: number) => {
-              const val = g.avgScore > 0 ? g.avgScore : Math.max(3000, 29680 - i * 1800);
+              const val = g.avgScore || 0;
               return {
                 rank: i + 1,
                 name: g.name,
-                sub: "Kel. Sekeloa",
+                sub: "-",
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+        } else {
+          setTopKelompok([]);
         }
+
         if (d.dpl && d.dpl.length > 0) {
-          const topVal = d.dpl[0].points > 0 ? d.dpl[0].points : 9420;
+          const topVal = d.dpl[0].points || 1;
           setTopDpl(
             d.dpl.map((dp: any, i: number) => {
-              const val = dp.points > 0 ? dp.points : Math.max(1000, 9420 - i * 500);
+              const val = dp.points || 0;
               return {
                 rank: i + 1,
                 name: dp.name,
                 sub: `DPL (${dp.totalGroups || 0} Kelompok)`,
                 score: val.toLocaleString("id-ID"),
-                pct: Math.round((val / topVal) * 100),
+                pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
             })
           );
+        } else {
+          setTopDpl([]);
         }
       }
     } catch (e) {

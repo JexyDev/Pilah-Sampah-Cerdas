@@ -27,7 +27,7 @@ const TentangAplikasi: React.FC = () => {
           sampah di lingkungan masyarakat.
         </p>
         <p>
-          Hak Cipta &copy; {new Date().getFullYear()} PT Makerindo. Seluruh hak
+          Hak Cipta &copy; {new Date().getFullYear()} UNIKOM. Seluruh hak
           dilindungi undang-undang.
         </p>
       </div>

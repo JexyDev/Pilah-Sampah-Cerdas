@@ -19,7 +19,6 @@ import MahasiswaRegistration from "../pages/Registration/MahasiswaRegistration";
 import Register from "../pages/Registration/Register";
 
 import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
-import ManajemenMahasiswa from "../pages/ManajemenMahasiswa/ManajemenMahasiswa";
 import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
 import ManajemenLokasi from "../pages/ManajemenLokasi/ManajemenLokasi";
 import JadwalKegiatan from "../pages/JadwalKegiatan/JadwalKegiatan";
@@ -29,17 +28,17 @@ import PoinWarga from "../pages/PoinWarga/PoinWarga";
 import LaporanAnalitik from "../pages/LaporanAnalitik/LaporanAnalitik";
 import Notifikasi from "../pages/Notifikasi/Notifikasi";
 import Pengaturan from "../pages/Pengaturan/Pengaturan";
+import PenggunaOnline from "../pages/PenggunaOnline/PenggunaOnline";
 import SetorSampah from "../pages/SetorSampah/SetorSampah";
 import KknDashboard from "../pages/KknDashboard/KknDashboard";
 import KknWargaMonitoring from "../pages/KknDashboard/KknWargaMonitoring";
-import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
-import { ManageConfigs } from "../pages/SuperAdmin/ManageConfigs";
-import { AuditTrailList } from "../pages/SuperAdmin/AuditTrailList";
-import { MasterQrManager } from "../pages/SuperAdmin/MasterQrManager";
-import { ReviewDiscrepancy } from "../pages/SuperAdmin/ReviewDiscrepancy";
-import AktivitasMonitoring from "../pages/SuperAdmin/AktivitasMonitoring";
+import { ManageConfigs } from "../pages/SuperUser/ManageConfigs";
+import { AuditTrailList } from "../pages/SuperUser/AuditTrailList";
+import { MasterQrManager } from "../pages/SuperUser/MasterQrManager";
+import { ReviewDiscrepancy } from "../pages/SuperUser/ReviewDiscrepancy";
+import AktivitasMonitoring from "../pages/SuperUser/AktivitasMonitoring";
 import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
 import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
 import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
@@ -53,15 +52,22 @@ import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
 import PanduanPage from "../pages/Panduan/PanduanPage";
 import DplDashboardPage from "../pages/dpl/DplDashboardPage";
 import LandingPage from "../pages/LandingPage/LandingPage";
+import RolePermissionPage from "../pages/SuperUser/RolePermissionPage";
+import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
   children,
   allowedRoles,
 }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (WEB_DISABLED_ROLES.includes(user.peran)) {
+    logout();
     return <Navigate to="/login" replace />;
   }
 
@@ -109,7 +115,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -117,7 +123,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-absen"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <MonitoringAbsen />
             </ProtectedRoute>
           }
@@ -125,7 +131,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-aktivitas"
           element={
-            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_USER", "ADMIN_DLH"]}>
               <AktivitasMonitoring />
             </ProtectedRoute>
           }
@@ -133,7 +139,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-pengangkutan"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PETUGAS_RESIDU"]}>
               <ManajemenPengangkutan />
             </ProtectedRoute>
           }
@@ -141,7 +147,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-qr"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <MasterData />
             </ProtectedRoute>
           }
@@ -149,7 +155,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/warga-tempat-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <MasterData />
             </ProtectedRoute>
           }
@@ -158,16 +164,16 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/manajemen-mahasiswa"
+          path="/pengguna-online"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-              <ManajemenMahasiswa />
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"]}>
+              <PenggunaOnline />
             </ProtectedRoute>
           }
         />
@@ -176,7 +182,7 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute
               allowedRoles={[
-                "SUPER_ADMIN",
+                "SUPER_USER",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -194,7 +200,7 @@ const AppRoutes: React.FC = () => {
           path="/manajemen-lokasi"
           element={
             <ProtectedRoute
-              allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "MAHASISWA_KKN"]}
+              allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "MAHASISWA_KKN"]}
             >
               <ManajemenLokasi />
             </ProtectedRoute>
@@ -203,8 +209,24 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dashboard-dpl"
           element={
-            <ProtectedRoute allowedRoles={["DPL", "DOSEN_PEMBIMBING", "SUPER_ADMIN", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN", "WARGA", "RW", "LURAH", "CAMAT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <DplDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <DplDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/role-permissions"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER"]}>
+              <RolePermissionPage />
             </ProtectedRoute>
           }
         />
@@ -212,7 +234,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-ekosistem-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
               <ManajemenEkosistemKkn />
             </ProtectedRoute>
           }
@@ -220,7 +242,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/pemanfaatan-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -228,7 +250,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/hasil-pemanfaatan"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <HasilPemanfaatan />
             </ProtectedRoute>
           }
@@ -238,7 +260,7 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute
               allowedRoles={[
-                "SUPER_ADMIN",
+                "SUPER_USER",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -261,7 +283,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/input-manual"
           element={
-            <ProtectedRoute allowedRoles={["PETUGAS_RESIDU", "SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["PETUGAS_RESIDU", "SUPER_USER", "ADMIN_DLH"]}>
               <InputSetoranManual />
             </ProtectedRoute>
           }
@@ -270,7 +292,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/kategori-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
               <KategoriSampah />
             </ProtectedRoute>
           }
@@ -280,7 +302,7 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute
               allowedRoles={[
-                "SUPER_ADMIN",
+                "SUPER_USER",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -298,7 +320,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/laporan-analitik"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]}>
               <LaporanAnalitik />
             </ProtectedRoute>
           }
@@ -309,7 +331,7 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute
               allowedRoles={[
-                "SUPER_ADMIN",
+                "SUPER_USER",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -328,7 +350,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/evaluasi-ai"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
               <ReviewDiscrepancy />
             </ProtectedRoute>
           }
@@ -359,33 +381,33 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/superadmin/configs"
+          path="/superUser/configs"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER"]}>
               <ManageConfigs />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/superadmin/audit"
+          path="/superUser/audit"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER"]}>
               <AuditTrailList />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/superadmin/qr-master"
+          path="/superUser/qr-master"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER"]}>
               <MasterQrManager />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/superadmin/discrepancies"
+          path="/superUser/discrepancies"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
               <ReviewDiscrepancy />
             </ProtectedRoute>
           }

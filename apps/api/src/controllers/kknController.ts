@@ -63,10 +63,10 @@ export class KknController {
   async getRegisteredWarga(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const rtRwId = req.query.rtRwId ? parseInt(req.query.rtRwId as string, 10) : undefined;
+      const rwId = req.query.rwId ? parseInt(req.query.rwId as string, 10) : undefined;
       const search = req.query.search as string | undefined;
 
-      const data = await kknService.getRegisteredWarga(kknUserId, { rtRwId, search });
+      const data = await kknService.getRegisteredWarga(kknUserId, { rwId, search });
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getRegisteredWarga error:", error);
@@ -92,10 +92,10 @@ export class KknController {
       const kknUserId = req.user!.userId;
       const status = req.query.status as string;
       const kelurahan = req.query.kelurahan as string;
-      const rtRwId = req.query.rtRw ? parseInt(req.query.rtRw as string, 10) : undefined;
+      const rwId = req.query.rw ? parseInt(req.query.rw as string, 10) : undefined;
       const search = req.query.search as string;
 
-      const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rtRwId, search });
+      const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rwId, search });
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaList error:", error);
@@ -200,8 +200,8 @@ export class KknController {
   async handover(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const { toKknUserId, rtRwId, notes } = req.body;
-      const data = await kknService.handover(kknUserId, toKknUserId, Number(rtRwId), notes);
+      const { toKknUserId, rwId, notes } = req.body;
+      const data = await kknService.handover(kknUserId, toKknUserId, Number(rwId), notes);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] handover error:", error);
@@ -319,4 +319,6 @@ export class KknController {
 }
 
 export const kknController = new KknController();
+
+
 

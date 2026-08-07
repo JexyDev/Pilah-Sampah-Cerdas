@@ -9,8 +9,8 @@ import { notificationIntegrationController } from "../controllers/notificationIn
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
-router.post("/test-otp", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), notificationIntegrationController.testOtp);
-router.post("/test-alarm", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), notificationIntegrationController.testAlarm);
-router.post("/test-email", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), notificationIntegrationController.testEmail);
-router.post("/test-fcm", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), notificationIntegrationController.testFcm);
+router.post("/test-otp", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), notificationIntegrationController.testOtp);
+router.post("/test-alarm", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), notificationIntegrationController.testAlarm);
+router.post("/test-email", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), notificationIntegrationController.testEmail);
+router.post("/test-fcm", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), notificationIntegrationController.testFcm);
 export default router;

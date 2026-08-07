@@ -1,4 +1,4 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Download, User, Trash2, X, AlertTriangle, Pencil, Phone, MapPin, CheckCircle } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -12,15 +12,45 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 
 import { useSearchParams } from "react-router-dom";
+import { Pagination } from "../../components/common/Pagination";
+
+/** Pemetaan enum peran ke label bahasa Indonesia baku */
+const ROLE_LABEL_MAP: Record<string, string> = {
+  SUPER_USER: "Super User",
+  ADMIN_DLH: "Dinas Lingkungan Hidup",
+  CAMAT: "Camat",
+  LURAH: "Lurah",
+  RW: "Rukun Warga",
+  PEMIMPIN: "Pimpinan",
+  PANITIA_TASKFORCE: "Task Force",
+  DPL: "Dosen Pembimbing Lapangan",
+  PETUGAS_RESIDU: "Petugas Residu",
+  MAHASISWA_KKN: "Mahasiswa KKN",
+  WARGA: "Warga",
+};
+
+const cleanKelurahanName = (raw: string | undefined | null) => {
+  if (!raw || raw === "-") return "-";
+  let clean = String(raw)
+    .replace(/^Kel\.\s*/i, "")
+    .replace(/^urahan\s*/i, "")
+    .replace(/^Kelurahan\s*/i, "")
+    .trim();
+  return clean ? `Kelurahan ${clean}` : "-";
+};
+
+const AVAILABLE_RWS = [
+  "01", "02", "03", "04", "05", "06", "07", "08", "09", "10",
+  "11", "12", "13", "16", "21", "30", "40", "50", "60", "70"
+];
 
 const ManajemenPengguna: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const roleFromUrl = searchParams.get("role") || "Semua";
+  const [searchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get("role") || "SUPER_USER";
 
   const [users, setUsers] = useState<any[]>([]);
-  const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,17 +64,7 @@ const ManajemenPengguna: React.FC = () => {
     }
   }, [roleFromUrl]);
 
-  const handleRoleTabChange = (role: string) => {
-    setSelectedRole(role);
-    if (role === "Semua") {
-      setSearchParams({});
-    } else {
-      setSearchParams({ role });
-    }
-  };
   const [selectedStatus, setSelectedStatus] = useState("Semua");
-  const [selectedRw, setSelectedRw] = useState("Semua");
-  const [selectedRt, setSelectedRt] = useState("Semua");
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,15 +72,33 @@ const ManajemenPengguna: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
-
+    address: "",
     password: "",
     roleName: "WARGA",
     phone: "",
     status: "Aktif",
     rtRwId: "",
+    nim: "",
+    nip: "",
+    prodi: "S1 Manajemen",
+    selectedRws: [] as string[],
   });
+
+  const formatPhone = (phone: string) => {
+    if (!phone) return "-";
+    let clean = phone.trim();
+    if (clean.includes(".") || clean.length < 7 || clean.startsWith("NIP") || clean.startsWith("4127")) {
+      return clean;
+    }
+    if (clean.startsWith("0")) return "+62" + clean.slice(1);
+    if (clean.startsWith("62")) return "+" + clean;
+    if (!clean.startsWith("+")) return "+62" + clean;
+    return clean;
+  };
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalKelurahan, setModalKelurahan] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,11 +115,20 @@ const ManajemenPengguna: React.FC = () => {
       if (searchQuery) params.search = searchQuery;
       if (selectedRole !== "Semua") params.roleName = selectedRole;
       if (selectedStatus !== "Semua") params.status = selectedStatus;
-      if (selectedRw !== "Semua") params.rw = selectedRw;
-      if (selectedRt !== "Semua") params.rt = selectedRt;
 
       const response = await api.get("/users", { params });
-      setUsers(response.data.data || []);
+      let dataUsers = response.data.data || [];
+
+      // Clean Lurah data formatting if Lurah role selected
+      if (selectedRole === "LURAH") {
+        dataUsers = dataUsers.map((u: any) => ({
+          ...u,
+          kelurahan: cleanKelurahanName(u.kelurahan || u.address),
+          address: cleanKelurahanName(u.address || u.kelurahan),
+        }));
+      }
+
+      setUsers(dataUsers);
     } catch (err) {
       setError("Gagal memuat data pengguna dari server.");
       toast.error("Gagal memuat data pengguna");
@@ -90,82 +137,86 @@ const ManajemenPengguna: React.FC = () => {
     }
   };
 
-  const fetchAreas = async () => {
-    try {
-      const res = await api.get("/bins/areas");
-      setAreas(res.data?.data || []);
-    } catch (err) {
-      console.error("Failed to fetch areas:", err);
-    }
-  };
+
 
   useEffect(() => {
     setCurrentPage(1); // Reset page on filter change
     fetchUsers();
-  }, [searchQuery, selectedRole, selectedStatus, selectedRw, selectedRt]);
+  }, [searchQuery, selectedRole, selectedStatus]);
+  const ALLOWED_KELURAHANS = [
+    "Cipaganti",
+    "Dago",
+    "Lebak Gede",
+    "Lebak Siliwangi",
+    "Sadang Serang",
+    "Sekeloa",
+  ];
 
-  useEffect(() => {
-    fetchAreas();
-  }, []);
-
-  // Parse RT and RW lists dynamically from backend database
-  const uniqueRws = Array.from(
-    new Set(
-      areas
-        .map((a) => {
-          // Supports "RW 01", "RW 1", "RW01", "RT 01 / RW 06", etc.
-          const match = a.name.match(/RW\s*(\d+)/i);
-          return match ? match[1].replace(/^0+/, "") || "1" : null;
-        })
-        .filter(Boolean)
-    )
-  ).sort((a, b) => parseInt(a) - parseInt(b)) as string[];
-
-  const uniqueRts = Array.from(
-    new Set(
-      areas
-        .map((a) => {
-          const match = a.name.match(/RT\s*(\d+)/i);
-          return match ? match[1].replace(/^0+/, "") || "1" : null;
-        })
-        .filter(Boolean)
-    )
-  ).sort((a, b) => parseInt(a) - parseInt(b)) as string[];
+  const uniqueKelurahans = ALLOWED_KELURAHANS;
 
   const handleOpenAddModal = () => {
     setModalType("add");
+    const defaultRole = selectedRole !== "Semua" ? selectedRole : "WARGA";
+    setModalKelurahan("");
     setFormData({
       name: "",
-
+      address: "",
       password: "",
-      roleName: "WARGA",
+      roleName: defaultRole,
       phone: "",
       status: "Aktif",
-      rtRwId: areas[0]?.id?.toString() || "",
+      rtRwId: "",
+      nim: "",
+      nip: "",
+      prodi: defaultRole === "DPL" ? "S1 Manajemen" : "S1 Teknik Informatika",
+      selectedRws: [],
     });
     setShowPassword(false);
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (user: any) => {
+  const handleOpenEditModal = (u: any) => {
     setModalType("edit");
-    setSelectedUser(user);
-    let matchedAreaId = "";
-    if (user.wilayah) {
-      const found = areas.find((a) => user.wilayah.includes(a.name));
-      if (found) matchedAreaId = found.id.toString();
-    }
-    setFormData({
-      name: user.name,
+    setSelectedUser(u);
+    let matchedAreaId = u.rtRwId ? String(u.rtRwId) : "";
+    let foundKelurahan = u.kelurahan || "";
+    setModalKelurahan(foundKelurahan.replace(/^Kel\.\s*/i, "").replace(/^Kelurahan\s*/i, "").trim());
 
+    // Parse multi-select RWs
+    let rwsArr: string[] = [];
+    if (u.studentProfile?.kelompok?.cakupanRw || u.wilayah) {
+      const raw = u.studentProfile?.kelompok?.cakupanRw || u.wilayah || "";
+      const matches = raw.match(/\d+/g);
+      if (matches) {
+        rwsArr = Array.from(new Set(matches.map((m: string) => m.padStart(2, "0"))));
+      }
+    }
+
+    setFormData({
+      name: u.name || "",
+      address: u.address || "",
       password: "",
-      roleName: user.role || "WARGA",
-      phone: user.phone || "",
-      status: user.status || "Aktif",
+      roleName: u.role || selectedRole || "WARGA",
+      phone: u.phone || "",
+      status: u.status || "Aktif",
       rtRwId: matchedAreaId,
+      nim: u.studentProfile?.nim || u.nim || "",
+      nip: u.nip || u.studentProfile?.nip || u.dplNip || u.dplProfile?.nip || "4127.34.02.001",
+      prodi: u.prodi || u.studentProfile?.jurusan || u.address || "S1 Manajemen",
+      selectedRws: rwsArr,
     });
     setShowPassword(false);
     setIsModalOpen(true);
+  };
+
+  const handleRwToggle = (rwVal: string) => {
+    setFormData((prev) => {
+      const exists = prev.selectedRws.includes(rwVal);
+      const updated = exists
+        ? prev.selectedRws.filter((r) => r !== rwVal)
+        : [...prev.selectedRws, rwVal];
+      return { ...prev, selectedRws: updated };
+    });
   };
 
   const handleCloseModal = () => {
@@ -177,10 +228,32 @@ const ManajemenPengguna: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const payload = {
-        ...formData,
-        rtRwId: formData.rtRwId ? parseInt(formData.rtRwId) : null,
+      const parsedAreaId = formData.rtRwId ? parseInt(formData.rtRwId) : null;
+      const payload: any = {
+        name: formData.name,
+        address: formData.address,
+        phone: formatPhone(formData.phone),
+        roleName: formData.roleName,
+        status: formData.status,
+        rtRwId: parsedAreaId,
+        rwId: parsedAreaId,
       };
+
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
+      if (formData.roleName === "MAHASISWA_KKN") {
+        if (formData.nim) payload.nim = formData.nim;
+        if (formData.selectedRws.length > 0) {
+          payload.wilayah = `RW ${formData.selectedRws.join(", ")}${modalKelurahan ? ` (${modalKelurahan})` : ""}`;
+        }
+      }
+
+      if (formData.roleName === "DPL") {
+        payload.nip = formData.nip;
+        payload.prodi = formData.prodi;
+      }
 
       if (modalType === "add") {
         await api.post("/users", payload);
@@ -198,8 +271,8 @@ const ManajemenPengguna: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = (user: any) => {
-    setUserToDelete(user);
+  const handleDeleteClick = (u: any) => {
+    setUserToDelete(u);
     setIsDeleteModalOpen(true);
   };
 
@@ -221,342 +294,614 @@ const ManajemenPengguna: React.FC = () => {
     setUserToDelete(null);
   };
 
-  // Pagination logic
-  const sortedUsers = [...users].sort((a, b) => {
-    if (a.status === "PENDING" && b.status !== "PENDING") return -1;
-    if (a.status !== "PENDING" && b.status === "PENDING") return 1;
-    return 0;
-  });
-  const totalPages = Math.ceil(sortedUsers.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedUsers = sortedUsers.slice(startIndex, startIndex + rowsPerPage);
-
-  const handleExportCSV = () => {
+  const handleExportCsv = () => {
     if (users.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
 
     const headers = [
+      "ID",
       "Nama Lengkap",
-
-      "No. Telfon",
-      "Peran",
-      "Wilayah",
-      "Setoran (Kg)",
+      "No HP",
+      "Role",
       "Status",
-      "Tanggal Terdaftar",
+      "Kecamatan",
+      "Kelurahan",
+      "RW",
+      "Alamat",
     ];
 
-    const csvData = users.map((u) => [
-      u.name,
-
-      u.phone || "-",
-      u.role,
-      u.wilayah,
-      u.setoran,
-      u.status,
-      u.createdAt ? new Date(u.createdAt).toLocaleDateString("id-ID") : "-",
-    ]);
-
-    const csvContent = [
+    const csvRows = [
       headers.join(","),
-      ...csvData.map((row) =>
-        row.map((cell) => `"${String(cell || "").replace(/"/g, '""')}"`).join(",")
+      ...users.map((u) =>
+        [
+          u.id,
+          `"${u.name || ""}"`,
+          `"${u.phone || ""}"`,
+          u.role,
+          u.status || "Aktif",
+          `"${u.kecamatan || ""}"`,
+          `"${cleanKelurahanName(u.kelurahan)}"`,
+          `"${u.rw || ""}"`,
+          `"${(u.address || "").replace(/"/g, '""')}"`,
+        ].join(",")
       ),
-    ].join("\n");
+    ];
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Data_Pengguna_${new Date().toISOString().split("T")[0]}.csv`);
-    link.style.visibility = "hidden";
+    link.setAttribute("download", `Data_Pengguna_${selectedRole}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("CSV berhasil diunduh");
+    toast.success("File CSV berhasil diunduh");
   };
 
+  // Pagination calculation
+  const totalPages = Math.ceil(users.length / rowsPerPage) || 1;
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Pengguna</h1>
-            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <User size={13} /> Data Pengguna
-            </span>
-          </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Kelola data akun warga, petugas residu, pengurus RT/RW, & mahasiswa KKN di Kecamatan Coblong.
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+            Manajemen Pengguna
+          </h1>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Kelola data akun warga, petugas residu, pengurus RT/RW, DPL, & mahasiswa KKN di Kecamatan Coblong.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {!isReadOnly && (
+        {!isReadOnly && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportCsv}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              <Download size={15} className="text-slate-500" />
+              Ekspor CSV
+            </button>
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
-              <UserPlus size={15} /> Tambah Pengguna
+              <UserPlus size={15} />
+              Tambah Pengguna
             </button>
-          )}
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
-          >
-            <Download size={15} /> Ekspor CSV
-          </button>
-        </div>
-      </div>
-
-      {/* Master Role Switcher Tabs */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
-        {[
-          { key: "Semua", label: "Semua Peran", icon: "🌐" },
-          { key: "EKSEKUTIF", label: "Admin & Eksekutif", icon: "🏢" },
-          { key: "DPL", label: "DPL / Pimpinan Panitia", icon: "👨‍🏫" },
-          { key: "CAMAT", label: "Camat", icon: "🏛️" },
-          { key: "LURAH", label: "Lurah", icon: "🏢" },
-          { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },
-          { key: "PETUGAS_RESIDU", label: "Petugas Residu Hilir", icon: "🚚" },
-          { key: "MAHASISWA_KKN", label: "Mahasiswa KKN", icon: "🎓" },
-          { key: "WARGA", label: "Warga", icon: "🏠" },
-        ].map((tab) => {
-          const isActive = selectedRole === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => handleRoleTabChange(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
-                isActive
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Pengguna</p>
-          <p className="text-2xl font-black text-slate-800 mt-1">{users.length}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Total Pengguna
+            </p>
+            <h3 className="text-2xl font-black text-slate-800 mt-1">
+              {users.length}
+            </h3>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60">
+            <User size={20} />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Status Aktif</p>
-          <p className="text-2xl font-black text-emerald-600 mt-1">
-            {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE").length}
-          </p>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Status Aktif
+            </p>
+            <h3 className="text-2xl font-black text-emerald-600 mt-1">
+              {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
+            </h3>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/60">
+            <CheckCircle size={20} />
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Pending Verifikasi</p>
-          <p className="text-2xl font-black text-amber-600 mt-1">
-            {users.filter((u) => u.status === "PENDING" || u.status === "Pending" || u.status === "PENDING_APPROVAL").length}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Peran Terfilter</p>
-          <p className="text-base font-extrabold text-blue-700 mt-1 truncate">{selectedRole === "Semua" ? "Seluruh Role (10)" : selectedRole.replace("_", " ")}</p>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Peran Terfilter
+            </p>
+            <h3 className="text-lg font-black text-slate-800 mt-1 truncate max-w-[150px]">
+              {ROLE_LABEL_MAP[selectedRole] || selectedRole}
+            </h3>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/60">
+            <User size={20} />
+          </div>
         </div>
       </div>
 
-      {/* Filters Card */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-        <div className="relative w-full lg:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            placeholder="Cari nama, No. HP..."
-            type="text"
-          />
-        </div>
+      {/* Filter Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative w-full md:w-80">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari nama, No. HP..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+            />
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
-          <div>
+          {/* Filter Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="Semua">Semua Peran</option>
-              <option value="SUPER_ADMIN">Super Admin</option>
-              <option value="ADMIN_DLH">Admin DLH</option>
-              <option value="DPL">Dosen Pembimbing (DPL)</option>
-              <option value="PEMIMPIN">Pimpinan & Panitia Taskforce</option>
+              <option value="SUPER_USER">Super User</option>
+              <option value="ADMIN_DLH">Dinas Lingkungan Hidup</option>
               <option value="CAMAT">Camat</option>
               <option value="LURAH">Lurah</option>
-              <option value="RW">RW</option>
+              <option value="RW">Rukun Warga</option>
+              <option value="PEMIMPIN">Pimpinan</option>
+              <option value="PANITIA_TASKFORCE">Task Force</option>
+              <option value="DPL">Dosen Pembimbing Lapangan</option>
               <option value="PETUGAS_RESIDU">Petugas Residu</option>
-              <option value="WARGA">Warga</option>
               <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
+              <option value="WARGA">Warga</option>
             </select>
-          </div>
 
-          <div>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="Semua">Semua Status</option>
               <option value="Aktif">Aktif</option>
               <option value="Nonaktif">Nonaktif</option>
             </select>
           </div>
-          <div>
-            <select
-              value={selectedRw}
-              onChange={(e) => setSelectedRw(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="Semua">Semua RW</option>
-              {uniqueRws.map((rw) => (
-                <option key={rw} value={rw}>
-                  RW {rw}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <select
-              value={selectedRt}
-              onChange={(e) => setSelectedRt(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="Semua">Semua RT</option>
-              {uniqueRts.map((rt) => (
-                <option key={rt} value={rt}>
-                  RT {rt}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
-      {/* Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Main Table Card */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               {selectedRole === "MAHASISWA_KKN" ? (
                 <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4">Nama & NIM</th>
-                  <th className="py-3.5 px-4">Universitas / Fakultas</th>
-                  <th className="py-3.5 px-4">No. WhatsApp</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">Program Studi</th>
+                  <th className="py-3.5 px-4">NIM</th>
+                  <th className="py-3.5 px-4">No. HP</th>
                   <th className="py-3.5 px-4">Kelompok KKN</th>
+                  <th className="py-3.5 px-4">DPL Pembimbing</th>
                   <th className="py-3.5 px-4">Wilayah Tugas</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "DPL" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">NIP</th>
+                  <th className="py-3.5 px-4">Program Studi</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "SUPER_USER" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "PEMIMPIN" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4">Wilayah</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "CAMAT" || selectedRole === "LURAH" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4">Wilayah</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "PETUGAS_RESIDU" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4">Kecamatan</th>
+                  <th className="py-3.5 px-4">Kelurahan</th>
+                  <th className="py-3.5 px-4">RW</th>
+                  <th className="py-3.5 px-4">Alamat TPS</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "RW" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Peran</th>
+                  <th className="py-3.5 px-4">Kecamatan</th>
+                  <th className="py-3.5 px-4">Kelurahan</th>
+                  <th className="py-3.5 px-4">RW</th>
+                  <th className="py-3.5 px-4">Alamat Rumah</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
                 </tr>
               ) : (
                 <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
-                  <th className="py-3.5 px-4 w-16">Avatar</th>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">No. HP</th>
                   <th className="py-3.5 px-4">Peran</th>
-                  <th className="py-3.5 px-4">Wilayah</th>
+                  <th className="py-3.5 px-4">Kecamatan</th>
+                  <th className="py-3.5 px-4">Kelurahan</th>
+                  <th className="py-3.5 px-4">RW</th>
+                  <th className="py-3.5 px-4">Alamat Rumah</th>
                   <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
                 </tr>
               )}
             </thead>
-            <tbody className="text-sm">
+            <tbody className="text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <Loader2 className="animate-spin text-primary" size={32} />
-                      <p>Memuat pengguna...</p>
+                      <Loader2 className="animate-spin text-blue-600" size={28} />
+                      <p className="font-semibold text-xs">Memuat data pengguna...</p>
                     </div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-error font-medium">
+                  <td colSpan={10} className="px-6 py-8 text-center text-rose-600 font-medium">
                     {error}
                   </td>
                 </tr>
               ) : paginatedUsers.length > 0 ? (
-                paginatedUsers.map((user, idx) =>
+                paginatedUsers.map((u, idx) =>
                   selectedRole === "MAHASISWA_KKN" ? (
-                    <tr
-                      key={user.id}
-                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    >
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {(currentPage - 1) * rowsPerPage + idx + 1}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">{user.name}</p>
-                        <p className="text-[10px] font-mono text-slate-400">
-                          NIM: {user.studentProfile?.nim || "-"}
-                        </p>
-                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
                       <td className="py-3.5 px-4 text-slate-700 font-semibold">
-                        {user.studentProfile?.fakultas || "UNIKOM"}
+                        {u.prodi || u.studentProfile?.jurusan || u.studentProfile?.fakultas || "Teknik Informatika"}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                        {u.nim || u.studentProfile?.nim || "-"}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">
                         <a
-                          href={`https://wa.me/${(user.phone || "").replace(/\+/g, "")}`}
+                          href={`https://wa.me/${formatPhone(u.phone || "").replace(/\+/g, "")}`}
                           target="_blank"
                           rel="noreferrer"
                           className="hover:text-emerald-600 hover:underline flex items-center gap-1"
                         >
                           <Phone size={12} className="text-emerald-500" />
-                          {user.phone || "-"}
+                          {formatPhone(u.phone)}
                         </a>
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200 font-bold text-[10px] inline-block">
-                          {user.studentProfile?.kelompok?.name || "Belum Plotting"}
+                          {u.studentProfile?.kelompok?.name || u.kelompok || "Belum Plotting"}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {user.wilayah && user.wilayah !== "-" ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin size={13} className="text-primary" />
-                            {user.wilayah}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Belum diset</span>
-                        )}
+                      <td className="py-3.5 px-4 font-semibold text-slate-700">
+                        {u.studentProfile?.kelompok?.dplName || u.dplName || "Belum Plotting"}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                        <span className="flex items-center gap-1">
+                          <MapPin size={13} className="text-blue-600 shrink-0" />
+                          {u.wilayah || u.studentProfile?.kelompok?.wilayahPenugasan || "Belum Plotting"}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            user.status === "Aktif" || user.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : "bg-rose-100 text-rose-800 border border-rose-200"
-                          }`}
-                        >
-                          {user.status || "Aktif"}
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
                         </span>
                       </td>
                       {!isReadOnly && (
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex justify-center gap-1">
                             <button
-                              onClick={() => handleOpenEditModal(user)}
+                              onClick={() => handleOpenEditModal(u)}
                               className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                               title="Edit"
                             >
                               <Pencil size={15} />
                             </button>
                             <button
-                              onClick={() => handleDeleteClick(user)}
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "DPL" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-700 font-bold">
+                        {u.nip || u.studentProfile?.nip || u.dplNip || u.dplProfile?.nip || "4127.34.02.001"}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                        {u.prodi || u.address || "S1 Manajemen"}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          DPL
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "SUPER_USER" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          SUPER_USER
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "PEMIMPIN" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-block px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          PEMIMPIN
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-extrabold">
+                        Universitas Komputer Indonesia
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "CAMAT" || selectedRole === "LURAH" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-extrabold">
+                        {u.role === "CAMAT"
+                          ? "Kecamatan Coblong"
+                          : cleanKelurahanName(u.kelurahan || u.address)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "PETUGAS_RESIDU" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-block px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          PETUGAS_RESIDU
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-semibold">Coblong</td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">
+                        {cleanKelurahanName(u.kelurahan)}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">{u.rw || "RW 03"}</td>
+                      <td className="py-3.5 px-4 text-slate-700 text-xs font-medium">
+                        {u.address || "Pos Residu RW 03"}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "RW" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="inline-block px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          RW
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-semibold">Coblong</td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">
+                        {cleanKelurahanName(u.kelurahan)}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">{u.rw || "-"}</td>
+                      <td className="py-3.5 px-4 text-slate-700 text-xs font-medium">{u.address || "-"}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
                               className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                               title="Hapus"
                             >
@@ -567,68 +912,41 @@ const ManajemenPengguna: React.FC = () => {
                       )}
                     </tr>
                   ) : (
-                    <tr
-                      key={user.id}
-                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    >
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {(currentPage - 1) * rowsPerPage + idx + 1}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        {user.name}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
-                        {user.phone || "-"}
-                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
                       <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block px-2.5 py-1 ${
-                            ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : [
-                                  "CAMAT",
-                                  "LURAH",
-                                  "RW",
-                                  "RT",
-                                  "PETUGAS_RESIDU",
-                                  "MAHASISWA_KKN",
-                                ].includes(user.role)
-                              ? "bg-orange-50 text-orange-700 border border-orange-200"
-                              : "bg-green-50 text-green-700 border border-green-200"
-                          } rounded-md text-[10px] font-bold tracking-wide uppercase`}
-                        >
-                          {user.role}
+                        <span className="inline-block px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                          {u.role || "WARGA"}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {user.wilayah}
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-semibold">Coblong</td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">
+                        {cleanKelurahanName(u.kelurahan)}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
-                        {user.setoran}
-                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">{u.rw || "-"}</td>
+                      <td className="py-3.5 px-4 text-slate-700 text-xs font-medium">{u.address || "-"}</td>
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">{u.setoran || 0}</td>
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            user.status === "Aktif" || user.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : "bg-rose-100 text-rose-800 border border-rose-200"
-                          }`}
-                        >
-                          {user.status || "Aktif"}
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
                         </span>
                       </td>
                       {!isReadOnly && (
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex justify-center gap-1">
                             <button
-                              onClick={() => handleOpenEditModal(user)}
+                              onClick={() => handleOpenEditModal(u)}
                               className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                               title="Edit"
                             >
                               <Pencil size={15} />
                             </button>
                             <button
-                              onClick={() => handleDeleteClick(user)}
+                              onClick={() => handleDeleteClick(u)}
                               className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                               title="Hapus"
                             >
@@ -642,11 +960,8 @@ const ManajemenPengguna: React.FC = () => {
                 )
               ) : (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-6 py-8 text-center text-on-surface-variant font-medium"
-                  >
-                    Tidak ada data pengguna
+                  <td colSpan={10} className="px-6 py-8 text-center text-slate-400 font-medium">
+                    Tidak ada data pengguna.
                   </td>
                 </tr>
               )}
@@ -656,49 +971,14 @@ const ManajemenPengguna: React.FC = () => {
 
         {/* Pagination Controls */}
         {users.length > 0 && !loading && !error && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/30 bg-white">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-on-surface-variant">Tampilkan</span>
-              <select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="bg-surface-container-low border border-outline-variant/50 rounded-md px-2 py-1 text-sm focus:border-primary focus:outline-none cursor-pointer"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <span className="text-sm text-on-surface-variant">data per halaman</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-on-surface-variant">
-                Menampilkan {startIndex + 1}-{Math.min(startIndex + rowsPerPage, users.length)} dari {users.length} data
-              </span>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-1 rounded-md hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft size={20} className="text-on-surface-variant" />
-                </button>
-                <div className="flex items-center px-2 text-sm font-medium text-on-surface">
-                  {currentPage} / {totalPages || 1}
-                </div>
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className="p-1 rounded-md hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight size={20} className="text-on-surface-variant" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={users.length}
+            itemsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setRowsPerPage}
+          />
         )}
       </div>
 
@@ -706,23 +986,21 @@ const ManajemenPengguna: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
-              <h3 className="text-xl font-bold text-on-surface">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-extrabold text-slate-800">
                 {modalType === "add" ? "Tambah Pengguna" : "Edit Pengguna"}
               </h3>
               <button
                 onClick={handleCloseModal}
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full transition-colors cursor-pointer"
               >
-                <X />
+                <X size={20} />
               </button>
             </div>
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[85vh]"
-            >
+            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[80vh]">
+              {/* Nama Lengkap */}
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Nama Lengkap
                 </label>
                 <input
@@ -730,11 +1008,13 @@ const ManajemenPengguna: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm"
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
                 />
               </div>
+
+              {/* No Telfon */}
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   No. Telfon
                 </label>
                 <input
@@ -742,16 +1022,77 @@ const ManajemenPengguna: React.FC = () => {
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-mono"
-                  placeholder="081234567890"
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-mono font-semibold"
+                  placeholder="+628..."
                 />
               </div>
 
+              {/* DPL specific fields */}
+              {formData.roleName === "DPL" && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      NIP / NIDN (Nomor Induk Pegawai)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nip}
+                      onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
+                      placeholder="4127.34.02.006"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-mono font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Program Studi
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.prodi}
+                      onChange={(e) => setFormData({ ...formData, prodi: e.target.value })}
+                      placeholder="S1 Manajemen"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Mahasiswa KKN specific fields */}
+              {formData.roleName === "MAHASISWA_KKN" && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      NIM (Nomor Induk Mahasiswa)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nim}
+                      onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
+                      placeholder="10123047"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-mono font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Program Studi
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.prodi}
+                      onChange={(e) => setFormData({ ...formData, prodi: e.target.value })}
+                      placeholder="S1 Teknik Informatika"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Password{" "}
                   {modalType === "edit" && (
-                    <span className="text-xs text-on-surface-variant font-normal">
+                    <span className="text-[10px] text-slate-400 font-normal">
                       (Kosongkan jika tidak diubah)
                     </span>
                   )}
@@ -762,87 +1103,132 @@ const ManajemenPengguna: React.FC = () => {
                     required={modalType === "add"}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full h-10 pl-3 pr-10 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm"
+                    className="w-full h-10 pl-3 pr-10 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer flex items-center justify-center"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
-                    {showPassword ? <EyeOff className="text-[20px]" size={20}/> : <Eye className="text-[20px]" size={20}/>}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
+
+              {/* Role */}
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Peran / Role
                 </label>
-                <select
-                  required
-                  value={formData.roleName}
-                  onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-bold cursor-pointer"
-                >
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                  <option value="ADMIN_DLH">Admin DLH</option>
-                  <option value="DPL">Dosen Pembimbing (DPL)</option>
-                  <option value="PEMIMPIN">Pimpinan</option>
-                  <option value="PANITIA_TASKFORCE">Panitia / Taskforce KKN</option>
-                  <option value="CAMAT">Camat</option>
-                  <option value="LURAH">Lurah</option>
-                  <option value="RW">Pengurus RW</option>
-                  <option value="RT">Pengurus RT</option>
-                  <option value="PETUGAS_RESIDU">Petugas Residu</option>
-                  <option value="WARGA">Warga</option>
-                  <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
-                </select>
+                <input
+                  type="text"
+                  disabled
+                  value={ROLE_LABEL_MAP[formData.roleName] || formData.roleName}
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-100 text-slate-600 text-xs font-bold cursor-not-allowed"
+                />
+              </div>
 
-              </div>
+              {/* Address / Location fields only if applicable */}
+              {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {formData.roleName === "PETUGAS_RESIDU" ? "Alamat TPS" : "Alamat Rumah"}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Jl. Dipatiukur No. ..."
+                    className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
+                  />
+                </div>
+              )}
+
+              {/* Kelurahan dropdown */}
+              {["WARGA", "RW", "LURAH", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(formData.roleName) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kelurahan
+                  </label>
+                  <select
+                    value={modalKelurahan}
+                    onChange={(e) => setModalKelurahan(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-bold cursor-pointer"
+                  >
+                    <option value="">Pilih Kelurahan</option>
+                    {uniqueKelurahans.map((k) => (
+                      <option key={k} value={k}>
+                        Kel. {k}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Multi-select RW checkboxes for Mahasiswa KKN */}
+              {formData.roleName === "MAHASISWA_KKN" && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Wilayah Tugas (Multi-Select RW)
+                  </label>
+                  <p className="text-[11px] text-slate-400 mb-2">
+                    Pilih satu atau beberapa RW pendampingan:
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200 max-h-36 overflow-y-auto">
+                    {AVAILABLE_RWS.map((rwNum) => {
+                      const isChecked = formData.selectedRws.includes(rwNum);
+                      return (
+                        <label
+                          key={rwNum}
+                          className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
+                            isChecked
+                              ? "bg-blue-50 text-blue-700 border-blue-300"
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleRwToggle(rwNum)}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          RW {rwNum}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Wilayah RT/RW
-                </label>
-                <select
-                  value={formData.rtRwId}
-                  onChange={(e) => setFormData({ ...formData, rtRwId: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-semibold cursor-pointer"
-                >
-                  <option value="">Pilih Wilayah (opsional)</option>
-                  {areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} (Kel. {a.kelurahan?.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Status</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
                 <select
                   required
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-semibold cursor-pointer"
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-bold cursor-pointer"
                 >
                   <option value="Aktif">Aktif</option>
                   <option value="Nonaktif">Nonaktif</option>
                 </select>
               </div>
-              <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-outline-variant/30">
+
+              {/* Buttons */}
+              <div className="mt-4 flex justify-end gap-2 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="px-4 py-2 rounded-lg font-medium text-on-surface-variant hover:bg-surface-container-low cursor-pointer"
+                  className="px-4 py-2 rounded-xl font-extrabold text-xs text-slate-500 hover:bg-slate-100 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-xs"
                 >
-                  {isSubmitting && (
-                    <Loader2 className="animate-spin" size={18} />
-                  )}
+                  {isSubmitting && <Loader2 className="animate-spin" size={15} />}
                   Simpan
                 </button>
               </div>
@@ -851,27 +1237,27 @@ const ManajemenPengguna: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Hapus */}
+      {/* Delete Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4 border border-rose-200">
               <AlertTriangle size={24} />
             </div>
-            <h3 className="text-lg font-bold text-on-surface mb-2">Hapus Pengguna</h3>
-            <p className="text-sm text-on-surface-variant mb-6">
-              Apakah Anda yakin ingin menghapus akun <strong>{userToDelete?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+            <h3 className="text-base font-extrabold text-slate-800 mb-1">Hapus Pengguna</h3>
+            <p className="text-xs text-slate-500 mb-6">
+              Apakah Anda yakin ingin menghapus akun <strong>{userToDelete?.name}</strong>?
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={closeDeleteModal}
-                className="flex-1 px-4 py-2 rounded-lg font-medium border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors"
+                className="flex-1 px-4 py-2 rounded-xl font-extrabold text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Batal
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 cursor-pointer transition-colors"
+                className="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs cursor-pointer shadow-xs"
               >
                 Hapus
               </button>

@@ -19,11 +19,11 @@ const DENSITY = {
     NON_ORGANIC: 0.2, // Non-organic is lighter
 };
 // Helper to find local RW/RT and Petugas staff for a given bin area
-async function getStaffForBin(binRtRwId) {
-    if (!binRtRwId)
+async function getStaffForBin(binRwId) {
+    if (!binRwId)
         return [];
-    const area = await prisma.rtRwArea.findUnique({
-        where: { id: binRtRwId },
+    const area = await prisma.rw.findUnique({
+        where: { id: binRwId },
     });
     if (!area)
         return [];
@@ -31,7 +31,7 @@ async function getStaffForBin(binRtRwId) {
         .split("/")
         .map((s) => s.trim())
         .find((s) => s.startsWith("RW")) || area.name;
-    const matchingAreas = await prisma.rtRwArea.findMany({
+    const matchingAreas = await prisma.rw.findMany({
         where: {
             kelurahanId: area.kelurahanId,
             name: { contains: rwPart },
@@ -40,10 +40,10 @@ async function getStaffForBin(binRtRwId) {
     });
     let areaIds = matchingAreas.map((a) => a.id);
     if (areaIds.length === 0)
-        areaIds = [binRtRwId];
+        areaIds = [binRwId];
     return prisma.user.findMany({
         where: {
-            rtRwId: { in: areaIds },
+            rwId: { in: areaIds },
             role: {
                 name: { in: ["RW", "PETUGAS_RESIDU", "RT", "MAHASISWA_KKN"] },
             },
@@ -66,7 +66,7 @@ export class BinService {
                 whereClause.status = filters.status;
             }
             if (filters.areaId) {
-                whereClause.rtRwId = parseInt(filters.areaId, 10);
+                whereClause.rwId = parseInt(filters.areaId, 10);
             }
             if (filters.categoryId) {
                 whereClause.categoryId = filters.categoryId;
@@ -481,7 +481,7 @@ export class BinService {
                     data: {
                         status: "ACTIVE_BOUND",
                         userId: user.id,
-                        rtRwId: user.rtRwId ?? household.rtRwId,
+                        rwId: user.rwId ?? household.rwId,
                         latitude: data.latitude ?? household.latitude,
                         longitude: data.longitude ?? household.longitude,
                     },
@@ -564,8 +564,8 @@ export class BinService {
         }
         const qrCode = await generateNextQrCode(data.categoryId);
         let kelurahanId = null;
-        if (data.rtRwId) {
-            const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
+        if (data.rwId) {
+            const area = await binRepository.findRtRwById(parseInt(data.rwId));
             if (area) {
                 kelurahanId = area.kelurahanId;
             }
@@ -573,7 +573,7 @@ export class BinService {
         return binRepository.createBin({
             qrCode,
             categoryId: data.categoryId,
-            rtRwId: parseInt(data.rtRwId),
+            rwId: parseInt(data.rwId),
             kelurahanId,
             latitude: data.latitude ? parseFloat(data.latitude) : null,
             longitude: data.longitude ? parseFloat(data.longitude) : null,
@@ -590,9 +590,9 @@ export class BinService {
             updateData.qrCode = data.qrCode;
         if (data.categoryId)
             updateData.categoryId = data.categoryId;
-        if (data.rtRwId) {
-            updateData.rtRwId = parseInt(data.rtRwId);
-            const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
+        if (data.rwId) {
+            updateData.rwId = parseInt(data.rwId);
+            const area = await binRepository.findRtRwById(parseInt(data.rwId));
             if (area) {
                 updateData.kelurahanId = area.kelurahanId;
             }
@@ -698,7 +698,7 @@ export class BinService {
                 maxCapacityLiter: maxVol,
                 kapasitas,
                 isCritical: kapasitas >= 80,
-                rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
+                rw: bin.rw?.name || `RT/RW ${bin.rwId}`,
                 status: realStatus === "TIDAK_AKTIF"
                     ? "TIDAK AKTIF"
                     : resetRequestStatus === "PENDING"
@@ -748,10 +748,10 @@ export class BinService {
         }
         const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
         // Notify local RW & Petugas staff
-        const staffList = await getStaffForBin(request.bin?.rtRwId || null);
+        const staffList = await getStaffForBin(request.bin?.rwId || null);
         const citizenName = request.user?.name || "Warga";
         const binQr = request.bin?.qrCode || "Tong";
-        const areaName = request.bin?.rtRw?.name || "Wilayah";
+        const areaName = request.bin?.rw?.name || "Wilayah";
         for (const staff of staffList) {
             await prisma.notification
                 .create({
@@ -801,7 +801,7 @@ export class BinService {
             include: {
                 bin: {
                     include: {
-                        rtRw: {
+                        rw: {
                             include: {
                                 kelurahan: true,
                             },
@@ -919,7 +919,7 @@ export class BinService {
             include: {
                 bin: {
                     include: {
-                        rtRw: true,
+                        rw: true,
                     },
                 },
             },
@@ -937,7 +937,7 @@ export class BinService {
                 latitude: t.bin.latitude,
                 longitude: t.bin.longitude,
                 distanceMeters,
-                rtRw: t.bin.rtRw?.name || `RT/RW ${t.bin.rtRwId}`,
+                rw: t.bin.rw?.name || `RT/RW ${t.bin.rwId}`,
             };
         });
         return route.sort((a, b) => a.distanceMeters - b.distanceMeters);
@@ -1082,7 +1082,7 @@ export class BinService {
     async reportIssue(binId, userId, issueType, _notes, evidencePhotoUrl) {
         const bin = await prisma.bin.findUnique({
             where: { id: binId },
-            include: { rtRw: true },
+            include: { rw: true },
         });
         if (!bin) {
             throw new Error("BIN_NOT_FOUND");
@@ -1093,7 +1093,7 @@ export class BinService {
         if (!user) {
             throw new Error("USER_NOT_FOUND");
         }
-        const staffList = await getStaffForBin(bin.rtRwId);
+        const staffList = await getStaffForBin(bin.rwId);
         if (issueType === "EMPTY_REQUEST") {
             // 1. Update bin volume to maxCapacityLiter (forces capacity to 100% full, showing red on map)
             await prisma.bin.update({
@@ -1124,7 +1124,7 @@ export class BinService {
                     .catch(() => { });
             }
             const title = "Permintaan Pengosongan Sampah";
-            const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tempat sampah ${bin.qrCode}.`;
+            const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tempat sampah ${bin.qrCode}.`;
             for (const staff of staffList) {
                 await prisma.notification
                     .create({
@@ -1147,7 +1147,7 @@ export class BinService {
                 data: { status: "BROKEN" },
             });
             const title = "Laporan Tempat Sampah Rusak";
-            const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) rusak atau QR code-nya sobek/rusak.`;
+            const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rw?.name || "Wilayah Umum"}) rusak atau QR code-nya sobek/rusak.`;
             for (const staff of staffList) {
                 await prisma.notification
                     .create({

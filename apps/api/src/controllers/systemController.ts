@@ -10,7 +10,7 @@ import { systemService } from "../services/systemService.js";
 
 export class SystemController {
   /**
-   * Get all audit trails (Super Admin only)
+   * Get all audit trails (SUPER USER only)
    */
   async getAuditTrails(req: Request, res: Response): Promise<void> {
     try {

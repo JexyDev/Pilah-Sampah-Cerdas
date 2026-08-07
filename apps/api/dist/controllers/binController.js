@@ -52,7 +52,7 @@ export class BinController {
                     id: bin.id,
                     kode: bin.qrCode,
                     lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
-                    rtRw: bin.rtRw?.name || (bin.rtRwId ? `ID RT/RW: ${bin.rtRwId}` : "Belum Terikat"),
+                    rw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
                     kapasitas,
                     status: bin.status === "BROKEN"
                         ? "Rusak"
@@ -63,7 +63,7 @@ export class BinController {
                                 : "Normal",
                     lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
                     categoryId: bin.categoryId || null,
-                    rtRwId: bin.rtRwId || null,
+                    rwId: bin.rwId || null,
                     maxCapacityLiter: maxVol,
                     latitude: bin.latitude,
                     longitude: bin.longitude,
@@ -612,7 +612,7 @@ export class BinController {
         }
     }
     /**
-     * Create QR Batch (Super Admin/Admin DLH)
+     * Create QR Batch (SUPER USER/Admin DLH)
      */
     async createQrBatch(req, res) {
         try {

@@ -21,11 +21,21 @@ export const adminMahasiswaService = {
                 include: {
                     studentProfile: {
                         include: {
-                            kelompok: true,
-                            assignedPolygon: true,
+                            kelompok: {
+                                include: {
+                                    dpl: {
+                                        select: {
+                                            id: true,
+                                            name: true,
+                                            phone: true,
+                                        },
+                                    },
+                                },
+                            },
+                            assignedRw: true,
                         },
                     },
-                    rtRw: {
+                    rw: {
                         include: {
                             kelurahan: true,
                         },
@@ -52,7 +62,7 @@ export const adminMahasiswaService = {
                     password: passwordHash,
                     roleId: role.id,
                     status: data.status_aktif || "Aktif",
-                    rtRwId: data.area_tugas || null,
+                    rwId: data.area_tugas || null,
                 },
             });
             const studentProfile = await tx.studentKkn.create({
@@ -65,10 +75,10 @@ export const adminMahasiswaService = {
                     startDate: new Date(),
                     endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
                     whitelistStatus: "APPROVED",
-                    assignedPolygonId: data.area_tugas || null,
+                    assignedRwId: data.area_tugas || null,
                 },
                 include: {
-                    assignedPolygon: true,
+                    assignedRw: true,
                 },
             });
             return { user, studentProfile };
@@ -82,7 +92,7 @@ export const adminMahasiswaService = {
                     ...(data.nama_lengkap && { name: data.nama_lengkap }),
                     ...(data.no_telepon && { phone: data.no_telepon }),
                     ...(data.status_aktif && { status: data.status_aktif }),
-                    ...(data.area_tugas !== undefined && { rtRwId: data.area_tugas || null }),
+                    ...(data.area_tugas !== undefined && { rwId: data.area_tugas || null }),
                 },
             });
             const studentProfile = await tx.studentKkn.findUnique({ where: { userId: id } });
@@ -94,10 +104,10 @@ export const adminMahasiswaService = {
                         ...(data.nim && { nim: data.nim }),
                         ...(data.universitas && { fakultas: data.universitas }),
                         ...(data.no_telepon && { noWa: data.no_telepon }),
-                        ...(data.area_tugas !== undefined && { assignedPolygonId: data.area_tugas || null }),
+                        ...(data.area_tugas !== undefined && { assignedRwId: data.area_tugas || null }),
                     },
                     include: {
-                        assignedPolygon: true,
+                        assignedRw: true,
                     },
                 });
             }

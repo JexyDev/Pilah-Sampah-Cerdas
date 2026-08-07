@@ -79,7 +79,7 @@ describe("AuthService - registerWarga security", () => {
                 name: undefined,
                 phone: undefined,
                 role: "WARGA",
-                rtRwId: undefined,
+                rwId: undefined,
                 fotoProfil: undefined,
             },
             accessToken: expect.any(String),

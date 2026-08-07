@@ -117,7 +117,7 @@ export class ResiduService {
     const user = await prisma.user.findUnique({
       where: { id: petugasUserId },
       include: {
-        rtRw: {
+        rw: {
           include: {
             kelurahan: true,
           },
@@ -177,8 +177,8 @@ export class ResiduService {
     const pointRateConfig = await configService.getConfig("point_rate_per_kg");
     const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
 
-    const rtRwStr = user.rtRw?.name || petugas.assignedZone || "01/02";
-    const kelurahanStr = user.rtRw?.kelurahan?.name || "Bojongsoang";
+    const rtRwStr = user.rw?.name || petugas.assignedZone || "01/02";
+    const kelurahanStr = user.rw?.kelurahan?.name || "Bojongsoang";
     const petugasIdStr = `PTR-${petugas.id.slice(0, 6).toUpperCase()}`;
 
     const totalViolationsToday = await prisma.violation.count({
@@ -218,7 +218,7 @@ export class ResiduService {
       akurasiScore: 90,
 
       // Additional & legacy metadata for compatibility
-      rtRw: rtRwStr,
+      rw: rtRwStr,
       kelurahan: kelurahanStr,
       todayWeightKg: Number(todayWeightKg.toFixed(1)),
       monthlyWeightKg: Number(monthlyWeightKg.toFixed(1)),
@@ -240,49 +240,187 @@ export class ResiduService {
     };
   }
 
-  async getRiwayat(petugasUserId: string) {
-    const logs = await prisma.setoranManual.findMany({
-      where: { petugasResiduId: petugasUserId },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: {
-        rw: true,
-      },
-    });
+  async getRiwayat(petugasUserId: string, _range?: string, type?: string) {
+    const logs: any[] = [];
 
-    return logs.map((log) => ({
-      id: log.id,
-      logId: log.id,
-      diinputOleh: log.diinputOleh,
-      berat: Number(log.berat),
-      actualWeightKg: Number(log.berat),
-      unit: log.unit,
-      kategori: log.kategori,
-      classification: log.kategori,
-      fotoResiduUrl: log.fotoResiduUrl,
-      imagePhotoUrl: log.fotoResiduUrl,
-      rwName: log.rw?.name || "RW Area",
-      createdAt: log.createdAt.toISOString(),
-      timestamp: log.createdAt.toISOString(),
-    }));
+    // 1. Fetch Violations (Pelanggaran)
+    if (!type || type === "SEMUA" || type === "PELANGGARAN") {
+      const violations = await prisma.violation.findMany({
+        where: { petugasUserId },
+        include: {
+          user: true,
+          bin: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+
+      logs.push(
+        ...violations.map((v) => ({
+          id: v.id,
+          logId: v.id,
+          title: "Pelanggaran Timbangan",
+          classification: v.type,
+          kategori: v.type,
+          binId: v.binId || "N/A",
+          binCode: v.bin?.qrCode || "N/A",
+          wargaName: v.user?.name || "Warga",
+          weightKg: 0,
+          actualWeightKg: 0,
+          points: 0, // Pelanggaran tidak dapat poin
+          latitude: null,
+          longitude: null,
+          status: "TERKIRIM",
+          timestamp: v.createdAt.toISOString(),
+          createdAt: v.createdAt.toISOString(),
+        }))
+      );
+    }
+
+    // 2. Fetch Setoran Otomatis (Tempat Sampah Pintar)
+    if (!type || type === "SEMUA" || type === "SETORAN") {
+      const setoranOtomatis = await prisma.setoranOtomatis.findMany({
+        where: {
+          bin: {
+            rw: {
+              petugasResiduId: petugasUserId,
+            },
+          },
+        },
+        include: {
+          bin: true,
+          warga: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+
+      logs.push(
+        ...setoranOtomatis.map((s) => {
+          let lat: number | null = null, long: number | null = null;
+          if (s.lokasiGps) {
+            const parts = s.lokasiGps.split(",");
+            if (parts.length === 2) {
+              const pLat = parseFloat(parts[0].trim());
+              const pLong = parseFloat(parts[1].trim());
+              if (!isNaN(pLat)) lat = pLat;
+              if (!isNaN(pLong)) long = pLong;
+            }
+          }
+          return {
+            id: s.id,
+            logId: s.id,
+            title: "Setoran Timbangan",
+            classification: s.hasilKlasifikasiAi || "Residu",
+            kategori: s.hasilKlasifikasiAi || "Residu",
+            binId: s.qrTempatSampahId,
+            binCode: s.bin?.qrCode || "N/A",
+            wargaName: s.warga?.name || "Warga",
+            weightKg: Number(s.berat),
+            actualWeightKg: Number(s.berat),
+            points: s.poin ? Number(s.poin) : 0, // Ambil dari DB
+            latitude: lat,
+            longitude: long,
+            status: "TERKIRIM",
+            timestamp: s.createdAt.toISOString(),
+            createdAt: s.createdAt.toISOString(),
+          };
+        })
+      );
+
+      // 3. Fetch Setoran Manual (Input Petugas Residu Hilir)
+      const setoranManual = await prisma.setoranManual.findMany({
+        where: { petugasResiduId: petugasUserId },
+        include: { rw: true },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+
+      logs.push(
+        ...setoranManual.map((s) => {
+          let lat: number | null = null, long: number | null = null;
+          if (s.lokasiGps) {
+            const parts = s.lokasiGps.split(",");
+            if (parts.length === 2) {
+              const pLat = parseFloat(parts[0].trim());
+              const pLong = parseFloat(parts[1].trim());
+              if (!isNaN(pLat)) lat = pLat;
+              if (!isNaN(pLong)) long = pLong;
+            }
+          }
+          return {
+            id: s.id,
+            logId: s.id,
+            title: "Setoran Manual Residu",
+            classification: s.kategori || "Residu",
+            kategori: s.kategori || "Residu",
+            binId: "GLOBAL_BIN",
+            binCode: "Bin Global RT/RW",
+            wargaName: "Global",
+            weightKg: Number(s.berat),
+            actualWeightKg: Number(s.berat),
+            points: Number(s.berat) * 2 + (s.fotoResiduUrl ? 10 : 0), // Berat * 2 + bonus foto 10
+            fotoResiduUrl: s.fotoResiduUrl,
+            imagePhotoUrl: s.fotoResiduUrl,
+            latitude: lat,
+            longitude: long,
+            status: "TERKIRIM",
+            timestamp: s.createdAt.toISOString(),
+            createdAt: s.createdAt.toISOString(),
+          };
+        })
+      );
+    }
+
+    logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return logs;
   }
 
   async getAnalytics() {
-    const trend = [
-      { date: "Mon", weightKg: 120 },
-      { date: "Tue", weightKg: 140 },
-      { date: "Wed", weightKg: 90 },
-      { date: "Thu", weightKg: 150 },
-      { date: "Fri", weightKg: 180 },
-      { date: "Sat", weightKg: 110 },
-      { date: "Sun", weightKg: 95 },
-    ];
+    // 1. Trend: 7 Days Setoran Manual
+    const today = new Date();
+    const trend = [];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const startOfDay = new Date(d.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(d.setHours(23, 59, 59, 999));
+      
+      const sum = await prisma.setoranManual.aggregate({
+        where: { createdAt: { gte: startOfDay, lte: endOfDay } },
+        _sum: { berat: true },
+      });
+      
+      trend.push({
+        date: dayNames[startOfDay.getDay()],
+        weightKg: Number(sum._sum.berat || 0),
+      });
+    }
 
-    const zones = [
-      { id: 1, region: "RW 06 Dago", complianceScore: 85, violationsCount: 2 },
-      { id: 2, region: "RW 02 Cigadung", complianceScore: 60, violationsCount: 8 },
-      { id: 3, region: "RW 01 Coblong", complianceScore: 45, violationsCount: 14 },
-    ];
+    // 2. Zones Compliance
+    const allRw = await prisma.rw.findMany({
+      include: { kelurahan: true },
+      take: 5
+    });
+
+    const zones = await Promise.all(
+      allRw.map(async (rw) => {
+        const violationsCount = await prisma.violation.count({
+          where: { bin: { rwId: rw.id } }
+        });
+        
+        // Mock compliance score calculation based on violations
+        const complianceScore = Math.max(0, 100 - (violationsCount * 5));
+        
+        return {
+          id: rw.id,
+          region: `${rw.name} ${rw.kelurahan?.name ? rw.kelurahan.name : ''}`,
+          complianceScore,
+          violationsCount,
+        };
+      })
+    );
 
     return {
       trend,
@@ -293,14 +431,16 @@ export class ResiduService {
   async submitLog(
     petugasUserId: string,
     data: {
-      actualWeightKg: number;
+      actualWeightKg: number | string;
       classification?: string;
       imagePhotoUrl?: string;
-      rtRw?: string;
+      rw?: string;
       kelurahan?: string;
       notes?: string;
-      logId?: string; // fallback if updating existing log
-      binId?: string; // support binId from mobile
+      logId?: string;
+      binId?: string;
+      latitude?: number | string;
+      longitude?: number | string;
     }
   ) {
     const weightKg = Number(data.actualWeightKg) || 0;
@@ -309,15 +449,15 @@ export class ResiduService {
     }
     const user = await prisma.user.findUnique({
       where: { id: petugasUserId },
-      include: { rtRw: true },
+      include: { rw: true, petugasProfile: true },
     });
 
     if (!user) throw new Error("PETUGAS_NOT_FOUND");
 
-    let targetRwId = user.rtRwId;
+    let targetRwId = user.rwId;
 
     if (!targetRwId) {
-      const assignedRw = await prisma.rtRwArea.findFirst({
+      const assignedRw = await prisma.rw.findFirst({
         where: { petugasResiduId: petugasUserId },
       });
       if (assignedRw) {
@@ -325,15 +465,15 @@ export class ResiduService {
       }
     }
 
-    if (!targetRwId && data.rtRw) {
-      const foundRw = await prisma.rtRwArea.findFirst({
-        where: { name: { contains: data.rtRw } },
+    if (!targetRwId && data.rw) {
+      const foundRw = await prisma.rw.findFirst({
+        where: { name: { contains: data.rw } },
       });
       if (foundRw) targetRwId = foundRw.id;
     }
 
     if (!targetRwId) {
-      const firstRw = await prisma.rtRwArea.findFirst();
+      const firstRw = await prisma.rw.findFirst();
       if (firstRw) {
         targetRwId = firstRw.id;
       } else {
@@ -341,9 +481,12 @@ export class ResiduService {
       }
     }
 
+    const lokasiGps =
+      data.latitude && data.longitude ? `${data.latitude}, ${data.longitude}` : null;
+
     const pointRateConfig = await configService.getConfig("point_rate_per_kg");
     const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
-    const pointsEarned = Math.round(weightKg * pointRatePerKg);
+    const pointsEarned = Math.round(weightKg * pointRatePerKg) + (data.imagePhotoUrl ? 10 : 0);
 
     const setoran = await prisma.setoranManual.create({
       data: {
@@ -353,7 +496,8 @@ export class ResiduService {
         fotoResiduUrl: data.imagePhotoUrl || "/uploads/default-residu.jpg",
         berat: weightKg,
         unit: "Kg",
-        kategori: data.classification || "residu",
+        kategori: data.classification || "Residu",
+        lokasiGps: lokasiGps,
       },
     });
 
@@ -373,14 +517,35 @@ export class ResiduService {
     });
     const globalBinTotalKg = Number(globalSum._sum.berat || 0);
 
+    const latNum = data.latitude ? parseFloat(String(data.latitude)) : null;
+    const longNum = data.longitude ? parseFloat(String(data.longitude)) : null;
+
     return {
       logId: setoran.id,
+      id: setoran.id,
+      berat: weightKg,
       weightKg: Number(weightKg.toFixed(1)),
+      classification: data.classification || "Residu",
+      kategori: data.classification || "Residu",
+      lokasiGps: lokasiGps,
+      latitude: latNum,
+      longitude: longNum,
       pointsEarned,
+      points: pointsEarned,
       globalBinTotalKg: Number(globalBinTotalKg.toFixed(1)),
+      kpiScore: (user.petugasProfile?.kpiScore
+        ? Number(user.petugasProfile.kpiScore)
+        : 100
+      ).toFixed(2),
+      isPunctual: true,
+      discrepancyStatus: "NONE",
+      status: "TERKIRIM",
       timestamp: setoran.createdAt.toISOString(),
     };
   }
 }
 
 export const residuService = new ResiduService();
+
+
+

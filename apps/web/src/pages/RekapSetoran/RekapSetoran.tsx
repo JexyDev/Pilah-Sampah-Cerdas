@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
 import {
   Download,
   Search,
@@ -18,12 +19,10 @@ import {
   Calendar,
   CheckCircle,
   X,
-  ChevronLeft,
-  ChevronRight,
   Receipt,
   Users,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { Pagination } from "../../components/common/Pagination";
 import api from "../../services/api";
 
 export default function RekapSetoran() {
@@ -40,7 +39,7 @@ export default function RekapSetoran() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchDeposits();
@@ -53,23 +52,15 @@ export default function RekapSetoran() {
       if (response.data?.success && Array.isArray(response.data.data)) {
         setDeposits(response.data.data);
       } else {
-        setDeposits(getDemoDeposits());
+        setDeposits([]);
       }
     } catch (err: any) {
-      console.warn("Failed to load deposits, fallback demo dataset:", err);
-      setDeposits(getDemoDeposits());
+      console.error("Failed to load deposits:", err);
+      setDeposits([]);
     } finally {
       setLoading(false);
     }
   };
-
-  const getDemoDeposits = () => [
-    { id: "DEP-901", warga: "Budi Santoso", rtRw: "RT 04 / RW 02", jenis: "Organik", berat: 2.5, poin: 180, waktu: "2026-08-02T08:15:00Z", status: "Selesai" },
-    { id: "DEP-902", warga: "Siti Rahmawati", rtRw: "RT 02 / RW 01", jenis: "Anorganik", berat: 1.8, poin: 140, waktu: "2026-08-02T07:45:00Z", status: "Selesai" },
-    { id: "DEP-903", warga: "Hendra Wijaya", rtRw: "RT 05 / RW 03", jenis: "Organik", berat: 3.2, poin: 230, waktu: "2026-08-02T07:10:00Z", status: "Selesai" },
-    { id: "DEP-904", warga: "Ahmad Jubaedi", rtRw: "RT 01 / RW 02", jenis: "Anorganik", berat: 4.0, poin: 280, waktu: "2026-08-01T17:30:00Z", status: "Selesai" },
-    { id: "DEP-905", warga: "Ratna Dewi", rtRw: "RT 03 / RW 02", jenis: "Organik", berat: 1.5, poin: 110, waktu: "2026-08-01T16:50:00Z", status: "Selesai" },
-  ];
 
   const filteredDeposits = useMemo(() => {
     return deposits.filter((d) => {
@@ -176,7 +167,6 @@ export default function RekapSetoran() {
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh
           </button>
           <button
             onClick={handleExportCSV}
@@ -260,7 +250,7 @@ export default function RekapSetoran() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter size={16} className="text-slate-400" />
           <span className="text-xs font-bold text-slate-600">Filter:</span>
-          
+
           <select
             value={filterKategori}
             onChange={(e) => setFilterKategori(e.target.value)}
@@ -349,11 +339,10 @@ export default function RekapSetoran() {
                       <td className="py-3.5 px-4 text-slate-600 font-semibold">{item.rtRw || "RT 01 / RW 01"}</td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
-                            isOrganik
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold ${isOrganik
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : "bg-blue-100 text-blue-800 border border-blue-200"
-                          }`}
+                            }`}
                         >
                           {item.jenis || "Organik"}
                         </span>
@@ -377,52 +366,15 @@ export default function RekapSetoran() {
         )}
 
         {/* Pagination Controls */}
-        {!loading && totalPages > 1 && (
-          <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs font-bold text-slate-500">
-              Halaman <span className="text-slate-900 font-black">{currentPage}</span> dari{" "}
-              <span className="text-slate-900 font-black">{totalPages}</span>
-            </p>
-
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <ChevronLeft size={14} /> Sebelum
-              </button>
-
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let pageNum = i + 1;
-                if (totalPages > 5 && currentPage > 3) {
-                  pageNum = currentPage - 2 + i;
-                  if (pageNum > totalPages) pageNum = totalPages - (4 - i);
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                      currentPage === pageNum
-                        ? "bg-primary text-white shadow-sm"
-                        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                Lanjut <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
+        {!loading && filteredDeposits.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredDeposits.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         )}
       </div>
 

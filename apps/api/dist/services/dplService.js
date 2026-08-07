@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 function getKelompokWhere(dplUserId, role) {
     const normalizedRole = String(role || "").toUpperCase();
-    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPERADMIN", "SUPER_ADMIN", "ADMIN"].some((r) => normalizedRole.includes(r));
+    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "superUser", "SUPER_USER", "ADMIN"].some((r) => normalizedRole.includes(r));
     if (isAdmin) {
         return {};
     }
@@ -46,10 +46,7 @@ export const dplService = {
         const totalSystemBins = await prisma.bin.count({ where: { status: "ACTIVE_BOUND" } });
         const groupSummaries = await Promise.all(groups.map(async (grp, idx) => {
             const studentUserIds = grp.students.map((s) => s.userId);
-            let studentCount = grp.students.length;
-            if (studentCount === 0 && totalSystemStudents > 0) {
-                studentCount = Math.max(5, Math.ceil(totalSystemStudents / (groups.length || 1)));
-            }
+            const studentCount = grp.students.length;
             let activatedBinsCount = 0;
             if (studentUserIds.length > 0) {
                 activatedBinsCount = await prisma.bin.count({
@@ -59,29 +56,24 @@ export const dplService = {
                     },
                 });
             }
-            if (activatedBinsCount === 0 && totalSystemBins > 0) {
-                if (grp.kelurahan) {
-                    activatedBinsCount = await prisma.bin.count({
-                        where: {
-                            status: "ACTIVE_BOUND",
-                            rtRw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } },
-                        },
-                    });
-                }
-                if (activatedBinsCount === 0) {
-                    activatedBinsCount = Math.max(4, Math.ceil(totalSystemBins / (groups.length || 1)));
-                }
+            if (activatedBinsCount === 0 && grp.kelurahan) {
+                activatedBinsCount = await prisma.bin.count({
+                    where: {
+                        status: "ACTIVE_BOUND",
+                        rw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } },
+                    },
+                });
             }
             const totalAttendances = await prisma.activityAttendance.count({
-                where: studentUserIds.length > 0 ? { studentId: { in: studentUserIds } } : {},
+                where: studentUserIds.length > 0 ? { studentId: { in: studentUserIds } } : { id: "impossible-id" },
             });
             const totalSchedules = await prisma.schedule.count();
-            const expectedAttendances = studentCount * (totalSchedules || 1);
-            const avgAttendanceRate = expectedAttendances > 0
-                ? Math.min(100, Math.max(75, Math.round((totalAttendances / expectedAttendances) * 100)))
-                : 85;
+            const expectedAttendances = studentCount * totalSchedules;
+            const avgAttendanceRate = expectedAttendances > 0 && totalAttendances > 0
+                ? Math.min(100, Math.round((totalAttendances / expectedAttendances) * 100))
+                : 0;
             const pointSum = await prisma.pointHistory.aggregate({
-                where: studentUserIds.length > 0 ? { userId: { in: studentUserIds } } : {},
+                where: studentUserIds.length > 0 ? { userId: { in: studentUserIds } } : { id: "impossible-id" },
                 _sum: { points: true },
             });
             return {
@@ -92,7 +84,7 @@ export const dplService = {
                 studentCount,
                 activatedBinsCount,
                 avgAttendanceRate,
-                totalGroupPoints: pointSum._sum.points || studentCount * 120,
+                totalGroupPoints: pointSum._sum.points || 0,
             };
         }));
         return groupSummaries;
@@ -146,7 +138,7 @@ export const dplService = {
             const izinCount = leaveRequests.filter((r) => r.type === "IZIN" && r.status === "APPROVED").length;
             const totalSchedules = await prisma.schedule.count();
             const attendedCount = attendances.length;
-            const alphaCount = Math.max(0, (totalSchedules || 1) - attendedCount - sickCount - izinCount);
+            const alphaCount = totalSchedules > 0 ? Math.max(0, totalSchedules - attendedCount - sickCount - izinCount) : 0;
             const points = await prisma.pointHistory.aggregate({
                 where: { userId: st.userId },
                 _sum: { points: true },
@@ -163,8 +155,8 @@ export const dplService = {
                 isKetua: Boolean(st.isKetua),
                 kelompokName: st.kelompok?.name || "-",
                 assessmentScore: Number(st.assessmentScore || 0),
-                individualPoints: points._sum.points || 150,
-                attendanceRate: totalSchedules > 0 ? Math.round((attendedCount / totalSchedules) * 100) : 90,
+                individualPoints: points._sum.points || 0,
+                attendanceRate: totalSchedules > 0 && attendedCount > 0 ? Math.round((attendedCount / totalSchedules) * 100) : 0,
                 attendedCount,
                 sickCount,
                 izinCount,
@@ -212,7 +204,7 @@ export const dplService = {
                     },
                 },
                 category: true,
-                rtRw: true,
+                rw: true,
             },
         });
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -297,7 +289,7 @@ export const dplService = {
                 user: { select: { name: true, address: true } },
             },
         });
-        const rwAreas = await prisma.rtRwArea.findMany({
+        const rwAreas = await prisma.rw.findMany({
             include: { kelurahan: true },
         });
         return {
@@ -368,7 +360,7 @@ export const dplService = {
      */
     getApprovalHistory: async (dplUserId, role) => {
         const normalizedRole = String(role || "").toUpperCase();
-        const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPERADMIN", "SUPER_ADMIN", "ADMIN"].some((r) => normalizedRole.includes(r));
+        const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "superUser", "SUPER_USER", "ADMIN"].some((r) => normalizedRole.includes(r));
         const history = await prisma.studentLeaveRequest.findMany({
             where: isAdmin
                 ? { reviewedAt: { not: null } }

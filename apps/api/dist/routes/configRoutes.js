@@ -9,6 +9,6 @@ import { configController } from "../controllers/configController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
-router.get("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), configController.getAll);
-router.post("/", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), configController.update);
+router.get("/", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), configController.getAll);
+router.post("/", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), configController.update);
 export default router;

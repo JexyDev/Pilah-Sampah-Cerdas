@@ -15,7 +15,7 @@ const router = Router();
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "MAHASISWA_KKN", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW", "RT"]),
   facilityController.createFacility
 );
 
@@ -24,14 +24,14 @@ router.get("/", authMiddleware, facilityController.getFacilities);
 router.post(
   "/:id/production",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   facilityController.recordProduction
 );
 
 router.post(
   "/farms",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   facilityController.createFarm
 );
 
@@ -40,7 +40,7 @@ router.get("/farms", authMiddleware, facilityController.getFarms);
 router.post(
   "/maggot/distributions",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   facilityController.distributeMaggot
 );
 

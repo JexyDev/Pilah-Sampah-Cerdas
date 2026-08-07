@@ -56,14 +56,14 @@ export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
-  const [whyUsTab, setWhyUsTab] = useState<"points" | "bins">("points");
-  const [whatTab, setWhatTab] = useState<"pemilahan" | "pemanfaatan">("pemilahan");
+  const [whyUsTab, setWhyUsTab] = useState<"points" | "bins" | "iot">("points");
+  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(0);
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
   const [showApkModal, setShowApkModal] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>("");
-  
+
   // Interactive User Guide & Flow state
-  const [guideRoleTab, setGuideRoleTab] = useState<"warga" | "kkn" | "rw" | "petugas" | "dlh" | "dpl" | "superadmin">("warga");
+  const [guideRoleTab, setGuideRoleTab] = useState<"warga" | "kkn" | "rw" | "petugas" | "dlh" | "dpl" | "superUser">("warga");
   const [activeFlowStep, setActiveFlowStep] = useState<number>(1);
 
   const scrollToSection = (id: string) => {
@@ -84,8 +84,8 @@ export const LandingPage: React.FC = () => {
 
   // IntersectionObserver to sync URL hash & active menu state on scroll
   useEffect(() => {
-    const sections = ["#about", "#why-us", "#how-it-works", "#guide", "#what-we-do"];
-    
+    const sections = ["#about", "#why-us", "#faq", "#guide"];
+
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
 
@@ -124,11 +124,11 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="landing-page min-h-screen relative selection:bg-emerald-500 selection:text-white">
-      
+
       {/* ----------------- CENTERED MODERN NAVBAR ----------------- */}
       <nav className="landing-nav py-4">
         <div className="container-custom flex items-center justify-between relative">
-          
+
           {/* Logo Branding (Left - Icon Shifted Down 4px & Expanded ViewBox No Top Clipping) */}
           <Link
             to="/"
@@ -136,7 +136,7 @@ export const LandingPage: React.FC = () => {
             className="flex items-center gap-2.5 group shrink-0"
           >
             <TrashCareLogoIcon className="w-11 h-11 translate-y-[4px] transition-transform group-hover:scale-105 shrink-0" />
-            
+
             <div className="flex flex-col text-left justify-center">
               <span className="text-2xl font-black tracking-tight leading-none">
                 <span className="text-sky-600">Trash</span>
@@ -164,22 +164,16 @@ export const LandingPage: React.FC = () => {
                 Mengapa Aplikasi Ini
               </button>
               <button
-                onClick={() => scrollToSection("#how-it-works")}
-                className={activeSection === "#how-it-works" ? "active text-emerald-600 font-extrabold" : ""}
+                onClick={() => scrollToSection("#faq")}
+                className={activeSection === "#faq" ? "active text-emerald-600 font-extrabold" : ""}
               >
-                Cara Kerja
+                FAQ
               </button>
               <button
                 onClick={() => scrollToSection("#guide")}
                 className={activeSection === "#guide" ? "active text-emerald-600 font-extrabold" : ""}
               >
                 Buku Panduan
-              </button>
-              <button
-                onClick={() => scrollToSection("#what-we-do")}
-                className={activeSection === "#what-we-do" ? "active text-emerald-600 font-extrabold" : ""}
-              >
-                Daur Ulang
               </button>
             </div>
           </div>
@@ -196,7 +190,7 @@ export const LandingPage: React.FC = () => {
               </button>
             ) : (
               <Link to="/login" className="btn-primary-clean">
-                Register / Login
+                Daftar / Masuk
               </Link>
             )}
 
@@ -204,7 +198,7 @@ export const LandingPage: React.FC = () => {
               onClick={() => setShowContactModal(true)}
               className="btn-secondary-clean hidden sm:inline-flex"
             >
-              Contact Us
+              Hubungi Kami
             </button>
           </div>
         </div>
@@ -213,18 +207,18 @@ export const LandingPage: React.FC = () => {
       {/* ----------------- HERO SECTION ----------------- */}
       <section className="relative pt-12 pb-24 bg-gradient-to-b from-emerald-50/60 via-slate-50/40 to-white overflow-hidden">
         <div className="container-custom grid grid-cols-1 xl:grid-cols-12 gap-10 items-center">
-          
+
           {/* Hero Left Column: Real Project Copy (xl:col-span-5) */}
           <div className="xl:col-span-5 space-y-7 text-left relative z-10">
-            
+
             {/* Single Clean High-Impact Badge */}
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/90 border border-emerald-300 text-emerald-950 text-xs font-extrabold shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                Sistem Pemilahan Sampah Cerdas • Kecamatan Coblong
+                Sistem Pemilahan Sampah Cerdas Berbasis Wilayah
               </div>
             </div>
-            
+
             {/* Large Spacious Headline */}
             <h1 className="hero-title-main">
               Sampah <span className="text-blue-hero">Terdata</span>,<br />
@@ -232,7 +226,7 @@ export const LandingPage: React.FC = () => {
             </h1>
 
             <p className="text-slate-600 text-base leading-relaxed font-medium">
-              Sistem tata kelola sampah terintegrasi dengan pendekatan kegiatan KKN berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan, pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
+              Sistem tata kelola sampah terintegrasi dengan kegiatan KKN Berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan (DPL), pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
 
             {/* Quick Stat Highlights */}
@@ -253,15 +247,15 @@ export const LandingPage: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <button
-                onClick={() => setShowApkModal(true)}
-                className="btn-primary-clean px-8 py-3.5 text-base"
+                onClick={() => scrollToSection("#why-us")}
+                className="btn-primary-clean px-8 py-3.5 text-base cursor-pointer"
               >
-                Unduh Aplikasi Mobile
+                Pelajari Fitur Utama
                 <span className="material-symbols-outlined text-lg">arrow_forward</span>
               </button>
 
-              <button onClick={() => scrollToSection("#about")} className="btn-secondary-clean px-8 py-3.5 text-base">
-                Pelajari Lebih Lanjut
+              <button onClick={() => scrollToSection("#guide")} className="btn-secondary-clean px-8 py-3.5 text-base cursor-pointer">
+                Buku Panduan Operasional
               </button>
             </div>
           </div>
@@ -269,25 +263,25 @@ export const LandingPage: React.FC = () => {
           {/* Hero Right Column: REAL WEB APP DASHBOARD CARD */}
           <div className="xl:col-span-7 text-left cursor-pointer" onClick={handlePreviewClick}>
             <div className="widescreen-dashboard-card">
-              
+
               {/* Browser Window Header Bar */}
               <div className="browser-top-bar">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-rose-400"></span>
                   <span className="w-3 h-3 rounded-full bg-amber-400"></span>
                   <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
-                  <span className="text-[11px] font-bold text-slate-400 ml-2 hidden sm:inline">TrashCare Web Monitoring App</span>
+                  <span className="text-[11px] font-bold text-slate-400 ml-2 hidden sm:inline">Aplikasi Web Pemantauan TrashCare</span>
                 </div>
                 <div className="px-4 py-0.5 bg-white border border-slate-200 rounded-full text-[10px] text-slate-500 font-semibold flex items-center gap-1.5 shadow-2xs">
                   <span className="material-symbols-outlined text-xs text-emerald-600">lock</span>
                   <span>https://trashcare.id/dashboard</span>
                 </div>
-                <div className="text-[10px] font-extrabold text-emerald-600 hidden sm:block">LIVE PREVIEW</div>
+                <div className="text-[10px] font-extrabold text-emerald-600 hidden sm:block">PRATINJAU LANGSUNG</div>
               </div>
 
               {/* Main Dashboard Layout */}
               <div className="p-4 sm:p-6 space-y-4 bg-white">
-                
+
                 {/* Header Greeting Bar */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
@@ -323,10 +317,10 @@ export const LandingPage: React.FC = () => {
 
                 {/* Sidebar + Main Content Grid */}
                 <div className="grid grid-cols-12 gap-4">
-                  
+
                   {/* Left Sidebar */}
                   <div className="col-span-12 sm:col-span-3 space-y-2.5 pr-3 border-r border-slate-100 hidden sm:block text-[10px]">
-                    
+
                     {/* TrashCare Vector Logo Box */}
                     <div className="py-2 px-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
                       <TrashCareLogoIcon className="w-7 h-7 shrink-0" />
@@ -335,7 +329,7 @@ export const LandingPage: React.FC = () => {
                           <span className="text-sky-600">Trash</span>
                           <span className="text-emerald-600">Care</span>
                         </span>
-                        <span className="text-[8px] font-bold text-slate-400 mt-0.5">COBLONG</span>
+                        <span className="text-[8px] font-bold text-slate-400 mt-0.5">MONITORING</span>
                       </div>
                     </div>
 
@@ -394,13 +388,13 @@ export const LandingPage: React.FC = () => {
 
                   {/* Main Dashboard Content Area */}
                   <div className="col-span-12 sm:col-span-9 space-y-3.5">
-                    
+
                     {/* Filters Bar (Clean Single Horizontal Row) */}
                     <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
                       <div className="flex items-center gap-2 overflow-x-auto">
                         <div className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg font-bold flex items-center gap-1 shadow-2xs shrink-0 whitespace-nowrap">
                           <span className="material-symbols-outlined text-xs">location_on</span>
-                          Wilayah: Coblong
+                          Wilayah: Semua RT/RW
                           <span className="material-symbols-outlined text-xs">expand_more</span>
                         </div>
                         <div className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg font-bold flex items-center gap-1 shadow-2xs shrink-0 whitespace-nowrap">
@@ -418,7 +412,7 @@ export const LandingPage: React.FC = () => {
 
                     {/* 6 Real Metric Cards Row */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                      
+
                       <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5">
                         <div className="flex items-center gap-1">
                           <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -489,11 +483,11 @@ export const LandingPage: React.FC = () => {
 
                     {/* Charts Row */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
-                      
+
                       {/* Line Chart with Clear X & Y Axes */}
                       <div className="sm:col-span-7 bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-1.5">
                         <div className="flex items-center justify-between border-b border-slate-200/60 pb-1">
-                          <h4 className="font-extrabold text-[11px] text-slate-900">Trend Setoran Sampah (Real-time)</h4>
+                          <h4 className="font-extrabold text-[11px] text-slate-900">Tren Setoran Sampah (Waktu Nyata)</h4>
                           <div className="flex items-center gap-2 text-[8px] font-extrabold">
                             <span className="flex items-center gap-1 text-emerald-700"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Organik</span>
                             <span className="flex items-center gap-1 text-amber-600"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Anorganik</span>
@@ -588,9 +582,9 @@ export const LandingPage: React.FC = () => {
                       <div className="px-3 py-2 bg-slate-100/90 border-b border-slate-200/80 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                          <h4 className="font-extrabold text-[11px] text-slate-900">Top Warga &amp; Wilayah Teraktif • Kecamatan Coblong</h4>
+                          <h4 className="font-extrabold text-[11px] text-slate-900">Top Warga &amp; Wilayah Teraktif</h4>
                         </div>
-                        <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">LIVE RANKING</span>
+                        <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">PERINGKAT LANGSUNG</span>
                       </div>
 
                       <div className="overflow-x-auto">
@@ -610,7 +604,7 @@ export const LandingPage: React.FC = () => {
                               <td className="py-1.5 px-3 font-extrabold text-amber-500 flex items-center gap-1">
                                 🥇 #1
                               </td>
-                              <td className="py-1.5 px-3 font-bold text-slate-900">Andi Pratama</td>
+                              <td className="py-1.5 px-3 font-bold text-slate-900">Bu Ratna</td>
                               <td className="py-1.5 px-3 text-slate-500">RT 01/RW 06, Kel. Dago</td>
                               <td className="py-1.5 px-3 text-right font-extrabold text-slate-900">120 Kg</td>
                               <td className="py-1.5 px-3 text-center">
@@ -622,8 +616,8 @@ export const LandingPage: React.FC = () => {
                               <td className="py-1.5 px-3 font-extrabold text-slate-400 flex items-center gap-1">
                                 🥈 #2
                               </td>
-                              <td className="py-1.5 px-3 font-bold text-slate-900">Siti Rahmawati</td>
-                              <td className="py-1.5 px-3 text-slate-500">RT 02/RW 03, Kel. Sekeloa</td>
+                              <td className="py-1.5 px-3 font-bold text-slate-900">Bu Sri</td>
+                              <td className="py-1.5 px-3 text-slate-500">RT 02/RW 02, Kel. Cigadung</td>
                               <td className="py-1.5 px-3 text-right font-extrabold text-slate-900">105 Kg</td>
                               <td className="py-1.5 px-3 text-center">
                                 <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">95%</span>
@@ -634,8 +628,8 @@ export const LandingPage: React.FC = () => {
                               <td className="py-1.5 px-3 font-extrabold text-amber-700 flex items-center gap-1">
                                 🥉 #3
                               </td>
-                              <td className="py-1.5 px-3 font-bold text-slate-900">Budi Santoso</td>
-                              <td className="py-1.5 px-3 text-slate-500">RT 04/RW 05, Kel. Sadang Serang</td>
+                              <td className="py-1.5 px-3 font-bold text-slate-900">Bu Rina</td>
+                              <td className="py-1.5 px-3 text-slate-500">RT 01/RW 01, Kel. Coblong</td>
                               <td className="py-1.5 px-3 text-right font-extrabold text-slate-900">98 Kg</td>
                               <td className="py-1.5 px-3 text-center">
                                 <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">92%</span>
@@ -644,8 +638,8 @@ export const LandingPage: React.FC = () => {
                             </tr>
                             <tr className="hover:bg-emerald-50/40 transition">
                               <td className="py-1.5 px-3 font-bold text-slate-500">#4</td>
-                              <td className="py-1.5 px-3 font-bold text-slate-900">Rina Wijaya</td>
-                              <td className="py-1.5 px-3 text-slate-500">RT 03/RW 01, Kel. Lebak Gede</td>
+                              <td className="py-1.5 px-3 font-bold text-slate-900">Pak Asep</td>
+                              <td className="py-1.5 px-3 text-slate-500">RT 03/RW 06, Kel. Dago</td>
                               <td className="py-1.5 px-3 text-right font-extrabold text-slate-900">85 Kg</td>
                               <td className="py-1.5 px-3 text-center">
                                 <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">88%</span>
@@ -668,27 +662,288 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* ----------------- INSTANSI & PARTNER SECTION (FULL & PROMINENT) ----------------- */}
+      <section className="py-20 bg-slate-50/70 border-y border-slate-200/80 w-full">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 space-y-12 text-center">
+
+          {/* Prominent Header Title & Subtitle */}
+          <div className="space-y-3 max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Bersama Mitra, Menciptakan Dampak
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed">
+              Kolaborasi bersama berbagai pihak untuk lingkungan yang lebih baik.
+            </p>
+          </div>
+
+          {/* 7 Prominent Large White Partner Cards Grid (Full Spreading Width) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 lg:gap-5 w-full">
+
+            {/* Card 1: UNIKOM */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <img src="/logos/unikom.png" alt="UNIKOM" className="w-12 h-12 object-contain shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-sky-700 tracking-tight leading-tight">UNIKOM</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Universitas Komputer Indonesia</span>
+              </div>
+            </div>
+
+            {/* Card 2: Pemerintah Kota Bandung */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <img src="/logos/kota-bandung.png" alt="Pemerintah Kota Bandung" className="w-12 h-12 object-contain shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-slate-900 tracking-tight leading-tight">Pemerintah</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Kota Bandung</span>
+              </div>
+            </div>
+
+            {/* Card 3: DLH Kota Bandung */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <img src="/logos/dlh.png" alt="DLH Kota Bandung" className="w-12 h-12 object-contain shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-emerald-700 tracking-tight leading-tight">DLH</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Kota Bandung</span>
+              </div>
+            </div>
+
+            {/* Card 4: Kecamatan Coblong */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <img src="/logos/kecamatan-coblong.png" alt="Kecamatan Coblong" className="w-12 h-12 object-contain shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-slate-900 tracking-tight leading-tight">Kecamatan</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Coblong</span>
+              </div>
+            </div>
+
+            {/* Card 5: Kelurahan Se-Kecamatan Coblong */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <img src="/logos/kota-bandung.png" alt="Kelurahan Se-Kecamatan Coblong" className="w-12 h-12 object-contain shrink-0 opacity-90" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-indigo-900 tracking-tight leading-tight">Kelurahan</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Se-Kecamatan Coblong</span>
+              </div>
+            </div>
+
+            {/* Card 6: Bank Sampah Mitra */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <svg className="w-12 h-12 shrink-0" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M25 8 A17 17 0 0 1 40 20" stroke="#16a34a" strokeWidth="4" strokeLinecap="round" fill="none" />
+                <polygon points="40,14 44,22 34,22" fill="#16a34a" />
+                <path d="M40 30 A17 17 0 0 1 10 30" stroke="#16a34a" strokeWidth="4" strokeLinecap="round" fill="none" />
+                <polygon points="10,36 6,28 16,28" fill="#16a34a" />
+                <path d="M10 20 A17 17 0 0 1 25 8" stroke="#16a34a" strokeWidth="4" strokeLinecap="round" fill="none" />
+                <circle cx="25" cy="25" r="5" fill="#16a34a" />
+              </svg>
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-emerald-800 tracking-tight leading-tight">Bank Sampah</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Mitra</span>
+              </div>
+            </div>
+
+            {/* Card 7: Komunitas Masyarakat */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-500/50 transition duration-300 flex items-center gap-4 text-left">
+              <svg className="w-12 h-12 shrink-0" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="25" cy="25" r="19" stroke="#334155" strokeWidth="2" fill="#f8fafc" />
+                <circle cx="25" cy="18" r="4" fill="#1e293b" />
+                <path d="M17 33 C17 27 21 24 25 24 C29 24 33 27 33 33" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <circle cx="16" cy="20" r="3" fill="#64748b" />
+                <path d="M10 33 C10 29 13 26 16 26" stroke="#64748b" strokeWidth="2" strokeLinecap="round" fill="none" />
+                <circle cx="34" cy="20" r="3" fill="#64748b" />
+                <path d="M40 33 C40 29 37 26 34 26" stroke="#64748b" strokeWidth="2" strokeLinecap="round" fill="none" />
+              </svg>
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-slate-900 tracking-tight leading-tight">Komunitas</span>
+                <span className="text-xs text-slate-500 font-semibold mt-1 leading-snug">Masyarakat</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+
+
+      {/* ----------------- GLOBAL IMPACT TARGETS (SDGs SECTION WITH REAL OFFICIAL ICONS) ----------------- */}
+      <section className="py-12 bg-white">
+        <div className="container-custom">
+
+          <div className="bg-emerald-50/40 rounded-3xl p-8 sm:p-10 border border-emerald-100/90 shadow-2xs space-y-8">
+
+            {/* SDGs Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-emerald-100 pb-6">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                  GLOBAL IMPACT TARGETS
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Pencapaian Tujuan Pembangunan Berkelanjutan (SDGs)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium max-w-md leading-relaxed">
+                TrashCare mendukung indikator utama PBB dalam mewujudkan lingkungan perkotaan yang bersih, sehat, dan berkelanjutan.
+              </p>
+            </div>
+
+            {/* 5 Real UN Official SDG Cards with Icons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+
+              {/* SDG #3: Kehidupan Sehat & Sejahtera */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">TARGET SDG</span>
+                    <span className="text-lg font-black text-[#4C9F38]">#3</span>
+                  </div>
+
+                  <div className="pt-3 flex items-center gap-3">
+                    {/* Official UN SDG 3 Real Icon Container */}
+                    <div className="w-12 h-12 rounded-xl bg-[#4C9F38] text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <svg className="w-7 h-7 fill-none stroke-white stroke-[2.2]" viewBox="0 0 24 24">
+                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" fill="currentColor" fillOpacity="0.25" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M7 12h2.5l1.5-3.5 2.5 7 1.5-3.5H17" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900 leading-snug">
+                      Kehidupan Sehat &amp; Sejahtera
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Mencegah penumpukan sampah liar penular penyakit.
+                </p>
+              </div>
+
+              {/* SDG #11: Kota & Permukiman Berkelanjutan (Highlight Active Border) */}
+              <div className="bg-emerald-50/50 p-5 rounded-2xl border-2 border-emerald-500 shadow-sm transition flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-800">TARGET SDG</span>
+                    <span className="text-lg font-black text-[#FD9D24]">#11</span>
+                  </div>
+
+                  <div className="pt-3 flex items-center gap-3">
+                    {/* Official UN SDG 11 Real Icon Container */}
+                    <div className="w-12 h-12 rounded-xl bg-[#FD9D24] text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <svg className="w-7 h-7 fill-white" viewBox="0 0 24 24">
+                        <path d="M15 11V5l-3-2-3 2v6H3v10h18V11h-6zm-4-6l1-.67L13 5v14h-2V5zm-4 8h2v2H7v-2zm0 4h2v2H7v-2zm10 0h-2v-2h2v2zm0-4h-2v-2h2v2z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900 leading-snug">
+                      Kota &amp; Permukiman Berkelanjutan
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                  Menata sistem kebersihan lingkungan pemukiman.
+                </p>
+              </div>
+
+              {/* SDG #12: Konsumsi & Produksi Bertanggung Jawab */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">TARGET SDG</span>
+                    <span className="text-lg font-black text-[#BF8B2E]">#12</span>
+                  </div>
+
+                  <div className="pt-3 flex items-center gap-3">
+                    {/* Official UN SDG 12 Real Icon Container */}
+                    <div className="w-12 h-12 rounded-xl bg-[#BF8B2E] text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <svg className="w-7 h-7 fill-none stroke-white stroke-[2.2]" viewBox="0 0 24 24">
+                        <path d="M7 16A4 4 0 017 8c2.5 0 4.5 4 5 4s2.5-4 5-4a4 4 0 010 8c-2.5 0-4.5-4-5-4s-2.5 4-5 4z" strokeLinecap="round" />
+                        <path d="M15.5 13.5L17.5 16l-2 2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900 leading-snug">
+                      Konsumsi &amp; Produksi Bertanggung Jawab
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Memaksimalkan daur ulang dan kompos limbah.
+                </p>
+              </div>
+
+              {/* SDG #13: Penanganan Perubahan Iklim */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">TARGET SDG</span>
+                    <span className="text-lg font-black text-[#3F7E44]">#13</span>
+                  </div>
+
+                  <div className="pt-3 flex items-center gap-3">
+                    {/* Official UN SDG 13 Real Icon Container */}
+                    <div className="w-12 h-12 rounded-xl bg-[#3F7E44] text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <svg className="w-7 h-7 fill-none stroke-white stroke-2" viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3.5" fill="white" />
+                      </svg>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900 leading-snug">
+                      Penanganan Perubahan Iklim
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Reduksi emisi gas metana dari sampah organik.
+                </p>
+              </div>
+
+              {/* SDG #15: Ekosistem Daratan */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">TARGET SDG</span>
+                    <span className="text-lg font-black text-[#56C02B]">#15</span>
+                  </div>
+
+                  <div className="pt-3 flex items-center gap-3">
+                    {/* Official UN SDG 15 Real Icon Container */}
+                    <div className="w-12 h-12 rounded-xl bg-[#56C02B] text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <svg className="w-7 h-7 fill-white" viewBox="0 0 24 24">
+                        <path d="M12 2L4 15h5v5h6v-5h5L12 2zm0 3.8L16.2 13H13v5h-2v-5H7.8L12 5.8z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900 leading-snug">
+                      Ekosistem Daratan
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Menjaga kualitas tanah dan sumber air bersih.
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
       {/* ----------------- 01. ABOUT US ----------------- */}
       <section id="about" className="py-24 bg-white border-y border-slate-200/80 relative overflow-hidden">
         <div className="container-custom space-y-16">
-          
+
           {/* About Header Narrative */}
           <div className="max-w-4xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-black uppercase tracking-wider">
               <span className="material-symbols-outlined text-sm text-emerald-600">nature_people</span>
-              01. About Us &amp; Ecosystem Vision
+              01. Tentang Kami &amp; Visi Ekosistem
             </div>
 
             <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-              Sistem Pemilahan Sampah Cerdas <span className="text-emerald-600">Kecamatan Coblong</span>
+              Ekosistem Pemilahan Sampah Cerdas <span className="text-emerald-600">Terintegrasi</span>
             </h2>
 
             <p className="text-slate-600 text-lg leading-relaxed font-medium">
-              TrashCare adalah platform tata kelola kebersihan terpadu yang menghubungkan masyarakat, mahasiswa KKN, pengurus RW, dan petugas residu di Kecamatan Coblong, Kota Bandung. Sistem mengedepankan transparansi pencatatan, pemilahan mandiri, dan gamifikasi poin tanpa penggunaan NIK.
+              TrashCare merupakan platform tata kelola kebersihan modern yang mengolaborasikan masyarakat, mahasiswa KKN, pengurus RW, petugas residu, hingga Dinas Lingkungan Hidup. Sistem ini menghadirkan transparansi data real-time, validasi pemilahan berbasis QR Code &amp; AI, serta skema gamifikasi poin terverifikasi demi mendukung Kecamatan Coblong Bebas Sampah.
             </p>
 
             <div className="flex flex-wrap gap-2.5 pt-2">
-              {["Auth WhatsApp OTP (+62)", "Tanpa NIK", "Maks 2 Bin Mandiri", "Window Penjemputan 06-08 & 16-18", "Timbangan Fisik Residu"].map((tag, idx) => (
+              {["Auth WhatsApp OTP (+62)", "Tanpa NIK (Privasi Aman)", "Maks. 2 Tempat Sampah", "Window Penjemputan 06-08 & 16-18", "Verifikasi Timbangan Residu"].map((tag, idx) => (
                 <span key={idx} className="px-4 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-extrabold rounded-xl">
                   #{tag}
                 </span>
@@ -698,17 +953,17 @@ export const LandingPage: React.FC = () => {
 
           {/* 4 Real Project Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
+
             <div className="about-pillar-card space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <span className="material-symbols-outlined text-3xl">delete_sweep</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900">1. Pemilahan 2 Tempat Sampah</h3>
+              <h3 className="text-xl font-black text-slate-900">1. Digitalisasi Tempat Sampah</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Setiap rumah tangga berhak mendaftarkan 1 Tempat Sampah Organik dan 1 Tempat Sampah Anorganik berlabel QR. Sampah residu dipisahkan dan ditimbang di hilir.
+                Registrasi presisi maksimal 2 Tempat Sampah (Organik &amp; Anorganik) berlabel QR unik per rumah tangga. Residu dipisahkan dan ditimbang akurat di hilir oleh Petugas.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-black text-emerald-600">
-                <span>Masa Aktif Bin 30 Hari</span>
+                <span>Masa Aktif 30 Hari + Auto-Reset</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
               </div>
             </div>
@@ -717,12 +972,12 @@ export const LandingPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <span className="material-symbols-outlined text-3xl">stars</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900">2. Ledger Poin Atomik</h3>
+              <h3 className="text-xl font-black text-slate-900">2. Gamifikasi &amp; Ledger Poin</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Pencatatan poin Warga &amp; Mahasiswa menggunakan skema ledger terpisah di database. Pengajuan setoran disetujui RW sebelum poin bertambah.
+                Sistem pencatatan poin terpisah (Ledger Isolation) untuk Warga, Mahasiswa, dan Petugas. Poin bertambah secara atomik setelah persetujuan dan verifikasi RW.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-black text-emerald-600">
-                <span>Transparansi Audit</span>
+                <span>Transparansi Audit Terjamin</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
               </div>
             </div>
@@ -731,12 +986,12 @@ export const LandingPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <span className="material-symbols-outlined text-3xl">groups</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900">3. Pendampingan KKN</h3>
+              <h3 className="text-xl font-black text-slate-900">3. Kolaborasi KKN Berdampak</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Mahasiswa KKN merekam koordinat GPS lokasi tempat sampah saat pendaftaran warga dan membantu sosialisasi pemilahan sampah di wilayah.
+                Mahasiswa KKN mengunci titik geolokasi GPS saat registrasi Tempat Sampah, mengedukasi warga, dan mencatat histori penugasan serah terima wilayah.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-black text-emerald-600">
-                <span>Serah Terima Wilayah KKN</span>
+                <span>Histori Handover KKN</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
               </div>
             </div>
@@ -745,9 +1000,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <span className="material-symbols-outlined text-3xl">compost</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900">4. Pemanfaatan Hilir</h3>
+              <h3 className="text-xl font-black text-slate-900">4. Pemanfaatan Sampah Hilir</h3>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Fasilitas pemanfaatan meliputi Loseda (pipa kompos dapur), Bata Terawang, Rumah Maggot BSF, Bank Sampah, dan budidaya ternak.
+                Integrasi pemantauan hasil olahan sampah melalui Loseda (pipa kompos), Bata Terawang, Rumah Maggot BSF, Bank Sampah, hingga budidaya ternak.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-black text-emerald-600">
                 <span>Monitoring Laporan Panen</span>
@@ -757,39 +1012,6 @@ export const LandingPage: React.FC = () => {
 
           </div>
 
-          {/* Clean Light Sustainable Development Goals (SDGs) Grid */}
-          <div className="bg-gradient-to-br from-emerald-50/70 via-white to-slate-50 rounded-3xl p-8 sm:p-12 border border-emerald-100/90 space-y-8 shadow-xs">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-100/80 pb-6">
-              <div>
-                <span className="text-emerald-700 text-xs font-black uppercase tracking-widest">GLOBAL IMPACT TARGETS</span>
-                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-                  Pencapaian Tujuan Pembangunan Berkelanjutan (SDGs)
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600 max-w-md font-medium">
-                TrashCare mendukung indikator utama PBB dalam mewujudkan lingkungan Kecamatan Coblong yang bersih, sehat, dan berkelanjutan.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {[
-                { num: "3", title: "Kehidupan Sehat & Sejahtera", desc: "Mencegah penumpukan sampah liar penular penyakit." },
-                { num: "11", title: "Kota & Permukiman Berkelanjutan", desc: "Menata sistem kebersihan lingkungan Coblong." },
-                { num: "12", title: "Konsumsi & Produksi Bertanggung Jawab", desc: "Memaksimalkan daur ulang dan kompos limbah." },
-                { num: "13", title: "Penanganan Perubahan Iklim", desc: "Reduksi emisi gas metana dari sampah organik." },
-                { num: "15", title: "Ekosistem Daratan", desc: "Menjaga kualitas tanah dan sumber air bersih." },
-              ].map((sdg) => (
-                <div key={sdg.num} className="clean-sdg-card space-y-3 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800">SDG TARGET</span>
-                    <span className="text-2xl font-black text-emerald-600">#{sdg.num}</span>
-                  </div>
-                  <h4 className="font-extrabold text-slate-900 text-sm leading-snug">{sdg.title}</h4>
-                  <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{sdg.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
 
         </div>
       </section>
@@ -797,12 +1019,12 @@ export const LandingPage: React.FC = () => {
       {/* ----------------- 02. WHY US ----------------- */}
       <section id="why-us" className="py-24 bg-slate-50/70 border-b border-slate-200/80">
         <div className="container-custom space-y-12">
-          
+
           <div className="max-w-3xl mx-auto text-center space-y-3">
-            <span className="text-emerald-600 text-xs font-black uppercase tracking-widest">02. WHY US</span>
+            <span className="text-emerald-600 text-xs font-black uppercase tracking-widest">02. MENGAPA KAMI</span>
             <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">Mengapa Aplikasi Ini?</h2>
             <p className="text-slate-600 text-base sm:text-lg font-medium">
-              Solusi tata kelola sampah rumah tangga terintegrasi untuk Kecamatan Coblong, Kota Bandung.
+              Solusi tata kelola sampah rumah tangga terintegrasi untuk seluruh pemukiman dan wilayah.
             </p>
 
             {/* Clean Interactive Pills */}
@@ -811,13 +1033,19 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setWhyUsTab("points")}
                 className={`clean-interactive-tab ${whyUsTab === "points" ? "active" : ""}`}
               >
-                Point-Based Gamification
+                Gamifikasi Berbasis Poin
               </button>
               <button
                 onClick={() => setWhyUsTab("bins")}
                 className={`clean-interactive-tab ${whyUsTab === "bins" ? "active" : ""}`}
               >
                 Manajemen Tempat Sampah
+              </button>
+              <button
+                onClick={() => setWhyUsTab("iot")}
+                className={`clean-interactive-tab ${whyUsTab === "iot" ? "active" : ""}`}
+              >
+                Terintegrasi IoT
               </button>
             </div>
           </div>
@@ -830,9 +1058,9 @@ export const LandingPage: React.FC = () => {
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">stars</span>
                     </div>
-                    <span className="font-extrabold text-lg text-slate-900">Point-Based Ledger System</span>
+                    <span className="font-extrabold text-lg text-slate-900">Sistem Ledger Berbasis Poin</span>
                   </div>
-                  <span className="text-xs px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full font-bold">Reward &amp; Audit</span>
+                  <span className="text-xs px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full font-bold">Insentif &amp; Audit</span>
                 </div>
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
@@ -841,8 +1069,8 @@ export const LandingPage: React.FC = () => {
 
                 <div className="grid grid-cols-3 gap-4 pt-2 text-center">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Level Warga</span>
-                    <p className="text-2xl font-black text-emerald-600">Level 8</p>
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Skor Kepatuhan</span>
+                    <p className="text-2xl font-black text-emerald-600">94.5%</p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                     <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Poin</span>
@@ -854,16 +1082,16 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : whyUsTab === "bins" ? (
               <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">delete</span>
                     </div>
-                    <span className="font-extrabold text-lg text-slate-900">Aturan Tempat Sampah (Bin)</span>
+                    <span className="font-extrabold text-lg text-slate-900">Aturan Tempat Sampah Rumah Tangga</span>
                   </div>
-                  <span className="text-xs px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full font-bold">QR Validation</span>
+                  <span className="text-xs px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full font-bold">Validasi Kode QR</span>
                 </div>
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
@@ -887,36 +1115,100 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            ) : (
+              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-xl">sensors</span>
+                    </div>
+                    <span className="font-extrabold text-lg text-slate-900">Terintegrasi Dengan IoT &amp; Sensor Digital</span>
+                  </div>
+                  <span className="text-xs px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 rounded-full font-bold">IoT &amp; Tracking</span>
+                </div>
+
+                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                  Pengawasan pemilahan sampah dilengkapi dengan pemindaian QR Code digital, perekaman GPS lokasi tempat sampah saat registrasi, serta radar notifikasi penjemputan otomatis berbasis waktu nyata.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-left">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="material-symbols-outlined text-emerald-600 text-xl">qr_code_scanner</span>
+                    <p className="text-xs font-black text-slate-900">Scan QR Digital</p>
+                    <p className="text-[11px] text-slate-500 font-medium">Verifikasi identitas tempat sampah instan.</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="material-symbols-outlined text-sky-600 text-xl">location_on</span>
+                    <p className="text-xs font-black text-slate-900">Koordinat Presisi GPS</p>
+                    <p className="text-[11px] text-slate-500 font-medium">Tracking titik lokasi fisik tempat sampah warga.</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="material-symbols-outlined text-rose-500 text-xl">notifications_active</span>
+                    <p className="text-xs font-black text-slate-900">Radar Merah Otomatis</p>
+                    <p className="text-[11px] text-slate-500 font-medium">Pengingat penjemputan berbasis window waktu.</p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
         </div>
       </section>
 
-      {/* ----------------- 03. HOW IT WORKS ----------------- */}
-      <section id="how-it-works" className="py-24 bg-white border-b border-slate-200/80">
-        <div className="container-custom space-y-16">
-          <div className="text-center space-y-2">
-            <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">03. How</span>
-            <h2 className="text-4xl font-extrabold text-slate-900">Bagaimana Cara Kerja Aplikasi</h2>
-            <p className="text-slate-500 text-sm font-medium">Terintegrasi dan transparan dari hulu ke hilir</p>
+      {/* ----------------- 03. FAQ (PERTANYAAN UMUM) ----------------- */}
+      <section id="faq" className="py-24 bg-white border-b border-slate-200/80">
+        <div className="container-custom space-y-12">
+          <div className="text-center space-y-2 max-w-2xl mx-auto">
+            <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">03. FAQ - PERTANYAAN UMUM</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">Pertanyaan Yang Sering Diajukan</h2>
+            <p className="text-slate-500 text-sm font-medium">
+              Informasi lengkap seputar operasional, sistem poin, dan pengelolaan tempat sampah TrashCare.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="max-w-3xl mx-auto space-y-3">
             {[
-              { icon: "delete", num: "1", title: "Pilah Sampah", desc: "Pilah sampah mandiri sesuai kategori Organik dan Anorganik." },
-              { icon: "schedule", num: "2", title: "Window Waktu", desc: "Pengangkutan di window 06:00-08:00 & 16:00-18:00." },
-              { icon: "qr_code_scanner", num: "3", title: "Scan & Angkut", desc: "Petugas melakukan pengangkutan dan memindai kode QR Tempat Sampah." },
-              { icon: "scale", num: "4", title: "Timbangan Fisik", desc: "Hasil timbangan diinput manual oleh Petugas Residu." },
-              { icon: "account_balance_wallet", num: "5", title: "Poin Disetujui RW", desc: "Poin insentif warga bertambah atomik setelah diverifikasi RW." },
-            ].map((step) => (
-              <div key={step.num} className="waste-cat-card text-center space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-slate-100">
-                  <span className="material-symbols-outlined text-3xl">{step.icon}</span>
-                </div>
-                <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">Langkah {step.num}</span>
-                <h3 className="font-extrabold text-slate-900 text-base mt-1 mb-1">{step.title}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
+              {
+                q: "Bagaimana cara mendaftar akun Warga di aplikasi TrashCare?",
+                a: "Tanpa NIK! Warga mendaftar menggunakan nomor HP WhatsApp (+62) untuk mendapatkan kode OTP instan. Pendaftaran dapat dilakukan mandiri atau dibantu oleh Mahasiswa KKN pendamping di lokasi."
+              },
+              {
+                q: "Berapa jumlah tempat sampah yang dapat didaftarkan per rumah tangga?",
+                a: "Setiap rumah tangga berhak mendaftarkan maksimal 2 Tempat Sampah (1 Organik dan 1 Anorganik). Sampah residu tidak dibuatkan tempat sampah di rumah, melainkan dipisahkan dan ditimbang di hilir."
+              },
+              {
+                q: "Kapan jam operasional penjemputan sampah dilakukan oleh petugas?",
+                a: "Penjemputan dilakukan secara disiplin pada 2 window waktu operasional harian: Pukul 06:00 - 08:00 WIB dan Pukul 16:00 - 18:00 WIB."
+              },
+              {
+                q: "Bagaimana alur perhitungan dan pembagian poin insentif warga?",
+                a: "Poin insentif dicatat dalam ledger terpisah database. Poin bertambah (+10 Warga & +10 Mahasiswa KKN) setelah pendaftaran/setoran disetujui Pengurus RW. Pengajuan ide daur ulang yang disetujui RW memberikan reward tambahan +50 poin."
+              },
+              {
+                q: "Berapa lama masa aktif tempat sampah yang terdaftar?",
+                a: "Tempat sampah aktif selama 30 hari dan di-reset otomatis setiap kali warga mengunggah foto setoran + disetujui pengangkutannya. Jika 30 hari tanpa aktivitas, tempat sampah menjadi tidak aktif dan membutuhkan aktivasi ulang via RW."
+              }
+            ].map((faq, idx) => (
+              <div key={idx} className="bg-slate-50/80 rounded-2xl border border-slate-200/80 overflow-hidden transition-all">
+                <button
+                  onClick={() => setFaqOpenIndex(faqOpenIndex === idx ? null : idx)}
+                  className="w-full p-5 text-left flex items-center justify-between font-extrabold text-slate-900 text-sm cursor-pointer hover:bg-slate-100/60 transition"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-black flex items-center justify-center">
+                      Q{idx + 1}
+                    </span>
+                    {faq.q}
+                  </span>
+                  <span className="material-symbols-outlined text-slate-400">
+                    {faqOpenIndex === idx ? "remove_circle_outline" : "add_circle_outline"}
+                  </span>
+                </button>
+                {faqOpenIndex === idx && (
+                  <div className="px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed font-medium border-t border-slate-200/60 bg-white">
+                    {faq.a}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -926,7 +1218,7 @@ export const LandingPage: React.FC = () => {
       {/* ----------------- 04. BUKU PANDUAN & ALUR EKOSISTEM INTERAKTIF ----------------- */}
       <section id="guide" className="py-24 bg-slate-50/70 border-b border-slate-200/80">
         <div className="container-custom space-y-16">
-          
+
           {/* Section Title Header */}
           <div className="max-w-3xl mx-auto text-center space-y-3">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/90 text-emerald-950 text-xs font-black uppercase tracking-wider">
@@ -937,7 +1229,7 @@ export const LandingPage: React.FC = () => {
               Panduan Lengkap <span className="text-emerald-600">Alur &amp; Peran</span> Ekosistem
             </h2>
             <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed">
-              Memahami siklus tata kelola sampah terintegrasi dari hulu ke hilir serta fitur interaktif untuk tiap peran pengguna di Kecamatan Coblong.
+              Memahami siklus tata kelola sampah terintegrasi dari hulu ke hilir serta fitur interaktif untuk tiap peran pengguna.
             </p>
           </div>
 
@@ -966,17 +1258,15 @@ export const LandingPage: React.FC = () => {
                 <button
                   key={item.step}
                   onClick={() => setActiveFlowStep(item.step)}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between h-28 ${
-                    activeFlowStep === item.step
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.02]"
-                      : "bg-slate-50 text-slate-700 border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/50"
-                  }`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between h-28 ${activeFlowStep === item.step
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.02]"
+                    : "bg-slate-50 text-slate-700 border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/50"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`w-7 h-7 rounded-xl text-xs font-black flex items-center justify-center ${
-                        activeFlowStep === item.step ? "bg-white text-emerald-700" : "bg-emerald-100 text-emerald-800"
-                      }`}
+                      className={`w-7 h-7 rounded-xl text-xs font-black flex items-center justify-center ${activeFlowStep === item.step ? "bg-white text-emerald-700" : "bg-emerald-100 text-emerald-800"
+                        }`}
                     >
                       0{item.step}
                     </span>
@@ -1000,7 +1290,7 @@ export const LandingPage: React.FC = () => {
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
                     <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Warga &amp; Mahasiswa KKN</span>
-                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Status Bin: PRINTED → DIPEGANG_MAHASISWA → PENDING_APPROVAL</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Status Tempat Sampah: PRINTED → DIPEGANG_MAHASISWA → PENDING_APPROVAL</span>
                   </div>
                 </div>
               )}
@@ -1048,7 +1338,7 @@ export const LandingPage: React.FC = () => {
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
                     <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Petugas Residu</span>
-                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Input Data: Manual Physical Scale Reading</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Input Data: Hasil Timbangan Fisik Manual</span>
                   </div>
                 </div>
               )}
@@ -1064,7 +1354,7 @@ export const LandingPage: React.FC = () => {
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
                     <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Pengurus RW &amp; RT</span>
-                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Reward: +10 Poin Warga, +10 Poin KKN, +50 Ide Daur Ulang</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Insentif: +10 Poin Warga, +10 Poin KKN, +50 Ide Daur Ulang</span>
                   </div>
                 </div>
               )}
@@ -1080,7 +1370,7 @@ export const LandingPage: React.FC = () => {
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px] font-extrabold">
                     <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Peran: Admin DLH, Camat, Lurah, DPL</span>
-                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Akses: Read-Only Executive Dashboard &amp; Peta GIS</span>
+                    <span className="px-2.5 py-1 bg-white text-emerald-800 rounded-lg border border-emerald-200">Akses: Dasbor Eksekutif Pemantauan &amp; Peta GIS</span>
                   </div>
                 </div>
               )}
@@ -1106,16 +1396,15 @@ export const LandingPage: React.FC = () => {
                 { key: "petugas", label: "Petugas Residu", icon: "local_shipping" },
                 { key: "dlh", label: "Admin DLH / Camat / Lurah", icon: "monitoring" },
                 { key: "dpl", label: "DPL KKN", icon: "supervisor_account" },
-                { key: "superadmin", label: "Super Admin", icon: "admin_panel_settings" },
+                { key: "superUser", label: "SUPER USER", icon: "admin_panel_settings" },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setGuideRoleTab(tab.key as any)}
-                  className={`px-4 py-2.5 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center gap-2 border ${
-                    guideRoleTab === tab.key
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.03]"
-                      : "bg-white text-slate-700 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 shadow-2xs"
-                  }`}
+                  className={`px-4 py-2.5 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center gap-2 border ${guideRoleTab === tab.key
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.03]"
+                    : "bg-white text-slate-700 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 shadow-2xs"
+                    }`}
                 >
                   <span className="material-symbols-outlined text-lg">{tab.icon}</span>
                   {tab.label}
@@ -1125,7 +1414,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Active Role Content Card */}
             <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200/80 shadow-lg space-y-8 transition-all">
-              
+
               {/* Role Header Info */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
                 <div className="space-y-1">
@@ -1138,7 +1427,7 @@ export const LandingPage: React.FC = () => {
                         {guideRoleTab === "petugas" && "local_shipping"}
                         {guideRoleTab === "dlh" && "monitoring"}
                         {guideRoleTab === "dpl" && "supervisor_account"}
-                        {guideRoleTab === "superadmin" && "admin_panel_settings"}
+                        {guideRoleTab === "superUser" && "admin_panel_settings"}
                       </span>
                     </span>
                     <div>
@@ -1149,9 +1438,9 @@ export const LandingPage: React.FC = () => {
                         {guideRoleTab === "petugas" && "Panduan Peran: Petugas Residu Hilir"}
                         {guideRoleTab === "dlh" && "Panduan Peran: Admin DLH, Camat, & Lurah"}
                         {guideRoleTab === "dpl" && "Panduan Peran: Dosen Pembimbing Lapangan (DPL)"}
-                        {guideRoleTab === "superadmin" && "Panduan Peran: Super Administrator"}
+                        {guideRoleTab === "superUser" && "Panduan Peran: SUPER USERistrator"}
                       </h4>
-                      <p className="text-xs text-slate-500 font-medium">Kecamatan Coblong, Kota Bandung</p>
+                      <p className="text-xs text-slate-500 font-medium">Sistem Pemilahan Sampah Terpadu</p>
                     </div>
                   </div>
                 </div>
@@ -1164,14 +1453,14 @@ export const LandingPage: React.FC = () => {
                   </span>
                   <span className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-base">security</span>
-                    {guideRoleTab === "dlh" ? "Aksabilitas: Read-Only Scoped Guard" : "Aksabilitas: Operasional & Management"}
+                    {guideRoleTab === "dlh" ? "Aksesibilitas: Pemantauan Sesuai Wilayah" : "Aksesibilitas: Operasional & Manajemen"}
                   </span>
                 </div>
               </div>
 
               {/* Role Details Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
+
                 {/* Left Column: Rules & Key Features */}
                 <div className="lg:col-span-5 space-y-6">
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
@@ -1302,7 +1591,7 @@ export const LandingPage: React.FC = () => {
                         </>
                       )}
 
-                      {guideRoleTab === "superadmin" && (
+                      {guideRoleTab === "superUser" && (
                         <>
                           <li className="flex items-start gap-2">
                             <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
@@ -1348,7 +1637,7 @@ export const LandingPage: React.FC = () => {
                     ))}
 
                     {guideRoleTab === "kkn" && [
-                      { step: 1, title: "1. Ambil Batch QR Code Master", desc: "Menerima QR Code Tempat Sampah berstatus `PRINTED` dari Super Admin." },
+                      { step: 1, title: "1. Ambil Batch QR Code Master", desc: "Menerima QR Code Tempat Sampah berstatus `PRINTED` dari SUPER USER." },
                       { step: 2, title: "2. Scan Awal QR Code", desc: "Memindai kode QR untuk mengubah status menjadi `DIPEGANG_MAHASISWA`." },
                       { step: 3, title: "3. Registrasi Warga & Record GPS", desc: "Mendatangi warga, merekam lokasi GPS gawai, dan mengaitkan QR ke Warga (`PENDING_APPROVAL`)." },
                       { step: 4, title: "4. Poin Pendampingan & Handover", desc: "Menerima +10 poin atomik saat RW setuju, serta mencatat riwayat serah terima KKN." },
@@ -1398,11 +1687,11 @@ export const LandingPage: React.FC = () => {
                       </div>
                     ))}
 
-                    {(guideRoleTab === "dlh" || guideRoleTab === "dpl" || guideRoleTab === "superadmin") && [
+                    {(guideRoleTab === "dlh" || guideRoleTab === "dpl" || guideRoleTab === "superUser") && [
                       { step: 1, title: "1. Login Portal Terotorisasi", desc: "Masuk ke sistem sesuai kewenangan role masing-masing." },
                       { step: 2, title: "2. Pantau Real-Time Dashboard", desc: "Melihat grafik timbulan residu, peta sebaran fasilitas, dan indikator statistik wilayah." },
                       { step: 3, title: "3. Evaluasi & Manajemen Data", desc: "Melakukan peninjauan diskrepansi AI, absensi KKN, atau master data QR Code." },
-                      { step: 4, title: "4. Unduh Laporan Lanjutan", desc: "Mengekspor laporan rekapitulasi untuk evaluasi berkala kebersihan Kecamatan Coblong." },
+                      { step: 4, title: "4. Unduh Laporan Lanjutan", desc: "Mengekspor laporan rekapitulasi untuk evaluasi berkala kebersihan wilayah." },
                     ].map((s) => (
                       <div key={s.step} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-3">
                         <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
@@ -1450,133 +1739,131 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ----------------- 05. WHAT WE DO ----------------- */}
+      {/* ----------------- 05. WHAT WE DO (Hapus/Sembunyikan sementara sesuai notulensi) ----------------- */}
+      {/* 
       <section id="what-we-do" className="py-24 bg-slate-50/50">
         <div className="container-custom space-y-12">
           <div className="text-center space-y-2">
-            <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
+            <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. DAUR ULANG &amp; GIS</span>
             <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir &amp; Fasilitas GIS</h2>
-            <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah Kecamatan Coblong</p>
-
-            <div className="inline-flex p-1 bg-white border border-slate-200 rounded-full mt-4">
-              <button
-                onClick={() => setWhatTab("pemilahan")}
-                className={`clean-interactive-tab ${whatTab === "pemilahan" ? "active" : ""}`}
-              >
-                Kategori Pemilahan
-              </button>
-              <button
-                onClick={() => setWhatTab("pemanfaatan")}
-                className={`clean-interactive-tab ${whatTab === "pemanfaatan" ? "active" : ""}`}
-              >
-                Fasilitas Pemanfaatan GIS
-              </button>
-            </div>
+            <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah pemukiman</p>
           </div>
-
-          {whatTab === "pemilahan" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-              {[
-                { title: "Plastik", icon: "local_drink", color: "text-emerald-600", desc: "Didaur ulang menjadi produk kerajinan & modul ecobrick." },
-                { title: "Kertas", icon: "description", color: "text-amber-500", desc: "Kardus & koran diolah kembali menjadi bubur kertas daur ulang." },
-                { title: "Logam", icon: "hardware", color: "text-slate-600", desc: "Kaleng & potongan besi disalurkan ke mitra peleburan logam." },
-                { title: "Kaca", icon: "wine_bar", color: "text-emerald-500", desc: "Botol kaca disalurkan ke industri daur ulang kaca utuh." },
-                { title: "Organik", icon: "eco", color: "text-green-600", desc: "Sisa dapur diolah di Loseda, Bata Terawang, & Budidaya Maggot BSF." },
-              ].map((cat, idx) => (
-                <div key={idx} className="waste-cat-card text-center space-y-3">
-                  <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto border border-slate-100 ${cat.color}`}>
-                    <span className="material-symbols-outlined text-3xl">{cat.icon}</span>
-                  </div>
-                  <h4 className="font-extrabold text-slate-900 text-base">{cat.title}</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{cat.desc}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  title: "Loseda & Bata Terawang",
-                  type: "Kompos Dapur",
-                  desc: "Pipa kompos Loseda dan lubang Bata Terawang untuk pengolahan sisa makanan organik tingkat rumah tangga.",
-                  icon: "compost"
-                },
-                {
-                  title: "Rumah Maggot BSF",
-                  type: "Pakan Ternak",
-                  desc: "Pengolahan cepat limbah organik menggunakan larva Black Soldier Fly (BSF) sebagai pakan lele/ayam.",
-                  icon: "set_meal"
-                },
-                {
-                  title: "Bank Sampah & Ecobrick",
-                  type: "Anorganik",
-                  desc: "Penyaluran material daur ulang dan modul ecobrick terdata melalui pemetaan fasilitas GIS.",
-                  icon: "layers"
-                },
-              ].map((item, idx) => (
-                <div key={idx} className="bg-white border border-slate-200/80 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-                    </span>
-                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">{item.type}</span>
-                  </div>
-                  <h4 className="font-extrabold text-slate-900 text-lg">{item.title}</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
+      */}
 
-      {/* ----------------- FOOTER ----------------- */}
-      <footer className="bg-slate-900 text-slate-400 py-16 text-sm border-t border-slate-800">
-        <div className="container-custom grid grid-cols-1 md:grid-cols-4 gap-10">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-white font-black text-xl">
-              <TrashCareLogoIcon className="w-8 h-8" />
-              <span className="text-white">Trash<span className="text-emerald-400">Care</span></span>
+      {/* ----------------- FOOTER (FULL WIDTH EDGE-TO-EDGE) ----------------- */}
+      <footer className="w-full bg-white border-t border-slate-200/80 pt-16 pb-12 relative overflow-hidden text-slate-700">
+
+        {/* Leaf Watermark in Bottom Right of Full Footer */}
+        <div className="absolute -bottom-10 -right-10 opacity-10 pointer-events-none">
+          <svg className="w-96 h-96 fill-emerald-600" viewBox="0 0 100 100">
+            <path d="M 50 10 C 20 40 10 70 50 90 C 90 70 80 40 50 10 Z" />
+            <path d="M 50 10 L 50 90" stroke="#ffffff" strokeWidth="4" />
+          </svg>
+        </div>
+
+        <div className="container-custom space-y-12 relative z-10">
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+
+            {/* Column 1: Brand & Socials (md:col-span-5) */}
+            <div className="md:col-span-5 space-y-5">
+              <div className="flex items-center gap-3">
+                <TrashCareLogoIcon className="w-10 h-10 shrink-0" />
+                <div>
+                  <h4 className="text-xl font-extrabold text-slate-900 leading-none">
+                    <span className="text-sky-600">Trash</span>
+                    <span className="text-emerald-600">Care</span>
+                  </h4>
+                  <p className="text-[11px] font-bold text-slate-500 mt-1">
+                    Tata Kelola Sampah Berkelanjutan
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed font-medium max-w-sm">
+                Program kolaboratif mahasiswa dan masyarakat untuk memperkuat edukasi, pemilahan, pengolahan, serta pemantauan sampah secara terukur dan berkelanjutan.
+              </p>
+
+              {/* Green Social Icons */}
+              <div className="flex items-center gap-2.5 pt-1">
+                <a href="#instagram" aria-label="Instagram" className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition shadow-2xs">
+                  <span className="material-symbols-outlined text-base">photo_camera</span>
+                </a>
+                <a href="#facebook" aria-label="Facebook" className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition shadow-2xs">
+                  <span className="material-symbols-outlined text-base">public</span>
+                </a>
+                <a href="#youtube" aria-label="YouTube" className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition shadow-2xs">
+                  <span className="material-symbols-outlined text-base">play_circle</span>
+                </a>
+                <a href="#whatsapp" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition shadow-2xs">
+                  <span className="material-symbols-outlined text-base">chat</span>
+                </a>
+              </div>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              Sistem Pemilahan &amp; Pengelolaan Sampah Terintegrasi Kecamatan Coblong, Kota Bandung.
-            </p>
-            <p className="text-xs text-slate-500 font-semibold">© 2026 UNIKOM. All rights reserved.</p>
+
+            {/* Column 2: Menu (md:col-span-2) */}
+            <div className="md:col-span-2 space-y-3">
+              <h5 className="font-extrabold text-sm text-emerald-800">Menu</h5>
+              <ul className="space-y-2 text-xs text-slate-600 font-medium">
+                <li><button onClick={() => scrollToSection("#")} className="hover:text-emerald-700 transition">Beranda</button></li>
+                <li><button onClick={() => scrollToSection("#about")} className="hover:text-emerald-700 transition">Tentang</button></li>
+                <li><button onClick={() => scrollToSection("#why-us")} className="hover:text-emerald-700 transition">Program</button></li>
+                <li><button onClick={() => scrollToSection("#guide")} className="hover:text-emerald-700 transition">Kegiatan</button></li>
+                <li><button onClick={() => scrollToSection("#faq")} className="hover:text-emerald-700 transition">Dampak</button></li>
+                <li><button onClick={() => setShowContactModal(true)} className="hover:text-emerald-700 transition">Kontak</button></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Informasi (md:col-span-2) */}
+            <div className="md:col-span-2 space-y-3">
+              <h5 className="font-extrabold text-sm text-emerald-800">Informasi</h5>
+              <ul className="space-y-2 text-xs text-slate-600 font-medium">
+                <li><button onClick={() => scrollToSection("#about")} className="hover:text-emerald-700 transition">Tentang KKN</button></li>
+                <li><button onClick={() => scrollToSection("#why-us")} className="hover:text-emerald-700 transition">Lokasi &amp; Periode</button></li>
+                <li><button onClick={() => scrollToSection("#guide")} className="hover:text-emerald-700 transition">Tim &amp; DPL</button></li>
+                <li><button onClick={() => scrollToSection("#why-us")} className="hover:text-emerald-700 transition">Mitra</button></li>
+                <li><Link to="/panduan" className="hover:text-emerald-700 transition">Panduan Penggunaan</Link></li>
+                <li><button onClick={() => setShowContactModal(true)} className="hover:text-emerald-700 transition">Kebijakan Privasi</button></li>
+              </ul>
+            </div>
+
+            {/* Column 4: Kontak (md:col-span-3) */}
+            <div className="md:col-span-3 space-y-3">
+              <h5 className="font-extrabold text-sm text-emerald-800">Kontak</h5>
+              <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
+                <li className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">location_on</span>
+                  <span>Jl. Dipatiukur No.112-116 Bandung, Jawa Barat 40132</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">mail</span>
+                  <span>info@unikom.ac.id</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">call</span>
+                  <span>(022) 2504119</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">chat</span>
+                  <span>+62812-3456-7890</span>
+                </li>
+              </ul>
+            </div>
+
           </div>
 
-          <div>
-            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Navigasi</h5>
-            <ul className="space-y-2.5 text-xs font-semibold">
-              <li><button onClick={() => scrollToSection("#about")} className="hover:text-white transition">Tentang Kami</button></li>
-              <li><button onClick={() => scrollToSection("#why-us")} className="hover:text-white transition">Mengapa Aplikasi Ini</button></li>
-              <li><button onClick={() => scrollToSection("#how-it-works")} className="hover:text-white transition">Cara Kerja</button></li>
-              <li><button onClick={() => scrollToSection("#guide")} className="hover:text-white transition">Buku Panduan</button></li>
-              <li><button onClick={() => scrollToSection("#what-we-do")} className="hover:text-white transition">Daur Ulang</button></li>
-            </ul>
+          {/* Bottom Divider & Copyright */}
+          <div className="border-t border-slate-200/70 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-medium">
+            <div>
+              © 2026 UNIVERSITAS KOMPUTER INDONESIA ALL RIGHTS RESERVED.
+            </div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs">
+              <span>v1.0.0</span>
+            </span>
           </div>
 
-          <div>
-            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan</h5>
-            <ul className="space-y-2.5 text-xs font-semibold">
-              <li><Link to="/login" className="hover:text-white transition">Portal Dashboard</Link></li>
-              <li><button onClick={() => scrollToSection("#how-it-works")} className="hover:text-white transition">Jadwal Pengangkutan</button></li>
-              <li><button onClick={() => scrollToSection("#about")} className="hover:text-white transition">Pendampingan KKN</button></li>
-            </ul>
-          </div>
-
-          <div>
-            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Kontak</h5>
-            <ul className="space-y-2.5 text-xs font-semibold">
-              <li className="flex items-start gap-2.5">
-                <span className="material-symbols-outlined text-base text-slate-400">location_on</span>
-                <span>Kecamatan Coblong, Kota Bandung, Jawa Barat</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-base text-slate-400">mail</span>
-                <span>support@trashcare.id</span>
-              </li>
-            </ul>
-          </div>
         </div>
       </footer>
 
@@ -1587,7 +1874,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
                 <span className="material-symbols-outlined text-emerald-600">contact_support</span>
-                Hubungi Kami (Contact Us)
+                Hubungi Kami
               </h3>
               <button onClick={() => setShowContactModal(false)} className="text-slate-400 hover:text-slate-600 transition">
                 <span className="material-symbols-outlined">close</span>
@@ -1596,12 +1883,13 @@ export const LandingPage: React.FC = () => {
 
             <div className="space-y-3 text-xs text-slate-600">
               <p className="font-medium">
-                Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerjasama operasional:
+                Untuk informasi seputar sistem pemilahan sampah cerdas KKN Berdampak dan kerja sama operasional, silakan hubungi CDC UNIKOM:
               </p>
               <div className="p-4 bg-slate-50 rounded-2xl space-y-2 font-bold text-slate-800">
-                <p>📍 Kantor Kecamatan Coblong, Kota Bandung</p>
-                <p>📧 Email: info@trashcare.id / makerindo@gmail.com</p>
-                <p>📞 Whatsapp Support: +62 812-3456-7890</p>
+                <p>🏢 Tim KKN Berdampak UNIKOM</p>
+                <p>📍 Jl. Dipati Ukur No. 112-116, Bandung, Jawa Barat 40132</p>
+                <p>📧 Email: kknberdampak@unikom.ac.id</p>
+                <p>🌐 Website: https://unikom.ac.id</p>
               </div>
             </div>
 
@@ -1633,7 +1921,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
                 <span className="material-symbols-outlined text-3xl">download_for_offline</span>
               </div>
-              <h4 className="font-bold text-slate-900 text-base">TrashCare Mobile App</h4>
+              <h4 className="font-bold text-slate-900 text-base">Aplikasi Mobile TrashCare</h4>
               <p className="text-xs text-slate-500 leading-relaxed font-medium">
                 File instalasi rilis APK Android sedang diproses. Tautan unduhan langsung akan segera aktif.
               </p>

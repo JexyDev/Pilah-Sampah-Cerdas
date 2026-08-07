@@ -50,7 +50,7 @@ router.post(
     if (role === "WARGA" || role === "MAHASISWA_KKN") {
       return binController.registerWargaBin(req, res);
     }
-    return roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"])(req, res, next);
+    return roleMiddleware(["SUPER_USER", "ADMIN_DLH"])(req, res, next);
   },
   binController.createBin
 );
@@ -67,7 +67,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.updateBin
 );
 
@@ -83,14 +83,14 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteBin
 );
 
 router.put(
   "/:qrCode/broken",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
   binController.markBinAsBroken
 );
 
@@ -151,7 +151,7 @@ router.get("/areas", authMiddleware, binController.getAreas);
  * @swagger
  * /api/v1/bins/kelurahans:
  *   post:
- *     summary: Tambah Kelurahan Baru (Admin DLH / Super Admin)
+ *     summary: Tambah Kelurahan Baru (Admin DLH / SUPER USER)
  *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
@@ -173,7 +173,7 @@ router.get("/areas", authMiddleware, binController.getAreas);
 router.post(
   "/kelurahans",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.createKelurahan
 );
 
@@ -181,7 +181,7 @@ router.post(
  * @swagger
  * /api/v1/bins/kelurahans/{id}:
  *   delete:
- *     summary: Hapus Kelurahan (Admin DLH / Super Admin)
+ *     summary: Hapus Kelurahan (Admin DLH / SUPER USER)
  *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
@@ -198,26 +198,26 @@ router.post(
 router.delete(
   "/kelurahans/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteKelurahan
 );
 router.post("/measure", authMiddleware, binController.measure);
 router.post(
   "/areas",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.createArea
 );
 router.put(
   "/areas/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.updateArea
 );
 router.delete(
   "/areas/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteArea
 );
 
@@ -307,7 +307,7 @@ router.get("/:id/status", binController.getStatus);
 router.post(
   "/:id/empty",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.emptyBin
 );
 
@@ -323,49 +323,49 @@ router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.reviewResetRequest
 );
 
 router.post(
   "/qr-batch",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.createQrBatch
 );
 
 router.get(
   "/qr-batch",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
   binController.getAllQrBatches
 );
 
 router.put(
   "/qr-batch/:id/assign",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.assignQrBatch
 );
 
 router.post(
   "/dispatch/:id/claim",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
   binController.claimDispatch
 );
 
 router.get(
   "/dispatch/optimized-route",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
   binController.getOptimizedRoute
 );
 
 router.put(
   "/:id/approve-activation",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "RW"]),
+  roleMiddleware(["SUPER_USER", "RW"]),
   binController.approveActivation
 );
 
@@ -379,7 +379,7 @@ router.post(
 router.put(
   "/:id/reject-activation",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "RW"]),
+  roleMiddleware(["SUPER_USER", "RW"]),
   binController.rejectActivation
 );
 
@@ -400,7 +400,7 @@ router.post(
 router.put(
   "/:id/capacity",
   authMiddleware,
-  roleMiddleware(["WARGA", "SUPER_ADMIN", "RW"]),
+  roleMiddleware(["WARGA", "SUPER_USER", "RW"]),
   binController.updateCapacity
 );
 
@@ -422,14 +422,14 @@ router.post(
 router.get(
   "/reset-requests",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.listResetRequests
 );
 
 router.put(
   "/reset/:id/approve",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.approveResetRequest
 );
 

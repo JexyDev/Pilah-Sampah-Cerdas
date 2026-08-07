@@ -9,7 +9,7 @@ import { create } from "zustand";
 import api from "../utils/api";
 
 export type UserRole =
-  | "SUPER_ADMIN"
+  | "SUPER_USER"
   | "ADMIN_DLH"
   | "CAMAT"
   | "LURAH"
@@ -64,7 +64,7 @@ const normalizeRole = (role: string): UserRole => {
 const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: string } => {
   const role = normalizeRole(rawRole);
   switch (role) {
-    case "SUPER_ADMIN":
+    case "SUPER_USER":
       return { avatarBg: "bg-indigo-100", avatarColor: "text-indigo-700" };
     case "ADMIN_DLH":
       return { avatarBg: "bg-blue-100", avatarColor: "text-blue-700" };
@@ -89,7 +89,7 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
 
 const getWilayahByRole = (role: string): string => {
   switch (role) {
-    case "SUPER_ADMIN":
+    case "SUPER_USER":
       return "Kecamatan Coblong";
     case "ADMIN_DLH":
       return "Kecamatan Coblong";
@@ -112,11 +112,19 @@ const getWilayahByRole = (role: string): string => {
   }
 };
 
+export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "MAHASISWA_KKN", "PETUGAS_RESIDU"];
+
 const getInitialUser = (): User | null => {
   try {
     const stored = localStorage.getItem("psc_user");
     if (!stored) return null;
     const user = JSON.parse(stored);
+    if (user && WEB_DISABLED_ROLES.includes(user.peran)) {
+      localStorage.removeItem("psc_user");
+      localStorage.removeItem("psc_access_token");
+      localStorage.removeItem("psc_refresh_token");
+      return null;
+    }
     if (user && (user.wilayah === "Sistem Pusat" || user.wilayah === "Dinas Lingkungan Hidup")) {
       user.wilayah = "Kecamatan Coblong";
       localStorage.setItem("psc_user", JSON.stringify(user));
@@ -129,7 +137,7 @@ const getInitialUser = (): User | null => {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
-  isAuthenticated: !!localStorage.getItem("psc_access_token"),
+  isAuthenticated: !!localStorage.getItem("psc_access_token") && (!getInitialUser() ? false : true),
   isLoading: false,
   error: null,
 
@@ -146,6 +154,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const { user: backendUser, accessToken, refreshToken } = payload;
+      const normalizedRole = normalizeRole(backendUser.role);
+
+      if (WEB_DISABLED_ROLES.includes(normalizedRole)) {
+        localStorage.removeItem("psc_access_token");
+        localStorage.removeItem("psc_refresh_token");
+        localStorage.removeItem("psc_user");
+        set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
+        return false;
+      }
 
       // Simpan token
       localStorage.setItem("psc_access_token", accessToken);
@@ -154,7 +171,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       // Buat user object untuk store
-      const normalizedRole = normalizeRole(backendUser.role);
       const avatarConfig = getAvatarConfig(normalizedRole);
       const user: User = {
         id: backendUser.id,
@@ -204,13 +220,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const { user: backendUser, accessToken, refreshToken } = payload;
+      const normalizedRole = normalizeRole(backendUser.role);
+
+      if (WEB_DISABLED_ROLES.includes(normalizedRole)) {
+        localStorage.removeItem("psc_access_token");
+        localStorage.removeItem("psc_refresh_token");
+        localStorage.removeItem("psc_user");
+        set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
+        return false;
+      }
 
       localStorage.setItem("psc_access_token", accessToken);
       if (refreshToken) {
         localStorage.setItem("psc_refresh_token", refreshToken);
       }
 
-      const normalizedRole = normalizeRole(backendUser.role);
       const avatarConfig = getAvatarConfig(normalizedRole);
       const user: User = {
         id: backendUser.id,

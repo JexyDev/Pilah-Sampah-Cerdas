@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 async function seedAudit() {
   console.log('Seeding audit trail...');
   const users = await prisma.user.findMany({ take: 5 });
-  const superAdmin = await prisma.user.findFirst({ where: { role: { name: 'SUPER_ADMIN' } } });
+  const superUser = await prisma.user.findFirst({ where: { role: { name: 'SUPER_USER' } } });
   const adminDlh = await prisma.user.findFirst({ where: { role: { name: 'ADMIN_DLH' } } });
 
-  const creators = [superAdmin, adminDlh, ...users].filter(Boolean);
+  const creators = [superUser, adminDlh, ...users].filter(Boolean);
 
   if (creators.length > 0) {
     const today = new Date();

@@ -64,10 +64,11 @@ router.post("/upload", authMiddleware, uploadAvatarMiddleware.single("image"), a
  *         description: Deteksi berhasil
  */
 router.post("/detect", authMiddleware, roleMiddleware(["WARGA"]), uploadAvatarMiddleware.single("image"), aiController.detectCombined);
-router.post("/logs/:id/report", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]), aiController.submitReport);
-router.get("/logs/discrepancies", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), aiController.getDiscrepancies);
-router.put("/logs/:id/resolve", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]), aiController.resolveDiscrepancy);
-router.get("/compliance/:userId", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), aiController.getComplianceScore);
+router.post("/logs/:id/report", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]), aiController.submitReport);
+router.get("/logs/discrepancies", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), aiController.getDiscrepancies);
+router.put("/logs/:id/resolve", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), aiController.resolveDiscrepancy);
+router.get("/compliance/:userId", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), aiController.getComplianceScore);
 router.get("/emissions", authMiddleware, aiController.getCo2eStats);
 router.post("/estimate-volume", authMiddleware, uploadAvatarMiddleware.single("image"), aiController.estimateVolume);
+router.post("/classify", authMiddleware, uploadAvatarMiddleware.single("image"), aiController.classifyMock);
 export default router;

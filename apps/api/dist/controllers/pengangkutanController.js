@@ -8,16 +8,16 @@ export class PengangkutanController {
     async getAll(req, res) {
         try {
             const user = req.user;
-            let rtRwId;
+            let rwId;
             // Restrict to user's RW area if they are RT/RW
             if (user && (user.role === "RW" || user.role === "RT")) {
-                rtRwId = user.rtRwId;
+                rwId = user.rwId;
             }
-            else if (req.query.rtRwId) {
-                rtRwId = parseInt(req.query.rtRwId, 10);
+            else if (req.query.rwId) {
+                rwId = parseInt(req.query.rwId, 10);
             }
             const status = req.query.status;
-            const tasks = await pengangkutanService.getAll({ status, rtRwId });
+            const tasks = await pengangkutanService.getAll({ status, rwId });
             res.status(200).json({ success: true, data: tasks });
         }
         catch (error) {

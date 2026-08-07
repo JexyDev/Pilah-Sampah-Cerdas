@@ -46,7 +46,7 @@ export class ResiduController {
         },
         include: {
           category: true,
-          rtRw: true,
+          rw: true,
           user: true,
         },
         take: 20,
@@ -69,7 +69,7 @@ export class ResiduController {
           qrCode: b.qrCode,
           kodeQr: b.qrCode,
           kategori: b.category?.name || "Organik",
-          lokasi: b.rtRw ? `${b.rtRw.name}` : "RT 01 / RW 01",
+          lokasi: b.rw ? `${b.rw.name}` : "RT 01 / RW 01",
           alamat: b.user?.address || "Jl. Coblong Raya No. " + (idx + 1),
           wargaNama: b.user?.name || "Warga Dampingan " + (idx + 1),
           namaWarga: b.user?.name || "Warga Dampingan " + (idx + 1),
@@ -78,7 +78,7 @@ export class ResiduController {
           currentVolumeLiter: vol,
           maxCapacityLiter: max,
           category: b.category,
-          rtRw: b.rtRw,
+          rw: b.rw,
           user: b.user,
         };
       });
@@ -98,7 +98,9 @@ export class ResiduController {
   async getRiwayat(req: Request, res: Response) {
     try {
       const petugasUserId = req.user!.userId;
-      const data = await residuService.getRiwayat(petugasUserId);
+      const range = req.query.range as string;
+      const type = req.query.type as string;
+      const data = await residuService.getRiwayat(petugasUserId, range, type);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[ResiduController] getRiwayat error:", error);
@@ -160,7 +162,7 @@ export class ResiduController {
     try {
       const petugasUserId = req.user!.userId;
 
-      let imagePhotoUrl = req.body.imagePhotoUrl || req.body.image;
+      let imagePhotoUrl = req.body.imagePhotoUrl || req.body.image || req.body.photoPath;
       if (req.file) {
         imagePhotoUrl = `/uploads/${req.file.filename}`;
       } else if (req.files) {
@@ -170,14 +172,16 @@ export class ResiduController {
       }
 
       const data = await residuService.submitLog(petugasUserId, {
-        actualWeightKg: Number(req.body.actualWeightKg),
-        classification: req.body.classification,
+        actualWeightKg: req.body.actualWeightKg || req.body.weight,
+        classification: req.body.classification || req.body.kategori,
         imagePhotoUrl: imagePhotoUrl || "/uploads/default-residu.jpg",
-        rtRw: req.body.rtRw,
+        rw: req.body.rw,
         kelurahan: req.body.kelurahan,
         notes: req.body.notes,
         logId: req.body.logId,
         binId: req.body.binId,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
       });
 
       res.status(201).json({ success: true, data });
@@ -189,3 +193,4 @@ export class ResiduController {
 }
 
 export const residuController = new ResiduController();
+

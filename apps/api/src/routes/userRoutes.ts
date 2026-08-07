@@ -35,7 +35,7 @@ router.get(
   "/",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -61,7 +61,7 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   userController.createUser
 );
 
@@ -83,7 +83,7 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   userController.deleteUser
 );
 
@@ -105,7 +105,7 @@ router.delete(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   userController.updateUser
 );
 

@@ -245,9 +245,51 @@ import { uploadSingleImage } from "../middlewares/uploadMiddleware.js";
  */
 router.post("/pengajuan-izin", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), uploadSingleImage.single("fotoBukti"), kknController.createLeaveRequest);
 // Alias routes matching exact Mahasiswa KKN spec
+/**
+ * @swagger
+ * /api/v1/kkn/attendance/check-in:
+ *   post:
+ *     summary: Absensi check-in KKN (Alternatif)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil check-in
+ */
 router.post(["/attendance/check-in", "/attendance/checkin"], authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknAttendanceController.recordAttendance);
+/**
+ * @swagger
+ * /api/v1/kkn/history:
+ *   get:
+ *     summary: Riwayat aktivitas lapangan
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logbook kegiatan
+ */
 router.get("/history", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.getActivityLog);
-router.get(["/kegiatan/:id/lokasi", "/target-lokasi"], authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getActivityLocation);
+/**
+ * @swagger
+ * /api/v1/kkn/kegiatan/{id}/lokasi:
+ *   get:
+ *     summary: Mendapatkan lokasi kegiatan (Target Lokasi)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lokasi target kegiatan
+ */
+router.get(["/kegiatan/:id/lokasi", "/target-lokasi"], authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getActivityLocation);
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 router.get("/notifications", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), async (req, res) => {

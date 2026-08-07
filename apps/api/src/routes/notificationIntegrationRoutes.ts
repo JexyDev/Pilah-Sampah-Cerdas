@@ -15,28 +15,28 @@ const router = Router();
 router.post(
   "/test-otp",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   notificationIntegrationController.testOtp
 );
 
 router.post(
   "/test-alarm",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   notificationIntegrationController.testAlarm
 );
 
 router.post(
   "/test-email",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   notificationIntegrationController.testEmail
 );
 
 router.post(
   "/test-fcm",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   notificationIntegrationController.testFcm
 );
 

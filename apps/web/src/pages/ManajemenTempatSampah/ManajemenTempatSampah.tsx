@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -11,12 +11,17 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { Pagination } from "../../components/common/Pagination";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import {
+  KELURAHAN_GEODATA,
   createMapBinIcon,
+  createRwZonaIcon,
+  createKelurahanPinIcon,
   createHouseIcon,
 } from "../../constants/coblongGeoData";
+import { Layers } from "lucide-react";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -25,6 +30,44 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
+
+const MapEvents = ({
+  setZoom,
+  setSelectedKelurahan,
+}: {
+  setZoom: (z: number) => void;
+  setSelectedKelurahan: (k: string) => void;
+}) => {
+  useMapEvents({
+    zoomend: (e) => {
+      const z = e.target.getZoom();
+      setZoom(z);
+      if (z < 15) {
+        setSelectedKelurahan("Semua Kelurahan");
+      }
+    },
+  });
+  return null;
+};
+
+const MapFlyTo = ({ target }: { target: { center: [number, number]; zoom: number; timestamp: number } | null }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (target) {
+      map.flyTo(target.center, target.zoom, { duration: 1.2 });
+    }
+  }, [target, map]);
+  return null;
+};
+
+const kelurahanCentroidsMap = Object.values(KELURAHAN_GEODATA).map((kg) => ({
+  name: kg.name,
+  lat: kg.centroid[0],
+  lng: kg.centroid[1],
+  bounds: kg.bounds,
+  color: kg.color,
+  rwCount: kg.rwCount,
+}));
 
 
 const LocationPicker = ({ position, onChange }: { position: [number, number] | null; onChange: (lat: number, lng: number) => void }) => {
@@ -42,11 +85,33 @@ const ManajemenTempatSampah: React.FC = () => {
 
   const [bins, setBins] = useState<any[]>([]);
   const [households, setHouseholds] = useState<any[]>([]);
+  const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBin, setSelectedBin] = useState<string | null>(null);
   const [selectedBinDetail, setSelectedBinDetail] = useState<any | null>(null);
+
+  // Map view reference
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8903, 107.611]);
+  const [mapZoom, setMapZoom] = useState<number>(15);
+  const [selectedMapKelurahan, setSelectedMapKelurahan] = useState("Semua Kelurahan");
+  const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
+
+  // Group bins by household / location
+  const householdGroups = React.useMemo(() => {
+    const groups: Record<string, { bins: any[]; latitude: number; longitude: number }> = {};
+    bins
+      .filter((b) => b.latitude && b.longitude)
+      .forEach((bin) => {
+        const key = bin.userId || `${bin.latitude},${bin.longitude}`;
+        if (!groups[key]) {
+          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude) };
+        }
+        groups[key].bins.push(bin);
+      });
+    return Object.values(groups);
+  }, [bins]);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -141,9 +206,21 @@ const ManajemenTempatSampah: React.FC = () => {
     fetchBins();
   }, [statusFilter, areaFilter, categoryFilter]);
 
+  const fetchLocations = async () => {
+    try {
+      const response = await api.get("/bins/locations");
+      if (response.data?.success) {
+        setLocations(response.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch locations for map:", err);
+    }
+  };
+
   useEffect(() => {
     fetchHouseholds();
     loadFormOptions();
+    fetchLocations();
   }, []);
 
   useEffect(() => {
@@ -351,7 +428,7 @@ const ManajemenTempatSampah: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Smart Bin (Tempat Sampah)</h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Tempat Sampah</h1>
             <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
               <Map size={13} /> Titik Fasilitas
             </span>
@@ -439,7 +516,7 @@ const ManajemenTempatSampah: React.FC = () => {
 
       {/* Bin Table */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[850px] text-left border-collapse">
           <thead>
             <tr className="bg-surface-container-low text-on-surface-variant text-[12px] font-bold uppercase tracking-wider">
               <th className="px-6 py-4">QR Code</th>
@@ -565,7 +642,7 @@ const ManajemenTempatSampah: React.FC = () => {
                         <button
                           onClick={() => setSelectedBinDetail(bin)}
                           className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                          title="Detail Bin"
+                          title="Detail Tempat Sampah"
                         >
                           <Eye size={18} />
                         </button>
@@ -607,123 +684,329 @@ const ManajemenTempatSampah: React.FC = () => {
 
         {/* Interactive Table Pagination Footer Bar */}
         {bins.length > 0 && (
-          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="text-xs text-slate-600 font-medium">
-              Menampilkan <span className="font-bold text-slate-900">{startIndex + 1}</span> -{" "}
-              <span className="font-bold text-slate-900">{Math.min(startIndex + rowsPerPage, bins.length)}</span> dari{" "}
-              <span className="font-bold text-slate-900">{bins.length}</span> data tempat sampah
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-500 font-semibold">Tampilkan:</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-500"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                  title="Halaman Sebelumnya"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-xs font-bold text-slate-800 px-2">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                  title="Halaman Selanjutnya"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={bins.length}
+            itemsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setRowsPerPage}
+          />
         )}
       </div>
 
 
-      {/* Geospatial Map */}
+      {/* Geospatial Map with Kelurahan Polygons & RW Zona Details */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 space-y-4">
-        <h3 className="font-bold text-[18px] text-on-surface flex items-center gap-2">
-          <Map className="text-primary" />
-          Peta Sebaran Bins & Rumah Warga (Geospatial)
-        </h3>
-        <div className="h-[400px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-bold text-[18px] text-on-surface flex items-center gap-2">
+            <Map className="text-primary" />
+            Peta Sebaran Tempat Sampah & Detail RW/Zona (Geospatial)
+          </h3>
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedMapKelurahan}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedMapKelurahan(val);
+                if (val !== "Semua Kelurahan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
+                  const geo = KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")];
+                  setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+                } else {
+                  setFlyTarget({ center: [-6.8903, 107.611], zoom: 15, timestamp: Date.now() });
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white shadow-2xs cursor-pointer hover:border-primary focus:outline-none"
+            >
+              <option value="Semua Kelurahan">Semua Kelurahan</option>
+              <option value="Dago">Kel. Dago</option>
+              <option value="Sadang Serang">Kel. Sadang Serang</option>
+              <option value="Sekeloa">Kel. Sekeloa</option>
+              <option value="Lebak Gede">Kel. Lebak Gede</option>
+              <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+              <option value="Cipaganti">Kel. Cipaganti</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="h-[480px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
+          {/* Map Overlay Legend Card */}
+          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-auto">
+            <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-slate-100/80 flex flex-col gap-3 min-w-[200px]">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                <Layers className="w-4 h-4 text-emerald-600" />
+                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Kapasitas Tempat Sampah / Zona
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shadow-sm"></div>
+                <span className="text-[12px] font-semibold text-slate-700">&lt; 70% (Aman)</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100 shadow-sm"></div>
+                <span className="text-[12px] font-semibold text-slate-700">70% - 90% (Siaga)</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100 shadow-sm"></div>
+                <span className="text-[12px] font-semibold text-slate-700">&gt; 90% (Penuh)</span>
+              </div>
+            </div>
+          </div>
+
           <MapContainer
-            center={[-6.8903, 107.611]}
-            zoom={15}
+            center={mapCenter}
+            zoom={mapZoom}
             scrollWheelZoom={true}
             style={{ height: "100%", width: "100%", zIndex: 1 }}
           >
+            <MapFlyTo target={flyTarget} />
+            <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {/* Bin Markers */}
-            {bins
-              .filter((b) => b.latitude && b.longitude)
-              .map((b) => (
-                <Marker
-                  key={b.kode}
-                  position={[Number(b.latitude), Number(b.longitude)]}
-                  icon={createMapBinIcon(b.status)}
-                >
-                  <Popup>
-                    <div className="text-[12px] space-y-1">
-                      <strong>Tempat Sampah: {b.kode}</strong>
-                      <br />
-                      Pemilik: {b.wargaName || "Publik/Umum"}
-                      <br />
-                      Kategori: {b.category?.name || b.categoryId}
-                      <br />
-                      Kapasitas: {b.kapasitas}% terisi ({b.currentVolumeLiter || 0}L /{" "}
-                      {b.maxCapacityLiter || 25}L)
-                      <br />
-                      RT/RW: {b.rtRw}
-                      <br />
-                      Status: {b.status}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
 
-            {/* Household Markers */}
-            {households
-              .filter((h) => h.latitude && h.longitude)
-              .map((h) => (
+            {/* LEVEL 1: KELURAHAN BOUNDARY POLYGONS */}
+            {Object.values(KELURAHAN_GEODATA).map((kg) => {
+              if (
+                selectedMapKelurahan !== "Semua Kelurahan" &&
+                selectedMapKelurahan.toLowerCase() !== kg.name.toLowerCase()
+              ) {
+                return null;
+              }
+
+              return (
+                <Polygon
+                  key={`kel-poly-bman-${kg.id}`}
+                  positions={kg.bounds}
+                  pathOptions={{
+                    color: kg.color,
+                    fillColor: kg.color,
+                    fillOpacity: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 0.32 : 0.18,
+                    weight: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 3 : 2.2,
+                  }}
+                />
+              );
+            })}
+
+            {/* LEVEL 1: KELURAHAN OVERVIEW MARKERS */}
+            {selectedMapKelurahan === "Semua Kelurahan" &&
+              kelurahanCentroidsMap.map((kel) => {
+                const rwsInKel = locations.filter(
+                  (l) => l.kelurahan.toLowerCase() === kel.name.toLowerCase()
+                );
+                return (
+                  <Marker
+                    key={`bman-kel-${kel.name}`}
+                    position={[kel.lat, kel.lng]}
+                    icon={createKelurahanPinIcon(kel.name, rwsInKel.length || 10)}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedMapKelurahan(kel.name);
+                        setFlyTarget({ center: [kel.lat, kel.lng], zoom: 16, timestamp: Date.now() });
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs p-1 text-center font-sans">
+                        <strong className="text-sm font-bold block text-slate-900 mb-1">
+                          Kelurahan {kel.name}
+                        </strong>
+                        <p className="text-slate-600 mb-2">
+                          Total Wilayah: <strong>{rwsInKel.length} RW</strong>
+                        </p>
+                        <button
+                          onClick={() => {
+                            setSelectedMapKelurahan(kel.name);
+                            setFlyTarget({ center: [kel.lat, kel.lng], zoom: 16, timestamp: Date.now() });
+                          }}
+                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition cursor-pointer"
+                        >
+                          Buka Detail Tempat Sampah →
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
+            {/* LEVEL 2: RW ZONA MARKERS WITH FULL RW METADATA */}
+            {(() => {
+              if (selectedMapKelurahan === "Semua Kelurahan" && mapZoom < 16) return null;
+
+              const filteredLocs = locations.filter((loc) => {
+                if (selectedMapKelurahan === "Semua Kelurahan") return true;
+                return loc.kelurahan.toLowerCase() === selectedMapKelurahan.toLowerCase();
+              });
+
+              const validLocations = filteredLocs.filter((g) => g.latitude && g.longitude);
+              if (validLocations.length === 0) return null;
+
+              return validLocations.map((group, idx) => (
                 <Marker
-                  key={h.id}
-                  position={[Number(h.latitude), Number(h.longitude)]}
-                  icon={createHouseIcon()}
+                  key={`rw-zona-bman-${group.rw}-${idx}`}
+                  position={[group.latitude, group.longitude]}
+                  icon={createRwZonaIcon(group.rw, group.patuh)}
+                  eventHandlers={{
+                    click: () => {
+                      setMapCenter([group.latitude, group.longitude]);
+                      setMapZoom(17);
+                    },
+                  }}
                 >
                   <Popup>
-                    <div className="text-[12px]">
-                      <strong>Rumah {h.user?.name || "Warga"}</strong>
-                      <br />
-                      Alamat: {h.address}
-                      <br />
-                      RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
+                    <div className="text-xs p-2 text-left font-sans min-w-[260px] sm:min-w-[300px]">
+                      <strong className="text-sm font-black block mb-2 text-slate-900 border-b pb-1.5 text-center">
+                        Wilayah {group.rw.includes(`(${group.kelurahan})`) ? group.rw : `${group.rw} (${group.kelurahan})`}
+                      </strong>
+
+                      <div className="space-y-1.5 my-2 text-xs text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Ketua RW:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.ketuaRwName || "Belum ditugaskan"}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Petugas Residu:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.petugasResiduName || "Belum ditugaskan"}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Mahasiswa KKN:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.mahasiswaKknName || "Tidak ada"}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-slate-500 font-semibold shrink-0">Lurah {group.kelurahan ? `(${group.kelurahan})` : ""}:</span>
+                          <span className="font-extrabold text-slate-900 text-right truncate">{group.lurahName || "Belum ditugaskan"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between text-slate-600 my-1 px-1 text-xs">
+                        <span>Tingkat Kepatuhan:</span>
+                        <strong className="text-emerald-600 font-black text-sm">{group.patuh}%</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-600 mb-2 px-1 text-xs">
+                        <span>Tempat Sampah:</span>
+                        <strong className="text-slate-800 font-black">{group.titikCount} Tempat Sampah</strong>
+                      </div>
+
+                      <p className="text-[11px] text-emerald-600 font-bold italic text-center pt-1.5 border-t border-slate-100">
+                        Klik untuk zoom ke detail rumah tangga
+                      </p>
                     </div>
                   </Popup>
                 </Marker>
-              ))}
+              ));
+            })()}
+
+            {/* LEVEL 3: HOUSEHOLD BINS & CAPACITY CIRCLES */}
+            {mapZoom >= 14 && (
+              <>
+                {householdGroups.map((group, idx) => {
+                  let maxPercentage = 0;
+                  group.bins.forEach((bin) => {
+                    const vol = Number(bin.currentVolumeLiter || 0);
+                    const max = Number(bin.maxCapacityLiter || 25);
+                    const pct = max > 0 ? (vol / max) * 100 : 0;
+                    if (pct > maxPercentage) maxPercentage = pct;
+                  });
+
+                  let status = "Aman";
+                  let color = "#10b981";
+                  if (maxPercentage >= 90) {
+                    status = "Penuh";
+                    color = "#ef4444";
+                  } else if (maxPercentage >= 70) {
+                    status = "Sedang";
+                    color = "#f59e0b";
+                  }
+
+                  return (
+                    <React.Fragment key={`hh-bin-frag-bman-${idx}`}>
+                      <Circle
+                        center={[group.latitude, group.longitude]}
+                        radius={20}
+                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.15, weight: 1 }}
+                      />
+                      <Marker
+                        position={[group.latitude, group.longitude]}
+                        icon={createMapBinIcon(status)}
+                        eventHandlers={{
+                          click: () => {
+                            setMapCenter([group.latitude, group.longitude]);
+                            setMapZoom(19);
+                          },
+                        }}
+                      >
+                        <Popup>
+                          <div className="text-[12px] space-y-2 font-sans">
+                            <strong className="text-sm font-bold block mb-1 border-b pb-1 text-slate-800">
+                              Data Tempat Sampah Rumah Tangga
+                            </strong>
+                            <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                              {group.bins.map((bin) => {
+                                const vol = Number(bin.currentVolumeLiter || 0);
+                                const max = Number(bin.maxCapacityLiter || 25);
+                                const pct = max > 0 ? Math.round((vol / max) * 100) : 0;
+
+                                return (
+                                  <div
+                                    key={`bin-popup-${bin.kode}`}
+                                    className="bg-slate-50 p-2 rounded border border-slate-200 text-xs"
+                                  >
+                                    <div className="flex justify-between font-bold text-slate-900 mb-0.5">
+                                      <span>{bin.kode}</span>
+                                      <span
+                                        className={
+                                          pct >= 90
+                                            ? "text-red-600"
+                                            : pct >= 70
+                                              ? "text-amber-600"
+                                              : "text-emerald-600"
+                                        }
+                                      >
+                                        {pct}%
+                                      </span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-600">
+                                      Pemilik: {bin.wargaName || "Publik/Umum"}
+                                      <br />
+                                      Kategori: {bin.category?.name || bin.categoryId} ({vol}L / {max}L)
+                                      <br />
+                                      RT/RW: {bin.rtRw}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </React.Fragment>
+                  );
+                })}
+
+                {/* Individual House Markers */}
+                {households
+                  .filter((h) => h.latitude && h.longitude)
+                  .map((h) => (
+                    <Marker
+                      key={`house-bman-${h.id}`}
+                      position={[Number(h.latitude), Number(h.longitude)]}
+                      icon={createHouseIcon()}
+                    >
+                      <Popup>
+                        <div className="text-[12px] font-sans">
+                          <strong>Rumah {h.user?.name || "Warga"}</strong>
+                          <br />
+                          Alamat: {h.address}
+                          <br />
+                          RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+              </>
+            )}
           </MapContainer>
         </div>
       </div>
@@ -796,7 +1079,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 </table>
               ) : (
                 <p className="text-center text-on-surface-variant text-sm py-8">
-                  Belum ada transaksi di tong ini
+                  Belum ada transaksi di tempat sampah ini
                 </p>
               )}
             </div>

@@ -161,4 +161,47 @@ docs/<deskripsi-singkat>
 - **Petugas Residu**: Memiliki akses ke **Web Monitoring** (`apps/web`) untuk pemantauan data timbulan residu, eskalasi penjemputan, dan laporan warga.
 - **LARANGAN KATA 'TONG' (WAJIB DIIKUTI)**: **DILARANG** menggunakan kata **'tong'** atau **'tong sampah'** di SELURUH antarmuka pengguna (UI), label tabel, notifikasi, komentar kode, maupun dokumentasi. SELALU gunakan istilah **'Tempat Sampah'** (contoh: 'Kapasitas Tempat Sampah', 'Tempat Sampah Organik', 'Tempat Sampah Anorganik').
 
+---
+
+## 10. Kebijakan Anti-Dummy & Integrasi Data Real (WAJIB DIIKUTI)
+
+- **Batasan Data Seed / Development**: Data tiruan/mock HANYA BOLEH berada di skrip seed database (`prisma/seed.ts` atau file test fixture). DILARANG KERAS menanamkan (*hardcode*) data dummy statis di dalam komponen UI / frontend service tanpa indikator status.
+- **Pengembangan UI Tanpa Backend**: Jika backend belum tersedia, AI BOLEH membuat tampilan UI terlebih dahulu DENGAN SYARAT WAJIB mencantumkan indikator visual yang jelas (misal badge `[Belum Terhubung API]` / state `Loading/Disconnected`). DILARANG menyajikan data hardcode seolah-olah data tersebut live dari backend.
+- **Klaim Penyelesaian & Verifikasi**: Setiap klaim bahwa fitur/endpoint telah terhubung dengan data real WAJIB dibuktikan dengan menyertakan log query database (SQL/Prisma) atau potongan response JSON dari API aktif dalam laporan/PR.
+- **Pemeriksaan & Penegakan**: Kepatuhan terhadap aturan ini diperiksa secara berkala via instruksi ini dan sesi Quality Control terpisah (`PROMPT_QC_PROFESIONAL_FINAL.md`).
+
+---
+
+## 11. Aturan Data Real (Anti-Dummy)
+
+Trashcare akan dipakai LANGSUNG oleh masyarakat, mahasiswa KKN, dan diawasi UNIKOM/DLH. Prinsip ini MUTLAK:
+
+1. **Semua data yang tampil ke user (monitoring, dashboard, grafik, tabel, leaderboard, kalkulasi apapun) WAJIB berasal dari akumulasi data REAL di database — hasil relasi antar tabel yang sungguhan, BUKAN dikarang/hardcode/mock, BUKAN placeholder angka acak.**
+
+2. **Seed data untuk testing/development BOLEH ada**, TAPI wajib memenuhi 3 syarat:
+   - Ditandai jelas di kode (misal file `seed.ts` terpisah, komentar `// SEED DATA — bukan data produksi`)
+   - TIDAK PERNAH ikut ke database production/environment yang dipakai demo ke publik
+   - Dihapus/di-reset sebelum go-live
+
+3. **AI DILARANG mengklaim "sudah real" tanpa bukti.** Bukti yang wajib disertakan (minimal 2 dari 4):
+   - Screenshot/kutipan response API asli (bukan dari kode, dari hasil eksekusi sungguhan)
+   - Hasil query database langsung, dicocokkan dengan angka yang tampil di UI
+   - Video/langkah reproduksi: input data → langsung cek muncul benar di tampilan lain
+   - Perhitungan manual 1 contoh (misal 1 poin, 1 skor kepatuhan) dibandingkan hasil sistem, angkanya harus cocok
+
+4. **AI BOLEH membangun UI sebelum backend selesai** (untuk mempercepat review desain), TAPI WAJIB:
+   - Beri badge/label jelas terlihat: **"Belum Terhubung Backend"** atau **"Data Sementara"**
+   - Dicatat di `PROGRESS_TRACKER_TRASHCARE.md` dengan status 🟡 (Sedang), BUKAN 🟢
+   - TIDAK boleh badge ini "lupa dihapus" — jadi checklist wajib sebelum status naik ke 🟢: badge sudah dilepas DAN backend sudah nyambung
+
+5. **Status 🟢 "Sudah" di Progress Tracker TIDAK BOLEH diisi sendiri oleh AI tanpa verifikasi kedua** (4-mata) — AI maksimal menandai 🟡 "Siap Direview". Status 🟢 final baru diisi setelah developer (Anda/tim) melakukan pengecekan ulang manual dan mengonfirmasi.
+
+6. **Semua grafik/chart WAJIB plot dari query database sungguhan** — dilarang ada angka hardcode di komponen chart (baik sebagai default value, fallback, maupun contoh yang "lupa diganti"). Kalau data belum ada/kosong, tampilkan EMPTY STATE yang jujur ("Belum ada data"), JANGAN diisi angka contoh supaya "kelihatan bagus".
+
+7. **Setiap kalkulasi (poin, indeks kepatuhan, KPI, leaderboard, compliance score, dst) WAJIB diverifikasi rumusnya PERSIS sesuai dokumen spec yang berlaku** — kutip baris kode rumusnya sebagai bukti, jangan asumsikan "kemungkinan sudah benar".
+
+Pelanggaran aturan ini (klaim real padahal dummy) dianggap SETARA dengan bug kritis (❌), bukan sekadar catatan minor.
+
+
+
 

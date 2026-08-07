@@ -29,7 +29,7 @@ import bankSampahRouter from "./routes/bankSampahRoutes.js";
 import notificationIntegrationRouter from "./routes/notificationIntegrationRoutes.js";
 import kknRouter from "./routes/kknRoutes.js";
 import residuRouter from "./routes/residuRoutes.js";
-import superAdminRouter from "./routes/superAdminRoutes.js";
+import superUserRouter from "./routes/superUserRoutes.js";
 import rwRouter from "./routes/rwRoutes.js";
 import ideDaurUlangRouter from "./routes/ideDaurUlangRoutes.js";
 import areaRouter from "./routes/areaRoutes.js";
@@ -39,6 +39,7 @@ import pemanfaatanRouter from "./routes/pemanfaatanRoutes.js";
 import pengangkutanRouter from "./routes/pengangkutanRoutes.js";
 import kelompokRouter from "./routes/kelompokRoutes.js";
 import dplRouter from "./routes/dplRoutes.js";
+import permissionRouter from "./routes/permissionRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
@@ -92,7 +93,7 @@ app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/petugas-residu", residuRouter);
-app.use("/api/v1/super-admin", superAdminRouter);
+app.use("/api/v1/super-user", superUserRouter);
 app.use("/api/v1/rw", rwRouter);
 app.use("/api/v1/rt", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
@@ -103,6 +104,7 @@ app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
 app.use("/api/v1/dpl", dplRouter);
+app.use("/api/v1/permissions", permissionRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);

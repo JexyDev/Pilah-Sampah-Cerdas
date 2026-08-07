@@ -59,7 +59,28 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const getHeaderInfo = (pathname: string) => {
+  const getHeaderInfo = (pathname: string, search: string = "") => {
+    const fullPath = pathname + search;
+
+    if (fullPath.includes("/dashboard-kkn")) {
+      if (search.includes("tab=MAHASISWA")) {
+        return {
+          title: "Portofolio Mahasiswa KKN",
+          subtitle: "Pantau data aktivitas, logbook, dan rekapan presensi mahasiswa KKN.",
+        };
+      }
+      if (search.includes("tab=APPROVAL")) {
+        return {
+          title: "Persetujuan Sakit & Izin KKN",
+          subtitle: "Validasi dan evaluasi permohonan izin/sakit mahasiswa KKN.",
+        };
+      }
+      return {
+        title: "Kelompok KKN",
+        subtitle: "Ringkasan data kelompok bimbingan KKN, wilayah, dan statistik presensi.",
+      };
+    }
+
     switch (pathname) {
       case "/dashboard":
       case "/":
@@ -70,25 +91,82 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               ? "Pantau poin Anda, temukan tempat sampah terdekat, dan mulai memilah sampah secara pintar."
               : "Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.",
         };
+      case "/monitoring":
+        return {
+          title: "Monitoring Wilayah",
+          subtitle: "Pantau peta GIS, distribusi tempat sampah, dan statistik timbulan residu wilayah.",
+        };
+      case "/monitoring-absen":
+        return {
+          title: "Monitoring Absen KKN",
+          subtitle: "Pemantauan kehadiran dan presensi lokasi mahasiswa KKN secara real-time.",
+        };
+      case "/monitoring-aktivitas":
+        return {
+          title: "Monitoring Aktivitas",
+          subtitle: "Pantau log aktivitas sistem dan tindakan operasional petugas.",
+        };
+      case "/manajemen-pengangkutan":
+        return {
+          title: "Pengangkutan Sampah",
+          subtitle: "Kelola penugasan dispatch dan armada penjemputan residu.",
+        };
       case "/manajemen-pengguna":
         return {
           title: "Manajemen Pengguna",
-          subtitle: "Kelola daftar akun, hak akses, dan data warga.",
+          subtitle: "Kelola daftar akun, hak akses, dan data warga Kecamatan Coblong.",
         };
       case "/manajemen-tempat-sampah":
         return {
           title: "Manajemen Tempat Sampah",
-          subtitle: "Pantau status kapasitas dan lokasi titik kumpul sampah.",
+          subtitle: "Pantau status kapasitas dan lokasi titik kumpul tempat sampah.",
         };
       case "/manajemen-lokasi":
+      case "/peta":
         return {
           title: "Manajemen Lokasi",
           subtitle: "Daftar wilayah dan RT/RW yang dilayani oleh sistem.",
+        };
+      case "/dashboard-dpl":
+        return {
+          title: "Dashboard DPL",
+          subtitle: "Ringkasan pengawasan kelompok KKN dan evaluasi lapangan.",
+        };
+      case "/role-permissions":
+        return {
+          title: "Hak Akses & Role (RBAC)",
+          subtitle: "Pengaturan izin dan kewenangan peran pengguna sistem.",
+        };
+      case "/manajemen-ekosistem-kkn":
+        return {
+          title: "Manajemen Ekosistem KKN",
+          subtitle: "Kelola data kelompok KKN, wilayah dampingan, dan DPL.",
+        };
+      case "/pemanfaatan-sampah":
+        return {
+          title: "Pemanfaatan Sampah",
+          subtitle: "Pencatatan pengolahan kompos, loseda, bata terawang, dan maggot.",
+        };
+      case "/hasil-pemanfaatan":
+        return {
+          title: "Hasil Pemanfaatan",
+          subtitle: "Catatan produksi pupuk, panen maggot, dan hasil pengolahan.",
+        };
+      case "/setor-sampah":
+      case "/setor":
+        return {
+          title: "Monitoring Pemilahan Warga",
+          subtitle: "Pantau setoran sampah warga dan hasil pemilahan AI.",
         };
       case "/jadwal-kegiatan":
         return {
           title: "Jadwal Kegiatan",
           subtitle: "Agenda sosialisasi, pelatihan, dan pengangkutan sampah.",
+        };
+      case "/input-manual":
+        return {
+          title: "Input Setoran Manual",
+          subtitle: "Input manual timbulan residu industri dan fisik oleh petugas residu.",
         };
       case "/kategori-sampah":
         return {
@@ -101,7 +179,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           subtitle: "Laporan transaksi harian, bulanan, dan total penimbangan.",
         };
       case "/poin-warga":
-        return { title: "Poin Warga", subtitle: "Kelola leaderboard poin warga." };
+        return {
+          title: "Poin Warga",
+          subtitle: "Kelola perolehan poin gamifikasi dan leaderboard warga.",
+        };
+      case "/leaderboard":
+        return {
+          title: "Leaderboard Warga",
+          subtitle: "Peringkat warga terbaik dalam pemilahan sampah.",
+        };
       case "/laporan-analitik":
         return {
           title: "Laporan & Analitik",
@@ -113,13 +199,65 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           subtitle: "Pusat pemberitahuan sistem dan pembaruan aplikasi.",
         };
       case "/pengaturan":
-        return { title: "Pengaturan", subtitle: "Konfigurasi akun dan preferensi aplikasi." };
+        return {
+          title: "Pengaturan",
+          subtitle: "Konfigurasi akun dan preferensi aplikasi.",
+        };
+      case "/evaluasi-ai":
+      case "/superUser/discrepancies":
+        return {
+          title: "Review Diskrepansi AI",
+          subtitle: "Evaluasi dan persetujuan selisih klasifikasi AI vs manual.",
+        };
+      case "/superUser/configs":
+        return {
+          title: "Rule Engine & Konfigurasi",
+          subtitle: "Pengaturan parameter sistem dan tarif poin.",
+        };
+      case "/superUser/audit":
+        return {
+          title: "Audit Trail",
+          subtitle: "Catatan riwayat perubahan data dan keamanan sistem.",
+        };
+      case "/superUser/qr-master":
+        return {
+          title: "Master QR Code",
+          subtitle: "Kelola batch QR code dan aktivasi tempat sampah.",
+        };
+      case "/rw/approval":
+        return {
+          title: "Persetujuan Aktivasi Tempat Sampah",
+          subtitle: "Persetujuan registrasi tempat sampah dan akun petugas dari warga.",
+        };
+      case "/rw/fasilitas":
+        return {
+          title: "Input Fasilitas & Ide",
+          subtitle: "Pendaftaran fasilitas pengolahan sampah dan ide daur ulang.",
+        };
+      case "/ide-daur-ulang":
+        return {
+          title: "Ide Daur Ulang",
+          subtitle: "Kumpulan karya dan inspirasi daur ulang sampah warga.",
+        };
+      case "/panduan":
+        return {
+          title: "Menu Panduan",
+          subtitle: "Panduan penggunaan aplikasi dan tata cara pemilahan sampah.",
+        };
+      case "/tentang":
+        return {
+          title: "Tentang Aplikasi",
+          subtitle: "Informasi versi aplikasi TrashCare Kecamatan Coblong.",
+        };
       default:
-        return { title: "Dashboard", subtitle: "" };
+        return {
+          title: "Dashboard Utama",
+          subtitle: "Sistem pemilahan sampah cerdas terintegrasi Kecamatan Coblong.",
+        };
     }
   };
 
-  const headerInfo = getHeaderInfo(location.pathname);
+  const headerInfo = getHeaderInfo(location.pathname, location.search);
 
   const handleLogout = () => {
     logout();
@@ -327,17 +465,19 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </p>
             </div>
             <div
-              className={`w-10 h-10 rounded-full ${user?.avatarBg || "bg-blue-100"} ${user?.avatarColor || "text-blue-700"} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden`}
+              className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden bg-slate-100"
             >
-              {user?.fotoProfil ? (
-                <img
-                  src={getProfilePhotoUrl(user.fotoProfil) || undefined}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                user?.avatar || "U"
-              )}
+              <img
+                src={
+                  getProfilePhotoUrl(user?.fotoProfil) ||
+                  `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80`
+                }
+                alt="Avatar"
+                className="w-full h-full object-cover"
+                onError={(e: any) => {
+                  e.target.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80`;
+                }}
+              />
             </div>
           </div>
 

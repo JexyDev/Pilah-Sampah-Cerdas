@@ -42,9 +42,10 @@ export class PointRepository {
       select: {
         id: true,
         name: true,
+        fotoProfil: true,
         households: {
           select: {
-            rtRw: { select: { name: true } },
+            rw: { select: { name: true } },
           },
           take: 1,
         },
@@ -58,7 +59,8 @@ export class PointRepository {
       .map((u) => ({
         id: u.id,
         nama: u.name,
-        rtRw: u.households.length > 0 ? u.households[0].rtRw.name : "RT/RW",
+        fotoProfil: u.fotoProfil,
+        rw: u.households.length > 0 ? u.households[0].rw.name : "RT/RW",
         poin: u.pointHistory.reduce((sum, p) => sum + p.points, 0),
       }))
       .sort((a, b) => b.poin - a.poin)
@@ -74,3 +76,4 @@ export class PointRepository {
 }
 
 export const pointRepository = new PointRepository();
+

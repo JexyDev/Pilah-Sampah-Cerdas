@@ -140,7 +140,7 @@ Tidak boleh ada komponen yang langsung asumsikan data selalu ada.
 ## 7. Portal Web Monitoring & Autentikasi Role
 
 ### 7.1 Form Login Universal (No HP +62)
-- Seluruh 9 Role (Super Admin, Admin DLH, Camat, Lurah, RW, DPL, Mahasiswa KKN, Petugas Residu, Warga) melakukan autentikasi melalui **Input Nomor Telepon (+62)** dan **OTP WhatsApp / Kredensial Password**.
+- Seluruh 9 Role (SUPER USER, Admin DLH, Camat, Lurah, RW, DPL, Mahasiswa KKN, Petugas Residu, Warga) melakukan autentikasi melalui **Input Nomor Telepon (+62)** dan **OTP WhatsApp / Kredensial Password**.
 - NIM (Mahasiswa) dan NIP (DPL) dapat ditampilkan pada Profil User / Badge UI.
 
 ### 7.2 Cakupan Dashboard Web (`apps/web`)
@@ -148,5 +148,5 @@ Tidak boleh ada komponen yang langsung asumsikan data selalu ada.
 2. **Petugas Residu:** Portal Web Monitoring timbulan residu, log hasil timbangan manual, dan monitoring pengaduan/eskalasi penjemputan.
 3. **Admin DLH & Camat & Lurah:** Portal Web Monitoring (Read-Only) berbasis scoping wilayah (Kota, Kecamatan, Kelurahan) + Modal Approval Diskrepansi AI khusus DLH.
 4. **RW & Mahasiswa KKN:** Portal pengelolaan aktivasi tempat sampah (QR Bins) & pendaftaran warga.
-5. **Super Admin:** Master data management (Bulk KKN/DPL, configurator sistem, audit log).
+5. **SUPER USER:** Master data management (Bulk KKN/DPL, configurator sistem, audit log).
 

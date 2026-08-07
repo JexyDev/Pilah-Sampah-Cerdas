@@ -165,9 +165,9 @@ const IdeDaurUlang: React.FC = () => {
     return `${host}${path}`;
   };
 
-  const canSubmit = user?.peran === "WARGA" || user?.peran === "SUPER_ADMIN" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
-  const isRW = user?.peran === "RW" || user?.peran === "SUPER_ADMIN";
-  const isAdmin = user?.peran === "SUPER_ADMIN" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
+  const canSubmit = user?.peran === "WARGA" || user?.peran === "SUPER_USER" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
+  const isRW = user?.peran === "RW" || user?.peran === "SUPER_USER";
+  const isAdmin = user?.peran === "SUPER_USER" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

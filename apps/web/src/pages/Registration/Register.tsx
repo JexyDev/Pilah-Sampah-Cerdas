@@ -9,7 +9,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRight, ShieldCheck, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRight, ShieldCheck, RefreshCcw, CheckCircle2, Smartphone } from "lucide-react";
 import api from "../../utils/api";
 
 // Exact Vector SVG Icon matching the TrashCare logo
@@ -267,9 +267,28 @@ export const Register: React.FC = () => {
               </Link>
             </div>
 
-            <div className="space-y-1 text-left">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Daftar Akun Baru</h1>
-              <p className="text-xs text-slate-500 font-medium">Lengkapi data diri Anda untuk bergabung ke dalam platform.</p>
+            <div className="space-y-3 text-left">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Pendaftaran Akun</h1>
+              
+              {/* Mobile App Redirect Notice */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs text-amber-800">
+                  <Smartphone className="text-amber-600" size={18} />
+                  <span>Akses Warga, Mahasiswa, & Petugas Residu Khusus Mobile App</span>
+                </div>
+                <p className="text-xs leading-relaxed text-amber-800/90 font-medium">
+                  Sesuai kebijakan tata kelola sistem, pendaftaran dan pengoperasian akun Warga, Mahasiswa KKN, dan Petugas Residu **hanya dapat dilakukan melalui Aplikasi Mobile TrashCare**.
+                </p>
+                <div className="pt-1 flex items-center gap-2">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs transition shadow-xs"
+                  >
+                    <span>Halaman Login Web (Khusus Pengawas/Admin)</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* Role Selection Dropdown/Tabs (Default: Warga) */}

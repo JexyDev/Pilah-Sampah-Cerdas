@@ -18,6 +18,7 @@ export interface ScopingFilters {
 
 /**
  * Determine dynamic query filters based on User role and area-scoping.
+ * Hierarki: SUPER_USER/ADMIN_DLH/CAMAT = all data; LURAH = per Kelurahan; RW = per RW; RT = per RW juga (scope RW).
  */
 export async function getScopingFilters(user: {
   userId: string;
@@ -25,7 +26,7 @@ export async function getScopingFilters(user: {
 }): Promise<ScopingFilters> {
   const dbUser = await prisma.user.findUnique({
     where: { id: user.userId },
-    include: { rtRw: { include: { kelurahan: true } } },
+    include: { rw: { include: { kelurahan: true } } },
   });
 
   if (!dbUser) return {};
@@ -38,14 +39,14 @@ export async function getScopingFilters(user: {
   };
   const role = normalizeRole(user.role);
 
-  // 1. SUPER_ADMIN, ADMIN_DLH, and CAMAT see all data (CAMAT is read-only checked at route level)
-  if (role === "SUPER_ADMIN" || role === "ADMIN_DLH" || role === "CAMAT") {
+  // 1. SUPER_USER, ADMIN_DLH, and CAMAT see all data (CAMAT is read-only checked at route level)
+  if (role === "SUPER_USER" || role === "ADMIN_DLH" || role === "CAMAT") {
     return {};
   }
 
   // 2. LURAH is scoped by Kelurahan
   if (role === "LURAH") {
-    const kelurahanId = dbUser.rtRw?.kelurahanId;
+    const kelurahanId = dbUser.rw?.kelurahanId;
     if (!kelurahanId) {
       return {
         userFilter: { id: "none" },
@@ -55,45 +56,17 @@ export async function getScopingFilters(user: {
       };
     }
     return {
-      userFilter: { rtRw: { kelurahanId } },
+      userFilter: { rw: { kelurahanId } },
       binFilter: { kelurahanId },
-      householdFilter: { rtRw: { kelurahanId } },
+      householdFilter: { rw: { kelurahanId } },
       wasteLogFilter: { bin: { kelurahanId } },
     };
   }
 
-  // 3. RW is scoped strictly by RW number and Kelurahan
-  if (role === "RW") {
-    const areaName = dbUser.rtRw?.name; // e.g. "RT 02 / RW 06"
-    const kelurahanId = dbUser.rtRw?.kelurahanId;
-
-    if (!areaName || !kelurahanId) {
-      return {
-        userFilter: { id: "none" },
-        binFilter: { id: "none" },
-        householdFilter: { id: "none" },
-        wasteLogFilter: { id: "none" },
-      };
-    }
-
-    const rwPart =
-      areaName
-        .split("/")
-        .map((s) => s.trim())
-        .find((s) => s.startsWith("RW")) || areaName;
-
-    return {
-      userFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
-      binFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
-      householdFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
-      wasteLogFilter: { bin: { rtRw: { kelurahanId, name: { contains: rwPart } } } },
-    };
-  }
-
-  // 3b. RT is scoped by their exact RT/RW area
-  if (role === "RT") {
-    const rtRwId = dbUser.rtRwId;
-    if (!rtRwId) {
+  // 3. RW & RT scoped by their rwId
+  if (role === "RW" || role === "RT") {
+    const rwId = dbUser.rwId;
+    if (!rwId) {
       return {
         userFilter: { id: "none" },
         binFilter: { id: "none" },
@@ -102,24 +75,24 @@ export async function getScopingFilters(user: {
       };
     }
     return {
-      userFilter: { rtRwId },
-      binFilter: { rtRwId },
-      householdFilter: { rtRwId },
-      wasteLogFilter: { bin: { rtRwId } },
+      userFilter: { rwId },
+      binFilter: { rwId },
+      householdFilter: { rwId },
+      wasteLogFilter: { bin: { rwId } },
     };
   }
 
-  // 4. MAHASISWA_KKN is scoped by their assigned RT/RW area polygon
+  // 4. MAHASISWA_KKN is scoped by their assigned RW area
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: user.userId },
     });
-    if (student && student.assignedPolygonId) {
+    if (student && student.assignedRwId) {
       return {
-        userFilter: { rtRwId: student.assignedPolygonId },
-        binFilter: { rtRwId: student.assignedPolygonId },
-        householdFilter: { rtRwId: student.assignedPolygonId },
-        wasteLogFilter: { bin: { rtRwId: student.assignedPolygonId } },
+        userFilter: { rwId: student.assignedRwId },
+        binFilter: { rwId: student.assignedRwId },
+        householdFilter: { rwId: student.assignedRwId },
+        wasteLogFilter: { bin: { rwId: student.assignedRwId } },
       };
     }
   }

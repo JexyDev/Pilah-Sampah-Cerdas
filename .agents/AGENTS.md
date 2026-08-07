@@ -124,7 +124,7 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
 ## 1. Autentikasi & Autorisasi (RBAC)
 - **Login Warga**: Menggunakan **Nomor HP (+62) + OTP via WhatsApp** (WA API disediakan oleh PT Makerindo).
   - **Keamanan Akun Warga**: Kata sandi warga tetap wajib di-hash menggunakan standar pengamanan backend (bcrypt) demi keamanan data sekunder.
-- **Login Role Lain**: Super Admin, Admin DLH, Camat, Lurah, RW, Mahasiswa KKN, dan Petugas Residu menggunakan **Email + Password standar**.
+- **Login Role Lain**: SUPER USER, Admin DLH, Camat, Lurah, RW, Mahasiswa KKN, dan Petugas Residu menggunakan **Email + Password standar**.
 - **Akses Read-Only (Monitoring)**:
   - Role **Admin DLH**, **Camat**, dan **Lurah** dibatasi secara ketat menjadi **Read-Only** (hanya monitoring visual/data-scoping).
   - Terapkan middleware `readOnlyGuard` untuk menolak (403) seluruh operasi tulis (POST, PUT, DELETE) dari ketiga role tersebut, kecuali approval diskrepansi AI khusus Admin DLH.
@@ -147,7 +147,7 @@ Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat 
   - **Tempat Sampah Rusak**: RW dapat menandai bin sebagai `BROKEN` -> QR menjadi tidak aktif secara permanen.
 
 ## 2b. Histori Penugasan & Handover KKN
-- **Histori Handover**: Setiap serah terima wilayah tugas, daftar warga dampingan, dan aset QR batch antar mahasiswa KKN (lama ke baru) wajib dicatat dalam tabel histori penugasan (`kkn_handover_history`) di database agar dapat dipantau oleh Super Admin secara kronologis.
+- **Histori Handover**: Setiap serah terima wilayah tugas, daftar warga dampingan, dan aset QR batch antar mahasiswa KKN (lama ke baru) wajib dicatat dalam tabel histori penugasan (`kkn_handover_history`) di database agar dapat dipantau oleh SUPER USER secara kronologis.
 
 ## 3. Jam Operasional, Penjemputan, & Timbangan
 - **Window Waktu**: Cek & angkut dilakukan pukul **06:00-08:00** dan **16:00-18:00**.

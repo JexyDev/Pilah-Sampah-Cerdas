@@ -38,7 +38,7 @@ const router = Router();
  *               address:
  *                 type: string
  *                 example: Jl. Titiran Dalam No. 10
- *               rtRwId:
+ *               rwId:
  *                 type: integer
  *                 example: 1
  *               latitude:
@@ -58,7 +58,7 @@ const router = Router();
  *         description: Household already exists in this area
  */
 // Only WARGA (or ADMIN/Staff) can register household
-router.post("/register", authMiddleware, roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]), householdController.register);
+router.post("/register", authMiddleware, roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]), householdController.register);
 /**
  * @swagger
  * /api/v1/households/me:
@@ -75,7 +75,7 @@ router.get("/me", authMiddleware, householdController.getMyHouseholds);
 router.get("/me/bins/summary", authMiddleware, householdController.getBinsSummary);
 router.get("/bins/summary", authMiddleware, householdController.getBinsSummary);
 router.get("/", authMiddleware, roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",

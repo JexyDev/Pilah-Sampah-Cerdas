@@ -302,7 +302,7 @@ router.post("/change-password", authMiddleware, authController.changePassword);
 router.post(
   "/register/admin-dlh",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN"]),
+  roleMiddleware(["SUPER_USER"]),
   authController.registerAdminDlh
 );
 

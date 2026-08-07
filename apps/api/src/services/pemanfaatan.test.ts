@@ -15,7 +15,7 @@ describe("Pemanfaatan Service CRUD Tests", () => {
 
   beforeAll(async () => {
     await prisma.pemanfaatan.deleteMany({});
-    rtRwArea = await prisma.rtRwArea.findFirst();
+    rtRwArea = await prisma.rw.findFirst();
   });
 
   it("should perform full CRUD on pemanfaatan program", async () => {
@@ -56,3 +56,4 @@ describe("Pemanfaatan Service CRUD Tests", () => {
     await expect(pemanfaatanService.getById(created.id)).rejects.toThrow();
   });
 });
+

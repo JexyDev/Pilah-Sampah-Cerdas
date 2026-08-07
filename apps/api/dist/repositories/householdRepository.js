@@ -14,7 +14,7 @@ export class HouseholdRepository {
         return prisma.household.create({
             data,
             include: {
-                rtRw: true,
+                rw: true,
             },
         });
     }
@@ -25,7 +25,7 @@ export class HouseholdRepository {
         return prisma.household.findUnique({
             where: { id },
             include: {
-                rtRw: {
+                rw: {
                     include: { kelurahan: true },
                 },
             },
@@ -38,7 +38,7 @@ export class HouseholdRepository {
         return prisma.household.findMany({
             where: { userId },
             include: {
-                rtRw: {
+                rw: {
                     include: { kelurahan: true },
                 },
             },
@@ -47,11 +47,11 @@ export class HouseholdRepository {
     /**
      * Check if user already registered a household in the same area.
      */
-    async findHouseholdByUserAndArea(userId, rtRwId) {
+    async findHouseholdByUserAndArea(userId, rwId) {
         return prisma.household.findFirst({
             where: {
                 userId,
-                rtRwId,
+                rwId,
             },
         });
     }
@@ -61,7 +61,7 @@ export class HouseholdRepository {
     async findAll() {
         return prisma.household.findMany({
             include: {
-                rtRw: {
+                rw: {
                     include: { kelurahan: true },
                 },
                 user: {

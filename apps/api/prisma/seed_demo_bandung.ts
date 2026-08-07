@@ -24,7 +24,7 @@ async function main() {
   // 1. Setup Roles
   const roles = [
     'WARGA', 'RT', 'RW', 'PETUGAS_RESIDU', 'PENGANGKUT', 
-    'MAHASISWA_KKN', 'DPL', 'ADMIN_KELURAH', 'ADMIN_KECAMATAN', 'SUPER_ADMIN', 'ADMIN_DLH', 'CAMAT', 'LURAH'
+    'MAHASISWA_KKN', 'DPL', 'ADMIN_KELURAH', 'ADMIN_KECAMATAN', 'SUPER_USER', 'ADMIN_DLH', 'CAMAT', 'LURAH'
   ];
   const roleMap = new Map<string, number>();
   for (const r of roles) {
@@ -125,7 +125,7 @@ async function main() {
   const rw06TargetId = rw06DagoArea?.id || (rtRwObjects.find(r => r.name.includes("RW 06"))?.id ?? null);
 
   const adminSeeds = [
-    { phone: "+628111111111", name: "Super Admin TrashCare", role: "SUPER_ADMIN", rtRwId: null },
+    { phone: "+628111111111", name: "SUPER USER TrashCare", role: "SUPER_USER", rtRwId: null },
     { phone: "+628111111112", name: "Admin DLH Bandung", role: "ADMIN_DLH", rtRwId: null },
     { phone: "+628111111113", name: "Camat Coblong", role: "CAMAT", rtRwId: null },
     { phone: "+628111111114", name: "Lurah Dago", role: "LURAH", rtRwId: null },
@@ -225,7 +225,7 @@ async function main() {
   }
 
   // Admin / General
-  await createUser('Super Admin', '081200999999', 'SUPER_ADMIN');
+  await createUser('SUPER USER', '081200999999', 'SUPER_USER');
   await createUser('Admin Coblong', '081200999998', 'ADMIN_KECAMATAN');
 
   console.log(`✅ Memproses ${allWarga.length} warga untuk koordinat dan setoran...`);

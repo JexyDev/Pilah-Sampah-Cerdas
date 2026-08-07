@@ -32,11 +32,47 @@ const gpsRateLimiter = (req, res, next) => {
 };
 // Student routes
 router.post("/mahasiswa/lokasi", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), gpsRateLimiter, kknAttendanceController.updateLocation);
-router.get("/kegiatan/:id/lokasi", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]), kknAttendanceController.getActivityLocation);
+/**
+ * @swagger
+ * /api/v1/kegiatan/{id}/lokasi:
+ *   get:
+ *     summary: Mendapatkan lokasi spesifik kegiatan
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil lokasi kegiatan
+ */
+router.get("/kegiatan/:id/lokasi", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]), kknAttendanceController.getActivityLocation);
+/**
+ * @swagger
+ * /api/v1/kegiatan/{id}/absen:
+ *   post:
+ *     summary: Melakukan absensi (check-in) untuk kegiatan KKN
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Absen berhasil dicatat
+ */
 router.post("/kegiatan/:id/absen", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknAttendanceController.recordAttendance);
 // Monitoring routes
-router.get("/mahasiswa/lokasi-aktif", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getActiveStudentsLocations);
-router.get("/kegiatan/:id/absen", authMiddleware, roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getAttendanceList);
+router.get("/mahasiswa/lokasi-aktif", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getActiveStudentsLocations);
+router.get("/kegiatan/:id/absen", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getAttendanceList);
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 router.post("/location-ping", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), async (req, res) => {
@@ -49,7 +85,7 @@ router.post("/location-ping", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]),
         res.status(400).json({ error: error.message });
     }
 });
-router.get("/warga-dampingan", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN"]), async (req, res) => {
+router.get("/warga-dampingan", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER"]), async (req, res) => {
     try {
         const result = await kknAttendanceServiceInstance.getWargaDampingan(req.user.userId);
         res.json(result);

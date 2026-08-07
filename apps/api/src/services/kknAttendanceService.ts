@@ -405,7 +405,7 @@ export class KknAttendanceService {
           select: {
             nim: true,
             jurusan: true,
-            assignedPolygon: {
+            assignedRw: {
               select: {
                 name: true,
                 latitude: true,
@@ -441,11 +441,11 @@ export class KknAttendanceService {
           lng = Number(mhs.attendances[0].longitude);
           recAt = mhs.attendances[0].attendedAt;
         } else if (
-          mhs.studentProfile?.assignedPolygon?.latitude &&
-          mhs.studentProfile?.assignedPolygon?.longitude
+          mhs.studentProfile?.assignedRw?.latitude &&
+          mhs.studentProfile?.assignedRw?.longitude
         ) {
-          lat = Number(mhs.studentProfile.assignedPolygon.latitude);
-          lng = Number(mhs.studentProfile.assignedPolygon.longitude);
+          lat = Number(mhs.studentProfile.assignedRw.latitude);
+          lng = Number(mhs.studentProfile.assignedRw.longitude);
         } else {
           const charSum = mhs.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
           lat = -6.8915 + ((charSum % 30) - 15) * 0.0003;
@@ -493,6 +493,7 @@ export class KknAttendanceService {
               select: {
                 nim: true,
                 jurusan: true,
+                isKetua: true,
               },
             },
           },
@@ -544,10 +545,54 @@ export class KknAttendanceService {
       };
     });
 
-    const allStudents = await prisma.user.findMany({
-      where: {
-        role: { name: "MAHASISWA_KKN" },
+    // Fetch schedule to filter students strictly by assigned Kelompok KKN
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: {
+        kelompok: {
+          include: {
+            students: {
+              select: { userId: true },
+            },
+          },
+        },
       },
+    });
+
+    let studentWhereCondition: any = { role: { name: "MAHASISWA_KKN" } };
+
+    if (schedule?.kelompok?.students && schedule.kelompok.students.length > 0) {
+      const groupUserIds = schedule.kelompok.students.map((s) => s.userId);
+      studentWhereCondition = {
+        id: { in: groupUserIds },
+        role: { name: "MAHASISWA_KKN" },
+      };
+    } else if (schedule?.title) {
+      const groups = await prisma.kelompokKkn.findMany({
+        include: {
+          students: {
+            select: { userId: true },
+          },
+        },
+      });
+
+      // Sort groups by name length descending so "Kelompok 10" matches before "Kelompok 1"
+      const sortedGroups = [...groups].sort((a, b) => b.name.length - a.name.length);
+      const matchedGroup = sortedGroups.find((g) =>
+        schedule.title.toLowerCase().includes(g.name.toLowerCase())
+      );
+
+      if (matchedGroup && matchedGroup.students.length > 0) {
+        const groupUserIds = matchedGroup.students.map((s) => s.userId);
+        studentWhereCondition = {
+          id: { in: groupUserIds },
+          role: { name: "MAHASISWA_KKN" },
+        };
+      }
+    }
+
+    const allStudents = await prisma.user.findMany({
+      where: studentWhereCondition,
       select: {
         id: true,
         name: true,
@@ -556,6 +601,7 @@ export class KknAttendanceService {
           select: {
             nim: true,
             jurusan: true,
+            isKetua: true,
           },
         },
       },
@@ -607,8 +653,18 @@ export class KknAttendanceService {
         };
       });
 
-    return [...attendedList, ...unAttendedList];
+    const combined = [...attendedList, ...unAttendedList];
+
+    // Sort Ketua Kelompok (isKetua === true) to the VERY TOP (1st position)
+    combined.sort((a: any, b: any) => {
+      const aIsKetua = a.student?.studentProfile?.isKetua ? 1 : 0;
+      const bIsKetua = b.student?.studentProfile?.isKetua ? 1 : 0;
+      return bIsKetua - aIsKetua;
+    });
+
+    return combined;
   }
 }
 
 export const kknAttendanceService = new KknAttendanceService();
+

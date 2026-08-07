@@ -116,7 +116,7 @@ describe("AuthService - registerWarga security", () => {
 
         phone: undefined,
         role: "WARGA",
-        rtRwId: undefined,
+        rwId: undefined,
         fotoProfil: undefined,
       },
       accessToken: expect.any(String),
@@ -124,3 +124,4 @@ describe("AuthService - registerWarga security", () => {
     });
   });
 });
+

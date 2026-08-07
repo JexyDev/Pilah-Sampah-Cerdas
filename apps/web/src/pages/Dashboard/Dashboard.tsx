@@ -1,4 +1,4 @@
-import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Bell, RefreshCw, Megaphone, AlertTriangle, Truck, Archive, Send, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Users } from "lucide-react";
+import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Bell, RefreshCw, Megaphone, AlertTriangle, Truck, Archive, Send, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -41,6 +41,328 @@ const PERIODE_OPTIONS: SelectOption[] = [
   { value: "bulanan", label: "Bulan Ini", sublabel: "30 Hari Terakhir" },
   { value: "tahunan", label: "Tahun Ini", sublabel: "Tahun Berjalan" },
 ];
+
+// ========== Compliance Modal Component ==========
+interface ComplianceModalProps {
+  locations: any[];
+  onClose: () => void;
+}
+
+const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose }) => {
+  const [search, setSearch] = useState("");
+  const [kelurahanFilter, setKelurahanFilter] = useState("SEMUA");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState("HIGHEST");
+
+  const uniqueKelurahan = Array.from(
+    new Set(locations.map((loc) => loc.kelurahan || "Lainnya").filter(Boolean))
+  ).sort();
+
+  const totalRW = locations.length;
+  const avgPatuh =
+    totalRW > 0
+      ? (locations.reduce((acc, curr) => acc + Number(curr.patuh || 0), 0) / totalRW).toFixed(1)
+      : "0";
+  const highPatuhCount = locations.filter((loc) => Number(loc.patuh || 0) >= 85).length;
+  const medPatuhCount = locations.filter(
+    (loc) => Number(loc.patuh || 0) >= 60 && Number(loc.patuh || 0) < 85
+  ).length;
+  const lowPatuhCount = locations.filter((loc) => Number(loc.patuh || 0) < 60).length;
+
+  const filteredLocations = locations
+    .filter((loc) => {
+      const query = search.toLowerCase();
+      const matchSearch =
+        !search ||
+        (loc.rw || "").toLowerCase().includes(query) ||
+        (loc.kelurahan || "").toLowerCase().includes(query);
+
+      const matchKel =
+        kelurahanFilter === "SEMUA" ||
+        (loc.kelurahan || "").toLowerCase() === kelurahanFilter.toLowerCase();
+
+      const patuh = Number(loc.patuh || 0);
+      let matchStatus = true;
+      if (statusFilter === "HIGH") matchStatus = patuh >= 85;
+      else if (statusFilter === "MED") matchStatus = patuh >= 60 && patuh < 85;
+      else if (statusFilter === "LOW") matchStatus = patuh < 60;
+
+      return matchSearch && matchKel && matchStatus;
+    })
+    .sort((a, b) => {
+      const patuhA = Number(a.patuh || 0);
+      const patuhB = Number(b.patuh || 0);
+      if (sortBy === "HIGHEST") return patuhB - patuhA;
+      if (sortBy === "LOWEST") return patuhA - patuhB;
+      if (sortBy === "RW_ASC") return (a.rw || "").localeCompare(b.rw || "");
+      if (sortBy === "KELURAHAN") return (a.kelurahan || "").localeCompare(b.kelurahan || "");
+      return 0;
+    });
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-slate-200/80 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+        {/* Modal Header */}
+        <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white flex justify-between items-start shrink-0">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-white/20 text-emerald-100 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-md">
+                Kecamatan Coblong
+              </span>
+              <span className="bg-emerald-400/20 text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Data Terkini Real-Time
+              </span>
+            </div>
+            <h3 className="font-black text-2xl tracking-tight text-white flex items-center gap-2.5">
+              <LineChart className="text-emerald-300" size={24} />
+              Indeks Kepatuhan Pemilahan Sampah
+            </h3>
+            <p className="text-xs text-emerald-100/90 mt-1 font-medium max-w-xl">
+              Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap RW di wilayah Kecamatan Coblong.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Quick Stats Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 border-b border-slate-100 shrink-0">
+          <div className="bg-white p-3 rounded-2xl border border-slate-200/70 shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rata-rata Kepatuhan</span>
+            <span className="text-lg font-black text-slate-800 mt-0.5 block">{avgPatuh}%</span>
+          </div>
+          <div className="bg-white p-3 rounded-2xl border border-emerald-200/70 shadow-2xs">
+            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Patuh Tinggi (≥85%)</span>
+            <span className="text-lg font-black text-emerald-700 mt-0.5 block">{highPatuhCount} RW</span>
+          </div>
+          <div className="bg-white p-3 rounded-2xl border border-amber-200/70 shadow-2xs">
+            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider block">Sedang (60-84%)</span>
+            <span className="text-lg font-black text-amber-700 mt-0.5 block">{medPatuhCount} RW</span>
+          </div>
+          <div className="bg-white p-3 rounded-2xl border border-rose-200/70 shadow-2xs">
+            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Perlu Perhatian (&lt;60%)</span>
+            <span className="text-lg font-black text-rose-700 mt-0.5 block">{lowPatuhCount} RW</span>
+          </div>
+        </div>
+
+        {/* Filter Controls Bar */}
+        <div className="p-4 bg-white border-b border-slate-100 space-y-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama RW atau Kelurahan..."
+                className="w-full bg-slate-50 border border-slate-200 pl-10 pr-8 py-2 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={kelurahanFilter}
+                onChange={(e) => setKelurahanFilter(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:border-emerald-600 cursor-pointer"
+              >
+                <option value="SEMUA">Semua Kelurahan</option>
+                {uniqueKelurahan.map((kel) => (
+                  <option key={kel} value={kel}>{kel}</option>
+                ))}
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:border-emerald-600 cursor-pointer"
+              >
+                <option value="ALL">Semua Kepatuhan</option>
+                <option value="HIGH">Tinggi (≥85%)</option>
+                <option value="MED">Sedang (60-84%)</option>
+                <option value="LOW">Perlu Perhatian (&lt;60%)</option>
+              </select>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:border-emerald-600 cursor-pointer"
+              >
+                <option value="HIGHEST">Kepatuhan Tertinggi</option>
+                <option value="LOWEST">Kepatuhan Terendah</option>
+                <option value="RW_ASC">Urutkan RW</option>
+                <option value="KELURAHAN">Urutkan Kelurahan</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Quick Filter Badges */}
+          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 overflow-x-auto pb-1">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider shrink-0">Filter Cepat:</span>
+            <button
+              onClick={() => { setStatusFilter("ALL"); setKelurahanFilter("SEMUA"); setSearch(""); }}
+              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
+                statusFilter === "ALL" && kelurahanFilter === "SEMUA" && !search
+                  ? "bg-emerald-600 text-white border-emerald-600"
+                  : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700"
+              }`}
+            >
+              Semua ({totalRW})
+            </button>
+            <button
+              onClick={() => setStatusFilter("HIGH")}
+              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
+                statusFilter === "HIGH"
+                  ? "bg-emerald-600 text-white border-emerald-600"
+                  : "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+              }`}
+            >
+              Tinggi ({highPatuhCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter("MED")}
+              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
+                statusFilter === "MED"
+                  ? "bg-amber-600 text-white border-amber-600"
+                  : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
+              }`}
+            >
+              Sedang ({medPatuhCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter("LOW")}
+              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
+                statusFilter === "LOW"
+                  ? "bg-rose-600 text-white border-rose-600"
+                  : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
+              }`}
+            >
+              Perlu Perhatian ({lowPatuhCount})
+            </button>
+          </div>
+        </div>
+
+        {/* Modal List Body */}
+        <div className="p-6 space-y-3 overflow-y-auto flex-1 bg-slate-50/50">
+          {filteredLocations.length === 0 ? (
+            <div className="py-12 text-center flex flex-col items-center justify-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                <Search size={28} />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-slate-800">Data RW Tidak Ditemukan</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  Tidak ada data wilayah yang sesuai dengan filter atau kata kunci pencarian Anda.
+                </p>
+              </div>
+              <button
+                onClick={() => { setSearch(""); setKelurahanFilter("SEMUA"); setStatusFilter("ALL"); }}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 mt-2"
+              >
+                <RotateCcw size={14} /> Reset Filter
+              </button>
+            </div>
+          ) : (
+            filteredLocations.map((loc) => {
+              const patuh = Number(loc.patuh || 0);
+              const isHigh = patuh >= 85;
+              const isMed = patuh >= 60 && patuh < 85;
+
+              return (
+                <div
+                  key={loc.id || `${loc.rw}-${loc.kelurahan}`}
+                  className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all space-y-3 group"
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-black text-sm text-slate-900 group-hover:text-emerald-700 transition">
+                          {loc.rw}
+                        </h4>
+                        <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                          {loc.kelurahan}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium mt-1 flex items-center gap-2">
+                        <span>{loc.rtCount || 0} RT</span>
+                        <span>•</span>
+                        <span>{loc.titikCount || 0} Titik Tempat Sampah</span>
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs ${
+                          isHigh
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : isMed
+                            ? "bg-amber-50 text-amber-700 border border-amber-200"
+                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                        }`}
+                      >
+                        {isHigh ? (
+                          <CheckCircle2 size={13} className="text-emerald-600" />
+                        ) : isMed ? (
+                          <Sparkles size={13} className="text-amber-600" />
+                        ) : (
+                          <AlertTriangle size={13} className="text-rose-600" />
+                        )}
+                        {patuh}% Patuh
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 block mt-1">
+                        {isHigh ? "Sangat Patuh" : isMed ? "Cukup Patuh" : "Perlu Perhatian"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200/50">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 shadow-2xs ${
+                          isHigh
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                            : isMed
+                            ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                            : "bg-gradient-to-r from-rose-500 to-red-500"
+                        }`}
+                        style={{ width: `${Math.max(patuh, 4)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-4 border-t border-slate-100 bg-white flex justify-between items-center text-xs text-slate-500 shrink-0">
+          <span>Menampilkan <strong className="text-slate-800">{filteredLocations.length}</strong> dari <strong className="text-slate-800">{locations.length}</strong> RW</span>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ========== Warga Dashboard Component ==========
 const WargaDashboard: React.FC = () => {
@@ -253,11 +575,21 @@ const WargaDashboard: React.FC = () => {
 
     setIsSubmittingIssue(true);
     try {
+      let uploadedPhotoUrl = "";
+      if (issuePhoto) {
+        const formData = new FormData();
+        formData.append("image", issuePhoto);
+        const uploadRes = await api.post("/waste/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        uploadedPhotoUrl = uploadRes.data?.data?.imageUrl || "";
+      }
+
       const payload = {
         issueType,
         notes: issueNotes,
-        photoUrl: issuePhotoPreview, // mocked for now
-        evidencePhotoUrl: issuePhotoPreview,
+        photoUrl: uploadedPhotoUrl,
+        evidencePhotoUrl: uploadedPhotoUrl,
         binId: issueBinId
       };
 
@@ -481,7 +813,7 @@ const WargaDashboard: React.FC = () => {
               </h4>
               <p className="text-xs text-green-100 max-w-md leading-relaxed">
                 Gunakan kamera ponsel Anda untuk memindai sampah menggunakan kecerdasan buatan (AI)
-                dan setorkan ke smart bin terdekat untuk hadiah instan.
+                dan setorkan ke tempat sampah terdekat untuk hadiah instan.
               </p>
               <div className="inline-flex items-center gap-1.5 bg-white/20 border border-white/30 rounded-full px-3 py-1 mt-2 text-[10px] font-bold uppercase tracking-wider">
                 <Zap size={14} />
@@ -1358,11 +1690,10 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
-  const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Superadmin monitoring and details
+  // superUser monitoring and details
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [timeFilter, setTimeFilter] = useState("semua"); // harian, mingguan, bulanan, tahunan, semua
 
@@ -1488,10 +1819,9 @@ const Dashboard: React.FC = () => {
 
 
         // Secondary data: jangan gagalkan seluruh dashboard jika salah satu endpoint error
-        const [binsSettled, usersSettled, trendSettled, locSettled, analyticsSettled] =
+        const [binsSettled, trendSettled, locSettled, analyticsSettled] =
           await Promise.allSettled([
             api.get("/bins"),
-            api.get("/users"),
             api.get("/dashboard/trend", { params: { weeks, wilayah: user?.wilayah } }),
             api.get("/bins/locations"),
             api.get("/dashboard/analytics"),
@@ -1517,15 +1847,7 @@ const Dashboard: React.FC = () => {
           setRecentBins([]);
         }
 
-        if (usersSettled.status === "fulfilled") {
-          let usersData = usersSettled.value.data?.data ?? usersSettled.value.data ?? [];
-          if (hasWilayah) {
-            usersData = usersData.filter((u: any) => u.wilayah === user?.wilayah);
-          }
-          setRecentUsers(Array.isArray(usersData) ? usersData.slice(0, 3) : []);
-        } else {
-          setRecentUsers([]);
-        }
+
 
         if (trendSettled.status === "fulfilled" && trendSettled.value.data?.success) {
           setTrendData(trendSettled.value.data.data);
@@ -1668,14 +1990,14 @@ const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Right Control: Indeks Kepatuhan RT/RW Button */}
+        {/* Right Control: Indeks Kepatuhan Pemilahan Sampah Button */}
         <div className="flex items-center justify-end">
           <button
             onClick={() => setShowComplianceModal(true)}
             className="w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/30"
           >
             <LineChart size={16} />
-            <span>Indeks Kepatuhan RT/RW</span>
+            <span>Indeks Kepatuhan Pemilahan Sampah</span>
           </button>
         </div>
       </div>
@@ -2106,7 +2428,7 @@ const Dashboard: React.FC = () => {
                   Data Tempat Sampah Terbaru
                 </h4>
                 <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
-                  Monitoring Kapasitas & Status QR Bin Terdaftar
+                  Monitoring Kapasitas & Status QR Tempat Sampah Terdaftar
                 </p>
               </div>
             </div>
@@ -2221,14 +2543,14 @@ const Dashboard: React.FC = () => {
                             <button
                               onClick={() => setSelectedBinForDetail(bin)}
                               className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                              title="Detail Bin"
+                              title="Detail Tempat Sampah"
                             >
                               <Eye size={15} />
                             </button>
                             <button
                               onClick={() => navigate(`/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
                               className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                              title="Edit Bin"
+                              title="Edit Tempat Sampah"
                             >
                               <Pencil size={15} />
                             </button>
@@ -2250,173 +2572,99 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Aktivitas Pengguna Baru Card */}
+        {/* Sesi Aktif Card */}
         <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between card-polish">
-          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
-                <Users size={16} />
+          <div>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shadow-2xs">
+                  <UserCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-[17px] text-slate-800 tracking-tight">
+                    Sesi Aktif
+                  </h4>
+                  <p className="text-xs text-slate-400 font-medium leading-none mt-1">
+                    Pengguna yang sesinya masih terbuka
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-extrabold text-[16px] text-slate-800 tracking-tight">
-                  Aktivitas Pengguna Baru
-                </h4>
-                <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
-                  Pengguna Terdaftar & Operator Aktif
-                </p>
+              <span className="text-2xl font-black text-slate-900 tracking-tight">
+                4
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
+                  <Code2 size={16} className="text-slate-500" />
+                  <span>Super User / Task Force</span>
+                </div>
+                <span className="font-black text-slate-900 text-sm">1</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
+                  <ShieldCheck size={16} />
+                  <span>Operator (DLH / Camat / Lurah)</span>
+                </div>
+                <span className="font-bold text-slate-300 text-sm">1</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
+                  <Award size={16} />
+                  <span>Rukun Warga (RW)</span>
+                </div>
+                <span className="font-bold text-slate-300 text-sm">0</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
+                  <BookOpen size={16} className="text-emerald-600" />
+                  <span>Dosen DPL</span>
+                </div>
+                <span className="font-black text-slate-900 text-sm">1</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
+                  <Truck size={16} className="text-rose-600" />
+                  <span>Petugas Residu</span>
+                </div>
+                <span className="font-black text-slate-900 text-sm">1</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
+                  <GraduationCap size={16} />
+                  <span>Mahasiswa KKN</span>
+                </div>
+                <span className="font-bold text-slate-300 text-sm">0</span>
               </div>
             </div>
-            <Link
-              to="/manajemen-pengguna"
-              className="text-xs font-extrabold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1 bg-blue-50 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl border border-blue-200/60"
-            >
-              Lihat Semua <ChevronRight size={14} />
-            </Link>
           </div>
 
-          <div className="space-y-3 min-h-[300px]">
-            {recentUsers.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 font-medium text-xs">
-                Belum ada data pengguna baru.
-              </div>
-            ) : (
-              recentUsers.map((u) => {
-                const roleStr = String(u.role || u.peran || "WARGA").toUpperCase();
-                const isKkn = roleStr.includes("KKN") || roleStr.includes("MAHASISWA");
-                const isPetugas = roleStr.includes("PETUGAS") || roleStr.includes("RESIDU");
-                const isDpl = roleStr.includes("DPL") || roleStr.includes("DOSEN");
-
-                let roleBadgeBg = "bg-slate-100 text-slate-700 border-slate-200";
-                let avatarBg = "bg-gradient-to-tr from-slate-600 to-slate-500 text-white";
-                let roleLabel = u.role || "Warga";
-
-                if (isKkn) {
-                  roleBadgeBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
-                  avatarBg = "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white";
-                  roleLabel = "Mahasiswa KKN";
-                } else if (isPetugas) {
-                  roleBadgeBg = "bg-rose-50 text-rose-700 border-rose-200";
-                  avatarBg = "bg-gradient-to-tr from-rose-600 to-red-500 text-white";
-                  roleLabel = "Petugas Residu";
-                } else if (isDpl) {
-                  roleBadgeBg = "bg-blue-50 text-blue-700 border-blue-200";
-                  avatarBg = "bg-gradient-to-tr from-blue-600 to-indigo-500 text-white";
-                  roleLabel = "Dosen DPL";
-                }
-
-                return (
-                  <div
-                    key={u.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-slate-50/80 transition-all border border-slate-100 hover:border-slate-200/80 shadow-2xs group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Avatar with Role Styling */}
-                      <div className={`w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center font-black text-sm shadow-xs shrink-0 ring-2 ring-white`}>
-                        {isKkn ? <GraduationCap size={18} /> : isPetugas ? <Truck size={18} /> : u.name.charAt(0).toUpperCase()}
-                      </div>
-
-                      {/* Name, Role & Phone */}
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-extrabold text-slate-800 leading-snug truncate group-hover:text-emerald-700 transition-colors">
-                          {u.name}
-                        </p>
-                        <p className="text-[11px] text-slate-400 font-medium mt-0.5 truncate">
-                          <span className={`inline-block px-1.5 py-0.5 text-[9.5px] font-extrabold rounded-md border ${roleBadgeBg}`}>
-                            {roleLabel}
-                          </span>
-                          {u.phone && ` • ${u.phone}`}
-                        </p>
-                        {u.wilayah && (
-                          <div className="mt-1">
-                            <span className="inline-block text-[9.5px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                              {u.wilayah}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Status Pill */}
-                    <div className="shrink-0 flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 text-[10.5px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Aktif
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+          <div className="mt-6 pt-4 border-t border-slate-100">
+            <Link
+              to="/pengguna-online"
+              className="w-full py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-2 shadow-2xs group cursor-pointer"
+            >
+              Kelola Pengguna Online <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
+            </Link>
           </div>
         </div>
       </div>
 
 
-      {/* === Footer === */}
-      <footer className="flex justify-between items-center pt-4 pb-4 border-t border-outline-variant/10">
-        <p className="text-[12px] text-on-surface-variant">
-          © 2026 TrashCare. Sampah Terdata, Lingkungan Tertata.
-        </p>
-        <div className="flex gap-gutter">
-          <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
-            Kebijakan Privasi
-          </a>
-          <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
-            Syarat & Ketentuan
-          </a>
-          <a href="#" className="text-[12px] text-on-surface-variant hover:text-primary transition-colors">
-            Bantuan
-          </a>
-        </div>
-      </footer>
+
 
       {/* Compliance List Modal */}
       {showComplianceModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-              <h3 className="font-bold text-[20px] text-on-surface flex items-center gap-2">
-                <LineChart className="text-primary" />
-                Kepatuhan Partisipasi RT/RW
-              </h3>
-              <button
-                onClick={() => setShowComplianceModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto">
-              <p className="text-xs text-on-surface-variant">
-                Persentase rumah tangga yang aktif menyetorkan sampah dibanding total rumah tangga
-                terdaftar pada masing-masing RW di wilayah Kecamatan Coblong.
-              </p>
-              <div className="space-y-3 text-xs">
-                {locations.map((loc) => (
-                  <div key={loc.id} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-bold text-sm text-on-surface">{loc.rw} ({loc.kelurahan})</h4>
-                        <p className="text-[10px] text-on-surface-variant">
-                          {loc.rtCount} RT • {loc.titikCount} Titik tempat sampah
-                        </p>
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${loc.patuh >= 85 ? "bg-green-100 text-green-700" : loc.patuh >= 60 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
-                        {loc.patuh}% Patuh
-                      </span>
-                    </div>
-                    <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${loc.patuh >= 85 ? "bg-primary" : loc.patuh >= 60 ? "bg-yellow-500" : "bg-red-500"}`}
-                        style={{ width: `${loc.patuh}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ComplianceModal
+          locations={locations}
+          onClose={() => setShowComplianceModal(false)}
+        />
       )}
 
       {/* Composition Detail Modal */}

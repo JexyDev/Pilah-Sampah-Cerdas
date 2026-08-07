@@ -42,7 +42,7 @@ async function main() {
   // 2. Seed Roles
   console.log("Creating roles...");
   const roles = [
-    "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT",
+    "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT",
     "PETUGAS_RESIDU", "WARGA", "MAHASISWA_KKN"
   ];
   const roleMap: Record<string, any> = {};
@@ -89,16 +89,16 @@ async function main() {
     data: { name: "Anorganik", description: "Sampah plastik, kertas, logam", pointsPerKg: 15 }
   });
 
-  // 5. Seed Super Admin & RW Accounts
+  // 5. Seed SUPER USER & RW Accounts
   console.log("Creating core users...");
-  const superAdmin = await prisma.user.create({
+  const superUser = await prisma.user.create({
     data: {
       phone: "+628111111111",
-      email: "superadmin@psc.id",
-      name: "Super Admin TrashCare",
+      email: "superUser@psc.id",
+      name: "SUPER USER TrashCare",
       password: passwordHash,
       status: "Aktif",
-      roleId: roleMap["SUPER_ADMIN"].id,
+      roleId: roleMap["SUPER_USER"].id,
       nik: "3273010000000001"
     }
   });

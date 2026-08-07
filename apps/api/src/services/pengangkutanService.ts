@@ -9,16 +9,16 @@ import { PrismaClient, DispatchStatus } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export class PengangkutanService {
-  async getAll(filters?: { status?: string; rtRwId?: number }) {
+  async getAll(filters?: { status?: string; rwId?: number }) {
     const whereClause: any = {};
 
     if (filters?.status) {
       whereClause.status = filters.status as DispatchStatus;
     }
 
-    if (filters?.rtRwId) {
+    if (filters?.rwId) {
       whereClause.bin = {
-        rtRwId: filters.rtRwId,
+        rwId: filters.rwId,
       };
     }
 
@@ -27,7 +27,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rtRw: {
+            rw: {
               include: {
                 kelurahan: true,
               },
@@ -49,7 +49,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rtRw: {
+            rw: {
               include: {
                 kelurahan: true,
               },
@@ -87,7 +87,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rtRw: {
+            rw: {
               include: {
                 kelurahan: true,
               },
@@ -127,7 +127,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rtRw: {
+            rw: {
               include: {
                 kelurahan: true,
               },
@@ -153,3 +153,4 @@ export class PengangkutanService {
 }
 
 export const pengangkutanService = new PengangkutanService();
+

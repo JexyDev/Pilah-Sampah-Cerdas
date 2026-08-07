@@ -280,7 +280,7 @@ router.put("/profile", authMiddleware, authController.updateProfile);
  */
 router.put("/password", authMiddleware, authController.updatePassword);
 router.post("/change-password", authMiddleware, authController.changePassword);
-router.post("/register/admin-dlh", authMiddleware, roleMiddleware(["SUPER_ADMIN"]), authController.registerAdminDlh);
+router.post("/register/admin-dlh", authMiddleware, roleMiddleware(["SUPER_USER"]), authController.registerAdminDlh);
 router.post("/register/camat", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerCamat);
 router.post("/register/lurah", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerLurah);
 router.post("/register/rw", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerRw);

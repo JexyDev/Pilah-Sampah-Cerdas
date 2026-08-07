@@ -102,63 +102,69 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
 
       {/* Item List */}
       <div className="my-3 flex-1 flex flex-col justify-start space-y-2 min-h-[240px]">
-        {displayItems.map((item, idx) => {
-          const rawPct = Math.round((item.points / (topScore || 1)) * 100);
-          const barPct = Math.min(100, Math.max(8, rawPct));
-          const isHovered = hoveredIndex === idx;
+        {displayItems.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 italic text-xs py-8">
+            Belum ada data poin terverifikasi.
+          </div>
+        ) : (
+          displayItems.map((item, idx) => {
+            const rawPct = topScore > 0 ? Math.round((item.points / topScore) * 100) : 0;
+            const barPct = Math.min(100, Math.max(8, rawPct));
+            const isHovered = hoveredIndex === idx;
 
-          return (
-            <div
-              key={`${item.rank}-${item.name}`}
-              onMouseEnter={() => setHoveredIndex(idx)}
-              onMouseLeave={() => setHoveredIndex(null)}
-              className={`flex items-center gap-1.5 text-xs group px-2 py-1.5 rounded-xl transition-all duration-150 border min-w-0 ${
-                isHovered
-                  ? "bg-slate-50 border-slate-300/80 shadow-xs scale-[1.01]"
-                  : "bg-white border-transparent"
-              }`}
-            >
-              {/* Rank Icon / Medal */}
-              {getRankBadge(item.rank)}
+            return (
+              <div
+                key={`${item.rank}-${item.name}`}
+                onMouseEnter={() => setHoveredIndex(idx)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                className={`flex items-center gap-1.5 text-xs group px-2 py-1.5 rounded-xl transition-all duration-150 border min-w-0 ${
+                  isHovered
+                    ? "bg-slate-50 border-slate-300/80 shadow-xs scale-[1.01]"
+                    : "bg-white border-transparent"
+                }`}
+              >
+                {/* Rank Icon / Medal */}
+                {getRankBadge(item.rank)}
 
-              {/* Name & Subtitle */}
-              <div className="flex-1 min-w-0 pr-1">
-                <p className="font-extrabold text-slate-800 text-[12px] sm:text-[13px] leading-snug group-hover:text-emerald-700 truncate" title={item.name}>
-                  {item.name}
-                </p>
-                {item.subtitle && (
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 leading-tight font-medium truncate">
-                    {item.subtitle}
+                {/* Name & Subtitle */}
+                <div className="flex-1 min-w-0 pr-1">
+                  <p className="font-extrabold text-slate-800 text-[12px] sm:text-[13px] leading-snug group-hover:text-emerald-700 truncate" title={item.name}>
+                    {item.name}
                   </p>
-                )}
-              </div>
-
-              {/* Interactive Progress Bar & Percentage Ratio */}
-              <div className="w-16 sm:w-24 shrink-0 flex flex-col items-end gap-0.5">
-                <div className="flex justify-between items-center w-full text-[9px] text-slate-500 font-bold">
-                  <span className="text-slate-400 font-normal hidden sm:inline">Rasio</span>
-                  <span className="text-slate-700">{rawPct}%</span>
+                  {item.subtitle && (
+                    <p className="text-[10px] sm:text-[11px] text-slate-400 leading-tight font-medium truncate">
+                      {item.subtitle}
+                    </p>
+                  )}
                 </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
-                  <div
-                    className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
-                    style={{ width: `${barPct}%`, backgroundColor: barColor }}
-                  />
+
+                {/* Interactive Progress Bar & Percentage Ratio */}
+                <div className="w-16 sm:w-24 shrink-0 flex flex-col items-end gap-0.5">
+                  <div className="flex justify-between items-center w-full text-[9px] text-slate-500 font-bold">
+                    <span className="text-slate-400 font-normal hidden sm:inline">Rasio</span>
+                    <span className="text-slate-700">{rawPct}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
+                      style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                    />
+                  </div>
+                </div>
+
+                {/* Points */}
+                <div className="w-14 sm:w-16 text-right shrink-0">
+                  <span className="font-extrabold text-slate-800 text-[11px] sm:text-[13px] font-mono block leading-none truncate">
+                    {item.points.toLocaleString("id-ID")}
+                  </span>
+                  <span className="text-[8px] sm:text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
+                    {unitLabel}
+                  </span>
                 </div>
               </div>
-
-              {/* Points */}
-              <div className="w-14 sm:w-16 text-right shrink-0">
-                <span className="font-extrabold text-slate-800 text-[11px] sm:text-[13px] font-mono block leading-none truncate">
-                  {item.points.toLocaleString("id-ID")}
-                </span>
-                <span className="text-[8px] sm:text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
-                  {unitLabel}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Card Footer */}
@@ -180,106 +186,14 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
 
 
 export const LeaderboardWidget: React.FC = () => {
-  // Default Full Mock Datasets (matching screenshot)
-  const defaultWarga: LeaderboardItem[] = [
-    { rank: 1, name: "Dewi Lestari", subtitle: "RW 06, Kel. Sekeloa", points: 12350 },
-    { rank: 2, name: "Budi Hartono", subtitle: "RW 02, Kel. Dago", points: 9870 },
-    { rank: 3, name: "Siti Aminah", subtitle: "RW 01, Kel. Sekeloa", points: 8420 },
-    { rank: 4, name: "Rizky Maulana", subtitle: "RW 03, Kel. Cibeunying", points: 7560 },
-    { rank: 5, name: "Ahmad Fauzi", subtitle: "RW 02, Kel. Sekeloa", points: 7120 },
-    { rank: 6, name: "Tuti Handayani", subtitle: "RW 04, Kel. Cibeunying", points: 6780 },
-    { rank: 7, name: "Rina Marlina", subtitle: "RW 01, Kel. Dago", points: 6450 },
-    { rank: 8, name: "Hendra Wijaya", subtitle: "RW 05, Kel. Cipedes", points: 6230 },
-    { rank: 9, name: "Yuniar", subtitle: "RW 08, Kel. Sekeloa", points: 5890 },
-    { rank: 10, name: "Agus Setiawan", subtitle: "RW 03, Kel. Cibeunying", points: 5430 },
-  ];
-
-  const defaultPetugas: LeaderboardItem[] = [
-    { rank: 1, name: "Dodi Kurniawan", subtitle: "Kel. Sekeloa", points: 8620 },
-    { rank: 2, name: "Agus Salim", subtitle: "Kel. Dago", points: 7540 },
-    { rank: 3, name: "Iwan Setiawan", subtitle: "Kel. Cibeunying", points: 6980 },
-    { rank: 4, name: "Asep Saepudin", subtitle: "Kel. Cipedes", points: 6450 },
-    { rank: 5, name: "Tedi Hermawan", subtitle: "Kel. Cibeunying", points: 6120 },
-    { rank: 6, name: "Ujang Rehman", subtitle: "Kel. Dago", points: 5780 },
-    { rank: 7, name: "Rahmat Hidayat", subtitle: "Kel. Sekeloa", points: 5430 },
-    { rank: 8, name: "Deni Surya", subtitle: "Kel. Cipedes", points: 5190 },
-    { rank: 9, name: "Yayan Sopiyan", subtitle: "Kel. Dago", points: 4860 },
-    { rank: 10, name: "Cecep Maulana", subtitle: "Kel. Sekeloa", points: 4520 },
-  ];
-
-  const defaultRw: LeaderboardItem[] = [
-    { rank: 1, name: "RW 01", subtitle: "Kel. Sekeloa", points: 24560 },
-    { rank: 2, name: "RW 02", subtitle: "Kel. Dago", points: 21870 },
-    { rank: 3, name: "RW 06", subtitle: "Kel. Sekeloa", points: 19420 },
-    { rank: 4, name: "RW 03", subtitle: "Kel. Cibeunying", points: 18230 },
-    { rank: 5, name: "RW 05", subtitle: "Kel. Cibeunying", points: 16870 },
-    { rank: 6, name: "RW 04", subtitle: "Kel. Cipedes", points: 15430 },
-    { rank: 7, name: "RW 07", subtitle: "Kel. Cipedes", points: 13980 },
-    { rank: 8, name: "RW 08", subtitle: "Kel. Dago", points: 12570 },
-    { rank: 9, name: "RW 09", subtitle: "Kel. Cibeunying", points: 10620 },
-    { rank: 10, name: "RW 10", subtitle: "Kel. Cibeunying", points: 9340 },
-  ];
-
-  const defaultKelurahan: LeaderboardItem[] = [
-    { rank: 1, name: "Kelurahan Sekeloa", points: 56230 },
-    { rank: 2, name: "Kelurahan Dago", points: 49700 },
-    { rank: 3, name: "Kelurahan Cibeunying", points: 45120 },
-    { rank: 4, name: "Kelurahan Cipedes", points: 37800 },
-    { rank: 5, name: "Kelurahan Lebakgede", points: 29780 },
-    { rank: 6, name: "Kelurahan Sukajadi", points: 28680 },
-    { rank: 7, name: "Kelurahan Pasirkaliki", points: 26480 },
-    { rank: 8, name: "Kelurahan Tamansari", points: 23160 },
-    { rank: 9, name: "Kelurahan Sukapura", points: 20340 },
-    { rank: 10, name: "Kelurahan Pasirwangi", points: 18540 },
-  ];
-
-  const defaultMahasiswa: LeaderboardItem[] = [
-    { rank: 1, name: "Andi Firmansyah", subtitle: "RW 01 / RT 02 (Kel. Sekeloa)", points: 7820 },
-    { rank: 2, name: "Bella Saphira", subtitle: "RW 01 / RT 01 (Kel. Dago)", points: 7120 },
-    { rank: 3, name: "Ciko Jeriko", subtitle: "RW 02 / RT 01 (Kel. Sekeloa)", points: 6880 },
-    { rank: 4, name: "Dinda Aprilia", subtitle: "RW 03 / RT 02 (Kel. Cibeunying)", points: 6230 },
-    { rank: 5, name: "Fajar Ramadhan", subtitle: "RW 04 / RT 01 (Kel. Cibeunying)", points: 5940 },
-    { rank: 6, name: "Gina Nuraini", subtitle: "RW 05 / RT 02 (Kel. Cipedes)", points: 5780 },
-    { rank: 7, name: "Muhammad Rayhan", subtitle: "RW 06 / RT 01 (Kel. Cipedes)", points: 5600 },
-    { rank: 8, name: "Nabila Zahran", subtitle: "RW 07 / RT 01 (Kel. Dago)", points: 5210 },
-    { rank: 9, name: "Ricki Ardiansyah", subtitle: "RW 08 / RT 01 (Kel. Dago)", points: 4980 },
-    { rank: 10, name: "Putri Melati", subtitle: "RW 09 / RT 02 (Kel. Sekeloa)", points: 4750 },
-  ];
-
-  const defaultKelompok: LeaderboardItem[] = [
-    { rank: 1, name: "Kelompok A", subtitle: "Kel. Sekeloa", points: 29680 },
-    { rank: 2, name: "Kelompok B", subtitle: "Kel. Dago", points: 26430 },
-    { rank: 3, name: "Kelompok C", subtitle: "Kel. Cibeunying", points: 24150 },
-    { rank: 4, name: "Kelompok D", subtitle: "Kel. Cipedes", points: 21760 },
-    { rank: 5, name: "Kelompok E", subtitle: "Kel. Dago", points: 20340 },
-    { rank: 6, name: "Kelompok F", subtitle: "Kel. Cibeunying", points: 19120 },
-    { rank: 7, name: "Kelompok G", subtitle: "Kel. Sekeloa", points: 17350 },
-    { rank: 8, name: "Kelompok H", subtitle: "Kel. Cipedes", points: 15820 },
-    { rank: 9, name: "Kelompok I", subtitle: "Kel. Dago", points: 14200 },
-    { rank: 10, name: "Kelompok J", subtitle: "Kel. Sekeloa", points: 12870 },
-  ];
-
-  const defaultDpl: LeaderboardItem[] = [
-    { rank: 1, name: "Dr. Ir. Rudi Hermawan, M.T.", points: 9420 },
-    { rank: 2, name: "Dr. Siti Rahmawati, M.Si.", points: 8730 },
-    { rank: 3, name: "Prof. Dr. Andi Setiawan, M.Sc.", points: 7980 },
-    { rank: 4, name: "Dr. Nunik Kurniasih, S.T., M.T.", points: 7120 },
-    { rank: 5, name: "Dr. Dodi Supriadi, M.Pd.", points: 6540 },
-    { rank: 6, name: "Dr. Yulia Puspitasari, M.Kom.", points: 5980 },
-    { rank: 7, name: "Dr. Asep Hidayat, S.E., M.M.", points: 5820 },
-    { rank: 8, name: "Dr. Bambang Irawan, M.Sc.", points: 5230 },
-    { rank: 9, name: "Dr. Rina Marlina, S.T., M.T.", points: 4890 },
-    { rank: 10, name: "Dr. Hendra Wijaya, M.T.", points: 4520 },
-  ];
-
-  // Dynamic API state overlay
-  const [wargaList, setWargaList] = useState<LeaderboardItem[]>(defaultWarga);
-  const [petugasList, setPetugasList] = useState<LeaderboardItem[]>(defaultPetugas);
-  const [rwList, setRwList] = useState<LeaderboardItem[]>(defaultRw);
-  const [kelurahanList, setKelurahanList] = useState<LeaderboardItem[]>(defaultKelurahan);
-  const [mahasiswaList, setMahasiswaList] = useState<LeaderboardItem[]>(defaultMahasiswa);
-  const [kelompokList, setKelompokList] = useState<LeaderboardItem[]>(defaultKelompok);
-  const [dplList, setDplList] = useState<LeaderboardItem[]>(defaultDpl);
+  // Real DB state (starts empty, filled from API)
+  const [wargaList, setWargaList] = useState<LeaderboardItem[]>([]);
+  const [petugasList, setPetugasList] = useState<LeaderboardItem[]>([]);
+  const [rwList, setRwList] = useState<LeaderboardItem[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<LeaderboardItem[]>([]);
+  const [mahasiswaList, setMahasiswaList] = useState<LeaderboardItem[]>([]);
+  const [kelompokList, setKelompokList] = useState<LeaderboardItem[]>([]);
+  const [dplList, setDplList] = useState<LeaderboardItem[]>([]);
 
   useEffect(() => {
     fetchLiveLeaderboards();
@@ -290,38 +204,39 @@ export const LeaderboardWidget: React.FC = () => {
       const res = await api.get("/gamification/leaderboard");
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
-        if (d.citizens && d.citizens.length > 0) {
+        if (d.citizens) {
           const apiWarga = d.citizens.map((c: any, i: number) => ({
             rank: i + 1,
             name: c.name,
-            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : (defaultWarga[i]?.subtitle || "RW 06, Kel. Sekeloa"),
-            points: c.totalPoints > 0 ? c.totalPoints : (defaultWarga[i]?.points || Math.max(1000, 12350 - i * 700)),
+            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : "Wilayah Coblong",
+            points: Number(c.totalPoints || 0),
           }));
           setWargaList(apiWarga);
         }
-        if (d.pengangkut && d.pengangkut.length > 0) {
+        if (d.pengangkut) {
           const apiPetugas = d.pengangkut.map((p: any, i: number) => ({
             rank: i + 1,
             name: p.name,
-            subtitle: p.wilayah || "Kel. Sekeloa",
-            points: p.totalPoints > 0 ? p.totalPoints : (defaultPetugas[i]?.points || Math.max(800, 8620 - i * 400)),
+            subtitle: p.wilayah || "Coblong",
+            points: Number(p.totalPoints || 0),
           }));
           setPetugasList(apiPetugas);
         }
-        if (d.rtRw && d.rtRw.length > 0) {
+        if (d.rtRw) {
           const apiRw = d.rtRw.map((r: any, i: number) => ({
             rank: i + 1,
-            name: r.rtRwName || `RW 0${i + 1}`,
-            subtitle: `Kel. ${r.kelurahanName || "Sekeloa"}`,
-            points: r.totalPoints > 0 ? r.totalPoints : (defaultRw[i]?.points || Math.max(2000, 24560 - i * 1500)),
+            name: r.rtRwName || `RW ${i + 1}`,
+            subtitle: `Kel. ${r.kelurahanName || "Coblong"}`,
+            points: Number(r.totalPoints || 0),
           }));
           setRwList(apiRw);
         }
-        if (d.regions && d.regions.length > 0) {
+        if (d.regions) {
           const apiKel = d.regions.map((k: any, i: number) => ({
             rank: i + 1,
             name: `Kelurahan ${k.kelurahanName}`,
-            points: k.totalPoints > 0 ? k.totalPoints : (defaultKelurahan[i]?.points || Math.max(5000, 56230 - i * 4000)),
+            subtitle: "Kecamatan Coblong",
+            points: Number(k.totalPoints || 0),
           }));
           setKelurahanList(apiKel);
         }
@@ -330,30 +245,30 @@ export const LeaderboardWidget: React.FC = () => {
       const resKkn = await api.get("/gamification/leaderboard-kkn");
       if (resKkn.data?.success && resKkn.data.data) {
         const d = resKkn.data.data;
-        if (d.students && d.students.length > 0) {
+        if (d.students) {
           const apiMhs = d.students.map((s: any, i: number) => ({
             rank: i + 1,
             name: s.name,
-            subtitle: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : (defaultMahasiswa[i]?.subtitle || "RW 01 / RT 02 (Kel. Sekeloa)"),
-            points: s.finalScore > 0 ? s.finalScore : (defaultMahasiswa[i]?.points || Math.max(500, 7820 - i * 350)),
+            subtitle: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : "Mahasiswa KKN",
+            points: Number(s.finalScore || 0),
           }));
           setMahasiswaList(apiMhs);
         }
-        if (d.groups && d.groups.length > 0) {
+        if (d.groups) {
           const apiGrp = d.groups.map((g: any, i: number) => ({
             rank: i + 1,
             name: g.name,
-            subtitle: "Kel. Sekeloa",
-            points: g.avgScore > 0 ? g.avgScore : (defaultKelompok[i]?.points || Math.max(3000, 29680 - i * 1800)),
+            subtitle: "Tim Dampingan KKN",
+            points: Number(g.avgScore || 0),
           }));
           setKelompokList(apiGrp);
         }
-        if (d.dpl && d.dpl.length > 0) {
+        if (d.dpl) {
           const apiDpl = d.dpl.map((dp: any, i: number) => ({
             rank: i + 1,
             name: dp.name,
             subtitle: `DPL (${dp.totalGroups || 0} Kelompok)`,
-            points: dp.points > 0 ? dp.points : (defaultDpl[i]?.points || Math.max(1000, 9420 - i * 500)),
+            points: Number(dp.points || 0),
           }));
           setDplList(apiDpl);
         }
@@ -381,14 +296,14 @@ export const LeaderboardWidget: React.FC = () => {
                   Grafik Kepatuhan Pemilahan per Kelurahan
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Persentase kepatuhan dalam pemilahan sampah
+                  Persentase kepatuhan dalam pemilahan sampah real-time
                 </p>
               </div>
             </div>
 
             <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center gap-1">
-              <span className="text-[10px] text-emerald-600 font-bold uppercase">Rata-rata</span>
-              <span className="text-emerald-700">81%</span>
+              <span className="text-[10px] text-emerald-600 font-bold uppercase">Status</span>
+              <span className="text-emerald-700">Terverifikasi</span>
             </div>
           </div>
 
@@ -404,33 +319,43 @@ export const LeaderboardWidget: React.FC = () => {
             </div>
 
             <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {[
-                { name: "Kel. Sekeloa", val: 92 },
-                { name: "Kel. Dago", val: 88 },
-                { name: "Kel. Cibeunying", val: 84 },
-                { name: "Kel. Cipedes", val: 79 },
-                { name: "Kel. Lebakgede", val: 74 },
-                { name: "Kel. Tamansari", val: 69 },
-              ].map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                  <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
-                    {d.val}%
-                  </span>
-                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                    <div
-                      className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                      style={{ height: `${d.val}%` }}
-                    ></div>
+              {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
+                { name: "Kel. Sekeloa", points: 0 },
+                { name: "Kel. Dago", points: 0 },
+                { name: "Kel. Sadang Serang", points: 0 },
+                { name: "Kel. Sekeloa", points: 0 },
+                { name: "Kel. Lebak Gede", points: 0 },
+                { name: "Kel. Cipaganti", points: 0 },
+              ]).map((d, idx) => {
+                const valPct = d.points > 0 ? Math.min(100, Math.round(d.points * 5)) : 0;
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                    <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
+                      {valPct}%
+                    </span>
+                    <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                      <div
+                        className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                        style={{ height: `${valPct}%` }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {["Kel. Sekeloa", "Kel. Dago", "Kel. Cibeunying", "Kel. Cipedes", "Kel. Lebakgede", "Kel. Tamansari"].map((name, idx) => (
+            {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
+              { name: "Sekeloa" },
+              { name: "Dago" },
+              { name: "Sadang Serang" },
+              { name: "Cibeunying" },
+              { name: "Lebak Gede" },
+              { name: "Cipaganti" },
+            ]).map((item, idx) => (
               <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {name}
+                {item.name.replace("Kelurahan ", "")}
               </span>
             ))}
           </div>
@@ -448,56 +373,68 @@ export const LeaderboardWidget: React.FC = () => {
                   Grafik Volume Sampah per Kelurahan
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Total volume sampah terkumpul (ton)
+                  Total volume sampah terkumpul real (Kg)
                 </p>
               </div>
             </div>
 
             <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
-              <span className="text-sky-700">15.6 ton</span>
+              <span className="text-sky-700">
+                {kelurahanList.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(1)} Kg
+              </span>
             </div>
           </div>
 
           {/* Bar Chart Area */}
           <div className="pt-4 flex gap-2 items-end">
             <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-40 text-right select-none shrink-0 pb-5">
-              <span>5 ton</span>
-              <span>4</span>
-              <span>3</span>
-              <span>2</span>
-              <span>1</span>
+              <span>{Math.max(...kelurahanList.map((k) => k.points || 0), 10).toFixed(0)} Kg</span>
+              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.8).toFixed(0)}</span>
+              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.6).toFixed(0)}</span>
+              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.4).toFixed(0)}</span>
+              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.2).toFixed(0)}</span>
               <span>0</span>
             </div>
 
             <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {[
-                { name: "Kel. Sekeloa", val: 3.4 },
-                { name: "Kel. Dago", val: 3.1 },
-                { name: "Kel. Cibeunying", val: 2.8 },
-                { name: "Kel. Cipedes", val: 2.4 },
-                { name: "Kel. Lebakgede", val: 2.1 },
-                { name: "Kel. Tamansari", val: 1.8 },
-              ].map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                  <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
-                    {d.val} ton
-                  </span>
-                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                    <div
-                      className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                      style={{ height: `${(d.val / 5) * 100}%` }}
-                    ></div>
+              {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
+                { name: "Sekeloa", points: 0 },
+                { name: "Dago", points: 0 },
+                { name: "Sadang Serang", points: 0 },
+                { name: "Cibeunying", points: 0 },
+                { name: "Lebak Gede", points: 0 },
+                { name: "Cipaganti", points: 0 },
+              ]).map((d, idx) => {
+                const maxVol = Math.max(...kelurahanList.map((k) => k.points || 0), 10);
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                    <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
+                      {(d.points || 0).toFixed(1)} Kg
+                    </span>
+                    <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                      <div
+                        className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                        style={{ height: `${maxVol > 0 ? ((d.points || 0) / maxVol) * 100 : 0}%` }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {["Kel. Sekeloa", "Kel. Dago", "Kel. Cibeunying", "Kel. Cipedes", "Kel. Lebakgede", "Kel. Tamansari"].map((name, idx) => (
+            {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
+              { name: "Sekeloa" },
+              { name: "Dago" },
+              { name: "Sadang Serang" },
+              { name: "Cibeunying" },
+              { name: "Lebak Gede" },
+              { name: "Cipaganti" },
+            ]).map((item, idx) => (
               <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {name}
+                {item.name.replace("Kelurahan ", "")}
               </span>
             ))}
           </div>
@@ -529,7 +466,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={wargaList}
-            maxPoints={wargaList[0]?.points || 12350}
+            maxPoints={wargaList[0]?.points || 0}
             linkTo="/leaderboard?system=system1&tab=citizens"
           />
 
@@ -540,7 +477,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-rose-500"
             barColor="#ef4444"
             items={petugasList}
-            maxPoints={petugasList[0]?.points || 8620}
+            maxPoints={petugasList[0]?.points || 0}
             linkTo="/leaderboard?system=system1&tab=pengangkut"
           />
 
@@ -551,7 +488,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={rwList}
-            maxPoints={rwList[0]?.points || 24560}
+            maxPoints={rwList[0]?.points || 0}
             linkTo="/leaderboard?system=system1&tab=rtrw"
           />
 
@@ -562,7 +499,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-blue-600"
             barColor="#3b82f6"
             items={kelurahanList}
-            maxPoints={kelurahanList[0]?.points || 56230}
+            maxPoints={kelurahanList[0]?.points || 0}
             linkTo="/leaderboard?system=system1&tab=kelurahan"
           />
         </div>
@@ -592,7 +529,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={mahasiswaList}
-            maxPoints={mahasiswaList[0]?.points || 7820}
+            maxPoints={mahasiswaList[0]?.points || 0}
             linkTo="/leaderboard?system=system2&tab=students"
           />
 
@@ -603,7 +540,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={kelompokList}
-            maxPoints={kelompokList[0]?.points || 29680}
+            maxPoints={kelompokList[0]?.points || 0}
             linkTo="/leaderboard?system=system2&tab=groups"
           />
 
@@ -614,7 +551,7 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-teal-600"
             barColor="#10b981"
             items={dplList}
-            maxPoints={dplList[0]?.points || 9420}
+            maxPoints={dplList[0]?.points || 0}
             linkTo="/leaderboard?system=system2&tab=students"
           />
         </div>

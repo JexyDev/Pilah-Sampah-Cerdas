@@ -89,28 +89,28 @@ router.post(
 router.post(
   "/logs/:id/report",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
   aiController.submitReport
 );
 
 router.get(
   "/logs/discrepancies",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   aiController.getDiscrepancies
 );
 
 router.put(
   "/logs/:id/resolve",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   aiController.resolveDiscrepancy
 );
 
 router.get(
   "/compliance/:userId",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
   aiController.getComplianceScore
 );
 
@@ -121,6 +121,13 @@ router.post(
   authMiddleware,
   uploadAvatarMiddleware.single("image"),
   aiController.estimateVolume
+);
+
+router.post(
+  "/classify",
+  authMiddleware,
+  uploadAvatarMiddleware.single("image"),
+  aiController.classifyMock
 );
 
 export default router;

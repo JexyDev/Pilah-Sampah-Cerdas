@@ -11,9 +11,9 @@ export class HouseholdService {
     /**
      * Register a new household.
      */
-    async registerHousehold(userId, address, rtRwId, latitude, longitude) {
+    async registerHousehold(userId, address, rwId, latitude, longitude) {
         // 1. Check if user already has a household in this specific RT/RW (to avoid duplicates)
-        const existing = await householdRepository.findHouseholdByUserAndArea(userId, rtRwId);
+        const existing = await householdRepository.findHouseholdByUserAndArea(userId, rwId);
         if (existing) {
             throw new Error("HOUSEHOLD_ALREADY_EXISTS");
         }
@@ -21,7 +21,7 @@ export class HouseholdService {
         const household = await householdRepository.createHousehold({
             userId,
             address,
-            rtRwId,
+            rwId,
             latitude,
             longitude,
         });
@@ -60,7 +60,7 @@ export class HouseholdService {
             },
             include: {
                 category: true,
-                rtRw: true,
+                rw: true,
             },
         });
         const binsWithFlag = userBins.map((bin) => {

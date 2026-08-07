@@ -14,7 +14,7 @@ graph TD
 
 ### 1.1 Scope Platform & Target Role
 * **Aplikasi Mobile (Thin-Client):** Digunakan secara eksklusif oleh **Warga**, **Mahasiswa KKN**, dan **Petugas Residu**. Focus pada aksi lapangan cepat.
-* **Aplikasi Web (Superset Dashboard):** Digunakan oleh **RT, RW, Pengangkut, DPL, Admin Kelurahan, Admin Kecamatan, Super Admin**, serta **Warga/Mahasiswa/Petugas Residu** (sebagai superset monitoring visual & analytics).
+* **Aplikasi Web (Superset Dashboard):** Digunakan oleh **RT, RW, Pengangkut, DPL, Admin Kelurahan, Admin Kecamatan, SUPER USER**, serta **Warga/Mahasiswa/Petugas Residu** (sebagai superset monitoring visual & analytics).
 
 ---
 
@@ -24,7 +24,7 @@ graph TD
 > *Dahulu: Field identifikasi menggunakan `nik` pada tabel `users` dan `households_nik`.*
 > *Digantikan: `phone_number` untuk Warga & Pengurus, `nim` untuk Mahasiswa KKN, `nip` untuk DPL. Seluruh NIK dihapus total.*
 
-* **`roles`**: Level hak akses (SUPER_ADMIN, ADMIN_KECAMATAN, ADMIN_KELURAHAN, DPL, PENGANGKUT, PETUGAS_RW, PETUGAS_RT, PETUGAS_RESIDU, MAHASISWA_KKN, WARGA).
+* **`roles`**: Level hak akses (SUPER_USER, ADMIN_KECAMATAN, ADMIN_KELURAHAN, DPL, PENGANGKUT, PETUGAS_RW, PETUGAS_RT, PETUGAS_RESIDU, MAHASISWA_KKN, WARGA).
 * **`users`**: Identitas akun (id, phone_number, nim, nip, email, password_hash, full_name, role_id, rt_id, rw_id, kelurahan_id, created_at).
 * **`refresh_tokens`**: Token rotasi refresh session (id, user_id, token, expires_at, created_at).
 * **`kelurahan`**: Data kelurahan di Kecamatan Coblong.

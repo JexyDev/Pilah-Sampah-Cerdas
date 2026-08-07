@@ -17,7 +17,7 @@ const prisma = new PrismaClient();
 describe("E2E & Security Validation for All 8 Roles", () => {
   beforeAll(async () => {
     const rolesList = [
-      "SUPER_ADMIN",
+      "SUPER_USER",
       "ADMIN_DLH",
       "CAMAT",
       "LURAH",
@@ -38,9 +38,9 @@ describe("E2E & Security Validation for All 8 Roles", () => {
     const userSeeds = [
       {
         phone: "+628111111111",
-        email: `superadmin.test-${Date.now()}@psc.id`,
-        name: "Super Admin",
-        roleId: roleMap["SUPER_ADMIN"].id,
+        email: `superUser.test-${Date.now()}@psc.id`,
+        name: "SUPER USER",
+        roleId: roleMap["SUPER_USER"].id,
       },
       {
         phone: "+628111111112",
@@ -107,7 +107,7 @@ describe("E2E & Security Validation for All 8 Roles", () => {
   });
 
   const roles = [
-    { phone: "+628111111111", role: "SUPER_ADMIN" },
+    { phone: "+628111111111", role: "SUPER_USER" },
     { phone: "+628111111112", role: "ADMIN_DLH" },
     { phone: "+628111111113", role: "CAMAT" },
     { phone: "+628111111114", role: "LURAH" },

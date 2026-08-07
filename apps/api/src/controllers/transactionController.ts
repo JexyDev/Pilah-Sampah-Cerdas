@@ -23,8 +23,8 @@ export const transactionController = {
           id: d.id,
           warga: wargaName,
           phone: d.warga?.phone || "-",
-          rtRw: d.warga?.rtRw?.name || "RT 01 / RW 01",
-          kelurahan: d.warga?.rtRw?.kelurahan?.name || "Coblong",
+          rw: d.warga?.rw?.name || "RT 01 / RW 01",
+          kelurahan: d.warga?.rw?.kelurahan?.name || "Coblong",
           jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
           berat: Number(d.berat),
           poin: Math.round(Number(d.poin)),
@@ -54,8 +54,8 @@ export const transactionController = {
 
       const mappedDeposits = deposits.map((d: any) => {
         const poinVal = Number(d.poin || 0);
-        const areaName = d.bin?.rtRw?.name || "";
-        const kelName = d.bin?.rtRw?.kelurahan?.name || "";
+        const areaName = d.bin?.rw?.name || "";
+        const kelName = d.bin?.rw?.kelurahan?.name || "";
         const binCode = d.bin?.qrCode || "BIN";
         const addr =
           d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
@@ -72,7 +72,7 @@ export const transactionController = {
           status: "Selesai",
           lokasi: addr,
           address: addr,
-          rtRw: areaName || null,
+          rw: areaName || null,
           kelurahan: kelName || areaName || null,
           binQrCode: binCode,
         };
@@ -139,8 +139,8 @@ export const transactionController = {
     try {
       const user = req.user!;
       let rwId: number | undefined;
-      if (user.role === "RW" && user.rtRwId) {
-        rwId = user.rtRwId;
+      if (user.role === "RW" && user.rwId) {
+        rwId = user.rwId;
       }
       const deposits = await transactionService.getManualDeposits(rwId);
       res.status(200).json({ success: true, data: deposits });
@@ -164,7 +164,7 @@ export const transactionController = {
         id: deposit.id,
         warga: deposit.warga?.name || "Unknown",
         phone: deposit.warga?.phone || "",
-        rtRw: deposit.bin?.rtRw?.name || "",
+        rw: deposit.bin?.rw?.name || "",
         jenis: deposit.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
         berat: Number(deposit.berat),
         poin: Number(deposit.poin),
@@ -182,3 +182,4 @@ export const transactionController = {
     }
   },
 };
+
