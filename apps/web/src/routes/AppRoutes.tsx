@@ -433,9 +433,16 @@ const AppRoutes: React.FC = () => {
           element={<IdeDaurUlang />}
         />
         <Route path="/tentang" element={<TentangAplikasi />} />
+        <Route
+          path="/kkn/monitoring-warga"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "MAHASISWA_KKN"]}>
+              <KknWargaMonitoring />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Route>
-      <Route path="/kkn/monitoring-warga" element={<KknWargaMonitoring />} />
     </Routes>
   );
 };
