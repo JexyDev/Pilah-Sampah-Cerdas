@@ -16,27 +16,36 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
+            export PATH=$PATH:/usr/local/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
+            
+            echo "=== 1. Pulling Latest Code from Git ==="
             cd ~/Pilah-Sampah-Cerdas
             git fetch origin main
             git reset --hard origin/main
 
-            # Backend
-            cd apps/api
-            npm install
-            npm run build
+            echo "=== 2. Resetting Database & Seeding Real Data (apps/api) ==="
+            cd ~/Pilah-Sampah-Cerdas/apps/api
+            npm install --silent
             npx prisma generate
-            npx prisma migrate deploy
-            cd ../..
+            npx prisma db push --force-reset --skip-generate
+            npx prisma db seed
+            npx tsx scripts/seed-official-coblong-officials.ts || true
+            npx tsx scripts/seed-rt-rw-all.ts || true
+            npx tsx scripts/seed-dpl-real.ts || true
+            npx tsx scripts/seed-mhs-demo.ts || true
+            npm run build
 
-            # Frontend (Zero-Downtime Atomic Deployment)
-            cd apps/web
-            npm install
-            npx vite build --outDir dist-temp
-            rm -rf dist-old
-            mv dist dist-old 2>/dev/null || true
-            mv dist-temp dist
-            rm -rf dist-old
-            cd ../..
+            echo "=== 3. Restarting PM2 Backend ==="
+            ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 restart psc-backend || pm2 restart all || true
 
-            # Restart services
-            pm2 restart all
+            echo "=== 4. Building Frontend Web (apps/web) ==="
+            cd ~/Pilah-Sampah-Cerdas/apps/web
+            npm install --silent
+            npm run build
+
+            echo "=== 5. Deploying Frontend to Web Root ==="
+            sudo cp -r dist/* /var/www/html/ 2>/dev/null || cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/ 2>/dev/null || true
+            
+            echo "=== 6. PM2 Status ==="
+            pm2 status || true
+
