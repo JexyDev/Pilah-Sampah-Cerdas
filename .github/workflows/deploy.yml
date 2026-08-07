@@ -9,13 +9,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          script: |
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Execute Remote Deploy via SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" << 'EOF'
             export PATH=$PATH:/usr/local/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
             
             echo "=== 1. Pulling Latest Code from Git ==="
@@ -49,7 +52,8 @@ jobs:
             sudo cp -r dist/* /var/www/html/
             sudo cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
 
-            
             echo "=== 6. PM2 Status ==="
             pm2 status || true
+          EOF
+
 
