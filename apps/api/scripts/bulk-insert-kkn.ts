@@ -386,18 +386,22 @@ async function main() {
           });
 
           if (!existingRw) {
-            const rwPassword = await bcrypt.hash(rwPhone, 10);
-            await prisma.user.create({
-              data: {
-                name: `Pengurus RW ${rwPadded} - Kel. ${row.kelurahan}`,
-                phone: rwPhone,
-                password: rwPassword,
-                roleId: rwRole.id,
-                status: 'Aktif',
-                mustChangePassword: false,
-              } as any
-            });
-            createdRwCount++;
+            try {
+              const rwPassword = await bcrypt.hash(rwPhone, 10);
+              await prisma.user.create({
+                data: {
+                  name: `Pengurus RW ${rwPadded} - Kel. ${row.kelurahan}`,
+                  phone: rwPhone,
+                  password: rwPassword,
+                  roleId: rwRole.id,
+                  status: 'Aktif',
+                  mustChangePassword: false,
+                } as any
+              });
+              createdRwCount++;
+            } catch (e) {
+              // Ignore idempotent existing RW creation
+            }
           }
         }
       }
