@@ -7,7 +7,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
-import { downloadPanduanPdf } from "../../utils/downloadPanduanPdf";
 import "./LandingPage.css";
 import { Icon } from "@iconify/react";
 
@@ -60,15 +59,10 @@ export const LandingPage: React.FC = () => {
   const [whyUsTab, setWhyUsTab] = useState<
     "points" | "bins" | "iot"
   >("points");
-  const [whatTab, setWhatTab] = useState<"pemilahan" | "pemanfaatan">("pemilahan");
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
   const [showApkModal, setShowApkModal] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-
-  // Interactive User Guide & Flow state
-  const [guideRoleTab, setGuideRoleTab] = useState<"warga" | "kkn" | "rw" | "petugas" | "dlh" | "dpl" | "superadmin">("warga");
-  const [activeFlowStep, setActiveFlowStep] = useState<number>(1);
 
   const scrollToSection = (id: string) => {
     const targetId = id.startsWith("#") ? id : `#${id}`;
