@@ -2161,7 +2161,7 @@ export const LandingPage: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-white font-black text-xl">
               <TrashCareLogoIcon className="w-8 h-8" />
-              <span className="text-white">Trash<span className="text-emerald-400">Care</span></span>
+              <span className="text-[#0084DC] ">Trash<span className="text-emerald-400">Care</span></span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
               Sistem Pemilahan &amp; Pengelolaan Sampah Terintegrasi.
