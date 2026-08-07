@@ -53,7 +53,8 @@ jobs:
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
-            ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 restart psc-backend || pm2 restart all || true
+            ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 start dist/index.js --name psc-backend || ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 restart psc-backend || true
+            ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 save || true
 
             echo "=== 4. Preparing Frontend Web Root ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
