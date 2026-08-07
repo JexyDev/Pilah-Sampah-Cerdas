@@ -484,19 +484,25 @@ async function main() {
     const loginSecret = row.nim || row.phoneNormalized;
     const hashedPassword = await bcrypt.hash(loginSecret, 10);
 
-    // 4. Create User with mustChangePassword = true
+    // 4. Create User with mustChangePassword = true (Check existing by phone first)
     const userName = row.isKetua ? `👑 ${row.namaMahasiswa} (Ketua Kelompok)` : row.namaMahasiswa;
-    const user = await prisma.user.create({
-      data: {
-        name: userName,
-        phone: row.phoneNormalized,
-        password: hashedPassword,
-        roleId: kknRole.id,
-        status: 'Aktif',
-        mustChangePassword: true,
-        address: row.nim ? `NIM: ${row.nim} | ${row.programStudi}` : row.programStudi,
-      } as any
+    let user = await prisma.user.findFirst({
+      where: { phone: row.phoneNormalized }
     });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name: userName,
+          phone: row.phoneNormalized,
+          password: hashedPassword,
+          roleId: kknRole.id,
+          status: 'Aktif',
+          mustChangePassword: true,
+          address: row.nim ? `NIM: ${row.nim} | ${row.programStudi}` : row.programStudi,
+        } as any
+      });
+    }
 
     // 5. Create StudentKkn profile with NIM uniqueness check
     let studentNim = row.nim ? String(row.nim).trim() : null;
