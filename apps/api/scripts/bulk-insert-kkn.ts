@@ -122,6 +122,7 @@ async function main() {
   const colKelompok = headers.findIndex(h => h.includes('kelompok'));
   const colRw = headers.findIndex(h => h.includes('rw') || h.includes('lokasi'));
   const colNama = headers.findIndex(h => h.includes('nama mahasiswa') || h.includes('nama mhs') || (h.includes('nama') && !h.includes('kelompok')));
+  const colNim = headers.findIndex(h => h === 'nim' || h.includes('nim'));
   const colPhone = headers.findIndex(h => h.includes('hp') || h.includes('telp') || h.includes('telepon') || h.includes('no wa') || h.includes('no. wa') || h === 'wa');
   const colProdi = headers.findIndex(h => h.includes('prodi') || h.includes('program studi') || h.includes('jurusan'));
   const colDpl = headers.findIndex(h => h.includes('dpl'));
@@ -132,6 +133,7 @@ async function main() {
   console.log(`   • Kelompok    : Col ${colKelompok}`);
   console.log(`   • Lokasi (RW) : Col ${colRw}`);
   console.log(`   • Nama Mhs    : Col ${colNama}`);
+  console.log(`   • NIM         : Col ${colNim}`);
   console.log(`   • No. HP      : Col ${colPhone}`);
   console.log(`   • Prodi       : Col ${colProdi}`);
   console.log(`   • DPL         : Col ${colDpl}\n`);
@@ -197,6 +199,7 @@ async function main() {
     if (cellDpl && !cellDpl.toLowerCase().includes('jumlah')) lastDpl = cellDpl;
 
     const cellProdi = colProdi !== -1 ? cleanText(rawRow[colProdi]) : '';
+    const cellNim = colNim !== -1 ? cleanText(rawRow[colNim]) : null;
 
     let phoneNorm = normalizePhone(cellPhone);
 
@@ -239,7 +242,7 @@ async function main() {
       programStudi: cellProdi,
       dplNama: lastDpl,
       isKetua: false,
-      nim: null
+      nim: cellNim || null
     });
   }
 
@@ -504,18 +507,16 @@ async function main() {
       }
     }
 
-    // 5. Create StudentKkn profile with NIM uniqueness check
+    // 5. Create / Update StudentKkn profile
     let studentNim = row.nim ? String(row.nim).trim() : null;
-    if (studentNim) {
-      const existingNim = await prisma.studentKkn.findFirst({ where: { nim: studentNim } });
-      if (existingNim) {
-        studentNim = null; // Set null if NIM already registered in DB to ensure idempotency
-      }
-    }
 
     try {
       const existingStudent = await prisma.studentKkn.findFirst({ where: { userId: user.id } });
       if (!existingStudent) {
+        if (studentNim) {
+          const existingNim = await prisma.studentKkn.findFirst({ where: { nim: studentNim } });
+          if (existingNim) studentNim = null;
+        }
         await prisma.studentKkn.create({
           data: {
             userId: user.id,
@@ -531,6 +532,14 @@ async function main() {
             whitelistStatus: 'APPROVED'
           } as any
         });
+      } else if (studentNim && !existingStudent.nim) {
+        const existingNim = await prisma.studentKkn.findFirst({ where: { nim: studentNim } });
+        if (!existingNim) {
+          await prisma.studentKkn.update({
+            where: { id: existingStudent.id },
+            data: { nim: studentNim }
+          });
+        }
       }
     } catch (e) {
       // Ignore idempotent duplicate error
