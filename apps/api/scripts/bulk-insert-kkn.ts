@@ -491,17 +491,22 @@ async function main() {
     });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          name: userName,
-          phone: row.phoneNormalized,
-          password: hashedPassword,
-          roleId: kknRole.id,
-          status: 'Aktif',
-          mustChangePassword: true,
-          address: row.nim ? `NIM: ${row.nim} | ${row.programStudi}` : row.programStudi,
-        } as any
-      });
+      try {
+        user = await prisma.user.create({
+          data: {
+            name: userName,
+            phone: row.phoneNormalized,
+            password: hashedPassword,
+            roleId: kknRole.id,
+            status: 'Aktif',
+            mustChangePassword: true,
+            address: row.nim ? `NIM: ${row.nim} | ${row.programStudi}` : row.programStudi,
+          } as any
+        });
+      } catch (err) {
+        user = await prisma.user.findFirst({ where: { phone: row.phoneNormalized } });
+        if (!user) continue;
+      }
     }
 
     // 5. Create StudentKkn profile with NIM uniqueness check
