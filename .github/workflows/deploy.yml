@@ -18,7 +18,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" << 'EOF'
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
             export PATH=$PATH:/usr/local/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
             
             echo "=== 1. Pulling Latest Code from Git ==="
@@ -47,10 +47,10 @@ jobs:
             npm run build
 
             echo "=== 5. Deploying Frontend to Web Root ==="
-            sudo mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            sudo rm -rf /var/www/html/assets /var/www/pilah-sampah-cerdas/frontend/dist/assets
-            sudo cp -r dist/* /var/www/html/
-            sudo cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
+            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
+            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/assets /var/www/pilah-sampah-cerdas/frontend/dist/assets
+            echo "$VPS_PASS" | sudo -S cp -r dist/* /var/www/html/
+            echo "$VPS_PASS" | sudo -S cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
 
             echo "=== 6. PM2 Status ==="
             pm2 status || true
