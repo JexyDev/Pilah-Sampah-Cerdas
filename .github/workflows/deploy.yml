@@ -36,25 +36,20 @@ jobs:
             export PATH=$PATH:/usr/local/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
             
             echo "=== 1. Pulling Latest Code from Git ==="
-            cd ~/Pilah-Sampah-Cerdas
+            cd ~/Pilah-Sampah-Cerdas-new || cd ~/Pilah-Sampah-Cerdas
             git fetch origin main
             git reset --hard origin/main
 
-            echo "=== 2. Resetting Database & Seeding Real Data (apps/api) ==="
-            cd ~/Pilah-Sampah-Cerdas/apps/api
+            echo "=== 2. Updating Backend (apps/api) ==="
+            cd apps/api
             npm install --silent
             npx prisma generate
-            npx prisma db push --force-reset --skip-generate
-            npx prisma db seed
-            npx tsx scripts/seed-official-coblong-officials.ts || true
-            npx tsx scripts/seed-rt-rw-all.ts || true
-            npx tsx scripts/seed-dpl-real.ts || true
-            npx tsx scripts/seed-mhs-demo.ts || true
-            npx tsx scripts/bulk-insert-kkn.ts scripts/data_kkn.xlsx --commit || true
+            npx prisma db push --skip-generate
+            npx tsx scripts/sync-nims-now.ts || true
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
-            ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 start dist/index.js --name psc-backend || ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 restart psc-backend || true
+            ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 restart psc-backend || ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 start dist/index.js --name psc-backend || true
             ~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin/pm2 save || true
 
             echo "=== 4. Preparing Frontend Web Root ==="
