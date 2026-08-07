@@ -85,8 +85,9 @@ class WargaDampingan extends Equatable {
     required this.binId,
     required this.wargaName,
     required this.address,
+    this.kecamatan = '',
     this.kelurahan = '',
-    this.rtRw = '',
+    this.rw = '',
     this.mahasiswaId = '',
     this.pendampingName = '',
     this.status = '',
@@ -100,8 +101,9 @@ class WargaDampingan extends Equatable {
   final String binId;
   final String wargaName;
   final String address;
+  final String kecamatan;
   final String kelurahan;
-  final String rtRw;
+  final String rw;
   final String mahasiswaId;
   final String pendampingName;
   final String status;
@@ -198,8 +200,9 @@ class WargaDampingan extends Equatable {
       binId: extractedBinId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
       address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
+      kecamatan: json['kecamatan']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
-      rtRw: json['rtRw']?.toString() ?? json['rt_rw']?.toString() ?? '',
+      rw: json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '',
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
       status: rawStatus,
@@ -229,8 +232,9 @@ class RegisterWargaRequest {
     this.name,
     this.address,
     this.qrCode,
-    this.rtRwId,
-    this.rtRw,
+    this.rwId,
+    this.rw,
+    this.kecamatan,
     this.kelurahan,
     this.latitude,
     this.longitude,
@@ -252,12 +256,13 @@ class RegisterWargaRequest {
   final String? qrCode;
 
   /// Opsional: ID RT/RW
-  final String? rtRwId;
+  final String? rwId;
 
-  /// Opsional: String RT/RW (fallback jika rtRwId tidak digunakan)
-  final String? rtRw;
+  /// Opsional: String RW (fallback jika rwId tidak digunakan)
+  final String? rw;
 
   /// Opsional: Kelurahan
+  final String? kecamatan;
   final String? kelurahan;
 
   /// Opsional: Latitude lokasi pendaftaran
@@ -274,8 +279,9 @@ class RegisterWargaRequest {
     if (name != null && name!.isNotEmpty) map['name'] = name;
     if (address != null && address!.isNotEmpty) map['address'] = address;
     if (qrCode != null && qrCode!.isNotEmpty) map['qrCode'] = qrCode;
-    if (rtRwId != null && rtRwId!.isNotEmpty) map['rtRwId'] = rtRwId;
-    if (rtRw != null && rtRw!.isNotEmpty) map['rtRw'] = rtRw;
+    if (rwId != null && rwId!.isNotEmpty) map['rwId'] = rwId;
+    if (rw != null && rw!.isNotEmpty) map['rw'] = rw;
+    if (kecamatan != null && kecamatan!.isNotEmpty) map['kecamatan'] = kecamatan;
     if (kelurahan != null && kelurahan!.isNotEmpty) map['kelurahan'] = kelurahan;
     if (latitude != null) map['latitude'] = latitude;
     if (longitude != null) map['longitude'] = longitude;

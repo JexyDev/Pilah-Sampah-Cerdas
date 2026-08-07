@@ -5,9 +5,9 @@ abstract class PetugasResiduRepository {
   /// Ambil ringkasan dashboard Petugas Residu
   Future<PetugasResiduDashboard> getDashboard();
 
-  Future<List<ResiduBinPickup>?> getCachedJadwalHarian({String? kelurahan, String? rtRw});
+  Future<List<ResiduBinPickup>?> getCachedJadwalHarian({String? kecamatan, String? kelurahan, String? rw});
   /// Ambil daftar tempat sampah dalam assignedZone dengan volume >= 70%
-  Future<List<ResiduBinPickup>> getJadwalHarian({String? kelurahan, String? rtRw});
+  Future<List<ResiduBinPickup>> getJadwalHarian({String? kecamatan, String? kelurahan, String? rw});
 
   /// Submit input timbangan fisik residu
   Future<bool> submitLog({

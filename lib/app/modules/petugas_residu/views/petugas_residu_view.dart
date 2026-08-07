@@ -34,7 +34,7 @@ class PetugasResiduView extends ConsumerWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
             ),
             Text(
-              'Wilayah Tugas: ${user?.rtRw.isNotEmpty == true ? "RT ${user!.rtRw}" : (dashboard?.assignedZone ?? "RT 01/RW 02")}',
+              'Wilayah Tugas: ${user?.rw.isNotEmpty == true ? "RT ${user!.rw}" : (dashboard?.assignedZone ?? "RW 02")}',
               style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
@@ -116,7 +116,7 @@ class PetugasResiduView extends ConsumerWidget {
                       child: ElevatedButton.icon(
                         onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu) : null,
                         icon: const Icon(Icons.scale_rounded, size: 22),
-                        label: const Text('Input Timbangan Sampah Residu RT/RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        label: const Text('Input Timbangan Sampah Residu RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
                           foregroundColor: Colors.white,
@@ -128,12 +128,12 @@ class PetugasResiduView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.xl),
 
-                    // Daftar Residu RT/RW Header
+                    // Daftar Residu RW Header
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Daftar Residu RT/RW (Input Timbangan)',
+                          'Daftar Residu RW (Input Timbangan)',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                         ),
                         Text(
@@ -175,13 +175,13 @@ class PetugasResiduView extends ConsumerWidget {
   Widget _buildTimeWindowBanner(BuildContext context, bool isActive) {
     return Container(
       width: double.infinity,
-      color: isActive ? AppColors.primaryGreen.withValues(alpha: 0.1) : Colors.amber[50],
+      color: isActive ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.warningYellow,
       padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: 10),
       child: Row(
         children: [
           Icon(
             isActive ? Icons.access_time_filled_rounded : Icons.info_outline_rounded,
-            color: isActive ? AppColors.primaryGreen : Colors.amber[900],
+            color: isActive ? AppColors.primaryGreen : AppColors.warningYellow,
             size: 20,
           ),
           const SizedBox(width: 10),
@@ -193,7 +193,7 @@ class PetugasResiduView extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isActive ? AppColors.primaryGreen : Colors.amber[900],
+                color: isActive ? AppColors.primaryGreen : AppColors.warningYellow,
               ),
             ),
           ),
@@ -228,7 +228,7 @@ class PetugasResiduView extends ConsumerWidget {
               color: Colors.white.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.stars_rounded, color: Colors.amber, size: 32),
+            child: const Icon(Icons.stars_rounded, color: AppColors.warningYellow, size: 32),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -343,10 +343,10 @@ class PetugasResiduView extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: bin.isPickedUp ? Colors.green[50] : Colors.amber[50],
+                    color: bin.isPickedUp ? AppColors.primaryGreen : AppColors.warningYellow,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: bin.isPickedUp ? AppColors.primaryGreen : Colors.amber[400]!,
+                      color: bin.isPickedUp ? AppColors.primaryGreen : AppColors.warningYellow,
                     ),
                   ),
                   child: Text(
@@ -354,7 +354,7 @@ class PetugasResiduView extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: bin.isPickedUp ? AppColors.primaryGreen : Colors.amber[900],
+                      color: bin.isPickedUp ? AppColors.primaryGreen : AppColors.warningYellow,
                     ),
                   ),
                 ),

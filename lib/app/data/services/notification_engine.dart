@@ -338,6 +338,6 @@ class NotificationEngine {
   Future<void> cancelAll() async {
     try {
       await _flutterLocalNotificationsPlugin.cancelAll();
-    } catch (_) {}
+    } catch (e) { debugPrint('Silenced error: $e'); }
   }
 }

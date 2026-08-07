@@ -203,7 +203,7 @@ final scanFlowProvider = StateNotifierProvider<ScanFlowNotifier, ScanFlowState>(
   },
 );
 
-// ─── Aktivasi Bin Provider ────────────────────────────────────────────────────
+// ─── Aktivasi Tempat Sampah Provider ────────────────────────────────────────────────────
 
 class AktivasiBinState {
   const AktivasiBinState({
@@ -290,7 +290,7 @@ final aktivasiBinProvider =
       return AktivasiBinNotifier(ref.watch(binRepositoryProvider));
     });
 
-// ─── Reset Bin Provider ───────────────────────────────────────────────────────
+// ─── Reset Tempat Sampah Provider ───────────────────────────────────────────────────────
 
 class ResetBinState {
   const ResetBinState({

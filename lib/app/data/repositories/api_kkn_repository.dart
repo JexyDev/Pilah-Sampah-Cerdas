@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mahasiswa_kkn_models.dart';
@@ -23,7 +25,7 @@ class ApiKknRepository implements KknRepository {
       try {
         final data = jsonDecode(cachedStr) as Map<String, dynamic>;
         return KknDashboardData.fromJson(data);
-      } catch (_) {}
+      } catch (e) { debugPrint('Silenced error: $e'); }
     }
     return null;
   }
@@ -46,7 +48,7 @@ class ApiKknRepository implements KknRepository {
         try {
           final data = jsonDecode(cachedStr) as Map<String, dynamic>;
           return KknDashboardData.fromJson(data);
-        } catch (_) {}
+        } catch (e) { debugPrint('Silenced error: $e'); }
       }
       throw Exception('Gagal memuat data dashboard KKN');
     }
@@ -60,7 +62,7 @@ class ApiKknRepository implements KknRepository {
       try {
         final list = jsonDecode(cachedStr) as List<dynamic>;
         return list.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
-      } catch (_) {}
+      } catch (e) { debugPrint('Silenced error: $e'); }
     }
     return null;
   }
@@ -88,7 +90,7 @@ class ApiKknRepository implements KknRepository {
         if (aktivasiData.isNotEmpty) {
           rawList = aktivasiData;
         }
-      } catch (_) {}
+      } catch (e) { debugPrint('Silenced error: $e'); }
     }
 
     if (rawList.isNotEmpty) {
@@ -101,7 +103,7 @@ class ApiKknRepository implements KknRepository {
          try {
            final list = jsonDecode(cachedStr) as List<dynamic>;
            return list.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
-         } catch (_) {}
+         } catch (e) { debugPrint('Silenced error: $e'); }
        }
     }
 
@@ -124,7 +126,7 @@ class ApiKknRepository implements KknRepository {
       try {
         final list = jsonDecode(cachedStr) as List<dynamic>;
         return list;
-      } catch (_) {}
+      } catch (e) { debugPrint('Silenced error: $e'); }
     }
     return null;
   }
@@ -147,7 +149,7 @@ class ApiKknRepository implements KknRepository {
         try {
           final list = jsonDecode(cachedStr) as List<dynamic>;
           return list;
-        } catch (_) {}
+        } catch (e) { debugPrint('Silenced error: $e'); }
       }
       throw Exception('Gagal memuat log aktivitas KKN');
     }
@@ -211,8 +213,8 @@ class ApiKknRepository implements KknRepository {
     String? nim,
     String? namaMahasiswa,
     String? kodeZona,
-    String? rtRw,
-    String? kelurahan,
+    String? rw,
+    String? kecamatan, String? kelurahan,
     int? durationMinutes,
     String? timestamp,
   }) async {
@@ -224,8 +226,9 @@ class ApiKknRepository implements KknRepository {
         if (nim != null && nim.isNotEmpty) 'nim': nim,
         if (namaMahasiswa != null && namaMahasiswa.isNotEmpty) 'namaMahasiswa': namaMahasiswa,
         if (kodeZona != null && kodeZona.isNotEmpty) 'kodeZona': kodeZona,
-        if (rtRw != null && rtRw.isNotEmpty) 'rtRw': rtRw,
+        if (rw != null && rw.isNotEmpty) 'rw': rw,
         if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
+        if (kecamatan != null && kecamatan.isNotEmpty) 'kecamatan': kecamatan,
         if (durationMinutes != null) 'durationMinutes': durationMinutes,
         'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
       };
@@ -245,11 +248,11 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<List<dynamic>> getWargaForAktivasi({String? kelurahan, String? rtRw, String? search}) async {
+  Future<List<dynamic>> getWargaForAktivasi({String? kecamatan, String? kelurahan, String? rw, String? search}) async {
     try {
       final Map<String, dynamic> queryParams = {};
       if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
-      if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
+      if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
       final response = await apiClient.dio.get('/kkn/warga', queryParameters: queryParams);

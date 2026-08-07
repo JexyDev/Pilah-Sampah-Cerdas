@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -272,7 +274,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       // bahkan yang tidak pakai Theme.of(context).textTheme
       builder: (context, child) {
         return DefaultTextStyle(
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.poppins(
             fontSize: 14,
             color: const Color(0xFF191C1E),
           ),

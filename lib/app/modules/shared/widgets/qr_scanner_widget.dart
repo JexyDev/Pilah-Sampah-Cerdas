@@ -1,12 +1,14 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 
-/// Widget QR Scanner terpusat — scan QR tempat sampah & aktivasi bin.
+/// Widget QR Scanner terpusat — scan QR tempat sampah & aktivasi tempat sampah.
 ///
 /// - Android/iOS: MobileScanner dengan permission request runtime
 /// - Web/Desktop: Input manual fallback

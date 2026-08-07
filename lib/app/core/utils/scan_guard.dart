@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../modules/scan/controllers/scan_controller.dart';
 import '../../data/models/bin_entity.dart';

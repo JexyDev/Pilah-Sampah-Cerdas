@@ -15,12 +15,12 @@ class KelompokKknView extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
 
     final kel = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rt = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '01/02';
 
     final KelompokKknData kelompokData = state.kelompok ?? KelompokKknData(
       groupId: 'kkn-${user?.id ?? "1"}',
-      groupName: 'Kelompok KKN $kel RT $rt',
-      poskoLocation: 'Posko KKN RT $rt, Kel. $kel, Kec. Bojongsoang',
+      groupName: 'Kelompok KKN $kel RW $rw',
+      poskoLocation: 'Posko KKN RW $rw, Kel. $kel, Kec. Bojongsoang',
       dosenPembimbing: 'Dr. Ir. Pembimbing, M.T.',
       totalGroupPoints: 1250,
       members: [
@@ -327,16 +327,16 @@ class KelompokKknView extends ConsumerWidget {
                                 margin: const EdgeInsets.only(left: 6),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withValues(alpha: 0.15),
+                                  color: AppColors.primaryBlue.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
                                 ),
                                 child: const Text(
                                   'ANDA',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
+                                    color: AppColors.primaryBlue,
                                   ),
                                 ),
                               ),
@@ -374,9 +374,9 @@ class KelompokKknView extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.06),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                    border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.2)),
                   ),
                   child: const Row(
                     children: [

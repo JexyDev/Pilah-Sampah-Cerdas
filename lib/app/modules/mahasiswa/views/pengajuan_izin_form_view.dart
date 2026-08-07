@@ -127,7 +127,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: AppColors.primaryGreenLight,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.primaryGreen, width: 2),
               ),
@@ -143,19 +143,19 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: AppColors.warningYellow,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade300),
+                border: Border.all(color: AppColors.warningYellow),
               ),
               child: const Column(
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded, color: Colors.amber, size: 20),
+                      Icon(Icons.access_time_rounded, color: AppColors.warningYellow, size: 20),
                       SizedBox(width: 8),
                       Text(
                         'Status: Menunggu Verifikasi',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.amber),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warningYellow),
                       ),
                     ],
                   ),
@@ -240,13 +240,13 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber[50],
+                color: AppColors.warningYellow,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber[300]!),
+                border: Border.all(color: AppColors.warningYellow),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, color: Colors.amber, size: 22),
+                  Icon(Icons.info_outline_rounded, color: AppColors.warningYellow, size: 22),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -380,7 +380,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                     style: BorderStyle.solid,
                   ),
                   borderRadius: BorderRadius.circular(10),
-                  color: _photoPath != null ? Colors.green.shade50 : Colors.grey[50],
+                  color: _photoPath != null ? AppColors.primaryGreenLight : Colors.grey[50],
                 ),
                 child: _photoPath == null
                     ? const Column(

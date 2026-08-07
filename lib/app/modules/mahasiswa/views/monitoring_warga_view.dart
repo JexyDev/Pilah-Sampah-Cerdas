@@ -46,19 +46,19 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     if (isAktivasiBinMode && !_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
       final kelurahan = user?.kelurahan ?? 'Bojongsoang';
-      final rtRw = user?.rtRw ?? '01/02';
+      final rw = user?.rw ?? '01/02';
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
                 kelurahan: kelurahan,
-                rtRw: rtRw,
+                rw: rw,
               );
         }
       });
     }
   }
 
-  List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode, String userKel, String userRt) {
+  List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode, String userKec, String userKel, String userRw) {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false; // Hanya tampilkan role warga
 
@@ -71,12 +71,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       
       if (_selectedRtRw != 'Semua') {
         final cleanSelected = _selectedRtRw.replaceAll(RegExp(r'[^\d]'), '');
-        final cleanWarga = w.rtRw.replaceAll(RegExp(r'[^\d]'), '');
+        final cleanWarga = w.rw.replaceAll(RegExp(r'[^\d]'), '');
         final cleanAddr = w.address.replaceAll(RegExp(r'[^\d]'), '');
 
         final matches = (cleanWarga.isNotEmpty && cleanWarga.contains(cleanSelected)) ||
             (cleanAddr.isNotEmpty && cleanAddr.contains(cleanSelected)) ||
-            w.rtRw.contains(_selectedRtRw) ||
+            w.rw.contains(_selectedRtRw) ||
             w.address.contains(_selectedRtRw);
         if (!matches) return false;
       }
@@ -93,12 +93,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     }).toList();
   }
 
-  List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga, String userKel, String userRt) {
+  List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga, String userKec, String userKel, String userRw) {
     try {
       return allWarga.map((e) {
         final WargaDampingan w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
         final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
-        final targetRt = w.rtRw.isNotEmpty ? w.rtRw : userRt;
+        final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
+        final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
 
         String formattedAddr = w.address;
         if (formattedAddr.contains('RT ,') || formattedAddr.contains('Kel.') && (formattedAddr.endsWith('Kel.') || formattedAddr.contains('Kel.,') || formattedAddr.contains('Kel. '))) {
@@ -107,10 +108,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               .replaceAll(RegExp(r',?\s*Kel\.?\s*$'), '')
               .trim();
           if (cleaned.endsWith(',')) cleaned = cleaned.substring(0, cleaned.length - 1).trim();
-          formattedAddr = '$cleaned, RT $targetRt, Kel. $targetKel';
-        } else if (!formattedAddr.toLowerCase().contains('rt') && !formattedAddr.toLowerCase().contains('kel')) {
+          formattedAddr = '$cleaned, RW $targetRw, Kel. $targetKel, Kec. $targetKec';
+        } else if (!formattedAddr.toLowerCase().contains('rw') && !formattedAddr.toLowerCase().contains('kel')) {
           final numStr = w.binId.length >= 2 ? w.binId.substring(w.binId.length - 2) : '04';
-          formattedAddr = '$formattedAddr No. $numStr, RT $targetRt, Kel. $targetKel';
+          formattedAddr = '$formattedAddr No. $numStr, RW $targetRw, Kel. $targetKel, Kec. $targetKec';
         }
 
         return WargaDampingan(
@@ -118,7 +119,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           wargaName: w.wargaName,
           address: formattedAddr,
           kelurahan: targetKel,
-          rtRw: targetRt,
+          rw: targetRw,
+          kecamatan: targetKec,
           mahasiswaId: w.mahasiswaId,
           recentLogs: w.recentLogs,
           isActivated: w.isActivated,
@@ -136,8 +138,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
+    final userKec = user?.kecamatan ?? 'Coblong';
     final userKel = user?.kelurahan ?? 'Bojongsoang';
-    final userRt = user?.rtRw ?? '01/02';
+    final userRw = user?.rw ?? '02';
 
     final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     
@@ -147,52 +150,50 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     final rawAktivasiList = aktivasiState?.wargaList ?? [];
 
     final allWargaList = isAktivasiBinMode 
-        ? _getFilteredWargaAktivasi(rawAktivasiList, userKel, userRt)
+        ? _getFilteredWargaAktivasi(rawAktivasiList, userKec, userKel, userRw)
         : state.wargaList.map((w) {
-            final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+            final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
                 ? w.address
-                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $userRt, Kel. $userKel';
+                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, Kel. $userKel, Kec. $userKec';
             return WargaDampingan(
-              binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rtRw: userRt, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
+              binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rw: userRw, kecamatan: userKec, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
             );
           }).toList();
 
-    List<String> kelurahanList;
-    List<String> rtRwList;
+    List<String> kelurahanList = [];
+    List<String> rtRwList = [];
 
     if (isAktivasiBinMode) {
       _selectedKelurahan = userKel;
-      _selectedRtRw = userRt;
-      kelurahanList = [userKel];
-      rtRwList = [userRt];
-    } else {
-      final kelurahans = allWargaList
-          .where((w) => w.role == 'WARGA' && w.kelurahan.isNotEmpty)
-          .map((w) => w.kelurahan)
-          .toSet()
-          .toList();
-      kelurahans.sort();
-
-      final rtrws = allWargaList
-          .where((w) => w.role == 'WARGA' && w.rtRw.isNotEmpty && 
-                       (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
-          .map((w) => w.rtRw)
-          .toSet()
-          .toList();
-      rtrws.sort();
-
-      kelurahanList = <String>['Semua', ...kelurahans];
-      rtRwList = <String>['Semua', ...rtrws];
-
-      if (!kelurahanList.contains(_selectedKelurahan)) {
-        _selectedKelurahan = 'Semua';
-      }
-      if (!rtRwList.contains(_selectedRtRw)) {
-        _selectedRtRw = 'Semua';
-      }
+      _selectedRtRw = userRw;
     }
 
-    final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode, userKel, userRt);
+    final kelurahans = allWargaList
+        .where((w) => w.role == 'WARGA' && w.kelurahan.isNotEmpty)
+        .map((w) => w.kelurahan)
+        .toSet()
+        .toList();
+    kelurahans.sort();
+
+    final rtrws = allWargaList
+        .where((w) => w.role == 'WARGA' && w.rw.isNotEmpty && 
+                     (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
+        .map((w) => w.rw)
+        .toSet()
+        .toList();
+    rtrws.sort();
+
+    kelurahanList = <String>['Semua', ...kelurahans];
+    rtRwList = <String>['Semua', ...rtrws];
+
+    if (!kelurahanList.contains(_selectedKelurahan)) {
+      _selectedKelurahan = 'Semua';
+    }
+    if (!rtRwList.contains(_selectedRtRw)) {
+      _selectedRtRw = 'Semua';
+    }
+
+    final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode, userKec, userKel, userRw);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -213,12 +214,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }
         },
         color: AppColors.primaryGreen,
-        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKel, userRt),
+        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKec, userKel, userRw),
       ),
     );
   }
 
-  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKel, String userRt) {
+  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
     final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
     final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
@@ -309,9 +310,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: InputDecorator(
-                              key: ValueKey('rtrw_$userRt'),
+                              key: ValueKey('rtrw_$userRw'),
                               decoration: InputDecoration(
-                                labelText: 'RT/RW Dampingan',
+                                labelText: 'RW Dampingan',
                                 prefixIcon: const Icon(Icons.maps_home_work_outlined, size: 18, color: AppColors.primaryGreen),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -320,7 +321,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                 isDense: true,
                               ),
                               child: Text(
-                                userRt.isNotEmpty ? (userRt.startsWith('RT') ? userRt : 'RT $userRt') : 'RT 01/RW 02',
+                                userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -349,7 +350,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               initialValue: _selectedRtRw,
-                              decoration: const InputDecoration(labelText: 'RT/RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
+                              decoration: const InputDecoration(labelText: 'RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
                               items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
                               onChanged: (val) {
                                 if (val != null) {
@@ -469,7 +470,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           // ── Sub-info RT & Kelurahan ─────────────────────────
                           Builder(
                             builder: (_) {
-                              final rtStr = warga.rtRw.isNotEmpty ? (warga.rtRw.startsWith('RT') ? warga.rtRw : 'RT ${warga.rtRw}') : (userRt.startsWith('RT') ? userRt : 'RT $userRt');
+                              final rtStr = warga.rw.isNotEmpty ? (warga.rw.startsWith('RW') ? warga.rw : 'RW ') : (userRw.startsWith('RW') ? userRw : 'RW $userRw');
                               final kelStr = warga.kelurahan.isNotEmpty ? (warga.kelurahan.startsWith('Kel.') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') : (userKel.startsWith('Kel.') ? userKel : 'Kel. $userKel');
                               return Text(
                                 '$rtStr, $kelStr',
@@ -489,7 +490,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           // ── Metrik Keaktifan (Poin & % Benar) ───────────────
                           Row(
                             children: [
-                              const Icon(Icons.monetization_on_rounded, size: 15, color: Colors.amber),
+                              const Icon(Icons.monetization_on_rounded, size: 15, color: AppColors.warningYellow),
                               const SizedBox(width: 4),
                               Text('${warga.totalPoints} Poin', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                               const SizedBox(width: 14),
@@ -682,7 +683,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                   children: [
                     CircleAvatar(
                       radius: 12,
-                      backgroundColor: isFirst ? Colors.amber : AppColors.textHint,
+                      backgroundColor: isFirst ? AppColors.warningYellow : AppColors.textHint,
                       child: Text(
                         '${index + 1}',
                         style: const TextStyle(

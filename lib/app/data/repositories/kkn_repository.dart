@@ -43,19 +43,19 @@ abstract class KknRepository {
     String? nim,
     String? namaMahasiswa,
     String? kodeZona,
-    String? rtRw,
-    String? kelurahan,
+    String? rw,
+    String? kecamatan, String? kelurahan,
     int? durationMinutes,
     String? timestamp,
   });
 
   /// Mengambil daftar warga (untuk fitur aktivasi)
-  Future<List<dynamic>> getWargaForAktivasi({String? kelurahan, String? rtRw, String? search});
+  Future<List<dynamic>> getWargaForAktivasi({String? kecamatan, String? kelurahan, String? rw, String? search});
 
   /// Mengaktivasi warga by scan (wargaId + qrCode)
   Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude);
 
-  /// Mengaktivasi bin untuk warga dengan lokasi GPS (latitude, longitude)
+  /// Mengaktivasi tempat sampah untuk warga dengan lokasi GPS (latitude, longitude)
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng});
 
   /// Mengambil riwayat aktivitas KKN

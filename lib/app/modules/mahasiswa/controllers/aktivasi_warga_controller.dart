@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../../core/utils/network_exception_helper.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class AktivasiWargaState {
   final bool isLoading;
@@ -52,31 +53,33 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
 
   final Ref ref;
 
-  /// Fetch dengan kelurahan & rtRw eksplisit dari user yang sudah login.
+  /// Fetch dengan kelurahan & rw eksplisit dari user yang sudah login.
   /// Dipanggil dari view setelah auth state terkonfirmasi.
   Future<void> fetchWargaWithRegion({
     required String kelurahan,
-    required String rtRw,
+    required String rw,
     String search = '',
   }) async {
     state = state.copyWith(
       isLoading: true,
       clearError: true,
       selectedKelurahan: kelurahan,
-      selectedRtRw: rtRw,
+      selectedRtRw: rw,
       searchQuery: search,
     );
     try {
+      final user = ref.read(authProvider).user;
       final repo = ref.read(kknRepositoryProvider);
       var data = await repo.getWargaForAktivasi(
+        kecamatan: user?.kecamatan,
         kelurahan: kelurahan.isEmpty ? null : kelurahan,
-        rtRw: rtRw.isEmpty ? null : rtRw,
+        rw: rw.isEmpty ? null : rw,
         search: search.isEmpty ? null : search,
       );
 
-      // Fallback: Jika data kosong karena perbedaan format string kelurahan/rtRw di DB backend,
+      // Fallback: Jika data kosong karena perbedaan format string kelurahan/rw di DB backend,
       // panggil ulang tanpa parameter region agar data warga binaan tetap muncul.
-      if (data.isEmpty && (kelurahan.isNotEmpty || rtRw.isNotEmpty)) {
+      if (data.isEmpty && (kelurahan.isNotEmpty || rw.isNotEmpty)) {
         data = await repo.getWargaForAktivasi(
           search: search.isEmpty ? null : search,
         );
@@ -102,7 +105,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     final rt = state.selectedRtRw ?? '';
     await fetchWargaWithRegion(
       kelurahan: kel,
-      rtRw: rt,
+      rw: rt,
       search: state.searchQuery,
     );
   }
@@ -194,7 +197,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   }
 }
 
-/// autoDispose: state reset setiap kali halaman Aktivasi Bin dibuka baru.
+/// autoDispose: state reset setiap kali halaman Aktivasi Tempat Sampah dibuka baru.
 final aktivasiWargaProvider = StateNotifierProvider.autoDispose<AktivasiWargaNotifier, AktivasiWargaState>((ref) {
   return AktivasiWargaNotifier(ref);
 });

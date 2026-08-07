@@ -111,7 +111,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
                 : state.errorMessage != null
-                    ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: Colors.red)))
+                    ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: AppColors.dangerRed)))
                     : filteredLogs.isEmpty
                         ? _buildEmpty()
                         : RefreshIndicator(

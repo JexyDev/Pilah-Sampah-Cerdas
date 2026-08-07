@@ -21,15 +21,15 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
       margin: const EdgeInsets.all(AppDimensions.md),
       padding: const EdgeInsets.all(AppDimensions.lg),
       decoration: BoxDecoration(
-        color: isRejected ? Colors.red[50] : Colors.amber[50],
+        color: isRejected ? AppColors.dangerRed : AppColors.warningYellow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isRejected ? AppColors.dangerRed.withValues(alpha: 0.3) : Colors.amber.shade300,
+          color: isRejected ? AppColors.dangerRed.withValues(alpha: 0.3) : AppColors.warningYellow,
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isRejected ? Colors.red : Colors.amber).withValues(alpha: 0.08),
+            color: (isRejected ? AppColors.dangerRed : AppColors.warningYellow).withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -41,12 +41,12 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isRejected ? Colors.red[100] : Colors.amber[100],
+              color: isRejected ? AppColors.dangerRed : AppColors.warningYellow,
               shape: BoxShape.circle,
             ),
             child: Icon(
               isRejected ? Icons.cancel_outlined : Icons.hourglass_top_rounded,
-              color: isRejected ? AppColors.dangerRed : Colors.amber[900],
+              color: isRejected ? AppColors.dangerRed : AppColors.warningYellow,
               size: 40,
             ),
           ),
@@ -57,14 +57,14 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: isRejected ? AppColors.dangerRed : Colors.amber[900],
+              color: isRejected ? AppColors.dangerRed : AppColors.warningYellow,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             isRejected
                 ? 'Pengajuan akun Petugas Residu Anda ditolak oleh Admin. Silakan hubungi pengurus RW setempat untuk informasi lebih lanjut.'
-                : 'Akun Anda telah terdaftar sebagai Petugas Residu dan sedang dalam tahap verifikasi Whitelist RW/Admin. Fitur input sampah residu ke RT/RW akan otomatis aktif setelah akun Anda disetujui.',
+                : 'Akun Anda telah terdaftar sebagai Petugas Residu dan sedang dalam tahap verifikasi Whitelist RW/Admin. Fitur input sampah residu ke RW akan otomatis aktif setelah akun Anda disetujui.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
@@ -78,7 +78,7 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
             icon: const Icon(Icons.refresh_rounded, size: 18),
             label: const Text('Cek Status Terbaru'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isRejected ? AppColors.dangerRed : Colors.amber[800],
+              backgroundColor: isRejected ? AppColors.dangerRed : AppColors.warningYellow,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

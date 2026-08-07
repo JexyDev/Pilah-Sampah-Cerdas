@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import '../models/bin_entity.dart';
 import '../models/ai_detection_entity.dart';
@@ -47,7 +49,7 @@ class ApiBinRepository implements BinRepository {
               if (status == 'PENDING' && binId != null) {
                 pendingBinIds.add(binId);
               }
-            } catch (_) {}
+            } catch (e) { debugPrint('Silenced error: $e'); }
           }
         }
 
@@ -71,7 +73,7 @@ class ApiBinRepository implements BinRepository {
               if (matchingBin.currentVolumeL < matchingBin.maxCapacityL && req.status != BinResetStatus.pending) {
                 await apiClient.secureStorage.delete(key: entry.key);
               }
-            } catch (_) {}
+            } catch (e) { debugPrint('Silenced error: $e'); }
           }
         }
 
@@ -587,12 +589,12 @@ class ApiBinRepository implements BinRepository {
             await apiClient.secureStorage.delete(key: 'active_reset_request_$userId');
             return null;
           }
-        } catch (_) {}
+        } catch (e) { debugPrint('Silenced error: $e'); }
 
         final data = jsonDecode(cachedStr) as Map<String, dynamic>;
         return _mapResetRequest(data);
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Silenced error: $e'); }
     return null;
   }
 
@@ -664,7 +666,7 @@ class ApiBinRepository implements BinRepository {
       lat: _parseDouble(json['latitude'] ?? json['lat']),
       lng: _parseDouble(json['longitude'] ?? json['lng']),
       householdName: json['householdName']?.toString() ?? '',
-      rt: json['rtRw']?.toString() ?? json['rt']?.toString() ?? '',
+
       rw: json['rw']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       isResetPending: isResetPending,

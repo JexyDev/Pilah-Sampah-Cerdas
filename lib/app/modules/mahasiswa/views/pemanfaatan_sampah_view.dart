@@ -124,7 +124,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
     }
 
     final user = ref.read(authProvider).user;
-    final rwTarget = user?.rtRw.isNotEmpty == true ? 'RW ${user!.rtRw.split('/').last}' : 'RW 02';
+    final rwTarget = user?.rw.isNotEmpty == true ? 'RW ${user!.rw.split('/').last}' : 'RW 02';
 
     late PemanfaatanSampahRequest request;
 
@@ -445,13 +445,13 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.08),
+                color: AppColors.primaryBlue.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.assignment_ind_rounded, color: Colors.blue, size: 28),
+                  Icon(Icons.assignment_ind_rounded, color: AppColors.primaryBlue, size: 28),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -608,51 +608,48 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
               ),
             ),
 
-          // Sticky Button Area Mentok Bawah (SafeArea)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundCanvas,
-                border: Border(top: BorderSide(color: Colors.grey.shade300)),
-              ),
-              child: SafeArea(
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
-                    ),
-                    onPressed: state.isLoading ? null : () => _onSubmit(_tabController.index == 0),
-                    child: state.isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'KIRIM LAPORAN',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                  ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        color: AppColors.backgroundCanvas,
+        child: SafeArea(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCanvas,
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
                 ),
+                onPressed: state.isLoading ? null : () => _onSubmit(_tabController.index == 0),
+                child: state.isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'KIRIM LAPORAN',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

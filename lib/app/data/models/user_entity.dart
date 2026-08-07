@@ -10,7 +10,7 @@ class UserEntity extends Equatable {
     this.phone = '',
     this.address = '',
     this.kelurahan = '',
-    this.rtRw = '',
+    this.rw = '',
     this.householdId,
     this.fcmToken,
     this.fotoProfil,
@@ -28,8 +28,9 @@ class UserEntity extends Equatable {
   final String phone;
   final String address;
   final UserRole role;
+  final String kecamatan;
   final String kelurahan;
-  final String rtRw;
+  final String rw;
   final String? householdId; // diisi setelah GET /households/me
   final String? fcmToken;
   final String? fotoProfil;
@@ -39,23 +40,8 @@ class UserEntity extends Equatable {
   final String prodi;
   final String fakultas;
   final String universitas;
-  final String kecamatan;
 
-  String get rt {
-    if (rtRw.contains('/')) {
-      final parts = rtRw.split('/');
-      return parts[0].trim();
-    }
-    return rtRw;
-  }
 
-  String get rw {
-    if (rtRw.contains('/')) {
-      final parts = rtRw.split('/');
-      return parts.length > 1 ? parts[1].trim() : '';
-    }
-    return '';
-  }
 
   UserEntity copyWith({
     String? id,
@@ -63,8 +49,9 @@ class UserEntity extends Equatable {
     String? phone,
     String? address,
     UserRole? role,
+    String? kecamatan,
     String? kelurahan,
-    String? rtRw,
+    String? rw,
     String? householdId,
     String? fcmToken,
     String? fotoProfil,
@@ -81,8 +68,9 @@ class UserEntity extends Equatable {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       role: role ?? this.role,
+      kecamatan: kecamatan ?? this.kecamatan,
       kelurahan: kelurahan ?? this.kelurahan,
-      rtRw: rtRw ?? this.rtRw,
+      rw: rw ?? this.rw,
       householdId: householdId ?? this.householdId,
       fcmToken: fcmToken ?? this.fcmToken,
       fotoProfil: fotoProfil ?? this.fotoProfil,
@@ -96,7 +84,7 @@ class UserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kelurahan, rtRw];
+  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kecamatan, kelurahan, rw];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.

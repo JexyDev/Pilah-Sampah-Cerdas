@@ -115,7 +115,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     color: AppColors.dangerRed,
                     description:
                         'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tempat sampah residu, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
-                    tips: 'Tips: Laporan ini membantu edukasi warga oleh Ketua RT/RW.',
+                    tips: 'Tips: Laporan ini membantu edukasi warga oleh Ketua RW.',
                   ),
                   const SizedBox(height: 14),
                   _buildStepCard(

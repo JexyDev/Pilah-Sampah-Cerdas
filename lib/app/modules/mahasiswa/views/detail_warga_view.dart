@@ -140,7 +140,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          warga.binId.isEmpty || warga.binId == 'Belum Ada Bin'
+                                          warga.binId.isEmpty || warga.binId == 'Belum Ada Tempat Sampah'
                                               ? 'Belum Ada Tempat Sampah'
                                               : 'ID Tempat Sampah: ${warga.binId}',
                                           style: const TextStyle(

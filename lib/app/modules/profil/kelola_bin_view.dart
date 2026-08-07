@@ -148,7 +148,7 @@ class _BinCardLarge extends StatelessWidget {
                     Text(
                       bin.isActive ? 'AKTIF' : 'NON-AKTIF',
                       style: TextStyle(
-                        color: bin.isActive ? AppColors.primaryGreen : Colors.red,
+                        color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),

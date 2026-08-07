@@ -75,11 +75,11 @@ class PetugasResiduPoinView extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.2),
+                        color: AppColors.warningYellow.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.amber.withValues(alpha: 0.6), width: 1.5),
+                        border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.6), width: 1.5),
                       ),
-                      child: const Icon(Icons.monetization_on_rounded, color: Colors.amber, size: 48),
+                      child: const Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 48),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -166,10 +166,10 @@ class PetugasResiduPoinView extends ConsumerWidget {
                       elevation: 1,
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Colors.amber.withValues(alpha: 0.15),
-                          child: Icon(
+                          backgroundColor: AppColors.warningYellow.withValues(alpha: 0.15),
+                          child: const Icon(
                             Icons.add_circle_outline,
-                            color: Colors.amber[800],
+                            color: AppColors.warningYellow,
                           ),
                         ),
                         title: Text(

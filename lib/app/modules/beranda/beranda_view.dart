@@ -21,7 +21,7 @@ import '../shared/widgets/empty_state.dart';
 import '../../core/utils/scan_guard.dart';
 
 /// Halaman beranda Ã¢â‚¬â€ sesuai desain:
-/// Header biru, avatar+nama+RT/RW, stats card, Aksi Cepat, Riwayat.
+/// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
 class BerandaView extends ConsumerStatefulWidget {
   const BerandaView({
     super.key,
@@ -35,8 +35,6 @@ class BerandaView extends ConsumerStatefulWidget {
 }
 
 class _BerandaViewState extends ConsumerState<BerandaView> {
-  bool _hideFullBinAlert = false;
-
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
@@ -295,7 +293,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Baris atas: Avatar + Nama + RT/RW
+          // Baris atas: Avatar + Nama + RW
           Row(
             children: [
               // Avatar logo
@@ -364,9 +362,9 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                      color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+                      border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -375,11 +373,11 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isOnline ? Colors.green : Colors.red,
+                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
                             boxShadow: [
                               if (isOnline)
                                 BoxShadow(
-                                  color: Colors.green.withValues(alpha: 0.4),
+                                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
                                   blurRadius: 4,
                                   spreadRadius: 1,
                                 ),
@@ -392,7 +390,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: isOnline ? Colors.green : Colors.red,
+                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
                           ),
                         ),
                       ],
@@ -640,53 +638,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Ringkasan Tempat Sampah Penuh (Dummy data for UI)
-          if (!_hideFullBinAlert)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.dangerRed.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.dangerRed.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 4.0),
-                    child: Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Peringatan Tempat Sampah Penuh',
-                          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.dangerRed, fontSize: 14),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Ada 3 tempat sampah yang mencapai kapasitas kritis dan perlu segera dikosongkan.',
-                          style: TextStyle(fontSize: 12, color: AppColors.dangerRed),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.dangerRed, size: 20),
-                    onPressed: () {
-                      setState(() {
-                        _hideFullBinAlert = true;
-                      });
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
         ],
       );
     }
@@ -740,7 +691,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           ),
         ),
         const SizedBox(width: 12),
-        // Minta Kosongkan Bin Ã¢â‚¬â€ outline merah/biru
+        // Minta Kosongkan Tempat Sampah Ã¢â‚¬â€ outline merah/biru
         Expanded(
           child: GestureDetector(
             onTap: isOnline

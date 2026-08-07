@@ -26,7 +26,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     super.dispose();
   }
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId, String userNim) {
+  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKecamatan, String userKelurahan, String userRw, String userId, String userNim) {
     // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa
     var activatedOnly = list.where((w) {
       if (!w.isActivated) return false;
@@ -41,17 +41,18 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
       final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';
-      final targetRt = userRtRw.isNotEmpty ? userRtRw : '01/02';
-      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+      final targetRw = userRw.isNotEmpty ? userRw : '02';
+      final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : (userKecamatan.isNotEmpty ? userKecamatan : 'Coblong');
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel';
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, Kel. $targetKel, Kec. $targetKec';
       
       return WargaDampingan(
         binId: w.binId,
         wargaName: w.wargaName,
         address: displayAddr,
         kelurahan: targetKel,
-        rtRw: targetRt,
+        rw: targetRw,
         mahasiswaId: w.mahasiswaId,
         recentLogs: w.recentLogs,
         isActivated: w.isActivated,
@@ -74,12 +75,13 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
+    final userRw = user?.rw ?? '02';
+    final userKec = user?.kecamatan ?? 'Coblong';
     final userKel = user?.kelurahan ?? 'Bojongsoang';
-    final userRt = user?.rtRw ?? '01/02';
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
     
-    final filtered = _filteredList(state.wargaList, userKel, userRt, userId, userNim);
+    final filtered = _filteredList(state.wargaList, userKec, userKel, userRw, userId, userNim);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,

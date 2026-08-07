@@ -109,7 +109,7 @@ class _PemilahanMonitoringDashboardViewState
                                     cells: [
                                       DataCell(Text(formattedDate, style: const TextStyle(fontSize: 13))),
                                       DataCell(Text(item.wargaName ?? 'Warga #${item.userId.substring(0, 6)}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                                      DataCell(Text(item.wilayah ?? 'RT 01 / RW 03', style: const TextStyle(fontSize: 13))),
+                                      DataCell(Text(item.wilayah ?? 'RW 03', style: const TextStyle(fontSize: 13))),
                                       DataCell(
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -223,14 +223,14 @@ class _PemilahanMonitoringDashboardViewState
           ),
         ),
 
-        // Filter RT/RW
+        // Filter RW
         DropdownButton<String>(
           value: _selectedRtRw,
           items: const [
             DropdownMenuItem(value: 'Semua', child: Text('Semua Wilayah')),
-            DropdownMenuItem(value: 'RT 01 / RW 03', child: Text('RT 01 / RW 03')),
-            DropdownMenuItem(value: 'RT 02 / RW 03', child: Text('RT 02 / RW 03')),
-            DropdownMenuItem(value: 'RT 03 / RW 03', child: Text('RT 03 / RW 03')),
+            DropdownMenuItem(value: 'RW 03', child: Text('RW 03')),
+            DropdownMenuItem(value: 'RW 03', child: Text('RW 03')),
+            DropdownMenuItem(value: 'RW 03', child: Text('RW 03')),
           ],
           onChanged: (val) => setState(() {
             _selectedRtRw = val ?? 'Semua';

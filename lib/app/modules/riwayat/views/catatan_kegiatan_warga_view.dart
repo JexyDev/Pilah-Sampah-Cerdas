@@ -41,7 +41,7 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
           // Group entries by Warga
           final Map<String, List<WasteLogEntity>> grouped = {};
           for (final log in logs) {
-            final key = '${log.wargaName ?? "Warga #${log.userId.substring(0, 6)}"} — ${log.wilayah ?? "RT 01/RW 03"}';
+            final key = '${log.wargaName ?? "Warga #${log.userId.substring(0, 6)}"} — ${log.wilayah ?? "RW 03"}';
             grouped.putIfAbsent(key, () => []).add(log);
           }
 

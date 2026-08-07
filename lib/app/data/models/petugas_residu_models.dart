@@ -68,7 +68,7 @@ class PetugasResiduDashboard extends Equatable {
     return PetugasResiduDashboard(
       petugasId: json['petugasId']?.toString() ?? '',
       name: json['name']?.toString() ?? 'Petugas Residu',
-      assignedZone: json['assignedZone']?.toString() ?? json['rtRw']?.toString() ?? 'RT 01/RW 02',
+      assignedZone: json['assignedZone']?.toString() ?? json['rw']?.toString() ?? json['rtRw']?.toString() ?? 'RW 02',
       whitelistStatus: WhitelistStatusExtension.fromApi(json['whitelistStatus']?.toString() ?? 'APPROVED'),
       accountStatus: json['accountStatus']?.toString() ?? 'ACTIVE',
       totalJadwal: (json['totalJadwal'] as num?)?.toInt() ?? 8,
@@ -96,8 +96,9 @@ class ResiduBinPickup extends Equatable {
     required this.binCode,
     required this.wargaName,
     required this.address,
+    required this.kecamatan,
     required this.kelurahan,
-    required this.rtRw,
+    required this.rw,
     required this.volumePercentage,
     required this.isPickedUp,
     this.lastPickedUpTime,
@@ -110,8 +111,9 @@ class ResiduBinPickup extends Equatable {
   final String binCode;
   final String wargaName;
   final String address;
+  final String kecamatan;
   final String kelurahan;
-  final String rtRw;
+  final String rw;
   final double volumePercentage; // e.g. 75.0 (%)
   final bool isPickedUp;
   final DateTime? lastPickedUpTime;
@@ -127,8 +129,9 @@ class ResiduBinPickup extends Equatable {
       binCode: json['binCode']?.toString() ?? json['qrCode']?.toString() ?? 'BIN-RESIDU',
       wargaName: json['namaWarga']?.toString() ?? json['wargaName']?.toString() ?? json['user']?['name']?.toString() ?? 'Warga',
       address: json['alamat']?.toString() ?? json['address']?.toString() ?? 'Jl. Raya Bojongsoang No. 12',
+      kecamatan: json['kecamatan']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
-      rtRw: json['rtRw']?.toString() ?? '',
+      rw: json['rw']?.toString() ?? json['rtRw']?.toString() ?? '',
       volumePercentage: (json['volumePercent'] as num?)?.toDouble() ?? (json['volumePercentage'] as num?)?.toDouble() ?? 80.0,
       isPickedUp: (json['isPickedUp'] as bool?) ?? (json['status']?.toString().toUpperCase() == 'PICKED_UP'),
       lastPickedUpTime: DateTime.tryParse(json['lastPickedUpTime']?.toString() ?? ''),

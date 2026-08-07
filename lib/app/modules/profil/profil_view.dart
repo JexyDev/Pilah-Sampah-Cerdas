@@ -13,7 +13,7 @@ import '../mahasiswa/controllers/location_ping_controller.dart';
 import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
-/// Header biru, avatar rumah dalam lingkaran, nama+RT/RW, Data RT, Tempat Sampah Saya, Keluar.
+/// Header biru, avatar rumah dalam lingkaran, nama+RW, Data RT, Tempat Sampah Saya, Keluar.
 class ProfilView extends ConsumerStatefulWidget {
   const ProfilView({super.key});
 
@@ -172,7 +172,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     child: Text(
                       user?.role == UserRole.mahasiswaKkn
                           ? 'Mahasiswa KKN'
-                          : (user?.rtRw ?? 'RT 04 / RW 02'),
+                          : (user?.rw ?? 'RW 02'),
                       style: const TextStyle(
                         color: AppColors.primaryGreen,
                         fontSize: 12,
@@ -282,14 +282,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                                 : 'Belum diatur',
                           ),
                           _divider(),
-                          _InfoTile(
-                            Icons.home_outlined,
-                            'RT',
-                            user?.rt != null && user!.rt.isNotEmpty
-                                ? 'RT ${user.rt}'
-                                : 'Belum diatur',
-                          ),
-                          _divider(),
+
                         ],
                         _InfoTile(
                           Icons.badge_outlined,

@@ -12,9 +12,9 @@ class BinEntity extends Equatable {
     required this.lat,
     required this.lng,
     required this.householdName,
-    required this.rt,
     required this.rw,
-    required this.kelurahan,
+    this.kecamatan = '',
+    this.kelurahan = '',
     required this.isActive,
     this.isResetPending = false,
     this.createdAt,
@@ -30,8 +30,8 @@ class BinEntity extends Equatable {
     double? lat,
     double? lng,
     String? householdName,
-    String? rt,
     String? rw,
+    String? kecamatan,
     String? kelurahan,
     bool? isActive,
     bool? isResetPending,
@@ -45,8 +45,8 @@ class BinEntity extends Equatable {
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       householdName: householdName ?? this.householdName,
-      rt: rt ?? this.rt,
       rw: rw ?? this.rw,
+      kecamatan: kecamatan ?? this.kecamatan,
       kelurahan: kelurahan ?? this.kelurahan,
       isActive: isActive ?? this.isActive,
       isResetPending: isResetPending ?? this.isResetPending,
@@ -61,8 +61,8 @@ class BinEntity extends Equatable {
   final double lat;
   final double lng;
   final String householdName;
-  final String rt;
   final String rw;
+  final String kecamatan;
   final String kelurahan;
   final bool isActive;
   final bool isResetPending;

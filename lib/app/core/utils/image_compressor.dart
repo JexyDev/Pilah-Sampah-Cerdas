@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// 
 /// Target Batas Ukuran:
 /// - AI Scan Sampah (FR-01): Target < 1MB (Max 1024 x 1024px, Quality ~80%)
-/// - Reset Bin Evidence (FR-12): Target < 5MB (Max 1920 x 1080px, Quality ~85%)
+/// - Reset Tempat Sampah Evidence (FR-12): Target < 5MB (Max 1920 x 1080px, Quality ~85%)
 /// - Update Avatar Profil (FR-16): Target < 300KB (Max 512 x 512px, Quality ~80%)
 class ImageCompressor {
   ImageCompressor._();

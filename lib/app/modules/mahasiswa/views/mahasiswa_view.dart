@@ -154,7 +154,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             ? user.prodi
             : (dashboard != null && dashboard.jurusan.isNotEmpty ? dashboard.jurusan : 'Teknik Informatika'));
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rtRw = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '01/02';
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
@@ -170,9 +170,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             margin: const EdgeInsets.only(right: 12),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+              color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+              border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -181,11 +181,11 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isOnline ? Colors.green : Colors.red,
+                    color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
                     boxShadow: [
                       if (isOnline)
                         BoxShadow(
-                          color: Colors.green.withValues(alpha: 0.4),
+                          color: AppColors.primaryGreen.withValues(alpha: 0.4),
                           blurRadius: 4,
                           spreadRadius: 1,
                         ),
@@ -198,7 +198,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isOnline ? Colors.green : Colors.red,
+                    color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
                   ),
                 ),
               ],
@@ -339,7 +339,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Kel. $kelurahan • RT/RW $rtRw',
+                            'Kel. $kelurahan • RW $rw',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -382,7 +382,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
     final totalWarga = myWargaList.length;
 
-    // Aktif Bin: Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
+    // Aktivasi Tempat Sampah: Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
     final wargaAktif = myWargaList.where((w) => w.isActivated).length;
 
     return Row(
@@ -584,7 +584,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
     final userKel = user?.kelurahan ?? 'Bojongsoang';
-    final userRt = user?.rtRw ?? '01/02';
+    final userRw = user?.rw ?? '01/02';
 
     // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa ini
     final list = state.wargaList.where((w) {
@@ -598,15 +598,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
       return true;
     }).map((w) {
-      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $userRt, Kel. $userKel';
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, Kel. $userKel';
       return WargaDampingan(
         binId: w.binId,
         wargaName: w.wargaName,
         address: displayAddr,
         kelurahan: userKel,
-        rtRw: userRt,
+        rw: userRw,
         mahasiswaId: w.mahasiswaId,
         recentLogs: w.recentLogs,
         isActivated: w.isActivated,

@@ -173,9 +173,9 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                      color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+                      border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -184,11 +184,11 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isOnline ? Colors.green : Colors.red,
+                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
                             boxShadow: [
                               if (isOnline)
                                 BoxShadow(
-                                  color: Colors.green.withValues(alpha: 0.4),
+                                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
                                   blurRadius: 4,
                                   spreadRadius: 1,
                                 ),
@@ -201,7 +201,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: isOnline ? Colors.green : Colors.red,
+                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
                           ),
                         ),
                       ],
@@ -400,7 +400,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Pencatatan timbangan residu fisik terakumulasi otomatis ke Bin Residu Global RT/RW.',
+                            'Pencatatan timbangan residu fisik terakumulasi otomatis ke Tempat Sampah Residu Global RW.',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

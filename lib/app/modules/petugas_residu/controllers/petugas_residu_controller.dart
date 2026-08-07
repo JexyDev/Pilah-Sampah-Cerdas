@@ -108,10 +108,10 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
     }
   }
 
-  Future<void> fetchJadwal({String? kelurahan, String? rtRw}) async {
+  Future<void> fetchJadwal({String? kelurahan, String? rw}) async {
     try {
       final repo = _ref.read(petugasResiduRepositoryProvider);
-      final list = await repo.getJadwalHarian(kelurahan: kelurahan, rtRw: rtRw);
+      final list = await repo.getJadwalHarian(kelurahan: kelurahan, rw: rw);
       state = state.copyWith(jadwalList: list);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Gagal memuat jadwal penjemputan.');

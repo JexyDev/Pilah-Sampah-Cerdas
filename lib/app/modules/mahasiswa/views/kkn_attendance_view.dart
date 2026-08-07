@@ -100,17 +100,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         // Success attendance
         if (state.isSuccessAttendance) ...[
           Card(
-            color: Colors.green.shade50,
+            color: AppColors.primaryGreenLight,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                  const Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 64),
                   const SizedBox(height: 16),
                   const Text(
                     'Absensi Berhasil Tercatat!',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -173,13 +173,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                         decoration: BoxDecoration(
                           color: state.isTracking
                               ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                              : Colors.orange.withValues(alpha: 0.1),
+                              : AppColors.warningOrange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           state.isTracking ? 'AKTIF' : 'NON-AKTIF',
                           style: TextStyle(
-                            color: state.isTracking ? AppColors.primaryGreen : Colors.orange,
+                            color: state.isTracking ? AppColors.primaryGreen : AppColors.warningOrange,
                             fontWeight: FontWeight.bold,
                             fontSize: 10,
                           ),
@@ -242,10 +242,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
             decoration: BoxDecoration(
               color: state.isInsideRadius
                   ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                  : Colors.orange.withValues(alpha: 0.1),
+                  : AppColors.warningOrange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: state.isInsideRadius ? AppColors.primaryGreen : Colors.orange,
+                color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.warningOrange,
                 width: 1.5,
               ),
             ),
@@ -253,7 +253,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
               children: [
                 Icon(
                   state.isInsideRadius ? Icons.verified_user : Icons.warning_amber_rounded,
-                  color: state.isInsideRadius ? AppColors.primaryGreen : Colors.orange,
+                  color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.warningOrange,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -268,7 +268,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                          color: state.isInsideRadius ? AppColors.primaryGreen : Colors.orange,
+                          color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.warningOrange,
                         ),
                       ),
                       if (pos != null && activity != null) ...[
@@ -279,7 +279,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                             fontSize: 11,
                             color: state.isInsideRadius
                                 ? AppColors.primaryGreen.withValues(alpha: 0.8)
-                                : Colors.orange.withValues(alpha: 0.8),
+                                : AppColors.warningOrange.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -422,8 +422,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                 );
               },
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange.shade800,
-                side: BorderSide(color: Colors.orange.shade400, width: 1.5),
+                foregroundColor: AppColors.warningOrange,
+                side: const BorderSide(color: AppColors.warningOrange, width: 1.5),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.event_busy_rounded, size: 20),
@@ -547,7 +547,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                           await notifier.recordAttendance(
                             method: 'GEOFENCE_2HRS',
                             kodeZona: kodeZonaCtrl.text.trim(),
-                            rtRw: rtRwCtrl.text.trim(),
+                            rw: rtRwCtrl.text.trim(),
                             kelurahan: selectedKelurahan,
                           );
                         },

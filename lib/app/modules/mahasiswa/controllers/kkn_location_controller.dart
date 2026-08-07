@@ -393,7 +393,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<bool> recordAttendance({
     required String method,
     required String kodeZona,
-    required String rtRw,
+    required String rw,
     required String kelurahan,
   }) async {
     _currentTargetScheduleId ??= 'SCH-TODAY';
@@ -418,7 +418,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         nim: nim,
         namaMahasiswa: namaMahasiswa,
         kodeZona: kodeZona,
-        rtRw: rtRw,
+        rw: rw,
+        kecamatan: user?.kecamatan,
         kelurahan: kelurahan,
         durationMinutes: durationMinutes,
         timestamp: DateTime.now().toUtc().toIso8601String(),
@@ -439,14 +440,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             userId: user.id,
             role: user.role.name,
             title: 'Absensi KKN Berhasil 📍',
-            desc: 'Presensi Geofence KKN di $kelurahan ($rtRw) berhasil tercatat (+10 PTS).',
+            desc: 'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
             title: 'Absensi KKN Berhasil 📍',
-            desc: 'Presensi Geofence KKN di $kelurahan ($rtRw) berhasil tercatat (+10 PTS).',
+            desc: 'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
         }

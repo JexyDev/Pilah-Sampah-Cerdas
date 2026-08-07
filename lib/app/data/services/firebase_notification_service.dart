@@ -103,7 +103,7 @@ class FirebaseNotificationService {
             time: map['time']?.toString() ?? 'Baru saja',
             icon: map['icon']?.toString() ?? 'info',
           ));
-        } catch (_) {}
+        } catch (e) { debugPrint('Silenced error: $e'); }
       }
       return result;
     } catch (e) {
@@ -126,7 +126,7 @@ class FirebaseNotificationService {
             map['isRead'] = true;
             return jsonEncode(map);
           }
-        } catch (_) {}
+        } catch (e) { debugPrint('Silenced error: $e'); }
         return item;
       }).toList();
 

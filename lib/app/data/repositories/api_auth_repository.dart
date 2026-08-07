@@ -68,21 +68,24 @@ class ApiAuthRepository implements AuthRepository {
 
         var user = _mapUser(userMap);
 
-        // Untuk warga: fetch household (householdId, rtRw, kelurahan)
+        // Untuk warga: fetch household (householdId, rw, kelurahan)
         // Untuk mahasiswa/petugas: baca dari local storage dulu
         if (user.role == UserRole.warga) {
           user = await _fetchAndAttachHousehold(user);
         } else if (user.role == UserRole.mahasiswaKkn) {
-          // Cek apakah login response sudah ada kelurahan/rtRw
-          if (user.kelurahan.isEmpty || user.rtRw.isEmpty) {
+          // Cek apakah login response sudah ada kelurahan/rw
+          if (user.kelurahan.isEmpty || user.rw.isEmpty) {
             // Baca dari local storage yang mungkin sudah disimpan sebelumnya
+            final localKec = await secureStorage.read(key: AppConfig.mahasiswaKecamatanKey);
             final localKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
-            final localRt = await secureStorage.read(key: AppConfig.mahasiswaRtRwKey);
+            final localRt = await secureStorage.read(key: AppConfig.mahasiswaRwKey);
             if ((localKel != null && localKel.isNotEmpty) ||
-                (localRt != null && localRt.isNotEmpty)) {
+                (localRt != null && localRt.isNotEmpty) ||
+                (localKec != null && localKec.isNotEmpty)) {
               user = user.copyWith(
+                kecamatan: localKec?.isNotEmpty == true ? localKec! : user.kecamatan,
                 kelurahan: localKel?.isNotEmpty == true ? localKel! : user.kelurahan,
-                rtRw: localRt?.isNotEmpty == true ? localRt! : user.rtRw,
+                rw: localRt?.isNotEmpty == true ? localRt! : user.rw,
               );
             }
           }
@@ -361,18 +364,21 @@ class ApiAuthRepository implements AuthRepository {
         user = user.copyWith(householdId: cachedHouseholdId);
       }
 
-      // Untuk mahasiswa KKN: baca kelurahan & rtRw dari local storage
+      // Untuk mahasiswa KKN: baca kelurahan & rw dari local storage
       if (user.role == UserRole.mahasiswaKkn) {
+        final cachedKec = await secureStorage.read(key: AppConfig.mahasiswaKecamatanKey);
         final cachedKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
-        final cachedRt = await secureStorage.read(key: AppConfig.mahasiswaRtRwKey);
+        final cachedRt = await secureStorage.read(key: AppConfig.mahasiswaRwKey);
         final hasLocalRegion = (cachedKel != null && cachedKel.isNotEmpty) ||
-                               (cachedRt != null && cachedRt.isNotEmpty);
+                               (cachedRt != null && cachedRt.isNotEmpty) ||
+                               (cachedKec != null && cachedKec.isNotEmpty);
         if (hasLocalRegion) {
           user = user.copyWith(
+            kecamatan: cachedKec?.isNotEmpty == true ? cachedKec! : user.kecamatan,
             kelurahan: cachedKel?.isNotEmpty == true ? cachedKel! : user.kelurahan,
-            rtRw: cachedRt?.isNotEmpty == true ? cachedRt! : user.rtRw,
+            rw: cachedRt?.isNotEmpty == true ? cachedRt! : user.rw,
           );
-        } else if (user.kelurahan.isEmpty || user.rtRw.isEmpty) {
+        } else if (user.kelurahan.isEmpty || user.rw.isEmpty) {
           // Fallback ke API hanya jika lokal belum ada
           user = await _fetchProfileMe(user);
         }
@@ -424,7 +430,7 @@ class ApiAuthRepository implements AuthRepository {
 
   // ─── Private: fetch household setelah login ───────────────────────────────
 
-  /// GET /api/v1/households/me → ambil householdId + rtRw + kelurahan
+  /// GET /api/v1/households/me → ambil householdId + rw + kelurahan
   /// dari household pertama milik user.
   Future<UserEntity> _fetchAndAttachHousehold(UserEntity user) async {
     // Household ID khusus untuk role Warga. Hindari memanggil endpoint ini untuk role lain agar tidak terkena 401/403.
@@ -439,12 +445,12 @@ class ApiAuthRepository implements AuthRepository {
           final hh = data.first as Map<String, dynamic>;
           final householdId = hh['id']?.toString() ?? '';
           
-          String rtRw = '';
+          String rw = '';
           String kelurahan = '';
           
-          if (hh['rtRw'] is Map) {
-            final rtRwMap = hh['rtRw'] as Map<String, dynamic>;
-            rtRw = rtRwMap['name']?.toString() ?? '';
+          if (hh['rw'] is Map) {
+            final rtRwMap = hh['rw'] as Map<String, dynamic>;
+            rw = rtRwMap['name']?.toString() ?? '';
             if (rtRwMap['kelurahan'] is Map) {
               final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
               kelurahan = kelMap['name']?.toString() ?? '';
@@ -458,7 +464,8 @@ class ApiAuthRepository implements AuthRepository {
             );
             return user.copyWith(
               householdId: householdId,
-              rtRw: rtRw,
+              rw: rw,
+              kecamatan: user.kecamatan,
               kelurahan: kelurahan,
             );
           }
@@ -628,21 +635,21 @@ class ApiAuthRepository implements AuthRepository {
   // ─── Helper ───────────────────────────────────────────────────────────────
 
   UserEntity _mapUser(Map<String, dynamic> userMap) {
-    // Ekstrak kelurahan & rtRw dari berbagai kemungkinan struktur response:
-    // - Flat: {'kelurahan': 'Bojongsoang', 'rtRw': '01/02'}
-    // - Nested via rtRw object: {'rtRw': {'name': '01/02', 'kelurahan': {'name': 'Bojongsoang'}}}
-    // - Nested via kelompok KKN: {'kelompokKkn': {'kelurahan': ..., 'rtRw': ...}}
+    // Ekstrak kelurahan & rw dari berbagai kemungkinan struktur response:
+    // - Flat: {'kelurahan': 'Bojongsoang', 'rw': '01/02'}
+    // - Nested via rw object: {'rw': {'name': '01/02', 'kelurahan': {'name': 'Bojongsoang'}}}
+    // - Nested via kelompok KKN: {'kelompokKkn': {'kelurahan': ..., 'rw': ...}}
     String kelurahan = '';
-    String rtRw = '';
+    String rw = '';
 
     // 1. Coba flat field langsung
     kelurahan = userMap['kelurahan']?.toString() ?? '';
-    rtRw = userMap['rtRw']?.toString() ?? '';
+    rw = userMap['rw']?.toString() ?? '';
 
-    // 2. Jika rtRw adalah object nested (seperti struktur warga)
-    if (rtRw.isEmpty && userMap['rtRw'] is Map) {
-      final rtRwMap = userMap['rtRw'] as Map<String, dynamic>;
-      rtRw = rtRwMap['name']?.toString() ?? '';
+    // 2. Jika rw adalah object nested (seperti struktur warga)
+    if (rw.isEmpty && userMap['rw'] is Map) {
+      final rtRwMap = userMap['rw'] as Map<String, dynamic>;
+      rw = rtRwMap['name']?.toString() ?? '';
       if (kelurahan.isEmpty && rtRwMap['kelurahan'] is Map) {
         final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
         kelurahan = kelMap['name']?.toString() ?? '';
@@ -655,29 +662,29 @@ class ApiAuthRepository implements AuthRepository {
     final sp = userMap['studentProfile'] is Map ? (userMap['studentProfile'] as Map<String, dynamic>) : null;
     if (sp != null) {
       if (kelurahan.isEmpty) kelurahan = sp['kelurahan']?.toString() ?? sp['penugasanKelurahan']?.toString() ?? sp['kelompok']?['kelurahan']?.toString() ?? '';
-      if (rtRw.isEmpty) {
-        if (sp['rtRw'] != null) {
-          rtRw = sp['rtRw'].toString();
+      if (rw.isEmpty) {
+        if (sp['rw'] != null) {
+          rw = sp['rw'].toString();
         } else if (sp['penugasanRt'] != null && sp['penugasanRw'] != null) {
-          rtRw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
-        } else if (sp['kelompok']?['rtRw'] != null) {
-          rtRw = sp['kelompok']['rtRw'].toString();
+          rw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
+        } else if (sp['kelompok']?['rw'] != null) {
+          rw = sp['kelompok']['rw'].toString();
         }
       }
     }
 
     // 4. Coba dari kelompokKkn (struktur mahasiswa KKN)
-    if ((kelurahan.isEmpty || rtRw.isEmpty) && userMap['kelompokKkn'] is Map) {
+    if ((kelurahan.isEmpty || rw.isEmpty) && userMap['kelompokKkn'] is Map) {
       final kkn = userMap['kelompokKkn'] as Map<String, dynamic>;
       if (kelurahan.isEmpty) kelurahan = kkn['kelurahan']?.toString() ?? '';
-      if (rtRw.isEmpty) rtRw = kkn['rtRw']?.toString() ?? '';
+      if (rw.isEmpty) rw = kkn['rw']?.toString() ?? '';
     }
 
     // 5. Coba dari profile nested
-    if ((kelurahan.isEmpty || rtRw.isEmpty) && userMap['profile'] is Map) {
+    if ((kelurahan.isEmpty || rw.isEmpty) && userMap['profile'] is Map) {
       final profile = userMap['profile'] as Map<String, dynamic>;
       if (kelurahan.isEmpty) kelurahan = profile['kelurahan']?.toString() ?? '';
-      if (rtRw.isEmpty) rtRw = profile['rtRw']?.toString() ?? '';
+      if (rw.isEmpty) rw = profile['rw']?.toString() ?? '';
     }
 
     final String nim = userMap['nim']?.toString() ?? sp?['nim']?.toString() ?? userMap['profile']?['nim']?.toString() ?? '';
@@ -693,8 +700,9 @@ class ApiAuthRepository implements AuthRepository {
       email: userMap['email']?.toString(),
       role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
       fotoProfil: userMap['fotoProfil']?.toString(),
-      kelurahan: kelurahan,
-      rtRw: rtRw,
+      kecamatan: userMap['kecamatan']?.toString() ?? '',
+      kelurahan: userMap['kelurahan']?.toString() ?? '',
+      rw: rw,
       nim: nim,
       jurusan: jurusan,
       prodi: prodi,
@@ -704,7 +712,7 @@ class ApiAuthRepository implements AuthRepository {
   }
 
   /// Fetch data wilayah mahasiswa dari /auth/me atau fallback ke /kkn/kelompok/me.
-  /// Backend /auth/me tidak return kelurahan/rtRw, tapi /kkn/kelompok/me punya poskoLocation.
+  /// Backend /auth/me tidak return kelurahan/rw, tapi /kkn/kelompok/me punya poskoLocation.
   Future<UserEntity> _fetchProfileMe(UserEntity user) async {
     // Coba /auth/me dulu (siapa tahu backend nanti update untuk return wilayah)
     try {
@@ -726,11 +734,12 @@ class ApiAuthRepository implements AuthRepository {
         debugPrint('[DEBUG /auth/me] userMap=$userMap');
         if (userMap.isNotEmpty) {
           final fetched = _mapUser(userMap);
-          if (fetched.kelurahan.isNotEmpty && fetched.rtRw.isNotEmpty) {
-            debugPrint('[DEBUG /auth/me] Got kelurahan=${fetched.kelurahan} rtRw=${fetched.rtRw}');
+          if (fetched.kelurahan.isNotEmpty && fetched.rw.isNotEmpty) {
+            debugPrint('[DEBUG /auth/me] Got kelurahan=${fetched.kelurahan} rw=${fetched.rw}');
             return user.copyWith(
+              kecamatan: userMap['kecamatan']?.toString() ?? '',
               kelurahan: fetched.kelurahan,
-              rtRw: fetched.rtRw,
+              rw: fetched.rw,
             );
           }
         }
@@ -752,9 +761,9 @@ class ApiAuthRepository implements AuthRepository {
           kelompokData = data as Map<String, dynamic>;
         }
 
-        // Coba field kelurahan & rtRw langsung
+        // Coba field kelurahan & rw langsung
         String kel = kelompokData['kelurahan']?.toString() ?? '';
-        String rt = kelompokData['rtRw']?.toString() ?? '';
+        String rt = kelompokData['rw']?.toString() ?? '';
 
         // Parse dari poskoLocation: "Kel. Bojongsoang RT 03 / RW 08"
         if ((kel.isEmpty || rt.isEmpty) && kelompokData['poskoLocation'] is String) {
@@ -768,11 +777,12 @@ class ApiAuthRepository implements AuthRepository {
           if (rtMatch != null && rt.isEmpty) rt = '${rtMatch.group(1)?.padLeft(2,'0')}/${rtMatch.group(2)?.padLeft(2,'0')}';
         }
 
-        debugPrint('[DEBUG kelompok] parsed kelurahan=$kel rtRw=$rt');
+        debugPrint('[DEBUG kelompok] parsed kelurahan=$kel rw=$rt');
         if (kel.isNotEmpty || rt.isNotEmpty) {
           return user.copyWith(
+            kecamatan: kelompokData['kecamatan']?.toString() ?? user.kecamatan,
             kelurahan: kel.isNotEmpty ? kel : user.kelurahan,
-            rtRw: rt.isNotEmpty ? rt : user.rtRw,
+            rw: rt.isNotEmpty ? rt : user.rw,
           );
         }
       }
@@ -818,7 +828,7 @@ class ApiAuthRepository implements AuthRepository {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Silenced error: $e'); }
 
     try {
       final rtResp = await apiClient.dio.get('/wilayah/rt');
@@ -831,7 +841,7 @@ class ApiAuthRepository implements AuthRepository {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Silenced error: $e'); }
 
     // 2. Coba endpoint /areas/kelurahan
     try {
@@ -845,7 +855,7 @@ class ApiAuthRepository implements AuthRepository {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Silenced error: $e'); }
 
     // 3. Coba endpoint /areas/rt-rw
     try {
@@ -867,7 +877,7 @@ class ApiAuthRepository implements AuthRepository {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Silenced error: $e'); }
 
     final validKels = kelurahans.where((k) => k.isNotEmpty && !k.contains('{')).toList();
     final validRts = rtRws.where((r) => r.isNotEmpty && !r.contains('{')).toList();

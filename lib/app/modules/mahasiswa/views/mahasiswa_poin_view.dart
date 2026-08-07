@@ -41,7 +41,7 @@ class MahasiswaPoinView extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ── 2. Stats 3 Kolom ──────────────────────────────
-                  _buildStatsRow(mhsState),
+                  _buildStatsRow(mhsState, user != null ? ref.watch(pointHistoryProvider) : const AsyncValue.loading()),
                   const SizedBox(height: 16),
 
                   // ── 3. Info Banner Poin KKN ─────────────────────────
@@ -142,35 +142,40 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(MahasiswaState mhsState) {
+  Widget _buildStatsRow(MahasiswaState mhsState, AsyncValue<List<PointHistoryEntity>> asyncHistory) {
     final wargaCount = mhsState.wargaList.where((w) => w.isActivated).length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
+    
+    int laporanCount = 0;
+    if (asyncHistory.value != null) {
+      laporanCount = asyncHistory.value!.where((h) => h.description.toLowerCase().contains('pemanfaatan')).length;
+    }
 
     return Row(
       children: [
         Expanded(
           child: _StatCard(
-            title: 'Presensi',
-            value: '${(points / 10).floor()} Hari',
-            icon: Icons.location_on_rounded,
+            topText: 'Hari',
+            middleText: '${(points / 10).floor()}',
+            bottomText: 'Presensi',
             color: AppColors.primaryGreen,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _StatCard(
-            title: 'Tempat Sampah Aktif',
-            value: '$wargaCount Warga',
-            icon: Icons.qr_code_scanner_rounded,
+            topText: 'Warga',
+            middleText: '$wargaCount',
+            bottomText: 'Tempat Sampah',
             color: AppColors.primaryBlueDark,
           ),
         ),
         const SizedBox(width: 8),
-        const Expanded(
+        Expanded(
           child: _StatCard(
-            title: 'Pemanfaatan',
-            value: 'Laporan',
-            icon: Icons.recycling_rounded,
+            topText: 'Laporan',
+            middleText: '$laporanCount',
+            bottomText: 'Pemanfaatan',
             color: AppColors.warningOrange,
           ),
         ),
@@ -265,46 +270,57 @@ class MahasiswaPoinView extends ConsumerWidget {
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
+    required this.topText,
+    required this.middleText,
+    required this.bottomText,
     required this.color,
   });
 
-  final String title;
-  final String value;
-  final IconData icon;
+  final String topText;
+  final String middleText;
+  final String bottomText;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(height: 6),
           Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
+            topText,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 10,
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.bold, // 1: Bold
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            middleText,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600, // 2: Semi-bold
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            bottomText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w400, // 3: Regular
             ),
           ),
         ],

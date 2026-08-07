@@ -256,7 +256,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                       ),
                       // Dekorasi bintang kecil (Stars)
                       const Positioned(top: 12, left: 12, child: Icon(Icons.circle, size: 4, color: AppColors.primaryBlue)),
-                      const Positioned(top: 8, right: 24, child: Icon(Icons.star, size: 8, color: Colors.blueAccent)),
+                      const Positioned(top: 8, right: 24, child: Icon(Icons.star, size: 8, color: AppColors.primaryBlue)),
                       const Positioned(bottom: 16, left: 16, child: Icon(Icons.circle, size: 3, color: AppColors.primaryBlue)),
                       const Positioned(bottom: 24, right: 12, child: Icon(Icons.star, size: 10, color: AppColors.primaryGreen)),
                       const Positioned(top: 28, left: 6, child: Icon(Icons.star, size: 6, color: AppColors.primaryGreen)),
@@ -280,7 +280,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                 
                 // 3. Subjudul
                 const Text(
-                  'Data residu fisik telah tercatat\ndi Tempat Sampah Residu Global RT/RW.',
+                  'Data residu fisik telah tercatat\ndi Tempat Sampah Residu Global RW.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -297,7 +297,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: Colors.blue.shade100, width: 1.5),
+                    border: Border.all(color: AppColors.primaryBlue, width: 1.5),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -336,7 +336,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: AppColors.primaryGreenLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -451,7 +451,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Input manual hasil timbangan fisik residu untuk terakumulasi ke Bin Residu Global RT/RW.',
+                        'Input manual hasil timbangan fisik residu untuk terakumulasi ke Tempat Sampah Residu Global RW.',
                         style: TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -478,8 +478,8 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Tempat Sampah Residu Global RT/RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          Text('Tercatat di Audit Trail Monitoring RT/RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          Text('Tempat Sampah Residu Global RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('Tercatat di Audit Trail Monitoring RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                         ],
                       ),
                     ),
@@ -493,7 +493,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                 decoration: const InputDecoration(
                   hintText: 'Masukkan berat (misal: 12.5)',
@@ -579,7 +579,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.location_on, color: Colors.greenAccent, size: 14),
+                                        const Icon(Icons.location_on, color: AppColors.primaryGreen, size: 14),
                                         const SizedBox(width: 4),
                                         Text(
                                           'GPS Tercatat: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',

@@ -180,7 +180,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final userNim = user?.nim.isNotEmpty == true ? user!.nim : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '1301210042');
     final userProdi = user?.prodi.isNotEmpty == true ? user!.prodi : (user?.jurusan.isNotEmpty == true ? user!.jurusan : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : 'S1 Teknik Informatika'));
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rtRw = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '01/02';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -284,7 +284,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                     _buildReadOnlyField('NIM', userNim.isNotEmpty ? userNim : '-'),
                     _buildReadOnlyField('Fakultas', userProdi.isNotEmpty ? userProdi : '-'),
                   _buildReadOnlyField('Kelurahan Dampingan', kelurahan.isNotEmpty ? kelurahan : '-'),
-                  _buildReadOnlyField('RT / RW Dampingan', rtRw.isNotEmpty ? rtRw : '-'),
+                  _buildReadOnlyField('RW Dampingan', rw.isNotEmpty ? rw : '-'),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(10),

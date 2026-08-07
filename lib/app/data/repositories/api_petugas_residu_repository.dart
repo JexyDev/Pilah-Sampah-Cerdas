@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
@@ -66,7 +68,7 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   }
 
   @override
-  Future<List<ResiduBinPickup>?> getCachedJadwalHarian({String? kelurahan, String? rtRw}) async {
+  Future<List<ResiduBinPickup>?> getCachedJadwalHarian({String? kecamatan, String? kelurahan, String? rw}) async {
     final prefs = await SharedPreferences.getInstance();
     final cachedStr = prefs.getString(_cacheKeyJadwal);
     if (cachedStr != null && cachedStr.isNotEmpty) {
@@ -81,10 +83,10 @@ class ApiPetugasResiduRepository implements PetugasResiduRepository {
   }
 
   @override
-  Future<List<ResiduBinPickup>> getJadwalHarian({String? kelurahan, String? rtRw}) async {
+  Future<List<ResiduBinPickup>> getJadwalHarian({String? kecamatan, String? kelurahan, String? rw}) async {
     final Map<String, dynamic> queryParams = {};
     if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
-    if (rtRw != null && rtRw.isNotEmpty) queryParams['rtRw'] = rtRw;
+    if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
 
     final response = await apiClient.dio.get('/petugas-residu/jadwal-harian', queryParameters: queryParams);
     if (response.statusCode == 200 && response.data != null) {

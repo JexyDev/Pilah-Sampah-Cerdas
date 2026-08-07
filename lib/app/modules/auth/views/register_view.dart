@@ -225,7 +225,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
 
     if (_selectedRole == 'Warga') {
       data['address'] = InputSanitizer.sanitize(_alamatController.text);
-      data['rtRw'] = _selectedRtRw;
+      data['rw'] = _selectedRtRw;
       data['kelurahan'] = _selectedKelurahan;
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = InputSanitizer.sanitize(_nimController.text);
@@ -236,12 +236,12 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['jenjang'] = _selectedJenjang;
       data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
       data['dplName'] = InputSanitizer.sanitize(_dplNameController.text);
-      data['rtRw'] = _selectedRtRw;
+      data['rw'] = _selectedRtRw;
       data['kelurahan'] = _selectedKelurahan;
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
-      data['rtRw'] = _selectedRtRw;
+      data['rw'] = _selectedRtRw;
       data['kelurahan'] = _selectedKelurahan;
       data['assignedZone'] = _selectedKelurahan;
     }

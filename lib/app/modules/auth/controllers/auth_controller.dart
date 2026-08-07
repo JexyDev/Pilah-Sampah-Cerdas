@@ -205,12 +205,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  /// Update kelurahan & rtRw mahasiswa KKN langsung di state.
+  /// Update kelurahan & rw mahasiswa KKN langsung di state.
   /// Data ini disimpan permanen di local storage oleh AuthRepository.
-  void setMahasiswaRegion({required String kelurahan, required String rtRw}) {
+  void setMahasiswaRegion({required String kelurahan, required String rw, String kecamatan = ''}) {
     if (state.user == null) return;
     state = state.copyWith(
-      user: state.user!.copyWith(kelurahan: kelurahan, rtRw: rtRw),
+      user: state.user!.copyWith(kecamatan: kecamatan, kelurahan: kelurahan, rw: rw),
     );
   }
 
