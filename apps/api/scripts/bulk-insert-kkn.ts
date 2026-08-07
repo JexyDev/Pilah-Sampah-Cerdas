@@ -210,6 +210,7 @@ async function main() {
     if (!phoneNorm || phoneSeenInFile.has(phoneNorm)) {
       phoneNorm = `+628999${String(Date.now()).slice(-4)}${String(rowNum).padStart(3, '0')}`;
     }
+    phoneSeenInFile.set(phoneNorm, { rowNum, namaMahasiswa: cellNama });
     // Parse RW (fallback RW 1 if missing)
     const rwList = parseRwString(lastRw) || [1];
 
