@@ -1,4 +1,4 @@
-﻿version: '3.8'
+version: '3.8'
 
 services:
   # 1. Database PostgreSQL (GIS-Ready)
@@ -34,6 +34,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # 3. AI Model Serving (YOLOv8-seg -> ONNX, FastAPI)
+  # Resource-limited per implementation_plan.md §6.5 — VPS has very little
+  # RAM headroom, so this container must not exceed these caps.
+  ai-model:
+    build:
+      context: ../model
+      dockerfile: serving/Dockerfile
+    container_name: psc-ai-model
+    restart: always
+    ports:
+      - '8000:8000'
+    mem_limit: 700m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 
 volumes:
   postgres_data:
