@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="dlhEcoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <!-- Circular Eco Shield -->
+  <circle cx="60" cy="60" r="52" fill="url(#dlhEcoGrad)" stroke="#10b981" stroke-width="4"/>
+  <circle cx="60" cy="60" r="45" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <!-- Leaf 1 (Left) -->
+  <path d="M60 62 C38 42 34 22 60 22 C60 42 56 62 60 62 Z" fill="url(#leafGrad)"/>
+  <!-- Leaf 2 (Right) -->
+  <path d="M60 62 C82 42 86 22 60 22 C60 42 64 62 60 62 Z" fill="#6ee7b7" opacity="0.9"/>
+  <!-- Leaf Vein -->
+  <path d="M60 26 V62" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Water Drop / Globe Base -->
+  <path d="M60 62 C48 62 44 76 60 88 C76 76 72 62 60 62 Z" fill="#38bdf8" opacity="0.9"/>
+  <!-- Text DLH KOTA BANDUNG -->
+  <text x="60" y="101" font-family="Arial, sans-serif" font-weight="900" font-size="10" fill="#ffffff" text-anchor="middle" letter-spacing="1">DLH BANDUNG</text>
+</svg>

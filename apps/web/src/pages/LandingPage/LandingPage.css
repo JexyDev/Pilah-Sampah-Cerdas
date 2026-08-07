@@ -7,37 +7,86 @@ html {
 }
 
 :root {
-  --primary-emerald: #059669;
+  --primary-emerald: #009966;
   --primary-emerald-hover: #047857;
   --primary-emerald-light: #ecfdf5;
+  --accent-blue: #0084DC;
+  --accent-blue-hover: #006ca6;
+  --accent-blue-light: #eaf3ff;
   --dark-slate: #0f172a;
   --bg-light: #f8fafc;
 }
 
 .landing-page {
+  padding-top: 60px;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color: #0f172a;
+
   background-color: #ffffff;
+
+  background-image:
+    radial-gradient(rgba(0, 153, 102, 0.12) 1px,
+      transparent 1px);
+
+  background-size: 28px 28px;
+
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
+/* ========================================
+   GLOBAL CONTAINER
+======================================== */
+
 .container-custom {
-  max-width: 1536px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  width: 100%;
+  max-width: 1280px;
+  /* sebelumnya 1440px */
+  margin: 0 auto;
+  padding-inline: 32px;
+}
+
+@media (min-width:1536px) {
+  .container-custom {
+    max-width: 1320px;
+  }
+}
+
+@media (max-width:1280px) {
+  .container-custom {
+    padding-inline: 28px;
+  }
+}
+
+@media (max-width:1024px) {
+  .container-custom {
+    padding-inline: 24px;
+  }
+}
+
+@media (max-width:768px) {
+  .container-custom {
+    padding-inline: 20px;
+  }
 }
 
 /* Glass Navbar */
 .landing-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 50;
+
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 /* NAVBAR LINKS ABSOLUTE PERFECT CENTER */
@@ -47,7 +96,6 @@ html {
   gap: 2.75rem;
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #475569;
 }
 
 .nav-links-centered button {
@@ -57,10 +105,10 @@ html {
   position: relative;
   transition: color 0.2s ease;
   padding: 0.25rem 0;
-  color: #475569;
   font-weight: 700;
   font-size: 0.9375rem;
   white-space: nowrap;
+
 }
 
 .nav-links-centered button:hover {
@@ -100,6 +148,7 @@ html {
   border: 1px solid #059669;
   white-space: nowrap;
 }
+
 .btn-primary-clean:hover {
   background-color: #047857;
   border-color: #047857;
@@ -122,6 +171,7 @@ html {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   white-space: nowrap;
 }
+
 .btn-secondary-clean:hover {
   background-color: #f8fafc;
   border-color: #94a3b8;
@@ -144,11 +194,11 @@ html {
 }
 
 .text-blue-hero {
-  color: #059669;
+  color: #0084DC;
 }
 
 .text-green-hero {
-  color: #10b981;
+  color: #009966;
 }
 
 /* EXPANDED WIDESCREEN REAL WEB DASHBOARD CARD */
@@ -161,6 +211,7 @@ html {
   transition: all 0.3s ease;
   width: 100%;
 }
+
 .widescreen-dashboard-card:hover {
   box-shadow: 0 25px 60px -10px rgba(5, 150, 105, 0.12);
 }
@@ -214,6 +265,22 @@ html {
   transform: translateY(-3px);
   border-color: #059669;
   box-shadow: 0 10px 20px rgba(5, 150, 105, 0.06);
+}
+
+.why-us-eyebrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width: fit-content;
+  margin: 0 auto 18px;
+
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+
+  color: #009966;
 }
 
 /* CLEAN LIGHT ABOUT US & WHY US CARDS */
@@ -291,3 +358,1632 @@ html {
   border-color: #059669;
 }
 
+/* ---------- Stats strip ---------- */
+.stats-strip {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 28px 20px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  transform: translateY(28px);
+  position: relative;
+  z-index: 3;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.stat-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--green-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  color: var(--ink-900);
+}
+
+.stat-label {
+  font-size: .78rem;
+  color: var(--ink-500);
+  font-weight: 500;
+}
+
+/* ---------- Stats Strip ---------- */
+
+.stats-strip {
+  width: 100%;
+  padding: 28px 32px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  align-items: center;
+}
+
+/* ---------- Stat Item ---------- */
+
+.stat-item {
+  min-width: 0;
+  min-height: 120px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 12px 18px;
+
+  border-right: 1px solid #e2e8f0;
+}
+
+.stat-item:last-child {
+  border-right: none;
+}
+
+/* ---------- Icon ---------- */
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+
+  margin-bottom: 12px;
+
+  border-radius: 13px;
+
+  background: #ecfdf5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    transform .25s ease,
+    background .25s ease;
+}
+
+.stat-icon svg {
+  width: 21px;
+  height: 21px;
+
+  color: #009966;
+}
+
+.stat-item:hover .stat-icon {
+  background: #d1fae5;
+  transform: translateY(-3px);
+}
+
+/* ---------- Value ---------- */
+
+.stat-value {
+  margin: 0;
+
+  font-size: 1.35rem;
+  line-height: 1.2;
+
+  font-weight: 800;
+
+  color: #0f172a;
+}
+
+/* ---------- Label ---------- */
+
+.stat-label {
+  margin-top: 7px;
+
+  font-size: .72rem;
+  line-height: 1.4;
+
+  color: #64748b;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+  .stats-strip {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    padding: 24px;
+  }
+
+  .stat-item:nth-child(3) {
+    border-right: none;
+  }
+
+  .stat-item:nth-child(4),
+  .stat-item:nth-child(5) {
+    border-top: 1px solid #e2e8f0;
+  }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+
+  .stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 18px;
+  }
+
+  .stat-item {
+    min-height: 110px;
+    padding: 12px 8px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 9px;
+  }
+
+  .stat-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+
+  .stat-label {
+    font-size: .68rem;
+    white-space: normal;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 400px) {
+
+  .stats-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-item {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .stat-item:last-child {
+    border-bottom: none;
+  }
+
+}
+
+/* ==========================================================
+   PROGRAM SECTION
+========================================================== */
+
+.program-section {
+  display: flex;
+  flex-direction: column;
+  gap: 72px;
+}
+
+/* ---------- TOP ---------- */
+
+.program-top {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.program-heading {
+  max-width: 400px;
+}
+
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.program-card {
+  background: #fff;
+  border: 1px solid #E6EBEF;
+  border-radius: 18px;
+  padding: 22px;
+  transition: .3s;
+  min-height: 205px;
+}
+
+.program-card:hover {
+  transform: translateY(-6px);
+  border-color: #009966;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .08);
+}
+
+.program-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #EEF8ED;
+  color: #009966;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 18px;
+}
+
+.program-icon svg {
+  stroke: #009966;
+}
+
+.program-card h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 10px;
+}
+
+.program-card p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+/* ==========================================================
+   KEGIATAN
+========================================================== */
+
+.activity-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.activity-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.kegiatan-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  padding: 16px;
+  border: 1px solid #E6EBEF;
+  border-radius: 18px;
+  background: #fff;
+
+  transition: .3s;
+}
+
+.kegiatan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .08);
+}
+
+.kegiatan-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+
+  background: linear-gradient(135deg,
+      #009966,
+      #0084DC);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  flex-shrink: 0;
+  position: relative;
+}
+
+.date-badge {
+  width: 42px;
+  height: 42px;
+  background: #fff;
+
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+
+  padding: 2px 0;
+  line-height: 1;
+}
+
+.date-badge strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1f2937;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.date-badge span {
+  display: block;
+  font-size: .62rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1;
+  letter-spacing: .02em;
+  text-transform: capitalize;
+}
+
+.kegiatan-body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: #64748b;
+  font-size: 13px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+
+  color: #009966;
+
+  margin: 0 0 18px;
+}
+
+.eyebrow::after {
+  content: "";
+  margin-top: 10px;
+
+  width: 42px;
+  height: 4px;
+
+  border-radius: 999px;
+  background: #009966;
+}
+
+.link-more {
+  font-size: .85rem;
+  font-weight: 700;
+  color: #0084DC;
+}
+
+/* ==========================================================
+   SDG SECTION
+========================================================== */
+
+.sdg-section {
+  width: 100%;
+}
+
+/* ==========================================================
+   HEADING
+========================================================== */
+
+.sdg-heading {
+  margin-bottom: 30px;
+}
+
+.sdg-heading .eyebrow {
+  margin-bottom: 12px;
+}
+
+.sdg-heading h2 {
+  max-width: 700px;
+
+  margin: 0 0 10px;
+
+  font-family: inherit;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.25;
+  font-weight: 900;
+
+  letter-spacing: -0.025em;
+
+  color: #0f172a;
+}
+
+.sdg-intro-text {
+  max-width: 650px;
+
+  margin: 0;
+
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.7;
+
+  color: #64748b;
+}
+
+/* ==========================================================
+   SDG GRID
+========================================================== */
+
+.sdg-grid {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  /* JARAK ANTAR LOGO */
+  width: max-content;
+  max-width: 100%;
+}
+
+/* ==========================================================
+   SDG ITEM
+========================================================== */
+
+.sdg-item {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  padding: 0;
+
+  transition: transform 0.25s ease;
+}
+
+.sdg-item:hover {
+  transform: translateY(-4px);
+}
+
+/* ==========================================================
+   SDG LABEL
+========================================================== */
+
+.sdg-top {
+  margin-bottom: 10px;
+}
+
+.sdg-number {
+  font-family: inherit;
+
+  font-size: 0.78rem;
+
+  font-weight: 800;
+
+  color: #009966;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
+}
+
+/* ==========================================================
+   SDG IMAGE
+========================================================== */
+
+.sdg-image {
+  display: block;
+
+  width: 100%;
+
+  max-width: 130px;
+
+  height: 130px;
+
+  object-fit: contain;
+
+  object-position: left center;
+
+  margin-bottom: 12px;
+}
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.sdg-description {
+  max-width: 160px;
+
+  margin: 0;
+
+  font-family: inherit;
+
+  font-size: 0.75rem;
+
+  line-height: 1.55;
+
+  font-weight: 500;
+
+  color: #64748b;
+}
+
+/* ==========================================================
+   BOTTOM TEXT
+========================================================== */
+
+.sdg-bottom-text {
+  margin: 28px 0 0;
+
+  font-family: inherit;
+
+  font-size: 0.9rem;
+
+  line-height: 1.6;
+
+  color: #64748b;
+
+  font-weight: 600;
+}
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 1000px) {
+
+  .sdg-grid {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 30px;
+  }
+
+  .sdg-image {
+    max-width: 115px;
+    height: 115px;
+  }
+
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+  .sdg-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 16px;
+  }
+
+  .sdg-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .sdg-description {
+    max-width: 150px;
+  }
+
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 420px) {
+
+  .sdg-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 12px;
+  }
+
+  .sdg-number {
+    font-size: 0.7rem;
+  }
+
+  .sdg-image {
+    width: 90px;
+    height: 90px;
+  }
+
+  .sdg-description {
+    font-size: 0.7rem;
+  }
+
+}
+
+/* ==========================================================
+   DAMPAK NYATA
+========================================================== */
+
+.dampak-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* ==========================================================
+   INTRO
+========================================================== */
+
+.dampak-intro {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 20px 35px 20px 0;
+}
+
+.dampak-intro .eyebrow {
+  margin-bottom: 14px;
+}
+
+.dampak-intro .section-title {
+  max-width: 14ch;
+
+  font-family: inherit;
+  font-size: clamp(1.7rem, 2.8vw, 2.35rem);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+
+  color: #0f172a;
+
+  margin-bottom: 14px;
+}
+
+.dampak-intro .section-desc {
+  max-width: 40ch;
+
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.7;
+
+  color: #64748b;
+}
+
+.dampak-intro .btn {
+  align-self: flex-start;
+  margin-top: 20px;
+}
+
+/* ==========================================================
+   STATISTIC CARDS
+========================================================== */
+
+.dampak-card {
+  min-height: 145px;
+
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  padding: 22px 20px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  gap: 6px;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.dampak-card:hover {
+  transform: translateY(-4px);
+
+  border-color: #009966;
+
+  box-shadow:
+    0 14px 30px rgba(15, 23, 42, 0.07);
+}
+
+.dampak-label {
+  font-family: inherit;
+
+  font-size: 0.72rem;
+  line-height: 1.4;
+
+  color: #64748b;
+
+  font-weight: 600;
+}
+
+.dampak-value {
+  font-family: inherit;
+
+  font-size: 1.55rem;
+  line-height: 1.2;
+
+  font-weight: 800;
+
+  color: #009966;
+
+  letter-spacing: -0.02em;
+}
+
+.dampak-sub {
+  font-family: inherit;
+
+  font-size: 0.72rem;
+
+  color: #94a3b8;
+
+  font-weight: 500;
+}
+
+/* ==========================================================
+   POSISI STAT CARD
+========================================================== */
+
+/*
+   Layout desktop:
+
+   ┌────────────────┬────────────┬────────────┐
+   │                │ Statistik  │ Statistik  │
+   │     INTRO      ├────────────┼────────────┤
+   │                │ Statistik  │ Statistik  │
+   ├────────────────┴────────────┴────────────┤
+   │                  CHART                    │
+   └───────────────────────────────────────────┘
+*/
+
+.dampak-card:nth-of-type(2) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dampak-card:nth-of-type(3) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.dampak-card:nth-of-type(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.dampak-card:nth-of-type(5) {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+/* ==========================================================
+   CHART
+========================================================== */
+
+.dampak-chart {
+  grid-column: 2 / 4;
+  grid-row: 3;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  padding: 24px;
+
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.dampak-chart:hover {
+  border-color: #cbd5e1;
+
+  box-shadow:
+    0 14px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* ==========================================================
+   CHART HEADER
+========================================================== */
+
+.dampak-chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 8px;
+}
+
+.dampak-chart-header .eyebrow {
+  margin-bottom: 6px;
+}
+
+.dampak-chart-header h3 {
+  margin: 0;
+
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+
+  color: #0f172a;
+}
+
+.chart-unit {
+  flex-shrink: 0;
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: #eaf3ff;
+  color: #0084dc;
+
+  font-family: inherit;
+
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ==========================================================
+   BAR LIST
+========================================================== */
+
+.bar-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 13px;
+
+  margin: 20px 0 10px;
+
+  padding: 0;
+
+  list-style: none;
+}
+
+.bar-list li {
+  display: grid;
+
+  grid-template-columns: 105px minmax(0, 1fr) 40px;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.bar-label {
+  font-family: inherit;
+
+  font-size: 0.76rem;
+
+  color: #475569;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.bar-track {
+  width: 100%;
+  height: 8px;
+
+  background: #f1f5f9;
+
+  border-radius: 999px;
+
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+
+  height: 100%;
+
+  background: linear-gradient(90deg,
+      #0084dc,
+      #009966);
+
+  border-radius: 999px;
+
+  transition: width 0.5s ease;
+}
+
+.bar-val {
+  font-family: inherit;
+
+  font-size: 0.74rem;
+
+  color: #64748b;
+
+  font-weight: 700;
+
+  text-align: right;
+}
+
+/* ==========================================================
+   AXIS
+========================================================== */
+
+.bar-axis {
+  display: flex;
+
+  justify-content: space-between;
+
+  margin-left: 117px;
+
+  padding-top: 9px;
+
+  border-top: 1px dashed #e2e8f0;
+
+  font-family: inherit;
+
+  font-size: 0.68rem;
+
+  color: #94a3b8;
+}
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 1100px) {
+
+  .dampak-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+
+  .dampak-intro {
+    grid-column: 1 / -1;
+    grid-row: auto;
+
+    padding: 0;
+
+    margin-bottom: 8px;
+  }
+
+  .dampak-intro .section-title {
+    max-width: 20ch;
+  }
+
+  .dampak-card:nth-of-type(2),
+  .dampak-card:nth-of-type(3),
+  .dampak-card:nth-of-type(4),
+  .dampak-card:nth-of-type(5) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .dampak-chart {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 768px) {
+
+  .dampak-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .dampak-intro {
+    grid-column: 1 / -1;
+  }
+
+  .dampak-intro .section-title {
+    max-width: 100%;
+
+    font-size: 1.8rem;
+  }
+
+  .dampak-card {
+    min-height: 125px;
+
+    padding: 18px 16px;
+  }
+
+  .dampak-value {
+    font-size: 1.35rem;
+  }
+
+  .dampak-chart {
+    grid-column: 1 / -1;
+
+    padding: 20px 16px;
+  }
+
+  .bar-list li {
+    grid-template-columns: 85px minmax(0, 1fr) 35px;
+
+    gap: 8px;
+  }
+
+  .bar-label {
+    font-size: 0.68rem;
+  }
+
+  .bar-axis {
+    margin-left: 93px;
+  }
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+  .dampak-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dampak-intro,
+  .dampak-card,
+  .dampak-chart {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .dampak-card {
+    min-height: auto;
+
+    padding: 18px;
+  }
+
+  .dampak-chart-header {
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+  .bar-list li {
+    grid-template-columns: 78px minmax(0, 1fr) 32px;
+  }
+
+  .bar-axis {
+    margin-left: 86px;
+  }
+}
+
+/* ==========================================================
+   MITRA / OUR CLIENTS
+========================================================== */
+
+#about,
+#why-us,
+#program,
+#dampak,
+#mitra,
+#Mitra,
+#faq {
+  scroll-margin-top: 85px;
+}
+
+.section-mitra {
+  background: #eef5f9;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 100px 0;
+  scroll-margin-top: 85px;
+}
+
+/* ---------- MAIN LAYOUT ---------- */
+
+.mitra-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 55px;
+  align-items: center;
+}
+
+/* ---------- LEFT CONTENT ---------- */
+
+.mitra-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.mitra-eyebrow {
+  margin: 0 0 12px;
+
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+
+  color: #64748b;
+}
+
+.mitra-eyebrow span {
+  margin: 0 5px;
+  color: #009966;
+}
+
+.mitra-title {
+  margin: 0;
+
+  font-family: inherit;
+  font-size: clamp(1.7rem, 2.8vw, 2.35rem);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+
+  color: #0f172a;
+}
+
+.mitra-description {
+  max-width: 350px;
+
+  margin: 18px 0 0;
+
+  font-size: 1rem;
+  line-height: 1.7;
+  font-weight: 500;
+
+  color: #475569;
+}
+
+
+/* ==========================================================
+   LOGO AREA
+========================================================== */
+
+.mitra-logos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+/* ---------- LOGO CARD ---------- */
+
+.mitra-logo-card {
+  min-height: 145px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 14px;
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease;
+}
+
+.mitra-logo-card:hover {
+  transform: translateY(-4px);
+  background: #ffffff;
+  border-color: #009966;
+  box-shadow: 0 14px 30px rgba(0, 153, 102, 0.12);
+}
+
+/* ---------- LOGO ---------- */
+
+.mitra-logo-placeholder {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  font-size: 2rem;
+}
+
+.mitra-logo-img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  margin-bottom: 12px;
+  transition: transform .25s ease;
+}
+
+.mitra-logo-card:hover .mitra-logo-img {
+  transform: scale(1.08);
+}
+
+.mitra-logo-card span {
+  font-family: inherit;
+  font-size: .78rem;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #334155;
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 1100px) {
+
+  .mitra-layout {
+    grid-template-columns: 280px 1fr;
+    gap: 35px;
+  }
+
+  .mitra-logos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .mitra-title {
+    font-size: 2.8rem;
+  }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 768px) {
+
+  .section-mitra {
+    padding: 60px 0;
+  }
+
+  .mitra-layout {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .mitra-content {
+    max-width: 600px;
+  }
+
+  .mitra-title {
+    font-size: 2.7rem;
+  }
+
+  .mitra-description {
+    max-width: 100%;
+  }
+
+  .mitra-logos {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+  .mitra-title {
+    font-size: 2.35rem;
+  }
+
+  .mitra-description {
+    font-size: .88rem;
+  }
+
+  .mitra-logos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mitra-logo-card {
+    min-height: 110px;
+  }
+
+  .mitra-logo-placeholder {
+    width: 45px;
+    height: 45px;
+    font-size: 1.7rem;
+  }
+
+}
+
+/* ==========================================================
+   FAQ SECTION
+========================================================== */
+
+.faq-header {
+  max-width: 800px;
+  margin: 0 auto 48px;
+}
+
+/* ---------- Eyebrow ---------- */
+
+.faq-eyebrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width: fit-content;
+
+  margin: 0 auto 18px;
+}
+
+.faq-eyebrow::after {
+  content: "";
+
+  width: 42px;
+  height: 4px;
+
+  margin-top: 10px;
+
+  border-radius: 999px;
+
+  background: #009966;
+}
+
+/* ---------- FAQ List ---------- */
+
+.faq-list {
+  max-width: 850px;
+
+  margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+/* ---------- FAQ Item ---------- */
+
+.faq-item {
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  transition:
+    border-color .25s ease,
+    box-shadow .25s ease,
+    background-color .25s ease;
+}
+
+.faq-item:hover {
+  border-color: #cbd5e1;
+}
+
+.faq-item.active {
+  border-color: #a7f3d0;
+
+  background: #fafffd;
+
+  box-shadow:
+    0 10px 25px rgba(15, 23, 42, .05);
+}
+
+/* ---------- Question ---------- */
+
+.faq-question {
+  width: 100%;
+
+  padding: 20px 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  background: transparent;
+
+  border: none;
+
+  color: #0f172a;
+
+  font-family: inherit;
+
+  font-size: .95rem;
+
+  font-weight: 800;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.faq-question:hover {
+  color: #009966;
+}
+
+/* ---------- Icon ---------- */
+
+.faq-icon {
+  width: 32px;
+  height: 32px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #f1f5f9;
+
+  color: #475569;
+
+  transition:
+    background-color .2s ease,
+    color .2s ease,
+    transform .2s ease;
+}
+
+.faq-item.active .faq-icon {
+  background: #009966;
+  color: #ffffff;
+}
+
+/* ---------- Answer ---------- */
+
+.faq-answer {
+  padding: 0 22px 20px;
+
+  animation: faqOpen .25s ease;
+}
+
+.faq-answer p {
+  margin: 0;
+
+  max-width: 720px;
+
+  font-size: .85rem;
+
+  line-height: 1.75;
+
+  font-weight: 500;
+
+  color: #64748b;
+}
+
+@keyframes faqOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Bottom CTA ---------- */
+
+.faq-bottom {
+  margin: 42px auto 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+
+  text-align: center;
+}
+
+.faq-bottom p {
+  margin: 0;
+
+  font-size: .85rem;
+
+  color: #64748b;
+
+  font-weight: 600;
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 768px) {
+
+  .faq-header {
+    margin-bottom: 32px;
+  }
+
+  .faq-question {
+    padding: 17px 18px;
+
+    font-size: .85rem;
+
+    gap: 14px;
+  }
+
+  .faq-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .faq-answer {
+    padding: 0 18px 18px;
+  }
+
+  .faq-answer p {
+    font-size: .78rem;
+    line-height: 1.7;
+  }
+
+  .faq-bottom {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+  .faq-question {
+    padding: 16px;
+
+    font-size: .8rem;
+  }
+
+  .faq-answer {
+    padding: 0 16px 16px;
+  }
+
+  .faq-answer p {
+    font-size: .75rem;
+  }
+}
