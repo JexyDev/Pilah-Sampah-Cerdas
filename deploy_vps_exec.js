@@ -29,7 +29,11 @@ npm install --silent
 npm run build
 
 echo "=== 5. Deploying Frontend to Web Root ==="
-sudo cp -r dist/* /var/www/html/ 2>/dev/null || cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/ 2>/dev/null || true
+sudo mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
+sudo rm -rf /var/www/html/assets /var/www/pilah-sampah-cerdas/frontend/dist/assets
+sudo cp -r dist/* /var/www/html/
+sudo cp -r dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
+
 
 echo "=== 6. Status Service ==="
 pm2 status || true
