@@ -26,13 +26,14 @@ async function main() {
   const sheet = wb.Sheets[sheetName];
   const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
+  const norm = (str: string) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
   const nimByName = new Map<string, string>();
   for (let i = 3; i < rows.length; i++) {
     const r = rows[i];
-    const nama = r && r[5] ? String(r[5]).trim().toLowerCase() : '';
+    const nama = r && r[5] ? String(r[5]) : '';
     const nim = r && r[6] ? String(r[6]).trim() : '';
-    if (nama && nim && !nama.includes('jumlah') && !nama.includes('nama mahasiswa')) {
-      nimByName.set(nama, nim);
+    if (nama && nim && !nama.toLowerCase().includes('jumlah') && !nama.toLowerCase().includes('nama mahasiswa')) {
+      nimByName.set(norm(nama), nim);
     }
   }
 
@@ -45,7 +46,7 @@ async function main() {
   let updatedCount = 0;
   for (const s of students) {
     if (!s.user) continue;
-    const nameKey = s.user.name.trim().toLowerCase();
+    const nameKey = norm(s.user.name);
     const nimVal = nimByName.get(nameKey);
     if (nimVal && s.nim !== nimVal) {
       try {
