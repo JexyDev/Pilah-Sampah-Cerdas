@@ -119,6 +119,7 @@ router.get("/locations", binController.getLocations);
  *         description: Berhasil mengambil daftar tempat sampah aktif milik Warga
  */
 router.get("/my-bins", authMiddleware, binController.getMyBins);
+router.get("/my", authMiddleware, binController.getMyBins);
 /**
  * @swagger
  * /api/v1/bins/kelurahans:
