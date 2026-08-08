@@ -163,15 +163,9 @@ export const DplDashboardPage: React.FC = () => {
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
 
-  const [minAttendanceHours, setMinAttendanceHours] = useState<number>(() => {
-    return Number(localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
+  const [minAttendanceHours] = useState<number>(() => {
+    return Number(localStorage.getItem("TRASHCARE_MIN_ATTENDANCE_HOURS") || localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
   });
-
-  const handleMinHoursChange = (hours: number) => {
-    setMinAttendanceHours(hours);
-    localStorage.setItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS", String(hours));
-    toast.success(`Durasi minimal absensi diset ${hours} Jam (Tm - Ts)`);
-  };
 
   const [kelompokPage, setKelompokPage] = useState(1);
   const [mahasiswaPage, setMahasiswaPage] = useState(1);
