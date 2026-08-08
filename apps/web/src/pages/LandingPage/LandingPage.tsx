@@ -1067,27 +1067,6 @@ export const LandingPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Dashboard Real Preview Mockup */}
-            <div className="dampak-chart p-2 sm:p-3 bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden group">
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200/70 shadow-inner bg-slate-900">
-                <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800 text-xs text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                  </div>
-                  <span className="font-mono text-[11px] text-slate-400 font-semibold tracking-wide">
-                    dashboard.trashcare.id
-                  </span>
-                  <div className="w-8" />
-                </div>
-                <img
-                  src="/image/dashboard.png"
-                  alt="Dashboard Real-Time Monitoring TrashCare"
-                  className="w-full h-auto object-cover rounded-b-xl group-hover:scale-[1.01] transition-transform duration-300"
-                />
-              </div>
-            </div>
 
           </div>
         </div>
