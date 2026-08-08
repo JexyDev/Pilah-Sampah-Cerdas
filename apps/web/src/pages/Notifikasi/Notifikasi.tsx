@@ -187,7 +187,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
             const ownerPhone = bin.resolvedPhone;
             const address = bin.resolvedAddress;
             const maxCap = Number(bin.maxCapacityLiter || 20);
-            const curVol = Number(bin.currentVolumeLiter || 16);
+            const curVol = Number(bin.currentVolumeLiter ?? 0);
             const fullness = Math.round((curVol / maxCap) * 100);
             const isCritical = fullness >= 80;
 

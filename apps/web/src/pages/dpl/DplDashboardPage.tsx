@@ -464,7 +464,7 @@ export const DplDashboardPage: React.FC = () => {
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <p className="text-[10px] text-slate-400 font-bold uppercase">Tempat Sampah Teraktivasi</p>
             <h3 className="text-base font-extrabold text-emerald-700 mt-1">
-              {mapCoverage?.bins?.length || groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0) || 128} Unit
+              {mapCoverage?.bins?.length ?? groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Unit
             </h3>
           </div>
         </div>
@@ -1176,7 +1176,7 @@ export const DplDashboardPage: React.FC = () => {
                     <Marker
                       key={`kel-pin-${kel.name}`}
                       position={[kel.lat, kel.lng]}
-                      icon={createKelurahanPinIcon(kel.name, rwsInKel.length || 10)}
+                      icon={createKelurahanPinIcon(kel.name, rwsInKel.length)}
                       eventHandlers={{
                         click: () => setSelectedKelurahanMap(kel.name),
                       }}

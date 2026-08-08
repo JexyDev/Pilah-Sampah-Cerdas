@@ -800,7 +800,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   <Marker
                     key={`bman-kel-${kel.name}`}
                     position={[kel.lat, kel.lng]}
-                    icon={createKelurahanPinIcon(kel.name, rwsInKel.length || 10)}
+                    icon={createKelurahanPinIcon(kel.name, rwsInKel.length)}
                     eventHandlers={{
                       click: () => {
                         setSelectedMapKelurahan(kel.name);

@@ -512,7 +512,7 @@ const ManajemenLokasi: React.FC = () => {
                   <Marker
                     key={`man-kel-${kel.name}`}
                     position={[kel.lat, kel.lng]}
-                    icon={createKelurahanPinIcon(kel.name, rwsInKel.length || 10)}
+                    icon={createKelurahanPinIcon(kel.name, rwsInKel.length)}
                     eventHandlers={{
                       click: () => {
                         setSelectedKelurahan(kel.name);

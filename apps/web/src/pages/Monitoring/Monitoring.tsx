@@ -361,7 +361,7 @@ const Monitoring: React.FC = () => {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rumah Tangga</p>
             <h3 className="text-xl font-black text-slate-900">
-              {((kpi as any)?.totalRumahTangga || (kpi as any)?.totalWarga || householdGroups.length || (bins.length > 0 ? Math.ceil(bins.length / 2) : 64))} Aktif
+              {(kpi as any)?.totalRumahTangga ?? (kpi as any)?.totalWarga ?? householdGroups.length ?? 0} Aktif
             </h3>
             <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5 mt-0.5">
               Klik rincian →
@@ -379,7 +379,7 @@ const Monitoring: React.FC = () => {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sampah Terpilah</p>
             <h3 className="text-xl font-black text-slate-900">
-              {kpi?.totalSampahKg && kpi.totalSampahKg > 0 ? kpi.totalSampahKg.toFixed(1) : "158.5"} Kg
+              {(kpi?.totalSampahKg ?? 0).toFixed(1)} Kg
             </h3>
             <span className="text-[10px] text-blue-600 font-extrabold flex items-center gap-0.5 mt-0.5">
               Klik komposisi →
@@ -397,7 +397,7 @@ const Monitoring: React.FC = () => {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tempat Sampah</p>
             <h3 className="text-xl font-black text-slate-900">
-              {kpi?.tempatSampahAktif && kpi.tempatSampahAktif > 0 ? kpi.tempatSampahAktif : (bins.length > 0 ? bins.length : 128)} Terdaftar
+              {kpi?.tempatSampahAktif ?? bins.length ?? 0} Terdaftar
             </h3>
             <span className="text-[10px] text-amber-600 font-extrabold flex items-center gap-0.5 mt-0.5">
               Status kapasitas →
@@ -620,7 +620,7 @@ const Monitoring: React.FC = () => {
                   <React.Fragment key={`rw-frag-${idx}`}>
                     <Marker
                       position={[group.latitude, group.longitude]}
-                      icon={createRwZonaIcon(group.rwName || `RW ${idx + 1}`, group.patuh || 88)}
+                      icon={createRwZonaIcon(group.rwName || `RW ${idx + 1}`, group.patuh ?? 0)}
                       eventHandlers={{
                         click: () => {
                           setFlyToTarget([group.latitude, group.longitude]);
@@ -826,7 +826,7 @@ const Monitoring: React.FC = () => {
               <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-xs">
                 <span className="text-gray-600">Skor Performa (KPI)</span>
                 <span className="font-bold text-emerald-600 text-sm">
-                  {rwResiduData?.petugas?.kpiScore || 100} / 100
+                  {rwResiduData?.petugas?.kpiScore ?? 0} / 100
                 </span>
               </div>
             </div>
