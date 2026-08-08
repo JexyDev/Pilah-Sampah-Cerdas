@@ -20,7 +20,6 @@ import {
   RefreshCcw,
   Phone,
   LogIn,
-  Sparkles,
   KeyRound,
   ShieldCheck,
   ArrowLeft,
