@@ -145,8 +145,8 @@ const MonitoringAbsen: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   
-  // Dynamic minimum attendance duration threshold configured by DPL (default 4 Hours)
-  const minHoursRequired = Number(localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
+  // Dynamic minimum attendance duration threshold configured by Super User (default 4 Hours)
+  const minHoursRequired = Number(localStorage.getItem("TRASHCARE_MIN_ATTENDANCE_HOURS") || localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);

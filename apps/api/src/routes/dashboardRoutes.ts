@@ -47,7 +47,19 @@ const router = Router();
 router.get(
   "/kpi",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+    "MAHASISWA_KKN",
+  ]),
   dashboardController.getKpi
 );
 
@@ -66,7 +78,18 @@ router.get(
 router.get(
   "/transactions",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+  ]),
   dashboardController.getTransactions
 );
 
@@ -99,7 +122,17 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
 router.get(
   "/analytics",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+  ]),
   dashboardController.getAnalytics
 );
 
@@ -118,7 +151,17 @@ router.get(
 router.get(
   "/export-dataset",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+  ]),
   dashboardController.exportDataset
 );
 

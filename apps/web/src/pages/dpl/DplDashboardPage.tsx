@@ -427,22 +427,12 @@ export const DplDashboardPage: React.FC = () => {
           </select>
         </div>
 
-        {/* Dynamic DPL Attendance Duration Control (Tm - Ts) */}
+        {/* Read-Only Attendance Duration Display (Configured by Super User) */}
         <div className="flex items-center gap-2 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200/80 shadow-2xs">
           <Clock size={16} className="text-emerald-600 shrink-0" />
           <span className="text-xs font-extrabold text-emerald-950 whitespace-nowrap">
-            Durasi Minimal Absensi
+            Durasi Minimal Absensi: <span className="text-emerald-700 font-black">{minAttendanceHours} Jam</span> <span className="text-[10px] text-emerald-600 font-bold">(Diatur SU)</span>
           </span>
-          <select
-            value={minAttendanceHours}
-            onChange={(e) => handleMinHoursChange(Number(e.target.value))}
-            className="bg-white border border-emerald-300 rounded-lg text-xs font-black text-emerald-800 px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer shadow-2xs"
-          >
-            <option value={2}>2 Jam</option>
-            <option value={4}>4 Jam (Standar DPL)</option>
-            <option value={6}>6 Jam</option>
-            <option value={8}>8 Jam</option>
-          </select>
         </div>
       </div>
 

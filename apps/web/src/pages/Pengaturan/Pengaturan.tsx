@@ -61,9 +61,12 @@ const Pengaturan: React.FC = () => {
     localStorage.getItem("psc_webhook_active") === "true"
   );
 
-  // Database State
+  // Database & System State
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
+  const [minAttendanceHours, setMinAttendanceHours] = useState<number>(() => {
+    return Number(localStorage.getItem("TRASHCARE_MIN_ATTENDANCE_HOURS") || localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
+  });
 
   const handleUpdateTunnel = () => {
     const randPrefix = Math.random().toString(36).substring(2, 6);
@@ -805,6 +808,37 @@ const Pengaturan: React.FC = () => {
                         <Brush size={18} />
                         {isClearingCache ? "Memproses..." : "Bersihkan Cache System"}
                       </button>
+                    </div>
+
+                    {/* Action 3: SU Control for Min Attendance Duration */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-lg border border-outline-variant/50 gap-4">
+                      <div>
+                        <p className="text-[14px] font-bold text-on-surface">
+                          Durasi Minimal Absensi KKN (Super User)
+                        </p>
+                        <p className="text-[12px] text-on-surface-variant mt-1">
+                          Atur batas durasi minimal (jam) mahasiswa berada di zona agar presensi dihitung valid.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <select
+                          value={minAttendanceHours}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setMinAttendanceHours(val);
+                            localStorage.setItem("TRASHCARE_MIN_ATTENDANCE_HOURS", String(val));
+                            localStorage.setItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS", String(val));
+                            toast.success(`Durasi minimal absensi KKN diset SU: ${val} Jam`);
+                          }}
+                          className="rounded-lg border border-outline-variant/70 px-3 py-2 text-xs font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((h) => (
+                            <option key={h} value={h}>
+                              {h} Jam (Tm - Ts)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
