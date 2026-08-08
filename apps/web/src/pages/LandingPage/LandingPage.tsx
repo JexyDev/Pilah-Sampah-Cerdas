@@ -282,31 +282,25 @@ export const LandingPage: React.FC = () => {
 
           </div>
 
-          {/* Action Buttons (Right Side - Icon only on Mobile, Full text on Desktop) */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Action Buttons (Desktop only — on mobile everything lives in the drawer) */}
+          <div className="flex items-center gap-3 shrink-0">
             {isAuthenticated ? (
               <button
                 onClick={() => navigate("/dashboard")}
-                className="btn-primary-clean flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold"
-                title="Ke Dashboard"
+                className="btn-primary-clean hidden lg:inline-flex"
               >
-                <span className="material-symbols-outlined text-xl sm:text-lg">dashboard</span>
-                <span className="hidden sm:inline">Ke Dashboard</span>
+                <span className="material-symbols-outlined text-lg">dashboard</span>
+                Ke Dashboard
               </button>
             ) : (
-              <Link
-                to="/login"
-                className="btn-primary-clean flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold"
-                title="Register / Login"
-              >
-                <span className="material-symbols-outlined text-xl sm:text-lg">login</span>
-                <span className="hidden sm:inline">Register / Login</span>
+              <Link to="/login" className="btn-primary-clean hidden lg:inline-flex">
+                Register / Login
               </Link>
             )}
 
             <button
               onClick={() => setShowContactModal(true)}
-              className="btn-secondary-clean hidden sm:inline-flex"
+              className="btn-secondary-clean hidden lg:inline-flex"
             >
               Contact Us
             </button>
@@ -317,6 +311,7 @@ export const LandingPage: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition shrink-0 cursor-pointer"
               aria-label="Toggle Navigation Menu"
+              aria-expanded={isMobileMenuOpen}
             >
               <span className="material-symbols-outlined text-2xl leading-none">
                 {isMobileMenuOpen ? "close" : "menu"}
@@ -361,9 +356,28 @@ export const LandingPage: React.FC = () => {
               </button>
             </div>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+              {isAuthenticated ? (
+                <button
+                  onClick={() => { setIsMobileMenuOpen(false); navigate("/dashboard"); }}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
+                >
+                  <span className="material-symbols-outlined text-lg">dashboard</span>
+                  Ke Dashboard
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
+                >
+                  <span className="material-symbols-outlined text-lg">login</span>
+                  Register / Login
+                </Link>
+              )}
+
               <button
                 onClick={() => { setIsMobileMenuOpen(false); setShowContactModal(true); }}
-                className="w-full py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-extrabold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 Contact Us
               </button>
