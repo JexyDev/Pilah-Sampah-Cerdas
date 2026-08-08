@@ -696,7 +696,7 @@ const Login: React.FC = () => {
 
           <div className="my-auto space-y-3 relative z-10 py-4">
             <h2 className="text-3xl font-black leading-tight tracking-tight text-white">
-              Sampah Tertata,<br />Lingkungan Terdata.
+              Sampah Terdata,<br />Lingkungan Tertata.
             </h2>
             <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
               Platform monitoring terintegrasi khusus Pengawas, RW, DPL, dan Pimpinan. Akses Warga, Mahasiswa KKN, &amp; Petugas Residu melalui Aplikasi Mobile.
