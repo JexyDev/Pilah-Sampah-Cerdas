@@ -507,7 +507,7 @@ const Login: React.FC = () => {
     { role: "RW", label: "Rukun Warga (RW 06 Dago)", phone: "+628111111115", pass: "password123", badge: "bg-teal-600", mobileOnly: false },
     { role: "Pimpinan", label: "Pimpinan (Prof. Dr. Ir. H. Eddy Soeryanto Soegoto, M.T.)", phone: "+628111111126", pass: "password123", badge: "bg-amber-600", mobileOnly: false },
     { role: "Task Force", label: "Task Force", phone: "+628111111127", pass: "password123", badge: "bg-slate-700", mobileOnly: false },
-    { role: "DPL", label: "Dosen Pembimbing Lapangan", phone: "+6281300000001", pass: "123456", badge: "bg-rose-600", mobileOnly: false },
+    { role: "DPL", label: "Dosen Pembimbing Lapangan", phone: "+6281300000001", pass: "password123", badge: "bg-rose-600", mobileOnly: false },
     { role: "Petugas", label: "Petugas Residu (Mobile Only)", phone: "+628111111117", pass: "password123", badge: "bg-orange-600", mobileOnly: true },
     { role: "Mahasiswa", label: "Mahasiswa (Mobile Only)", phone: "+628111111118", pass: "password123", badge: "bg-amber-600", mobileOnly: true },
     { role: "Warga", label: "Warga (Mobile Only)", phone: "+62812001001", pass: "password123", badge: "bg-emerald-600", mobileOnly: true },
