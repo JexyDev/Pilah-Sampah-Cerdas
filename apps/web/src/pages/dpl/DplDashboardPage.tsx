@@ -507,11 +507,11 @@ export const DplDashboardPage: React.FC = () => {
                 {chartGroupMode === "KELURAHAN" ? "Sebaran Mahasiswa per Kelurahan" : "Sebaran Mahasiswa per Kelompok KKN"}
               </h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
                 <button
                   onClick={() => setChartGroupMode("KELURAHAN")}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer whitespace-nowrap ${
                     chartGroupMode === "KELURAHAN"
                       ? "bg-white text-slate-900 shadow-xs"
                       : "text-slate-500 hover:text-slate-800"
@@ -521,7 +521,7 @@ export const DplDashboardPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setChartGroupMode("KELOMPOK")}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer whitespace-nowrap ${
                     chartGroupMode === "KELOMPOK"
                       ? "bg-white text-slate-900 shadow-xs"
                       : "text-slate-500 hover:text-slate-800"

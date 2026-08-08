@@ -284,26 +284,30 @@ export const LandingPage: React.FC = () => {
 
           {/* Action Buttons (Desktop only — on mobile everything lives in the drawer) */}
           <div className="flex items-center gap-3 shrink-0">
-            {isAuthenticated ? (
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="btn-primary-clean hidden lg:inline-flex"
-              >
-                <span className="material-symbols-outlined text-lg">dashboard</span>
-                Ke Dashboard
-              </button>
-            ) : (
-              <Link to="/login" className="btn-primary-clean hidden lg:inline-flex">
-                Register / Login
-              </Link>
-            )}
+            {/* Wrapper is required: .btn-primary-clean sets display:inline-flex and would
+                override Tailwind's .hidden if applied directly to the buttons. */}
+            <div className="hidden lg:flex items-center gap-3">
+              {isAuthenticated ? (
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="btn-primary-clean"
+                >
+                  <span className="material-symbols-outlined text-lg">dashboard</span>
+                  Ke Dashboard
+                </button>
+              ) : (
+                <Link to="/login" className="btn-primary-clean">
+                  Register / Login
+                </Link>
+              )}
 
-            <button
-              onClick={() => setShowContactModal(true)}
-              className="btn-secondary-clean hidden lg:inline-flex"
-            >
-              Contact Us
-            </button>
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="btn-secondary-clean"
+              >
+                Contact Us
+              </button>
+            </div>
 
             {/* Mobile Hamburger Toggle Button */}
             <button

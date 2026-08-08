@@ -116,3 +116,43 @@ body {
   100% { background-position: -200% 0; }
 }
 
+/* ==========================================================
+   GLOBAL RESPONSIVE SAFETY NET
+   Catches the common causes of horizontal overflow on mobile
+   app-wide, instead of patching each page individually.
+   ponytail: blunt instrument. If a specific page needs a
+   different treatment (e.g. an intentionally wide canvas),
+   override it locally on that page.
+========================================================== */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Media & embeds never push the viewport wider than the screen */
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+}
+
+/* Tables are the #1 overflow offender: make their wrapper scrollable
+   instead of letting the table stretch the whole page. */
+@media (max-width: 768px) {
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Recharts renders an absolutely-sized SVG; keep it inside its card */
+  .recharts-responsive-container {
+    max-width: 100%;
+  }
+}
+
