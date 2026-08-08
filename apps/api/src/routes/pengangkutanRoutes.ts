@@ -23,6 +23,8 @@ router.get(
     "RT",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
   ]),
   pengangkutanController.getAll
 );
@@ -39,6 +41,8 @@ router.get(
     "RT",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
   ]),
   pengangkutanController.getById
 );

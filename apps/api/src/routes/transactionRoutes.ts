@@ -25,6 +25,10 @@ router.get(
     "LURAH",
     "CAMAT",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+    "WARGA",
   ]),
   transactionController.getDeposits
 );
