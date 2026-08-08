@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu, Sun, Moon } from "lucide-react";
+import { Bell, LayoutGrid, BookOpen, Settings, LogOut, Leaf, GlassWater, Menu } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,7 +10,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useThemeStore } from "../../../store/useThemeStore";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -20,7 +19,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme } = useThemeStore();
   const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   const getProfilePhotoUrl = (path?: string) => {
@@ -37,10 +35,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [showProfile, setShowProfile] = useState(false);
 
   // Integrated Modal states
-  const [showTukarPoin, setShowTukarPoin] = useState(false);
-  const [tukarPoinAmount, setTukarPoinAmount] = useState("50000");
-  const [ewalletType, setEwalletType] = useState("DANA");
-  const [ewalletPhone, setEwalletPhone] = useState("");
   const [showBrosur, setShowBrosur] = useState(false);
 
   // Refs for closing on outside click
@@ -265,25 +259,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     navigate("/login");
   };
 
-  const handleTukarPoinSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ewalletPhone) {
-      toast.error("Masukkan nomor telepon E-Wallet Anda!");
-      return;
-    }
-    toast.success(
-      `Permintaan penukaran Rp ${parseInt(tukarPoinAmount).toLocaleString()} ke ${ewalletType} (${ewalletPhone}) sedang diproses! Poin Anda akan berkurang.`
-    );
-    setShowTukarPoin(false);
-    setEwalletPhone("");
-  };
-
-  const triggerCallOfficer = () => {
-    toast.success(
-      'Menghubungi Ketua RT/RW (WhatsApp simulasi): "Halo Pak RT, saya ingin melaporkan tempat sampah dekat rumah penuh..."'
-    );
-    setShowApps(false);
-  };
 
   const notifications = [
     {
@@ -399,30 +374,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/20 pb-2">
                   Layanan Terintegrasi Warga
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      setShowTukarPoin(true);
-                      setShowApps(false);
-                    }}
-                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-primary/5 hover:border-primary transition-all text-center gap-1 cursor-pointer"
-                  >
-                    <Gift className="text-primary" size={24} />
-                    <span className="text-[11px] font-bold text-on-surface">Tukar Poin</span>
-                  </button>
-                  <button
-                    onClick={triggerCallOfficer}
-                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-green-50 hover:border-green-600 transition-all text-center gap-1 cursor-pointer"
-                  >
-                    <MessageSquare className="text-green-600" size={24} />
-                    <span className="text-[11px] font-bold text-on-surface">Hubungi RT</span>
-                  </button>
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={() => {
                       setShowBrosur(true);
                       setShowApps(false);
                     }}
-                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-blue-50 hover:border-blue-600 transition-all text-center gap-1 cursor-pointer col-span-2"
+                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-blue-50 hover:border-blue-600 transition-all text-center gap-1 cursor-pointer"
                   >
                     <BookOpen className="text-blue-600" size={24} />
                     <span className="text-[11px] font-bold text-on-surface">
@@ -433,21 +391,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
             )}
           </div>
-
-          {/* Dark / Light Mode Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="group relative w-10 h-10 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all duration-300 active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/40 overflow-hidden"
-            title={theme === "light" ? "Beralih ke Dark Mode" : "Beralih ke Light Mode"}
-            aria-label="Toggle Theme"
-          >
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/10 via-transparent to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            {theme === "light" ? (
-              <Moon size={18} className="text-slate-700 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300" />
-            ) : (
-              <Sun size={18} className="text-amber-400 group-hover:rotate-90 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-            )}
-          </button>
         </div>
 
         {/* Profile Avatar Clickable Dropdown */}
@@ -508,83 +451,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Tukar Poin Modal */}
-      {showTukarPoin && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <form
-            onSubmit={handleTukarPoinSubmit}
-            className="bg-white rounded-2xl border border-outline-variant shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4"
-          >
-            <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-[16px] font-bold text-on-surface">
-                Tukar Poin Ke Saldo E-Wallet
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowTukarPoin(false)}
-                className="material-symbols-outlined text-[20px] text-on-surface-variant hover:text-primary cursor-pointer"
-              >
-                close
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                Pilih Nominal Pencairan
-              </label>
-              <select
-                className="w-full h-10 px-3 bg-surface-container rounded-lg text-xs font-semibold text-on-surface"
-                value={tukarPoinAmount}
-                onChange={(e) => setTukarPoinAmount(e.target.value)}
-              >
-                <option value="50000">Rp 50.000 (Setara 500 Poin)</option>
-                <option value="100000">Rp 100.000 (Setara 1.000 Poin)</option>
-                <option value="250000">Rp 250.000 (Setara 2.500 Poin)</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                Pilih Jenis E-Wallet
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {["DANA", "OVO", "GOPAY"].map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setEwalletType(type)}
-                    className={`h-9 text-xs font-bold rounded-lg border transition-all cursor-pointer ${ewalletType === type ? "border-primary bg-primary/5 text-primary" : "border-outline-variant text-on-surface hover:bg-surface-container-low"}`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                Nomor HP E-Wallet
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full h-10 px-3 bg-surface-container border border-outline-variant/55 rounded-lg text-xs focus:outline-none focus:border-primary"
-                placeholder="Contoh: 08123456789"
-                value={ewalletPhone}
-                onChange={(e) => setEwalletPhone(e.target.value)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full h-11 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-primary/10 mt-2"
-            >
-              <Wallet size={18} />
-              Proses Pencairan Poin
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* Brosur Panduan Modal */}
       {showBrosur && (
