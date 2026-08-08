@@ -1091,7 +1091,7 @@ export const DplDashboardPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <MapPin size={18} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tong Sampah
+                <MapPin size={18} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tempat Sampah
               </h3>
               <p className="text-xs text-slate-500">
                 Pilih Kelurahan untuk melihat detail titik RW dampingan dan lokasi tempat sampah warga.
@@ -1256,7 +1256,7 @@ export const DplDashboardPage: React.FC = () => {
                         <Popup>
                           <div className="text-xs p-1 text-center font-sans space-y-1">
                             <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full inline-block">
-                              Tong Sampah Aktif
+                              Tempat Sampah Aktif
                             </span>
                             <strong className="text-sm font-bold block text-slate-900">
                               {bin.qrCode}

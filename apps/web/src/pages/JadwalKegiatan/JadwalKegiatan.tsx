@@ -320,11 +320,11 @@ const JadwalKegiatan: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-6 bg-surface-container">
+    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] overflow-hidden -m-6 bg-surface-container">
       {/* Canvas */}
-      <main className="flex-1 overflow-hidden flex bg-surface p-6 gap-6 relative">
+      <main className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-surface p-4 lg:p-6 gap-4 lg:gap-6 relative">
         {/* Calendar Section */}
-        <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
+        <div className="flex-1 min-h-[400px] lg:min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
           {/* Calendar Header */}
           <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
@@ -483,7 +483,7 @@ const JadwalKegiatan: React.FC = () => {
         </div>
 
         {/* Right Sidebar: Details */}
-        <aside className="w-[340px] bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
+        <aside className="w-full lg:w-[340px] max-h-[50vh] lg:max-h-none bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <h3 className="text-[15px] font-bold text-slate-900 flex items-center gap-2">

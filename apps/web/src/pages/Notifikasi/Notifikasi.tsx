@@ -102,7 +102,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
           b.id === binId ? { ...b, currentVolumeLiter: 0, status: "ACTIVE_BOUND" } : b
         )
       );
-      toast.success(`Penjemputan sampah ${wargaName} berhasil di-ACC & volume tong di-reset!`);
+      toast.success(`Penjemputan sampah ${wargaName} berhasil di-ACC & volume tempat sampah di-reset!`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal melakukan ACC penjemputan");
     } finally {
@@ -275,7 +275,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
                         disabled={actionLoadingId === bin.id}
                         onClick={() => handleAccCollection(bin.id, ownerName)}
                         className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center gap-1"
-                        title="ACC & Reset Kapasitas Tong"
+                        title="ACC & Reset Kapasitas Tempat Sampah"
                       >
                         {actionLoadingId === bin.id ? (
                           <Loader2 className="animate-spin" size={14} />
@@ -326,7 +326,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
               </div>
 
               <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                Warga ({selectedBinForDetail.resolvedOwner}) mengajukan pengosongan tong{" "}
+                Warga ({selectedBinForDetail.resolvedOwner}) mengajukan pengosongan tempat sampah{" "}
                 {selectedBinForDetail.category?.name || "Organik"} ({selectedBinForDetail.qrCode || "BIN-124"}) di{" "}
                 {selectedBinForDetail.resolvedAddress}.
               </p>
@@ -347,7 +347,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
                     DETAIL PENGAJUAN
                   </p>
                   <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                    Warga ({selectedBinForDetail.resolvedOwner}) mengajukan pengosongan tong{" "}
+                    Warga ({selectedBinForDetail.resolvedOwner}) mengajukan pengosongan tempat sampah{" "}
                     {selectedBinForDetail.category?.name || "Organik"} ({selectedBinForDetail.qrCode || "BIN-124"}) di{" "}
                     {selectedBinForDetail.resolvedAddress}.
                   </p>
@@ -363,7 +363,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
                           ? `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").replace("/api/v1", "")}${selectedBinForDetail.evidencePhotoUrl}`
                           : selectedBinForDetail.evidencePhotoUrl
                       }
-                      alt="Bukti tong penuh"
+                      alt="Bukti tempat sampah penuh"
                       className="w-full h-44 object-cover rounded-lg border border-gray-200"
                     />
                   ) : (
@@ -392,7 +392,7 @@ const ScheduleDetailView = ({ notif }: { notif: any }) => {
                   }}
                   className="flex-1 py-3 rounded-xl text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
                 >
-                  ✓ Setujui & Reset Tong
+                  ✓ Setujui & Reset Tempat Sampah
                 </button>
               </div>
             </div>
@@ -522,7 +522,7 @@ const NotificationModal = ({
               {evidencePhoto ? (
                 <img
                   src={evidencePhoto}
-                  alt="Bukti tong penuh"
+                  alt="Bukti tempat sampah penuh"
                   className="w-full h-48 object-cover rounded-lg border border-gray-200"
                 />
               ) : (
@@ -549,7 +549,7 @@ const NotificationModal = ({
               onClick={onApprove}
               className="flex-1 py-3 rounded-xl text-sm font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
             >
-              ✓ Setujui & Reset Tong
+              ✓ Setujui & Reset Tempat Sampah
             </button>
           </div>
         </div>
@@ -565,7 +565,7 @@ const NotificationModal = ({
               <p className="font-semibold mb-1">Aksi Diperlukan</p>
               <p>
                 tempat sampah Anda telah mencapai kapasitas kritis. Silakan ambil foto bukti kondisi
-                tong yang penuh untuk mengajukan pengosongan ke petugas RT/RW.
+                tempat sampah yang penuh untuk mengajukan pengosongan ke petugas RT/RW.
               </p>
             </div>
           </div>
@@ -575,7 +575,7 @@ const NotificationModal = ({
               <div className="relative w-full">
                 <img
                   src={photo}
-                  alt="Bukti tong penuh"
+                  alt="Bukti tempat sampah penuh"
                   className="w-full h-48 object-cover rounded-lg border border-gray-200"
                 />
                 <button
@@ -643,7 +643,7 @@ const NotificationModal = ({
           </div>
           <h4 className="font-bold text-green-800 mb-1">Pengosongan Disetujui</h4>
           <p className="text-sm text-green-700">
-            Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tong menjadi 0%.
+            Petugas telah memverifikasi foto bukti Anda dan mereset kapasitas tempat sampah menjadi 0%.
             Terima kasih atas partisipasi Anda.
           </p>
         </div>
@@ -846,7 +846,7 @@ const Notifikasi: React.FC = () => {
     if (requestId) {
       try {
         await api.put(`/bins/reset-request/${requestId}/review`, { status: "APPROVED" });
-        toast.success("Pengajuan disetujui! Kapasitas tong berhasil direset.");
+        toast.success("Pengajuan disetujui! kapasitas tempat sampah berhasil direset.");
         setNotifications((prev) => prev.filter((n) => n.id !== selectedNotif.id));
         setSelectedNotif(null);
       } catch (err: any) {
@@ -854,7 +854,7 @@ const Notifikasi: React.FC = () => {
         toast.error(err.response?.data?.message || "Gagal menyetujui pengajuan");
       }
     } else {
-      toast.success("Pengajuan disetujui! Kapasitas tong berhasil direset.");
+      toast.success("Pengajuan disetujui! kapasitas tempat sampah berhasil direset.");
       setNotifications((prev) => prev.filter((n) => n.id !== selectedNotif.id));
       setSelectedNotif(null);
     }

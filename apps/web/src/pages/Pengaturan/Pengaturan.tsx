@@ -13,6 +13,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 import { APP_CONFIG } from "../../constants/config";
+import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
 const Pengaturan: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"profil" | "integrasi" | "database" | "tentang">("profil");
@@ -249,13 +250,7 @@ const Pengaturan: React.FC = () => {
   };
 
   // Profile Picture Helpers
-  const getProfilePhotoUrl = (path?: string) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-    const host = baseUrl.replace("/api/v1", "");
-    return `${host}${path}`;
-  };
+  const avatarUrl = getProfilePhotoUrl(profileData.fotoProfil, profileData.name);
 
   const handleFileChange = async (file: File) => {
     // Validate File Size (max 2MB)
@@ -308,8 +303,6 @@ const Pengaturan: React.FC = () => {
   };
 
   const initials = profileData.name ? profileData.name.substring(0, 2).toUpperCase() : "U";
-
-  const avatarUrl = getProfilePhotoUrl(profileData.fotoProfil);
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
@@ -395,6 +388,7 @@ const Pengaturan: React.FC = () => {
                           src={avatarUrl}
                           alt="Avatar"
                           className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200"
+                          onError={(e) => handleAvatarError(e, profileData.name)}
                         />
                       ) : (
                         <div

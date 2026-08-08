@@ -376,7 +376,7 @@ const MasterData: React.FC = () => {
                       <td className="py-3 px-4 text-center">
                         <button
                           className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus Tong"
+                          title="Hapus Tempat Sampah"
                           onClick={() => handleDeleteBin(b.id, b.qrCode)}
                         >
                           <Trash2 size={15} />

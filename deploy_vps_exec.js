@@ -48,7 +48,7 @@ conn.on("ready", () => {
       return;
     }
     stream.on("close", (code, signal) => {
-      console.log(`Deployment process finished with exit code: ${code}`);
+      console.log(`\nDeployment process finished with exit code: ${code}`);
       conn.end();
     }).on("data", (data) => {
       process.stdout.write(data);
@@ -56,10 +56,14 @@ conn.on("ready", () => {
       process.stderr.write(data);
     });
   });
+}).on("error", (err) => {
+  console.error("SSH Error:", err);
 }).connect({
   host: "157.10.252.252",
   port: 22,
   username: "maker",
   password: "Makerdotindo2026",
-  readyTimeout: 60000
+  readyTimeout: 120000,
+  keepaliveInterval: 10000,
 });
+

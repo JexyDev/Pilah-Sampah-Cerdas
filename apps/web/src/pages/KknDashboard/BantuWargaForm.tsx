@@ -83,13 +83,13 @@ export const BantuWargaForm = ({ onSuccess }: { onSuccess: () => void }) => {
           <input type="number" name="rtRwId" required value={formData.rtRwId} onChange={handleChange} className="mt-1 block w-full rounded-md border p-2" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">ID Kategori Tong (Cth: 1 = Organik)</label>
+          <label className="block text-sm font-medium text-gray-700">ID Kategori Tempat Sampah (Cth: 1 = Organik)</label>
           <input type="text" name="binCategoryId" required value={formData.binCategoryId} onChange={handleChange} className="mt-1 block w-full rounded-md border p-2" />
         </div>
         
         {/* Pilihan Kapasitas */}
         <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg mt-2">
-          <label className="block text-sm font-bold text-gray-800 mb-2">Penentuan Kapasitas Tong</label>
+          <label className="block text-sm font-bold text-gray-800 mb-2">Penentuan Kapasitas Tempat Sampah</label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input type="radio" name="capacityOption" value="DEFAULT" checked={formData.capacityOption === "DEFAULT"} onChange={handleChange} /> Standar (100L)

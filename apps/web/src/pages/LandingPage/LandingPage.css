@@ -70,6 +70,12 @@ html {
   }
 }
 
+@media (max-width:400px) {
+  .container-custom {
+    padding-inline: 16px;
+  }
+}
+
 /* Glass Navbar */
 .landing-nav {
   position: fixed;
@@ -539,6 +545,11 @@ html {
     padding: 18px;
   }
 
+  /* Center the orphan 5th stat when only 2 cols */
+  .stat-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
   .stat-item {
     min-height: 110px;
     padding: 12px 8px;
@@ -602,9 +613,30 @@ html {
 
 .program-top {
   display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 64px;
+  grid-template-columns: minmax(0, 380px) 1fr;
+  gap: 48px;
   align-items: center;
+}
+
+@media (max-width: 900px) {
+  .program-top {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .program-heading {
+    max-width: 100%;
+  }
+
+  .program-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .program-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .program-heading {

@@ -187,7 +187,7 @@ export const ManajemenPengangkutan: React.FC = () => {
     }
     try {
       await api.put(`/bins/reset/${id}/approve`);
-      toast.success("Pengosongan selesai! Kapasitas tong kembali ke 0%.");
+      toast.success("Pengosongan selesai! Kapasitas tempat sampah kembali ke 0%.");
       fetchRequests();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal menyelesaikan pengosongan");
@@ -646,7 +646,7 @@ export const ManajemenPengangkutan: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-800">Daftar Pengajuan Pengosongan Tong Warga</h2>
+              <h2 className="text-lg font-bold text-gray-800">Daftar Pengajuan pengosongan tempat sampah Warga</h2>
               <p className="text-xs text-gray-400 mt-0.5">Permintaan pengosongan yang dikirim langsung dari gawai warga.</p>
             </div>
 
@@ -686,7 +686,7 @@ export const ManajemenPengangkutan: React.FC = () => {
             <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
               <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
               <p className="text-sm font-medium">
-                {searchQuery ? "Tidak ada pengajuan yang sesuai pencarian." : "Belum ada pengajuan pengosongan tong dari warga."}
+                {searchQuery ? "Tidak ada pengajuan yang sesuai pencarian." : "Belum ada pengajuan pengosongan tempat sampah dari warga."}
               </p>
             </div>
           ) : (
@@ -899,7 +899,7 @@ export const ManajemenPengangkutan: React.FC = () => {
         <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">Foto Bukti Tong Penuh</h3>
+              <h3 className="text-lg font-bold text-gray-900">Foto Bukti Tempat Sampah Penuh</h3>
               <button
                 onClick={() => setEvidenceModalUrl(null)}
                 className="text-gray-400 hover:text-gray-600 font-bold cursor-pointer text-sm"
@@ -970,7 +970,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               </div>
 
               <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tong{" "}
+                Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tempat sampah{" "}
                 {selectedRequestForReview.bin.qrCode} di{" "}
                 {selectedRequestForReview.bin.rtRw?.name || "RT 01 / RW 04"}.
               </p>
@@ -991,7 +991,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                     DETAIL PENGAJUAN
                   </p>
                   <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                    Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tong{" "}
+                    Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tempat sampah{" "}
                     {selectedRequestForReview.bin.qrCode} di{" "}
                     {selectedRequestForReview.bin.rtRw?.name || "RT 01 / RW 04"}.
                   </p>
@@ -1007,7 +1007,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                           ? `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").replace("/api/v1", "")}${selectedRequestForReview.evidencePhotoUrl}`
                           : selectedRequestForReview.evidencePhotoUrl
                       }
-                      alt="Bukti tong penuh"
+                      alt="Bukti tempat sampah penuh"
                       className="w-full h-44 object-cover rounded-lg border border-gray-200"
                     />
                   ) : (
@@ -1036,7 +1036,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                   }}
                   className="flex-1 py-3 rounded-xl text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
                 >
-                  ✓ Setujui & Reset Tong
+                  ✓ Setujui & Reset Tempat Sampah
                 </button>
               </div>
             </div>

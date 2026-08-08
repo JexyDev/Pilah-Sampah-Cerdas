@@ -109,15 +109,24 @@ describe("UserService", () => {
       expect(result[0]).toEqual({
         id: "user-1",
         name: "User One",
-        email: "one@psc.id",
-        role: "WARGA",
+        email: "+6281122233344",
         phone: "+6281122233344",
+        nim: null,
+        role: "WARGA",
         status: "Aktif",
-        wilayah: "RT 01 / RW 01 (Kel. Dago)",
+        binStatus: "Belum Teraktivasi",
+        activeBinsCount: 0,
+        address: "",
+        kecamatan: "Kec. Coblong",
+        kelurahan: "Dago",
+        rw: "RT 01 / RW 01",
+        rt: "-",
+        wilayah: "RT 01 / RW 01, Dago, Kec. Coblong",
         setoran: 4.0,
         totalPoin: 150,
         createdAt: mockUsers[0].createdAt,
         studentProfile: null,
+        pendampingKkn: null,
       });
     });
   });
@@ -128,40 +137,38 @@ describe("UserService", () => {
       const mockCreatedUser = {
         id: "user-new",
         name: "New Warga",
-        email: "new@psc.id",
+        phone: "+6281122233344",
         role: { name: "WARGA" },
       };
 
       vi.mocked(userRepository.findRoleByName).mockResolvedValue(mockRole as any);
-      vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
+      mockPrismaUserFindUnique.mockResolvedValue(null);
       mockPrismaUserCreate.mockResolvedValue(mockCreatedUser);
 
       const result = await userService.createUser({
         name: "New Warga",
-        email: "new@psc.id",
         password: "password123",
         phone: "+6281122233344",
         roleName: "WARGA",
       });
 
       expect(userRepository.findRoleByName).toHaveBeenCalledWith("WARGA");
-      expect(userRepository.findByEmail).toHaveBeenCalledWith("new@psc.id");
       expect(mockPrismaTransaction).toHaveBeenCalled();
       expect(result).toEqual({
         id: "user-new",
         name: "New Warga",
-        email: "new@psc.id",
+        phone: "+6281122233344",
         role: "WARGA",
       });
     });
 
     it("should throw ROLE_NOT_FOUND if role does not exist", async () => {
+      mockPrismaUserFindUnique.mockResolvedValue(null);
       vi.mocked(userRepository.findRoleByName).mockResolvedValue(null);
 
       await expect(
         userService.createUser({
           name: "New Warga",
-          email: "new@psc.id",
           password: "password123",
           phone: "+6281122233345",
           roleName: "INVALID_ROLE",
@@ -169,19 +176,18 @@ describe("UserService", () => {
       ).rejects.toThrow("ROLE_NOT_FOUND");
     });
 
-    it("should throw EMAIL_CONFLICT if email already exists", async () => {
+    it("should throw PHONE_CONFLICT if phone number already exists", async () => {
       vi.mocked(userRepository.findRoleByName).mockResolvedValue({ id: 1 } as any);
-      vi.mocked(userRepository.findByEmail).mockResolvedValue({ id: "exist-user" } as any);
+      mockPrismaUserFindUnique.mockResolvedValue({ id: "exist-user" });
 
       await expect(
         userService.createUser({
           name: "New Warga",
-          email: "existing@psc.id",
           password: "password123",
           phone: "+6281122233346",
           roleName: "WARGA",
         })
-      ).rejects.toThrow("EMAIL_CONFLICT");
+      ).rejects.toThrow("PHONE_CONFLICT");
     });
   });
 });

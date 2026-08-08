@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -20,14 +21,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
-
-  const getProfilePhotoUrl = (path?: string) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-    const host = baseUrl.replace("/api/v1", "");
-    return `${host}${path}`;
-  };
 
   // Dropdown visibility states
   const [showNotifications, setShowNotifications] = useState(false);
@@ -263,8 +256,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const notifications = [
     {
       id: 1,
-      title: "Kapasitas Tong Kritis",
-      desc: "Tong Anorganik #2 - RT 02 terisi 88%. Harap setor ke titik lain.",
+      title: "Kapasitas Tempat Sampah Kritis",
+      desc: "Tempat Sampah Anorganik #2 - RT 02 terisi 88%. Harap setor ke titik lain.",
       time: "5 menit yang lalu",
       unread: true,
     },
@@ -411,15 +404,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden bg-slate-100"
             >
               <img
-                src={
-                  getProfilePhotoUrl(user?.fotoProfil) ||
-                  `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80`
-                }
+                src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
                 alt="Avatar"
                 className="w-full h-full object-cover"
-                onError={(e: any) => {
-                  e.target.src = `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80`;
-                }}
+                onError={(e) => handleAvatarError(e, user?.name)}
               />
             </div>
           </div>

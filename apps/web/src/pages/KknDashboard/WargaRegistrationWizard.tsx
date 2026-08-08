@@ -320,7 +320,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                   </div>
                   <div className="flex-1 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center relative overflow-hidden bg-white">
                     {formData.photoUrl ? (
-                      <img src={formData.photoUrl} alt="Tong" className="w-full h-full object-cover" />
+                      <img src={formData.photoUrl} alt="Tempat Sampah" className="w-full h-full object-cover" />
                     ) : (
                       <button type="button" onClick={handleTakePhoto} className="text-slate-500 hover:text-emerald-600 flex flex-col items-center transition-colors">
                         <Plus className="w-10 h-10 mb-2 opacity-50" />
@@ -336,7 +336,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
           {/* STEP 4: KAPASITAS */}
           {step === 4 && (
             <div className="space-y-6 animate-fadeIn">
-              <h3 className="font-semibold text-slate-800 border-b pb-2">Kapasitas Tong</h3>
+              <h3 className="font-semibold text-slate-800 border-b pb-2">Kapasitas Tempat Sampah</h3>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Penentuan Kapasitas Liter</label>

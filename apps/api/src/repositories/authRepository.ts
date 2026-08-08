@@ -284,7 +284,7 @@ export class AuthRepository {
       if (qrCode) {
         // 1. Find Bin with row-level lock (FOR UPDATE)
         const bins = await tx.$queryRaw<any[]>`
-          SELECT * FROM tong_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
+          SELECT * FROM tempat_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
         `;
         if (!bins || bins.length === 0) throw new Error("BIN_NOT_FOUND");
         bin = bins[0];

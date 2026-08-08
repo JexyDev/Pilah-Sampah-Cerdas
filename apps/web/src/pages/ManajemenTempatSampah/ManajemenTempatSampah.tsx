@@ -462,7 +462,7 @@ const ManajemenTempatSampah: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
-            placeholder="Cari ID Tong, QR Code..."
+            placeholder="Cari ID Tempat Sampah, QR Code..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
@@ -1236,7 +1236,7 @@ const ManajemenTempatSampah: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1">
-                  Pemilik Tong (Warga - Opsional)
+                  Pemilik Tempat Sampah (Warga - Opsional)
                 </label>
                 <select
                   value={formData.userId}

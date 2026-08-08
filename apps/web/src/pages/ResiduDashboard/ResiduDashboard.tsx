@@ -212,7 +212,7 @@ const ResiduDashboard: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-outline-variant shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white p-6 rounded-2xl border border-outline-variant shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-on-surface flex items-center gap-2">
             <ShieldAlert className="text-red-600 w-7 h-7" />
@@ -222,17 +222,17 @@ const ResiduDashboard: React.FC = () => {
             Petugas: {user?.name} • Zona Tugas: {summary?.assignedZone}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => setShowSubmitLogModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
             <CheckCircle className="w-4 h-4" />
             Validasi Berat Aktual
           </button>
           <button
             onClick={() => setShowViolationModal(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
             <Camera className="w-4 h-4" />
             Input Ketidakpatuhan

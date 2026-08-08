@@ -174,11 +174,11 @@ const Leaderboard: React.FC = () => {
         rank: i + 1,
         name: s.name,
         subtitle: `Kelompok: ${s.kelompok}`,
-        extraInfo: `Tong Aktif: ${s.activeBins} | Jam Kerja: ${s.totalHours} jam`,
+        extraInfo: `Tempat Sampah Aktif: ${s.activeBins} | Jam Kerja: ${s.totalHours} jam`,
         points: s.finalScore,
       }));
       pageTitle = "Papan Peringkat Mahasiswa KKN";
-      pageSubtitle = "Skor Akhir = (Jam Kerja * 0.4) + (Tong Aktif * 0.3) + (Nilai DPL * 0.3)";
+      pageSubtitle = "Skor Akhir = (Jam Kerja * 0.4) + (Tempat Sampah Aktif * 0.3) + (Nilai DPL * 0.3)";
       nameHeader = "Nama Mahasiswa";
       subtitleHeader = "Kelompok KKN";
       extraInfoHeader = "Metrik Kinerja";
@@ -271,12 +271,13 @@ const Leaderboard: React.FC = () => {
       </div>
 
       {/* Tab Switcher depending on System */}
-      <div className="flex justify-center border-b border-slate-200 overflow-x-auto pb-1 gap-2">
+      <div className="border-b border-slate-200 overflow-x-auto pb-1">
+        <div className="flex justify-center min-w-max mx-auto gap-2">
         {system === "system1" ? (
           <>
             <button
               onClick={() => setS1Tab("citizens")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s1Tab === "citizens" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -284,7 +285,7 @@ const Leaderboard: React.FC = () => {
             </button>
             <button
               onClick={() => setS1Tab("rtrw")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s1Tab === "rtrw" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -292,7 +293,7 @@ const Leaderboard: React.FC = () => {
             </button>
             <button
               onClick={() => setS1Tab("pengangkut")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s1Tab === "pengangkut" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -300,7 +301,7 @@ const Leaderboard: React.FC = () => {
             </button>
             <button
               onClick={() => setS1Tab("kelurahan")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s1Tab === "kelurahan" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -308,7 +309,7 @@ const Leaderboard: React.FC = () => {
             </button>
             <button
               onClick={() => setS1Tab("overview")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s1Tab === "overview" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -319,7 +320,7 @@ const Leaderboard: React.FC = () => {
           <>
             <button
               onClick={() => setS2Tab("students")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s2Tab === "students" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -327,7 +328,7 @@ const Leaderboard: React.FC = () => {
             </button>
             <button
               onClick={() => setS2Tab("groups")}
-              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 border-b-2 text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                 s2Tab === "groups" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -335,6 +336,7 @@ const Leaderboard: React.FC = () => {
             </button>
           </>
         )}
+        </div>
       </div>
 
       {system === "system1" && s1Tab === "overview" ? (

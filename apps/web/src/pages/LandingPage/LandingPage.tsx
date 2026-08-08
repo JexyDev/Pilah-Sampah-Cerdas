@@ -8,48 +8,27 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import "./LandingPage.css";
-import { Icon } from "@iconify/react";
+import KknLocationPlacementSection from "../../components/landing/KknLocationPlacementSection";
 
-// Exact Vector SVG Icon matching the user's uploaded logo image (Bin + Recycling Arrow + Green Leaf)
-const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-11 h-11" }) => (
-  <svg viewBox="-6 -8 112 116" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Blue Recycling Arrow (Top & Left) */}
-    <path
-      d="M 25 54 A 31 31 0 1 1 76 34"
-      fill="none"
-      stroke="#0284c7"
-      strokeWidth="7.5"
-      strokeLinecap="round"
-    />
-    <polygon points="76,20 88,36 68,36" fill="#0284c7" />
+// Material Symbols Icon component for stats strip
+const Icon: React.FC<{ icon: string; className?: string }> = ({ icon, className = "" }) => {
+  const iconMap: Record<string, string> = {
+    "tabler:activity": "analytics",
+    "octicon:people-16": "groups",
+    "iconamoon:trash": "delete",
+    "lucide:home": "home",
+    "solar:chart-linear": "monitoring",
+  };
+  return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || "star"}</span>;
+};
 
-    {/* Green Recycling Arrow (Bottom & Right) */}
-    <path
-      d="M 76 46 A 31 31 0 0 1 25 64"
-      fill="none"
-      stroke="#16a34a"
-      strokeWidth="7.5"
-      strokeLinecap="round"
-    />
-
-    {/* Trash Can Body (Blue) */}
-    <rect x="36" y="27" width="28" height="6" rx="2" fill="#0284c7" />
-    <path d="M43 27 C43 23 57 23 57 27 Z" fill="#0284c7" />
-    <path d="M38 35 L41 68 C41 71 44 73 48 73 L52 73 L48 55 C48 45 58 40 62 35 Z" fill="#0284c7" />
-
-    {/* Green Leaf Overlay (Bottom Right of Bin) */}
-    <path
-      d="M 46 68 C 46 47 70 41 70 41 C 70 41 74 61 58 68 C 50 71 46 68 46 68 Z"
-      fill="#16a34a"
-    />
-    <path
-      d="M 48 66 Q 58 56 68 43"
-      fill="none"
-      stroke="#ffffff"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
-  </svg>
+// Official High-Resolution TrashCare Icon Mark Asset (Matches user's reference image 1:1)
+const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+  <img
+    src="/image/trashcare-icon.png"
+    alt="TrashCare Icon"
+    className={`${className} object-contain shrink-0`}
+  />
 );
 
 export const LandingPage: React.FC = () => {
@@ -161,41 +140,51 @@ export const LandingPage: React.FC = () => {
       window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handlePreviewClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate("/login");
-  };
-
   const sdgs = [
     {
       num: 3,
+      tag: "#3",
+      color: "#4C9F38",
+      bgLight: "bg-[#4C9F38]/10 text-[#4C9F38] border-[#4C9F38]/20",
       img: "/image/sdg/SDG-3.svg",
       title: "Kehidupan Sehat & Sejahtera",
-      desc: "Mencegah penumpukan sampah liar dan meningkatkan kesehatan masyarakat.",
+      desc: "Mencegah akumulasi sampah liar serta meningkatkan derajat kesehatan masyarakat.",
     },
     {
       num: 11,
+      tag: "#11",
+      color: "#FD9D24",
+      bgLight: "bg-[#FD9D24]/10 text-[#FD9D24] border-[#FD9D24]/20",
       img: "/image/sdg/SDG-11.svg",
       title: "Kota & Permukiman Berkelanjutan",
-      desc: "Mewujudkan lingkungan yang bersih dan tertata.",
+      desc: "Mewujudkan lingkungan permukiman kota yang bersih, aman, dan berkelanjutan.",
     },
     {
       num: 12,
+      tag: "#12",
+      color: "#BF8B2E",
+      bgLight: "bg-[#BF8B2E]/10 text-[#BF8B2E] border-[#BF8B2E]/20",
       img: "/image/sdg/SDG-12.svg",
       title: "Konsumsi & Produksi Bertanggung Jawab",
-      desc: "Mendorong pemilahan, daur ulang, dan pengelolaan sampah.",
+      desc: "Mendorong praktik pemilahan sampah mandiri, daur ulang, dan ekonomi sirkular.",
     },
     {
       num: 13,
+      tag: "#13",
+      color: "#3F7E44",
+      bgLight: "bg-[#3F7E44]/10 text-[#3F7E44] border-[#3F7E44]/20",
       img: "/image/sdg/SDG-13.svg",
       title: "Penanganan Perubahan Iklim",
-      desc: "Mengurangi emisi dari sampah organik melalui pengolahan.",
+      desc: "Mengurangi emisi gas rumah kaca dari sampah organik melalui pengomposan.",
     },
     {
       num: 15,
+      tag: "#15",
+      color: "#56C02B",
+      bgLight: "bg-[#56C02B]/10 text-[#56C02B] border-[#56C02B]/20",
       img: "/image/sdg/SDG-15.svg",
-      title: "Menjaga Ekosistem Daratan",
-      desc: "Melindungi tanah, sungai, dan lingkungan hidup.",
+      title: "Ekosistem Daratan",
+      desc: "Melindungi kualitas tanah, air tanah, dan kelestarian ekosistem daratan.",
     },
   ];
 
@@ -211,16 +200,16 @@ export const LandingPage: React.FC = () => {
           <Link
             to="/"
             onClick={handleLogoClick}
-            className="flex items-center gap-2 group shrink-0"
+            className="flex items-center gap-2.5 group shrink-0"
           >
-            <TrashCareLogoIcon className="w-9 h-9 sm:w-11 sm:h-11 translate-y-[2px] sm:translate-y-[4px] transition-transform group-hover:scale-105 shrink-0" />
+            <TrashCareLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
 
             <div className="flex flex-col text-left justify-center">
-              <span className="text-xl sm:text-2xl font-black tracking-tight leading-none">
-                <span className="text-sky-600">Trash</span>
-                <span className="text-emerald-600">Care</span>
+              <span className="text-2xl sm:text-[1.75rem] font-black tracking-tight leading-none">
+                <span className="text-[#0073E6]">Trash</span>
+                <span className="text-[#59B828]">Care</span>
               </span>
-              <span className="text-[8px] sm:text-[10px] font-extrabold text-slate-500 tracking-wider uppercase mt-1 leading-none">
+              <span className="text-[9px] sm:text-[10.5px] font-black text-slate-700 tracking-[0.22em] uppercase mt-1 leading-none">
                 Pilah Sampah Cerdas
               </span>
             </div>
@@ -390,801 +379,97 @@ export const LandingPage: React.FC = () => {
         )}
       </nav>
 
-      {/* ----------------- HERO SECTION ----------------- */}
-      <section className="relative pt-12 pb-24 bg-gradient-to-b from-emerald-50/60 via-slate-50/40 to-white overflow-hidden">
-        <div className="container-custom grid grid-cols-1 xl:grid-cols-12 gap-10 items-center">
+      {/* ----------------- HERO SECTION (FULL WEB RESPONSIF EDGE-TO-EDGE) ----------------- */}
+      <section className="relative pt-8 sm:pt-10 lg:pt-2 pb-12 lg:pb-16 bg-white overflow-hidden">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
 
-          {/* Hero Left Column: Real Project Copy (xl:col-span-5) */}
-          <div className="xl:col-span-5 space-y-7 text-left relative z-10">
-
-            {/* Single Clean High-Impact Badge
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/90 border border-emerald-300 text-emerald-950 text-xs font-extrabold shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                Sistem Pemilahan Sampah Cerdas • Kecamatan Coblong
-              </div>
-            </div> */}
-
-            {/* Large Spacious Headline */}
-            <h1 className="hero-title-main">
-              Sampah <span className="text-blue-hero">Terdata</span>,<br />
-              Lingkungan <span className="text-green-hero">Tertata</span>
+          {/* Hero Left Column: Wording match user's screenshot 1:1 */}
+          <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-[3rem] font-black text-slate-900 leading-[1.15] tracking-tight">
+              Sampah <span className="text-[#0084DC]">Terdata</span>,<br />
+              Lingkungan <span className="text-[#009966]">Tertata</span>
             </h1>
 
-            <p className="text-slate-600 text-base leading-relaxed font-medium">
+            <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
               Sistem tata kelola sampah terintegrasi dengan pendekatan kegiatan KKN berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan, pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
 
-
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <button
-                onClick={() => setShowApkModal(true)}
-                className="btn-primary-clean px-8 py-3.5 text-base"
+                onClick={() => scrollToSection("#program")}
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-sm transition shadow-md cursor-pointer"
               >
-                Lihat Program
-                <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                Lihat Program <span className="text-lg">→</span>
               </button>
 
-              <button onClick={() => scrollToSection("#about")} className="btn-secondary-clean px-8 py-3.5 text-base">
+              <button
+                onClick={() => scrollToSection("#about")}
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-900 font-extrabold text-sm transition shadow-xs cursor-pointer"
+              >
                 Pelajari Lebih Lanjut
               </button>
             </div>
           </div>
 
-          {/* Hero Right Column: REAL WEB APP DASHBOARD CARD */}
-          <div className="xl:col-span-7 text-left cursor-pointer" onClick={handlePreviewClick}>
-            <div className="widescreen-dashboard-card">
-
-              {/* Hero Right Column: REAL WEB APP DASHBOARD CARD */}
-              <div className="w-full rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-
-                {/* Browser Window Header */}
-                <div className="browser-top-bar">
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="w-3 h-3 rounded-full bg-rose-400" />
-                    <span className="w-3 h-3 rounded-full bg-amber-400" />
-                    <span className="w-3 h-3 rounded-full bg-emerald-400" />
-
-                    <span className="text-[11px] font-bold text-slate-400 ml-2 hidden sm:inline">
-                      TrashCare Web Monitoring App
-                    </span>
-                  </div>
-
-                  <div className="px-4 py-0.5 bg-white border border-slate-200 rounded-full text-[10px] text-slate-500 font-semibold flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
-                    <span className="material-symbols-outlined text-xs text-emerald-600">
-                      lock
-                    </span>
-                    https://trashcare.id/dashboard
-                  </div>
-
-                  <div className="text-[10px] font-extrabold text-emerald-600 hidden sm:block shrink-0">
-                    LIVE PREVIEW
-                  </div>
-                </div>
-
-                {/* Main Dashboard */}
-                <div className="flex flex-col min-w-0">
-
-                  {/* Header Greeting */}
-                  <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-3">
-                    <div className="min-w-0">
-                      <h3 className="font-black text-slate-900 text-xs sm:text-base flex items-center gap-1.5 whitespace-nowrap">
-                        Selamat Datang Kembali, Petugas Monitoring
-                      </h3>
-
-                      <p className="text-xs text-slate-400 font-medium truncate">
-                        Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                        <span className="material-symbols-outlined text-base">
-                          notifications
-                        </span>
-                      </div>
-
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                        <span className="material-symbols-outlined text-base">
-                          grid_view
-                        </span>
-                      </div>
-
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                        <span className="material-symbols-outlined text-base">
-                          dark_mode
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
-                        <div className="text-right hidden sm:block">
-                          <p className="text-xs font-bold text-slate-800 leading-none">
-                            Petugas Monitoring
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-semibold uppercase">
-                            PETUGAS
-                          </p>
-                        </div>
-
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">
-                          PM
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sidebar + Main Content */}
-                  <div className="grid grid-cols-12 min-w-0">
-
-                    {/* ================= SIDEBAR ================= */}
-                    <aside className="col-span-3 hidden sm:block space-y-2.5 p-3 pr-3 border-r border-slate-100 text-[10px]">
-
-                      {/* Logo */}
-                      <div className="py-2 px-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
-                        <TrashCareLogoIcon className="w-7 h-7 shrink-0" />
-
-                        <div className="flex flex-col text-left leading-none">
-                          <span className="text-sm font-black tracking-tight">
-                            <span className="text-sky-600">Trash</span>
-                            <span className="text-emerald-600">Care</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Layanan Utama */}
-                      <div className="space-y-0.5 pt-1">
-                        <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wider px-1">
-                          LAYANAN UTAMA
-                        </p>
-
-                        <div className="real-sidebar-nav-item active">
-                          <span className="material-symbols-outlined text-base">
-                            grid_view
-                          </span>
-                          Dashboard
-                        </div>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            school
-                          </span>
-                          Dashboard DPL
-                        </div>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            map
-                          </span>
-                          Monitoring Wilayah
-                        </div>
-                      </div>
-
-                      {/* Kegiatan KKN */}
-                      <div className="space-y-0.5">
-                        <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wider px-1">
-                          KEGIATAN KKN
-                        </p>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            equalizer
-                          </span>
-                          Ringkasan
-                        </div>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            group
-                          </span>
-                          Kelompok KKN
-                        </div>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            folder_shared
-                          </span>
-                          Portofolio Mahasiswa
-                        </div>
-                      </div>
-
-                      {/* Tata Kelola */}
-                      <div className="space-y-0.5">
-                        <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wider px-1">
-                          TATA KELOLA
-                        </p>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            checklist
-                          </span>
-                          Monitoring Pemilahan
-                        </div>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            local_shipping
-                          </span>
-                          Pengangkutan Sampah
-                        </div>
-
-                        <div className="real-sidebar-nav-item">
-                          <span className="material-symbols-outlined text-base">
-                            recycling
-                          </span>
-                          Pemanfaatan Sampah
-                        </div>
-                      </div>
-
-                      {/* Quote */}
-                      <div className="p-2.5 bg-emerald-50/70 rounded-xl text-[10px] text-emerald-800 font-bold border border-emerald-100/80">
-                        Bersama memilah sampah, bersama jaga bumi.
-                      </div>
-                    </aside>
-
-                    {/* ================= MAIN CONTENT ================= */}
-                    <main className="col-span-12 sm:col-span-9 min-w-0 p-3 space-y-3.5">
-
-                      {/* Filters */}
-                      <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
-
-                        <div className="flex items-center gap-2 overflow-x-auto min-w-0">
-                          <div className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg font-bold flex items-center gap-1 shadow-2xs shrink-0 whitespace-nowrap">
-                            <span className="material-symbols-outlined text-xs">
-                              calendar_today
-                            </span>
-
-                            Periode: Semua
-
-                            <span className="material-symbols-outlined text-xs">
-                              expand_more
-                            </span>
-                          </div>
-                        </div>
-
-                        <button className="px-2.5 py-1 bg-emerald-700 text-white font-bold rounded-lg text-[10px] sm:text-xs flex items-center gap-1 shadow-2xs hover:bg-emerald-800 transition shrink-0 whitespace-nowrap">
-                          <span className="material-symbols-outlined text-xs">
-                            verified
-                          </span>
-                          Indeks Kepatuhan RT/RW
-                        </button>
-                      </div>
-
-                      {/* ================= METRIC CARDS ================= */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-
-                        {/* Total Pengguna */}
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-1 min-w-0">
-                            <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-xs">
-                                group
-                              </span>
-                            </div>
-
-                            <span className="text-[9px] text-slate-400 font-bold truncate">
-                              Total Pengguna
-                            </span>
-                          </div>
-
-                          <p className="text-base font-black text-slate-900">
-                            850
-                          </p>
-
-                          <p className="text-[9px] text-emerald-600 font-bold">
-                            +12 Warga
-                          </p>
-                        </div>
-
-                        {/* Tempat Sampah */}
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-xs">
-                                delete
-                              </span>
-                            </div>
-
-                            <span className="text-[9px] text-slate-400 font-bold truncate">
-                              Tempat Sampah
-                            </span>
-                          </div>
-
-                          <p className="text-base font-black text-slate-900">
-                            210
-                          </p>
-
-                          <span className="inline-block text-[8px] px-1 py-0.5 bg-rose-100 text-rose-700 font-bold rounded">
-                            5 Penuh
-                          </span>
-                        </div>
-
-                        {/* Lokasi */}
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-xs">
-                                place
-                              </span>
-                            </div>
-
-                            <span className="text-[9px] text-slate-400 font-bold truncate">
-                              Lokasi
-                            </span>
-                          </div>
-
-                          <p className="text-base font-black text-slate-900">
-                            90
-                          </p>
-
-                          <p className="text-[9px] text-emerald-600 font-bold">
-                            +2 RW
-                          </p>
-                        </div>
-
-                        {/* Total Setoran */}
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <div className="w-5 h-5 rounded bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-xs">
-                                shopping_bag
-                              </span>
-                            </div>
-
-                            <span className="text-[9px] text-slate-400 font-bold truncate">
-                              Total Setoran
-                            </span>
-                          </div>
-
-                          <p className="text-base font-black text-slate-900">
-                            1.850 Kg
-                          </p>
-
-                          <p className="text-[9px] text-emerald-600 font-bold">
-                            ↗ 15%
-                          </p>
-                        </div>
-
-                        {/* Total Poin */}
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <div className="w-5 h-5 rounded bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-xs">
-                                stars
-                              </span>
-                            </div>
-
-                            <span className="text-[9px] text-slate-400 font-bold truncate">
-                              Total Poin
-                            </span>
-                          </div>
-
-                          <p className="text-base font-black text-slate-900">
-                            35.000
-                          </p>
-
-                          <p className="text-[9px] text-emerald-600 font-bold">
-                            ↗ Poin
-                          </p>
-                        </div>
-
-                        {/* Total Jadwal */}
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-xs">
-                                calendar_month
-                              </span>
-                            </div>
-
-                            <span className="text-[9px] text-slate-400 font-bold truncate">
-                              Total Jadwal
-                            </span>
-                          </div>
-
-                          <p className="text-base font-black text-slate-900">
-                            4
-                          </p>
-
-                          <p className="text-[9px] text-emerald-600 font-bold">
-                            2 Hari Ini
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* ================= CHARTS ================= */}
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
-
-                        {/* Line Chart */}
-                        <div className="sm:col-span-7 bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-1.5 min-w-0">
-
-                          <div className="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1">
-                            <h4 className="font-extrabold text-[11px] text-slate-900">
-                              Trend Setoran Sampah (Real-time)
-                            </h4>
-
-                            <div className="flex items-center gap-2 text-[8px] font-extrabold shrink-0">
-                              <span className="flex items-center gap-1 text-emerald-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Organik
-                              </span>
-
-                              <span className="flex items-center gap-1 text-amber-600">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                Anorganik
-                              </span>
-
-                              <span className="flex items-center gap-1 text-rose-600">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                Residu
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-1 pt-1">
-
-                            {/* Y Axis */}
-                            <div className="flex flex-col justify-between text-[8px] text-slate-400 font-extrabold pr-1 border-r border-slate-200/80 text-right select-none shrink-0 h-28">
-                              <span>200 Kg</span>
-                              <span>150 Kg</span>
-                              <span>100 Kg</span>
-                              <span>50 Kg</span>
-                              <span>0 Kg</span>
-                            </div>
-
-                            {/* Chart */}
-                            <div className="flex-1 flex flex-col justify-between h-28 relative min-w-0">
-
-                              <svg
-                                className="w-full h-full overflow-visible"
-                                viewBox="0 0 350 100"
-                                preserveAspectRatio="none"
-                              >
-                                <line
-                                  x1="0"
-                                  y1="0"
-                                  x2="350"
-                                  y2="0"
-                                  stroke="#cbd5e1"
-                                  strokeWidth="0.8"
-                                  strokeDasharray="3 3"
-                                />
-
-                                <line
-                                  x1="0"
-                                  y1="25"
-                                  x2="350"
-                                  y2="25"
-                                  stroke="#e2e8f0"
-                                  strokeWidth="0.8"
-                                  strokeDasharray="3 3"
-                                />
-
-                                <line
-                                  x1="0"
-                                  y1="50"
-                                  x2="350"
-                                  y2="50"
-                                  stroke="#e2e8f0"
-                                  strokeWidth="0.8"
-                                  strokeDasharray="3 3"
-                                />
-
-                                <line
-                                  x1="0"
-                                  y1="75"
-                                  x2="350"
-                                  y2="75"
-                                  stroke="#e2e8f0"
-                                  strokeWidth="0.8"
-                                  strokeDasharray="3 3"
-                                />
-
-                                <line
-                                  x1="0"
-                                  y1="100"
-                                  x2="350"
-                                  y2="100"
-                                  stroke="#cbd5e1"
-                                  strokeWidth="1.2"
-                                />
-
-                                {/* Residu */}
-                                <path
-                                  d="M0 80 Q 45 65, 90 75 T 180 45 T 270 65 L 320 15 L 350 25"
-                                  fill="none"
-                                  stroke="#f43f5e"
-                                  strokeWidth="2.5"
-                                />
-
-                                {/* Anorganik */}
-                                <path
-                                  d="M0 90 Q 55 80, 110 85 T 225 70 L 350 55"
-                                  fill="none"
-                                  stroke="#f59e0b"
-                                  strokeWidth="2"
-                                />
-
-                                {/* Organik */}
-                                <path
-                                  d="M0 96 L 350 78"
-                                  fill="none"
-                                  stroke="#10b981"
-                                  strokeWidth="1.8"
-                                />
-                              </svg>
-
-                              <div className="flex justify-between text-[8px] text-slate-500 font-extrabold pt-1 border-t border-slate-300">
-                                <span>Mng 25</span>
-                                <span>Mng 27</span>
-                                <span>Mng 29</span>
-                                <span>Mng 31</span>
-                                <span>Mng 32</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Donut Chart */}
-                        <div className="sm:col-span-5 bg-slate-50/60 p-3.5 rounded-xl border border-slate-100 space-y-2 flex flex-col justify-between min-w-0">
-
-                          <div>
-                            <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
-                              <h4 className="font-extrabold text-[11px] text-slate-900">
-                                Komposisi Sampah
-                              </h4>
-
-                              <span className="text-[9px] text-emerald-700 font-bold">
-                                Volume
-                              </span>
-                            </div>
-
-                            <div className="py-2 flex items-center justify-center">
-                              <div className="relative w-16 h-16 rounded-full border-4 border-rose-500 flex items-center justify-center text-center">
-                                <div>
-                                  <p className="text-xs font-black text-rose-600 leading-none">
-                                    85%
-                                  </p>
-                                  <p className="text-[7px] font-bold text-slate-500 uppercase">
-                                    RESIDU
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-1 text-[9px] font-bold">
-                              <div className="flex justify-between gap-2">
-                                <span className="text-emerald-600">Organik</span>
-                                <span className="text-slate-800 whitespace-nowrap">
-                                  270 Kg (2%)
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between gap-2">
-                                <span className="text-amber-500">Anorganik</span>
-                                <span className="text-slate-800 whitespace-nowrap">
-                                  1.460 Kg (13%)
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between gap-2">
-                                <span className="text-rose-500">Residu</span>
-                                <span className="text-slate-800 whitespace-nowrap">
-                                  10.380 Kg (85%)
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <button className="w-full py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-bold mt-1">
-                            Detail Komposisi
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* ================= LIVE RANKING ================= */}
-                      <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs">
-
-                        <div className="px-3 py-2 bg-slate-100/90 border-b border-slate-200/80 flex items-center justify-between">
-                          <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
-                            LIVE RANKING
-                          </span>
-                        </div>
-
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left border-collapse text-[9px] min-w-[620px]">
-
-                            <thead>
-                              <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 font-extrabold uppercase tracking-wider text-[8px]">
-                                <th className="py-1.5 px-3">PERINGKAT</th>
-                                <th className="py-1.5 px-3">NAMA WARGA</th>
-                                <th className="py-1.5 px-3">WILAYAH (RT/RW)</th>
-                                <th className="py-1.5 px-3 text-right">
-                                  TOTAL SETORAN
-                                </th>
-                                <th className="py-1.5 px-3 text-center">
-                                  KEPATUHAN
-                                </th>
-                                <th className="py-1.5 px-3 text-right">
-                                  TOTAL POIN
-                                </th>
-                              </tr>
-                            </thead>
-
-                            <tbody className="divide-y divide-slate-100 bg-white font-medium text-slate-700">
-
-                              {/* #1 */}
-                              <tr className="hover:bg-emerald-50/40 transition">
-                                <td className="py-1.5 px-3 font-extrabold text-amber-500">
-                                  🥇 #1
-                                </td>
-
-                                <td className="py-1.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-                                  Andi Pratama
-                                </td>
-
-                                <td className="py-1.5 px-3 text-slate-500 whitespace-nowrap">
-                                  RT 01/RW 06, Kel. Dago
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                                  120 Kg
-                                </td>
-
-                                <td className="py-1.5 px-3 text-center">
-                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">
-                                    98%
-                                  </span>
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-black text-emerald-600 whitespace-nowrap">
-                                  5.000 Poin
-                                </td>
-                              </tr>
-
-                              {/* #2 */}
-                              <tr className="hover:bg-emerald-50/40 transition">
-                                <td className="py-1.5 px-3 font-extrabold text-slate-400">
-                                  🥈 #2
-                                </td>
-
-                                <td className="py-1.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-                                  Siti Rahmawati
-                                </td>
-
-                                <td className="py-1.5 px-3 text-slate-500 whitespace-nowrap">
-                                  RT 02/RW 03, Kel. Sekeloa
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                                  105 Kg
-                                </td>
-
-                                <td className="py-1.5 px-3 text-center">
-                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">
-                                    95%
-                                  </span>
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-black text-emerald-600 whitespace-nowrap">
-                                  4.250 Poin
-                                </td>
-                              </tr>
-
-                              {/* #3 */}
-                              <tr className="hover:bg-emerald-50/40 transition">
-                                <td className="py-1.5 px-3 font-extrabold text-amber-700">
-                                  🥉 #3
-                                </td>
-
-                                <td className="py-1.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-                                  Budi Santoso
-                                </td>
-
-                                <td className="py-1.5 px-3 text-slate-500 whitespace-nowrap">
-                                  RT 04/RW 05, Kel. Sadang Serang
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                                  98 Kg
-                                </td>
-
-                                <td className="py-1.5 px-3 text-center">
-                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">
-                                    92%
-                                  </span>
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-black text-emerald-600 whitespace-nowrap">
-                                  3.900 Poin
-                                </td>
-                              </tr>
-
-                              {/* #4 */}
-                              <tr className="hover:bg-emerald-50/40 transition">
-                                <td className="py-1.5 px-3 font-bold text-slate-500">
-                                  #4
-                                </td>
-
-                                <td className="py-1.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-                                  Rina Wijaya
-                                </td>
-
-                                <td className="py-1.5 px-3 text-slate-500 whitespace-nowrap">
-                                  RT 03/RW 01, Kel. Lebak Gede
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                                  85 Kg
-                                </td>
-
-                                <td className="py-1.5 px-3 text-center">
-                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">
-                                    88%
-                                  </span>
-                                </td>
-
-                                <td className="py-1.5 px-3 text-right font-black text-emerald-600 whitespace-nowrap">
-                                  3.400 Poin
-                                </td>
-                              </tr>
-
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-
-                    </main>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Hero Right Column: FULL WIDTH STATIC ULTRA-HD PHOTO BLENDING INTO WHITE LEFT */}
+          <div className="lg:col-span-6 xl:col-span-7 relative h-[300px] sm:h-[400px] md:h-[420px] lg:h-[540px] w-full select-none pointer-events-none">
+            <img
+              src="/image/dashboard.png"
+              alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
+              className="w-full h-full object-cover object-center lg:object-right select-none"
+            />
+
+            {/* SMOOTH FADE GRADIENTS ON THE EDGES THAT BLEND 100% INTO WHITE PAGE */}
+            <div className="absolute inset-y-0 left-0 w-2/5 sm:w-1/3 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none" />
+            <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white/30 to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
           </div>
 
         </div>
 
+        {/* Quick Stat Highlights (Clean White Card as shown in user screenshot) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
-        {/* Quick Stat Highlights */}
-        <div className="container mx-auto">
-          <div className="stats-strip">
-
-            <div className="stat-item">
-              <span className="stat-icon">
-                <Icon icon="tabler:activity" />
-              </span>
-              <span className="stat-value">25+</span>
-              <span className="stat-label">Kegiatan Terlaksana</span>
+            <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                <Icon icon="tabler:activity" className="text-xl" />
+              </div>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">25+</p>
+              <p className="text-xs font-bold text-slate-500">Kegiatan Terlaksana</p>
             </div>
 
-            <div className="stat-item">
-              <span className="stat-icon">
-                <Icon icon="octicon:people-16" />
-              </span>
-              <span className="stat-value">500+</span>
-              <span className="stat-label">Warga Terlibat</span>
+            <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
+              <div className="w-10 h-10 rounded-2xl bg-sky-100/80 text-sky-700 flex items-center justify-center">
+                <Icon icon="octicon:people-16" className="text-xl" />
+              </div>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">500+</p>
+              <p className="text-xs font-bold text-slate-500">Warga Terlibat</p>
             </div>
 
-            <div className="stat-item">
-              <span className="stat-icon">
-                <Icon icon="iconamoon:trash" />
-              </span>
-              <span className="stat-value">1.250+ kg</span>
-              <span className="stat-label">Sampah Terkelola</span>
+            <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                <Icon icon="iconamoon:trash" className="text-xl" />
+              </div>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">1.250+ kg</p>
+              <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
 
-            <div className="stat-item">
-              <span className="stat-icon">
-                <Icon icon="lucide:home" />
-              </span>
-              <span className="stat-value">6</span>
-              <span className="stat-label">Kelurahan Terlibat</span>
+            <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
+              <div className="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center">
+                <Icon icon="lucide:home" className="text-xl" />
+              </div>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">6</p>
+              <p className="text-xs font-bold text-slate-500">Kelurahan Terlibat</p>
             </div>
 
-            <div className="stat-item">
-              <span className="stat-icon">
-                <Icon icon="solar:chart-linear" />
-              </span>
-              <span className="stat-value">85%</span>
-              <span className="stat-label">Tingkat Pemilahan</span>
+            <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4 col-span-2 sm:col-span-1">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                <Icon icon="solar:chart-linear" className="text-xl" />
+              </div>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">85%</p>
+              <p className="text-xs font-bold text-slate-500">Tingkat Pemilahan</p>
             </div>
 
           </div>
@@ -1221,42 +506,54 @@ export const LandingPage: React.FC = () => {
 
 
           {/* Clean Light Sustainable Development Goals (SDGs) Grid */}
-
-          {/* ==========================================================
-    SDG SECTION
-========================================================== */}
-
-          <div className="sdg-section">
-
-            <div className="sdg-heading">
-
-              <h2>
+          <div className="sdg-section py-12">
+            <div className="sdg-heading text-center max-w-3xl mx-auto mb-10">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-[#1D3B2F] bg-[#1D3B2F]/10 px-3.5 py-1 rounded-full">
+                Komitmen Global
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
                 Sejalan dengan Tujuan Pembangunan Berkelanjutan (SDGs)
               </h2>
-
             </div>
 
-            <div className="sdg-grid">
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 md:gap-6 items-stretch max-w-7xl mx-auto px-4">
               {sdgs.map((sdg) => (
-                <div className="sdg-item" key={sdg.num}>
+                <div
+                  key={sdg.num}
+                  className="group relative bg-white rounded-3xl p-5 md:p-6 border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
+                >
+                  {/* Top Badge (Single Clean Badge) */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${sdg.bgLight}`}>
+                      {sdg.tag}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      SDG {sdg.num}
+                    </span>
+                  </div>
 
-                  <img
-                    src={sdg.img}
-                    alt={`SDG ${sdg.num}`}
-                    className="sdg-image"
-                  />
+                  {/* SVG Icon Image Box (Fixed Height, Proportional, Non-Lonjong) */}
+                  <div className="relative rounded-2xl overflow-hidden mb-4 h-32 sm:h-36 w-full bg-slate-50 flex items-center justify-center p-3 border border-slate-100/80 group-hover:bg-white group-hover:border-slate-200 transition-colors">
+                    <img
+                      src={sdg.img}
+                      alt={`SDG ${sdg.num}`}
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
 
+                  {/* KBBI Description Only (Title is inside SVG image) */}
+                  <div className="text-left flex-1 flex flex-col justify-start">
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      {sdg.desc}
+                    </p>
+                  </div>
                 </div>
               ))}
-
             </div>
 
-            <p className="sdg-bottom-text">
-              Bersama TrashCare, pengelolaan sampah menjadi bagian dari
-              solusi untuk lingkungan yang lebih bersih dan berkelanjutan.
+            <p className="sdg-bottom-text text-center text-xs text-slate-500 font-medium mt-8">
+              Bersama TrashCare, pengelolaan sampah menjadi bagian dari solusi untuk lingkungan yang lebih bersih dan berkelanjutan.
             </p>
-
           </div>
 
           <section className="section" id="program">
@@ -1371,10 +668,11 @@ export const LandingPage: React.FC = () => {
             </div>
           </section>
 
-
-
         </div>
       </section>
+
+      {/* Seksi Infografis Penempatan Lokasi KKN (Full-Width Edge-to-Edge) */}
+      <KknLocationPlacementSection />
 
       {/* ----------------- 02. WHY US ----------------- */}
       <section id="why-us" className="py-24 bg-[#f0fdf4] border-b border-[#dcfce7]">
@@ -1772,137 +1070,26 @@ export const LandingPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Chart */}
-            <div className="dampak-chart">
-
-              <div className="dampak-chart-header">
-                <div>
-                  <p className="eyebrow eyebrow-sm">
-                    Capaian per Kelurahan
-                  </p>
-
-                  <h3>
-                    Tingkat Pemilahan Sampah
-                  </h3>
+            {/* Dashboard Real Preview Mockup */}
+            <div className="dampak-chart p-2 sm:p-3 bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden group">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200/70 shadow-inner bg-slate-900">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                  </div>
+                  <span className="font-mono text-[11px] text-slate-400 font-semibold tracking-wide">
+                    dashboard.trashcare.id
+                  </span>
+                  <div className="w-8" />
                 </div>
-
-                <span className="chart-unit">
-                  Persentase
-                </span>
+                <img
+                  src="/image/dashboard.png"
+                  alt="Dashboard Real-Time Monitoring TrashCare"
+                  className="w-full h-auto object-cover rounded-b-xl group-hover:scale-[1.01] transition-transform duration-300"
+                />
               </div>
-
-              <ul className="bar-list">
-
-                <li>
-                  <span className="bar-label">
-                    Lebak Gede
-                  </span>
-
-                  <span className="bar-track">
-                    <span
-                      className="bar-fill"
-                      style={{ width: "90%" }}
-                    />
-                  </span>
-
-                  <span className="bar-val">
-                    90%
-                  </span>
-                </li>
-
-                <li>
-                  <span className="bar-label">
-                    Dago
-                  </span>
-
-                  <span className="bar-track">
-                    <span
-                      className="bar-fill"
-                      style={{ width: "85%" }}
-                    />
-                  </span>
-
-                  <span className="bar-val">
-                    85%
-                  </span>
-                </li>
-
-                <li>
-                  <span className="bar-label">
-                    Ciwaringin
-                  </span>
-
-                  <span className="bar-track">
-                    <span
-                      className="bar-fill"
-                      style={{ width: "80%" }}
-                    />
-                  </span>
-
-                  <span className="bar-val">
-                    80%
-                  </span>
-                </li>
-
-                <li>
-                  <span className="bar-label">
-                    Sekeloa
-                  </span>
-
-                  <span className="bar-track">
-                    <span
-                      className="bar-fill"
-                      style={{ width: "75%" }}
-                    />
-                  </span>
-
-                  <span className="bar-val">
-                    75%
-                  </span>
-                </li>
-
-                <li>
-                  <span className="bar-label">
-                    Cikawao
-                  </span>
-
-                  <span className="bar-track">
-                    <span
-                      className="bar-fill"
-                      style={{ width: "70%" }}
-                    />
-                  </span>
-
-                  <span className="bar-val">
-                    70%
-                  </span>
-                </li>
-
-                <li>
-                  <span className="bar-label">
-                    Sadang Serang
-                  </span>
-
-                  <span className="bar-track">
-                    <span
-                      className="bar-fill"
-                      style={{ width: "65%" }}
-                    />
-                  </span>
-
-                  <span className="bar-val">
-                    65%
-                  </span>
-                </li>
-
-              </ul>
-
-              <div className="bar-axis">
-                <span>0%</span>
-                <span>50%</span>
-                <span>100%</span>
-              </div>
-
             </div>
 
           </div>
@@ -1952,6 +1139,11 @@ export const LandingPage: React.FC = () => {
               <div className="mitra-logo-card">
                 <img src="/image/mitra/dlh-bandung.jpg" alt="DLH Kota Bandung" className="mitra-logo-img" />
                 <span>DLH<br />Kota Bandung</span>
+              </div>
+
+              <div className="mitra-logo-card">
+                <img src="/image/mitra/prov-jabar.png" alt="Pemerintah Provinsi Jawa Barat" className="mitra-logo-img" />
+                <span>Pemerintah<br />Prov. Jawa Barat</span>
               </div>
 
               {/* <div className="mitra-logo-card">
@@ -2295,14 +1487,50 @@ export const LandingPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs text-slate-600">
-                <p className="font-medium">
-                  Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerjasama operasional:
+              <div className="space-y-4 text-xs text-slate-600">
+                <p className="font-medium leading-relaxed">
+                  Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerja sama operasional:
                 </p>
-                <div className="p-4 bg-slate-50 rounded-2xl space-y-2 font-bold text-slate-800">
-                  <p>📍 Kantor Kecamatan Coblong, Kota Bandung</p>
-                  <p>📧 Email: info@trashcare.id / makerindo@gmail.com</p>
-                  <p>📞 Whatsapp Support: +62 812-3456-7890</p>
+                
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3.5">
+                  {/* Location Item */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="material-symbols-outlined text-base">location_on</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="font-extrabold text-slate-900 text-xs">Kampus Dago UNIKOM</p>
+                      <p className="text-slate-600 leading-relaxed font-medium">
+                        Jl. Dipati Ukur No.99, Lebakgede, Kec. Coblong, Kota Bandung, Jawa Barat 40132
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Email Item */}
+                  <div className="flex items-center gap-3 pt-1 border-t border-slate-200/60">
+                    <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-base">mail</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Resmi</p>
+                      <a href="mailto:cdc@unikom.ac.id" className="font-extrabold text-slate-800 hover:text-emerald-600 transition-colors">
+                        cdc@unikom.ac.id
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Item */}
+                  <div className="flex items-center gap-3 pt-1 border-t border-slate-200/60">
+                    <div className="w-8 h-8 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-base">chat</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">WhatsApp Support</p>
+                      <a href="https://wa.me/6285715516065" target="_blank" rel="noopener noreferrer" className="font-extrabold text-slate-800 hover:text-emerald-600 transition-colors">
+                        +62 857-1551-6065
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 

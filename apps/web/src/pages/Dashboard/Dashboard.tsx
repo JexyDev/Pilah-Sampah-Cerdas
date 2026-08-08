@@ -13,6 +13,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
@@ -548,7 +549,7 @@ const WargaDashboard: React.FC = () => {
   const handleOpenIssueModal = (binId: string, type: "EMPTY_REQUEST" | "BROKEN_REPORT") => {
     setIssueBinId(binId);
     setIssueType(type);
-    setIssueNotes(type === "EMPTY_REQUEST" ? "Minta pengosongan tong" : "Tong rusak/QR sobek");
+    setIssueNotes(type === "EMPTY_REQUEST" ? "Minta pengosongan tempat sampah" : "Tempat Sampah Rusak/QR Sobek");
     setIssuePhoto(null);
     setIssuePhotoPreview(null);
     setShowIssueModal(true);
@@ -569,7 +570,7 @@ const WargaDashboard: React.FC = () => {
   const handleSubmitIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (issueType === "EMPTY_REQUEST" && !issuePhoto) {
-      toast.error("Wajib mengunggah foto bukti tong penuh!");
+      toast.error("Wajib mengunggah foto bukti tempat sampah penuh!");
       return;
     }
 
@@ -648,15 +649,6 @@ const WargaDashboard: React.FC = () => {
     } finally {
       setIsConverting(false);
     }
-  };
-
-  // Helper for profile picture path
-  const getProfilePhotoUrl = (path?: string) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-    const host = baseUrl.replace("/api/v1", "");
-    return `${host}${path}`;
   };
 
   // Point calculations
@@ -834,15 +826,12 @@ const WargaDashboard: React.FC = () => {
           {/* Profile Card */}
           <div className="bg-white/95 backdrop-blur-sm border border-outline-variant/40 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
             <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-xl overflow-hidden border border-outline-variant/30 flex-shrink-0 bg-primary/10 text-primary">
-              {user?.fotoProfil ? (
-                <img
-                  src={getProfilePhotoUrl(user.fotoProfil) || undefined}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                user?.name.substring(0, 2).toUpperCase() || "U"
-              )}
+              <img
+                src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+                onError={(e) => handleAvatarError(e, user?.name)}
+              />
             </div>
             <div className="flex-1 text-center sm:text-left space-y-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -965,7 +954,7 @@ const WargaDashboard: React.FC = () => {
                         >
                           {bin.category === "ORGANIC" ? "eco" : "recycling"}
                         </span>
-                        Tong {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
+                        Tempat Sampah {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
                       </span>
                       {bin.realStatus === "ACTIVE_BOUND" && (
                         <span
@@ -986,7 +975,7 @@ const WargaDashboard: React.FC = () => {
                       <div className="mt-2 p-2 bg-red-50 rounded-lg border border-red-200 text-center">
                         <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-red-700 uppercase tracking-wider">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                          Tong Rusak / QR Sobek
+                          Tempat Sampah Rusak / QR Sobek
                         </span>
                       </div>
                     ) : bin.realStatus === "TIDAK_AKTIF" ? (
@@ -1116,7 +1105,7 @@ const WargaDashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-primary">
                   {issueType === "EMPTY_REQUEST" ? "delete" : "report"}
                 </span>
-                {issueType === "EMPTY_REQUEST" ? "Lapor Tong Penuh" : "Lapor Tong Rusak"}
+                {issueType === "EMPTY_REQUEST" ? "Lapor Tempat Sampah Penuh" : "Lapor Tempat Sampah Rusak"}
               </h3>
               <button
                 onClick={() => setShowIssueModal(false)}
@@ -1183,7 +1172,7 @@ const WargaDashboard: React.FC = () => {
             <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
               <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
                 <Settings className="text-primary" />
-                Ubah Kapasitas Tong
+                Ubah Kapasitas Tempat Sampah
               </h3>
               <button
                 onClick={() => setShowEditCapModal(false)}
@@ -1215,7 +1204,7 @@ const WargaDashboard: React.FC = () => {
                   <>
                     <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                        Kapasitas Tong Baru (Liter)
+                        Kapasitas Tempat Sampah Baru (Liter)
                       </label>
                       <input
                         type="number"
@@ -1228,7 +1217,7 @@ const WargaDashboard: React.FC = () => {
 
                     <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                        Upload Foto Bukti Tong
+                        Upload Foto Bukti Tempat Sampah
                       </label>
                       <input
                         type="file"
@@ -1558,7 +1547,7 @@ const WargaDashboard: React.FC = () => {
                           <th className="p-3 font-bold">Berat (Kg)</th>
                           <th className="p-3 font-bold">Estimasi Vol</th>
                           <th className="p-3 font-bold">Poin</th>
-                          <th className="p-3 font-bold">Titik Tong</th>
+                          <th className="p-3 font-bold">Titik Tempat Sampah</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/20 bg-white">
