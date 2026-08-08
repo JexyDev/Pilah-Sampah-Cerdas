@@ -20,6 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface OnlineUser {
   id: string;
@@ -44,6 +45,9 @@ interface TerminatedLog {
 }
 
 export const PenggunaOnline: React.FC = () => {
+  const { user: currentUser } = useAuthStore();
+  const isSuperUser = currentUser?.peran === "SUPER_USER";
+
   const [searchQuery, setSearchQuery] = useState("");
   const [deviceFilter, setDeviceFilter] = useState<string>("ALL");
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -423,20 +427,22 @@ export const PenggunaOnline: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Shutdown Sesi
-            </span>
-            <span className="text-2xl font-black text-rose-600">
-              {shutdownLogs.length}{" "}
-              <span className="text-xs font-semibold text-slate-400">Ditutup</span>
-            </span>
+        {isSuperUser && (
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Shutdown Sesi
+              </span>
+              <span className="text-2xl font-black text-rose-600">
+                {shutdownLogs.length}{" "}
+                <span className="text-xs font-semibold text-slate-400">Ditutup</span>
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200">
+              <ShieldAlert size={20} />
+            </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200">
-            <ShieldAlert size={20} />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Main Table Card */}
@@ -458,7 +464,9 @@ export const PenggunaOnline: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium">
-                Klik tombol power (Shutdown) untuk memaksa pengguna keluar dari sistem secara langsung.
+                {isSuperUser
+                  ? "Klik tombol power (Shutdown) untuk memaksa pengguna keluar dari sistem secara langsung."
+                  : "Daftar pemantauan real-time pengguna yang sedang aktif terhubung ke sistem."}
               </p>
             </div>
           </div>
@@ -526,13 +534,13 @@ export const PenggunaOnline: React.FC = () => {
                 <th className="py-3 px-2">ROLE</th>
                 <th className="py-3 px-2">WAKTU LOGIN</th>
                 <th className="py-3 px-2">LAMA AKTIF</th>
-                <th className="py-3 px-2 text-center w-24">AKSI SHUTDOWN</th>
+                {isSuperUser && <th className="py-3 px-2 text-center w-24">AKSI SHUTDOWN</th>}
               </tr>
             </thead>
             <tbody className="text-[11px]">
               {paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={isSuperUser ? 10 : 9} className="py-12 text-center text-slate-400 font-medium">
                     <Globe size={32} className="mx-auto mb-2 opacity-30 text-slate-400" />
                     Tidak ada pengguna online yang sesuai dengan kriteria pencarian.
                   </td>
@@ -607,16 +615,18 @@ export const PenggunaOnline: React.FC = () => {
                           <span>{user.activeDuration}</span>
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-center whitespace-nowrap">
-                        <button
-                          onClick={() => handleOpenShutdownModal(user)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all inline-flex items-center justify-center gap-1 font-black text-[10px] cursor-pointer border border-rose-200/80 hover:shadow-md hover:shadow-rose-600/30 active:scale-95"
-                          title="Paksa Logout Pengguna (Shutdown Sesi)"
-                        >
-                          <Power size={12} className="animate-pulse shrink-0" />
-                          <span>Shutdown</span>
-                        </button>
-                      </td>
+                      {isSuperUser && (
+                        <td className="py-3 px-2 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => handleOpenShutdownModal(user)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all inline-flex items-center justify-center gap-1 font-black text-[10px] cursor-pointer border border-rose-200/80 hover:shadow-md hover:shadow-rose-600/30 active:scale-95"
+                            title="Paksa Logout Pengguna (Shutdown Sesi)"
+                          >
+                            <Power size={12} className="animate-pulse shrink-0" />
+                            <span>Shutdown</span>
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })
