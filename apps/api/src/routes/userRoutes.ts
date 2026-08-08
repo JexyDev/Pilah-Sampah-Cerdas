@@ -45,6 +45,9 @@ router.get(
     "PENGANGKUT",
     "MAHASISWA_KKN",
     "WARGA",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
   ]),
   userController.getAll
 );
