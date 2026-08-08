@@ -8,7 +8,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import "./LandingPage.css";
-import KknLocationPlacementSection from "../../components/landing/KknLocationPlacementSection";
 
 // Material Symbols Icon component for stats strip
 const Icon: React.FC<{ icon: string; className?: string }> = ({ icon, className = "" }) => {
@@ -671,8 +670,6 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Seksi Infografis Penempatan Lokasi KKN (Full-Width Edge-to-Edge) */}
-      <KknLocationPlacementSection />
 
       {/* ----------------- 02. WHY US ----------------- */}
       <section id="why-us" className="py-24 bg-[#f0fdf4] border-b border-[#dcfce7]">
