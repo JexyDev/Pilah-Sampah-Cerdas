@@ -207,20 +207,20 @@ export const LandingPage: React.FC = () => {
       <nav className="landing-nav py-4">
         <div className="container-custom flex items-center justify-between relative">
 
-          {/* Logo Branding (Left - Icon Shifted Down 4px & Expanded ViewBox No Top Clipping) */}
+          {/* Logo Branding */}
           <Link
             to="/"
             onClick={handleLogoClick}
-            className="flex items-center gap-2.5 group shrink-0"
+            className="flex items-center gap-2 group shrink-0"
           >
-            <TrashCareLogoIcon className="w-11 h-11 translate-y-[4px] transition-transform group-hover:scale-105 shrink-0" />
+            <TrashCareLogoIcon className="w-9 h-9 sm:w-11 sm:h-11 translate-y-[2px] sm:translate-y-[4px] transition-transform group-hover:scale-105 shrink-0" />
 
             <div className="flex flex-col text-left justify-center">
-              <span className="text-2xl font-black tracking-tight leading-none">
+              <span className="text-xl sm:text-2xl font-black tracking-tight leading-none">
                 <span className="text-sky-600">Trash</span>
                 <span className="text-emerald-600">Care</span>
               </span>
-              <span className="text-[10px] font-extrabold text-slate-500 tracking-wider uppercase mt-1 leading-none">
+              <span className="text-[8px] sm:text-[10px] font-extrabold text-slate-500 tracking-wider uppercase mt-1 leading-none">
                 Pilah Sampah Cerdas
               </span>
             </div>
@@ -282,19 +282,25 @@ export const LandingPage: React.FC = () => {
 
           </div>
 
-          {/* Action Buttons (Right Side - Updated to 'Register / Login') */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Action Buttons (Right Side - Icon only on Mobile, Full text on Desktop) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isAuthenticated ? (
               <button
                 onClick={() => navigate("/dashboard")}
-                className="btn-primary-clean"
+                className="btn-primary-clean flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold"
+                title="Ke Dashboard"
               >
-                <span className="material-symbols-outlined text-lg">dashboard</span>
-                Ke Dashboard
+                <span className="material-symbols-outlined text-xl sm:text-lg">dashboard</span>
+                <span className="hidden sm:inline">Ke Dashboard</span>
               </button>
             ) : (
-              <Link to="/login" className="btn-primary-clean">
-                Register / Login
+              <Link
+                to="/login"
+                className="btn-primary-clean flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold"
+                title="Register / Login"
+              >
+                <span className="material-symbols-outlined text-xl sm:text-lg">login</span>
+                <span className="hidden sm:inline">Register / Login</span>
               </Link>
             )}
 
