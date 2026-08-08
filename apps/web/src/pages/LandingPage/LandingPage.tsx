@@ -410,21 +410,14 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Hero Right Column: FULL WIDTH STATIC ULTRA-HD PHOTO BLENDING INTO WHITE LEFT */}
-          <div className="lg:col-span-6 xl:col-span-7 relative h-[300px] sm:h-[400px] md:h-[420px] lg:h-[540px] w-full select-none pointer-events-none">
-            <img
-              src="/image/dashboard.png"
-              alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
-              className="w-full h-full object-cover object-center lg:object-right select-none"
-            />
-
-            {/* SMOOTH FADE GRADIENTS ON THE EDGES THAT BLEND 100% INTO WHITE PAGE */}
-            <div className="absolute inset-y-0 left-0 w-2/5 sm:w-1/3 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none" />
-            <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white/30 to-transparent pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-          </div>
-
+          {/* Hero Right Column: Clean Dashboard Image */}
+           <div className="lg:col-span-6 xl:col-span-7 relative h-[300px] sm:h-[400px] md:h-[420px] lg:h-[540px] w-full">
+             <img
+               src="/image/dashboard.png"
+               alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
+               className="w-full h-full object-cover object-center lg:object-right rounded-3xl shadow-lg"
+             />
+           </div>
         </div>
 
         {/* Quick Stat Highlights (Clean White Card as shown in user screenshot) */}
