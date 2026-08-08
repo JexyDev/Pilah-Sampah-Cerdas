@@ -693,7 +693,11 @@ const Login: React.FC = () => {
               </Link>
             </div>
 
-            <div className="space-y-1 text-left pt-2">
+            <div className="space-y-1.5 text-left pt-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
+                <span>Portal Web Pengawas &amp; Pengurus</span>
+              </div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">Selamat Datang</h1>
               <p className="text-xs text-slate-500 font-medium">
                 Masukkan nomor telepon terdaftar dan kata sandi Anda.
@@ -704,14 +708,15 @@ const Login: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
 
               {/* Phone Input */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Nomor HP
-                </label>
-                {/* Panduan format */}
-                <p className="text-[10px] text-slate-400 font-medium">
-                  Format: 08xxx, +628xxx, atau 628xxx — hanya angka
-                </p>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                    Nomor HP
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Format: 08xxx / +628xxx
+                  </span>
+                </div>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -722,7 +727,6 @@ const Login: React.FC = () => {
                     inputMode="numeric"
                     value={identifier}
                     onChange={(e) => {
-                      // Hanya izinkan angka dan tanda +
                       const val = e.target.value.replace(/[^\d+]/g, "");
                       setIdentifier(val);
                       if (val.trim()) setIdentifierError("");
@@ -737,31 +741,26 @@ const Login: React.FC = () => {
                     autoComplete="tel"
                   />
                 </div>
-                {identifierError && <p className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1"><AlertTriangle size={12} />{identifierError}</p>}
+                {identifierError && (
+                  <p className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1">
+                    <AlertTriangle size={12} />
+                    {identifierError}
+                  </p>
+                )}
               </div>
 
               {/* Password Input */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Kata Sandi</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotModal(true)}
-                    className="text-[10px] text-emerald-600 hover:text-emerald-700 font-extrabold transition cursor-pointer"
-                  >
-                    Lupa Kata Sandi?
-                  </button>
-                </div>
-                <p className="text-[10px] text-slate-400 font-medium">
-                  Minimal 8 karakter — kombinasi huruf dan angka
-                </p>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                  Kata Sandi
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     id="login-password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-10 h-12 bg-slate-50 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
-                    placeholder="Kata sandi (min. 8 karakter, huruf + angka)"
+                    className={`w-full pl-10 pr-11 h-12 bg-slate-50 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                    placeholder="Masukkan kata sandi akun"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); if (e.target.value.trim()) setPasswordError(""); }}
@@ -769,11 +768,38 @@ const Login: React.FC = () => {
                     disabled={isStoreLoading || isLocalLoading}
                     autoComplete="current-password"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition cursor-pointer" disabled={isStoreLoading || isLocalLoading}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60 transition cursor-pointer"
+                    disabled={isStoreLoading || isLocalLoading}
+                    title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
+                  >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {passwordError && <p className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1"><AlertTriangle size={12} />{passwordError}</p>}
+
+                {/* Sub-bar below Password Input: Error / Hint on Left, Forgot Password on Right */}
+                <div className="flex items-center justify-between pt-1">
+                  {passwordError ? (
+                    <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      {passwordError}
+                    </p>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Min. 8 karakter (huruf &amp; angka)
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[11px] text-emerald-600 hover:text-emerald-700 font-extrabold transition cursor-pointer ml-auto hover:underline"
+                  >
+                    Lupa Kata Sandi?
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}
@@ -792,15 +818,21 @@ const Login: React.FC = () => {
             </form>
           </div>
 
-          {/* Footer Area */}
-          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500 space-y-1">
-            <p>
-              Belum memiliki akun?{" "}
-              <Link to="/register" className="text-emerald-600 font-extrabold hover:underline">
-                Daftar Sekarang
-              </Link>
-            </p>
-            <p className="font-medium text-[11px] text-slate-400">© 2026 UNIKOM. All rights reserved.</p>
+          {/* Footer Area with Security Badge */}
+          <div className="pt-4 border-t border-slate-100 text-center space-y-3">
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-200/60">
+              <ShieldCheck size={12} className="text-emerald-600" />
+              <span>SSL 256-bit Encrypted Connection</span>
+            </div>
+            <div className="text-xs text-slate-500 space-y-1">
+              <p>
+                Belum memiliki akun?{" "}
+                <Link to="/register" className="text-emerald-600 font-extrabold hover:underline">
+                  Daftar Sekarang
+                </Link>
+              </p>
+              <p className="font-medium text-[11px] text-slate-400">© 2026 UNIKOM. All rights reserved.</p>
+            </div>
           </div>
 
         </div>
