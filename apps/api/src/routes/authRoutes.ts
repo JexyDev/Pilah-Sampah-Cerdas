@@ -362,4 +362,18 @@ router.patch(
   authController.approveKkn
 );
 
+// Online users (real-time via RefreshToken) — SUPER_USER only
+router.get(
+  "/online-users",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER"]),
+  authController.getOnlineUsers
+);
+router.delete(
+  "/online-users/:userId",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER"]),
+  authController.forceLogoutUser
+);
+
 export default router;
