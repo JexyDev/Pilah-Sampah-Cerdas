@@ -781,6 +781,90 @@ html {
   line-height: 1;
 }
 
+/* ========================================================== 
+   ACTIVITY LIST RESPONSIVE BREAKPOINTS
+   ========================================================== */
+
+@media (max-width: 900px) {
+   .activity-list {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+   }
+   
+   .kegiatan-card {
+      gap: 14px;
+      padding: 14px;
+   }
+   
+   .kegiatan-thumb {
+      width: 65px;
+      height: 65px;
+   }
+}
+
+@media (max-width: 600px) {
+   .activity-list {
+      grid-template-columns: 1fr;
+      gap: 16px;
+   }
+   
+   .kegiatan-card {
+      gap: 12px;
+      padding: 12px;
+      flex-direction: column;
+      text-align: center;
+   }
+   
+   .kegiatan-thumb {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto;
+   }
+   
+   .kegiatan-body h3 {
+      font-size: 14px;
+   }
+   
+   .location {
+      justify-content: center;
+   }
+}
+
+@media (max-width: 400px) {
+   .activity-list {
+      grid-template-columns: 1fr;
+      gap: 12px;
+   }
+   
+   .kegiatan-card {
+      gap: 10px;
+      padding: 10px;
+   }
+   
+   .kegiatan-thumb {
+      width: 55px;
+      height: 55px;
+   }
+   
+   .date-badge {
+      width: 36px;
+      height: 36px;
+   }
+   
+   .date-badge strong {
+      font-size: 0.85rem;
+   }
+   
+   .date-badge span {
+      font-size: 0.55rem;
+   }
+   
+   .kegiatan-body h3 {
+      font-size: 13px;
+      margin-bottom: 5px;
+   }
+}
+
 .date-badge strong {
   display: block;
   font-size: 1rem;
