@@ -210,8 +210,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { to: "/setor-sampah", icon: ScanLine, label: "Pemilahan Sampah Warga", allowed: ALL_ROLES },
         { to: "/rw/approval", icon: ShieldCheck, label: "Approval Tempat Sampah & Petugas", allowed: ["SUPER_USER", "RW", "RT"] as UserRole[] },
         { to: "/manajemen-pengangkutan", icon: Truck, label: "Pengangkutan Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/pemanfaatan-sampah", icon: Sprout, label: "Pemanfaatan Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/hasil-pemanfaatan", icon: Archive, label: "Hasil Pemanfaatan", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/pemanfaatan-sampah", icon: Sprout, label: "Entri Pemanfaatan Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/hasil-pemanfaatan", icon: Archive, label: "Laporan & Hasil Panen", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
       ],
     },
     {

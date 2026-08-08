@@ -346,15 +346,8 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/peta" element={<ManajemenLokasi />} />
-        <Route
-          path="/evaluasi-ai"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
-              <ReviewDiscrepancy />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/peta" element={<Navigate to="/manajemen-lokasi" replace />} />
+        <Route path="/evaluasi-ai" element={<Navigate to="/superUser/discrepancies" replace />} />
         <Route path="/lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
         <Route
           path="/setor"
