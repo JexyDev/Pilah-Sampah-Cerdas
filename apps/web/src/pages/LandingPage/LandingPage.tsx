@@ -63,8 +63,10 @@ export const LandingPage: React.FC = () => {
   const [showApkModal, setShowApkModal] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const scrollToSection = (id: string) => {
+    setIsMobileMenuOpen(false);
     const targetId = id.startsWith("#") ? id : `#${id}`;
     const element =
       document.querySelector(targetId) ||
@@ -302,8 +304,66 @@ export const LandingPage: React.FC = () => {
             >
               Contact Us
             </button>
+
+            {/* Mobile Hamburger Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition shrink-0 cursor-pointer"
+              aria-label="Toggle Navigation Menu"
+            >
+              <span className="material-symbols-outlined text-2xl leading-none">
+                {isMobileMenuOpen ? "close" : "menu"}
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-6 py-5 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
+            <div className="flex flex-col space-y-3 font-bold text-slate-800 text-sm text-left">
+              <button
+                onClick={() => scrollToSection("#about")}
+                className={`py-2 text-left transition ${activeSection === "#about" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
+              >
+                Tentang Kami
+              </button>
+              <button
+                onClick={() => scrollToSection("#why-us")}
+                className={`py-2 text-left transition ${activeSection === "#why-us" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
+              >
+                Mengapa Aplikasi Ini
+              </button>
+              <button
+                onClick={() => scrollToSection("#dampak")}
+                className={`py-2 text-left transition ${activeSection === "#dampak" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
+              >
+                Dampak
+              </button>
+              <button
+                onClick={() => scrollToSection("#mitra")}
+                className={`py-2 text-left transition ${activeSection.toLowerCase() === "#mitra" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
+              >
+                Mitra
+              </button>
+              <button
+                onClick={() => scrollToSection("#faq")}
+                className={`py-2 text-left transition ${activeSection === "#faq" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
+              >
+                FAQ
+              </button>
+            </div>
+            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+              <button
+                onClick={() => { setIsMobileMenuOpen(false); setShowContactModal(true); }}
+                className="w-full py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Contact Us
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ----------------- HERO SECTION ----------------- */}

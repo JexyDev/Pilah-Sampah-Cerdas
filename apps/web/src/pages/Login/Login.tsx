@@ -670,12 +670,12 @@ const Login: React.FC = () => {
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-7 p-8 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
 
           <div className="space-y-6">
 
             {/* Header Brand Block */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <Link to="/" className="flex items-center gap-2.5 group">
                 <TrashCareLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105" />
                 <div className="flex flex-col text-left">
