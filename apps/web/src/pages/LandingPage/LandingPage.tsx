@@ -1095,25 +1095,25 @@ export const LandingPage: React.FC = () => {
             {/* RIGHT LOGOS */}
             <div className="mitra-logos">
 
-              <div className="mitra-logo-card">
-                <img src="/image/mitra/unikom.png" alt="UNIKOM" className="mitra-logo-img" />
-                <span>UNIKOM</span>
-              </div>
+               <div className="mitra-logo-card">
+                 <img src="/image/mitra/unikom.png" alt="Universitas Komputer Indonesia" className="mitra-logo-img" />
+                 <span>Universitas Komputer<br />Indonesia</span>
+               </div>
 
               <div className="mitra-logo-card">
                 <img src="/image/mitra/pemkot-bandung.png" alt="Pemerintah Kota Bandung" className="mitra-logo-img" />
                 <span>Pemerintah<br />Kota Bandung</span>
               </div>
 
-              <div className="mitra-logo-card">
-                <img src="/image/mitra/dlh-bandung.jpg" alt="DLH Kota Bandung" className="mitra-logo-img" />
-                <span>DLH<br />Kota Bandung</span>
-              </div>
+               <div className="mitra-logo-card">
+                 <img src="/image/mitra/dlh-bandung.jpg" alt="Dinas Lingkungan Hidup Kota Bandung" className="mitra-logo-img" />
+                 <span>Dinas Lingkungan Hidup<br />Kota Bandung</span>
+               </div>
 
-              <div className="mitra-logo-card">
-                <img src="/image/mitra/prov-jabar.png" alt="Pemerintah Provinsi Jawa Barat" className="mitra-logo-img" />
-                <span>Pemerintah<br />Prov. Jawa Barat</span>
-              </div>
+               <div className="mitra-logo-card">
+                 <img src="/image/mitra/prov-jabar.png" alt="Pemerintah Provinsi Jawa Barat" className="mitra-logo-img" />
+                 <span>Pemerintah<br />Provinsi Jawa Barat</span>
+               </div>
 
               {/* <div className="mitra-logo-card">
                 <div className="mitra-logo-placeholder">📍</div>
