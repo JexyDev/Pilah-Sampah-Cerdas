@@ -499,45 +499,6 @@ const Login: React.FC = () => {
 
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  const DEMO_ACCOUNTS = [
-    { role: "Super User", label: "Super User", phone: "+628111111111", pass: "password123", badge: "bg-indigo-600", mobileOnly: false },
-    { role: "DLH", label: "Dinas Lingkungan Hidup (Darto, A.P., M.M.)", phone: "+628111111112", pass: "password123", badge: "bg-blue-600", mobileOnly: false },
-    { role: "Camat", label: "Camat (Ratna Rahayu Pitriyati, S.STP., M.Si.)", phone: "+628111111113", pass: "password123", badge: "bg-purple-600", mobileOnly: false },
-    { role: "Lurah", label: "Lurah Dago (Jusni Giri Susilowati, S.Sos., M.Si.)", phone: "+628111111114", pass: "password123", badge: "bg-pink-600", mobileOnly: false },
-    { role: "RW", label: "Rukun Warga (RW 06 Dago)", phone: "+628111111115", pass: "password123", badge: "bg-teal-600", mobileOnly: false },
-    { role: "Pimpinan", label: "Pimpinan (Prof. Dr. Ir. H. Eddy Soeryanto Soegoto, M.T.)", phone: "+628111111126", pass: "password123", badge: "bg-amber-600", mobileOnly: false },
-    { role: "Task Force", label: "Task Force", phone: "+628111111127", pass: "password123", badge: "bg-slate-700", mobileOnly: false },
-    { role: "DPL", label: "Dosen Pembimbing Lapangan", phone: "+6281300000001", pass: "password123", badge: "bg-rose-600", mobileOnly: false },
-    { role: "Petugas", label: "Petugas Residu (Mobile Only)", phone: "+628111111117", pass: "password123", badge: "bg-orange-600", mobileOnly: true },
-    { role: "Mahasiswa", label: "Mahasiswa (Mobile Only)", phone: "+628111111118", pass: "password123", badge: "bg-amber-600", mobileOnly: true },
-    { role: "Warga", label: "Warga (Mobile Only)", phone: "+62812001001", pass: "password123", badge: "bg-emerald-600", mobileOnly: true },
-  ];
-
-  const handleDemoClick = (account: typeof DEMO_ACCOUNTS[0], autoSubmit = false) => {
-    if (account.mobileOnly) {
-      showToast(`Akses ${account.role} hanya tersedia melalui aplikasi Mobile TrashCare.`, "warning");
-      setIdentifierError(`Peran ${account.role} khusus Mobile`);
-      return;
-    }
-    setIdentifier(account.phone);
-    setPassword(account.pass);
-    setIdentifierError("");
-    setPasswordError("");
-    toast.success(`Demo akun terisi: ${account.phone}`);
-    if (autoSubmit) {
-      setIsLocalLoading(true);
-      login(account.phone, account.pass).then((success) => {
-        setIsLocalLoading(false);
-        if (success) {
-          setShowSuccessOverlay(true);
-          setTimeout(() => navigate("/dashboard"), 1200);
-        } else {
-          toast.error("Gagal login dengan akun demo");
-        }
-      });
-    }
-  };
-
   const handleIdentifierBlur = () => {
     const normalized = normalizePhone(identifier);
     if (normalized !== identifier && normalized) setIdentifier(normalized);
@@ -830,58 +791,6 @@ const Login: React.FC = () => {
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Login Scrollable Box */}
-            <div className="pt-3 border-t border-slate-100 space-y-2 text-left">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-800 uppercase tracking-wider">
-                  <Sparkles size={14} className="text-amber-500 animate-pulse" />
-                  <span>Akses Cepat Demo</span>
-                </div>
-                <span className="text-[10px] text-emerald-600 font-extrabold">1-Klik Isi Otomatis</span>
-              </div>
-
-              <div className="max-h-44 overflow-y-auto pr-1 space-y-1.5 rounded-xl border border-slate-200/80 p-1.5 bg-slate-50/50">
-                {DEMO_ACCOUNTS.map((acc, i) => (
-                  <div
-                    key={i}
-                    onClick={() => handleDemoClick(acc)}
-                    className={`group flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer text-left shadow-2xs ${
-                      acc.mobileOnly
-                        ? "bg-slate-100/80 border-slate-200 opacity-75 hover:border-amber-400"
-                        : "bg-white border-slate-200/70 hover:border-emerald-500 hover:bg-emerald-50/60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-7 h-7 rounded-lg ${acc.badge} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs uppercase`}>
-                        {acc.role.slice(0, 2)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold text-slate-900 truncate leading-tight group-hover:text-emerald-700 flex items-center gap-1">
-                          <span>{acc.label}</span>
-                        </p>
-                        <p className="text-[10px] font-semibold text-slate-400 truncate">
-                          {acc.phone} • {acc.pass}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleDemoClick(acc, !acc.mobileOnly); }}
-                      className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition shrink-0 shadow-2xs cursor-pointer ${
-                        acc.mobileOnly
-                          ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
-                          : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      }`}
-                    >
-                      {acc.mobileOnly ? "Khusus Mobile" : "Login →"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
 
           {/* Footer Area */}
