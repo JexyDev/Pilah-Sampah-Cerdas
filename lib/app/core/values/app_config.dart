@@ -6,13 +6,17 @@ class AppConfig {
   AppConfig._();
 
   // --- API Base URL ---
-  // Server backend di-hosting pada VPS secara publik
-  static const String _devServerIp = '157.10.252.252'; 
-  static const int _port = 3000;
+  // Default: domain produksi ber-SSL.
+  // Override saat build tanpa mengubah kode, contoh:
+  //   flutter build apk --dart-define=API_BASE_URL=http://157.10.252.252:3000
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://trashcare.id',
+  );
 
-  static String get baseUrl {
-    return 'http://$_devServerIp:$_port';
-  }
+  /// Alamat cadangan (akses langsung via IP) bila domain belum ter-resolve
+  /// pada jaringan klien tertentu.
+  static const String fallbackBaseUrl = 'http://157.10.252.252:3000';
 
   static String get apiBaseUrl => '$baseUrl/api/v1';
 
