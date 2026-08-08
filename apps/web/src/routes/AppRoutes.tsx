@@ -431,7 +431,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/discrepancies"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <ReviewDiscrepancy />
             </ProtectedRoute>
           }
@@ -439,7 +439,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/rw/approval"
           element={
-            <ProtectedRoute allowedRoles={["RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "RT"]}>
               <RwApproval />
             </ProtectedRoute>
           }
@@ -447,7 +447,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/rw/fasilitas"
           element={
-            <ProtectedRoute allowedRoles={["RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "RT"]}>
               <RwFacilityInput />
             </ProtectedRoute>
           }
