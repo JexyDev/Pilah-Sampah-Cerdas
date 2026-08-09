@@ -146,25 +146,25 @@ export const LandingPage: React.FC = () => {
       color: "#4C9F38",
       bgLight: "bg-[#4C9F38]/10 text-[#4C9F38] border-[#4C9F38]/20",
       img: "/image/sdg/SDG-3.svg",
-      title: "Kehidupan Sehat & Sejahtera",
+      title: "Kehidupan Sehat dan Sejahtera",
       desc: "Mencegah akumulasi sampah liar serta meningkatkan derajat kesehatan masyarakat.",
     },
     {
       num: 11,
       tag: "#11",
-      color: "#FD9D24",
-      bgLight: "bg-[#FD9D24]/10 text-[#FD9D24] border-[#FD9D24]/20",
+      color: "#F99D26",
+      bgLight: "bg-[#F99D26]/10 text-[#F99D26] border-[#F99D26]/20",
       img: "/image/sdg/SDG-11.svg",
-      title: "Kota & Permukiman Berkelanjutan",
-      desc: "Mewujudkan lingkungan permukiman kota yang bersih, aman, dan berkelanjutan.",
+      title: "Kota dan Permukiman Berkelanjutan",
+      desc: "Mendorong partisipasi warga Coblong dalam pemilahan guna mewujudkan kota yang lestari.",
     },
     {
       num: 12,
       tag: "#12",
-      color: "#BF8B2E",
-      bgLight: "bg-[#BF8B2E]/10 text-[#BF8B2E] border-[#BF8B2E]/20",
+      color: "#CF8D2A",
+      bgLight: "bg-[#CF8D2A]/10 text-[#CF8D2A] border-[#CF8D2A]/20",
       img: "/image/sdg/SDG-12.svg",
-      title: "Konsumsi & Produksi Bertanggung Jawab",
+      title: "Konsumsi dan Produksi Bertanggung Jawab",
       desc: "Mendorong praktik pemilahan sampah mandiri, daur ulang, dan ekonomi sirkular.",
     },
     {
@@ -732,12 +732,12 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <span className="font-extrabold text-lg text-slate-900">
-                      Point-Based Ledger System
+                      Reward dan Audit
                     </span>
                   </div>
 
                   <span className="text-xs px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full font-bold">
-                    Reward &amp; Audit
+                    Reward dan Audit
                   </span>
                 </div>
 
@@ -810,7 +810,7 @@ export const LandingPage: React.FC = () => {
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
                   Setiap rumah tangga berhak mendaftarkan maksimal 2 tempat
-                  sampah (1 Organik &amp; 1 Anorganik). Tempat sampah aktif
+                  sampah (1 Organik dan 1 Anorganik). Tempat sampah aktif
                   selama 30 hari dan di-reset otomatis setiap setoran.
                   Penjemputan residu dipisahkan dan ditimbang manual oleh
                   Petugas Residu.
@@ -960,8 +960,8 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             {[
               { icon: "delete", num: "1", title: "Pilah Sampah", desc: "Pilah sampah mandiri sesuai kategori Organik dan Anorganik." },
-              { icon: "schedule", num: "2", title: "Window Waktu", desc: "Pengangkutan di window 06:00-08:00 & 16:00-18:00." },
-              { icon: "qr_code_scanner", num: "3", title: "Scan & Angkut", desc: "Petugas melakukan pengangkutan dan memindai kode QR Tempat Sampah." },
+              { icon: "schedule", num: "2", title: "Window Waktu", desc: "Pengangkutan di window 06:00-08:00 dan 16:00-18:00." },
+              { icon: "qr_code_scanner", num: "3", title: "Scan dan Angkut", desc: "Petugas melakukan pengangkutan dan memindai kode QR Tempat Sampah." },
               { icon: "scale", num: "4", title: "Timbangan Fisik", desc: "Hasil timbangan diinput manual oleh Petugas Residu." },
               { icon: "account_balance_wallet", num: "5", title: "Poin Disetujui RW", desc: "Poin insentif warga bertambah atomik setelah diverifikasi RW." },
             ].map((step) => (
@@ -1319,7 +1319,7 @@ export const LandingPage: React.FC = () => {
         <div className="container-custom space-y-12">
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
-            <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir &amp; Fasilitas GIS</h2>
+            <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir dan Fasilitas GIS</h2>
             <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah Kecamatan Coblong</p>
 
             <div className="inline-flex p-1 bg-white border border-slate-200 rounded-full mt-4">
@@ -1341,11 +1341,11 @@ export const LandingPage: React.FC = () => {
           {whatTab === "pemilahan" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               {[
-                { title: "Plastik", icon: "local_drink", color: "text-emerald-600", desc: "Didaur ulang menjadi produk kerajinan & modul ecobrick." },
-                { title: "Kertas", icon: "description", color: "text-amber-500", desc: "Kardus & koran diolah kembali menjadi bubur kertas daur ulang." },
-                { title: "Logam", icon: "hardware", color: "text-slate-600", desc: "Kaleng & potongan besi disalurkan ke mitra peleburan logam." },
+                { title: "Plastik", icon: "local_drink", color: "text-emerald-600", desc: "Didaur ulang menjadi produk kerajinan dan modul ecobrick." },
+                { title: "Kertas", icon: "description", color: "text-amber-500", desc: "Kardus dan koran diolah kembali menjadi bubur kertas daur ulang." },
+                { title: "Logam", icon: "hardware", color: "text-slate-600", desc: "Kaleng dan potongan besi disalurkan ke mitra peleburan logam." },
                 { title: "Kaca", icon: "wine_bar", color: "text-emerald-500", desc: "Botol kaca disalurkan ke industri daur ulang kaca utuh." },
-                { title: "Organik", icon: "eco", color: "text-green-600", desc: "Sisa dapur diolah di Loseda, Bata Terawang, & Budidaya Maggot BSF." },
+                { title: "Organik", icon: "eco", color: "text-green-600", desc: "Sisa dapur diolah di Loseda, Bata Terawang, dan Budidaya Maggot BSF." },
               ].map((cat, idx) => (
                 <div key={idx} className="waste-cat-card text-center space-y-3">
                   <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto border border-slate-100 ${cat.color}`}>
@@ -1360,7 +1360,7 @@ export const LandingPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  title: "Loseda & Bata Terawang",
+                  title: "Loseda dan Bata Terawang",
                   type: "Kompos Dapur",
                   desc: "Pipa kompos Loseda dan lubang Bata Terawang untuk pengolahan sisa makanan organik tingkat rumah tangga.",
                   icon: "compost"
@@ -1372,7 +1372,7 @@ export const LandingPage: React.FC = () => {
                   icon: "set_meal"
                 },
                 {
-                  title: "Bank Sampah & Ecobrick",
+                  title: "Bank Sampah dan Ecobrick",
                   type: "Anorganik",
                   desc: "Penyaluran material daur ulang dan modul ecobrick terdata melalui pemetaan fasilitas GIS.",
                   icon: "layers"
@@ -1403,7 +1403,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-[#0084DC] ">Trash<span className="text-emerald-400">Care</span></span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              Sistem Pemilahan &amp; Pengelolaan Sampah Terintegrasi.
+              Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi.
             </p>
             <p className="text-xs text-slate-500 font-semibold">© 2026 Universitas Komputer Indonesia. All rights reserved.</p>
           </div>
