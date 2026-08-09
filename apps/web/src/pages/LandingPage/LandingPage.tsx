@@ -1082,7 +1082,7 @@ export const LandingPage: React.FC = () => {
               <h2 className="mitra-title">
                 Mitra
                 <br />
-                Terpecaya
+                Terpercaya
               </h2>
 
               <p className="mitra-description">
@@ -1405,7 +1405,7 @@ export const LandingPage: React.FC = () => {
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
               Sistem Pemilahan &amp; Pengelolaan Sampah Terintegrasi.
             </p>
-            <p className="text-xs text-slate-500 font-semibold">© 2026 UNIKOM. All rights reserved.</p>
+            <p className="text-xs text-slate-500 font-semibold">© 2026 Universitas Komputer Indonesia. All rights reserved.</p>
           </div>
 
           <div>
