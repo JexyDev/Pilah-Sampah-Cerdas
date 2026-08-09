@@ -690,10 +690,6 @@ const Login: React.FC = () => {
             </div>
 
             <div className="space-y-1.5 text-left pt-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
-                <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
-                <span>Portal Web Pengawas &amp; Pengurus</span>
-              </div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">Selamat Datang</h1>
               <p className="text-xs text-slate-500 font-medium">
                 Masukkan nomor telepon terdaftar dan kata sandi Anda.
@@ -775,15 +771,11 @@ const Login: React.FC = () => {
 
                 {/* Sub-bar below Password Input: Error / Hint on Left, Forgot Password on Right */}
                 <div className="flex items-center justify-between pt-1">
-                  {passwordError ? (
+                  {passwordError && (
                     <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1">
                       <AlertTriangle size={12} />
                       {passwordError}
                     </p>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      Min. 8 karakter (huruf dan angka)
-                    </span>
                   )}
 
                   <button
