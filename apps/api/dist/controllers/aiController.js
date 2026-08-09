@@ -297,6 +297,7 @@ export class AiController {
                     organik_percent,
                     non_organik_percent,
                     vendorName: result.vendorName,
+                    annotatedImageBase64: result.annotatedImageBase64,
                     imageUrl
                 }
             });

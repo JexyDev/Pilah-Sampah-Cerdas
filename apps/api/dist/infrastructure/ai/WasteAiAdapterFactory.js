@@ -87,6 +87,7 @@ export class VendorWasteAiAdapter {
                 estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
                 detections: data.detections || [],
                 vendorName: data.vendorName || "TrashCare-v1",
+                annotatedImageBase64: data.annotatedImageBase64,
                 rawPayload: data,
             };
         }
