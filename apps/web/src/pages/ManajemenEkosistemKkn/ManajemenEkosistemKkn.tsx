@@ -571,7 +571,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <input
                   type="password"
                   required
-                  placeholder="Minimal 6 karakter"
+                  placeholder="Minimal 8 karakter (Huruf & Angka)"
                   value={dplForm.password}
                   onChange={(e) => setDplForm({ ...dplForm, password: e.target.value })}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"

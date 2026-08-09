@@ -563,7 +563,7 @@ const Pengaturan: React.FC = () => {
                   </label>
                   <input
                     className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
-                    placeholder="Minimal 6 karakter"
+                    placeholder="Minimal 8 karakter (Huruf & Angka)"
                     type="password"
                     value={passwordData.newPassword}
                     onChange={(e) =>

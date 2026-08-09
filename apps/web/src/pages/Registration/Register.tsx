@@ -537,7 +537,7 @@ export const Register: React.FC = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 6 karakter"
+                      placeholder="Min. 8 karakter"
                       className="w-full pl-9 pr-8 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -559,6 +559,25 @@ export const Register: React.FC = () => {
                       className="w-full pl-9 pr-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Password Requirements Indicator */}
+              <div className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1">
+                <p className="font-extrabold text-slate-700 uppercase tracking-wider mb-1">Ketentuan Kata Sandi (Wajib):</p>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                  <p className={password.length >= 8 ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {password.length >= 8 ? "✓" : "○"} Minimal 8 karakter
+                  </p>
+                  <p className={/[A-Z]/.test(password) ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {/[A-Z]/.test(password) ? "✓" : "○"} Huruf Besar (A-Z)
+                  </p>
+                  <p className={/[a-z]/.test(password) ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {/[a-z]/.test(password) ? "✓" : "○"} Huruf Kecil (a-z)
+                  </p>
+                  <p className={/[0-9]/.test(password) ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {/[0-9]/.test(password) ? "✓" : "○"} Angka (0-9)
+                  </p>
                 </div>
               </div>
 
