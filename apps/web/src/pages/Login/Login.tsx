@@ -677,7 +677,7 @@ const Login: React.FC = () => {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <Link to="/" className="flex items-center gap-2.5 group">
                 <TrashCareLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
-                <span className="text-xl font-black tracking-tight leading-none text-left">
+                <span className="text-xl font-black tracking-tight leading-normal text-left">
                   <span className="text-sky-600">Trash</span>
                   <span className="text-emerald-600">Care</span>
                 </span>
