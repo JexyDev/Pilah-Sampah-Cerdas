@@ -221,8 +221,20 @@ const Pengaturan: React.FC = () => {
       setPasswordMessage({ type: "error", text: "Sandi lama wajib diisi" });
       return;
     }
-    if (passwordData.newPassword.length < 6) {
-      setPasswordMessage({ type: "error", text: "Sandi baru minimal 6 karakter" });
+    if (passwordData.newPassword.length < 8) {
+      setPasswordMessage({ type: "error", text: "Sandi baru minimal 8 karakter" });
+      return;
+    }
+    if (!/[A-Z]/.test(passwordData.newPassword)) {
+      setPasswordMessage({ type: "error", text: "Sandi harus mengandung huruf besar (A-Z)" });
+      return;
+    }
+    if (!/[a-z]/.test(passwordData.newPassword)) {
+      setPasswordMessage({ type: "error", text: "Sandi harus mengandung huruf kecil (a-z)" });
+      return;
+    }
+    if (!/[0-9]/.test(passwordData.newPassword)) {
+      setPasswordMessage({ type: "error", text: "Sandi harus mengandung angka (0-9)" });
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {

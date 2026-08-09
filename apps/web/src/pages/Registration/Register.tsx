@@ -90,9 +90,12 @@ export const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) return toast.error("Nama lengkap wajib diisi.");
+   if (!name.trim()) return toast.error("Nama lengkap wajib diisi.");
     if (!phone.trim()) return toast.error("Nomor telepon wajib diisi.");
-    if (!password.trim() || password.length < 6) return toast.error("Kata sandi minimal 6 karakter.");
+    if (!password.trim() || password.length < 8) return toast.error("Kata sandi minimal 8 karakter.");
+    if (!/[A-Z]/.test(password)) return toast.error("Kata sandi harus mengandung huruf besar (A-Z).");
+    if (!/[a-z]/.test(password)) return toast.error("Kata sandi harus mengandung huruf kecil (a-z).");
+    if (!/[0-9]/.test(password)) return toast.error("Kata sandi harus mengandung angka (0-9).");
     if (password !== confirmPassword) return toast.error("Konfirmasi kata sandi tidak cocok.");
 
     let formattedPhone = phone.trim();
