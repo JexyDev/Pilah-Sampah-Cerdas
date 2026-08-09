@@ -71,7 +71,33 @@ async function main() {
     return `+62812999${phoneCounter}`;
   };
 
-  // 3. Seed Camat & Admin DLH Accounts
+  // 3. Seed Super User, Camat, & Admin DLH Accounts
+  await prisma.user.upsert({
+    where: { phone: "+628111111111" },
+    update: { roleId: roleMap["SUPER_USER"], password: DEFAULT_PASSWORD_HASH },
+    create: {
+      name: "Super User Taskforce DLH",
+      phone: "+628111111111",
+      password: DEFAULT_PASSWORD_HASH,
+      roleId: roleMap["SUPER_USER"],
+      address: "Pusat Komando TrashCare, Kota Bandung",
+      status: "Aktif",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { phone: "+6281200000000" },
+    update: { roleId: roleMap["SUPER_USER"], password: DEFAULT_PASSWORD_HASH },
+    create: {
+      name: "Administrator Utama TrashCare",
+      phone: "+6281200000000",
+      password: DEFAULT_PASSWORD_HASH,
+      roleId: roleMap["SUPER_USER"],
+      address: "Pusat Komando TrashCare, Kota Bandung",
+      status: "Aktif",
+    },
+  });
+
   await prisma.user.upsert({
     where: { phone: "+6281200000001" },
     update: { roleId: roleMap["CAMAT"], password: DEFAULT_PASSWORD_HASH },
@@ -98,7 +124,7 @@ async function main() {
     },
   });
 
-  console.log("✅ Akun Camat & Admin DLH siap.");
+  console.log("✅ Akun Super User, Camat, & Admin DLH siap.");
 
   // 4. Seed Kelurahan, Lurah Accounts, RWs & RW Accounts
   let fallbackOfficialAreaId: number | null = null;
