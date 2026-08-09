@@ -17,6 +17,8 @@ router.get("/", authMiddleware, roleMiddleware([
     "RT",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
 ]), pengangkutanController.getAll);
 router.get("/:id", authMiddleware, roleMiddleware([
     "SUPER_USER",
@@ -27,6 +29,8 @@ router.get("/:id", authMiddleware, roleMiddleware([
     "RT",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
 ]), pengangkutanController.getById);
 router.post("/", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), pengangkutanController.create);
 router.put("/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]), pengangkutanController.update);

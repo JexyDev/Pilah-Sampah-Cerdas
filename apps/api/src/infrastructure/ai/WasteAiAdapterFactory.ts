@@ -59,16 +59,25 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
     }
 
     try {
+      const formData = new FormData();
+      const fs = await import("fs");
+
+      if (payload.imagePath && fs.existsSync(payload.imagePath)) {
+        const fileBuffer = fs.readFileSync(payload.imagePath);
+        formData.append("image", new Blob([fileBuffer]), "waste.jpg");
+      } else if (payload.imageUrl && payload.imageUrl.startsWith("http")) {
+        const imgResp = await fetch(payload.imageUrl);
+        const arrayBuf = await imgResp.arrayBuffer();
+        formData.append("image", new Blob([arrayBuf]), "waste.jpg");
+      } else {
+        // Fallback dummy payload if no file/URL available
+        formData.append("image", new Blob([Buffer.from("dummy")]), "waste.jpg");
+      }
+
       const response = await fetch(this.endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          imageUrl: payload.imageUrl,
-          clientApp: "Trashcare-Bandung",
-        }),
+        headers: this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {},
+        body: formData,
       });
 
       if (!response.ok) {
@@ -79,16 +88,15 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
 
       return {
         requestId: data.requestId || uuidv4(),
-        detectedType: data.label || data.detectedType || "organik",
-        confidenceScore: Number(data.confidence || data.confidenceScore || 0.9),
-        estimatedVolumeLiter: Number(data.volumeLiter || 2.0),
+        detectedType: data.detectedType || "ORGANIC",
+        confidenceScore: Number(data.confidenceScore || 0.9),
+        estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
         detections: data.detections || [],
-        vendorName: data.vendorName || "ExternalVendorAI",
+        vendorName: data.vendorName || "TrashCare-v1",
         rawPayload: data,
       };
     } catch (error: any) {
       console.error("[VendorWasteAiAdapter] Error calling vendor AI API:", error.message);
-      // Fallback to Mock if vendor call fails
       const fallback = new MockWasteAiAdapter();
       return fallback.classifyWaste(payload);
     }

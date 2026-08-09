@@ -6,6 +6,8 @@
  */
 import { z } from "zod";
 import { authService } from "../services/authService.js";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 /**
  * Normalize phone: 08xxx → +628xxx, 628xxx → +628xxx
  */
@@ -863,6 +865,75 @@ export class AuthController {
                     message: error.message || "Gagal memverifikasi OTP",
                 });
             }
+        }
+    }
+    /**
+     * GET /auth/online-users
+     * Daftar user dengan RefreshToken aktif (belum expired) = sedang login
+     * Akses: SUPER_USER saja
+     */
+    async getOnlineUsers(_req, res) {
+        try {
+            const now = new Date();
+            const tokens = await prisma.refreshToken.findMany({
+                where: { expiresAt: { gt: now } },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            phone: true,
+                            role: { select: { name: true } },
+                            studentProfile: { select: { nim: true } },
+                        },
+                    },
+                },
+                orderBy: { createdAt: "desc" },
+            });
+            // De-duplicate: satu user bisa punya beberapa token (multi-device)
+            const seen = new Set();
+            const users = tokens
+                .filter((t) => {
+                if (seen.has(t.userId))
+                    return false;
+                seen.add(t.userId);
+                return true;
+            })
+                .map((t) => {
+                const roleName = t.user.role?.name ?? "UNKNOWN";
+                const isMobile = ["WARGA", "PETUGAS_RESIDU", "MAHASISWA_KKN", "DPL", "RT", "RW", "PENGANGKUT"].includes(roleName);
+                return {
+                    id: t.userId,
+                    name: t.user.name ?? "-",
+                    phone: t.user.phone ?? "-",
+                    role: roleName,
+                    device: isMobile ? "Mobile App (Android)" : "Website (Desktop)",
+                    identifier: t.user.studentProfile?.nim ?? t.user.phone ?? t.userId.slice(0, 8),
+                    loginTime: t.createdAt.toISOString(),
+                    tokenExpiresAt: t.expiresAt.toISOString(),
+                };
+            });
+            res.status(200).json({ success: true, data: users, total: users.length });
+        }
+        catch (err) {
+            console.error("[getOnlineUsers]", err);
+            res.status(500).json({ success: false, message: "Gagal mengambil data pengguna online" });
+        }
+    }
+    /**
+     * DELETE /auth/online-users/:userId
+     * Paksa logout — hapus semua RefreshToken user
+     * Akses: SUPER_USER saja
+     */
+    async forceLogoutUser(req, res) {
+        try {
+            const { userId } = req.params;
+            await prisma.refreshToken.deleteMany({ where: { userId } });
+            res.status(200).json({ success: true, message: "Sesi pengguna berhasil dihapus" });
+        }
+        catch (err) {
+            console.error("[forceLogoutUser]", err);
+            res.status(500).json({ success: false, message: "Gagal menghapus sesi" });
         }
     }
 }

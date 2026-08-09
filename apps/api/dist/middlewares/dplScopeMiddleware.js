@@ -11,12 +11,12 @@ export const dplScopeMiddleware = async (req, res, next) => {
             return;
         }
         const roleName = String(user.role || "").toUpperCase();
-        const allowedRoles = ["SUPER_USER", "superUser", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE", "PANITIA", "TASKFORCE"];
+        const allowedRoles = ["SUPER_USER", "superUser", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "DPL", "DOSEN_PEMBIMBING"];
         const isAllowed = allowedRoles.some((r) => roleName.includes(r));
         if (!isAllowed) {
             res.status(403).json({
                 error: "FORBIDDEN",
-                message: "Akses Dashboard KKN hanya untuk SUPER USER, Pemimpin, dan Panitia Taskforce",
+                message: "Akses Dashboard KKN hanya untuk SUPER USER, DPL, Pemimpin, dan Panitia Taskforce",
             });
             return;
         }

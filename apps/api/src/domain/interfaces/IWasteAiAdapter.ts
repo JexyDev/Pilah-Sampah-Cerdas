@@ -9,6 +9,7 @@
 export interface AiClassificationRequest {
   imageUrl: string;
   userId?: string;
+  imagePath?: string;
 }
 
 export interface WasteDetectionItem {

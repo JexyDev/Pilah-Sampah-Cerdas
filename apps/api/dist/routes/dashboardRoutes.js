@@ -7,7 +7,6 @@
 import { Router } from "express";
 import { dashboardController } from "../controllers/dashboardController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
 /**
  * @swagger
@@ -40,7 +39,7 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/kpi", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]), dashboardController.getKpi);
+router.get("/kpi", authMiddleware, dashboardController.getKpi);
 /**
  * @swagger
  * /api/v1/dashboard/transactions:
@@ -53,7 +52,7 @@ router.get("/kpi", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "C
  *       200:
  *         description: Success
  */
-router.get("/transactions", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]), dashboardController.getTransactions);
+router.get("/transactions", authMiddleware, dashboardController.getTransactions);
 /**
  * @swagger
  * /api/v1/dashboard/summary:
@@ -79,7 +78,7 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
  *       200:
  *         description: Success
  */
-router.get("/analytics", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]), dashboardController.getAnalytics);
+router.get("/analytics", authMiddleware, dashboardController.getAnalytics);
 /**
  * @swagger
  * /api/v1/dashboard/export-dataset:
@@ -92,7 +91,7 @@ router.get("/analytics", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DL
  *       200:
  *         description: CSV/Excel dataset file download
  */
-router.get("/export-dataset", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]), dashboardController.exportDataset);
+router.get("/export-dataset", authMiddleware, dashboardController.exportDataset);
 /**
  * @swagger
  * /api/v1/dashboard/regions:

@@ -142,6 +142,7 @@ export class UserService {
                 name: u.name,
                 email: u.phone,
                 phone: u.phone,
+                nim: u.studentProfile?.nim || null,
                 role: u.role.name,
                 status: u.status,
                 binStatus,

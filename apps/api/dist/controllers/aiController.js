@@ -6,6 +6,7 @@
  */
 import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
+import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
 export class AiController {
     /**
      * Mock AI Waste Detection using concurrent Redis queues
@@ -275,17 +276,27 @@ export class AiController {
     async classifyMock(req, res) {
         try {
             let imageUrl = req.body.imageUrl || "";
+            let imagePath = "";
             if (req.file) {
                 imageUrl = `/uploads/${req.file.filename}`;
+                imagePath = req.file.path;
             }
-            // Simulate AI processing delay
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const adapter = WasteAiAdapterFactory.getAdapter();
+            const result = await adapter.classifyWaste({ imageUrl, imagePath });
+            // Calculate organik & non-organik percentages if not calculated by adapter (fallback)
+            const organik_percent = result.rawPayload?.organik_percent ??
+                (result.detectedType === "ORGANIC" ? 100 : 0);
+            const non_organik_percent = result.rawPayload?.non_organik_percent ??
+                (result.detectedType === "NON_ORGANIC" ? 100 : 0);
             res.status(200).json({
                 success: true,
                 data: {
-                    confidence: Math.floor(Math.random() * (99 - 90 + 1) + 90),
-                    estimatedVolumeLiter: 50,
-                    detectedCategory: "ORGANIK",
+                    detectedType: result.detectedType,
+                    confidenceScore: result.confidenceScore,
+                    estimatedVolumeLiter: result.estimatedVolumeLiter,
+                    organik_percent,
+                    non_organik_percent,
+                    vendorName: result.vendorName,
                     imageUrl
                 }
             });
