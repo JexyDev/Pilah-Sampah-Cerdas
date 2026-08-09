@@ -460,7 +460,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="solar:chart-linear" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">85%</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">35%</p>
               <p className="text-xs font-bold text-slate-500">Tingkat Pemilahan</p>
             </div>
 
@@ -1052,7 +1052,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                85%
+                35%
               </span>
 
               <span className="dampak-sub">
