@@ -251,7 +251,7 @@ export const Register: React.FC = () => {
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2.5 group">
                 <TrashCareLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105 shrink-0" />
-                <span className="text-lg font-black tracking-tight leading-normal text-left">
+                <span className="text-lg font-black tracking-tight leading-normal text-left relative -top-[2px]">
                   <span className="text-sky-600">Trash</span>
                   <span className="text-emerald-600">Care</span>
                 </span>
