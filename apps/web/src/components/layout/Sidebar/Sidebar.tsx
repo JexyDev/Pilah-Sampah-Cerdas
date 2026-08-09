@@ -270,6 +270,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { to: "/superUser/qr-master", icon: QrCode, label: "Master QR & Inaktif", allowed: ["SUPER_USER"] as UserRole[] },
         { to: "/superUser/audit", icon: FileText, label: "Audit Trail", allowed: ["SUPER_USER"] as UserRole[] },
         { to: "/role-permissions", icon: Shield, label: "Hak Akses (RBAC)", allowed: ["SUPER_USER"] as UserRole[] },
+        { to: "/simulasi-model-ai", icon: FileText, label: "Simulasi Model AI", allowed: ["SUPER_USER", "ADMIN_DLH"] as UserRole[] },
       ],
     },
   ];

@@ -28,6 +28,7 @@ import PoinWarga from "../pages/PoinWarga/PoinWarga";
 import LaporanAnalitik from "../pages/LaporanAnalitik/LaporanAnalitik";
 import Notifikasi from "../pages/Notifikasi/Notifikasi";
 import Pengaturan from "../pages/Pengaturan/Pengaturan";
+import SimulasiModelAI from "../pages/SimulasiModelAI/SimulasiModelAI";
 import PenggunaOnline from "../pages/PenggunaOnline/PenggunaOnline";
 import SetorSampah from "../pages/SetorSampah/SetorSampah";
 import KknDashboard from "../pages/KknDashboard/KknDashboard";
@@ -249,6 +250,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER"]}>
               <RolePermissionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/simulasi-model-ai"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
+              <SimulasiModelAI />
             </ProtectedRoute>
           }
         />
