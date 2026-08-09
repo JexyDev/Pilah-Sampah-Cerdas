@@ -8,6 +8,7 @@ interface PredictionResult {
   organik_percent: number;
   non_organik_percent: number;
   vendorName: string;
+  annotatedImageBase64?: string;
 }
 
 const SimulasiModelAI: React.FC = () => {
@@ -131,7 +132,12 @@ const SimulasiModelAI: React.FC = () => {
 
           {preview && (
             <div className={styles.previewContainer}>
-              <img src={preview} alt="Preview" />
+              <img src={result?.annotatedImageBase64 || preview} alt="Preview" />
+              {result?.annotatedImageBase64 && (
+                <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
+                  Hasil Deteksi AI (Bounding Box)
+                </div>
+              )}
             </div>
           )}
         </div>
