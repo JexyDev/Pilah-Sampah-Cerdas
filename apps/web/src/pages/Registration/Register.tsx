@@ -256,9 +256,6 @@ export const Register: React.FC = () => {
                     <span className="text-sky-600">Trash</span>
                     <span className="text-emerald-600">Care</span>
                   </span>
-                  <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wider mt-0.5">
-                    Pilah Sampah Cerdas
-                  </span>
                 </div>
               </Link>
 

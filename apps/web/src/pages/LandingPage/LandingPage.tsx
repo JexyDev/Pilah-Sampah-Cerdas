@@ -208,9 +208,6 @@ export const LandingPage: React.FC = () => {
                 <span className="text-[#0073E6]">Trash</span>
                 <span className="text-[#59B828]">Care</span>
               </span>
-              <span className="text-[9px] sm:text-[10.5px] font-black text-slate-700 tracking-[0.22em] uppercase mt-1 leading-none">
-                Pilah Sampah Cerdas
-              </span>
             </div>
           </Link>
 
