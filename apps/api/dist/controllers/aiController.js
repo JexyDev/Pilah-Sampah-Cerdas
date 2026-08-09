@@ -302,9 +302,25 @@ export class AiController {
             });
         }
         catch (error) {
-            res
-                .status(500)
-                .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+            if (error.message === "NO_WASTE_DETECTED") {
+                res.status(422).json({
+                    success: false,
+                    code: "NO_WASTE_DETECTED",
+                    message: "Tidak terdeteksi objek sampah pada gambar (Tingkat Keyakinan AI < 40%). Coba foto objek sampah dengan pencahayaan dan jarak yang lebih jelas.",
+                });
+            }
+            else if (error.message === "IMAGE_UNREADABLE") {
+                res.status(422).json({
+                    success: false,
+                    code: "IMAGE_UNREADABLE",
+                    message: "Gambar buram atau tidak dapat dibaca oleh AI.",
+                });
+            }
+            else {
+                res
+                    .status(500)
+                    .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+            }
         }
     }
 }

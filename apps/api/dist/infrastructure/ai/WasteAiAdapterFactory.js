@@ -68,6 +68,15 @@ export class VendorWasteAiAdapter {
                 body: formData,
             });
             if (!response.ok) {
+                if (response.status === 422) {
+                    const errData = (await response.json().catch(() => ({})));
+                    if (errData?.detail === "NO_WASTE_DETECTED") {
+                        throw new Error("NO_WASTE_DETECTED");
+                    }
+                    if (errData?.detail === "IMAGE_UNREADABLE") {
+                        throw new Error("IMAGE_UNREADABLE");
+                    }
+                }
                 throw new Error(`AI Vendor returned HTTP ${response.status}`);
             }
             const data = (await response.json());
@@ -82,6 +91,9 @@ export class VendorWasteAiAdapter {
             };
         }
         catch (error) {
+            if (error.message === "NO_WASTE_DETECTED" || error.message === "IMAGE_UNREADABLE") {
+                throw error;
+            }
             console.error("[VendorWasteAiAdapter] Error calling vendor AI API:", error.message);
             const fallback = new MockWasteAiAdapter();
             return fallback.classifyWaste(payload);
