@@ -1422,9 +1422,9 @@ export const LandingPage: React.FC = () => {
           <div>
             <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan</h5>
             <ul className="space-y-2.5 text-xs font-semibold">
-              <li><Link to="/login" className="hover:text-white transition">Portal Dashboard</Link></li>
-              <li><button onClick={() => scrollToSection("#how-it-works")} className="hover:text-white transition">Jadwal Pengangkutan</button></li>
-              <li><button onClick={() => scrollToSection("#about")} className="hover:text-white transition">Pendampingan KKN</button></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Dabsor</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Monitoring</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
             </ul>
           </div>
 
