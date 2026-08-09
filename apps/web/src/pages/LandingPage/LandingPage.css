@@ -325,6 +325,7 @@ html {
   font-weight: 800;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 
 .clean-interactive-tab.active {
@@ -344,6 +345,41 @@ html {
   color: #059669;
   border-color: #059669;
   background-color: #ecfdf5;
+}
+
+/* ========================================================== 
+   TABLET - Reduce button sizes
+   ========================================================== */
+
+@media (max-width: 900px) {
+  .clean-interactive-tab {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* ========================================================== 
+   MOBILE - Much smaller buttons for wrapping
+   ========================================================== */
+
+@media (max-width: 600px) {
+  .clean-interactive-tab {
+    padding: 0.45rem 1rem;
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+}
+
+/* ========================================================== 
+   SMALL MOBILE - Minimal buttons
+   ========================================================== */
+
+@media (max-width: 400px) {
+  .clean-interactive-tab {
+    padding: 0.4rem 0.875rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+  }
 }
 
 /* INTERACTIVE GUIDE & STEPPER STYLES */
@@ -1632,7 +1668,19 @@ html {
 #mitra,
 #Mitra,
 #faq {
-  scroll-margin-top: 85px;
+  scroll-margin-top: 100px;
+}
+
+@media (max-width: 768px) {
+  #about,
+  #why-us,
+  #program,
+  #dampak,
+  #mitra,
+  #Mitra,
+  #faq {
+    scroll-margin-top: 110px;
+  }
 }
 
 .section-mitra {

@@ -57,7 +57,7 @@ export const LandingPage: React.FC = () => {
       window.history.pushState(null, "", targetId.toLowerCase());
       setActiveSection(targetId.toLowerCase());
 
-      const navbarOffset = 80;
+      const navbarOffset = 100;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - navbarOffset;
 
@@ -689,7 +689,7 @@ export const LandingPage: React.FC = () => {
             </p>
 
             {/* Clean Interactive Pills */}
-            <div className="inline-flex items-center gap-2 p-1.5 bg-white rounded-full border border-slate-200/80 shadow-2xs mt-4">
+            <div className="flex flex-wrap sm:inline-flex items-center justify-center gap-2.5 p-2 sm:p-1.5 bg-white rounded-2xl sm:rounded-full border border-slate-200/80 shadow-2xs mt-4 max-w-full">
               <button
                 onClick={() => setWhyUsTab("points")}
                 className={`clean-interactive-tab ${whyUsTab === "points" ? "active" : ""
