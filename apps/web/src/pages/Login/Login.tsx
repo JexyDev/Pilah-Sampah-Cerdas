@@ -826,7 +826,7 @@ const Login: React.FC = () => {
                   Daftar Sekarang
                 </Link>
               </p>
-              <p className="font-medium text-[11px] text-slate-400">© 2026 UNIKOM. All rights reserved.</p>
+              <p className="font-medium text-[11px] text-slate-400">© 2026 Universitas Komputer Indonesia. All rights reserved.</p>
             </div>
           </div>
 

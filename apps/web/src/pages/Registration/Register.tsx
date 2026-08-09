@@ -239,7 +239,7 @@ export const Register: React.FC = () => {
           </div>
 
           <div className="pt-8 border-t border-white/15 relative z-10 text-[11px] text-emerald-200/80 font-medium text-left">
-            © 2026 UNIKOM. All rights reserved.
+            © 2026 Universitas Komputer Indonesia. All rights reserved.
           </div>
         </div>
 
