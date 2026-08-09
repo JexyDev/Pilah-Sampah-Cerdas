@@ -654,6 +654,16 @@ html {
   align-items: center;
 }
 
+.program-heading {
+  max-width: 400px;
+}
+
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
 @media (max-width: 900px) {
    .program-top {
      grid-template-columns: 1fr;
@@ -684,16 +694,6 @@ html {
    .program-card {
      min-height: auto;
    }
-}
-
-.program-heading {
-  max-width: 400px;
-}
-
-.program-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
 }
 
 .program-card {
