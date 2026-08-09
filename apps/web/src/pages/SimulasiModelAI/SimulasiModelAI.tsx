@@ -72,7 +72,7 @@ const SimulasiModelAI: React.FC = () => {
         method: "POST",
         body: formData,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken") || localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("psc_access_token")}`,
         },
       });
 
