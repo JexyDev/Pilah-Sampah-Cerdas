@@ -42,10 +42,9 @@ const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12
   </svg>
 );
 
-// ─── Aturan validasi nomor HP ────────────────────────────────────────────────
 // Hanya menerima format nomor telepon Indonesia: 08xxx, 628xxx, +628xxx, 8xxx
-// Minimal 10 digit setelah kode negara, maksimal 13 digit.
-const PHONE_REGEX = /^\+628[1-9]\d{7,11}$/;
+// Minimal 9 digit, maksimal 14 digit.
+const PHONE_REGEX = /^\+628[0-9]\d{6,11}$/;
 
 function normalizePhone(val: string): string {
   let t = val.trim().replace(/[\s\-().]/g, "");
@@ -96,7 +95,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
   const handleRequestOtp = async () => {
     const normalized = normalizePhone(phone);
     if (!isPhoneValid(normalized)) {
-      setPhoneError("Format nomor HP tidak valid. Contoh: 08123456789 atau +6281234567890");
+      setPhoneError("Format nomor HP tidak valid. Terima: 08xxx atau +628xxx (10-13 digit)");
       return;
     }
     setPhoneError("");
@@ -295,7 +294,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                     }}
                     onBlur={() => {
                       if (phone && !isPhoneValid(phone)) {
-                        setPhoneError("Format nomor HP tidak valid. Contoh: 08123456789");
+                        setPhoneError("Format nomor HP tidak valid. Terima: 08xxx atau +628xxx (10-13 digit)");
                       }
                     }}
                     disabled={loading}
@@ -504,7 +503,7 @@ const Login: React.FC = () => {
     if (!normalized) {
       setIdentifierError("Nomor HP wajib diisi");
     } else if (!isPhoneValid(normalized)) {
-      setIdentifierError("Format nomor HP tidak valid. Contoh: 08123456789");
+      setIdentifierError("Format nomor HP tidak valid. Terima: 08xxx atau +628xxx (10-13 digit)");
     } else {
       setIdentifierError("");
     }
@@ -559,7 +558,7 @@ const Login: React.FC = () => {
       setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
     } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid. Contoh: 08123456789");
+      setIdentifierError("Format nomor HP tidak valid. Terima: 08xxx atau +628xxx (10-13 digit)");
       hasError = true;
     }
 
