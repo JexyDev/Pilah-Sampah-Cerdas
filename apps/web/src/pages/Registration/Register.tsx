@@ -250,13 +250,11 @@ export const Register: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2.5 group">
-                <TrashCareLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105" />
-                <div className="flex flex-col text-left">
-                  <span className="text-lg font-black tracking-tight leading-none">
-                    <span className="text-sky-600">Trash</span>
-                    <span className="text-emerald-600">Care</span>
-                  </span>
-                </div>
+                <TrashCareLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105 shrink-0" />
+                <span className="text-lg font-black tracking-tight leading-none text-left">
+                  <span className="text-sky-600">Trash</span>
+                  <span className="text-emerald-600">Care</span>
+                </span>
               </Link>
 
               <Link to="/login" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">
