@@ -32,14 +32,14 @@ export const uploadAvatarMiddleware = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: 2 * 1024 * 1024, // 2MB limit
+        fileSize: 50 * 1024 * 1024, // 50MB limit
     },
 });
 export const uploadSingleImage = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
+        fileSize: 50 * 1024 * 1024, // 50MB limit
     },
 });
 export const uploadResiduImage = uploadSingleImage.fields([
