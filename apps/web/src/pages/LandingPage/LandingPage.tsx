@@ -748,31 +748,31 @@ export const LandingPage: React.FC = () => {
                   yang disetujui RW memberikan reward tambahan (+50 poin).
                 </p>
 
-                <div className="grid grid-cols-3 gap-4 pt-2 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 text-center">
 
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Level Warga
                     </span>
-                    <p className="text-2xl font-black text-emerald-600">
+                    <p className="text-xl sm:text-2xl font-black text-emerald-600">
                       Level 8
                     </p>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Total Poin
                     </span>
-                    <p className="text-2xl font-black text-amber-500">
+                    <p className="text-xl sm:text-2xl font-black text-amber-500">
                       2.450 Poin
                     </p>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Ide Daur Ulang
                     </span>
-                    <p className="text-2xl font-black text-emerald-600">
+                    <p className="text-xl sm:text-2xl font-black text-emerald-600">
                       +50 Poin
                     </p>
                   </div>
