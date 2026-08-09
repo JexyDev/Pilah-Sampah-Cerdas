@@ -25,6 +25,7 @@ export interface AiClassificationResponse {
   estimatedVolumeLiter: number;
   detections: WasteDetectionItem[];
   vendorName: string;
+  annotatedImageBase64?: string;
   rawPayload?: Record<string, any>;
 }
 

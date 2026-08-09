@@ -102,6 +102,7 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
         estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
         detections: data.detections || [],
         vendorName: data.vendorName || "TrashCare-v1",
+        annotatedImageBase64: data.annotatedImageBase64,
         rawPayload: data,
       };
     } catch (error: any) {
