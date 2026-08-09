@@ -47,7 +47,9 @@ const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12
 const PHONE_REGEX = /^\+628[0-9]\d{6,11}$/;
 
 function normalizePhone(val: string): string {
-  let t = val.trim().replace(/[\s\-().]/g, "");
+  let t = val.trim();
+  if (t.includes(".")) return t; // Return DPL NIP as is
+  t = t.replace(/[\s\-().]/g, "");
   if (t.startsWith("08")) return "+62" + t.slice(1);
   if (t.startsWith("8")) return "+62" + t;
   if (t.startsWith("628") && !t.startsWith("+")) return "+" + t;
@@ -55,6 +57,11 @@ function normalizePhone(val: string): string {
 }
 
 function isPhoneValid(val: string): boolean {
+  const t = val.trim();
+  // If it's a DPL NIP (contains dot or starts with 4127)
+  if (t.startsWith("4127") || t.includes(".")) {
+    return true;
+  }
   return PHONE_REGEX.test(normalizePhone(val));
 }
 
@@ -512,9 +519,7 @@ const Login: React.FC = () => {
   const handlePasswordBlur = () => {
     const trimmed = password.trim();
     if (!trimmed) { setPasswordError("Kata sandi wajib diisi"); return; }
-    const v = isPasswordValid(trimmed);
-    if (!v.ok) setPasswordError(v.reason!);
-    else setPasswordError("");
+    setPasswordError("");
   };
 
   const isFormInvalid = !identifier.trim() || !password.trim() || !!identifierError || !!passwordError;
@@ -558,15 +563,12 @@ const Login: React.FC = () => {
       setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
     } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid. Terima: 08xxx atau +628xxx (10-13 digit)");
+      setIdentifierError("Format nomor HP/NIP tidak valid. Terima: 08xxx, +628xxx, atau NIP");
       hasError = true;
     }
 
     if (!passVal) { setPasswordError("Kata sandi wajib diisi"); hasError = true; }
-    else {
-      const v = isPasswordValid(passVal);
-      if (!v.ok) { setPasswordError(v.reason!); hasError = true; }
-    }
+    else { setPasswordError(""); }
 
     if (hasError) return;
 
@@ -705,10 +707,10 @@ const Login: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                    Nomor HP
+                    Nomor HP / NIP
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium">
-                    Format: 08xxx / +628xxx
+                    Format: 08xxx / +628xxx / NIP
                   </span>
                 </div>
                 <div className="relative">
@@ -716,23 +718,21 @@ const Login: React.FC = () => {
                   <input
                     id="login-phone"
                     className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
-                    placeholder="08123456789 atau +6281234567890"
-                    type="tel"
-                    inputMode="numeric"
+                    placeholder="08123456789 atau NIP (misal: 4127.xx.xx.xxx)"
+                    type="text"
                     value={identifier}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^\d+]/g, "");
+                      const val = e.target.value.replace(/[^\d+.]/g, "");
                       setIdentifier(val);
                       if (val.trim()) setIdentifierError("");
                     }}
                     onKeyDown={(e) => {
-                      if (!/[\d+]/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key)) {
+                      if (!/[\d+.]/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key)) {
                         e.preventDefault();
                       }
                     }}
                     onBlur={handleIdentifierBlur}
                     disabled={isStoreLoading || isLocalLoading}
-                    autoComplete="tel"
                   />
                 </div>
                 {identifierError && (
@@ -782,7 +782,7 @@ const Login: React.FC = () => {
                     </p>
                   ) : (
                     <span className="text-[10px] text-slate-400 font-medium">
-                      Min. 8 karakter (huruf &amp; angka)
+                      Min. 8 karakter (huruf dan angka)
                     </span>
                   )}
 
