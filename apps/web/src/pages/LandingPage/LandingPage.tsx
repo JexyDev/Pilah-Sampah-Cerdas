@@ -576,13 +576,6 @@ export const LandingPage: React.FC = () => {
                     <p>Mengolah sampah organik menjadi kompos atau produk bermanfaat.</p>
                   </article>
 
-                  <article className="program-card">
-                    <span className="program-icon" aria-hidden="true">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#009966" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M8 7V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3M8 13h8" /></svg>
-                    </span>
-                    <h3>Bank Sampah</h3>
-                    <p>Mengelola sampah anorganik melalui sistem pencatatan dan penimbangan.</p>
-                  </article>
 
                   <article className="program-card">
                     <span className="program-icon" aria-hidden="true">
