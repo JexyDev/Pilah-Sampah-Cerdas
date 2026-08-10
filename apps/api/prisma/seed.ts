@@ -13,6 +13,25 @@ async function main() {
   console.log("🌱 Seeding data wilayah TrashCare...\n");
 
   // ─────────────────────────────────────────────
+  // 0. CLEANUP — Hapus kecamatan & kelurahan lama yang bukan Coblong
+  // Ini idempotent: aman dijalankan berkali-kali
+  // ─────────────────────────────────────────────
+  const NON_COBLONG_KECAMATAN = ["Sukasari", "Cidadap", "Cibeunying Kidul", "Cibeunying Kaler", "Sumur Bandung"];
+  const NON_COBLONG_KELURAHAN = ["Gegerkalong", "Isola", "Sarijadi", "Sukasari", "Ciumbuleuit", "Hegarmanah", "Ledeng"];
+
+  // Hapus kelurahan non-Coblong beserta relasi RW/RT-nya (cascade)
+  await prisma.kelurahan.deleteMany({
+    where: { name: { in: NON_COBLONG_KELURAHAN } },
+  });
+  console.log(`🧹 Cleanup: ${NON_COBLONG_KELURAHAN.length} kelurahan non-Coblong dihapus`);
+
+  // Hapus kecamatan non-Coblong
+  await prisma.kecamatan.deleteMany({
+    where: { name: { in: NON_COBLONG_KECAMATAN } },
+  });
+  console.log(`🧹 Cleanup: ${NON_COBLONG_KECAMATAN.length} kecamatan non-Coblong dihapus\n`);
+
+  // ─────────────────────────────────────────────
   // 1. PROVINSI
   // ─────────────────────────────────────────────
   const jabar = await prisma.provinsi.upsert({
@@ -33,15 +52,10 @@ async function main() {
   console.log(`✅ Kabupaten/Kota: ${kotaBandung.name}`);
 
   // ─────────────────────────────────────────────
-  // 3. KECAMATAN (fokus Coblong + beberapa tetangga)
+  // 3. KECAMATAN (hanya Coblong — fokus area TrashCare)
   // ─────────────────────────────────────────────
   const kecamatans = [
     "Coblong",
-    "Sukasari",
-    "Cidadap",
-    "Cibeunying Kidul",
-    "Cibeunying Kaler",
-    "Sumur Bandung",
   ];
 
   const kecamatanMap: Record<string, number> = {};
@@ -56,32 +70,21 @@ async function main() {
   console.log(`✅ Kecamatan: ${kecamatans.join(", ")}`);
 
   // ─────────────────────────────────────────────
-  // 4. KELURAHAN (di bawah Kecamatan Coblong + Sukasari)
+  // 4. KELURAHAN (hanya 6 kelurahan resmi Coblong)
   // ─────────────────────────────────────────────
-  const kelurahanData: { name: string; kecamatan: string; id?: string }[] = [
-    // Kecamatan Coblong
-    { name: "Dago", kecamatan: "Coblong" },
-    { name: "Lebak Gede", kecamatan: "Coblong" },
-    { name: "Lebak Siliwangi", kecamatan: "Coblong" },
-    { name: "Sadang Serang", kecamatan: "Coblong" },
-    { name: "Sekeloa", kecamatan: "Coblong" },
-    { name: "Cipaganti", kecamatan: "Coblong" },
-    // Kecamatan Sukasari
-    { name: "Gegerkalong", kecamatan: "Sukasari" },
-    { name: "Isola", kecamatan: "Sukasari" },
-    { name: "Sarijadi", kecamatan: "Sukasari" },
-    { name: "Sukasari", kecamatan: "Sukasari" },
-    // Kecamatan Cidadap
-    { name: "Ciumbuleuit", kecamatan: "Cidadap" },
-    { name: "Hegarmanah", kecamatan: "Cidadap" },
-    { name: "Ledeng", kecamatan: "Cidadap" },
+  const kelurahanData: { name: string; kecamatan: string }[] = [
+    { name: "Dago",             kecamatan: "Coblong" },
+    { name: "Lebak Gede",       kecamatan: "Coblong" },
+    { name: "Lebak Siliwangi",  kecamatan: "Coblong" },
+    { name: "Sadang Serang",    kecamatan: "Coblong" },
+    { name: "Sekeloa",          kecamatan: "Coblong" },
+    { name: "Cipaganti",        kecamatan: "Coblong" },
   ];
 
   const kelurahanMap: Record<string, string> = {};
   for (const kel of kelurahanData) {
     const existing = await prisma.kelurahan.findFirst({ where: { name: kel.name } });
     if (existing) {
-      // Update kecamatanId jika belum ada
       const updated = await prisma.kelurahan.update({
         where: { id: existing.id },
         data: { kecamatanId: kecamatanMap[kel.kecamatan] },
@@ -97,25 +100,18 @@ async function main() {
       kelurahanMap[kel.name] = created.id;
     }
   }
-  console.log(`✅ Kelurahan: ${kelurahanData.length} kelurahan`);
+  console.log(`✅ Kelurahan Coblong: ${kelurahanData.map(k => k.name).join(", ")}`);
 
   // ─────────────────────────────────────────────
   // 5. RW (per kelurahan, 5-8 RW masing-masing)
   // ─────────────────────────────────────────────
   const rwData: { kelurahan: string; rwNumbers: number[]; lat: number; lng: number }[] = [
-    { kelurahan: "Dago", rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], lat: -6.8750079, lng: 107.6159521 },
-    { kelurahan: "Lebak Gede", rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], lat: -6.8947907, lng: 107.6152105 },
-    { kelurahan: "Lebak Siliwangi", rwNumbers: [1, 2, 3, 4, 5, 6], lat: -6.8920097, lng: 107.6103326 },
-    { kelurahan: "Sadang Serang", rwNumbers: Array.from({length: 21}, (_, i) => i + 1), lat: -6.8916671, lng: 107.626937 },
-    { kelurahan: "Sekeloa", rwNumbers: Array.from({length: 16}, (_, i) => i + 1), lat: -6.8864841, lng: 107.620447 },
-    { kelurahan: "Cipaganti", rwNumbers: [1, 2, 3, 4, 5, 6, 7], lat: -6.8866719, lng: 107.6029364 },
-    { kelurahan: "Gegerkalong", rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], lat: -6.8602, lng: 107.5902 },
-    { kelurahan: "Isola", rwNumbers: [1, 2, 3, 4, 5, 6], lat: -6.8568, lng: 107.5901 },
-    { kelurahan: "Sarijadi", rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8], lat: -6.8715, lng: 107.5893 },
-    { kelurahan: "Sukasari", rwNumbers: [1, 2, 3, 4, 5, 6, 7], lat: -6.8649, lng: 107.5931 },
-    { kelurahan: "Ciumbuleuit", rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9], lat: -6.8697, lng: 107.5952 },
-    { kelurahan: "Hegarmanah", rwNumbers: [1, 2, 3, 4, 5, 6], lat: -6.8727, lng: 107.5999 },
-    { kelurahan: "Ledeng", rwNumbers: [1, 2, 3, 4, 5, 6, 7], lat: -6.8665, lng: 107.5987 },
+    { kelurahan: "Dago",            rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], lat: -6.8750079, lng: 107.6159521 },
+    { kelurahan: "Lebak Gede",      rwNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], lat: -6.8947907, lng: 107.6152105 },
+    { kelurahan: "Lebak Siliwangi", rwNumbers: [1, 2, 3, 4, 5, 6],                           lat: -6.8920097, lng: 107.6103326 },
+    { kelurahan: "Sadang Serang",   rwNumbers: Array.from({length: 21}, (_, i) => i + 1),    lat: -6.8916671, lng: 107.626937  },
+    { kelurahan: "Sekeloa",         rwNumbers: Array.from({length: 16}, (_, i) => i + 1),    lat: -6.8864841, lng: 107.620447  },
+    { kelurahan: "Cipaganti",       rwNumbers: [1, 2, 3, 4, 5, 6, 7],                        lat: -6.8866719, lng: 107.6029364 },
   ];
 
   const rwMap: Record<string, number[]> = {}; // kelurahan → [rwId, ...]
