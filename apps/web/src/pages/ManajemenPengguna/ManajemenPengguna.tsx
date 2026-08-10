@@ -81,6 +81,7 @@ const ManajemenPengguna: React.FC = () => {
     nim: "",
     nip: "",
     prodi: "S1 Manajemen",
+    jabatan: "",
     selectedRws: [] as string[],
   });
 
