@@ -74,36 +74,57 @@ router.get("/kabupaten", async (req, res) => {
  * @swagger
  * /api/v1/areas/kecamatan:
  *   get:
- *     summary: Mendapatkan daftar Kecamatan
+ *     summary: Mendapatkan data Kecamatan Coblong beserta daftar kelurahannya
  *     tags: [Master Wilayah]
- *     parameters:
- *       - in: query
- *         name: kabupatenId
- *         schema:
- *           type: integer
- *       - in: query
- *         name: kabupaten
- *         schema:
- *           type: string
  *     responses:
  *       200:
- *         description: Berhasil mengambil daftar kecamatan
+ *         description: Berhasil mengambil data Kecamatan Coblong
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                         example: Coblong
+ *                       kelurahans:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: string
+ *                             name:
+ *                               type: string
  */
 router.get("/kecamatan", async (req, res) => {
     try {
-        const { kabupatenId, kabupaten_id, kabupatenName, kabupaten } = req.query;
-        const id = kabupatenId || kabupaten_id;
-        const name = kabupatenName || kabupaten;
-        const where = {};
-        if (id) {
-            where.kabupatenId = Number(id);
-        }
-        else if (name) {
-            where.kabupaten = { name: { contains: String(name), mode: "insensitive" } };
-        }
         const data = await prisma.kecamatan.findMany({
-            where,
-            include: { kabupaten: { select: { name: true } } },
+            where: {
+                name: { equals: "Coblong", mode: "insensitive" },
+            },
+            select: {
+                id: true,
+                name: true,
+                createdAt: true,
+                updatedAt: true,
+                kelurahans: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                    orderBy: { name: "asc" },
+                },
+            },
             orderBy: { name: "asc" },
         });
         res.json({ success: true, data });
@@ -116,36 +137,37 @@ router.get("/kecamatan", async (req, res) => {
  * @swagger
  * /api/v1/areas/kelurahan:
  *   get:
- *     summary: Mendapatkan daftar Kelurahan (dengan opsi filter kecamatanId / kecamatan)
+ *     summary: Mendapatkan daftar Kelurahan Kecamatan Coblong
  *     tags: [Master Wilayah]
  *     parameters:
  *       - in: query
  *         name: kecamatanId
  *         schema:
  *           type: integer
- *       - in: query
- *         name: kecamatan
- *         schema:
- *           type: string
+ *         description: Filter opsional berdasarkan ID kecamatan
  *     responses:
  *       200:
- *         description: Berhasil mengambil daftar kelurahan
+ *         description: Berhasil mengambil daftar kelurahan Coblong
  */
 router.get("/kelurahan", async (req, res) => {
     try {
-        const { kecamatanId, kecamatan_id, kecamatanName, kecamatan } = req.query;
+        const { kecamatanId, kecamatan_id } = req.query;
         const id = kecamatanId || kecamatan_id;
-        const name = kecamatanName || kecamatan;
-        const where = {};
+        const where = {
+            // Selalu scope ke Kecamatan Coblong
+            kecamatan: { name: { equals: "Coblong", mode: "insensitive" } },
+        };
         if (id) {
             where.kecamatanId = Number(id);
         }
-        else if (name) {
-            where.kecamatan = { name: { contains: String(name), mode: "insensitive" } };
-        }
         const data = await prisma.kelurahan.findMany({
             where,
-            include: { kecamatan: { select: { name: true } } },
+            select: {
+                id: true,
+                name: true,
+                createdAt: true,
+                updatedAt: true,
+            },
             orderBy: { name: "asc" },
         });
         res.json({ success: true, data });

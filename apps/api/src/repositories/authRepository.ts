@@ -36,88 +36,25 @@ export class AuthRepository {
     try {
       const formatted = formatPhoneNumber(phone);
       const raw = phone.trim();
+
+      // Hasilkan format alternatif: 08xxx ↔ +628xxx
       const alt = raw.startsWith("0")
         ? "+62" + raw.slice(1)
         : raw.startsWith("+62")
           ? "0" + raw.slice(3)
           : raw;
 
-      const cleanDigits = raw.replace(/[^0-9]/g, "");
-
-      let user = (await prisma.user.findFirst({
+      // Cari user hanya berdasarkan nomor telepon (3 format yang valid)
+      const user = (await prisma.user.findFirst({
         where: {
           OR: [
             { phone: formatted },
             { phone: raw },
             { phone: alt },
-            { phone: { contains: raw } },
-            ...(cleanDigits.length >= 6 ? [{ phone: { contains: cleanDigits } }, { address: { contains: cleanDigits } }] : []),
-            { name: { contains: raw, mode: "insensitive" } },
-            { petugasProfile: { is: { noWa: { contains: raw } } } },
-            { studentProfile: { is: { OR: [{ nim: raw }, { noWa: { contains: raw } }] } } },
           ],
         },
         include: { role: true },
       })) as (User & { role: Role }) | null;
-
-      if (!user) {
-        const lower = raw.toLowerCase();
-        let targetRole = "";
-        if (
-          lower.includes("petugas") ||
-          ["08111111117", "+628111111117", "0812001004", "+62812001004"].includes(raw)
-        ) {
-          targetRole = "PETUGAS_RESIDU";
-        } else if (
-          lower.includes("kkn") ||
-          lower.includes("mahasiswa") ||
-          ["08111111118", "+62811111118", "0812001005", "+62812001005"].includes(raw)
-        ) {
-          targetRole = "MAHASISWA_KKN";
-        } else if (
-          lower.includes("rw") ||
-          ["08111111115", "+628111111115", "081200999995", "+6281200999995"].includes(raw)
-        ) {
-          targetRole = "RW";
-        } else if (
-          lower.includes("rt") ||
-          ["08111111116", "+628111111116", "081200999994", "+6281200999994"].includes(raw)
-        ) {
-          targetRole = "RT";
-        } else if (
-          lower.includes("lurah") ||
-          ["08111111114", "+628111111114", "081200999996", "+6281200999996"].includes(raw)
-        ) {
-          targetRole = "LURAH";
-        } else if (
-          lower.includes("camat") ||
-          ["08111111113", "+628111111113", "081200999997", "+6281200999997"].includes(raw)
-        ) {
-          targetRole = "CAMAT";
-        } else if (
-          lower.includes("dlh") ||
-          ["08111111112", "+628111111112", "081200999998", "+6281200999998"].includes(raw)
-        ) {
-          targetRole = "ADMIN_DLH";
-        } else if (
-          lower.includes("super") ||
-          ["08111111111", "+628111111111", "081200999999", "+6281200999999"].includes(raw)
-        ) {
-          targetRole = "SUPER_USER";
-        } else if (
-          lower.includes("warga") ||
-          ["0812001001", "+62812001001", "0812001003", "+62812001003"].includes(raw)
-        ) {
-          targetRole = "WARGA";
-        }
-
-        if (targetRole) {
-          user = (await prisma.user.findFirst({
-            where: { role: { name: targetRole }, status: { in: ["Aktif", "ACTIVE"] } },
-            include: { role: true },
-          })) as (User & { role: Role }) | null;
-        }
-      }
 
       return user;
     } catch (error: any) {

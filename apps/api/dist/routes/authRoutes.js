@@ -21,7 +21,7 @@ const router = Router();
  * @swagger
  * /api/v1/auth/login:
  *   post:
- *     summary: Login user
+ *     summary: Login user menggunakan nomor telepon dan password
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -30,18 +30,19 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - phone
  *               - password
  *             properties:
- *               email:
+ *               phone:
  *                 type: string
- *                 example: admin@pilahsampah.id
+ *                 description: "Nomor HP dalam format 08xxx atau +628xxx"
+ *                 example: "08123456789"
  *               password:
  *                 type: string
  *                 example: password123
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login berhasil
  *         content:
  *           application/json:
  *             schema:
@@ -59,9 +60,9 @@ const router = Router();
  *                     refreshToken:
  *                       type: string
  *       400:
- *         description: Validation error
+ *         description: Validasi gagal
  *       401:
- *         description: Unauthorized (Invalid credentials)
+ *         description: Nomor HP atau password salah
  */
 router.post("/login", loginRateLimiter, authController.login);
 /**

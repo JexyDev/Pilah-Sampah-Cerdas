@@ -229,11 +229,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             { to: "/manajemen-pengguna?role=WARGA", label: "Warga" },
           ],
         },
+        {
+          type: "group",
+          icon: MapPin,
+          label: "Master Data Wilayah",
+          allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[],
+          children: [
+            { to: "/master-wilayah?tab=kecamatan", label: "Kecamatan" },
+            { to: "/master-wilayah?tab=kelurahan", label: "Kelurahan" },
+            { to: "/master-wilayah?tab=rw", label: "Rukun Warga (RW)" },
+            { to: "/master-wilayah?tab=rt", label: "Rukun Tetangga (RT)" },
+          ],
+        },
         { to: "/pengguna-online", icon: Globe, label: "Pengguna Online (Live)", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
         { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Manajemen Tempat Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
         { to: "/manajemen-lokasi", icon: MapPin, label: "Manajemen Lokasi", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
         { to: "/rw/fasilitas", icon: Sprout, label: "Fasilitas & Ide", allowed: ["SUPER_USER", "RW", "RT"] as UserRole[] },
       ],
+
     },
     {
       header: "Laporan & Validasi",

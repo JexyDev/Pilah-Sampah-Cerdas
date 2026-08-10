@@ -527,7 +527,6 @@ const ManajemenPengguna: React.FC = () => {
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">No. HP</th>
-                  <th className="py-3.5 px-4">Peran</th>
                   <th className="py-3.5 px-4">Wilayah</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
@@ -555,6 +554,15 @@ const ManajemenPengguna: React.FC = () => {
                   <th className="py-3.5 px-4">Kelurahan</th>
                   <th className="py-3.5 px-4">RW</th>
                   <th className="py-3.5 px-4">Alamat Rumah</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
+                </tr>
+              ) : selectedRole === "ADMIN_DLH" ? (
+                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">No. HP</th>
+                  <th className="py-3.5 px-4">Wilayah</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
                 </tr>
@@ -785,11 +793,6 @@ const ManajemenPengguna: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                          {u.role}
-                        </span>
-                      </td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-extrabold">
                         {u.role === "CAMAT"
                           ? "Kecamatan Coblong"
@@ -885,6 +888,42 @@ const ManajemenPengguna: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">{u.rw || "-"}</td>
                       <td className="py-3.5 px-4 text-slate-700 text-xs font-medium">{u.address || "-"}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {u.status || "Aktif"}
+                        </span>
+                      </td>
+                      {!isReadOnly && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ) : selectedRole === "ADMIN_DLH" ? (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
+                      <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">
+                        Kota Bandung
+                      </td>
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
                           {u.status || "Aktif"}

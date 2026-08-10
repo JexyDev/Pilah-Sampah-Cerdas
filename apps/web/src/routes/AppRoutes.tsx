@@ -12,6 +12,7 @@ import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Monitoring from "../pages/Monitoring/Monitoring";
 import MasterData from "../pages/MasterData/MasterData";
+import MasterWilayah from "../pages/MasterWilayah/MasterWilayah";
 import Leaderboard from "../pages/Leaderboard/Leaderboard";
 import NotFound from "../pages/NotFound/NotFound";
 import Login from "../pages/Login/Login";
@@ -160,6 +161,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <MasterData />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-wilayah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <MasterWilayah />
             </ProtectedRoute>
           }
         />

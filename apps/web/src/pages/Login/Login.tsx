@@ -566,7 +566,7 @@ const Login: React.FC = () => {
       setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
     } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid. Terima: 08xxx, +628xxx, atau NIP");
+      setIdentifierError("Format nomor HP tidak valid. Terima: 08xxx, +628xxx");
       hasError = true;
     }
 
@@ -670,7 +670,7 @@ const Login: React.FC = () => {
               Sampah Terdata,<br />Lingkungan Tertata.
             </h2>
             <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-              Platform pemantauan terintegrasi khusus Pengawas, Rukun Warga, Dosen Pembimbing Lapangan, dan Pimpinan. Akses untuk Warga, Mahasiswa KKN, dan Petugas Residu melalui Aplikasi Mobile.
+              Platform pemantauan terintegrasi khusus Rukun Warga, Dosen Pembimbing Lapangan, dan Pimpinan. Akses untuk Warga, Mahasiswa KKN, dan Petugas Residu melalui Aplikasi Mobile.
             </p>
           </div>
 
@@ -716,7 +716,7 @@ const Login: React.FC = () => {
                     Nomor HP
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium">
-                    Format: 08xxx / +628xxx / NIP
+                    Format: 08xxx / +628xxx
                   </span>
                 </div>
                 <div className="relative">
