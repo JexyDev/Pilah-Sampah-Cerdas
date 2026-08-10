@@ -14,18 +14,43 @@ async function main() {
 
   // ─────────────────────────────────────────────
   // 0. CLEANUP — Hapus kecamatan & kelurahan lama yang bukan Coblong
-  // Ini idempotent: aman dijalankan berkali-kali
+  // Harus dihapus dari tabel anak ke tabel induk (RT → RW → Kelurahan → Kecamatan)
+  // karena tidak ada onDelete: Cascade pada relasi Rw→Kelurahan
   // ─────────────────────────────────────────────
   const NON_COBLONG_KECAMATAN = ["Sukasari", "Cidadap", "Cibeunying Kidul", "Cibeunying Kaler", "Sumur Bandung"];
   const NON_COBLONG_KELURAHAN = ["Gegerkalong", "Isola", "Sarijadi", "Sukasari", "Ciumbuleuit", "Hegarmanah", "Ledeng"];
 
-  // Hapus kelurahan non-Coblong beserta relasi RW/RT-nya (cascade)
-  await prisma.kelurahan.deleteMany({
+  // Langkah 1: Cari ID kelurahan non-Coblong
+  const staleKelurahan = await prisma.kelurahan.findMany({
     where: { name: { in: NON_COBLONG_KELURAHAN } },
+    select: { id: true },
   });
-  console.log(`🧹 Cleanup: ${NON_COBLONG_KELURAHAN.length} kelurahan non-Coblong dihapus`);
+  const staleKelurahanIds = staleKelurahan.map((k) => k.id);
 
-  // Hapus kecamatan non-Coblong
+  if (staleKelurahanIds.length > 0) {
+    // Langkah 2: Cari ID RW dari kelurahan tersebut
+    const staleRws = await prisma.rw.findMany({
+      where: { kelurahanId: { in: staleKelurahanIds } },
+      select: { id: true },
+    });
+    const staleRwIds = staleRws.map((r) => r.id);
+
+    // Langkah 3: Hapus RT dari RW tersebut
+    if (staleRwIds.length > 0) {
+      await prisma.rt.deleteMany({ where: { rwId: { in: staleRwIds } } });
+      console.log(`🧹 Cleanup: RT dari ${staleRwIds.length} RW non-Coblong dihapus`);
+    }
+
+    // Langkah 4: Hapus RW dari kelurahan tersebut
+    await prisma.rw.deleteMany({ where: { kelurahanId: { in: staleKelurahanIds } } });
+    console.log(`🧹 Cleanup: RW non-Coblong dihapus`);
+
+    // Langkah 5: Hapus kelurahan non-Coblong
+    await prisma.kelurahan.deleteMany({ where: { id: { in: staleKelurahanIds } } });
+    console.log(`🧹 Cleanup: ${staleKelurahanIds.length} kelurahan non-Coblong dihapus`);
+  }
+
+  // Langkah 6: Hapus kecamatan non-Coblong (kelurahan sudah bersih)
   await prisma.kecamatan.deleteMany({
     where: { name: { in: NON_COBLONG_KECAMATAN } },
   });
