@@ -202,10 +202,36 @@ export class AuthRepository {
   /**
    * Find a user by ID, including their role details.
    */
-  async findUserById(id: string): Promise<(User & { role: Role }) | null> {
+  async findUserById(id: string): Promise<any> {
     return prisma.user.findUnique({
       where: { id },
-      include: { role: true },
+      include: {
+        role: true,
+        rw: {
+          include: {
+            kelurahan: {
+              include: {
+                kecamatan: true,
+              },
+            },
+          },
+        },
+        rt: true,
+        studentProfile: {
+          include: {
+            assignedRw: {
+              include: {
+                kelurahan: {
+                  include: {
+                    kecamatan: true,
+                  },
+                },
+              },
+            },
+            kelompok: true,
+          },
+        },
+      },
     });
   }
 

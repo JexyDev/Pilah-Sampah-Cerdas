@@ -89,6 +89,18 @@ router.get("/locations", binController.getLocations);
  *         description: Berhasil mengambil daftar tempat sampah aktif milik Warga
  */
 router.get("/my-bins", authMiddleware, binController.getMyBins);
+/**
+ * @swagger
+ * /api/v1/bins/my:
+ *   get:
+ *     summary: Menampilkan tempat sampah milik Warga (Alias Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar tempat sampah
+ */
 router.get("/my", authMiddleware, binController.getMyBins);
 /**
  * @swagger
@@ -159,6 +171,29 @@ router.post("/kelurahans", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_
  *         description: Kelurahan deleted successfully
  */
 router.delete("/kelurahans/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), binController.deleteKelurahan);
+/**
+ * @swagger
+ * /api/v1/bins/measure:
+ *   post:
+ *     summary: Mengukur / kalkulasi estimasi volume tempat sampah (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               height:
+ *                 type: number
+ *               width:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Estimasi volume berhasil dihitung
+ */
 router.post("/measure", authMiddleware, binController.measure);
 router.post("/areas", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), binController.createArea);
 router.put("/areas/:id", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), binController.updateArea);
@@ -256,12 +291,61 @@ router.put("/qr-batch/:id/assign", authMiddleware, roleMiddleware(["SUPER_USER",
 router.post("/dispatch/:id/claim", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]), binController.claimDispatch);
 router.get("/dispatch/optimized-route", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]), binController.getOptimizedRoute);
 router.put("/:id/approve-activation", authMiddleware, roleMiddleware(["SUPER_USER", "RW"]), binController.approveActivation);
+/**
+ * @swagger
+ * /api/v1/bins/activate:
+ *   post:
+ *     summary: Aktivasi tempat sampah warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [qrCode]
+ *             properties:
+ *               qrCode:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tempat sampah berhasil diajukan untuk aktivasi
+ */
 router.post("/activate", authMiddleware, roleMiddleware(["WARGA", "MAHASISWA_KKN"]), binController.registerWargaBin);
 router.put("/:id/reject-activation", authMiddleware, roleMiddleware(["SUPER_USER", "RW"]), binController.rejectActivation);
 router.post("/:id/report-issue", authMiddleware, roleMiddleware(["WARGA"]), binController.reportIssue);
 router.post("/:id/report-damage", authMiddleware, roleMiddleware(["WARGA", "RT", "RW", "PETUGAS_RESIDU"]), binController.reportIssue);
 router.put("/:id/capacity", authMiddleware, roleMiddleware(["WARGA", "SUPER_USER", "RW"]), binController.updateCapacity);
 router.post("/register-warga", authMiddleware, roleMiddleware(["WARGA"]), binController.registerWargaBin);
+/**
+ * @swagger
+ * /api/v1/bins/reset:
+ *   post:
+ *     summary: Pengajuan reset tempat sampah (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [binId]
+ *             properties:
+ *               binId:
+ *                 type: string
+ *               evidence:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Pengajuan reset berhasil dikirim
+ */
 router.post("/reset", authMiddleware, roleMiddleware(["WARGA"]), uploadAvatarMiddleware.single("evidence"), binController.createResetRequestMobile);
 router.get("/reset-requests", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]), binController.listResetRequests);
 router.put("/reset/:id/approve", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]), binController.approveResetRequest);

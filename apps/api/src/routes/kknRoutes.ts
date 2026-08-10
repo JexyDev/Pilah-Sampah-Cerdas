@@ -432,4 +432,20 @@ router.get(
   }
 );
 
+import { scheduleController } from "../controllers/scheduleController.js";
+
+/**
+ * @swagger
+ * /api/v1/kkn/schedules:
+ *   get:
+ *     summary: Mendapatkan daftar jadwal KKN (Alias Mobile Spec)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil list jadwal KKN
+ */
+router.get("/schedules", authMiddleware, scheduleController.getAllSchedules);
+
 export default router;

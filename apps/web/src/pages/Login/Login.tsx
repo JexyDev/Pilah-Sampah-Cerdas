@@ -24,9 +24,11 @@ import {
   ShieldCheck,
   ArrowLeft,
   MessageSquare,
+  Download,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
+import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp";
 
 // Exact Vector SVG Icon matching the TrashCare logo
 const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
@@ -519,6 +521,7 @@ const Login: React.FC = () => {
   const handlePasswordBlur = () => {
     const trimmed = password.trim();
     if (!trimmed) { setPasswordError("Kata sandi wajib diisi"); return; }
+    if (trimmed.length < 6) { setPasswordError("Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'."); return; }
     setPasswordError("");
   };
 
@@ -567,8 +570,15 @@ const Login: React.FC = () => {
       hasError = true;
     }
 
-    if (!passVal) { setPasswordError("Kata sandi wajib diisi"); hasError = true; }
-    else { setPasswordError(""); }
+    if (!passVal) { 
+      setPasswordError("Kata sandi wajib diisi"); 
+      hasError = true; 
+    } else if (passVal.length < 6) {
+      setPasswordError("Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'."); 
+      hasError = true; 
+    } else { 
+      setPasswordError(""); 
+    }
 
     if (hasError) return;
 
@@ -644,7 +654,7 @@ const Login: React.FC = () => {
       )}
 
       {/* Main Split Container Card */}
-      <div className="w-full max-w-[880px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-300">
+      <div className="w-full max-w-[1080px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-300">
 
         {/* Left Side: Rich Eco Feature Panel (Desktop) */}
         <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-8 flex-col justify-between relative overflow-hidden">
@@ -660,7 +670,7 @@ const Login: React.FC = () => {
               Sampah Terdata,<br />Lingkungan Tertata.
             </h2>
             <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-              Platform monitoring terintegrasi khusus Pengawas, RW, DPL, dan Pimpinan. Akses Warga, Mahasiswa KKN, &amp; Petugas Residu melalui Aplikasi Mobile.
+              Platform monitoring terintegrasi khusus Pengawas, RW, DPL, dan Pimpinan, Akses Warga, Mahasiswa KKN, &amp; Petugas Residu melalui Aplikasi Mobile.
             </p>
           </div>
 
@@ -713,30 +723,36 @@ const Login: React.FC = () => {
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     id="login-phone"
+                    autoFocus
                     className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
                     placeholder="08123456789 atau NIP (misal: 4127.xx.xx.xxx)"
                     type="text"
                     value={identifier}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^\d+.]/g, "");
+                      // Hanya izinkan angka dan tanda tambah (+)
+                      const val = e.target.value.replace(/[^\d+]/g, "");
                       setIdentifier(val);
                       if (val.trim()) setIdentifierError("");
                     }}
                     onKeyDown={(e) => {
-                      if (!/[\d+.]/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key)) {
+                      // Izinkan kombinasi shortcut (Ctrl+A, Ctrl+C, Ctrl+V, Cmd+A, dll)
+                      if (e.ctrlKey || e.metaKey) return;
+                      // Blokir tombol apa pun selain angka, tanda tambah, dan tombol kontrol navigasi/hapus
+                      if (!/^[\d+]$/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter", "Home", "End"].includes(e.key)) {
                         e.preventDefault();
                       }
                     }}
                     onBlur={handleIdentifierBlur}
                     disabled={isStoreLoading || isLocalLoading}
                   />
+                  {/* Error diletakkan secara absolute di ruang kosong margin bawah */}
+                  {identifierError && (
+                    <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 absolute -bottom-[18px] left-0">
+                      <AlertTriangle size={11} />
+                      {identifierError}
+                    </p>
+                  )}
                 </div>
-                {identifierError && (
-                  <p className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1">
-                    <AlertTriangle size={12} />
-                    {identifierError}
-                  </p>
-                )}
               </div>
 
               {/* Password Input */}
@@ -770,10 +786,11 @@ const Login: React.FC = () => {
                 </div>
 
                 {/* Sub-bar below Password Input: Error / Hint on Left, Forgot Password on Right */}
-                <div className="flex items-center justify-between pt-1">
+                <div className="relative flex items-center justify-end pt-1">
+                  {/* Error diletakkan secara absolute di sisi kiri agar tinggi form ditentukan hanya oleh tombol Lupa Kata Sandi */}
                   {passwordError && (
-                    <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1">
-                      <AlertTriangle size={12} />
+                    <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 absolute left-0 top-1.5">
+                      <AlertTriangle size={11} />
                       {passwordError}
                     </p>
                   )}
@@ -804,20 +821,36 @@ const Login: React.FC = () => {
             </form>
           </div>
 
-          {/* Footer Area with Security Badge */}
-          <div className="pt-4 border-t border-slate-100 text-center space-y-3">
-            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-200/60">
-              <ShieldCheck size={12} className="text-emerald-600" />
-              <span>SSL 256-bit Encrypted Connection</span>
-            </div>
-            <div className="text-xs text-slate-500 space-y-1">
-              <p>
-                Belum memiliki akun?{" "}
-                <Link to="/register" className="text-emerald-600 font-extrabold hover:underline">
-                  Daftar Sekarang
-                </Link>
-              </p>
-              <p className="font-medium text-[11px] text-slate-400">© 2026 Universitas Komputer Indonesia. All rights reserved.</p>
+          {/* Akses Mobile Card */}
+          <div className="pt-2">
+            <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 flex flex-col md:flex-row items-center gap-5">
+              {/* Image Placeholder */}
+              <div className="flex-shrink-0 w-44 md:w-56 flex items-center justify-center -ml-2">
+                <img src={ImageTigaRoleMobile} alt="Ilustrasi Warga, Mahasiswa, dan Petugas" className="w-full h-auto object-contain mix-blend-multiply" />
+              </div>
+              
+              <div className="flex-1 space-y-2.5 text-center md:text-left">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-extrabold text-slate-800">Akses Mobile untuk Semua</h3>
+                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                    Warga, Mahasiswa KKN, dan Petugas Residu dapat registrasi dan menggunakan aplikasi TrashCare di perangkat mobile.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <p className="text-[10px] text-slate-600 font-bold">Unduh aplikasinya di bawah ini:</p>
+                  <Link 
+                    to="/download"
+                    className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
+                  >
+                    <Download size={14} />
+                    <span>Unduh Aplikasi Mobile (APK)</span>
+                  </Link>
+                  <p className="text-[9px] text-slate-400 font-medium flex items-center md:justify-start justify-center gap-1.5">
+                    Tersedia untuk Android <span className="w-1 h-1 rounded-full bg-slate-300"></span> File APK
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

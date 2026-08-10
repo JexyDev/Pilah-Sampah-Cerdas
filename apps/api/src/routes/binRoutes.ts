@@ -119,6 +119,19 @@ router.get("/locations", binController.getLocations);
  *         description: Berhasil mengambil daftar tempat sampah aktif milik Warga
  */
 router.get("/my-bins", authMiddleware, binController.getMyBins);
+
+/**
+ * @swagger
+ * /api/v1/bins/my:
+ *   get:
+ *     summary: Menampilkan tempat sampah milik Warga (Alias Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar tempat sampah
+ */
 router.get("/my", authMiddleware, binController.getMyBins);
 /**
  * @swagger
@@ -202,6 +215,29 @@ router.delete(
   roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteKelurahan
 );
+/**
+ * @swagger
+ * /api/v1/bins/measure:
+ *   post:
+ *     summary: Mengukur / kalkulasi estimasi volume tempat sampah (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               height:
+ *                 type: number
+ *               width:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Estimasi volume berhasil dihitung
+ */
 router.post("/measure", authMiddleware, binController.measure);
 router.post(
   "/areas",
@@ -370,6 +406,30 @@ router.put(
   binController.approveActivation
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/activate:
+ *   post:
+ *     summary: Aktivasi tempat sampah warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [qrCode]
+ *             properties:
+ *               qrCode:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tempat sampah berhasil diajukan untuk aktivasi
+ */
 router.post(
   "/activate",
   authMiddleware,
@@ -412,6 +472,31 @@ router.post(
   binController.registerWargaBin
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/reset:
+ *   post:
+ *     summary: Pengajuan reset tempat sampah (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [binId]
+ *             properties:
+ *               binId:
+ *                 type: string
+ *               evidence:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Pengajuan reset berhasil dikirim
+ */
 router.post(
   "/reset",
   authMiddleware,

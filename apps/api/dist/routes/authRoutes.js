@@ -279,16 +279,152 @@ router.put("/profile", authMiddleware, authController.updateProfile);
  *         description: User not found
  */
 router.put("/password", authMiddleware, authController.updatePassword);
+/**
+ * @swagger
+ * /api/v1/auth/change-password:
+ *   post:
+ *     summary: Ubah kata sandi pengguna terotentikasi (Mobile Spec)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [oldPassword, newPassword]
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Kata sandi berhasil diperbarui
+ *       400:
+ *         description: Kata sandi lama salah atau baru tidak valid
+ */
 router.post("/change-password", authMiddleware, authController.changePassword);
+/**
+ * @swagger
+ * /api/v1/auth/forgot-password:
+ *   post:
+ *     summary: Kirim OTP lupa kata sandi via WhatsApp (Alias untuk Mobile Spec)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [phone]
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "08123456789"
+ *     responses:
+ *       200:
+ *         description: OTP berhasil dikirim
+ */
+router.post("/forgot-password", authController.requestOtp);
 router.post("/register/admin-dlh", authMiddleware, roleMiddleware(["SUPER_USER"]), authController.registerAdminDlh);
 router.post("/register/camat", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerCamat);
 router.post("/register/lurah", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerLurah);
 router.post("/register/rw", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerRw);
 router.post("/register/rt", authMiddleware, roleMiddleware(["RW", "ADMIN_DLH"]), authController.registerRt);
 router.post("/register/dpl", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.registerDpl);
+/**
+ * @swagger
+ * /api/v1/auth/register/petugas-residu:
+ *   post:
+ *     summary: Pendaftaran akun baru Petugas Residu
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, phone, password, nip]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               nip:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Akun Petugas Residu berhasil dibuat
+ */
 router.post("/register/petugas-residu", authController.registerPetugasResidu);
+/**
+ * @swagger
+ * /api/v1/auth/register/warga:
+ *   post:
+ *     summary: Pendaftaran akun Warga baru (No HP +62 + Password)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, phone, password, address, kelurahan, rtRw]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               kelurahan:
+ *                 type: string
+ *               rtRw:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Akun Warga berhasil dibuat
+ */
 router.post("/register/warga", authController.registerWarga);
 router.post("/register", authController.registerWarga);
+/**
+ * @swagger
+ * /api/v1/auth/register/mahasiswa-kkn:
+ *   post:
+ *     summary: Pendaftaran akun Mahasiswa KKN baru
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, phone, password, nim, universitas, kelurahan, rtRw]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               nim:
+ *                 type: string
+ *               universitas:
+ *                 type: string
+ *               kelurahan:
+ *                 type: string
+ *               rtRw:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Akun Mahasiswa KKN berhasil terdaftar (status pending whitelist/approval)
+ */
 router.post("/register/mahasiswa-kkn", authController.registerKkn);
 router.get("/kkn/pending", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.getKknPending);
 router.patch("/kkn/whitelist/:id", authMiddleware, roleMiddleware(["ADMIN_DLH"]), authController.approveKkn);

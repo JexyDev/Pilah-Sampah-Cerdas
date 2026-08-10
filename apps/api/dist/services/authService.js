@@ -217,6 +217,11 @@ export class AuthService {
         if (user.role.name === "WARGA") {
             streakInfo = await this.getCitizenMotivation(userId);
         }
+        const rwName = user.rw?.name || user.studentProfile?.assignedRw?.name || "";
+        const rtName = user.rt?.name || "";
+        const kelurahanName = user.rw?.kelurahan?.name || user.studentProfile?.assignedRw?.kelurahan?.name || user.studentProfile?.kelompok?.kelurahan || "";
+        const kecamatanName = user.rw?.kelurahan?.kecamatan?.name || user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name || "Coblong";
+        const rtRwStr = rtName && rwName ? `${rtName} / ${rwName}` : (rwName || rtName || "");
         return {
             id: user.id,
             name: user.name,
@@ -225,6 +230,11 @@ export class AuthService {
             address: user.address,
             fotoProfil: user.fotoProfil,
             qrCode: `USER:${user.id}`,
+            kelurahan: kelurahanName,
+            rw: rwName,
+            rt: rtName,
+            rtRw: rtRwStr,
+            kecamatan: kecamatanName,
             streakInfo,
         };
     }

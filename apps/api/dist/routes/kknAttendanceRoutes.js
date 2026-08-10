@@ -65,14 +65,57 @@ router.get("/kegiatan/:id/lokasi", authMiddleware, roleMiddleware(["SUPER_USER",
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               latitude:
+ *                 type: number
+ *               longitude:
+ *                 type: number
+ *               method:
+ *                 type: string
+ *                 description: "Metode absensi (misal: GPS, MANUAL, QR)"
  *     responses:
  *       200:
  *         description: Absen berhasil dicatat
  */
 router.post("/kegiatan/:id/absen", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknAttendanceController.recordAttendance);
-// Monitoring routes
-router.get("/mahasiswa/lokasi-aktif", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getActiveStudentsLocations);
-router.get("/kegiatan/:id/absen", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]), kknAttendanceController.getAttendanceList);
+/**
+ * @swagger
+ * /api/v1/mahasiswa/lokasi-aktif:
+ *   get:
+ *     summary: Mendapatkan lokasi aktif seluruh mahasiswa KKN
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar lokasi mahasiswa
+ */
+router.get("/mahasiswa/lokasi-aktif", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL"]), kknAttendanceController.getActiveStudentsLocations);
+/**
+ * @swagger
+ * /api/v1/kegiatan/{id}/absen:
+ *   get:
+ *     summary: Mendapatkan daftar absensi pada kegiatan tertentu
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan data absensi
+ */
+router.get("/kegiatan/:id/absen", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL"]), kknAttendanceController.getAttendanceList);
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 router.post("/location-ping", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), async (req, res) => {

@@ -98,6 +98,7 @@ app.use("/api/v1/rw", rwRouter);
 app.use("/api/v1/rt", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/areas", areaRouter);
+app.use("/api/v1/wilayah", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
 app.use("/api/v1", kknAttendanceRouter);
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
@@ -116,6 +117,8 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rw", rwRouter);
 app.use("/api/rt", rwRouter);
+app.use("/api/areas", areaRouter);
+app.use("/api/wilayah", areaRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {

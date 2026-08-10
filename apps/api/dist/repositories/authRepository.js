@@ -176,7 +176,33 @@ export class AuthRepository {
     async findUserById(id) {
         return prisma.user.findUnique({
             where: { id },
-            include: { role: true },
+            include: {
+                role: true,
+                rw: {
+                    include: {
+                        kelurahan: {
+                            include: {
+                                kecamatan: true,
+                            },
+                        },
+                    },
+                },
+                rt: true,
+                studentProfile: {
+                    include: {
+                        assignedRw: {
+                            include: {
+                                kelurahan: {
+                                    include: {
+                                        kecamatan: true,
+                                    },
+                                },
+                            },
+                        },
+                        kelompok: true,
+                    },
+                },
+            },
         });
     }
     /**

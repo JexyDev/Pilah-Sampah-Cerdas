@@ -396,7 +396,28 @@ router.put("/:id/read", authMiddleware, async (req, res) => {
         res.status(500).json({ status: "error", message: "Gagal menandai notifikasi" });
     }
 });
-// POST /api/v1/notifications/device-token
+/**
+ * @swagger
+ * /api/v1/notifications/device-token:
+ *   post:
+ *     summary: Registrasi FCM Push Notification Device Token (Mobile Spec)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Device token disimpan
+ */
 router.post("/device-token", authMiddleware, async (req, res) => {
     try {
         const { token } = req.body;
@@ -419,7 +440,18 @@ router.post("/device-token", authMiddleware, async (req, res) => {
         res.status(500).json({ status: "error", message: "Gagal menyimpan device token" });
     }
 });
-// POST /api/v1/notifications/unregister-token
+/**
+ * @swagger
+ * /api/v1/notifications/unregister-token:
+ *   post:
+ *     summary: Hapus registrasi FCM Push Notification Device Token (Mobile Spec)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Device token berhasil dihapus
+ */
 router.post("/unregister-token", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
