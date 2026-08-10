@@ -46,6 +46,7 @@ jobs:
             npm install --silent
             npx prisma generate
             npx prisma db push --skip-generate
+            npx prisma db seed
             npx tsx scripts/sync-nims-now.ts || true
             npm run build
 
