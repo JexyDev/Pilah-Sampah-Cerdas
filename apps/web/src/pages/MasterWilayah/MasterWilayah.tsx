@@ -42,7 +42,23 @@ const MasterWilayah: React.FC = () => {
       setError("");
       try {
         const response = await api.get(`/areas/${activeTab}`);
-        setData(response.data.data || []);
+        let fetchedData = response.data.data || [];
+        
+        // Integrasi data kelurahan untuk tab kecamatan jika deploy belum mengembalikan relasinya
+        if (activeTab === "kecamatan") {
+          try {
+            const kelResponse = await api.get('/areas/kelurahan');
+            const kelData = kelResponse.data.data || [];
+            fetchedData = fetchedData.map((k: any) => ({
+              ...k,
+              kelurahans: k.kelurahans?.length > 0 ? k.kelurahans : kelData
+            }));
+          } catch (e) {
+            console.error("Gagal sinkronisasi data kelurahan:", e);
+          }
+        }
+        
+        setData(fetchedData);
       } catch (err) {
         console.error(`Gagal memuat master wilayah (${activeTab}):`, err);
         setError(`Gagal memuat data ${TAB_LABEL_MAP[activeTab] || activeTab}`);
@@ -247,7 +263,7 @@ const MasterWilayah: React.FC = () => {
                     
                     {activeTab === "kecamatan" && (
                       <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {item.kelurahans?.length || 0} Kelurahan
+                        {item.kelurahans?.length || 0}
                       </td>
                     )}
                     {activeTab === "kelurahan" && (

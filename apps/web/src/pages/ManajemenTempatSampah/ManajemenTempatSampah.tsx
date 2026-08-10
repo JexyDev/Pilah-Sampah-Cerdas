@@ -518,7 +518,7 @@ const ManajemenTempatSampah: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-x-auto">
         <table className="w-full min-w-[850px] text-left border-collapse">
           <thead>
-            <tr className="bg-surface-container-low text-on-surface-variant text-[12px] font-bold uppercase tracking-wider">
+            <tr className="bg-surface-container-low text-on-surface-variant text-[12px] font-bold uppercase tracking-wider whitespace-nowrap">
               <th className="px-6 py-4">QR Code</th>
               <th className="px-6 py-4">Kode</th>
               <th className="px-6 py-4">Lokasi</th>
@@ -529,7 +529,7 @@ const ManajemenTempatSampah: React.FC = () => {
               {!isReadOnly && <th className="px-6 py-4 text-center">Aksi</th>}
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody className="text-sm whitespace-nowrap">
             {loading ? (
               <tr>
                 <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
@@ -698,10 +698,10 @@ const ManajemenTempatSampah: React.FC = () => {
 
       {/* Geospatial Map with Kelurahan Polygons & RW Zona Details */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-bold text-[18px] text-on-surface flex items-center gap-2">
-            <Map className="text-primary" />
-            Peta Sebaran Tempat Sampah & Detail RW/Zona (Geospatial)
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h3 className="font-bold text-[15px] sm:text-[18px] text-on-surface flex items-start gap-2 leading-snug">
+            <Map className="text-primary flex-shrink-0 mt-0.5" size={20} />
+            <span>Peta Sebaran Tempat Sampah & Detail RW/Zona (Geospatial)</span>
           </h3>
           <div className="flex items-center gap-2">
             <select
@@ -729,27 +729,29 @@ const ManajemenTempatSampah: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-[480px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
+        <div className="h-[350px] sm:h-[480px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
           {/* Map Overlay Legend Card */}
-          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-auto">
-            <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-slate-100/80 flex flex-col gap-3 min-w-[200px]">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                <Layers className="w-4 h-4 text-emerald-600" />
-                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+          <div className="absolute bottom-3 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-10 flex flex-col pointer-events-auto">
+            <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-100/80 flex flex-col gap-1.5 sm:gap-3 sm:min-w-[200px]">
+              <div className="flex items-center gap-1.5 sm:gap-2 border-b border-slate-100 pb-1.5 sm:pb-2">
+                <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 flex-shrink-0" />
+                <p className="text-[9px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-wider leading-tight">
                   Kapasitas Tempat Sampah / Zona
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shadow-sm"></div>
-                <span className="text-[12px] font-semibold text-slate-700">&lt; 70% (Aman)</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100 shadow-sm"></div>
-                <span className="text-[12px] font-semibold text-slate-700">70% - 90% (Siaga)</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100 shadow-sm"></div>
-                <span className="text-[12px] font-semibold text-slate-700">&gt; 90% (Penuh)</span>
+              <div className="flex flex-wrap sm:flex-col gap-x-3 gap-y-1.5 sm:gap-3 mt-0.5 sm:mt-0">
+                <div className="flex items-center gap-1.5 sm:gap-3">
+                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-emerald-500 ring-2 sm:ring-4 ring-emerald-100 shadow-sm"></div>
+                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">&lt; 70% (Aman)</span>
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-3">
+                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-amber-500 ring-2 sm:ring-4 ring-amber-100 shadow-sm"></div>
+                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">70-90% (Siaga)</span>
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-3">
+                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-rose-500 ring-2 sm:ring-4 ring-rose-100 shadow-sm"></div>
+                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">&gt; 90% (Penuh)</span>
+                </div>
               </div>
             </div>
           </div>

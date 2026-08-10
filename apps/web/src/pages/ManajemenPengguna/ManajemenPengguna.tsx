@@ -167,8 +167,9 @@ const ManajemenPengguna: React.FC = () => {
       status: "Aktif",
       rtRwId: "",
       nim: "",
-      nip: "",
+      nip: defaultRole === "DPL" || defaultRole === "PEMIMPIN" ? "" : "",
       prodi: defaultRole === "DPL" ? "S1 Manajemen" : "S1 Teknik Informatika",
+      jabatan: defaultRole === "PEMIMPIN" ? "Rektor" : "",
       selectedRws: [],
     });
     setShowPassword(false);
@@ -201,8 +202,9 @@ const ManajemenPengguna: React.FC = () => {
       status: u.status || "Aktif",
       rtRwId: matchedAreaId,
       nim: u.studentProfile?.nim || u.nim || "",
-      nip: u.nip || u.studentProfile?.nip || u.dplNip || u.dplProfile?.nip || "4127.34.02.001",
-      prodi: u.prodi || u.studentProfile?.jurusan || u.address || "S1 Manajemen",
+      nip: u.nip || u.studentProfile?.nip || u.dplNip || u.dplProfile?.nip || (u.role === "PEMIMPIN" ? "4127.34.02.001" : ""),
+      prodi: u.prodi || u.studentProfile?.jurusan || u.address || (u.role === "PEMIMPIN" ? "Universitas Komputer Indonesia" : "S1 Manajemen"),
+      jabatan: u.jabatan || (u.role === "PEMIMPIN" ? "Rektor" : ""),
       selectedRws: rwsArr,
     });
     setShowPassword(false);
@@ -251,8 +253,14 @@ const ManajemenPengguna: React.FC = () => {
       }
 
       if (formData.roleName === "DPL") {
+        payload.dplNip = formData.nip;
+        payload.dplProdi = formData.prodi;
+      }
+
+      if (formData.roleName === "PEMIMPIN") {
         payload.nip = formData.nip;
-        payload.prodi = formData.prodi;
+        payload.perguruanTinggi = formData.prodi;
+        payload.jabatan = formData.jabatan;
       }
 
       if (modalType === "add") {
@@ -499,7 +507,6 @@ const ManajemenPengguna: React.FC = () => {
                   <th className="py-3.5 px-4">No. HP</th>
                   <th className="py-3.5 px-4">NIP</th>
                   <th className="py-3.5 px-4">Program Studi</th>
-                  <th className="py-3.5 px-4">Peran</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
                 </tr>
@@ -515,10 +522,11 @@ const ManajemenPengguna: React.FC = () => {
               ) : selectedRole === "PEMIMPIN" ? (
                 <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4">NIP</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">No. HP</th>
-                  <th className="py-3.5 px-4">Peran</th>
-                  <th className="py-3.5 px-4">Wilayah</th>
+                  <th className="py-3.5 px-4">Perguruan Tinggi</th>
+                  <th className="py-3.5 px-4">Jabatan</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
                 </tr>
@@ -549,7 +557,6 @@ const ManajemenPengguna: React.FC = () => {
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">No. HP</th>
-                  <th className="py-3.5 px-4">Peran</th>
                   <th className="py-3.5 px-4">Kecamatan</th>
                   <th className="py-3.5 px-4">Kelurahan</th>
                   <th className="py-3.5 px-4">RW</th>
@@ -571,12 +578,12 @@ const ManajemenPengguna: React.FC = () => {
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">No. HP</th>
-                  <th className="py-3.5 px-4">Peran</th>
+                  {selectedRole !== "PANITIA_TASKFORCE" && <th className="py-3.5 px-4">Peran</th>}
                   <th className="py-3.5 px-4">Kecamatan</th>
                   <th className="py-3.5 px-4">Kelurahan</th>
                   <th className="py-3.5 px-4">RW</th>
-                  <th className="py-3.5 px-4">Alamat Rumah</th>
-                  <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>
+                  {selectedRole !== "PANITIA_TASKFORCE" && <th className="py-3.5 px-4">Alamat Rumah</th>}
+                  {selectedRole !== "PANITIA_TASKFORCE" && <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>}
                   <th className="py-3.5 px-4 text-center">Status</th>
                   {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
                 </tr>
@@ -676,11 +683,6 @@ const ManajemenPengguna: React.FC = () => {
                       <td className="py-3.5 px-4 text-slate-700 font-semibold">
                         {u.prodi || u.address || "S1 Manajemen"}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                          DPL
-                        </span>
-                      </td>
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
                           {u.status || "Aktif"}
@@ -750,15 +752,26 @@ const ManajemenPengguna: React.FC = () => {
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {(currentPage - 1) * rowsPerPage + idx + 1}
                       </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                        {u.nip || "4127.34.02.001"}
+                      </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-block px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                          PEMIMPIN
-                        </span>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        <a
+                          href={`https://wa.me/${formatPhone(u.phone || "").replace(/\+/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          <Phone size={12} className="text-emerald-500" />
+                          {formatPhone(u.phone)}
+                        </a>
                       </td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-extrabold">
-                        Universitas Komputer Indonesia
+                        {u.perguruanTinggi || "Universitas Komputer Indonesia"}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                        {u.jabatan || "Rektor"}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -877,11 +890,6 @@ const ManajemenPengguna: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-block px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                          RW
-                        </span>
-                      </td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-semibold">Coblong</td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">
                         {cleanKelurahanName(u.kelurahan)}
@@ -957,18 +965,24 @@ const ManajemenPengguna: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">{u.name}</td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">{formatPhone(u.phone)}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-block px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                          {u.role || "WARGA"}
-                        </span>
-                      </td>
+                      {selectedRole !== "PANITIA_TASKFORCE" && (
+                        <td className="py-3.5 px-4">
+                          <span className="inline-block px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                            {u.role || "WARGA"}
+                          </span>
+                        </td>
+                      )}
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-semibold">Coblong</td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">
                         {cleanKelurahanName(u.kelurahan)}
                       </td>
                       <td className="py-3.5 px-4 text-slate-800 text-xs font-bold">{u.rw || "-"}</td>
-                      <td className="py-3.5 px-4 text-slate-700 text-xs font-medium">{u.address || "-"}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">{u.setoran || 0}</td>
+                      {selectedRole !== "PANITIA_TASKFORCE" && (
+                        <td className="py-3.5 px-4 text-slate-700 text-xs font-medium">{u.address || "-"}</td>
+                      )}
+                      {selectedRole !== "PANITIA_TASKFORCE" && (
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900">{u.setoran || 0}</td>
+                      )}
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
                           {u.status || "Aktif"}
@@ -1120,6 +1134,48 @@ const ManajemenPengguna: React.FC = () => {
                       value={formData.prodi}
                       onChange={(e) => setFormData({ ...formData, prodi: e.target.value })}
                       placeholder="S1 Teknik Informatika"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Pemimpin specific fields */}
+              {formData.roleName === "PEMIMPIN" && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      NIP
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nip}
+                      onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
+                      placeholder="4127.34.02.001"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-mono font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Perguruan Tinggi
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.prodi}
+                      onChange={(e) => setFormData({ ...formData, prodi: e.target.value })}
+                      placeholder="Universitas Komputer Indonesia"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Jabatan
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.jabatan || ""}
+                      onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
+                      placeholder="Rektor"
                       className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white text-xs font-semibold"
                     />
                   </div>

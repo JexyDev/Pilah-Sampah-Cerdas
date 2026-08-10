@@ -310,7 +310,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
 
             {showNotifications && (
-              <div className="absolute top-11 right-0 w-80 bg-white rounded-xl shadow-xl border border-outline-variant/50 flex flex-col z-50 overflow-hidden">
+              <div className="absolute top-11 -right-[70px] sm:right-0 w-[300px] sm:w-80 bg-white rounded-xl shadow-xl border border-outline-variant/50 flex flex-col z-50 overflow-hidden">
                 <div className="p-3 bg-surface-container-low border-b border-outline-variant/30 flex justify-between items-center">
                   <span className="text-xs font-bold text-on-surface">Pemberitahuan Baru</span>
                   <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
@@ -363,7 +363,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
 
             {showApps && (
-              <div className="absolute top-11 right-0 w-72 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-4 flex flex-col gap-3 z-50">
+              <div className="absolute top-11 -right-[30px] sm:right-0 w-[280px] sm:w-72 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-4 flex flex-col gap-3 z-50">
                 <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/20 pb-2">
                   Layanan Terintegrasi Warga
                 </p>
