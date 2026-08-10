@@ -566,7 +566,7 @@ const Login: React.FC = () => {
       setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
     } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP/NIP tidak valid. Terima: 08xxx, +628xxx, atau NIP");
+      setIdentifierError("Format nomor HP tidak valid. Terima: 08xxx, +628xxx, atau NIP");
       hasError = true;
     }
 
@@ -603,7 +603,7 @@ const Login: React.FC = () => {
           setPassword("");
           setTimeout(() => passwordInputRef.current?.focus(), 50);
         } else if (storeErr === "ROLE_NOT_ALLOWED_ON_WEB") {
-          showToast("Akses Web khusus Pengawas, Admin, RW, DPL, & Pimpinan. Warga, Mahasiswa, dan Petugas Residu hanya dapat menggunakan aplikasi Mobile.", "warning");
+          showToast("Akses Web khusus Admin, Rukun Warga, Dosen Pembimbing Lapangan (DPL), dan Pimpinan. Warga, Mahasiswa, dan Petugas Residu hanya dapat menggunakan aplikasi Mobile.", "warning");
           setIdentifierError("Akses Web ditutup untuk peran ini (Gunakan Aplikasi Mobile)");
         } else if (storeErr === "USER_INACTIVE") {
           showToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");
@@ -670,7 +670,7 @@ const Login: React.FC = () => {
               Sampah Terdata,<br />Lingkungan Tertata.
             </h2>
             <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-              Platform monitoring terintegrasi khusus Pengawas, RW, DPL, dan Pimpinan, Akses Warga, Mahasiswa KKN, &amp; Petugas Residu melalui Aplikasi Mobile.
+              Platform pemantauan terintegrasi khusus Pengawas, Rukun Warga, Dosen Pembimbing Lapangan, dan Pimpinan. Akses untuk Warga, Mahasiswa KKN, dan Petugas Residu melalui Aplikasi Mobile.
             </p>
           </div>
 
@@ -713,7 +713,7 @@ const Login: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                    Nomor HP / NIP
+                    Nomor HP
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium">
                     Format: 08xxx / +628xxx / NIP
@@ -725,7 +725,7 @@ const Login: React.FC = () => {
                     id="login-phone"
                     autoFocus
                     className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
-                    placeholder="08123456789 atau NIP (misal: 4127.xx.xx.xxx)"
+                    placeholder="08123456789"
                     type="text"
                     value={identifier}
                     onChange={(e) => {

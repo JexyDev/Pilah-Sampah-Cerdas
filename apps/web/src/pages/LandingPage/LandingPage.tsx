@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Landing Page (Update CTA button text to 'Register / Login')
+ * Project: TrashCare Landing Page (Update CTA button text to 'Login')
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -279,7 +279,7 @@ export const LandingPage: React.FC = () => {
                 </button>
               ) : (
                 <Link to="/login" className="btn-primary-clean">
-                  Register / Login
+                  Login
                 </Link>
               )}
 
@@ -357,7 +357,7 @@ export const LandingPage: React.FC = () => {
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
                 >
                   <span className="material-symbols-outlined text-lg">login</span>
-                  Register / Login
+                  Login
                 </Link>
               )}
 
