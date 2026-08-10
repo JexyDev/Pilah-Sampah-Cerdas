@@ -9,7 +9,7 @@ import '../auth/controllers/auth_controller.dart';
 import '../../core/values/app_config.dart';
 import '../scan/controllers/scan_controller.dart';
 import '../mahasiswa/controllers/mahasiswa_controller.dart';
-import '../mahasiswa/controllers/location_ping_controller.dart';
+
 import '../../data/models/user_entity.dart';
 
 /// Halaman profil — sesuai desain:
@@ -44,7 +44,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       if (mounted) {
         if (success) {
           ref.read(authProvider.notifier).fetchProfile();
-          ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Foto profil berhasil diperbarui!'),
               backgroundColor: AppColors.primaryGreen,
@@ -52,7 +52,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
           );
         } else {
           final error = ref.read(authProvider).errorCode ?? 'Gagal mengunggah foto';
-          ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Upload gagal: $error'),
               backgroundColor: AppColors.dangerRed,
@@ -159,27 +159,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      user?.role == UserRole.mahasiswaKkn
-                          ? 'Mahasiswa KKN'
-                          : (user?.rw ?? 'RW 02'),
-                      style: const TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -239,22 +218,21 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _divider(),
                           _InfoTile(
                             Icons.account_balance_outlined,
-                            'Fakultas',
-                            (ref.watch(mahasiswaControllerProvider).dashboard?.jurusan.isNotEmpty == true)
-                                ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
-                                : 'Teknik Informatika',
+                            'Program Studi',
+                            (user?.prodi != null && user!.prodi.isNotEmpty && user.prodi != '-')
+                                ? user.prodi
+                                : (ref.watch(mahasiswaControllerProvider).dashboard?.jurusan.isNotEmpty == true
+                                    ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
+                                    : '-'),
                             bold: true,
                           ),
                           _divider(),
                           _InfoTile(
                             Icons.location_on_outlined,
                             'Wilayah / Posko KKN',
-                            (ref.watch(locationPingControllerProvider).detectedZoneArea != null &&
-                                    ref.watch(locationPingControllerProvider).detectedZoneArea!.isNotEmpty)
-                                ? ref.watch(locationPingControllerProvider).detectedZoneArea!
-                                : (user?.kelurahan != null && user!.kelurahan.isNotEmpty
-                                    ? 'Kel. ${user.kelurahan}'
-                                    : 'Belum terdeteksi di zona KKN'),
+                            (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
+                                ? 'Zona KKN Kel. ${user.kelurahan}'
+                                : 'Belum Terdaftar / -',
                           ),
                           _divider(),
                         ] else ...[

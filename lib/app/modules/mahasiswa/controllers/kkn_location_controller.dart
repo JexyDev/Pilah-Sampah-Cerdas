@@ -27,6 +27,7 @@ class KknLocationState {
   final String? zoneResetWarning;
   final DateTime? checkInTime;
   final DateTime? checkOutTime;
+  final int targetDurationMinutes;
 
   /// Kalkulasi Total Jam Kerja (Selisih Pulang - Masuk)
   int get totalWorkMinutes {
@@ -61,6 +62,7 @@ class KknLocationState {
     this.zoneResetWarning,
     this.checkInTime,
     this.checkOutTime,
+    this.targetDurationMinutes = 120,
   });
 
   KknLocationState copyWith({
@@ -77,6 +79,7 @@ class KknLocationState {
     String? zoneResetWarning,
     DateTime? checkInTime,
     DateTime? checkOutTime,
+    int? targetDurationMinutes,
     bool clearError = false,
     bool clearActivity = false,
     bool clearWarning = false,
@@ -95,6 +98,7 @@ class KknLocationState {
       zoneResetWarning: clearWarning ? null : (zoneResetWarning ?? this.zoneResetWarning),
       checkInTime: checkInTime ?? this.checkInTime,
       checkOutTime: checkOutTime ?? this.checkOutTime,
+      targetDurationMinutes: targetDurationMinutes ?? this.targetDurationMinutes,
     );
   }
 }
@@ -212,7 +216,18 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     try {
       final repo = ref.read(kknRepositoryProvider);
       final locationData = await repo.getTargetLocation(_currentTargetScheduleId!);
-      state = state.copyWith(activeActivity: locationData);
+      
+      int duration = 120;
+      if (locationData['targetDurationMinutes'] != null) {
+        duration = int.tryParse(locationData['targetDurationMinutes'].toString()) ?? 120;
+      } else if (locationData['durationMinutes'] != null) {
+        duration = int.tryParse(locationData['durationMinutes'].toString()) ?? 120;
+      }
+      
+      state = state.copyWith(
+        activeActivity: locationData, 
+        targetDurationMinutes: duration
+      );
     } catch (e) {
       state = state.copyWith(error: 'Gagal memuat target lokasi kegiatan.');
     }
@@ -247,39 +262,60 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       }
       _lastTimerDate = now;
 
+      // Sinkronisasi Real-Time dengan Web: Cek Status & Batas Waktu Dulu
+      final target = state.activeActivity;
+      bool isWithinWebWindow = true;
+      String? timeWindowWarning;
+
+      if (target != null) {
+        final startTimeStr = target['waktuMulai'] ?? target['startTime'] ?? target['waktu_mulai'];
+        final endTimeStr = target['batasWaktuAbsen'] ?? target['endTime'] ?? target['end_time'] ?? target['batas_waktu_absen'];
+        final status = (target['attendanceStatus'] ?? target['status'] ?? target['kehadiran'] ?? '').toString().toLowerCase();
+
+        // Jika sudah ada status final (hadir/izin/sakit) atau sukses absen, reset timer ke 0 & block
+        if (status == 'izin' || status == 'sakit' || status == 'hadir' || state.isSuccessAttendance) {
+          _stopZoneTimer(resetCompletely: true);
+          state = state.copyWith(
+            inZoneDurationSeconds: 0, 
+            isEligibleForAttendance: false, 
+            isSuccessAttendance: status == 'hadir' || state.isSuccessAttendance,
+            zoneResetWarning: status == 'hadir' || state.isSuccessAttendance 
+                ? 'Anda sudah berhasil melakukan absensi (Hadir) pada jadwal ini.'
+                : 'Anda tercatat $status pada jadwal ini, absensi ditutup.',
+            clearWarning: false,
+          );
+          return; // Stop processing further
+        }
+
+        if (startTimeStr != null && startTimeStr.toString().trim().isNotEmpty) {
+          final startTime = DateTime.tryParse(startTimeStr.toString());
+          if (startTime != null && now.isBefore(startTime)) {
+            isWithinWebWindow = false;
+            timeWindowWarning = 'Absensi belum dibuka. Jadwal dimulai pada ${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
+          }
+        }
+
+        if (endTimeStr != null && endTimeStr.toString().trim().isNotEmpty) {
+          final endTime = DateTime.tryParse(endTimeStr.toString());
+          if (endTime != null && now.isAfter(endTime)) {
+            isWithinWebWindow = false;
+            timeWindowWarning = 'Batas waktu absen telah berakhir (Tutup pada ${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')})';
+            
+            // RESET TIMER KETIKA WAKTU SELESAI
+            _stopZoneTimer(resetCompletely: true);
+            state = state.copyWith(inZoneDurationSeconds: 0, isEligibleForAttendance: false, zoneResetWarning: timeWindowWarning, clearWarning: false);
+            return; // Stop processing further
+          }
+        }
+      }
+
       if (state.isInsideRadius) {
         _zoneEntryTime ??= now;
         final currentSessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
         final totalElapsed = _accumulatedSeconds + currentSessionSeconds;
         
-        // Sinkronisasi Real-Time dengan Web: Waktu Mulai & Batas Waktu Absen
-        final target = state.activeActivity;
-        bool isWithinWebWindow = true;
-        String? timeWindowWarning;
-
-        if (target != null) {
-          final startTimeStr = target['waktuMulai'] ?? target['startTime'] ?? target['waktu_mulai'];
-          final endTimeStr = target['batasWaktuAbsen'] ?? target['endTime'] ?? target['end_time'] ?? target['batas_waktu_absen'];
-
-          if (startTimeStr != null && startTimeStr.toString().trim().isNotEmpty) {
-            final startTime = DateTime.tryParse(startTimeStr.toString());
-            if (startTime != null && now.isBefore(startTime)) {
-              isWithinWebWindow = false;
-              timeWindowWarning = 'Absensi belum dibuka. Jadwal dimulai pada ${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
-            }
-          }
-
-          if (endTimeStr != null && endTimeStr.toString().trim().isNotEmpty) {
-            final endTime = DateTime.tryParse(endTimeStr.toString());
-            if (endTime != null && now.isAfter(endTime)) {
-              isWithinWebWindow = false;
-              timeWindowWarning = 'Batas waktu absen telah berakhir (Tutup pada ${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')})';
-            }
-          }
-        }
-
-        // Syarat Absen MUTLAK: Harus berada di zona minimal 2 JAM (7200 detik / 120 menit)
-        final bool durationMet = totalElapsed >= 7200;
+        // Syarat Absen MUTLAK: Harus berada di zona sesuai target durasi
+        final bool durationMet = totalElapsed >= (state.targetDurationMinutes * 60);
         final bool eligible = isWithinWebWindow && durationMet;
 
         state = state.copyWith(
@@ -330,6 +366,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       return;
     }
 
+    // Anti Fake-GPS (Mock Location) Protection
+    if (pos.isMocked) {
+      state = state.copyWith(
+        error: 'Terdeteksi penggunaan Fake GPS / Mock Location. Harap matikan aplikasi Fake GPS untuk absensi.',
+        isInsideRadius: false,
+      );
+      _stopZoneTimer(isExitingZone: true);
+      return;
+    }
+
     state = state.copyWith(currentPosition: pos, error: null, clearError: true);
 
     // Send update to backend
@@ -343,26 +389,33 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // Geofencing checks
     final target = state.activeActivity;
     
-    double targetLat = -6.96772;
-    double targetLng = 107.65906;
-    double radius = 500.0;
+    if (target == null || (target['latitude'] == null && target['lat'] == null)) {
+      state = state.copyWith(
+        isInsideRadius: false,
+        distanceToTarget: 999999.0,
+      );
+      _stopZoneTimer(isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null);
+      return;
+    }
 
-    if (target != null) {
-      if (target['latitude'] != null) {
-        targetLat = double.tryParse(target['latitude'].toString()) ?? targetLat;
-      } else if (target['lat'] != null) {
-        targetLat = double.tryParse(target['lat'].toString()) ?? targetLat;
-      }
+    double targetLat = 0.0;
+    double targetLng = 0.0;
+    double radius = 50.0; // Default radius strictly 50m if not provided
 
-      if (target['longitude'] != null) {
-        targetLng = double.tryParse(target['longitude'].toString()) ?? targetLng;
-      } else if (target['lng'] != null) {
-        targetLng = double.tryParse(target['lng'].toString()) ?? targetLng;
-      }
+    if (target['latitude'] != null) {
+      targetLat = double.tryParse(target['latitude'].toString()) ?? targetLat;
+    } else if (target['lat'] != null) {
+      targetLat = double.tryParse(target['lat'].toString()) ?? targetLat;
+    }
 
-      if (target['radius'] != null) {
-        radius = double.tryParse(target['radius'].toString()) ?? radius;
-      }
+    if (target['longitude'] != null) {
+      targetLng = double.tryParse(target['longitude'].toString()) ?? targetLng;
+    } else if (target['lng'] != null) {
+      targetLng = double.tryParse(target['lng'].toString()) ?? targetLng;
+    }
+
+    if (target['radius'] != null) {
+      radius = double.tryParse(target['radius'].toString()) ?? radius;
     }
     
     if (radius <= 0) {

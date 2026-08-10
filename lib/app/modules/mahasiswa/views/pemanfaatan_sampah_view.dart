@@ -167,7 +167,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
             children: [
               Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 28),
               SizedBox(width: 10),
-              Text('Laporan Terkirim!'),
+              Expanded(child: Text('Laporan Terkirim!')),
             ],
           ),
           content: Text(

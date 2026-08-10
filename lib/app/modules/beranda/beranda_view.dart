@@ -697,7 +697,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             onTap: isOnline
                 ? () => Navigator.of(context).pushNamed(AppRoutes.resetBin)
                 : () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Koneksi internet diperlukan.'),
                         backgroundColor: AppColors.dangerRed,

@@ -337,7 +337,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                     ),
                     textAlign: TextAlign.center,

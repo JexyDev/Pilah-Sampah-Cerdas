@@ -106,7 +106,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
               onRefresh: () async {
                 final isOnline = ref.read(isOnlineProvider);
                 if (!isOnline) {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Anda sedang offline'),
                       backgroundColor: AppColors.dangerRed,

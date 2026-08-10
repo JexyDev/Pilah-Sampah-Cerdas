@@ -136,10 +136,12 @@ class _PemilahanMonitoringDashboardViewState
                                               context: context,
                                               builder: (ctx) => AlertDialog(
                                                 title: const Text('Foto Bukti Pemilahan'),
-                                                content: CachedNetworkImage(
-                                                  imageUrl: item.photoUrl ?? 'https://via.placeholder.com/300?text=Bukti+Sampah',
-                                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
-                                                ),
+                                                content: (item.photoUrl == null || item.photoUrl!.isEmpty)
+                                                    ? const SizedBox(height: 150, child: Center(child: Icon(Icons.image_not_supported_rounded, size: 80, color: Colors.grey)))
+                                                    : CachedNetworkImage(
+                                                        imageUrl: item.photoUrl!,
+                                                        errorWidget: (_, __, ___) => const SizedBox(height: 150, child: Center(child: Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey))),
+                                                      ),
                                                 actions: [
                                                   TextButton(
                                                     onPressed: () => Navigator.pop(ctx),

@@ -6,6 +6,7 @@ import '../models/bin_entity.dart';
 import 'waste_log_repository.dart';
 import '../../core/utils/app_exceptions.dart';
 import '../providers/api_client.dart';
+import '../../core/values/api_constants.dart';
 
 /// Implementasi WasteLogRepository yang terhubung ke backend Express.js.
 ///
@@ -42,7 +43,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId) async {
     final cacheKey = 'cached_waste_logs_$userId';
     try {
-      final response = await apiClient.dio.get('/transactions/my-deposits');
+      final response = await apiClient.dio.get(ApiEndpoints.transactionsMyDeposits);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -69,7 +70,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<List<PointHistoryEntity>> getPointHistoryByUser(String userId) async {
     try {
-      final response = await apiClient.dio.get('/points/me');
+      final response = await apiClient.dio.get(ApiEndpoints.pointsMe);
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -93,7 +94,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<int> getTotalPointsByUser(String userId) async {
     try {
-      final response = await apiClient.dio.get('/points/me');
+      final response = await apiClient.dio.get(ApiEndpoints.pointsMe);
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -113,7 +114,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<String> getUserLeaderboardRank(String userId) async {
     try {
-      final response = await apiClient.dio.get('/points/leaderboard');
+      final response = await apiClient.dio.get(ApiEndpoints.pointsLeaderboard);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;

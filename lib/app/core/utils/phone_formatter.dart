@@ -15,6 +15,15 @@ class PhoneFormatter {
     // 1. Bersihkan semua karakter selain digit dan +
     String phone = raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
     if (phone.isEmpty) return phone;
+    
+    // Check if it's likely a NIM. NIMs are 8-10 digits and usually don't start with 08.
+    String digitsOnly = phone.replaceAll('+', '');
+    bool isNimLength = digitsOnly.length >= 8 && digitsOnly.length <= 10;
+    bool isPhoneNumberPrefix = digitsOnly.startsWith('08') || digitsOnly.startsWith('628') || digitsOnly.startsWith('8');
+    
+    if (isNimLength && !isPhoneNumberPrefix) {
+      return phone; // Return NIM as-is
+    }
 
     // 2. Normalisasi format ke +62
     if (phone.startsWith('0')) {

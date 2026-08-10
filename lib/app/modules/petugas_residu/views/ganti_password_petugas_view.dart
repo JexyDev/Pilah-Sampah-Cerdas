@@ -43,7 +43,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     setState(() => _isSubmitting = false);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Kata sandi Petugas Residu berhasil diperbarui!'),
           backgroundColor: AppColors.primaryGreen,
@@ -54,7 +54,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     } else if (mounted) {
       final errorMsg = ref.read(petugasResiduControllerProvider).errorMessage ??
           'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.';
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMsg),
           backgroundColor: AppColors.dangerRed,
@@ -102,7 +102,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Untuk keamanan akun Petugas Residu RT/RW, gunakan kata sandi yang kuat (minimal 6 karakter).',
+                        'Untuk keamanan akun Petugas Residu RT/RW, gunakan kata sandi yang kuat (minimal 8 karakter).',
                         style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.3),
                       ),
                     ),
@@ -154,7 +154,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
                         ),
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Kata sandi baru wajib diisi';
-                          if (v.length < 6) return 'Kata sandi minimal 6 karakter';
+                          if (v.length < 8) return 'Kata sandi minimal 8 karakter';
                           return null;
                         },
                       ),

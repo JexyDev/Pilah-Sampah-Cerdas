@@ -73,18 +73,18 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerRed.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.scale_rounded,
+                        color: AppColors.dangerRed,
+                        size: 24,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.scale_rounded,
-                      color: AppColors.primaryGreen,
-                      size: 24,
-                    ),
-                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

@@ -19,7 +19,7 @@ class ScanGuard {
             children: [
               Icon(Icons.desktop_windows_rounded, color: AppColors.primaryGreen),
               SizedBox(width: 8),
-              Text('Monitoring Web', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Expanded(child: Text('Monitoring Web', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
             ],
           ),
           content: const Text(
@@ -55,9 +55,11 @@ class ScanGuard {
             children: [
               Icon(Icons.warning_rounded, color: AppColors.dangerRed),
               SizedBox(width: 8),
-              Text(
-                'Tempat Sampah Penuh',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              Expanded(
+                child: Text(
+                  'Tempat Sampah Penuh',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
               ),
             ],
           ),
@@ -93,9 +95,11 @@ class ScanGuard {
             children: [
               Icon(Icons.info_outline_rounded, color: AppColors.warningOrange),
               SizedBox(width: 8),
-              Text(
-                'Tempat Sampah Belum Diaktivasi',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              Expanded(
+                child: Text(
+                  'Tempat Sampah Belum Diaktivasi',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                ),
               ),
             ],
           ),

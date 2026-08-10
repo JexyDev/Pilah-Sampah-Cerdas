@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mahasiswa_kkn_models.dart';
 import '../providers/api_client.dart';
+import '../../core/values/api_constants.dart';
 import 'kkn_repository.dart';
 
 /// Implementasi [KknRepository] menggunakan Dio HTTP client.
@@ -33,7 +34,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<KknDashboardData> getDashboard() async {
     try {
-      final response = await apiClient.dio.get('/kkn/dashboard');
+      final response = await apiClient.dio.get(ApiEndpoints.kknDashboard);
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>? ?? {};
         final prefs = await SharedPreferences.getInstance();
@@ -71,7 +72,7 @@ class ApiKknRepository implements KknRepository {
   Future<List<WargaDampingan>> getWargaDampingan() async {
     List<dynamic> rawList = [];
     try {
-      final response = await apiClient.dio.get('/kkn/warga-dampingan');
+      final response = await apiClient.dio.get(ApiEndpoints.kknWargaDampingan);
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
           rawList = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
@@ -83,15 +84,7 @@ class ApiKknRepository implements KknRepository {
       rawList = [];
     }
 
-    // Fallback: Jika /kkn/warga-dampingan kosong, ambil data dari /kkn/warga (Warga Penugasan KKN)
-    if (rawList.isEmpty) {
-      try {
-        final aktivasiData = await getWargaForAktivasi();
-        if (aktivasiData.isNotEmpty) {
-          rawList = aktivasiData;
-        }
-      } catch (e) { debugPrint('Silenced error: $e'); }
-    }
+    // Fallback dihapus agar list Warga Dampingan HANYA berisi warga yang benar-benar diaktivasi oleh mahasiswa ini, bukan seluruh warga dari /kkn/warga.
 
     if (rawList.isNotEmpty) {
        final prefs = await SharedPreferences.getInstance();
@@ -113,7 +106,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<void> registerWarga(RegisterWargaRequest request) async {
     await apiClient.dio.post(
-      '/auth/register/warga',
+      ApiEndpoints.registerWarga,
       data: request.toJson(),
     );
   }
@@ -134,7 +127,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<List<dynamic>> getActivityLog() async {
     try {
-      final response = await apiClient.dio.get('/kkn/activity-log');
+      final response = await apiClient.dio.get(ApiEndpoints.kknActivityLog);
       if (response.statusCode == 200) {
         final list = response.data['data'] as List<dynamic>? ?? [];
         final prefs = await SharedPreferences.getInstance();
@@ -158,7 +151,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<String?> sendLocationPing(double latitude, double longitude) async {
     final response = await apiClient.dio.post(
-      '/kkn/location-ping',
+      ApiEndpoints.kknLocationPing,
       data: {
         'latitude': latitude,
         'longitude': longitude,
@@ -173,7 +166,7 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<List<dynamic>> getSchedules() async {
-    final response = await apiClient.dio.get('/schedules');
+    final response = await apiClient.dio.get(ApiEndpoints.schedules);
     if (response.statusCode == 200) {
       return response.data['data'] as List<dynamic>? ?? [];
     }
@@ -182,7 +175,7 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId) async {
-    final response = await apiClient.dio.get('/kegiatan/$scheduleId/lokasi');
+    final response = await apiClient.dio.get(ApiEndpoints.kegiatanLokasi(scheduleId));
     if (response.statusCode == 200 && response.data['success'] == true) {
       return response.data['data'] as Map<String, dynamic>? ?? {};
     }
@@ -192,7 +185,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<Map<String, dynamic>> getActiveZone() async {
     try {
-      final response = await apiClient.dio.get('/kkn/active-zone');
+      final response = await apiClient.dio.get(ApiEndpoints.kknActiveZone);
       if (response.statusCode == 200 && response.data != null) {
         if (response.data is Map<String, dynamic>) {
           return response.data['data'] as Map<String, dynamic>? ?? {};
@@ -235,10 +228,10 @@ class ApiKknRepository implements KknRepository {
 
       // Coba endpoint spesifik jadwal dahulu, jika gagal coba fallback /kkn/attendance/check-in
       try {
-        final res = await apiClient.dio.post('/kegiatan/$scheduleId/absen', data: payload);
+        final res = await apiClient.dio.post(ApiEndpoints.kegiatanAbsen(scheduleId), data: payload);
         if (res.statusCode == 200 || res.statusCode == 201) return true;
       } catch (_) {
-        final res = await apiClient.dio.post('/kkn/attendance/check-in', data: payload);
+        final res = await apiClient.dio.post(ApiEndpoints.kknCheckIn, data: payload);
         return res.statusCode == 200 || res.statusCode == 201;
       }
       return false;
@@ -255,7 +248,7 @@ class ApiKknRepository implements KknRepository {
       if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
-      final response = await apiClient.dio.get('/kkn/warga', queryParameters: queryParams);
+      final response = await apiClient.dio.get(ApiEndpoints.kknWarga, queryParameters: queryParams);
       
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
@@ -273,7 +266,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude) async {
     final response = await apiClient.dio.post(
-      '/kkn/warga/activate-by-scan',
+      ApiEndpoints.kknActivateByScan,
       data: {
         'wargaId': wargaId,
         'qrCode': qrCode,
@@ -287,7 +280,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng}) async {
     final response = await apiClient.dio.post(
-      '/kkn/warga/activate-bin',
+      ApiEndpoints.kknActivateBin,
       data: {
         'wargaId': wargaId,
         'binOrganikId': binOrganikId,
@@ -302,7 +295,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<List<dynamic>> getKknHistory() async {
     try {
-      final response = await apiClient.dio.get('/kkn/history');
+      final response = await apiClient.dio.get(ApiEndpoints.kknHistory);
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
           return (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
@@ -326,7 +319,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<KelompokKknData?> getKelompokKkn() async {
     try {
-      final response = await apiClient.dio.get('/kkn/kelompok/me');
+      final response = await apiClient.dio.get(ApiEndpoints.kknKelompokMe);
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>? ?? {};
         if (data.isEmpty) return null;
@@ -357,7 +350,7 @@ class ApiKknRepository implements KknRepository {
     }
 
     final response = await apiClient.dio.post(
-      '/kkn/pemanfaatan-sampah',
+      ApiEndpoints.kknPemanfaatanSampah,
       data: payload,
     );
     return response.statusCode == 200 || response.statusCode == 201;
@@ -380,7 +373,7 @@ class ApiKknRepository implements KknRepository {
     });
 
     final response = await apiClient.dio.post(
-      '/kkn/pengajuan-izin',
+      ApiEndpoints.kknPengajuanIzin,
       data: formData,
     );
 

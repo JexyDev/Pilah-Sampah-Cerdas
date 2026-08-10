@@ -102,10 +102,10 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   /// Refresh dengan parameter yang sudah tersimpan di state.
   Future<void> refresh() async {
     final kel = state.selectedKelurahan ?? '';
-    final rt = state.selectedRtRw ?? '';
+    final rw = state.selectedRtRw ?? '';
     await fetchWargaWithRegion(
       kelurahan: kel,
-      rw: rt,
+      rw: rw,
       search: state.searchQuery,
     );
   }

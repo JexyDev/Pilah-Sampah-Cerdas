@@ -64,7 +64,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                             const SizedBox(height: AppDimensions.md),
                             _buildLocationStatus(locationState, kknLocationState),
                             const SizedBox(height: AppDimensions.lg),
-                            _buildQuickActions(),
+                            _buildQuickActions(kknLocationState),
                             const SizedBox(height: AppDimensions.lg),
                             _buildWargaSection(state),
                             const SizedBox(height: 80),
@@ -152,9 +152,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         ? user.jurusan
         : (user?.prodi != null && user!.prodi.trim().isNotEmpty
             ? user.prodi
-            : (dashboard != null && dashboard.jurusan.isNotEmpty ? dashboard.jurusan : 'Teknik Informatika'));
-    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rw = user?.rw.isNotEmpty == true ? user!.rw : '01/02';
+            : (dashboard != null && dashboard.jurusan.isNotEmpty ? dashboard.jurusan : '-'));
+    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
@@ -505,7 +505,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // Quick Actions
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(KknLocationState kknState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -554,7 +554,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
               child: _MenuTileCard(
                 icon: Icons.location_on_rounded,
                 title: 'Absensi GPS KKN',
-                subtitle: 'Presensi 2 jam zona KKN',
+                subtitle: 'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} zona KKN',
                 gradientColors: const [Color(0xFF38BDF8), AppColors.primaryBlue],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
               ),
@@ -583,20 +583,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final user = ref.watch(authProvider).user;
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
-    final userKel = user?.kelurahan ?? 'Bojongsoang';
-    final userRw = user?.rw ?? '01/02';
+    final userKel = user?.kelurahan ?? '-';
+    final userRw = user?.rw ?? '-';
 
     // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa ini
     final list = state.wargaList.where((w) {
       if (!w.isActivated) return false;
 
       final mhsId = w.mahasiswaId.trim();
-      if (mhsId.isNotEmpty && mhsId.toLowerCase() != 'null' && mhsId.toLowerCase() != 'undefined') {
-        final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
-        if (!matchesUser) return false;
+      if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
+        return false;
       }
-
-      return true;
+      
+      final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
+      return matchesUser;
     }).map((w) {
       final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address

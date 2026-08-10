@@ -32,12 +32,12 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
       if (!w.isActivated) return false;
 
       final mhsId = w.mahasiswaId.trim();
-      if (mhsId.isNotEmpty && mhsId.toLowerCase() != 'null' && mhsId.toLowerCase() != 'undefined') {
-        final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
-        if (!matchesUser) return false;
+      if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
+        return false;
       }
-
-      return true;
+      
+      final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
+      return matchesUser;
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
       final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';

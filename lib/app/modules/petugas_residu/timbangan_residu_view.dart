@@ -31,7 +31,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   int _estimatedPoints = 0;
 
   bool get _canSubmit {
-    final weight = double.tryParse(_weightController.text.trim()) ?? 0.0;
+    final weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.')) ?? 0.0;
     return _photoPath != null && weight > 0 && !_isSubmitting;
   }
 
@@ -91,7 +91,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   }
 
   void _calculatePoints() {
-    final weightStr = _weightController.text.trim();
+    final weightStr = _weightController.text.trim().replaceAll(',', '.');
     final weight = double.tryParse(weightStr) ?? 0.0;
     
     // Rumus: Poin = (Berat * 2) + (Foto Valid ? 10 : 0)
@@ -127,7 +127,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.dangerRed),
       );
     }
@@ -136,7 +136,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   Future<void> _submitLog() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto bukti timbangan residu wajib diambil!'),
           backgroundColor: AppColors.dangerRed,
@@ -145,9 +145,9 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
       return;
     }
 
-    final double? weight = double.tryParse(_weightController.text.trim());
+    final double? weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
     if (weight == null || weight <= 0 || weight > 9999) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Berat timbangan tidak valid!'),
           backgroundColor: AppColors.dangerRed,
@@ -158,7 +158,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
     final isOnline = ref.read(isOnlineProvider);
     if (!isOnline) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
           backgroundColor: AppColors.dangerRed,
@@ -494,16 +494,16 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
               TextFormField(
                 controller: _weightController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.\,]?\d*'))],
                 decoration: const InputDecoration(
-                  hintText: 'Masukkan berat (misal: 12.5)',
+                  hintText: 'Masukkan berat (misal: 12.5 atau 12,5)',
                   prefixIcon: Icon(Icons.scale_outlined, color: AppColors.primaryGreen),
                   suffixText: 'Kg',
                   suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Berat timbangan wajib diisi';
-                  final val = double.tryParse(v);
+                  final val = double.tryParse(v.replaceAll(',', '.'));
                   if (val == null || val <= 0) return 'Masukkan angka positif';
                   if (val > 9999) return 'Maksimal 9999 kg';
                   return null;

@@ -88,7 +88,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,

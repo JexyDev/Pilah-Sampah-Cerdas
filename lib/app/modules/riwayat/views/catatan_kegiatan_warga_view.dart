@@ -124,10 +124,12 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Foto Bukti Setoran'),
-                                  content: CachedNetworkImage(
-                                    imageUrl: entry.photoUrl ?? 'https://via.placeholder.com/300?text=Foto+Bukti+Pemilahan',
-                                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
-                                  ),
+                                  content: (entry.photoUrl == null || entry.photoUrl!.isEmpty)
+                                      ? const SizedBox(height: 150, child: Center(child: Icon(Icons.image_not_supported_rounded, size: 80, color: Colors.grey)))
+                                      : CachedNetworkImage(
+                                          imageUrl: entry.photoUrl!,
+                                          errorWidget: (_, __, ___) => const SizedBox(height: 150, child: Center(child: Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey))),
+                                        ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(ctx),

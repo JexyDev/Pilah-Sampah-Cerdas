@@ -67,6 +67,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
   Widget _buildAttendanceDetail(KknLocationState state, KknLocationNotifier notifier) {
     final activity = state.activeActivity;
     final pos = state.currentPosition;
+    final activityTitle = activity != null 
+        ? (activity['namaKegiatan'] ?? activity['title'] ?? activity['judul'] ?? activity['name'] ?? _selectedScheduleTitle).toString()
+        : _selectedScheduleTitle;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,7 +78,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
-            _selectedScheduleTitle,
+            activityTitle,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
         ),
@@ -329,7 +332,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                         ],
                       ),
                       Text(
-                        '${(state.inZoneDurationSeconds / 60).floor()} / 120 Menit',
+                        '${(state.inZoneDurationSeconds / 60).floor()} / ${state.targetDurationMinutes} Menit',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -344,7 +347,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
-                      value: (state.inZoneDurationSeconds / 7200).clamp(0.0, 1.0),
+                      value: (state.inZoneDurationSeconds / (state.targetDurationMinutes * 60)).clamp(0.0, 1.0),
                       minHeight: 8,
                       backgroundColor: Colors.grey.shade200,
                       color: state.isEligibleForAttendance
@@ -355,8 +358,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   const SizedBox(height: 6),
                   Text(
                     state.isEligibleForAttendance
-                        ? '✓ Syarat durasi 2 jam kontinu telah terpenuhi. Silakan tekan tombol Absen.'
-                        : 'Waktu tersisa: ${((7200 - state.inZoneDurationSeconds) / 60).ceil()} menit lagi sebelum tombol absen terbuka.',
+                        ? '✓ Syarat durasi ${state.targetDurationMinutes % 60 == 0 ? '${state.targetDurationMinutes ~/ 60} jam' : '${state.targetDurationMinutes} menit'} kontinu telah terpenuhi. Silakan tekan tombol Absen.'
+                        : 'Waktu tersisa: ${(((state.targetDurationMinutes * 60) - state.inZoneDurationSeconds) / 60).ceil()} menit lagi sebelum tombol absen terbuka.',
                     style: TextStyle(
                       fontSize: 11,
                       color: state.isEligibleForAttendance
@@ -417,7 +420,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   AppRoutes.pengajuanIzin,
                   arguments: {
                     'scheduleId': _selectedScheduleId,
-                    'scheduleTitle': _selectedScheduleTitle,
+                    'scheduleTitle': activityTitle,
                   },
                 );
               },
@@ -512,7 +515,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                       readOnly: true,
                       enabled: false,
                       decoration: InputDecoration(
-                        labelText: 'RT / RW (Terkunci)',
+                        labelText: 'RW (Terkunci)',
                         prefixIcon: const Icon(Icons.tag_rounded),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,

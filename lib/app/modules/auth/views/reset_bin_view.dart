@@ -58,7 +58,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal memilih foto: $e')),
         );
       }
@@ -86,7 +86,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     // Error listener
     ref.listen(resetBinProvider, (_, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,
@@ -104,7 +104,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
             NotificationEngine().showResetPendingNotification();
-            ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Pengajuan pengosongan berhasil dikirim. Menunggu proses persetujuan RW (PENDING).'),
                 backgroundColor: AppColors.warningYellow,
@@ -187,15 +187,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       );
     }
 
-    // Auto select active non-pending bins by default if selection is empty
-    if (_selectedBinIds.isEmpty) {
-      for (final b in bins) {
-        if (b.isActive && !b.isResetPending) {
-          _selectedBinIds.add(b.id);
-        }
-      }
-    }
-
+    // Removed auto selection so user is free to choose or not
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,7 +239,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               return InkWell(
                 onTap: () {
                   if (!isBinActive) {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah ini dalam status NON-AKTIF dan tidak dapat dipilih.'),
                         duration: Duration(seconds: 2),
@@ -255,19 +247,9 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     );
                     return;
                   }
-                  if (bin.capacityPercent < 0.70) {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tempat sampah belum terisi 70%. Tidak dapat mengajukan pengosongan.'),
-                        backgroundColor: AppColors.dangerRed,
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                    return;
-                  }
+
                   if (isPendingBin) {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah ini sedang dalam proses pengajuan (PENDING).'),
                         duration: Duration(seconds: 2),
@@ -466,51 +448,73 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           const SizedBox(height: AppDimensions.lg),
         ],
         
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: isPending
-                ? () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Sedang mengajukan reset Tempat Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
-                        backgroundColor: AppColors.warningYellow,
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                : (_evidencePhotoPath != null && _selectedBinIds.isNotEmpty)
-                    ? () {
-                        final binIds = _selectedBinIds.toList();
-                        ref.read(resetBinProvider.notifier).submitReset(
-                              binIds: binIds,
-                              userId: userId,
-                              evidencePhotoPath: _evidencePhotoPath!,
-                            );
-                      }
-                    : null,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: isPending
-                  ? AppColors.warningYellow
-                  : (_selectedBinIds.isNotEmpty ? AppColors.primaryGreen : Colors.grey.shade400),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-              isPending
-                  ? 'Sedang Mengajukan (PENDING)'
-                  : (_selectedBinIds.isEmpty
-                      ? 'Pilih Tempat Sampah Terlebih Dahulu'
-                      : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: isPending || _selectedBinIds.isNotEmpty ? Colors.white : Colors.grey.shade700,
+        (() {
+          final bool hasInvalidSelectedBin = _selectedBinIds.any((id) {
+            final b = bins.firstWhere((element) => element.id == id);
+            return b.capacityPercent < 0.70;
+          });
+
+          return SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: isPending
+                  ? () {
+                      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sedang mengajukan reset Tempat Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                          backgroundColor: AppColors.warningYellow,
+                          behavior: SnackBarBehavior.floating,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  : hasInvalidSelectedBin
+                      ? () {
+                          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Tempat sampah yang dipilih belum terisi 70%. Tidak dapat mengajukan pengosongan.'),
+                              backgroundColor: AppColors.dangerRed,
+                              behavior: SnackBarBehavior.floating,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      : (_evidencePhotoPath != null && _selectedBinIds.isNotEmpty)
+                          ? () {
+                              final binIds = _selectedBinIds.toList();
+                              ref.read(resetBinProvider.notifier).submitReset(
+                                    binIds: binIds,
+                                    userId: userId,
+                                    evidencePhotoPath: _evidencePhotoPath!,
+                                  );
+                            }
+                          : null,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: isPending
+                    ? AppColors.warningYellow
+                    : hasInvalidSelectedBin
+                        ? AppColors.dangerRed
+                        : (_selectedBinIds.isNotEmpty ? AppColors.primaryGreen : Colors.grey.shade400),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                isPending
+                    ? 'Sedang Mengajukan (PENDING)'
+                    : hasInvalidSelectedBin
+                        ? 'Tempat Sampah Belum 70%'
+                        : (_selectedBinIds.isEmpty
+                            ? 'Pilih Tempat Sampah Terlebih Dahulu'
+                            : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isPending || hasInvalidSelectedBin || _selectedBinIds.isNotEmpty ? Colors.white : Colors.grey.shade700,
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        })(),
         const SizedBox(height: AppDimensions.md),
       ],
     );

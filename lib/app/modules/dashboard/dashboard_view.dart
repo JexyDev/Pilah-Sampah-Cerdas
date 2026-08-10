@@ -67,7 +67,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     // Dengarkan perubahan status koneksi untuk notifikasi "Internet kembali pulih"
     ref.listen<bool>(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Internet kembali pulih'),
             backgroundColor: AppColors.primaryGreen,
@@ -75,7 +75,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           ),
         );
       } else if (prev == true && next == false) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Anda sedang offline. Koneksi internet terputus.'),
             backgroundColor: AppColors.dangerRed,
@@ -113,16 +113,18 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   Widget _buildFab(bool isOnline, UserRole role) {
+    final fabColor = (role == UserRole.petugasResidu) ? AppColors.dangerRed : AppColors.primaryGreen;
+
     return Container(
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: isOnline ? AppColors.primaryGreen : AppColors.textHint,
+        color: isOnline ? fabColor : AppColors.textHint,
         shape: BoxShape.circle,
         boxShadow: isOnline
             ? [
                 BoxShadow(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                  color: fabColor.withValues(alpha: 0.4),
                   blurRadius: 12,
                   spreadRadius: 2,
                 ),

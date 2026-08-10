@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/models/bin_entity.dart';
@@ -137,10 +138,11 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
           bin.lat, bin.lng,
         );
 
-        if (distance > 500.0) { // Diperbesar jadi 500m agar tidak mudah error saat QC testing
-          throw const BinException(
+        const maxDistance = kDebugMode ? 500.0 : 10.0;
+        if (distance > maxDistance) {
+          throw BinException(
             'LOCATION_OUT_OF_RANGE',
-            'Anda terlalu jauh dari tempat sampah (> 500m).',
+            'Anda terlalu jauh dari tempat sampah (> ${maxDistance.toInt()}m).',
           );
         }
 

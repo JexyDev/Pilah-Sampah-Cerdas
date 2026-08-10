@@ -38,7 +38,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             children: [
               Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28),
               SizedBox(width: 10),
-              Text('QR Organik Terdeteksi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Expanded(child: Text('QR Organik Terdeteksi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
             ],
           ),
           content: Column(
@@ -102,7 +102,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
               children: [
                 Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
                 SizedBox(width: 10),
-                Text('QR Code Sama!'),
+                Expanded(child: Text('QR Code Sama!')),
               ],
             ),
             content: const Text('QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik. Silakan scan QR Code yang berbeda.'),
@@ -129,7 +129,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             children: [
               Icon(Icons.verified_user_rounded, color: AppColors.primaryGreen, size: 28),
               SizedBox(width: 10),
-              Text('Konfirmasi Aktivasi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Expanded(child: Text('Konfirmasi Aktivasi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
             ],
           ),
           content: Column(
@@ -309,7 +309,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
               children: [
                 Icon(Icons.error_outline_rounded, color: AppColors.dangerRed, size: 28),
                 SizedBox(width: 10),
-                Text('Aktivasi Gagal'),
+                Expanded(child: Text('Aktivasi Gagal')),
               ],
             ),
             content: Text(err),

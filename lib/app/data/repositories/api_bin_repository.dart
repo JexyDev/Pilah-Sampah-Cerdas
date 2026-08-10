@@ -9,6 +9,7 @@ import 'bin_repository.dart';
 import '../providers/api_client.dart';
 import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
+import '../../core/values/api_constants.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -32,7 +33,7 @@ class ApiBinRepository implements BinRepository {
   Future<List<BinEntity>> getBinsByHousehold(String householdId) async {
     const cacheKey = 'cached_bins';
     try {
-      final response = await apiClient.dio.get('/bins/my-bins');
+      final response = await apiClient.dio.get(ApiEndpoints.binsMyBins);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -137,7 +138,7 @@ class ApiBinRepository implements BinRepository {
   @override
   Future<List<BinEntity>> getAllBins() async {
     try {
-      final response = await apiClient.dio.get('/bins/my-bins');
+      final response = await apiClient.dio.get(ApiEndpoints.binsMyBins);
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
         return data.map((json) => _mapMyBin(json as Map<String, dynamic>)).toList();
@@ -154,7 +155,7 @@ class ApiBinRepository implements BinRepository {
   @override
   Future<BinEntity?> getBinByQrSerial(String qrSerial) async {
     try {
-      final response = await apiClient.dio.get('/bins/my-bins');
+      final response = await apiClient.dio.get(ApiEndpoints.binsMyBins);
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
         final match = data
@@ -209,7 +210,7 @@ class ApiBinRepository implements BinRepository {
       });
 
       final response = await apiClient.dio.post(
-        '/waste/detect',
+        ApiEndpoints.wasteDetect,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -294,7 +295,7 @@ class ApiBinRepository implements BinRepository {
       double lng = userLng;
 
       final response = await apiClient.dio.post(
-        '/bins/scan',
+        ApiEndpoints.binsScan,
         data: {
           'qrCode': qrCode,
           'detectedType': detectedType == WasteType.organic ? 'Organik' : 'Anorganik',
@@ -393,7 +394,7 @@ class ApiBinRepository implements BinRepository {
   }) async {
     try {
       final response = await apiClient.dio.post(
-        '/bins/activate',
+        ApiEndpoints.binsActivate,
         data: {
           'qrCode': qrSerial,
           if (latitude != null) 'latitude': latitude,
@@ -453,7 +454,7 @@ class ApiBinRepository implements BinRepository {
   }) async {
     try {
       final response = await apiClient.dio.post(
-        '/bins/activate',
+        ApiEndpoints.binsActivate,
         data: {
           'qrCodes': qrSerials,
           if (latitude != null) 'latitude': latitude,
@@ -522,7 +523,7 @@ class ApiBinRepository implements BinRepository {
       });
 
       final response = await apiClient.dio.post(
-        '/bins/reset',
+        ApiEndpoints.binsReset,
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
@@ -609,7 +610,7 @@ class ApiBinRepository implements BinRepository {
   }) async {
     try {
       await apiClient.dio.post(
-        '/bins/measure',
+        ApiEndpoints.binsMeasure,
         data: {
           'qrCode': qrCode,
           'binType': binType == WasteType.organic ? 'ORGANIC' : 'NON_ORGANIC',

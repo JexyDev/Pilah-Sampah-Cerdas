@@ -46,11 +46,13 @@ class AppTheme {
               fontSize: 16,
               fontWeight: FontWeight.w400,
               color: AppColors.textPrimary,
+              height: 1.5,
             ),
             bodyMedium: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: AppColors.textPrimary,
+              height: 1.5,
             ),
             bodySmall: GoogleFonts.poppins(
               fontSize: 12,

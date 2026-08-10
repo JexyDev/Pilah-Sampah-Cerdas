@@ -14,7 +14,7 @@ class WasteLogsNotifier extends AsyncNotifier<List<WasteLogEntity>> {
   @override
   FutureOr<List<WasteLogEntity>> build() async {
     final repo = ref.watch(wasteLogRepositoryProvider);
-    final userId = ref.watch(authProvider).user?.id ?? '';
+    final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
     
     // 1. Coba baca cache.
     final cached = await repo.getCachedWasteLogs(userId);
@@ -47,7 +47,7 @@ final pointHistoryProvider = FutureProvider<List<PointHistoryEntity>>((
   ref,
 ) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(authProvider).user?.id ?? '';
+  final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
   return repo.getPointHistoryByUser(userId);
 });
 
@@ -66,13 +66,13 @@ final dailyPointsProvider = FutureProvider<int>((ref) async {
 });
 final totalPointsProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(authProvider).user?.id ?? '';
+  final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
   return repo.getTotalPointsByUser(userId);
 });
 
 /// Provider peringkat user (misal: "#3 di RT 03")
 final userLeaderboardRankProvider = FutureProvider<String>((ref) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(authProvider).user?.id ?? '';
+  final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
   return repo.getUserLeaderboardRank(userId);
 });

@@ -13,7 +13,7 @@ bool _isPetugasResiduNotification(NotificationEntity notif) {
   final type = notif.type.toUpperCase();
   final title = notif.title.toUpperCase();
   final desc = notif.desc.toUpperCase();
-
+  
   // Dilarang total untuk Petugas Residu (Notifikasi Warga / Mahasiswa KKN / Penjemputan)
   final isForbidden = type.contains('JADWAL') ||
       type.contains('JEMPUT') ||
@@ -48,11 +48,18 @@ bool _isPetugasResiduNotification(NotificationEntity notif) {
       title.contains('POIN') ||
       title.contains('PETUGAS') ||
       title.contains('WHITELIST') ||
+      title.contains('VERIFIKASI') ||
       desc.contains('TIMBANGAN') ||
       desc.contains('RESIDU') ||
       desc.contains('LOG TIMBANGAN');
 
-  return isPetugasTopic;
+  if (!isPetugasTopic) return false;
+
+  // Hapus seed notifikasi palsu / dummy lama
+  if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) {
+    return false;
+  }
+  return true;
 }
 
 /// Provider khusus daftar notifikasi Petugas Residu Hilir

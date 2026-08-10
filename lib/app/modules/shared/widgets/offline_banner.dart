@@ -36,7 +36,7 @@ class OfflineBanner extends ConsumerWidget {
               style: TextStyle(
                 color: AppColors.offlineBannerText,
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,

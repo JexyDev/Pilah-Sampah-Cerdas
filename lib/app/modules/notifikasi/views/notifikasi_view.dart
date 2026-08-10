@@ -31,7 +31,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
     // Listener untuk error marking read
     ref.listen<MarkReadState>(markReadProvider, (previous, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage ?? 'Gagal menandai notifikasi'),
             backgroundColor: AppColors.dangerRed,

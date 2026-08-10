@@ -99,7 +99,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     if (permission == LocationPermission.deniedForever ||
         permission == LocationPermission.denied) {
       if (mounted && showDialogs) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
             backgroundColor: AppColors.dangerRed,
@@ -142,7 +142,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,
@@ -240,7 +240,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
     ref.listen(aktivasiBinProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,

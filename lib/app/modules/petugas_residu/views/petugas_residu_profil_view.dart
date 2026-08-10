@@ -36,11 +36,11 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
         if (mounted) {
           setState(() => _isUploading = false);
           if (success) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Foto profil berhasil diperbarui!'), backgroundColor: AppColors.primaryGreen),
             );
           } else {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Gagal mengunggah foto.'), backgroundColor: AppColors.dangerRed),
             );
           }
@@ -258,8 +258,8 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.home_outlined,
-                    'RT Penugasan',
-                    user?.rw.isNotEmpty == true ? 'RW ' : 'RT 01',
+                    'RW Penugasan',
+                    user?.rw.isNotEmpty == true ? 'RW ${user!.rw}' : 'RW 01',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(

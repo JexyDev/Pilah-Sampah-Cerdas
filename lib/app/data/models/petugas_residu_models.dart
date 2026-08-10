@@ -38,6 +38,7 @@ class PetugasResiduDashboard extends Equatable {
     required this.totalJadwal,
     required this.sudahDiambil,
     required this.totalWeightKg,
+    required this.monthlyWeightKg,
     required this.kpiScore,
     required this.totalPoints,
     this.ketepatanWaktuScore = 95.0,
@@ -51,42 +52,51 @@ class PetugasResiduDashboard extends Equatable {
   final String accountStatus; // 'ACTIVE', 'PENDING', 'INACTIVE'
   final int totalJadwal;
   final int sudahDiambil;
-  final double totalWeightKg;
+  final double totalWeightKg; // Maps to todayWeightKg from API
+  final double monthlyWeightKg; // Maps to monthlyWeightKg from API
   final double kpiScore; // Formula: 0.6 * ketepatanWaktu + 0.4 * akurasi
   final int totalPoints;
   final double ketepatanWaktuScore;
   final double akurasiScore;
 
   int get sisaJadwal => totalJadwal > sudahDiambil ? totalJadwal - sudahDiambil : 0;
-  bool get isApproved => whitelistStatus == WhitelistStatus.approved && accountStatus.toUpperCase() == 'ACTIVE';
+  bool get isApproved => whitelistStatus == WhitelistStatus.approved;
 
   factory PetugasResiduDashboard.fromJson(Map<String, dynamic> json) {
-    final double timeScore = (json['ketepatanWaktuScore'] as num?)?.toDouble() ?? 95.0;
-    final double accScore = (json['akurasiScore'] as num?)?.toDouble() ?? 92.0;
+    final double timeScore = (json['ketepatanWaktuScore'] as num?)?.toDouble() ?? 0.0;
+    final double accScore = (json['akurasiScore'] as num?)?.toDouble() ?? 0.0;
     final double calculatedKpi = (0.6 * timeScore) + (0.4 * accScore);
 
     return PetugasResiduDashboard(
       petugasId: json['petugasId']?.toString() ?? '',
       name: json['name']?.toString() ?? 'Petugas Residu',
-      assignedZone: json['assignedZone']?.toString() ?? json['rw']?.toString() ?? json['rtRw']?.toString() ?? 'RW 02',
-      whitelistStatus: WhitelistStatusExtension.fromApi(json['whitelistStatus']?.toString() ?? 'APPROVED'),
-      accountStatus: json['accountStatus']?.toString() ?? 'ACTIVE',
-      totalJadwal: (json['totalJadwal'] as num?)?.toInt() ?? 8,
-      sudahDiambil: (json['sudahDiambil'] as num?)?.toInt() ?? 3,
-      totalWeightKg: (json['totalWeightKg'] as num?)?.toDouble() ?? 42.5,
+      assignedZone: json['assignedZone']?.toString() ?? json['rw']?.toString() ?? json['rtRw']?.toString() ?? '-',
+      whitelistStatus: WhitelistStatusExtension.fromApi(json['whitelistStatus']?.toString() ?? 'PENDING'),
+      accountStatus: json['accountStatus']?.toString() ?? 'PENDING',
+      totalJadwal: (json['totalJadwal'] as num?)?.toInt() ?? 0,
+      sudahDiambil: (json['sudahDiambil'] as num?)?.toInt() ?? 0,
+      totalWeightKg: (json['todayWeightKg'] as num?)?.toDouble() ?? (json['totalWeightKg'] as num?)?.toDouble() ?? 0.0,
+      monthlyWeightKg: (json['monthlyWeightKg'] as num?)?.toDouble() ?? 0.0,
       kpiScore: (json['kpiScore'] as num?)?.toDouble() ?? calculatedKpi,
-      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
-        (((json['totalWeightKg'] as num? ?? 42.5) * 2) + 
-         ((json['sudahDiambil'] as num? ?? 3) * 10) + 
-         (((json['sudahDiambil'] as num? ?? 3) == (json['totalJadwal'] as num? ?? 8)) ? 50 : 0) + 
-         (calculatedKpi * 5)).toInt(),
+      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
       ketepatanWaktuScore: timeScore,
       akurasiScore: accScore,
     );
   }
 
   @override
-  List<Object?> get props => [petugasId, assignedZone, whitelistStatus, totalJadwal, sudahDiambil];
+  List<Object?> get props => [
+        petugasId,
+        name,
+        assignedZone,
+        whitelistStatus,
+        accountStatus,
+        totalJadwal,
+        sudahDiambil,
+        totalWeightKg,
+        monthlyWeightKg,
+        kpiScore,
+      ];
 }
 
 /// Model Item Tempat Sampah dalam Jadwal Penjemputan Hilir
@@ -132,7 +142,7 @@ class ResiduBinPickup extends Equatable {
       kecamatan: json['kecamatan']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       rw: json['rw']?.toString() ?? json['rtRw']?.toString() ?? '',
-      volumePercentage: (json['volumePercent'] as num?)?.toDouble() ?? (json['volumePercentage'] as num?)?.toDouble() ?? 80.0,
+      volumePercentage: (json['volumePercent'] as num?)?.toDouble() ?? (json['volumePercentage'] as num?)?.toDouble() ?? 0.0,
       isPickedUp: (json['isPickedUp'] as bool?) ?? (json['status']?.toString().toUpperCase() == 'PICKED_UP'),
       lastPickedUpTime: DateTime.tryParse(json['lastPickedUpTime']?.toString() ?? ''),
       latitude: (json['latitude'] as num?)?.toDouble(),

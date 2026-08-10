@@ -378,14 +378,6 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  if (!isApproved) ...[
-                    PetugasWhitelistGuardWidget(
-                      statusText: dashboard?.whitelistStatus.name ?? 'PENDING',
-                      onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-                  ],
-
                   // Banner
                   Container(
                     width: double.infinity,
@@ -425,7 +417,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                         value: '${dashboard?.totalWeightKg ?? 24.5}',
                         unit: 'Kg',
                         icon: Icons.scale_rounded,
-                        color: AppColors.primaryGreen,
+                        color: AppColors.dangerRed,
                       ),
                       const SizedBox(width: 14),
                       _buildStatCard(
@@ -512,10 +504,10 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.1),
+                              backgroundColor: AppColors.dangerRed.withValues(alpha: 0.1),
                               child: const Icon(
                                 Icons.scale_rounded,
-                                color: AppColors.primaryGreen,
+                                color: AppColors.dangerRed,
                                 size: 20,
                               ),
                             ),
@@ -545,7 +537,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: AppColors.primaryGreen,
+                                color: AppColors.dangerRed,
                               ),
                             ),
                           ),

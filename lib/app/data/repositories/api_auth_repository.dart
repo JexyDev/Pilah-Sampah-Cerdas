@@ -105,7 +105,7 @@ class ApiAuthRepository implements AuthRepository {
       }
       final message = e.response?.data?['message']?.toString();
       
-      if (status == 401) {
+      if (status == 401 || status == 404) {
         if (message != null && message.toLowerCase().contains('approve')) {
           throw AuthException(
             'UNAPPROVED_ACCOUNT',
@@ -114,7 +114,7 @@ class ApiAuthRepository implements AuthRepository {
         }
         throw const AuthException(
           'INVALID_CREDENTIALS',
-          'Nomor telepon atau password salah',
+          'Nomor telepon/NIM atau password salah',
         );
       }
       

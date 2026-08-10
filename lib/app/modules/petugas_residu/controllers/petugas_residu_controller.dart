@@ -81,31 +81,24 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
       state = state.copyWith(isLoading: true, clearError: true);
     }
     
-    // 2. Fetch fresh from network
-    try {
-      final results = await Future.wait([
-        repo.getDashboard(),
-        repo.getJadwalHarian(),
-        repo.getHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter),
-      ]);
+    // 2. Fetch fresh from network progressively
+    repo.getDashboard().then((dash) {
+      if (mounted) state = state.copyWith(dashboard: dash, isLoading: false);
+    }).catchError((_) {
+      if (mounted && cachedDash == null) state = state.copyWith(isLoading: false);
+    });
 
-      state = state.copyWith(
-        isLoading: false,
-        dashboard: results[0] as PetugasResiduDashboard,
-        jadwalList: results[1] as List<ResiduBinPickup>,
-        historyList: results[2] as List<Map<String, dynamic>>,
-      );
-    } catch (e) {
-      if (cachedDash != null) {
-        // We have cache, silently ignore error
-        state = state.copyWith(isLoading: false);
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: 'Gagal memuat data Petugas Residu: $e',
-        );
-      }
-    }
+    repo.getJadwalHarian().then((jadwal) {
+      if (mounted) state = state.copyWith(jadwalList: jadwal, isLoading: false);
+    }).catchError((_) {
+      if (mounted && cachedJadwal == null) state = state.copyWith(isLoading: false);
+    });
+
+    repo.getHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter).then((history) {
+      if (mounted) state = state.copyWith(historyList: history, isLoading: false);
+    }).catchError((_) {
+      if (mounted && cachedHistory == null) state = state.copyWith(isLoading: false);
+    });
   }
 
   Future<void> fetchJadwal({String? kelurahan, String? rw}) async {

@@ -155,7 +155,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
     } catch (e) {
       if (mounted) {
         setState(() => _isCapturing = false);
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengambil foto: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -190,7 +190,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal membuka galeri: $e'),
             backgroundColor: AppColors.dangerRed,

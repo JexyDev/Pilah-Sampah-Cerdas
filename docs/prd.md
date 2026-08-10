@@ -60,6 +60,49 @@ Seluruh identifikasi dan login pengguna di platform **tidak menggunakan NIK**:
    - Papan Peringkat (Leaderboard) Warga tingkat RT/RW.
    - Tracking status pengajuan reset tempat sampah.
 
+### 3.3 Alur Absensi GPS Mahasiswa KKN (Aplikasi Mobile)
+Fitur absensi Mahasiswa KKN menggunakan sistem pelacakan otomatis (Geofencing) tanpa memerlukan check-in manual di awal.
+1. **Target Sinkronisasi (API Fetching):** Aplikasi menarik data kegiatan (koordinat lokasi/target, rentang jam buka-tutup, dan target durasi absensi minimal).
+2. **Otomatisasi Timer (Geofencing 50m):** Mahasiswa tidak perlu menekan tombol "Mulai". Ketika GPS Mahasiswa mendeteksi jarak berada di dalam radius <= 50 meter dari titik target, *Stopwatch* kehadiran akan berjalan otomatis (Status bar/Dashboard berubah menjadi Hijau "Aktif").
+3. **Mekanisme Jeda (Pause & Resume):** Jika mahasiswa keluar dari radius 50 meter (misalnya sinyal melompat atau keluar zona sementara), *Stopwatch* tidak di-reset ke 0, melainkan hanya di-jeda (*freeze*). Saat masuk zona kembali, timer dilanjutkan. (Saat *freeze*, Dashboard berubah Merah/Abu-abu menandakan status "Tidak Aktif").
+4. **Eksekusi Check-In:** Tombol "Hadir / Absen" hanya akan terbuka (dapat diklik) apabila:
+   - *Stopwatch* telah mencapai/memenuhi target durasi minimum dari server (misal 120 menit).
+   - Mahasiswa sedang secara fisik berada di dalam zona (Dashboard Hijau) pada saat menekan tombol tersebut.
+5. **Anti-Kecurangan (Anti-Fraud) & Ketahanan:**
+   - **Fake GPS:** Sistem wajib mendeteksi penggunaan aplikasi *Mock Location*. Jika terdeteksi, *timer* dihentikan/dikunci paksa.
+   - **Manipulasi Waktu:** Penghitungan waktu menggunakan interval *tick* internal memori aplikasi (akumulatif detik per detik), bukan sekadar membandingkan jam lokal HP, sehingga merubah jam HP tidak akan memanipulasi durasi.
+   - **Persistent Notification:** Menampilkan notifikasi latar belakang (*sticky notification*) agar sistem operasi HP tidak mematikan timer secara diam-diam saat aplikasi ditekan tombol *Home* (minimize).
+
+### 3.4 Alur Fitur Operasional Mahasiswa KKN (Aplikasi Mobile)
+Selain fitur absensi, aplikasi Mahasiswa KKN berfungsi sebagai alat kerja pendataan lapangan dengan 4 fitur utama berikut:
+1. **Kelompok KKN (Informasi Tim):** Menampilkan detail profil anggota kelompok mahasiswa dan informasi kontak Dosen Pembimbing Lapangan (DPL) yang membina kelompok tersebut (Read-Only).
+2. **Aktivasi Tempat Sampah Warga (Registrasi):**
+   - Mahasiswa memindai stiker QR Code pada tempat sampah baru Warga.
+   - Mengisi form identitas warga (Nama, No HP, Kelurahan, RW) dan menyematkan koordinat lokasi tempat sampah secara presisi.
+   - Data tersimpan dan Warga resmi terdaftar, memungkinkan Warga *login* ke aplikasi Warga menggunakan Nomor HP-nya.
+3. **Warga Dampingan Terbaru (Monitoring & Evaluasi):**
+   - Mahasiswa memantau aktivitas historis Warga yang telah didaftarkannya.
+   - Sistem menampilkan total poin warga, riwayat buang sampah, dan metrik akurasi AI (*API Correct Percentage*) guna melihat kedisiplinan pemilahan (Organik vs Anorganik). Warga dengan akurasi rendah menjadi target edukasi ulang.
+4. **Kegiatan Mahasiswa (Pemanfaatan & Log Individu):**
+   - Mahasiswa mengirimkan laporan harian/aktivitas edukasi pemanfaatan sampah warga (misal: sosialisasi pembuatan kompos).
+   - Mahasiswa menginput form dan mengunggah foto bukti (terkompresi otomatis) yang langsung tersinkronisasi ke sistem Backend sebagai log untuk di-*approve* atau dinilai oleh DPL.
+
+### 3.5 Alur Fitur Operasional Petugas Residu (Aplikasi Mobile)
+Modul Petugas Residu didesain secara tertutup (*restricted*) khusus untuk input berat timbangan fisik sampah residu di titik kumpul RT/RW, dan **TIDAK** melayani penjemputan ke rumah warga.
+1. **Whitelist Guard (Gerbang Akses):** 
+   - Saat login, sistem memvalidasi `whitelistStatus` ke Backend.
+   - Petugas berstatus `PENDING` atau `REJECTED` akan ditahan di layar restriksi (menunggu persetujuan Admin DLH/RW). Hanya status `APPROVED` yang diizinkan mengakses dasbor utama.
+2. **Beranda & Jadwal Harian:**
+   - Menampilkan statistik kinerja (Total Tugas, Titik Selesai, Total Kg Terangkut, Skor KPI).
+   - Menampilkan daftar titik lokasi tempat sampah residu di wilayah penugasan (misal RT 01/RW 02) yang harus ditangani pada hari tersebut.
+3. **Input Timbangan & Foto (Core Action):**
+   - Petugas mendatangi lokasi, menimbang sampah residu, lalu memasukkan angka berat aktual (Kg) ke dalam aplikasi.
+   - Sistem mewajibkan petugas mengambil foto bukti dari kamera (terkompresi).
+   - Data dikirim langsung (*Real-Time Sync*) ke Dasbor Web RT/RW dan DLH.
+4. **Insentif & Riwayat Poin:**
+   - Setiap kali petugas berhasil menginput/sinkronisasi laporan timbangan yang valid, sistem Backend mengkalkulasi dan mengirimkan **Poin Insentif** ke akun petugas.
+   - Petugas dapat melihat riwayat penyelesaian tugas dan jumlah poin yang telah dikumpulkan sebagai motivasi gamifikasi kinerja.
+
 ---
 
 ## 4. Alur Pengosongan Tempat Sampah On-Demand (Reset Volume)

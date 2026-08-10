@@ -58,7 +58,13 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       title.contains('POIN') ||
       title.contains('KKN');
 
-  return isMahasiswaTopic;
+  if (!isMahasiswaTopic) return false;
+
+  // Hapus seed notifikasi palsu / dummy lama
+  if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) {
+    return false;
+  }
+  return true;
 }
 
 /// Provider khusus daftar notifikasi Mahasiswa KKN

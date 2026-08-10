@@ -50,7 +50,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto surat/bukti izin wajib diunggah!'),
           backgroundColor: AppColors.dangerRed,
@@ -86,7 +86,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       if (errMsg.contains('404') || errMsg.contains('network') || errMsg.contains('connection')) {
         setState(() => _isSuccess = true);
       } else {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengirim: $e'),
             backgroundColor: AppColors.dangerRed,

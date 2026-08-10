@@ -34,7 +34,7 @@ class PetugasResiduView extends ConsumerWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
             ),
             Text(
-              'Wilayah Tugas: ${user?.rw.isNotEmpty == true ? "RT ${user!.rw}" : (dashboard?.assignedZone ?? "RW 02")}',
+              'Wilayah Tugas: ${user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : (dashboard?.assignedZone ?? "RW 02")}',
               style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
@@ -54,14 +54,6 @@ class PetugasResiduView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── 1. Guard Whitelist State UI Jika PENDING/REJECTED ─────────────────
-              if (!isApproved) ...[
-                PetugasWhitelistGuardWidget(
-                  statusText: dashboard?.whitelistStatus.name ?? 'PENDING',
-                  onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
-                ),
-              ],
-
               // ── 2. Time Window Banner Indicator ───────────────────────────
               _buildTimeWindowBanner(context, state.isPickupWindowActive),
 

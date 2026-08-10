@@ -37,29 +37,30 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _kecamatanController = TextEditingController();
   final _dplNameController = TextEditingController();
   String _selectedJenjang = 'S1';
-  String _selectedKelurahan = 'Dago';
-  String _selectedRtRw = '01/02';
+  String? _selectedKelurahan;
+  String? _selectedRw;
   DateTime? _tglMulaiKKN;
   DateTime? _tglSelesaiKKN;
+  final Map<String, List<String>> _rwByKelurahan = {};
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
   final List<String> _kelurahanList = [];
-  final List<String> _rtRwList = [];
+  final List<String> _kecamatanList = [];
 
-  List<String> get _availableRtList {
-    if (_rtRwList.isEmpty) return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
-    final rts = _rtRwList.map((e) => e.split('/')[0].trim()).toSet().toList()..sort();
-    return rts;
-  }
+
 
   List<String> get _availableRwList {
-    if (_rtRwList.isEmpty) return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
-    final rws = _rtRwList
-        .map((e) => e.split('/').length > 1 ? e.split('/')[1].trim() : '01')
-        .toSet()
-        .toList()
-      ..sort();
-    return rws;
+    if (_selectedKelurahan == null) return [];
+    if (_rwByKelurahan.containsKey(_selectedKelurahan) && _rwByKelurahan[_selectedKelurahan!]!.isNotEmpty) {
+      final rws = _rwByKelurahan[_selectedKelurahan!]!.toSet().toList();
+      rws.sort((a, b) {
+        int ia = int.tryParse(a) ?? 0;
+        int ib = int.tryParse(b) ?? 0;
+        return ia.compareTo(ib);
+      });
+      return rws;
+    }
+    return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
   }
 
   String _selectedRole = 'Warga';
@@ -118,27 +119,37 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       final repo = ref.read(authRepositoryProvider);
       final res = await repo.fetchTerritories();
       final kelsRaw = (res['kelurahans'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
-      final rtsRaw = (res['rtRws'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
+      final kecsRaw = (res['kecamatans'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
 
       if (mounted) {
         setState(() {
+          _kecamatanList.clear();
+          _kecamatanList.addAll(kecsRaw);
           _kelurahanList.clear();
-          _kelurahanList.addAll(kelsRaw.isNotEmpty ? kelsRaw : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot']);
-          if (_kelurahanList.isNotEmpty && !_kelurahanList.contains(_selectedKelurahan)) {
-            _selectedKelurahan = _kelurahanList.first;
-          }
+          _kelurahanList.addAll(kelsRaw);
 
-          _rtRwList.clear();
-          _rtRwList.addAll(rtsRaw.isNotEmpty ? rtsRaw : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04']);
+          _rwByKelurahan.clear();
+          final rawRtRw = res['rawRtRw'] as List<dynamic>? ?? [];
+          for (final item in rawRtRw) {
+             if (item is Map<String, dynamic>) {
+                 final kelName = _cleanTerritoryName(item['kelurahan']);
+                 final rwName = _cleanTerritoryName(item['name']);
+                 if (kelName.isNotEmpty && rwName.isNotEmpty) {
+                     if (!_rwByKelurahan.containsKey(kelName)) {
+                         _rwByKelurahan[kelName] = [];
+                     }
+                     String cleanRw = rwName.replaceAll(RegExp(r'[^\d]'), '');
+                     if (cleanRw.isEmpty) cleanRw = rwName;
+                     if (!_rwByKelurahan[kelName]!.contains(cleanRw)) {
+                         _rwByKelurahan[kelName]!.add(cleanRw);
+                     }
+                 }
+             }
+          }
         });
       }
     } catch (_) {
-      if (mounted && _kelurahanList.isEmpty) {
-        setState(() {
-          _kelurahanList.addAll(['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa']);
-          _rtRwList.addAll(['01/01', '01/02', '02/02', '01/03', '02/03']);
-        });
-      }
+      // Tidak menggunakan fallback dummy
     }
   }
 
@@ -197,6 +208,17 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
 
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedRole == 'Warga' || _selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
+      if (_selectedKelurahan == null) {
+        _showToast('Kelurahan wajib dipilih');
+        return;
+      }
+      if (_selectedRw == null) {
+        _showToast('RW wajib dipilih');
+        return;
+      }
+    }
+
     if (_selectedRole == 'Mahasiswa') {
       if (_tglMulaiKKN == null) {
         _showToast('Tanggal mulai KKN wajib diisi');
@@ -225,8 +247,9 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
 
     if (_selectedRole == 'Warga') {
       data['address'] = InputSanitizer.sanitize(_alamatController.text);
-      data['rw'] = _selectedRtRw;
-      data['kelurahan'] = _selectedKelurahan;
+      data['rw'] = _selectedRw ?? '';
+      data['kelurahan'] = _selectedKelurahan ?? '';
+      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = InputSanitizer.sanitize(_nimController.text);
       data['fakultas'] = InputSanitizer.sanitize(_fakultasController.text);
@@ -236,14 +259,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['jenjang'] = _selectedJenjang;
       data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
       data['dplName'] = InputSanitizer.sanitize(_dplNameController.text);
-      data['rw'] = _selectedRtRw;
-      data['kelurahan'] = _selectedKelurahan;
+      data['rw'] = _selectedRw ?? '';
+      data['kelurahan'] = _selectedKelurahan ?? '';
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
-      data['rw'] = _selectedRtRw;
-      data['kelurahan'] = _selectedKelurahan;
-      data['assignedZone'] = _selectedKelurahan;
+      data['rw'] = _selectedRw ?? '';
+      data['kelurahan'] = _selectedKelurahan ?? '';
+      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
+      data['assignedZone'] = _selectedKelurahan ?? '';
     }
 
     ref.read(authProvider.notifier).clearError();
@@ -532,73 +556,55 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   labelText: 'Kecamatan',
                                   hintText: 'Pilih Kecamatan',
                                   prefixIcon: Icons.map_rounded,
-                                  value: _kecamatanController.text.isNotEmpty ? _kecamatanController.text : 'Coblong',
-                                  items: const [
-                                    DropdownItem(value: 'Coblong', label: 'Kecamatan Coblong', subtitle: 'Kota Bandung'),
-                                  ],
+                                  value: _kecamatanController.text.isNotEmpty ? _kecamatanController.text : null,
+                                  items: _kecamatanList.map((k) => DropdownItem(value: k, label: 'Kecamatan $k')).toList(),
                                   onChanged: (val) {
-                                    if (val != null) setState(() => _kecamatanController.text = val);
+                                    if (val != null && val != _kecamatanController.text) {
+                                      setState(() {
+                                        _kecamatanController.text = val;
+                                        _selectedKelurahan = null;
+                                        _selectedRw = null;
+                                      });
+                                    }
                                   },
                                 ),
                                 const SizedBox(height: 16),
                                 SearchableDropdownField<String>(
                                   labelText: _selectedRole == 'Mahasiswa' ? 'Kelurahan Dampingan' : 'Kelurahan',
-                                  hintText: 'Pilih Kelurahan',
+                                  hintText: _kecamatanController.text.isEmpty ? 'Pilih Kecamatan dulu' : 'Pilih Kelurahan',
                                   prefixIcon: Icons.map_outlined,
+                                  enabled: _kecamatanController.text.isNotEmpty,
                                   value: _selectedKelurahan,
                                   items: _kelurahanList
                                       .map((k) => DropdownItem(value: k, label: 'Kel. $k'))
                                       .toList(),
                                   onChanged: (val) {
-                                    if (val != null) setState(() => _selectedKelurahan = val);
+                                    if (val != null && val != _selectedKelurahan) {
+                                      setState(() {
+                                        _selectedKelurahan = val;
+                                        _selectedRw = null;
+                                      });
+                                    }
                                   },
                                 ),
                                  const SizedBox(height: 16),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: SearchableDropdownField<String>(
-                                          labelText: 'RT',
-                                          hintText: 'Pilih RT',
-                                          prefixIcon: Icons.home_outlined,
-                                          value: _selectedRtRw.split('/')[0],
-                                          items: _availableRtList
-                                              .map((rt) => DropdownItem(
-                                                    value: rt,
-                                                    label: 'RT $rt',
-                                                  ))
-                                              .toList(),
-                                          onChanged: (val) {
-                                            if (val != null) {
-                                              final currentRw = _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02';
-                                              setState(() => _selectedRtRw = '$val/$currentRw');
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: SearchableDropdownField<String>(
-                                          labelText: 'RW',
-                                          hintText: 'Pilih RW',
-                                          prefixIcon: Icons.location_city_rounded,
-                                          value: _selectedRtRw.split('/').length > 1 ? _selectedRtRw.split('/')[1] : '02',
-                                          items: _availableRwList
-                                              .map((rw) => DropdownItem(
-                                                    value: rw,
-                                                    label: 'RW $rw',
-                                                  ))
-                                              .toList(),
-                                          onChanged: (val) {
-                                            if (val != null) {
-                                              final currentRt = _selectedRtRw.split('/')[0];
-                                              setState(() => _selectedRtRw = '$currentRt/$val');
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
+                                  SearchableDropdownField<String>(
+                                    labelText: 'RW',
+                                    hintText: _selectedKelurahan == null ? 'Pilih Kelurahan dulu' : 'Pilih RW',
+                                    prefixIcon: Icons.location_city_rounded,
+                                    enabled: _selectedKelurahan != null,
+                                    value: _selectedRw,
+                                    items: _availableRwList
+                                        .map((rw) => DropdownItem(
+                                              value: rw,
+                                              label: 'RW $rw',
+                                            ))
+                                        .toList(),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => _selectedRw = val);
+                                      }
+                                    },
                                   ),
                                  const SizedBox(height: 16),
                               ],
@@ -814,7 +820,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 obscureText: _obscurePassword,
                                 textInputAction: TextInputAction.next,
                                 decoration: InputDecoration(
-                                  hintText: 'Minimal 6 karakter...',
+                                  hintText: 'Minimal 8 karakter...',
                                   prefixIcon: const Icon(
                                     Icons.lock_outline_rounded,
                                     color: AppColors.textSecondary,
@@ -837,8 +843,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   if (v == null || v.isEmpty) {
                                     return 'Kata sandi wajib diisi';
                                   }
-                                  if (v.length < 6) {
-                                    return 'Kata sandi minimal 6 karakter';
+                                  if (v.length < 8) {
+                                    return 'Kata sandi minimal 8 karakter';
                                   }
                                   return null;
                                 },

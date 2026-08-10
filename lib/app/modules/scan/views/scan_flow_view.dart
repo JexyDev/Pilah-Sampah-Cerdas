@@ -94,9 +94,17 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           _gpsLoading = false;
         });
       }
-    } catch (_) {
-      // GPS timeout atau error — lanjut tanpa koordinat
-      if (mounted) setState(() => _gpsLoading = false);
+    } catch (e) {
+      // Tolak silent bypass, beritahu user bahwa GPS gagal
+      if (mounted) {
+        setState(() => _gpsLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal mendapatkan lokasi GPS. Pastikan GPS aktif.'),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+      }
     }
   }
 
@@ -124,8 +132,6 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         });
       }
       // ─── AUTO-REFRESH setelah transaksi berhasil (step 2→3) ─────────────
-      // Invalidate semua provider terkait agar data langsung segar di semua
-      // layar (Beranda, Riwayat, Poin) tanpa user harus pull-to-refresh manual.
       if ((prev?.currentStep ?? 0) < 3 &&
           next.currentStep == 3 &&
           next.scanResult != null) {
@@ -422,7 +428,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Gagal membuka galeri: $e')),
                           );
                         }
@@ -505,7 +511,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -544,12 +550,22 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
                   
+                  if (_userLat == null || _userLng == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lokasi GPS belum ditemukan. Harap tunggu atau aktifkan GPS.'),
+                        backgroundColor: AppColors.dangerRed,
+                      ),
+                    );
+                    return false;
+                  }
+
                   ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _userLat ?? 0.0,
-                        userLng: _userLng ?? 0.0,
+                        userLat: _userLat!,
+                        userLng: _userLng!,
                       );
                   return true;
                 },
@@ -984,7 +1000,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       if (state.currentStep == 2 || state.aiResult != null) {
         _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tempat sampah.', isQrError: true);
       } else {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage ?? 'Terjadi kesalahan.'),
             backgroundColor: AppColors.dangerRed,
@@ -1283,7 +1299,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         isCorrect ? 'Pemilahan Benar' : 'Pemilahan Kurang Benar',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
                         ),
                       ),
@@ -1302,7 +1318,7 @@ class _AiSuccessSheet extends StatelessWidget {
                       'Estimasi Poin:',
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -1713,7 +1729,7 @@ class _OverflowDialog extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onScanLain,
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                label: const Text('Scan QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text('Scan QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1727,7 +1743,7 @@ class _OverflowDialog extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onAjukanReset,
                 icon: const Icon(Icons.cleaning_services_rounded, size: 18, color: AppColors.primaryGreen),
-                label: const Text('Ajukan Pengosongan Tong', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                label: const Text('Ajukan Pengosongan Tong', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primaryGreen),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
