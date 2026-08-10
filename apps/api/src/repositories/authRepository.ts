@@ -51,6 +51,8 @@ export class AuthRepository {
             { phone: formatted },
             { phone: raw },
             { phone: alt },
+            { studentProfile: { nim: raw } },
+            { studentProfile: { nim: alt } },
           ],
         },
         include: { role: true },

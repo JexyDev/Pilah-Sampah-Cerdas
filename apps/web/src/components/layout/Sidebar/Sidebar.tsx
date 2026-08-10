@@ -238,7 +238,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             { to: "/master-wilayah?tab=kecamatan", label: "Kecamatan" },
             { to: "/master-wilayah?tab=kelurahan", label: "Kelurahan" },
             { to: "/master-wilayah?tab=rw", label: "Rukun Warga (RW)" },
-            { to: "/master-wilayah?tab=rt", label: "Rukun Tetangga (RT)" },
           ],
         },
         { to: "/pengguna-online", icon: Globe, label: "Pengguna Online (Live)", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },

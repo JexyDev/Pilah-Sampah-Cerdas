@@ -64,6 +64,10 @@ function isPhoneValid(val: string): boolean {
   if (t.startsWith("4127") || t.includes(".")) {
     return true;
   }
+  // Allow NIM
+  if (/^\d{6,12}$/.test(t)) {
+    return true;
+  }
   return PHONE_REGEX.test(normalizePhone(val));
 }
 

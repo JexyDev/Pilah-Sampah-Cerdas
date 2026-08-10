@@ -25,7 +25,7 @@ function normalizePhone(phone: string): string {
 
 // Validation Schemas
 const loginSchema = z.object({
-  phone: z.string().min(1, "Nomor HP diperlukan"),
+  phone: z.string().min(1, "Nomor HP atau NIM diperlukan"),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
@@ -110,7 +110,7 @@ export class AuthController {
         res.status(400).json({
           success: false,
           code: "VALIDATION_ERROR",
-          message: "Format nomor HP atau password tidak valid",
+          message: "Format nomor HP/NIM atau password tidak valid",
           fields: parsed.error.format(),
         });
         return;
