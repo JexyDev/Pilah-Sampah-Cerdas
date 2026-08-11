@@ -77,7 +77,7 @@ async function main() {
     dplIdx++;
     // Format phone cleanly (+6281300000001 to +6281300000033)
     const phone = `+6281300000${String(dplIdx).padStart(3, '0')}`;
-    const jenjang = prodi.startsWith('D3') ? 'D3' : prodi.startsWith('D4') ? 'D4' : (nama.includes('Dr.') || nama.includes('Ph.D') || nama.includes('Prof.')) ? 'S3' : 'S2';
+    const jenjang = prodi.startsWith('D3') ? 'D3' : prodi.startsWith('D4') ? 'D4' : prodi.startsWith('S3') ? 'S3' : prodi.startsWith('S2') ? 'S2' : 'S1';
 
     const existingUser = await prisma.user.findFirst({
       where: {
