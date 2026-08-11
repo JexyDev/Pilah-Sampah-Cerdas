@@ -155,8 +155,8 @@ async function main() {
       });
 
       if (matchedDpl) {
-        // Search KknGroup by name and kelurahan
-        const kknGroups = await prisma.kknGroup.findMany();
+        // Search KelompokKkn by name and kelurahan
+        const kknGroups = await prisma.kelompokKkn.findMany();
         const matchedGroup = kknGroups.find(g => {
           const gName = g.name.toLowerCase();
           const kName = kelName.toLowerCase();
@@ -165,7 +165,7 @@ async function main() {
         });
 
         if (matchedGroup) {
-          await prisma.kknGroup.update({
+          await prisma.kelompokKkn.update({
             where: { id: matchedGroup.id },
             data: { dplId: matchedDpl.id }
           });
