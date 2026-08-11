@@ -20,7 +20,7 @@ export class AuthService {
         if (!user) {
             throw new Error("USER_NOT_FOUND");
         }
-        if (user.status !== "Aktif" && user.status !== "ACTIVE") {
+        if (user.status && user.status !== "Aktif" && user.status !== "ACTIVE") {
             if (user.status === "PENDING_APPROVAL" ||
                 user.status === "Pending" ||
                 user.status === "DIPEGANG_MAHASISWA") {
@@ -32,10 +32,11 @@ export class AuthService {
         if (!isPasswordValid) {
             throw new Error("WRONG_PASSWORD");
         }
+        const userRoleName = user.role?.name || "WARGA";
         // Prepare payload
         const payload = {
             userId: user.id,
-            role: user.role.name,
+            role: userRoleName,
             rwId: user.rwId ?? undefined,
         };
         // Generate tokens
@@ -49,7 +50,7 @@ export class AuthService {
             user: {
                 id: user.id,
                 name: user.name,
-                role: user.role.name,
+                role: userRoleName,
                 phone: user.phone,
                 address: user.address,
                 fotoProfil: user.fotoProfil,

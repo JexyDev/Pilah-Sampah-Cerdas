@@ -26,7 +26,7 @@ export class AuthService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (user.status !== "Aktif" && user.status !== "ACTIVE") {
+    if (user.status && user.status !== "Aktif" && user.status !== "ACTIVE") {
       if (
         user.status === "PENDING_APPROVAL" ||
         user.status === "Pending" ||
@@ -42,10 +42,12 @@ export class AuthService {
       throw new Error("WRONG_PASSWORD");
     }
 
+    const userRoleName = user.role?.name || "WARGA";
+
     // Prepare payload
     const payload = {
       userId: user.id,
-      role: user.role.name,
+      role: userRoleName,
       rwId: user.rwId ?? undefined,
     };
 
@@ -62,7 +64,7 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        role: user.role.name,
+        role: userRoleName,
         phone: user.phone,
         address: user.address,
         fotoProfil: user.fotoProfil,
