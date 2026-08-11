@@ -587,8 +587,9 @@ const ManajemenPengguna: React.FC = () => {
 
   // Helper function for cleaning redundant degree prefix from Program Studi name
   const cleanProdiName = (prodi?: string) => {
-    if (!prodi) return "-";
-    return prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
+    if (!prodi || prodi.trim() === "" || prodi.trim() === "-") return "-";
+    const cleaned = prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
+    return cleaned.length > 0 ? cleaned : prodi;
   };
 
   // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges

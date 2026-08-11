@@ -42,7 +42,29 @@ async function main() {
   const dplRawRows: any[] = XLSX.utils.sheet_to_json(dplSheet, { header: 1, defval: '' });
 
   console.log(`\n📌 Reading DPL Sheet: "${dplSheetName}"...`);
+  
+  // 1. Collect valid DPL names from Excel
+  const validDplNames = new Set<string>();
+  for (let r = 2; r < dplRawRows.length; r++) {
+    const row = dplRawRows[r];
+    const nama = row[1] ? String(row[1]).trim() : '';
+    if (nama && !nama.toLowerCase().includes('nama')) {
+      validDplNames.add(nama);
+    }
+  }
+
+  // 2. Delete any dummy DPL users not present in the real Excel list
+  const existingDpls = await prisma.user.findMany({ where: { role: { name: 'DPL' } } });
+  for (const dummy of existingDpls) {
+    if (!validDplNames.has(dummy.name)) {
+      console.log(`🧹 Removing dummy DPL: "${dummy.name}"`);
+      await prisma.user.delete({ where: { id: dummy.id } }).catch(() => {});
+    }
+  }
+
+  // 3. Upsert real 33 DPLs
   let dplCount = 0;
+  let dplIdx = 0;
 
   for (let r = 2; r < dplRawRows.length; r++) {
     const row = dplRawRows[r];
@@ -52,16 +74,17 @@ async function main() {
 
     if (!nama || nama.toLowerCase().includes('nama')) continue;
 
-    // Determine phone number deterministically based on index r
-    const phone = `+62813${String(r).padStart(8, '0')}`;
+    dplIdx++;
+    // Format phone cleanly (+6281300000001 to +6281300000033)
+    const phone = `+6281300000${String(dplIdx).padStart(3, '0')}`;
     const jenjang = prodi.startsWith('D3') ? 'D3' : prodi.startsWith('D4') ? 'D4' : (nama.includes('Dr.') || nama.includes('Ph.D') || nama.includes('Prof.')) ? 'S3' : 'S2';
 
-    // Upsert User
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
           { name: nama },
-          { nip: nip && nip.length > 3 ? nip : undefined }
+          { nip: nip && nip.length > 3 ? nip : undefined },
+          { phone: phone }
         ]
       }
     });
@@ -71,8 +94,9 @@ async function main() {
         where: { id: existingUser.id },
         data: {
           name: nama,
-          nip: nip || `4127.34.02.${String(r).padStart(3, '0')}`,
-          programStudi: prodi || 'S1 Teknik Informatika',
+          phone,
+          nip: nip || `4127.34.02.${String(dplIdx).padStart(3, '0')}`,
+          programStudi: prodi || 'S1 Manajemen',
           jenjangPendidikan: jenjang,
           roleId: roleMap['DPL'],
           status: 'Aktif'
@@ -86,8 +110,8 @@ async function main() {
           password: hashedPassword,
           roleId: roleMap['DPL'],
           status: 'Aktif',
-          nip: nip || `4127.34.02.${String(r).padStart(3, '0')}`,
-          programStudi: prodi || 'S1 Teknik Informatika',
+          nip: nip || `4127.34.02.${String(dplIdx).padStart(3, '0')}`,
+          programStudi: prodi || 'S1 Manajemen',
           jenjangPendidikan: jenjang,
           address: 'Universitas Komputer Indonesia, Jl. Dipati Ukur No.112-116, Bandung'
         }
