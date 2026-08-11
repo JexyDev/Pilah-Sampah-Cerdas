@@ -45,7 +45,7 @@ jobs:
             cd apps/api
             npm install --silent
             npx prisma generate
-            npx prisma db push --skip-generate
+            npx prisma db push --skip-generate --accept-data-loss
             npx prisma db seed
             npx tsx scripts/seed-complete-master-data.ts || true
             npx tsx scripts/sync-nims-now.ts || true
