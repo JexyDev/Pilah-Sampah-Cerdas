@@ -22,11 +22,11 @@ export const userController = {
             res.status(200).json({ success: true, data: mapped });
         }
         catch (error) {
-            console.error("[UserController] getAll error:", error);
+            console.error("[UserController] getAll uncaught error STACK:", error?.stack || error);
             res.status(500).json({
                 success: false,
                 error: "INTERNAL_SERVER_ERROR",
-                message: "Gagal memuat data pengguna",
+                message: error?.message ? `Gagal memuat data pengguna: ${error.message}` : "Gagal memuat data pengguna",
             });
         }
     },
@@ -86,7 +86,7 @@ export const userController = {
                 res.status(403).json({
                     success: false,
                     error: "FORBIDDEN",
-                    message: "Hanya SUPER USER yang dapat membuat akun Admin DLH, Camat, atau Lurah",
+                    message: "Hanya Admin yang dapat membuat akun Admin DLH, Camat, atau Lurah",
                 });
             }
             else if (error.message === "ROLE_NOT_FOUND") {
@@ -128,7 +128,7 @@ export const userController = {
                 res.status(403).json({
                     success: false,
                     error: "FORBIDDEN",
-                    message: "Hanya SUPER USER yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
+                    message: "Hanya Admin yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
                 });
             }
             else if (error.message === "USER_NOT_FOUND") {

@@ -23,7 +23,7 @@ function normalizePhone(phone) {
 }
 // Validation Schemas
 const loginSchema = z.object({
-    phone: z.string().min(1, "Nomor HP diperlukan"),
+    phone: z.string().min(1, "Nomor HP atau NIM diperlukan"),
     password: z.string().min(6, "Password minimal 6 karakter"),
 });
 const refreshSchema = z.object({
@@ -99,7 +99,7 @@ export class AuthController {
                 res.status(400).json({
                     success: false,
                     code: "VALIDATION_ERROR",
-                    message: "Format nomor HP atau password tidak valid",
+                    message: "Format nomor HP/NIM atau password tidak valid",
                     fields: parsed.error.format(),
                 });
                 return;
@@ -136,28 +136,28 @@ export class AuthController {
                     message: "Server sedang bermasalah, coba lagi nanti",
                 });
             }
-            else if (error.message === "USER_NOT_FOUND") {
+            else if (error.message === "USER_NOT_FOUND" || error.message?.includes("USER_NOT_FOUND")) {
                 res.status(401).json({
                     success: false,
                     code: "USER_NOT_FOUND",
-                    message: "User tidak ditemukan",
+                    message: "Nomor HP atau NIM tidak terdaftar di sistem TrashCare",
                 });
             }
-            else if (error.message === "WRONG_PASSWORD") {
+            else if (error.message === "WRONG_PASSWORD" || error.message?.includes("WRONG_PASSWORD")) {
                 res.status(401).json({
                     success: false,
                     code: "WRONG_PASSWORD",
-                    message: "Password salah",
+                    message: "Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'.",
                 });
             }
-            else if (error.message === "USER_PENDING_APPROVAL") {
+            else if (error.message === "USER_PENDING_APPROVAL" || error.message?.includes("USER_PENDING_APPROVAL")) {
                 res.status(401).json({
                     success: false,
                     code: "USER_PENDING_APPROVAL",
                     message: "Akun Anda belum disetujui oleh pengurus RW setempat. Silakan hubungi pengurus RW untuk proses verifikasi & aktivasi.",
                 });
             }
-            else if (error.message === "USER_INACTIVE") {
+            else if (error.message === "USER_INACTIVE" || error.message?.includes("USER_INACTIVE")) {
                 res.status(403).json({
                     success: false,
                     code: "USER_INACTIVE",
@@ -769,9 +769,9 @@ export class AuthController {
     }
     async resetPassword(req, res) {
         try {
-            const { phone, email, token, otp, newPassword } = req.body;
+            const { phone, email, token, otp, resetToken, newPassword } = req.body;
             const target = phone || email;
-            const verificationCode = otp || token;
+            const verificationCode = resetToken || otp || token;
             if (!target || !newPassword) {
                 res.status(400).json({
                     success: false,

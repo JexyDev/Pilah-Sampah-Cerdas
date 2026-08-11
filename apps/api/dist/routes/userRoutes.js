@@ -28,6 +28,7 @@ const router = Router();
  *         description: List of all users
  */
 router.get("/", authMiddleware, roleMiddleware([
+    "DEVELOPER",
     "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",

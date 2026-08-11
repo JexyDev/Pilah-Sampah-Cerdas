@@ -51,8 +51,18 @@ router.post("/clear-cache", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN
  */
 router.get("/audit-trail", authMiddleware, roleMiddleware(["SUPER_USER"]), systemController.getAuditTrails);
 /**
+ * Public Landing Page statistics (No auth required)
+ */
+router.get("/landing-stats", systemController.getLandingStats);
+/**
  * Social Feed management
  */
 router.post("/social-feed", authMiddleware, systemController.createSocialFeed);
 router.get("/social-feed", authMiddleware, systemController.getSocialFeed);
+/**
+ * APK Mobile Release endpoints
+ */
+router.post("/publish-release", authMiddleware, roleMiddleware(["SUPER_USER"]), systemController.publishRelease);
+router.get("/latest-release", systemController.getLatestRelease);
+router.get("/download-apk", systemController.downloadApk);
 export default router;

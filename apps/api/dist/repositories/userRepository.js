@@ -17,6 +17,14 @@ export class UserRepository {
                         kelurahan: {
                             include: { kecamatan: true },
                         },
+                        petugasResidu: {
+                            select: {
+                                id: true,
+                                name: true,
+                                fotoProfil: true,
+                                phone: true,
+                            },
+                        },
                     },
                 },
                 rt: {
@@ -69,11 +77,21 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
+                                        nip: true,
+                                        programStudi: true,
                                         phone: true,
+                                        fotoProfil: true,
                                     },
                                 },
                             },
                         },
+                    },
+                },
+                dplKelompok: {
+                    select: {
+                        id: true,
+                        name: true,
+                        kelurahan: true,
                     },
                 },
                 petugasProfile: true,
@@ -102,6 +120,10 @@ export class UserRepository {
     }
     async findRoleByName(name) {
         const normalizedMap = {
+            "Developer": "DEVELOPER",
+            "DEVELOPER": "DEVELOPER",
+            "Admin": "SUPER_USER",
+            "ADMIN": "SUPER_USER",
             "Super User": "SUPER_USER",
             "SUPER USER": "SUPER_USER",
             "Dinas Lingkungan Hidup": "ADMIN_DLH",

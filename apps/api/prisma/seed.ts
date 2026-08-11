@@ -184,6 +184,7 @@ async function main() {
   // 7. ROLES
   // ─────────────────────────────────────────────
   const roles = [
+    "DEVELOPER",
     "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
@@ -235,6 +236,7 @@ async function main() {
   ];
 
   const defaultPermissions: Record<string, Record<string, boolean[]>> = {
+    DEVELOPER: Object.fromEntries(resources.map((r) => [r, [true, true, true, true]])),
     SUPER_USER: Object.fromEntries(resources.map((r) => [r, [true, true, true, true]])),
     ADMIN_DLH: {
       dashboard_utama: [true, false, false, false],
@@ -316,8 +318,9 @@ async function main() {
   // 9. TEST USERS FOR ALL ROLES
   // ─────────────────────────────────────────────
   const testUsersConfig = [
-    { roleName: "SUPER_USER", phone: "+6281000000001", pass: "superUser123!", name: "Super User" },
-    { roleName: "SUPER_USER", phone: "+628111111111", pass: "password123", name: "Super User Test" },
+    { roleName: "DEVELOPER", phone: "+6281000000000", pass: "password123", name: "Developer" },
+    { roleName: "SUPER_USER", phone: "+6281000000001", pass: "superUser123!", name: "Admin" },
+    { roleName: "SUPER_USER", phone: "+628111111111", pass: "password123", name: "Admin Test" },
     { roleName: "ADMIN_DLH", phone: "+628111111112", pass: "password123", name: "Darto, A.P., M.M." },
     { roleName: "CAMAT", phone: "+628111111113", pass: "password123", name: "Ratna Rahayu Pitriyati, S.STP., M.Si." },
     { roleName: "LURAH", phone: "+628111111114", pass: "password123", name: "Jusni Giri Susilowati, S.Sos., M.Si." },

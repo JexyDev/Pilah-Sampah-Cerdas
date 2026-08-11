@@ -10,6 +10,54 @@ import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+function formatTitleCaseName(name) {
+    if (!name)
+        return "";
+    const degrees = {
+        "s.kom.": "S.Kom.", "s.kom": "S.Kom.",
+        "m.kom.": "M.Kom.", "m.kom": "M.Kom.",
+        "m.eng.": "M.Eng.", "m.eng": "M.Eng.",
+        "s.e.": "S.E.", "s.e": "S.E.",
+        "m.si.": "M.Si.", "m.si": "M.Si.",
+        "s.t.": "S.T.", "s.t": "S.T.",
+        "m.t.": "M.T.", "m.t": "M.T.",
+        "s.ds.": "S.Ds.", "s.ds": "S.Ds.",
+        "m.ds.": "M.Ds.", "m.ds": "M.Ds.",
+        "s.h.": "S.H.", "s.h": "S.H.",
+        "m.h.": "M.H.", "m.h": "M.H.",
+        "s.si.": "S.Si.", "s.si": "S.Si.",
+        "s.pd.": "S.Pd.", "s.pd": "S.Pd.",
+        "m.pd.": "M.Pd.", "m.pd": "M.Pd.",
+        "s.ip.": "S.IP.", "s.ip": "S.IP.",
+        "m.i.pol.": "M.I.Pol.", "m.i.pol": "M.I.Pol.",
+        "m.i.kom.": "M.I.Kom.", "m.i.kom": "M.I.Kom.",
+        "s.sos.": "S.Sos.", "s.sos": "S.Sos.",
+        "s.stp.": "S.STP.", "s.stp": "S.STP.",
+        "m.ap.": "M.AP.", "m.ap": "M.AP.",
+        "a.ks.": "A.KS.", "a.ks": "A.KS.",
+        "ph.d.": "Ph.D.", "ph.d": "Ph.D.",
+        "cima": "CIMA", "cdmp": "CDMP", "csba": "CSBA",
+        "dr.": "Dr.", "dr": "Dr.", "dra.": "Dra.", "dra": "Dra.",
+        "prof.": "Prof.", "prof": "Prof.",
+        "assoc.": "Assoc.", "assoc": "Assoc.",
+        "h.": "H.", "hj.": "Hj.", "ak.": "Ak.", "ca.": "CA.",
+        "s.s.": "S.S.", "m.hum": "M.Hum.", "m.hum.": "M.Hum."
+    };
+    return name
+        .split(" ")
+        .map((word) => {
+        if (!word)
+            return "";
+        const wLower = word.toLowerCase();
+        if (degrees[wLower])
+            return degrees[wLower];
+        return word
+            .split(/([\s\-'\.])/)
+            .map(p => [" ", "-", "'", "."].includes(p) ? p : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+            .join("");
+    })
+        .join(" ");
+}
 export class UserService {
     async getAllUsers(filters, currentUser) {
         const { search, roleName, status, rw, rt } = filters;
@@ -54,6 +102,31 @@ export class UserService {
             ];
         }
         const users = await userRepository.findMany(whereClause);
+        let petugasResiduRaw = users.filter((u) => u.role?.name === "PETUGAS_RESIDU");
+        if (petugasResiduRaw.length === 0) {
+            petugasResiduRaw = await userRepository.findMany({ role: { name: "PETUGAS_RESIDU" } });
+        }
+        const petugasResiduUsers = petugasResiduRaw.map((p) => ({
+            id: p.id,
+            name: formatTitleCaseName(p.name),
+            fotoProfil: p.fotoProfil || null,
+            phone: p.phone,
+            address: p.address || "",
+            kelurahan: p.rw?.kelurahan?.name || "",
+            rw: p.rw?.name || "",
+        }));
+        const nipKelompokMap = {};
+        users.forEach((u) => {
+            if (u.nip && Array.isArray(u.dplKelompok) && u.dplKelompok.length > 0) {
+                if (!nipKelompokMap[u.nip])
+                    nipKelompokMap[u.nip] = [];
+                u.dplKelompok.forEach((k) => {
+                    if (!nipKelompokMap[u.nip].some((item) => item.id === k.id)) {
+                        nipKelompokMap[u.nip].push(k);
+                    }
+                });
+            }
+        });
         let mapped = users.map((u) => {
             let wilayah = "-";
             if (u.rw) {
@@ -70,7 +143,7 @@ export class UserService {
                     totalSetoranKg += Number(s.berat);
                 });
             }
-            const totalPoin = u.pointHistory.reduce((sum, p) => sum + p.points, 0);
+            const totalPoin = Array.isArray(u.pointHistory) ? u.pointHistory.reduce((sum, p) => sum + (p.points || 0), 0) : 0;
             let pendampingKkn = null;
             if (u.bins && u.bins.length > 0) {
                 const boundBin = u.bins.find((b) => b.registeredByStudent);
@@ -88,21 +161,34 @@ export class UserService {
             let rwName = rwObj?.name || "-";
             let rtName = u.rt?.name || "-";
             if (u.role?.name === "CAMAT") {
-                kecamatanName = "Kec. Coblong";
+                kecamatanName = "Kecamatan Coblong";
                 if (kelurahanName === "-")
-                    kelurahanName = "Semua Kelurahan";
+                    kelurahanName = "Dago, Lebak Gede, Lebak Siliwangi, Sadang Serang, Sekeloa, Cipaganti";
             }
             else if (u.role?.name === "ADMIN_DLH" || u.role?.name === "SUPER_USER") {
-                kecamatanName = "Kec. Coblong";
+                kecamatanName = "Kecamatan Coblong";
                 if (kelurahanName === "-")
-                    kelurahanName = "Seluruh Kota";
+                    kelurahanName = "Kota Bandung";
             }
             if (kelurahanName === "-" && u.address) {
-                const kelMatch = u.address.match(/(?:Kel\.?|Kelurahan)\s*([A-Za-z\s]+?)(?:,|$|\s+Kec|\s+RW)/i);
-                if (kelMatch && kelMatch[1]) {
-                    kelurahanName = kelMatch[1].trim();
-                    kecamatanName = "Kec. Coblong";
+                const knownKels = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+                for (const k of knownKels) {
+                    if (u.address.toLowerCase().includes(k.toLowerCase())) {
+                        kelurahanName = k;
+                        kecamatanName = "Kecamatan Coblong";
+                        break;
+                    }
                 }
+                if (kelurahanName === "-") {
+                    const kelMatch = u.address.match(/(?:Kel\.?|Kelurahan)\s*([A-Za-z\s]+?)(?:,|$|\s+Kec|\s+RW)/i);
+                    if (kelMatch && kelMatch[1]) {
+                        kelurahanName = kelMatch[1].trim();
+                        kecamatanName = "Kecamatan Coblong";
+                    }
+                }
+            }
+            if (kecamatanName === "-" || kecamatanName === "Kec. Coblong") {
+                kecamatanName = "Kecamatan Coblong";
             }
             if (rwName === "-" && u.address) {
                 const rwMatch = u.address.match(/RW\s*(\d+)/i);
@@ -133,15 +219,54 @@ export class UserService {
             }
             const activeBinsCount = (u.bins || []).filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE").length + (u.binOwnerships || []).filter((bo) => bo.status === "ACTIVE_BOUND" || bo.status === "ACTIVE").length;
             const binStatus = activeBinsCount > 0 ? "Sudah Teraktivasi" : "Belum Teraktivasi";
-            const wilayahParts = [rwName, kelurahanName, kecamatanName].filter((p) => p && p !== "-");
-            if (wilayahParts.length > 0) {
-                wilayah = wilayahParts.join(", ");
+            let userWilayah = u.address || "";
+            if (u.role?.name === "ADMIN_DLH") {
+                userWilayah = u.address || "Kota Bandung";
+            }
+            else if (u.role?.name === "CAMAT") {
+                userWilayah = u.address || "Kecamatan Coblong";
+            }
+            else if (u.role?.name === "MAHASISWA_KKN") {
+                if (!u.studentProfile?.kelompokId || !u.studentProfile?.kelompok) {
+                    userWilayah = "-";
+                }
+                else if (u.studentProfile.kelompok.wilayahPenugasan) {
+                    userWilayah = u.studentProfile.kelompok.wilayahPenugasan;
+                }
+                else if (u.studentProfile.kelompok.kelurahan) {
+                    userWilayah = `Kel. ${u.studentProfile.kelompok.kelurahan}`;
+                }
+            }
+            else if (!userWilayah) {
+                const wilayahParts = [rwName, kelurahanName, kecamatanName].filter((p) => p && p !== "-");
+                if (wilayahParts.length > 0) {
+                    userWilayah = wilayahParts.join(", ");
+                }
+            }
+            let assignedPetugasObj = null;
+            if (u.role?.name === "RW") {
+                // Use the actual DB relation from Rw.petugasResidu
+                if (u.rw?.petugasResidu) {
+                    assignedPetugasObj = {
+                        id: u.rw.petugasResidu.id,
+                        name: formatTitleCaseName(u.rw.petugasResidu.name),
+                        fotoProfil: u.rw.petugasResidu.fotoProfil || null,
+                        phone: u.rw.petugasResidu.phone,
+                    };
+                }
             }
             return {
                 id: u.id,
-                name: u.name,
+                name: formatTitleCaseName(u.name),
                 email: u.phone,
                 phone: u.phone,
+                nip: u.nip || null,
+                institusi: u.institusi || null,
+                jabatan: u.jabatan || null,
+                programStudi: u.programStudi || null,
+                jenjangPendidikan: u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan || null,
+                jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga || null,
+                fotoProfil: u.fotoProfil || null,
                 nim: u.studentProfile?.nim || null,
                 role: u.role.name,
                 status: u.status,
@@ -152,14 +277,24 @@ export class UserService {
                 kelurahan: kelurahanName,
                 rw: rwName,
                 rt: rtName,
-                wilayah,
+                wilayah: userWilayah,
                 setoran: parseFloat(totalSetoranKg.toFixed(1)),
                 totalPoin,
-                pendampingKkn,
-                createdAt: u.createdAt,
+                petugasResidu: assignedPetugasObj ? {
+                    id: assignedPetugasObj.id,
+                    name: assignedPetugasObj.name,
+                    fotoProfil: assignedPetugasObj.fotoProfil,
+                    phone: assignedPetugasObj.phone,
+                } : (u.petugasResidu || null),
+                dplKelompok: (u.dplKelompok && u.dplKelompok.length > 0)
+                    ? u.dplKelompok
+                    : (u.nip && nipKelompokMap[u.nip])
+                        ? nipKelompokMap[u.nip]
+                        : [],
                 studentProfile: u.studentProfile
                     ? {
                         nim: u.studentProfile.nim,
+                        jenjangPendidikan: u.studentProfile.jenjangPendidikan || null,
                         jurusan: u.studentProfile.jurusan,
                         fakultas: u.studentProfile.fakultas,
                         noWa: u.studentProfile.noWa,
@@ -176,6 +311,9 @@ export class UserService {
                                 cakupanRw: u.studentProfile.kelompok.cakupanRw,
                                 dplId: u.studentProfile.kelompok.dplId,
                                 dplName: u.studentProfile.kelompok.dpl?.name || u.studentProfile.kelompok.dplNamaMentah || null,
+                                dplFotoProfil: u.studentProfile.kelompok.dpl?.fotoProfil || null,
+                                dplNip: u.studentProfile.kelompok.dpl?.nip || null,
+                                dplProdi: u.studentProfile.kelompok.dpl?.programStudi || null,
                                 dplPhone: u.studentProfile.kelompok.dpl?.phone || null,
                                 wilayahPenugasan: u.studentProfile.kelompok.cakupanRw
                                     ? `${u.studentProfile.kelompok.cakupanRw}${u.studentProfile.kelompok.kelurahan ? ` (${u.studentProfile.kelompok.kelurahan})` : ""}`
@@ -195,7 +333,7 @@ export class UserService {
         return mapped;
     }
     async createUser(data, currentUser) {
-        const { name, password, phone, roleName, status, rwId, rtRwId, address, nim, studentProfile } = data;
+        const { name, password, phone, roleName, status, rwId, rtRwId, address, nim, studentProfile, nip, institusi, programStudi, jenjangPendidikan, jumlahAnggotaKeluarga } = data;
         const effectiveRwId = rwId !== undefined && rwId !== null ? rwId : rtRwId;
         if (!phone) {
             throw new Error("PHONE_REQUIRED");
@@ -205,7 +343,7 @@ export class UserService {
         if (existingPhone) {
             throw new Error("PHONE_CONFLICT");
         }
-        if (["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName) && currentUser?.role !== "SUPER_USER") {
+        if (["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName) && !["SUPER_USER", "DEVELOPER"].includes(currentUser?.role || "")) {
             throw new Error("FORBIDDEN_ROLE_CREATION");
         }
         const role = await userRepository.findRoleByName(roleName);
@@ -242,18 +380,47 @@ export class UserService {
                     rwId: effectiveRwId ? parseInt(effectiveRwId) : null,
                     address: address || null,
                     fotoProfil: data.fotoProfil || getRandomDefaultAvatar(name),
+                    nip: nip || null,
+                    institusi: institusi || null,
+                    jabatan: data.jabatan || null,
+                    programStudi: programStudi || null,
+                    jenjangPendidikan: jenjangPendidikan || null,
+                    jumlahAnggotaKeluarga: jumlahAnggotaKeluarga !== undefined && jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null,
                 },
                 include: { role: { select: { name: true } } },
             });
             if (roleName === "MAHASISWA_KKN") {
                 const targetNim = studentProfile?.nim || nim;
-                if (targetNim || studentProfile) {
+                let targetKelompokId = studentProfile?.kelompokId || data.kelompokId;
+                const targetDplId = data.dplId || studentProfile?.dplId;
+                if (targetDplId) {
+                    const existingKelompok = await tx.kelompokKkn.findFirst({
+                        where: { dplId: targetDplId },
+                    });
+                    if (existingKelompok) {
+                        targetKelompokId = existingKelompok.id;
+                    }
+                    else {
+                        const dplUser = await tx.user.findUnique({ where: { id: targetDplId } });
+                        const kelName = dplUser ? `Kelompok ${dplUser.name}` : `Kelompok ${targetDplId.slice(0, 5)}`;
+                        const newKel = await tx.kelompokKkn.create({
+                            data: {
+                                name: kelName,
+                                dplId: targetDplId,
+                                kelurahan: data.kelurahan || "Cipaganti",
+                            },
+                        });
+                        targetKelompokId = newKel.id;
+                    }
+                }
+                if (targetNim || studentProfile || targetKelompokId) {
                     await tx.studentKkn.create({
                         data: {
                             userId: u.id,
                             nim: targetNim || "-",
-                            jurusan: studentProfile?.jurusan || "-",
+                            jurusan: studentProfile?.jurusan || programStudi || "-",
                             fakultas: studentProfile?.fakultas || "-",
+                            jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || null,
                             noWa: studentProfile?.noWa || u.phone || "",
                             startDate: studentProfile?.startDate ? new Date(studentProfile.startDate) : new Date(),
                             endDate: studentProfile?.endDate
@@ -262,8 +429,33 @@ export class UserService {
                             assignedRwId: studentProfile?.assignedRwId
                                 ? parseInt(studentProfile.assignedRwId)
                                 : u.rwId,
+                            kelompokId: targetKelompokId || null,
                             whitelistStatus: "APPROVED",
                         },
+                    });
+                }
+            }
+            if (roleName === "DPL") {
+                const targetKelompokIds = data.dplKelompokIds || (data.kelompokId ? [data.kelompokId] : []);
+                if (Array.isArray(targetKelompokIds) && targetKelompokIds.length > 0) {
+                    await tx.kelompokKkn.updateMany({
+                        where: { id: { in: targetKelompokIds } },
+                        data: { dplId: u.id },
+                    });
+                }
+            }
+            // Assign Petugas Residu to the RW area when creating an RW user
+            if (roleName === "RW" && data.petugasResiduId) {
+                const rwAreaId = u.rwId;
+                if (rwAreaId) {
+                    // Clear previous assignment for this petugas on other RWs
+                    await tx.rw.updateMany({
+                        where: { petugasResiduId: data.petugasResiduId },
+                        data: { petugasResiduId: null },
+                    });
+                    await tx.rw.update({
+                        where: { id: rwAreaId },
+                        data: { petugasResiduId: data.petugasResiduId },
                     });
                 }
             }
@@ -277,7 +469,7 @@ export class UserService {
         };
     }
     async updateUser(id, data, currentUser) {
-        const { name, phone, email, password, roleName, status, rwId: inputRwId, rtRwId, address, nim, studentProfile } = data;
+        const { name, phone, email, password, roleName, status, rwId: inputRwId, rtRwId, address, nim, studentProfile, nip, institusi, programStudi, jenjangPendidikan, jumlahAnggotaKeluarga, fotoProfil, wilayah, kecamatan, petugasResiduId } = data;
         const targetRwId = inputRwId !== undefined && inputRwId !== null ? inputRwId : rtRwId;
         const user = await userRepository.findById(id);
         if (!user) {
@@ -286,7 +478,7 @@ export class UserService {
         // Check if target user has a restricted role or if trying to change to a restricted role
         const isRestrictedRole = ["ADMIN_DLH", "CAMAT", "LURAH"].includes(user.role.name) ||
             (roleName && ["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName));
-        if (isRestrictedRole && currentUser?.role !== "SUPER_USER") {
+        if (isRestrictedRole && !["SUPER_USER", "DEVELOPER"].includes(currentUser?.role || "")) {
             throw new Error("FORBIDDEN_ROLE_UPDATE");
         }
         let roleId = user.roleId;
@@ -341,17 +533,80 @@ export class UserService {
         if (targetRwId !== undefined) {
             updateData.rwId = targetRwId ? parseInt(targetRwId) : null;
         }
-        if (address !== undefined) {
+        if (wilayah !== undefined) {
+            updateData.address = wilayah || null;
+        }
+        else if (kecamatan !== undefined) {
+            updateData.address = kecamatan || null;
+        }
+        else if (address !== undefined) {
             updateData.address = address || null;
         }
+        if (nip !== undefined)
+            updateData.nip = nip || null;
+        if (institusi !== undefined)
+            updateData.institusi = institusi || null;
+        if (data.jabatan !== undefined)
+            updateData.jabatan = data.jabatan || null;
+        if (programStudi !== undefined)
+            updateData.programStudi = programStudi || null;
+        if (jenjangPendidikan !== undefined)
+            updateData.jenjangPendidikan = jenjangPendidikan || null;
+        if (jumlahAnggotaKeluarga !== undefined)
+            updateData.jumlahAnggotaKeluarga = jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null;
+        if (fotoProfil !== undefined)
+            updateData.fotoProfil = fotoProfil || null;
         const updatedUser = await prisma.$transaction(async (tx) => {
             const u = await tx.user.update({
                 where: { id },
                 data: updateData,
                 include: { role: { select: { name: true } } },
             });
-            if ((roleName === "MAHASISWA_KKN" || u.role.name === "MAHASISWA_KKN") && (studentProfile || nim)) {
+            if (roleName === "MAHASISWA_KKN" || u.role.name === "MAHASISWA_KKN") {
                 const targetNim = studentProfile?.nim || nim;
+                let targetKelompokId = null;
+                if (data.kelompokId !== undefined) {
+                    targetKelompokId = data.kelompokId || null;
+                }
+                else if (Array.isArray(data.dplKelompokIds)) {
+                    targetKelompokId = data.dplKelompokIds.length > 0 && data.dplKelompokIds[0] ? data.dplKelompokIds[0] : null;
+                }
+                else if (studentProfile?.kelompokId !== undefined) {
+                    targetKelompokId = studentProfile.kelompokId || null;
+                }
+                const targetDplId = data.dplId !== undefined ? (data.dplId || null) : null;
+                if (targetDplId) {
+                    const existingKelompok = await tx.kelompokKkn.findFirst({
+                        where: { dplId: targetDplId },
+                    });
+                    if (existingKelompok) {
+                        targetKelompokId = existingKelompok.id;
+                    }
+                    else if (targetKelompokId) {
+                        await tx.kelompokKkn.update({
+                            where: { id: targetKelompokId },
+                            data: { dplId: targetDplId },
+                        });
+                    }
+                    else {
+                        const dplUser = await tx.user.findUnique({ where: { id: targetDplId } });
+                        const kelName = dplUser ? `Kelompok ${dplUser.name}` : `Kelompok ${targetDplId.slice(0, 5)}`;
+                        const newKel = await tx.kelompokKkn.create({
+                            data: {
+                                name: kelName,
+                                dplId: targetDplId,
+                                kelurahan: data.kelurahan || "Cipaganti",
+                            },
+                        });
+                        targetKelompokId = newKel.id;
+                    }
+                }
+                if (!targetKelompokId) {
+                    await tx.user.update({
+                        where: { id },
+                        data: { address: null },
+                    });
+                }
                 await tx.studentKkn.upsert({
                     where: { userId: id },
                     create: {
@@ -359,6 +614,7 @@ export class UserService {
                         nim: targetNim || "-",
                         jurusan: studentProfile?.jurusan || "-",
                         fakultas: studentProfile?.fakultas || "-",
+                        jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || null,
                         noWa: studentProfile?.noWa || u.phone || "",
                         startDate: studentProfile?.startDate ? new Date(studentProfile.startDate) : new Date(),
                         endDate: studentProfile?.endDate
@@ -367,6 +623,7 @@ export class UserService {
                         assignedRwId: studentProfile?.assignedRwId
                             ? parseInt(studentProfile.assignedRwId)
                             : (updateData.rwId || u.rwId),
+                        kelompokId: targetKelompokId,
                         whitelistStatus: "APPROVED",
                     },
                     update: {
@@ -374,6 +631,8 @@ export class UserService {
                         ...(studentProfile?.jurusan && { jurusan: studentProfile.jurusan }),
                         ...(studentProfile?.fakultas && { fakultas: studentProfile.fakultas }),
                         ...(studentProfile?.noWa && { noWa: studentProfile.noWa }),
+                        ...((studentProfile?.jenjangPendidikan || jenjangPendidikan) && { jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan }),
+                        kelompokId: targetKelompokId,
                     },
                 });
             }
@@ -383,6 +642,36 @@ export class UserService {
                     where: { userId: id },
                     data: { whitelistStatus: pStatus },
                 });
+            }
+            if ((checkRoleName === "DPL" || u.role.name === "DPL") && (data.dplKelompokIds !== undefined || data.kelompokId !== undefined || data.selectedKelompokId !== undefined)) {
+                const targetKelompokIds = data.dplKelompokIds || (data.kelompokId ? [data.kelompokId] : data.selectedKelompokId ? [data.selectedKelompokId] : []);
+                await tx.kelompokKkn.updateMany({
+                    where: { dplId: u.id },
+                    data: { dplId: null },
+                });
+                if (Array.isArray(targetKelompokIds) && targetKelompokIds.length > 0) {
+                    await tx.kelompokKkn.updateMany({
+                        where: { id: { in: targetKelompokIds } },
+                        data: { dplId: u.id },
+                    });
+                }
+            }
+            // Assign Petugas Residu to the RW area when editing an RW user
+            if ((checkRoleName === "RW" || u.role.name === "RW") && petugasResiduId !== undefined) {
+                const rwAreaId = updateData.rwId || u.rwId;
+                if (rwAreaId) {
+                    // Clear previous assignment for this petugas on other RWs
+                    if (petugasResiduId) {
+                        await tx.rw.updateMany({
+                            where: { petugasResiduId: petugasResiduId },
+                            data: { petugasResiduId: null },
+                        });
+                    }
+                    await tx.rw.update({
+                        where: { id: rwAreaId },
+                        data: { petugasResiduId: petugasResiduId || null },
+                    });
+                }
             }
             return u;
         });

@@ -21,7 +21,7 @@ const router = Router();
  * @swagger
  * /api/v1/auth/login:
  *   post:
- *     summary: Login user menggunakan nomor telepon dan password
+ *     summary: Login user menggunakan nomor telepon atau NIM dan password
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -35,8 +35,8 @@ const router = Router();
  *             properties:
  *               phone:
  *                 type: string
- *                 description: "Nomor HP dalam format 08xxx atau +628xxx"
- *                 example: "08123456789"
+ *                 description: "Nomor HP (08xxx / +628xxx) atau NIM (8-12 digit angka murni)"
+ *                 example: "10124095"
  *               password:
  *                 type: string
  *                 example: password123
@@ -62,7 +62,7 @@ const router = Router();
  *       400:
  *         description: Validasi gagal
  *       401:
- *         description: Nomor HP atau password salah
+ *         description: Nomor HP / NIM atau password salah
  */
 router.post("/login", loginRateLimiter, authController.login);
 /**
@@ -210,6 +210,16 @@ router.get("/me", authMiddleware, authController.getCurrentUser);
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Upload successful

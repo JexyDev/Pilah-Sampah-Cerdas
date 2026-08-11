@@ -42,6 +42,8 @@ export class AuthRepository {
                         { phone: formatted },
                         { phone: raw },
                         { phone: alt },
+                        { studentProfile: { nim: raw } },
+                        { studentProfile: { nim: alt } },
                     ],
                 },
                 include: { role: true },
@@ -178,6 +180,8 @@ export class AuthRepository {
     async findRoleByName(name) {
         try {
             const normalizedMap = {
+                "Admin": "SUPER_USER",
+                "ADMIN": "SUPER_USER",
                 "Super User": "SUPER_USER",
                 "SUPER USER": "SUPER_USER",
                 "Dinas Lingkungan Hidup": "ADMIN_DLH",

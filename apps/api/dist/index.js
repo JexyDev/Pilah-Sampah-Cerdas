@@ -43,11 +43,20 @@ import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
-// Enable CORS
+// Enable CORS with Dynamic Preflight Reflection & Tunnel Header Support
 app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const origin = req.headers.origin || "*";
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "*");
+    // Dynamically reflect requested headers from preflight OPTIONS request
+    const requestedHeaders = req.headers["access-control-request-headers"];
+    if (requestedHeaders) {
+        res.setHeader("Access-Control-Allow-Headers", requestedHeaders);
+    }
+    else {
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, bypass-tunnel-reminder, *");
+    }
     if (req.method === "OPTIONS") {
         return res.sendStatus(200);
     }
