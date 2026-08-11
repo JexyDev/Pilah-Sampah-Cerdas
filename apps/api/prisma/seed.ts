@@ -319,6 +319,7 @@ async function main() {
   // ─────────────────────────────────────────────
   const testUsersConfig = [
     { roleName: "DEVELOPER", phone: "+6281000000000", pass: "password123", name: "Developer" },
+    { roleName: "DEVELOPER", phone: "+628992330060", pass: "password123", name: "Daffa Jaya Perkasa" },
     { roleName: "SUPER_USER", phone: "+6281000000001", pass: "superUser123!", name: "Admin" },
     { roleName: "SUPER_USER", phone: "+628111111111", pass: "password123", name: "Admin Test" },
     { roleName: "ADMIN_DLH", phone: "+628111111112", pass: "password123", name: "Darto, A.P., M.M." },

@@ -130,6 +130,16 @@ async function main() {
       address: 'Bandung'
     },
     {
+      name: 'Daffa Jaya Perkasa',
+      phone: '+628992330060',
+      role: 'DEVELOPER',
+      nip: '4127.99.00.060',
+      institusi: 'PT Makerindo',
+      programStudi: 'Software Engineering',
+      jenjangPendidikan: 'S1',
+      address: 'Bandung'
+    },
+    {
       name: 'Super User Test',
       phone: '+628111111111',
       role: 'SUPER_USER',
