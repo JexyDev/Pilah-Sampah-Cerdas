@@ -1797,23 +1797,45 @@ const ManajemenPengguna: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Dynamic Multi-select RW for Mahasiswa (derived from filteredRwsByKelurahan / DB relation) */}
+                      {/* Dynamic Multi-select RW for Mahasiswa (with Cascading Kelurahan Dropdown above it) */}
                       {formData.roleName === "MAHASISWA_KKN" && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Wilayah Penugasan (RW)</label>
-                          <p className="text-[10px] text-slate-400 mb-2">Pilih satu atau beberapa RW pendampingan (Kel. {getCleanKelName(modalKelurahan)}):</p>
-                          <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 border border-slate-200 max-h-36 overflow-y-auto">
-                            {filteredRwsByKelurahan.map((area: any) => {
-                              const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
-                              const rwName = area.name.startsWith("RW") ? area.name : `RW ${rwNum}`;
-                              const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwName);
-                              return (
-                                <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-2xs" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
-                                  <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
-                                  {rwName}
-                                </label>
-                              );
-                            })}
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelurahan Penugasan *</label>
+                            <select
+                              value={getCleanKelName(modalKelurahan) || "Cipaganti"}
+                              onChange={(e) => {
+                                const selectedKel = e.target.value;
+                                setModalKelurahan(selectedKel);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedRws: [],
+                                }));
+                              }}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                            >
+                              {["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].map((k) => (
+                                <option key={k} value={k}>Kel. {k}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Wilayah Penugasan (RW)</label>
+                            <p className="text-[10px] text-slate-400 mb-2">Pilih satu atau beberapa RW pendampingan (Kel. {getCleanKelName(modalKelurahan) || "Cipaganti"}):</p>
+                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 border border-slate-200 max-h-36 overflow-y-auto">
+                              {filteredRwsByKelurahan.map((area: any) => {
+                                const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
+                                const rwName = area.name.startsWith("RW") ? area.name : `RW ${rwNum}`;
+                                const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwName);
+                                return (
+                                  <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-2xs" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
+                                    <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
+                                    {rwName}
+                                  </label>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       )}
