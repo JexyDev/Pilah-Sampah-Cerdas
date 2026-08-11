@@ -37,7 +37,7 @@ async function main() {
   const workbook = XLSX.readFile(xlsxPath);
   
   // ── A. SEED 33 REAL DPL FROM EXCEL ──
-  const dplSheetName = workbook.SheetNames.find(s => s.toLowerCase().includes('dpl')) || 'Data DPL KKN';
+  const dplSheetName = workbook.SheetNames.find(s => s.trim().toLowerCase() === 'data dpl kkn') || 'Data DPL KKN';
   const dplSheet = workbook.Sheets[dplSheetName];
   const dplRawRows: any[] = XLSX.utils.sheet_to_json(dplSheet, { header: 1, defval: '' });
 

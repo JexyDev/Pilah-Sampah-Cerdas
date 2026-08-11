@@ -255,7 +255,18 @@ const ManajemenPengguna: React.FC = () => {
       });
     }
 
-    return list.sort((a: any, b: any) => {
+    // Deduplicate list by numeric RW identifier to prevent duplicate RW buttons in modal
+    const seen = new Set<string>();
+    const uniqueList: any[] = [];
+    for (const item of list) {
+      const rwNum = item.name.replace(/\D/g, "").padStart(2, "0");
+      if (rwNum && rwNum !== "00" && !seen.has(rwNum)) {
+        seen.add(rwNum);
+        uniqueList.push(item);
+      }
+    }
+
+    return uniqueList.sort((a: any, b: any) => {
       const numA = parseInt(a.name.replace(/\D/g, "") || "0", 10);
       const numB = parseInt(b.name.replace(/\D/g, "") || "0", 10);
       return numA - numB;
