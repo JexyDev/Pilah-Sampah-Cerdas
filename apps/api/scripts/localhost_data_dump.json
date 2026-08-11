@@ -1676,7 +1676,7 @@
       "name": "RW 17",
       "latitude": "-6.8788671",
       "longitude": "107.634937",
-      "petugasResiduId": "24815bde-18d3-40d6-9098-410b4642c3ec",
+      "petugasResiduId": null,
       "createdAt": "2026-08-10T22:29:45.156Z",
       "updatedAt": "2026-08-11T14:20:50.996Z"
     }
@@ -4367,7 +4367,7 @@
       "dplNamaMentah": "Hanhan Maulana, M.Kom., Ph.D.",
       "dplId": "621e42e4-8d82-4bbd-a4cc-a2dd93c707f7",
       "createdAt": "2026-08-11T00:35:53.558Z",
-      "updatedAt": "2026-08-11T14:20:20.847Z"
+      "updatedAt": "2026-08-11T14:28:48.369Z"
     },
     {
       "id": "6053c783-502a-4d4b-a161-20e69d566157",
@@ -4380,7 +4380,7 @@
       "dplNamaMentah": "Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.",
       "dplId": "4747fe8c-4c85-4ef0-8b0f-feaa3a524ec2",
       "createdAt": "2026-08-11T00:35:54.727Z",
-      "updatedAt": "2026-08-11T14:20:20.853Z"
+      "updatedAt": "2026-08-11T14:28:48.372Z"
     },
     {
       "id": "43cbfccd-c9eb-412a-8099-9818fc6e33a3",
@@ -4393,7 +4393,7 @@
       "dplNamaMentah": "Rangga Sidik, S.Kom., M.Kom., M.Eng",
       "dplId": "6b5701c7-1943-443d-a499-b539ee868ccb",
       "createdAt": "2026-08-11T00:35:55.885Z",
-      "updatedAt": "2026-08-11T14:20:20.859Z"
+      "updatedAt": "2026-08-11T14:28:48.374Z"
     },
     {
       "id": "3f0a2e56-6edb-46b8-8a3d-c81b1213833b",
@@ -4407,7 +4407,7 @@
       "dplNamaMentah": "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd",
       "dplId": "5de92be7-0efb-49c9-acf6-a61d0c205043",
       "createdAt": "2026-08-11T00:35:16.688Z",
-      "updatedAt": "2026-08-11T14:20:20.864Z"
+      "updatedAt": "2026-08-11T14:28:48.376Z"
     },
     {
       "id": "b950eac3-f830-42f5-992f-73e559317946",
@@ -4421,7 +4421,7 @@
       "dplNamaMentah": "Assoc Prof. Dr. Agus Riyanto S.E., M.S.i",
       "dplId": "9850e19a-38ae-4fa0-8895-a38f6f0341bd",
       "createdAt": "2026-08-11T00:35:19.900Z",
-      "updatedAt": "2026-08-11T14:20:20.870Z"
+      "updatedAt": "2026-08-11T14:28:48.378Z"
     },
     {
       "id": "a8a37942-bfa9-4163-b0c8-61a99fd2af73",
@@ -4435,7 +4435,7 @@
       "dplNamaMentah": "Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP",
       "dplId": "97069a28-2491-4dec-b30c-2b8934e6bd84",
       "createdAt": "2026-08-11T00:35:23.018Z",
-      "updatedAt": "2026-08-11T14:20:20.876Z"
+      "updatedAt": "2026-08-11T14:28:48.380Z"
     },
     {
       "id": "e51ee809-69cf-4822-93c2-d5d306f0e464",
@@ -4450,7 +4450,7 @@
       "dplNamaMentah": "Dr. Linna Ismawati, S.E., M.Si.",
       "dplId": "4b69ad1c-3942-4483-b4be-dc8f72b6afb0",
       "createdAt": "2026-08-11T00:35:26.285Z",
-      "updatedAt": "2026-08-11T14:20:20.881Z"
+      "updatedAt": "2026-08-11T14:28:48.382Z"
     },
     {
       "id": "e72c4199-aeef-47d6-9a7c-1dc888166a02",
@@ -4463,7 +4463,7 @@
       "dplNamaMentah": "Fenny Febrianti, S.S.,M.Hum",
       "dplId": "04168161-739b-46ff-a16e-b64092208917",
       "createdAt": "2026-08-11T00:35:39.428Z",
-      "updatedAt": "2026-08-11T14:20:20.887Z"
+      "updatedAt": "2026-08-11T14:28:48.384Z"
     },
     {
       "id": "96abffc5-f3be-4eca-8998-66cfe3da4414",
@@ -4476,7 +4476,7 @@
       "dplNamaMentah": "Dr. Nungki Heriyati, S.S.S.,I.Kom.,M.A.",
       "dplId": "556db059-83bb-49f1-8644-61f0ccc27985",
       "createdAt": "2026-08-11T00:35:41.215Z",
-      "updatedAt": "2026-08-11T14:20:20.892Z"
+      "updatedAt": "2026-08-11T14:28:48.386Z"
     },
     {
       "id": "01085951-70ca-4f5f-8dd0-37780ac0ffda",
@@ -4490,7 +4490,7 @@
       "dplNamaMentah": "Ayub Subandi, S.Si., M.T., Ph.D.",
       "dplId": "dd1b9675-132b-42a5-90fd-5727ca4e3042",
       "createdAt": "2026-08-11T00:35:51.622Z",
-      "updatedAt": "2026-08-11T14:20:20.898Z"
+      "updatedAt": "2026-08-11T14:28:48.388Z"
     },
     {
       "id": "7cb54178-46af-44bb-8737-9499d5295de5",
@@ -4502,7 +4502,7 @@
       "dplNamaMentah": "Iyan Andriana, S.T., M.T.",
       "dplId": "05872790-b449-49a7-b069-3cc86f0d9d94",
       "createdAt": "2026-08-11T00:35:52.446Z",
-      "updatedAt": "2026-08-11T14:20:20.903Z"
+      "updatedAt": "2026-08-11T14:28:48.390Z"
     },
     {
       "id": "b2a1c5f7-d009-4057-b3ba-e21dbea38e3a",
@@ -4516,7 +4516,7 @@
       "dplNamaMentah": "Muhammad Aksan Ipaenin, S.T. M.Sc.",
       "dplId": "4186b863-1d9d-45b2-a7ab-fa222a88f874",
       "createdAt": "2026-08-11T00:35:28.860Z",
-      "updatedAt": "2026-08-11T14:20:20.909Z"
+      "updatedAt": "2026-08-11T14:28:48.392Z"
     },
     {
       "id": "3104fddd-1fd1-43a1-a68e-c5cd6abe8597",
@@ -4530,7 +4530,7 @@
       "dplNamaMentah": "Assoc.Prof. Dr. Wartika S.Kom.,MT",
       "dplId": "5ba21e1c-883e-4002-a134-96126e3f7e90",
       "createdAt": "2026-08-11T00:35:29.966Z",
-      "updatedAt": "2026-08-11T14:20:20.914Z"
+      "updatedAt": "2026-08-11T14:28:48.395Z"
     },
     {
       "id": "287aafe8-72ba-4060-bd06-7d4bcb3b4901",
@@ -4545,7 +4545,7 @@
       "dplNamaMentah": "Myrna Dwi Rahmatya, S.Kom.,M.Kom",
       "dplId": "34c59786-3bd6-4c50-bc01-ee22719995ec",
       "createdAt": "2026-08-11T00:35:31.108Z",
-      "updatedAt": "2026-08-11T14:20:20.919Z"
+      "updatedAt": "2026-08-11T14:28:48.397Z"
     },
     {
       "id": "68e137c5-764b-479b-8b6c-e0ca0e6b44fa",
@@ -4559,7 +4559,7 @@
       "dplNamaMentah": "Alif Finandhita, S.Kom., M.T.",
       "dplId": "5298d44f-fe84-4de3-8c2f-e6835b61d9ea",
       "createdAt": "2026-08-11T00:35:32.191Z",
-      "updatedAt": "2026-08-11T14:20:20.924Z"
+      "updatedAt": "2026-08-11T14:28:48.400Z"
     },
     {
       "id": "2bd400f6-7ddf-4fe6-9a38-a994742967b5",
@@ -4572,7 +4572,7 @@
       "dplNamaMentah": "Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D",
       "dplId": "c4901853-2c79-4843-9001-f043a195ad7e",
       "createdAt": "2026-08-11T00:35:33.287Z",
-      "updatedAt": "2026-08-11T14:20:20.929Z"
+      "updatedAt": "2026-08-11T14:28:48.402Z"
     },
     {
       "id": "cc37e242-9920-4096-84c8-5b2b77b8b826",
@@ -4585,7 +4585,7 @@
       "dplNamaMentah": "Dr. Eng. Siswanti Zuraida, S.Pd., M.T.",
       "dplId": "899c1564-fe92-4aff-9228-0d59be65bc30",
       "createdAt": "2026-08-11T00:35:34.319Z",
-      "updatedAt": "2026-08-11T14:20:20.934Z"
+      "updatedAt": "2026-08-11T14:28:48.405Z"
     },
     {
       "id": "c47fae43-4959-49ad-9fd0-c6a9c3b20fa5",
@@ -4599,7 +4599,7 @@
       "dplNamaMentah": "John Adler, S.Si., M.Si.",
       "dplId": "e0006831-106f-4f8d-92a6-735b8aa732ba",
       "createdAt": "2026-08-11T00:35:37.354Z",
-      "updatedAt": "2026-08-11T14:20:20.939Z"
+      "updatedAt": "2026-08-11T14:28:48.407Z"
     },
     {
       "id": "06ecfbc2-906a-4421-ba71-27b526efa940",
@@ -4613,7 +4613,7 @@
       "dplNamaMentah": "Wahyudi, S.H., M.H.",
       "dplId": "1ba7000a-b528-4c0f-9561-a055a3ac4969",
       "createdAt": "2026-08-11T00:35:44.075Z",
-      "updatedAt": "2026-08-11T14:20:20.944Z"
+      "updatedAt": "2026-08-11T14:28:48.409Z"
     },
     {
       "id": "bba8a23b-b0b4-4690-83eb-d49ca47de1d9",
@@ -4628,7 +4628,7 @@
       "dplNamaMentah": "Richi Dwi Agustia, S.Kom., M.Kom.",
       "dplId": "289a6dbd-37a8-477e-9bad-2bdc91b71bc3",
       "createdAt": "2026-08-11T00:35:45.048Z",
-      "updatedAt": "2026-08-11T14:20:20.949Z"
+      "updatedAt": "2026-08-11T14:28:48.411Z"
     },
     {
       "id": "9d8834a0-5efc-498f-8f92-613583c0cca5",
@@ -4642,7 +4642,7 @@
       "dplNamaMentah": "Arif Try Cahyadi, S.Ds., M.Ds.",
       "dplId": "a167260f-9bc3-4517-9046-07ec9907941d",
       "createdAt": "2026-08-11T00:35:50.807Z",
-      "updatedAt": "2026-08-11T14:20:20.954Z"
+      "updatedAt": "2026-08-11T14:28:48.413Z"
     },
     {
       "id": "aa6a34aa-39e0-4eaf-8973-5fe2c50159f8",
@@ -4658,7 +4658,7 @@
       "dplNamaMentah": "Dr.H.Tatang Supriyadi,S.E.,M.M",
       "dplId": "4524cd7a-c93e-44b4-8aa7-0832fe935f5c",
       "createdAt": "2026-08-11T00:35:48.800Z",
-      "updatedAt": "2026-08-11T14:20:20.958Z"
+      "updatedAt": "2026-08-11T14:28:48.415Z"
     },
     {
       "id": "8a2ee5f7-519f-4f92-92e3-e74c1f2216c0",
@@ -4672,7 +4672,7 @@
       "dplNamaMentah": "Dr. Wendi Zaman,M.Si",
       "dplId": "bf3c537c-0649-4d68-8830-3f9cfde3d48e",
       "createdAt": "2026-08-11T00:35:49.801Z",
-      "updatedAt": "2026-08-11T14:20:20.963Z"
+      "updatedAt": "2026-08-11T14:28:48.417Z"
     },
     {
       "id": "1673dfb2-f199-4977-b6a5-729f4b63e839",
@@ -4686,7 +4686,7 @@
       "dplNamaMentah": "Dr. Olih Solihin, S.Sos., M.I.Kom.",
       "dplId": "2d7e99f6-69c1-46c0-96e3-62463015e225",
       "createdAt": "2026-08-11T00:35:35.270Z",
-      "updatedAt": "2026-08-11T14:20:20.968Z"
+      "updatedAt": "2026-08-11T14:28:48.419Z"
     },
     {
       "id": "120896b5-5ba5-48c3-b0b5-d8d4542083e2",
@@ -4700,7 +4700,7 @@
       "dplNamaMentah": "Hery Dwi Yulianto, S.T., M.Kom.",
       "dplId": "5ab0e5fd-9a94-4106-9934-0fa74822df25",
       "createdAt": "2026-08-11T00:35:36.295Z",
-      "updatedAt": "2026-08-11T14:20:20.972Z"
+      "updatedAt": "2026-08-11T14:28:48.421Z"
     },
     {
       "id": "755e1042-de0e-4438-a431-1c040dc5578b",
@@ -4714,7 +4714,7 @@
       "dplNamaMentah": "Dr. Henike Primawati, S.IP., M.I.Pol.",
       "dplId": "68d9eb64-65d0-4e81-b0c5-fea1d04b66b7",
       "createdAt": "2026-08-11T00:35:38.468Z",
-      "updatedAt": "2026-08-11T14:20:20.978Z"
+      "updatedAt": "2026-08-11T14:28:48.423Z"
     },
     {
       "id": "7a2a4a1a-6b95-4ed0-882f-dc0751eda0b1",
@@ -4727,7 +4727,7 @@
       "dplNamaMentah": "Dr. Tatik Fidowaty, S.IP., M.Si",
       "dplId": "00d273fc-b96b-48cc-bc80-96ee6bbd32e5",
       "createdAt": "2026-08-11T00:35:40.397Z",
-      "updatedAt": "2026-08-11T14:20:20.982Z"
+      "updatedAt": "2026-08-11T14:28:48.425Z"
     },
     {
       "id": "193dd438-8f60-4d48-9b68-ff76a80bc5b9",
@@ -4739,7 +4739,7 @@
       "dplNamaMentah": "Amilia Widya, S.Pd., M.T.",
       "dplId": "44c05481-314c-4621-b918-8be2e552bc09",
       "createdAt": "2026-08-11T00:35:42.996Z",
-      "updatedAt": "2026-08-11T14:20:20.987Z"
+      "updatedAt": "2026-08-11T14:28:48.428Z"
     },
     {
       "id": "c8ca24d7-7e68-434d-951d-0bec351e5d86",
@@ -4752,7 +4752,7 @@
       "dplNamaMentah": "Assoc. Prof., Dr. Manap Solihat, Drs., M.Si.",
       "dplId": "cf2be1a4-1942-4e75-83a8-9604e1f79975",
       "createdAt": "2026-08-11T00:35:45.859Z",
-      "updatedAt": "2026-08-11T14:20:20.992Z"
+      "updatedAt": "2026-08-11T14:28:48.430Z"
     },
     {
       "id": "a785454a-1a3b-497a-9785-e36029a40df6",
@@ -4766,7 +4766,7 @@
       "dplNamaMentah": "Cherry Dharmawan, S.Sn., M.Sn.",
       "dplId": "8273c13f-a1d1-4976-8635-31d2e6caee2a",
       "createdAt": "2026-08-11T00:35:46.814Z",
-      "updatedAt": "2026-08-11T14:20:20.997Z"
+      "updatedAt": "2026-08-11T14:28:48.432Z"
     },
     {
       "id": "5a48383b-4943-4ec2-accb-cb3374502d11",
@@ -4781,7 +4781,7 @@
       "dplNamaMentah": "Assoc. Prof. Dr. Sri Dewi Anggadini, S.E., M.Si., Ak., CA",
       "dplId": "78cfdb63-a048-4e23-a9f9-5a3d306d360e",
       "createdAt": "2026-08-11T00:35:47.773Z",
-      "updatedAt": "2026-08-11T14:20:21.001Z"
+      "updatedAt": "2026-08-11T14:28:48.434Z"
     }
   ],
   "users": [
@@ -5614,31 +5614,6 @@
       "petugasProfile": null
     },
     {
-      "id": "df32d86b-4bdf-4d21-a66d-50f23d2c46ed",
-      "name": "Developer Master",
-      "password": "$2a$10$XT86rf6fP4YALfnsgXHsgeQ2Qpl2Iadi/rDANmt5Ct5MRM6In8A4S",
-      "fcmToken": null,
-      "roleId": 16,
-      "createdAt": "2026-08-11T13:58:49.977Z",
-      "updatedAt": "2026-08-11T14:14:01.893Z",
-      "fotoProfil": null,
-      "rwId": null,
-      "rtId": null,
-      "status": "Aktif",
-      "address": "Bandung",
-      "phone": "+6281000000000",
-      "mustChangePassword": false,
-      "wargaSubtype": null,
-      "nip": "4127.99.00.001",
-      "institusi": "PT Makerindo",
-      "jabatan": null,
-      "programStudi": "Software Engineering",
-      "jenjangPendidikan": "S1",
-      "jumlahAnggotaKeluarga": null,
-      "studentProfile": null,
-      "petugasProfile": null
-    },
-    {
       "id": "83edf191-d0bd-4200-9bf8-efb60a671386",
       "name": "Super User Test",
       "password": "$2a$10$XT86rf6fP4YALfnsgXHsgeQ2Qpl2Iadi/rDANmt5Ct5MRM6In8A4S",
@@ -5661,6 +5636,48 @@
       "jenjangPendidikan": "S1",
       "jumlahAnggotaKeluarga": null,
       "studentProfile": null,
+      "petugasProfile": null
+    },
+    {
+      "id": "8460079f-140a-4857-bcbc-fbdaf45e8666",
+      "name": "Nurhayati",
+      "password": "$2a$10$fXLuCMjzCDstkpPzTLuk4.VJQ.tNVbZWvM4KuHOWzBdSNgid.MebS",
+      "fcmToken": null,
+      "roleId": 6,
+      "createdAt": "2026-08-11T00:35:33.211Z",
+      "updatedAt": "2026-08-11T08:17:38.492Z",
+      "fotoProfil": null,
+      "rwId": null,
+      "rtId": null,
+      "status": "Aktif",
+      "address": "RW 02, RW 03, RW 15 Kel. Lebak Gede",
+      "phone": "+6283145310967",
+      "mustChangePassword": true,
+      "wargaSubtype": null,
+      "nip": null,
+      "institusi": null,
+      "jabatan": null,
+      "programStudi": "S1 Teknik Informatika",
+      "jenjangPendidikan": "S1",
+      "jumlahAnggotaKeluarga": null,
+      "studentProfile": {
+        "id": "248e9e07-48ff-475a-8354-22886d767b64",
+        "userId": "8460079f-140a-4857-bcbc-fbdaf45e8666",
+        "nim": "10123105",
+        "jurusan": "S1 Teknik Informatika",
+        "fakultas": "-",
+        "noWa": "+6283145310967",
+        "startDate": "2026-08-11T00:35:33.214Z",
+        "endDate": "2026-09-10T00:35:33.214Z",
+        "assignedRwId": null,
+        "whitelistStatus": "APPROVED",
+        "createdAt": "2026-08-11T00:35:33.215Z",
+        "updatedAt": "2026-08-11T08:17:38.489Z",
+        "kelompokId": "68e137c5-764b-479b-8b6c-e0ca0e6b44fa",
+        "assessmentScore": "0",
+        "isKetua": false,
+        "jenjangPendidikan": "S1"
+      },
       "petugasProfile": null
     },
     {
@@ -6895,6 +6912,48 @@
       "jenjangPendidikan": "S1",
       "jumlahAnggotaKeluarga": null,
       "studentProfile": null,
+      "petugasProfile": null
+    },
+    {
+      "id": "0ab07ec9-6aa3-4a0a-955f-4a9036efea4e",
+      "name": "Livia Syakira",
+      "password": "$2a$10$QFWXpImeR6mTqjQvOk.xI.CGgNdDWFwuxTDoJuK2e1m0BtB0QurI.",
+      "fcmToken": null,
+      "roleId": 6,
+      "createdAt": "2026-08-11T00:35:43.060Z",
+      "updatedAt": "2026-08-11T10:25:15.940Z",
+      "fotoProfil": null,
+      "rwId": null,
+      "rtId": null,
+      "status": "Aktif",
+      "address": null,
+      "phone": "+6282118959063",
+      "mustChangePassword": true,
+      "wargaSubtype": null,
+      "nip": null,
+      "institusi": null,
+      "jabatan": null,
+      "programStudi": "Akuntansi",
+      "jenjangPendidikan": "S1",
+      "jumlahAnggotaKeluarga": null,
+      "studentProfile": {
+        "id": "957078e6-d72d-4938-9e02-96ec783ac8f9",
+        "userId": "0ab07ec9-6aa3-4a0a-955f-4a9036efea4e",
+        "nim": "21225111",
+        "jurusan": "S1 Akuntansi",
+        "fakultas": "-",
+        "noWa": "+6282118959063",
+        "startDate": "2026-08-11T00:35:43.063Z",
+        "endDate": "2026-09-10T00:35:43.063Z",
+        "assignedRwId": 47,
+        "whitelistStatus": "APPROVED",
+        "createdAt": "2026-08-11T00:35:43.063Z",
+        "updatedAt": "2026-08-11T04:07:49.545Z",
+        "kelompokId": null,
+        "assessmentScore": "0",
+        "isKetua": false,
+        "jenjangPendidikan": "S1"
+      },
       "petugasProfile": null
     },
     {
@@ -12141,48 +12200,6 @@
         "createdAt": "2026-08-11T00:35:32.124Z",
         "updatedAt": "2026-08-11T08:17:38.483Z",
         "kelompokId": "287aafe8-72ba-4060-bd06-7d4bcb3b4901",
-        "assessmentScore": "0",
-        "isKetua": false,
-        "jenjangPendidikan": "S1"
-      },
-      "petugasProfile": null
-    },
-    {
-      "id": "8460079f-140a-4857-bcbc-fbdaf45e8666",
-      "name": "Nurhayati",
-      "password": "$2a$10$fXLuCMjzCDstkpPzTLuk4.VJQ.tNVbZWvM4KuHOWzBdSNgid.MebS",
-      "fcmToken": null,
-      "roleId": 6,
-      "createdAt": "2026-08-11T00:35:33.211Z",
-      "updatedAt": "2026-08-11T08:17:38.492Z",
-      "fotoProfil": null,
-      "rwId": null,
-      "rtId": null,
-      "status": "Aktif",
-      "address": "RW 02, RW 03, RW 15 Kel. Lebak Gede",
-      "phone": "+6283145310967",
-      "mustChangePassword": true,
-      "wargaSubtype": null,
-      "nip": null,
-      "institusi": null,
-      "jabatan": null,
-      "programStudi": "S1 Teknik Informatika",
-      "jenjangPendidikan": "S1",
-      "jumlahAnggotaKeluarga": null,
-      "studentProfile": {
-        "id": "248e9e07-48ff-475a-8354-22886d767b64",
-        "userId": "8460079f-140a-4857-bcbc-fbdaf45e8666",
-        "nim": "10123105",
-        "jurusan": "S1 Teknik Informatika",
-        "fakultas": "-",
-        "noWa": "+6283145310967",
-        "startDate": "2026-08-11T00:35:33.214Z",
-        "endDate": "2026-09-10T00:35:33.214Z",
-        "assignedRwId": null,
-        "whitelistStatus": "APPROVED",
-        "createdAt": "2026-08-11T00:35:33.215Z",
-        "updatedAt": "2026-08-11T08:17:38.489Z",
-        "kelompokId": "68e137c5-764b-479b-8b6c-e0ca0e6b44fa",
         "assessmentScore": "0",
         "isKetua": false,
         "jenjangPendidikan": "S1"
@@ -18777,48 +18794,6 @@
         "createdAt": "2026-08-11T00:35:41.007Z",
         "updatedAt": "2026-08-11T08:17:36.189Z",
         "kelompokId": "7a2a4a1a-6b95-4ed0-882f-dc0751eda0b1",
-        "assessmentScore": "0",
-        "isKetua": false,
-        "jenjangPendidikan": "S1"
-      },
-      "petugasProfile": null
-    },
-    {
-      "id": "0ab07ec9-6aa3-4a0a-955f-4a9036efea4e",
-      "name": "Livia Syakira",
-      "password": "$2a$10$QFWXpImeR6mTqjQvOk.xI.CGgNdDWFwuxTDoJuK2e1m0BtB0QurI.",
-      "fcmToken": null,
-      "roleId": 6,
-      "createdAt": "2026-08-11T00:35:43.060Z",
-      "updatedAt": "2026-08-11T10:25:15.940Z",
-      "fotoProfil": null,
-      "rwId": null,
-      "rtId": null,
-      "status": "Aktif",
-      "address": null,
-      "phone": "+6282118959063",
-      "mustChangePassword": true,
-      "wargaSubtype": null,
-      "nip": null,
-      "institusi": null,
-      "jabatan": null,
-      "programStudi": "Akuntansi",
-      "jenjangPendidikan": "S1",
-      "jumlahAnggotaKeluarga": null,
-      "studentProfile": {
-        "id": "957078e6-d72d-4938-9e02-96ec783ac8f9",
-        "userId": "0ab07ec9-6aa3-4a0a-955f-4a9036efea4e",
-        "nim": "21225111",
-        "jurusan": "S1 Akuntansi",
-        "fakultas": "-",
-        "noWa": "+6282118959063",
-        "startDate": "2026-08-11T00:35:43.063Z",
-        "endDate": "2026-09-10T00:35:43.063Z",
-        "assignedRwId": 47,
-        "whitelistStatus": "APPROVED",
-        "createdAt": "2026-08-11T00:35:43.063Z",
-        "updatedAt": "2026-08-11T04:07:49.545Z",
-        "kelompokId": null,
         "assessmentScore": "0",
         "isKetua": false,
         "jenjangPendidikan": "S1"

@@ -176,70 +176,137 @@ async function main() {
     });
   }
 
-  console.log('📥 5. Restoring 634 Users...');
+  console.log('📥 5. Restoring Users & Profiles...');
+  const dumpPhones = new Set(dump.users.map((u: any) => u.phone));
+
+  // Purge any user on VPS not in the official dump (e.g. dummy Mahasiswa +628111111118)
+  const existingUsersOnVps = await prisma.user.findMany();
+  for (const evu of existingUsersOnVps) {
+    if (!dumpPhones.has(evu.phone)) {
+      console.log(`🧹 Purging old non-dump user: ${evu.name} (${evu.phone})`);
+      await prisma.studentKkn.deleteMany({ where: { userId: evu.id } }).catch(() => {});
+      await prisma.petugasResidu.deleteMany({ where: { userId: evu.id } }).catch(() => {});
+      await prisma.user.delete({ where: { id: evu.id } }).catch(() => {});
+    }
+  }
+
   for (const u of dump.users) {
     const { studentProfile, petugasProfile, ...userData } = u;
-    await prisma.user.create({
-      data: {
-        id: userData.id,
-        name: userData.name,
-        password: userData.password,
-        fcmToken: userData.fcmToken,
-        roleId: userData.roleId,
-        createdAt: new Date(userData.createdAt),
-        updatedAt: new Date(userData.updatedAt),
-        fotoProfil: userData.fotoProfil,
-        rwId: userData.rwId,
-        rtId: userData.rtId,
-        status: userData.status,
-        address: userData.address,
-        phone: userData.phone,
-        mustChangePassword: userData.mustChangePassword,
-        wargaSubtype: userData.wargaSubtype,
-        nip: userData.nip,
-        institusi: userData.institusi,
-        jabatan: userData.jabatan,
-        programStudi: userData.programStudi,
-        jenjangPendidikan: userData.jenjangPendidikan,
-        jumlahAnggotaKeluarga: userData.jumlahAnggotaKeluarga
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: userData.id },
+          { phone: userData.phone }
+        ]
       }
     });
 
-    if (studentProfile) {
-      await prisma.studentKkn.create({
+    const userPayload = {
+      name: userData.name,
+      password: userData.password,
+      fcmToken: userData.fcmToken,
+      roleId: userData.roleId,
+      fotoProfil: userData.fotoProfil,
+      rwId: userData.rwId,
+      rtId: userData.rtId,
+      status: userData.status,
+      address: userData.address,
+      phone: userData.phone,
+      mustChangePassword: userData.mustChangePassword,
+      wargaSubtype: userData.wargaSubtype,
+      nip: userData.nip,
+      institusi: userData.institusi,
+      jabatan: userData.jabatan,
+      programStudi: userData.programStudi,
+      jenjangPendidikan: userData.jenjangPendidikan,
+      jumlahAnggotaKeluarga: userData.jumlahAnggotaKeluarga
+    };
+
+    let createdOrUpdatedUserId = userData.id;
+
+    if (existingUser) {
+      createdOrUpdatedUserId = existingUser.id;
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: userPayload
+      });
+    } else {
+      const newUser = await prisma.user.create({
         data: {
-          id: studentProfile.id,
-          userId: studentProfile.userId,
-          nim: studentProfile.nim,
-          jurusan: studentProfile.jurusan,
-          fakultas: studentProfile.fakultas,
-          noWa: studentProfile.noWa,
-          startDate: new Date(studentProfile.startDate),
-          endDate: new Date(studentProfile.endDate),
-          assignedRwId: studentProfile.assignedRwId,
-          whitelistStatus: studentProfile.whitelistStatus,
-          createdAt: new Date(studentProfile.createdAt),
-          updatedAt: new Date(studentProfile.updatedAt),
-          kelompokId: studentProfile.kelompokId,
-          isKetua: studentProfile.isKetua,
-          jenjangPendidikan: studentProfile.jenjangPendidikan
+          id: userData.id,
+          ...userPayload
         }
       });
+      createdOrUpdatedUserId = newUser.id;
+    }
+
+    if (studentProfile) {
+      const existingStudent = await prisma.studentKkn.findFirst({
+        where: {
+          OR: [
+            { userId: createdOrUpdatedUserId },
+            { nim: studentProfile.nim && studentProfile.nim.length > 3 ? studentProfile.nim : undefined }
+          ]
+        }
+      });
+
+      const studentPayload = {
+        userId: createdOrUpdatedUserId,
+        nim: studentProfile.nim,
+        jurusan: studentProfile.jurusan,
+        fakultas: studentProfile.fakultas,
+        noWa: studentProfile.noWa,
+        startDate: new Date(studentProfile.startDate),
+        endDate: new Date(studentProfile.endDate),
+        assignedRwId: studentProfile.assignedRwId,
+        whitelistStatus: studentProfile.whitelistStatus,
+        kelompokId: studentProfile.kelompokId,
+        isKetua: studentProfile.isKetua,
+        jenjangPendidikan: studentProfile.jenjangPendidikan
+      };
+
+      if (existingStudent) {
+        await prisma.studentKkn.update({
+          where: { id: existingStudent.id },
+          data: studentPayload
+        });
+      } else {
+        await prisma.studentKkn.create({
+          data: {
+            id: studentProfile.id,
+            ...studentPayload
+          }
+        });
+      }
     }
 
     if (petugasProfile) {
-      await prisma.petugasResidu.create({
-        data: {
-          id: petugasProfile.id,
-          userId: petugasProfile.userId,
-          nama: petugasProfile.nama,
-          noWa: petugasProfile.noWa,
-          assignedZone: petugasProfile.assignedZone,
-          createdAt: new Date(petugasProfile.createdAt),
-          updatedAt: new Date(petugasProfile.updatedAt),
-          whitelistStatus: petugasProfile.whitelistStatus
-        }
+      const existingPetugas = await prisma.petugasResidu.findFirst({
+        where: { userId: createdOrUpdatedUserId }
       });
+
+      const petugasPayload = {
+        userId: createdOrUpdatedUserId,
+        nama: petugasProfile.nama,
+        noWa: petugasProfile.noWa,
+        assignedZone: petugasProfile.assignedZone,
+        whitelistStatus: petugasProfile.whitelistStatus
+      };
+
+      if (existingPetugas) {
+        await prisma.petugasResidu.update({
+          where: { id: existingPetugas.id },
+          data: petugasPayload
+        });
+      } else {
+        await prisma.petugasResidu.create({
+          data: {
+            id: petugasProfile.id,
+            ...petugasPayload
+          }
+        });
+      }
     }
   }
 
