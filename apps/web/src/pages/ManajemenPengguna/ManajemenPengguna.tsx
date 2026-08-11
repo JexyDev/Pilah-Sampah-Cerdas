@@ -146,6 +146,7 @@ const ManajemenPengguna: React.FC = () => {
     status: "Aktif",
     rtRwId: "",
     nim: "",
+    nip: "",
     prodi: "S1 Manajemen",
     jabatan: "",
     selectedRws: [] as string[],
