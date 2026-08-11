@@ -9,6 +9,7 @@ import { create } from "zustand";
 import api from "../utils/api";
 
 export type UserRole =
+  | "DEVELOPER"
   | "SUPER_USER"
   | "ADMIN_DLH"
   | "CAMAT"
@@ -43,7 +44,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (phone: string, password: string) => Promise<boolean>;
+  login: (phone: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   requestOtp: (phone: string) => Promise<boolean>;
   verifyOtp: (phone: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -52,6 +53,7 @@ interface AuthState {
 }
 
 const normalizeRole = (role: string): UserRole => {
+  if (["DEVELOPER", "Developer", "developer", "dev"].includes(role)) return "DEVELOPER";
   if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(role)) return "ADMIN_DLH";
   if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(role)) return "CAMAT";
   if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
@@ -64,6 +66,8 @@ const normalizeRole = (role: string): UserRole => {
 const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: string } => {
   const role = normalizeRole(rawRole);
   switch (role) {
+    case "DEVELOPER":
+      return { avatarBg: "bg-emerald-100", avatarColor: "text-[#009966]" };
     case "SUPER_USER":
       return { avatarBg: "bg-indigo-100", avatarColor: "text-indigo-700" };
     case "ADMIN_DLH":
@@ -89,6 +93,8 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
 
 const getWilayahByRole = (role: string): string => {
   switch (role) {
+    case "DEVELOPER":
+      return "PT Makerindo";
     case "SUPER_USER":
       return "Kecamatan Coblong";
     case "ADMIN_DLH":
@@ -112,22 +118,62 @@ const getWilayahByRole = (role: string): string => {
   }
 };
 
+export const computeAvatarInitials = (name: string = "User"): string => {
+  if (!name) return "U";
+  const cleanName = name
+    .replace(/\b(Assoc\.|Prof\.|Dr\.|Dra\.|Drs\.|S\.Kom\.|M\.Kom\.|M\.Eng\.|S\.E\.|M\.Si\.|S\.T\.|M\.T\.|S\.Ds\.|M\.Ds\.|S\.H\.|M\.H\.|S\.Si\.|S\.Pd\.|M\.Pd\.|S\.IP\.|M\.I\.Pol\.|M\.I\.Kom\.|S\.Sos\.|S\.STP\.|M\.AP\.|A\.KS\.|Ph\.D\.|CIMA|CDMP|CSBA)\b/gi, "")
+    .trim();
+  const words = (cleanName || name).split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "U";
+  if (words.length === 1) return words[0][0].toUpperCase();
+  return words.slice(0, 3).map((w) => w[0].toUpperCase()).join("");
+};
+
 export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "MAHASISWA_KKN", "PETUGAS_RESIDU"];
+
+// ─── Helper: Storage abstraction (localStorage vs sessionStorage) ─────────────
+const TOKEN_KEYS = ["psc_access_token", "psc_refresh_token", "psc_user"] as const;
+
+function getActiveStorage(): Storage {
+  // Jika flag remember_me disimpan di localStorage → localStorage, else → sessionStorage
+  return localStorage.getItem("psc_remember_me") === "1" ? localStorage : sessionStorage;
+}
+
+function getStoredItem(key: string): string | null {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? null;
+}
+
+function setStoredItem(key: string, value: string, remember: boolean): void {
+  if (remember) {
+    localStorage.setItem(key, value);
+    sessionStorage.removeItem(key); // cleanup other storage
+  } else {
+    sessionStorage.setItem(key, value);
+    localStorage.removeItem(key); // cleanup other storage
+  }
+}
+
+function clearAllStoredItems(): void {
+  TOKEN_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+  localStorage.removeItem("psc_remember_me");
+}
 
 const getInitialUser = (): User | null => {
   try {
-    const stored = localStorage.getItem("psc_user");
+    const stored = getStoredItem("psc_user");
     if (!stored) return null;
     const user = JSON.parse(stored);
     if (user && WEB_DISABLED_ROLES.includes(user.peran)) {
-      localStorage.removeItem("psc_user");
-      localStorage.removeItem("psc_access_token");
-      localStorage.removeItem("psc_refresh_token");
+      clearAllStoredItems();
       return null;
     }
     if (user && (user.wilayah === "Sistem Pusat" || user.wilayah === "Dinas Lingkungan Hidup")) {
       user.wilayah = "Kecamatan Coblong";
-      localStorage.setItem("psc_user", JSON.stringify(user));
+      const storage = getActiveStorage();
+      storage.setItem("psc_user", JSON.stringify(user));
     }
     return user;
   } catch {
@@ -137,11 +183,11 @@ const getInitialUser = (): User | null => {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
-  isAuthenticated: !!localStorage.getItem("psc_access_token") && (!getInitialUser() ? false : true),
+  isAuthenticated: !!getStoredItem("psc_access_token") && (!getInitialUser() ? false : true),
   isLoading: false,
   error: null,
 
-  login: async (phone: string, password: string) => {
+  login: async (phone: string, password: string, rememberMe: boolean = true) => {
     set({ isLoading: true, error: null });
     try {
       // Axios returns { data, status, ... }; backend body is { message, data: { user, accessToken, refreshToken } }
@@ -157,17 +203,22 @@ export const useAuthStore = create<AuthState>((set) => ({
       const normalizedRole = normalizeRole(backendUser.role);
 
       if (WEB_DISABLED_ROLES.includes(normalizedRole)) {
-        localStorage.removeItem("psc_access_token");
-        localStorage.removeItem("psc_refresh_token");
-        localStorage.removeItem("psc_user");
+        clearAllStoredItems();
         set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
         return false;
       }
 
-      // Simpan token
-      localStorage.setItem("psc_access_token", accessToken);
+      // Simpan flag remember_me di localStorage (selalu persisten sebagai referensi)
+      if (rememberMe) {
+        localStorage.setItem("psc_remember_me", "1");
+      } else {
+        localStorage.removeItem("psc_remember_me");
+      }
+
+      // Simpan token berdasarkan pilihan "Ingat Saya"
+      setStoredItem("psc_access_token", accessToken, rememberMe);
       if (refreshToken) {
-        localStorage.setItem("psc_refresh_token", refreshToken);
+        setStoredItem("psc_refresh_token", refreshToken, rememberMe);
       }
 
       // Buat user object untuk store
@@ -178,7 +229,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: backendUser.email,
         peran: normalizedRole,
         wilayah: getWilayahByRole(normalizedRole),
-        avatar: backendUser.name.substring(0, 2).toUpperCase(),
+        avatar: computeAvatarInitials(backendUser.name),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
         address: backendUser.address,
@@ -186,7 +237,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         ...avatarConfig,
       };
 
-      localStorage.setItem("psc_user", JSON.stringify(user));
+      setStoredItem("psc_user", JSON.stringify(user), rememberMe);
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       return true;
     } catch (err: any) {
@@ -242,7 +293,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: backendUser.email,
         peran: normalizedRole,
         wilayah: getWilayahByRole(normalizedRole),
-        avatar: backendUser.name.substring(0, 2).toUpperCase(),
+        avatar: computeAvatarInitials(backendUser.name),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
         address: backendUser.address,
@@ -262,14 +313,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      const refreshToken = localStorage.getItem("psc_refresh_token");
+      const refreshToken = getStoredItem("psc_refresh_token");
       if (refreshToken) {
         await api.post("/auth/logout", { refreshToken }).catch(() => {});
       }
     } finally {
-      localStorage.removeItem("psc_access_token");
-      localStorage.removeItem("psc_refresh_token");
-      localStorage.removeItem("psc_user");
+      clearAllStoredItems();
       set({ user: null, isAuthenticated: false, error: null });
     }
   },
@@ -278,7 +327,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, wilayah: newWilayah };
-      localStorage.setItem("psc_user", JSON.stringify(updatedUser));
+      const remember = localStorage.getItem("psc_remember_me") === "1";
+      setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
       return { user: updatedUser };
     });
   },
@@ -287,7 +337,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, ...updatedFields };
-      localStorage.setItem("psc_user", JSON.stringify(updatedUser));
+      const remember = localStorage.getItem("psc_remember_me") === "1";
+      setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
       return { user: updatedUser };
     });
   },

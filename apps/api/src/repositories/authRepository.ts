@@ -203,6 +203,8 @@ export class AuthRepository {
   async findRoleByName(name: string): Promise<Role | null> {
     try {
       const normalizedMap: Record<string, string> = {
+        "Admin": "SUPER_USER",
+        "ADMIN": "SUPER_USER",
         "Super User": "SUPER_USER",
         "SUPER USER": "SUPER_USER",
         "Dinas Lingkungan Hidup": "ADMIN_DLH",

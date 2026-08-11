@@ -14,7 +14,6 @@ import {
   MapPin, 
   FileText, 
   LogOut, 
-  ShieldCheck, 
   Sprout, 
   LineChart, 
   Trophy, 
@@ -35,17 +34,21 @@ import {
   GraduationCap,
   Archive,
   Shield,
-  Globe
+  ChevronDown,
+  Clock
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
-import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
-import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
-
+import showToast from "../../../utils/showToast";
 import type { LucideIcon } from "lucide-react";
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isCollapsed?: boolean;
+}
 
 interface NavItemProps {
   to: string;
@@ -70,17 +73,52 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
   return (
     <Link
       to={to}
-      className={`flex items-center px-4 py-3 rounded-r-xl transition-all text-[13px] ${
+      className={`relative flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 text-[13px] group overflow-hidden ${
         isCurrentActive
-          ? "bg-secondary-fixed text-on-secondary-fixed-variant border-l-4 border-secondary font-bold"
-          : "text-on-surface-variant hover:bg-surface-container-high"
+          ? "bg-[#e5f7ed] text-[#009966] font-extrabold shadow-2xs"
+          : "text-slate-600 hover:text-[#009966] hover:bg-slate-50/80 hover:translate-x-1 font-semibold active:scale-[0.98]"
       }`}
     >
-      <Icon className="mr-3 text-[20px]" size={20} />
-      <span className="flex-1">{label}</span>
-      {badge !== undefined && (
-        <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{badge}</span>
+      {/* Left Curved Green Accent Indicator */}
+      {isCurrentActive && (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] rounded-r-full" />
       )}
+
+      <Icon className={`shrink-0 transition-colors ${isCurrentActive ? "text-[#009966]" : "text-slate-500 group-hover:text-[#009966]"}`} size={19} />
+      <span className="flex-1 truncate">{label}</span>
+      {badge !== undefined && (
+        <span className="bg-[#009966] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{badge}</span>
+      )}
+    </Link>
+  );
+};
+
+const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => {
+  const location = useLocation();
+  const currentPathWithSearch = location.pathname + location.search;
+
+  const isCurrentActive = useMemo(() => {
+    if (to.includes("?")) return currentPathWithSearch === to;
+    if (location.pathname !== to) return false;
+    if (!location.search) return true;
+    return currentPathWithSearch === to;
+  }, [to, location.pathname, location.search, currentPathWithSearch]);
+
+  return (
+    <Link
+      to={to}
+      title={label}
+      className={`relative w-10 h-10 rounded-2xl flex items-center justify-center my-0.5 transition-all group cursor-pointer shrink-0 ${
+        isCurrentActive
+          ? "bg-[#009966] text-white shadow-md shadow-emerald-900/20 scale-105"
+          : "text-slate-500 hover:text-[#009966] hover:bg-slate-100"
+      }`}
+    >
+      <Icon size={19} />
+      {/* Hover Tooltip appearing on right */}
+      <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70]">
+        {label}
+      </span>
     </Link>
   );
 };
@@ -95,42 +133,53 @@ const NavGroup: React.FC<{
   const currentPath = location.pathname + location.search;
 
   const isAnySubActive = items.some(
-    (sub) => location.pathname === sub.to || currentPath === sub.to
+    (item) => currentPath === item.to || (["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(item.to) && ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) && !location.search)
   );
 
   return (
-    <div className="flex flex-col">
+    <div className="space-y-0.5">
       <button
-        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center px-4 py-2.5 rounded-r-xl transition-all text-[13px] w-full text-left cursor-pointer ${
+        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 text-[13px] text-left group relative overflow-hidden ${
           isAnySubActive
-            ? "bg-slate-100/80 text-slate-900 font-bold border-l-3 border-emerald-600"
-            : "text-slate-600 hover:bg-slate-100/60"
+            ? "bg-[#e5f7ed] text-[#009966] font-extrabold"
+            : "text-slate-600 hover:text-[#009966] hover:bg-slate-50/80 font-semibold"
         }`}
       >
-        <Icon className="mr-3 text-[20px]" size={20} />
-        <span className="flex-1 font-bold">{label}</span>
+        {isAnySubActive && (
+          <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] rounded-r-full" />
+        )}
+
+        <Icon className={`shrink-0 transition-colors ${isAnySubActive ? "text-[#009966]" : "text-slate-500 group-hover:text-[#009966]"}`} size={19} />
+        <span className="flex-1 font-extrabold truncate">{label}</span>
         <ChevronDown
           size={16}
-          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`transition-transform duration-200 text-slate-400 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
       {isOpen && (
-        <div className="ml-6 pl-2 border-l border-slate-200 my-1 space-y-1">
+        <div className="ml-4 pl-1.5 border-l-2 border-slate-200/80 my-1 space-y-1">
           {items.map((sub) => {
-            const isActive = currentPath === sub.to || (sub.to === "/manajemen-pengguna" && location.pathname === "/manajemen-pengguna" && !location.search);
+            const isActive = currentPath === sub.to || (["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(sub.to) && ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) && !location.search);
             return (
               <NavLink
                 key={sub.to}
                 to={sub.to}
-                className={`block px-3 py-1.5 rounded-md text-[12px] transition-all ${
+                title={sub.label}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[12px] transition-all group ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-800 font-bold border-l-2 border-emerald-600 pl-2.5"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium"
+                    ? "bg-[#e5f7ed] text-[#009966] font-extrabold shadow-2xs"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-[#009966] hover:translate-x-1 font-semibold active:scale-[0.98]"
                 }`}
               >
-                {sub.label}
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                    isActive
+                      ? "bg-[#009966] scale-125 ring-2 ring-emerald-200"
+                      : "bg-slate-300 group-hover:bg-[#009966]"
+                  }`}
+                />
+                <span className="truncate leading-normal">{sub.label}</span>
               </NavLink>
             );
           })}
@@ -141,20 +190,45 @@ const NavGroup: React.FC<{
 };
 
 const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
-  <div className="px-4 py-2 text-[10px] uppercase font-bold text-primary tracking-wider mt-4 mb-1 border-t border-outline-variant/20 pt-3 first:border-t-0 first:pt-0 first:mt-2">
+  <div className="px-4 pt-4 pb-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
     {label}
   </div>
 );
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const [showLogoutModal, setShowLogoutModal] = React.useState<boolean>(false);
+  const userRole = (user?.peran || "WARGA") as UserRole;
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+
+  // Live real-time clock state
+  const [timeStr, setTimeStr] = React.useState("");
+  const [dateStr, setDateStr] = React.useState("");
+
+  React.useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTimeStr(
+        now.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }) + " WIB"
+      );
+      setDateStr(
+        now.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      );
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -162,127 +236,109 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const confirmLogout = () => {
     logout();
-    toast.success("Berhasil keluar sistem");
+    showToast.success("Berhasil keluar sistem");
     navigate("/login");
   };
 
-  const currentRole = user?.peran || "WARGA";
-  const hasAccess = (allowed: UserRole[]) => allowed.includes(currentRole as UserRole);
-
   const ALL_ROLES: UserRole[] = [
+    "DEVELOPER",
     "SUPER_USER",
-    "ADMIN_DLH",
-    "CAMAT",
-    "LURAH",
+    "WARGA",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+    "PEMIMPIN",
     "RW",
     "RT",
     "DPL",
-    "PEMIMPIN",
+    "DOSEN_PEMBIMBING",
+    "CAMAT",
+    "LURAH",
+    "ADMIN_DLH",
     "PANITIA_TASKFORCE",
   ];
 
+  const hasAccess = (allowed: UserRole[]) => userRole === "DEVELOPER" || allowed.includes(userRole);
+
   const menuSections = [
     {
-      header: "Layanan Utama",
+      header: "NAVIGASI UTAMA",
       items: [
-        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard Utama", allowed: ALL_ROLES },
-        { to: "/monitoring", icon: Activity, label: "Monitoring Wilayah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"] as UserRole[] },
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dasbor Utama", allowed: ALL_ROLES },
+        { to: "/monitoring", icon: MapPin, label: "Pemantauan Wilayah", allowed: ALL_ROLES },
       ],
     },
     {
-      header: "Dashboard Kegiatan KKN",
+      header: "OPERASIONAL PERSAMPAHAN",
       items: [
-        { to: "/dashboard-kkn", icon: Users, label: "Kelompok KKN", allowed: ["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/dashboard-kkn?tab=MAHASISWA", icon: GraduationCap, label: "Portofolio Mahasiswa", allowed: ["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/dashboard-kkn?tab=APPROVAL", icon: ClipboardCheck, label: "Persetujuan Sakit / Izin", allowed: ["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/setor-sampah", icon: ScanLine, label: "Penyetoran Sampah", allowed: ALL_ROLES },
+        { to: "/manajemen-pengangkutan", icon: Truck, label: "Pengangkutan Residu", allowed: ["SUPER_USER", "PETUGAS_RESIDU", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
+        { to: "/rekap-setoran", icon: Receipt, label: "Rekapitulasi Setoran", allowed: ["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
       ],
     },
     {
-      header: "Tata Kelola Sampah",
+      header: "PENGOLAHAN & KKN",
       items: [
-        { to: "/setor-sampah", icon: ScanLine, label: "Pemilahan Sampah Warga", allowed: ALL_ROLES },
-        { to: "/rw/approval", icon: ShieldCheck, label: "Approval Tempat Sampah & Petugas", allowed: ["SUPER_USER", "RW", "RT"] as UserRole[] },
-        { to: "/manajemen-pengangkutan", icon: Truck, label: "Pengangkutan Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/pemanfaatan-sampah", icon: Sprout, label: "Entri Pemanfaatan Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/hasil-pemanfaatan", icon: Archive, label: "Laporan & Hasil Panen", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Program KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
+        { to: "/pemanfaatan-sampah", icon: Sprout, label: "Pengolahan Daur Ulang", allowed: ALL_ROLES },
+        { to: "/hasil-pemanfaatan", icon: Archive, label: "Produk & Hasil Olahan", allowed: ALL_ROLES },
+        { to: "/monitoring-absen", icon: ClipboardCheck, label: "Presensi & Absensi KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
       ],
     },
     {
-      header: "Manajemen Data",
+      header: "MANAJEMEN DATA MASTER",
       items: [
         {
           type: "group",
-          icon: Users,
           label: "Master Pengguna",
-          allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[],
+          icon: Users,
+          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "RW", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[],
           children: [
-            { to: "/manajemen-pengguna?role=SUPER_USER", label: "Super User" },
-            { to: "/manajemen-pengguna?role=ADMIN_DLH", label: "Dinas Lingkungan Hidup" },
-            { to: "/manajemen-pengguna?role=CAMAT", label: "Camat" },
-            { to: "/manajemen-pengguna?role=LURAH", label: "Lurah" },
-            { to: "/manajemen-pengguna?role=RW", label: "Rukun Warga" },
-            { to: "/manajemen-pengguna?role=PEMIMPIN", label: "Pimpinan Perguruan Tinggi" },
-            { to: "/manajemen-pengguna?role=PANITIA_TASKFORCE", label: "Task Force Perguruan Tinggi" },
-            { to: "/manajemen-pengguna?role=DPL", label: "Dosen Pembimbing Lapangan" },
-            { to: "/manajemen-pengguna?role=PETUGAS_RESIDU", label: "Petugas Residu" },
-            { to: "/manajemen-pengguna?role=MAHASISWA_KKN", label: "Mahasiswa" },
-            { to: "/manajemen-pengguna?role=WARGA", label: "Warga" },
+            { to: "/master-pengguna?role=developer", label: "Developer" },
+            { to: "/master-pengguna?role=admin", label: "Super User" },
+            { to: "/master-pengguna?role=pimpinan", label: "Pimpinan" },
+            { to: "/master-pengguna?role=taskforce", label: "Task Force" },
+            { to: "/master-pengguna?role=dpl", label: "Dosen Pembimbing Lapangan" },
+            { to: "/master-pengguna?role=dlh", label: "Dinas Lingkungan Hidup" },
+            { to: "/master-pengguna?role=camat", label: "Camat" },
+            { to: "/master-pengguna?role=lurah", label: "Lurah" },
+            { to: "/master-pengguna?role=rw", label: "Rukun Warga" },
+            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Residu" },
+            { to: "/master-pengguna?role=mahasiswa", label: "Mahasiswa" },
+            { to: "/master-pengguna?role=warga", label: "Warga" },
           ],
         },
-        {
-          type: "group",
-          icon: MapPin,
-          label: "Master Data Wilayah",
-          allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[],
-          children: [
-            { to: "/master-wilayah?tab=kecamatan", label: "Kecamatan" },
-            { to: "/master-wilayah?tab=kelurahan", label: "Kelurahan" },
-            { to: "/master-wilayah?tab=rw", label: "Rukun Warga (RW)" },
-          ],
-        },
-        { to: "/pengguna-online", icon: Globe, label: "Pengguna Online (Live)", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Manajemen Tempat Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/manajemen-lokasi", icon: MapPin, label: "Manajemen Lokasi", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/rw/fasilitas", icon: Sprout, label: "Fasilitas & Ide", allowed: ["SUPER_USER", "RW", "RT"] as UserRole[] },
-      ],
-
-    },
-    {
-      header: "Laporan & Validasi",
-      items: [
-        { to: "/superUser/discrepancies", icon: ClipboardCheck, label: "Review Diskrepansi AI", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
-        { to: "/monitoring-absen", icon: Compass, label: "Monitoring Absen KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/rekap-setoran", icon: Receipt, label: "Rekap Setoran", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/laporan-analitik", icon: LineChart, label: "Laporan & Analitik", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Tempat & Wadah Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
+        { to: "/manajemen-lokasi", icon: Compass, label: "Wilayah & Titik TPS", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
+        { to: "/kategori-sampah", icon: Tags, label: "Kategori & Jenis Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
       ],
     },
     {
-      header: "Edukasi & Gamifikasi",
+      header: "ANALITIK & GAMIFIKASI",
       items: [
-        { to: "/leaderboard", icon: Trophy, label: "Leaderboard", allowed: ALL_ROLES },
-        { to: "/poin-warga", icon: Star, label: "Poin Warga", allowed: ALL_ROLES },
-        { to: "/ide-daur-ulang", icon: Lightbulb, label: "Ide Daur Ulang", allowed: ALL_ROLES },
-        { to: "/jadwal-kegiatan", icon: Calendar, label: "Jadwal Kegiatan", allowed: ALL_ROLES },
-        { to: "/kategori-sampah", icon: Tags, label: "Kategori Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/laporan-analitik", icon: LineChart, label: "Laporan & Analitik Eksekutif", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
+        { to: "/leaderboard", icon: Trophy, label: "Peringkat & Poin Warga", allowed: ALL_ROLES },
+        { to: "/poin-warga", icon: Star, label: "Tabungan Poin Warga", allowed: ALL_ROLES },
+        { to: "/ide-daur-ulang", icon: Lightbulb, label: "Katalis Ide Daur Ulang", allowed: ALL_ROLES },
+        { to: "/jadwal-kegiatan", icon: Calendar, label: "Agenda & Jadwal Kegiatan", allowed: ALL_ROLES },
       ],
     },
     {
-      header: "Sistem & Bantuan",
+      header: "ADMINISTRASI SISTEM",
       items: [
-        { to: "/panduan", icon: FileText, label: "Menu Panduan", allowed: ALL_ROLES },
-        { to: "/notifikasi", icon: Bell, label: "Notifikasi", allowed: ALL_ROLES },
-        { to: "/pengaturan", icon: Settings, label: "Pengaturan", allowed: ALL_ROLES },
-        { to: "/tentang", icon: Info, label: "Tentang Aplikasi", allowed: ALL_ROLES },
+        { to: "/superUser/configs", icon: Sliders, label: "Aturan Sistem & Bobot Poin", allowed: ["SUPER_USER"] as UserRole[] },
+        { to: "/superUser/qr-master", icon: QrCode, label: "Master Kode QR & Inaktif", allowed: ["SUPER_USER"] as UserRole[] },
+        { to: "/role-permissions", icon: Shield, label: "Hak Akses & Peran (RBAC)", allowed: ["SUPER_USER"] as UserRole[] },
+        { to: "/superUser/audit", icon: FileText, label: "Log Audit Sistem", allowed: ["SUPER_USER"] as UserRole[] },
+        { to: "/monitoring-aktivitas", icon: Activity, label: "Monitoring Aktivitas", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
       ],
     },
     {
-      header: "SUPER USER Panel",
+      header: "BANTUAN & PENGATURAN",
       items: [
-        { to: "/superUser/configs", icon: Sliders, label: "Rule Engine", allowed: ["SUPER_USER"] as UserRole[] },
-        { to: "/superUser/qr-master", icon: QrCode, label: "Master QR & Inaktif", allowed: ["SUPER_USER"] as UserRole[] },
-        { to: "/superUser/audit", icon: FileText, label: "Audit Trail", allowed: ["SUPER_USER"] as UserRole[] },
-        { to: "/role-permissions", icon: Shield, label: "Hak Akses (RBAC)", allowed: ["SUPER_USER"] as UserRole[] },
-        { to: "/simulasi-model-ai", icon: FileText, label: "Simulasi Model AI", allowed: ["SUPER_USER", "ADMIN_DLH"] as UserRole[] },
+        { to: "/notifikasi", icon: Bell, label: "Notifikasi Pemberitahuan", allowed: ALL_ROLES },
+        { to: "/panduan", icon: FileText, label: "Panduan Penggunaan", allowed: ALL_ROLES },
+        { to: "/pengaturan", icon: Settings, label: "Pengaturan Profil", allowed: ALL_ROLES },
+        { to: "/tentang", icon: Info, label: "Informasi Aplikasi", allowed: ALL_ROLES },
       ],
     },
   ];
@@ -296,118 +352,203 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           onClick={onClose}
         />
       )}
-      <aside className={`w-[260px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col z-50 transition-transform duration-300 ease-in-out transform lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        {/* Brand Header */}
-        <div className="px-5 py-4 border-b border-outline-variant/30 bg-slate-50/40 flex items-center justify-center">
-          <div className="relative group w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-gradient-to-b from-emerald-50/70 to-white/90 border border-emerald-100/70 shadow-2xs transition-all duration-300 hover:shadow-xs hover:scale-[1.01]">
-            <img
-              src="/logo.png"
-              alt="TrashCare Logo"
-              className="h-16 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-        </div>
 
-        {/* Navigation Menu */}
-        <nav
-          className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "#bccabc transparent" }}
-          onClick={() => {
-            if (window.innerWidth < 1024) onClose();
-          }}
-        >
-          {menuSections.map((sec) => {
-            const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
-            if (visibleItems.length === 0) return null;
-            return (
-              <React.Fragment key={sec.header}>
-                <SectionHeader label={sec.header} />
-                {visibleItems.map((item: any) =>
-                  item.type === "group" ? (
-                    <NavGroup
-                      key={item.label}
-                      icon={item.icon}
-                      label={item.label}
-                      items={item.children}
-                    />
-                  ) : (
-                    <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
-                  )
-                )}
-              </React.Fragment>
-            );
-          })}
-        </nav>
+      {/* Sidebar Container */}
+      <aside
+        className={`${
+          isCollapsed ? "w-[84px]" : "w-[280px]"
+        } h-screen fixed left-0 top-0 bg-white border-r border-slate-200/80 flex flex-col z-50 transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Render Collapsed Mini Sidebar */}
+        {isCollapsed ? (
+          <div className="flex flex-col h-full items-center justify-between py-3">
+            {/* Top Brand Original Full-Color Logo (Preserving Original Image) */}
+            <div className="flex flex-col items-center w-full border-b border-slate-100 pb-3 mb-2">
+              <div
+                title="TrashCare"
+                className="w-12 h-12 rounded-2xl bg-[#e5f7ed] border border-[#009966]/20 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
+              >
+                <img
+                  src="/image/trashcare-icon.png"
+                  alt="TrashCare Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
 
-      {/* Sidebar Footer */}
-      <div className="p-4 border-t border-outline-variant bg-surface-container-low">
-        <div className="bg-primary/10 p-3 rounded-xl mb-4 text-center">
-          <p className="text-[11px] text-primary font-bold">
-            Bersama memilah sampah, bersama jaga bumi.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden bg-slate-100"
-          >
-            <img
-              src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
-              alt="Avatar"
-              className="w-full h-full object-cover"
-              onError={(e) => handleAvatarError(e, user?.name)}
-            />
-          </div>
-          <div className="overflow-hidden flex-1">
-            <p className="text-[12px] text-on-surface font-bold truncate">
-              {user?.name || "Pengguna"}
-            </p>
-            <p className="text-[10px] text-on-surface-variant truncate font-semibold">
-              {user?.peran?.replace("_", " ")}
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="ml-auto text-on-surface-variant hover:text-error transition-colors flex-shrink-0"
-            title="Keluar Sistem"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
-        <div className="mt-3 text-[9px] text-on-surface-variant/65 text-center leading-relaxed">
-          © 2026 UNIVERSITAS KOMPUTER INDONESIA  ALL RIGHTS RESERVED.
-        </div>
-      </div>
-    </aside>
+            {/* Centered Icons Navigation List with Section Dividers & Smooth Scroll */}
+            <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center max-h-[calc(100vh-170px)] scrollbar-thin scrollbar-thumb-slate-200">
+              {menuSections.map((sec, idx) => {
+                const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
+                if (visibleItems.length === 0) return null;
+                return (
+                  <React.Fragment key={sec.header}>
+                    {idx > 0 && <div className="w-6 h-px bg-slate-200/80 my-1.5 mx-auto shrink-0" />}
+                    {visibleItems.map((item: any) =>
+                      item.type === "group" ? (
+                        <NavItemCollapsed
+                          key={item.label}
+                          to={item.children[0]?.to || "/manajemen-pengguna"}
+                          icon={item.icon}
+                          label={item.label}
+                        />
+                      ) : (
+                        <NavItemCollapsed
+                          key={item.to}
+                          to={item.to}
+                          icon={item.icon}
+                          label={item.label}
+                        />
+                      )
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </nav>
 
-    {showLogoutModal && (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100]">
-        <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-100 text-center space-y-4 animate-in fade-in zoom-in duration-150">
-          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto font-bold text-lg">
-            !
+            {/* Bottom Actions for Collapsed Mode */}
+            <div className="flex flex-col items-center gap-2 pt-3 border-t border-slate-100 w-full px-2 shrink-0">
+              {/* System Clock Pill Icon */}
+              <div
+                title={timeStr ? `${dateStr} - ${timeStr}` : "Jam Sistem"}
+                className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-600 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 transition-all"
+              >
+                <Clock size={19} />
+                <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60]">
+                  {timeStr || "Jam Sistem"}
+                </span>
+              </div>
+
+              {/* Logout Button Icon */}
+              <button
+                onClick={handleLogout}
+                title="Keluar Sistem"
+                className="w-11 h-11 rounded-2xl text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all relative group cursor-pointer"
+              >
+                <LogOut size={19} />
+                <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60]">
+                  Keluar Sistem
+                </span>
+              </button>
+            </div>
           </div>
-          <div>
-            <h3 className="font-extrabold text-lg text-gray-900">Konfirmasi Keluar</h3>
-            <p className="text-xs text-gray-500 mt-1">Apakah Anda yakin ingin keluar dari aplikasi TrashCare?</p>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => setShowLogoutModal(false)}
-              className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 transition cursor-pointer"
+        ) : (
+          /* Render Full-Width Sidebar Mode */
+          <>
+            {/* Brand Header */}
+            <div className="p-5 border-b border-slate-100 flex flex-col items-center text-center bg-white shrink-0 relative overflow-hidden group">
+              <div className="absolute top-2 w-28 h-28 bg-gradient-to-tr from-emerald-200/50 via-teal-100/40 to-sky-200/40 rounded-full blur-2xl pointer-events-none animate-pulse" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-emerald-100/40 rounded-full blur-xl pointer-events-none animate-pulse" style={{ animationDelay: "1s" }} />
+
+              <div className="absolute top-3 left-4 opacity-35 text-emerald-600 animate-bounce pointer-events-none" style={{ animationDuration: "3.5s" }}>
+                <Sprout size={16} />
+              </div>
+              <div className="absolute bottom-3 right-5 opacity-35 text-sky-600 animate-bounce pointer-events-none" style={{ animationDuration: "4.5s", animationDelay: "1.2s" }}>
+                <Trash2 size={15} />
+              </div>
+              <div className="absolute top-4 right-4 opacity-30 text-teal-600 animate-pulse pointer-events-none" style={{ animationDuration: "2.8s" }}>
+                <Tags size={14} />
+              </div>
+
+              <div className="relative z-10 w-15 h-15 mb-1.5 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                <img
+                  src="/image/trashcare-icon.png"
+                  alt="TrashCare Logo"
+                  className="w-full h-full object-contain drop-shadow-sm"
+                />
+              </div>
+
+              <h1 className="relative z-10 text-2xl font-black tracking-tight leading-tight">
+                <span className="text-[#0284c7]">Trash</span>
+                <span className="text-[#009966]">Care</span>
+              </h1>
+              <p className="relative z-10 text-[11px] font-bold text-[#009966] tracking-tight mt-0.5">
+                Sistem Pemantauan Pemilahan Sampah
+              </p>
+            </div>
+
+            {/* Navigation Menu */}
+            <nav
+              className="flex-1 overflow-y-auto px-2 space-y-0.5 py-3"
+              style={{ scrollbarWidth: "thin", scrollbarColor: "#cbd5e1 transparent" }}
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth < 1024) onClose();
+              }}
             >
-              Batal
-            </button>
-            <button
-              onClick={confirmLogout}
-              className="flex-1 py-2.5 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition shadow-sm cursor-pointer"
-            >
-              Ya, Keluar
-            </button>
+              {menuSections.map((sec) => {
+                const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
+                if (visibleItems.length === 0) return null;
+                return (
+                  <React.Fragment key={sec.header}>
+                    <SectionHeader label={sec.header} />
+                    {visibleItems.map((item: any) =>
+                      item.type === "group" ? (
+                        <NavGroup
+                          key={item.label}
+                          icon={item.icon}
+                          label={item.label}
+                          items={item.children}
+                        />
+                      ) : (
+                        <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+                      )
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </nav>
+
+            {/* Sidebar Footer */}
+            <div className="p-3.5 border-t border-slate-100 bg-slate-50/50 shrink-0">
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-3 text-center shadow-2xs mb-2.5">
+                <p className="text-[11px] font-bold text-slate-500 leading-tight">{dateStr || "Selasa, 11 Agustus 2026"}</p>
+                <p className="text-lg font-black text-slate-800 tracking-tight font-mono leading-snug mt-0.5">{timeStr || "00:00:00"}</p>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[#e11d48] hover:bg-rose-50 font-extrabold text-[13px] transition-all cursor-pointer group"
+              >
+                <LogOut size={19} className="text-[#e11d48] group-hover:-translate-x-0.5 transition-transform" />
+                <span>Keluar Sistem</span>
+              </button>
+            </div>
+          </>
+        )}
+      </aside>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto">
+              <LogOut size={24} />
+            </div>
+            <div>
+              <h3 className="font-black text-lg text-slate-900">Konfirmasi Keluar</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Apakah Anda yakin ingin keluar dari aplikasi TrashCare?</p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-2.5 bg-rose-500 text-white font-extrabold text-xs rounded-xl hover:bg-rose-600 transition shadow-xs cursor-pointer"
+              >
+                Ya, Keluar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </>
-);
+      )}
+    </>
+  );
 };
 
 export default Sidebar;

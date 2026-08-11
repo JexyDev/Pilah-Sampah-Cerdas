@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+
 import { ErrorBoundary } from "react-error-boundary";
 import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Header/Header";
@@ -16,13 +16,30 @@ import ErrorBoundaryFallback from "../../common/ErrorBoundaryFallback";
 
 const MainLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleToggleSidebar = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setIsSidebarOpen((prev) => !prev);
+    } else {
+      setIsCollapsed((prev) => !prev);
+    }
+  };
 
   return (
     <div className="flex bg-surface min-h-screen relative overflow-x-hidden">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <main className="ml-0 lg:ml-[260px] min-h-screen flex flex-col justify-between flex-1 w-full transition-all duration-300">
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        isCollapsed={isCollapsed}
+      />
+      <main
+        className={`ml-0 ${
+          isCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]"
+        } min-h-screen flex flex-col justify-between flex-1 w-full transition-all duration-300`}
+      >
         <div>
-          <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <Header onToggleSidebar={handleToggleSidebar} isCollapsed={isCollapsed} />
           <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
             <div className="p-container-margin">
               <Outlet />
@@ -33,7 +50,7 @@ const MainLayout: React.FC = () => {
           <Footer />
         </div>
       </main>
-      <Toaster position="bottom-right" />
+
     </div>
   );
 };

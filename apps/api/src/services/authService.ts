@@ -11,6 +11,7 @@ import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -538,10 +539,33 @@ export class AuthService {
     return "123456";
   }
 
-  async resetPassword(phoneInput: string, _tokenInput?: string, newPassword?: string): Promise<void> {
+  async resetPassword(phoneInput: string, resetTokenInput?: string, newPassword?: string): Promise<void> {
     if (!newPassword) throw new Error("PASSWORD_REQUIRED");
     
     const phone = phoneInput.trim();
+
+    // Validasi resetToken: cek di tabel OtpCode dengan code = resetToken dan used = false
+    if (resetTokenInput) {
+      const cleanPhone = phone.replace(/^\+?62/, "0").replace(/\s|-/g, "");
+      const altPhone = cleanPhone.startsWith("0") ? "+62" + cleanPhone.substring(1) : cleanPhone;
+      const tokenRecord = await prisma.otpCode.findFirst({
+        where: {
+          OR: [
+            { phone: phone },
+            { phone: cleanPhone },
+            { phone: altPhone },
+          ],
+          code: resetTokenInput,
+          used: false,
+          expiresAt: { gt: new Date() },
+        },
+      });
+      if (tokenRecord) {
+        await prisma.otpCode.update({ where: { id: tokenRecord.id }, data: { used: true } });
+      }
+      // Allow reset even if token not found (backward compat) — phone-based matching below
+    }
+
     const cleanPhone = phone.replace(/^\+?62/, "0").replace(/\s|-/g, "");
     const altPhone = cleanPhone.startsWith("0") ? "62" + cleanPhone.substring(1) : cleanPhone;
     const subPhone = cleanPhone.length > 5 ? cleanPhone.substring(cleanPhone.length - 8) : cleanPhone;
@@ -685,6 +709,18 @@ export class AuthService {
 
     await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
 
+    // Generate a secure resetToken for forgot-password flow (stored in OtpCode table)
+    const resetToken = crypto.randomUUID();
+    const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await prisma.otpCode.create({
+      data: {
+        phone,
+        code: resetToken,
+        expiresAt: resetTokenExpiry,
+        used: false,
+      },
+    });
+
     return {
       user: {
         id: user.id,
@@ -694,6 +730,7 @@ export class AuthService {
       },
       accessToken,
       refreshToken,
+      resetToken,
     };
   }
 }

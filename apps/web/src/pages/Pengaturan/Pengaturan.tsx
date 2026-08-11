@@ -297,6 +297,20 @@ const Pengaturan: React.FC = () => {
     }
   };
 
+  const handleDeletePhoto = async () => {
+    try {
+      setIsUploading(true);
+      await authService.updateProfile({ fotoProfil: null as any });
+      setProfileData((prev) => ({ ...prev, fotoProfil: "" }));
+      updateStoreUser({ fotoProfil: null as any });
+      toast.success("Foto profil berhasil dihapus!");
+    } catch (err: any) {
+      toast.error("Gagal menghapus foto profil");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(true);
@@ -427,12 +441,24 @@ const Pengaturan: React.FC = () => {
                       onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])}
                     />
 
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline"
-                    >
-                      Ubah Foto Profil
-                    </button>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline cursor-pointer"
+                      >
+                        Ubah Foto Profil
+                      </button>
+                      {profileData.fotoProfil && (
+                        <button
+                          type="button"
+                          onClick={handleDeletePhoto}
+                          className="text-[11px] font-bold text-rose-600 uppercase tracking-wider hover:underline cursor-pointer"
+                        >
+                          Hapus Foto
+                        </button>
+                      )}
+                    </div>
                     <p className="text-[10px] text-on-surface-variant font-medium text-center max-w-[150px] leading-relaxed">
                       JPG, PNG, WEBP. Maks 2MB. Drag & drop file juga bisa dilakukan.
                     </p>

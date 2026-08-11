@@ -243,7 +243,7 @@ const ManajemenMahasiswa: React.FC = () => {
   if (user?.peran !== "SUPER_USER") {
     return (
       <div className="p-8 text-center text-rose-600 font-bold bg-white rounded-2xl m-6 border border-rose-200">
-        Akses Ditolak. Halaman ini khusus SUPER USER.
+        Akses Ditolak. Halaman ini khusus Admin.
       </div>
     );
   }

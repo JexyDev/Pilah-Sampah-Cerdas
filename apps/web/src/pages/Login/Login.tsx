@@ -6,14 +6,10 @@
 
 import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import toast from "react-hot-toast";
 import {
-  Server,
-  WifiOff,
   Lock,
   EyeOff,
   Eye,
-  AlertCircle,
   AlertTriangle,
   X,
   CheckCircle2,
@@ -28,7 +24,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
-import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp";
+import showToast from "../../utils/showToast";
 
 // Exact Vector SVG Icon matching the TrashCare logo
 const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
@@ -118,9 +114,9 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
       const data = res.data;
       // Di development, tampilkan OTP untuk testing
       if (data.devOtp) {
-        toast.success(`[DEV] Kode OTP: ${data.devOtp}`, { duration: 15000 });
+        showToast.success(`[DEV] Kode OTP: ${data.devOtp}`);
       } else {
-        toast.success("Kode OTP telah dikirim ke WhatsApp Anda!");
+        showToast.success("Kode OTP telah dikirim ke WhatsApp Anda!");
       }
       setStep("otp");
       startResendCooldown();
@@ -131,7 +127,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
       } else if (msg.includes("USER_INACTIVE") || msg.includes("tidak aktif")) {
         setPhoneError("Akun dengan nomor ini tidak aktif");
       } else {
-        toast.error("Gagal mengirim OTP. Silakan coba lagi.");
+        showToast.error("Gagal mengirim OTP. Silakan coba lagi.");
       }
     } finally {
       setLoading(false);
@@ -192,7 +188,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
         resetToken,
         newPassword,
       });
-      toast.success("Kata sandi berhasil diperbarui! Silakan masuk kembali.");
+      showToast.success("Kata sandi berhasil diperbarui! Silakan masuk kembali.");
       onClose();
     } catch (err: any) {
       const msg = err.response?.data?.message || "";
@@ -231,76 +227,91 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+        className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-5 flex items-center justify-between">
+        {/* Header Banner - Emerald Green #009966 */}
+        <div className="bg-[#009966] p-5 flex items-center justify-between">
           <div className="flex items-center gap-3 text-white">
-            <KeyRound size={22} />
+            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <KeyRound size={20} className="text-white" />
+            </div>
             <div>
-              <h2 className="font-black text-base leading-tight">Lupa Kata Sandi</h2>
-              <p className="text-emerald-100 text-[11px] font-medium">
+              <h2 className="font-black text-lg text-white leading-tight">Lupa Kata Sandi</h2>
+              <p className="text-emerald-100 text-[11px] font-semibold">
                 {step === "phone" && "Langkah 1 dari 3 — Verifikasi Nomor HP"}
-                {step === "otp" && "Langkah 2 dari 3 — Masukkan Kode OTP"}
+                {step === "otp" && "Langkah 2 dari 3 — Verifikasi Kode OTP"}
                 {step === "new_password" && "Langkah 3 dari 3 — Buat Kata Sandi Baru"}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/70 hover:text-white transition cursor-pointer">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center text-white/80 hover:text-white transition cursor-pointer"
+            aria-label="Tutup modal"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {/* Progress bar */}
+        {/* 3-Step Progress Bar */}
         <div className="w-full h-1.5 bg-slate-100">
           <div
-            className="h-full bg-emerald-500 transition-all duration-500"
+            className="h-full bg-emerald-400 transition-all duration-500"
             style={{ width: step === "phone" ? "33%" : step === "otp" ? "66%" : "100%" }}
           />
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 text-left">
+
           {/* ── Step 1: Nomor HP ── */}
           {step === "phone" && (
             <>
-              <div className="text-center space-y-1">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
-                  <MessageSquare size={28} className="text-emerald-600" />
+              {/* Centered Circular WhatsApp Icon Badge */}
+              <div className="text-center space-y-2">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
+                  <MessageSquare size={26} />
                 </div>
-                <p className="text-sm text-slate-600 font-medium mt-3">
+                <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
                   Masukkan nomor HP yang terdaftar. Kode OTP 6 digit akan dikirimkan ke WhatsApp Anda.
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Nomor HP Terdaftar
+              <div className="space-y-2">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block">
+                  NOMOR HP TERDAFTAR
                 </label>
-                {/* Aturan validasi yang ditampilkan */}
-                <div className="text-[10px] text-slate-400 font-medium bg-slate-50 rounded-lg px-3 py-2 border border-slate-200 space-y-0.5">
-                  <p>✓ Hanya angka — format nomor Indonesia (+62/08/628)</p>
-                  <p>✓ Contoh: 08123456789 atau +6281234567890</p>
-                  <p>✓ Panjang: 10–13 digit (setelah kode negara)</p>
+
+                {/* Rules Guidance Card matching reference image 1:1 */}
+                <div className="text-[11px] text-slate-500 font-medium bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
+                  <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                    <span className="text-emerald-600 font-extrabold">✓</span> Hanya angka — format nomor Indonesia (+62/08/628)
+                  </p>
+                  <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                    <span className="text-emerald-600 font-extrabold">✓</span> Contoh: 08123456789 atau +6281234567890
+                  </p>
+                  <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                    <span className="text-emerald-600 font-extrabold">✓</span> Panjang: 10–13 digit (setelah kode negara)
+                  </p>
                 </div>
+
+                {/* Styled Phone Input */}
                 <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} />
                   <input
-                    className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${phoneError ? "border-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                    className={`w-full pl-11 pr-4 h-13 bg-white border ${phoneError ? "border-rose-500 focus:ring-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-base font-bold text-slate-900 outline-none transition-all`}
                     placeholder="08123456789 atau +6281234567890"
                     type="tel"
                     inputMode="numeric"
                     value={phone}
                     onChange={(e) => {
-                      // Tolak karakter selain digit, +, spasi
                       const val = e.target.value.replace(/[^\d+\s]/g, "");
                       setPhone(val);
                       if (phoneError) setPhoneError("");
                     }}
                     onKeyDown={(e) => {
-                      // Blokir huruf & simbol (izinkan: digit, +, backspace, arrow, tab)
                       if (!/[\d+\s]/.test(e.key) && !["Backspace","Delete","ArrowLeft","ArrowRight","Tab","Enter"].includes(e.key)) {
                         e.preventDefault();
                       }
@@ -314,19 +325,26 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                     autoFocus
                   />
                 </div>
+
                 {phoneError && (
-                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1">
-                    <AlertTriangle size={11} />{phoneError}
+                  <p className="text-[11px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
+                    <AlertTriangle size={12} />
+                    {phoneError}
                   </p>
                 )}
               </div>
 
+              {/* WhatsApp Submit Button #009966 */}
               <button
                 onClick={handleRequestOtp}
                 disabled={loading || !phone.trim()}
-                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full h-13 bg-[#009966] hover:bg-emerald-700 text-white text-sm font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all duration-300 shadow-md shadow-emerald-700/20 disabled:opacity-50 cursor-pointer"
               >
-                {loading ? <><RefreshCcw className="animate-spin" size={16} /><span>Mengirim OTP...</span></> : <><MessageSquare size={16} /><span>Kirim Kode OTP via WhatsApp</span></>}
+                {loading ? (
+                  <><RefreshCcw className="animate-spin" size={17} /><span>Mengirim Kode OTP...</span></>
+                ) : (
+                  <><MessageSquare size={18} /><span>Kirim Kode OTP via WhatsApp</span></>
+                )}
               </button>
             </>
           )}
@@ -334,24 +352,24 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
           {/* ── Step 2: OTP ── */}
           {step === "otp" && (
             <>
-              <div className="text-center space-y-1">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
-                  <ShieldCheck size={28} className="text-emerald-600" />
+              <div className="text-center space-y-2">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
+                  <ShieldCheck size={28} />
                 </div>
-                <p className="text-sm text-slate-600 font-medium mt-3">
+                <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
                   Kode OTP 6 digit dikirim ke WhatsApp{" "}
-                  <strong className="text-slate-800">{normalizePhone(phone)}</strong>.
+                  <strong className="text-slate-900 font-bold">{normalizePhone(phone)}</strong>.
                 </p>
-                <p className="text-[11px] text-slate-400">Periksa WhatsApp Anda. Kode berlaku 5 menit.</p>
+                <p className="text-[11px] text-slate-400 font-medium">Periksa WhatsApp Anda. Kode berlaku 5 menit.</p>
               </div>
 
-              {/* 6 kotak OTP */}
-              <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
+              {/* 6 Boxes OTP Input */}
+              <div className="flex gap-2 justify-center py-1" onPaste={handleOtpPaste}>
                 {otp.map((digit, i) => (
                   <input
                     key={i}
                     ref={(el) => { otpRefs.current[i] = el; }}
-                    className={`w-11 h-14 text-center text-xl font-black border-2 ${otpError ? "border-rose-400" : "border-slate-200 focus:border-emerald-600"} rounded-xl bg-slate-50 outline-none transition-all`}
+                    className={`w-12 h-14 text-center text-2xl font-black border-2 ${otpError ? "border-rose-400" : "border-slate-200 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl bg-slate-50 focus:bg-white text-slate-900 outline-none transition-all shadow-2xs`}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -363,38 +381,44 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   />
                 ))}
               </div>
+
               {otpError && (
                 <p className="text-[11px] text-rose-500 font-bold flex items-center gap-1 justify-center">
-                  <AlertTriangle size={12} />{otpError}
+                  <AlertTriangle size={12} />
+                  {otpError}
                 </p>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => { setStep("phone"); setOtp(["", "", "", "", "", ""]); setOtpError(""); }}
-                  className="flex-1 h-11 border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition flex items-center justify-center gap-1 cursor-pointer"
+                  className="flex-1 h-12 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl hover:bg-slate-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <ArrowLeft size={15} /> Kembali
+                  <ArrowLeft size={16} /> Kembali
                 </button>
                 <button
                   onClick={handleVerifyOtp}
                   disabled={loading || otp.join("").length < 6}
-                  className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                  className="flex-1 h-12 bg-[#009966] hover:bg-emerald-700 text-white text-xs font-extrabold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md disabled:opacity-50 cursor-pointer"
                 >
-                  {loading ? <><RefreshCcw className="animate-spin" size={15} /><span>Memverifikasi...</span></> : "Verifikasi OTP →"}
+                  {loading ? (
+                    <><RefreshCcw className="animate-spin" size={16} /><span>Memverifikasi...</span></>
+                  ) : (
+                    <span>Verifikasi Kode OTP →</span>
+                  )}
                 </button>
               </div>
 
-              <div className="text-center">
+              <div className="text-center pt-1">
                 {resendCooldown > 0 ? (
                   <p className="text-[11px] text-slate-400 font-medium">
-                    Kirim ulang kode dalam <strong className="text-emerald-600">{resendCooldown} detik</strong>
+                    Kirim ulang kode dalam <strong className="text-[#009966] font-bold">{resendCooldown} detik</strong>
                   </p>
                 ) : (
                   <button
                     onClick={() => { handleRequestOtp(); }}
                     disabled={loading}
-                    className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold cursor-pointer"
+                    className="text-[11px] text-[#009966] hover:text-emerald-700 font-extrabold cursor-pointer hover:underline"
                   >
                     Tidak menerima kode? Kirim ulang →
                   </button>
@@ -406,25 +430,25 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
           {/* ── Step 3: Password Baru ── */}
           {step === "new_password" && (
             <>
-              <div className="text-center space-y-1">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
-                  <Lock size={28} className="text-emerald-600" />
+              <div className="text-center space-y-2">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
+                  <Lock size={26} />
                 </div>
-                <p className="text-sm text-slate-600 font-medium mt-3">
-                  Buat kata sandi baru yang kuat untuk akun Anda.
+                <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
+                  Buat kata sandi baru yang kuat untuk akun TrashCare Anda.
                 </p>
               </div>
 
-              {/* Aturan password */}
-              <div className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 space-y-1">
-                <p className="font-black text-slate-700 uppercase tracking-wider mb-1.5">Ketentuan Kata Sandi:</p>
-                <p className={newPassword.length >= PASSWORD_MIN_LEN ? "text-emerald-600 font-bold" : ""}>
+              {/* Ketentuan password */}
+              <div className="text-[11px] text-slate-500 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 space-y-1.5">
+                <p className="font-extrabold text-slate-800 uppercase tracking-wider mb-1">Ketentuan Kata Sandi:</p>
+                <p className={newPassword.length >= PASSWORD_MIN_LEN ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {newPassword.length >= PASSWORD_MIN_LEN ? "✓" : "○"} Minimal {PASSWORD_MIN_LEN} karakter
                 </p>
-                <p className={/[A-Za-z]/.test(newPassword) ? "text-emerald-600 font-bold" : ""}>
+                <p className={/[A-Za-z]/.test(newPassword) ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {/[A-Za-z]/.test(newPassword) ? "✓" : "○"} Mengandung minimal 1 huruf (a–z atau A–Z)
                 </p>
-                <p className={/\d/.test(newPassword) ? "text-emerald-600 font-bold" : ""}>
+                <p className={/\d/.test(newPassword) ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {/\d/.test(newPassword) ? "✓" : "○"} Mengandung minimal 1 angka (0–9)
                 </p>
               </div>
@@ -433,9 +457,9 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 <div className="space-y-1">
                   <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Kata Sandi Baru</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-10 pr-10 h-12 bg-slate-50 border ${pwError ? "border-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white border ${pwError ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
                       placeholder="Kata sandi baru (min. 8 karakter)"
                       type={showNewPw ? "text" : "password"}
                       value={newPassword}
@@ -443,8 +467,8 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                       disabled={loading}
                       autoFocus
                     />
-                    <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 cursor-pointer">
-                      {showNewPw ? <EyeOff size={17} /> : <Eye size={17} />}
+                    <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-700 cursor-pointer">
+                      {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -452,17 +476,17 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 <div className="space-y-1">
                   <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Konfirmasi Kata Sandi</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-10 pr-10 h-12 bg-slate-50 border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
                       placeholder="Ulangi kata sandi baru"
                       type={showConfirmPw ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => { setConfirmPassword(e.target.value); if (pwError) setPwError(""); }}
                       disabled={loading}
                     />
-                    <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 cursor-pointer">
-                      {showConfirmPw ? <EyeOff size={17} /> : <Eye size={17} />}
+                    <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-700 cursor-pointer">
+                      {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -470,16 +494,21 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
 
               {pwError && (
                 <p className="text-[11px] text-rose-500 font-bold flex items-center gap-1">
-                  <AlertTriangle size={12} />{pwError}
+                  <AlertTriangle size={12} />
+                  {pwError}
                 </p>
               )}
 
               <button
                 onClick={handleResetPassword}
                 disabled={loading || !newPassword || !confirmPassword}
-                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full h-13 bg-[#009966] hover:bg-emerald-700 text-white text-sm font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
-                {loading ? <><RefreshCcw className="animate-spin" size={16} /><span>Menyimpan...</span></> : <><CheckCircle2 size={18} /><span>Simpan Kata Sandi Baru</span></>}
+                {loading ? (
+                  <><RefreshCcw className="animate-spin" size={17} /><span>Menyimpan Kata Sandi...</span></>
+                ) : (
+                  <><CheckCircle2 size={19} /><span>Simpan Kata Sandi Baru</span></>
+                )}
               </button>
             </>
           )}
@@ -501,8 +530,8 @@ const Login: React.FC = () => {
 
   // UX State
   const [isLocalLoading, setIsLocalLoading] = useState(false);
-  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   // Validation States
   const [identifierError, setIdentifierError] = useState("");
@@ -530,36 +559,19 @@ const Login: React.FC = () => {
   };
 
   const isFormInvalid = !identifier.trim() || !password.trim() || !!identifierError || !!passwordError;
-  const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay || isFormInvalid;
+  const isBtnDisabled = isStoreLoading || isLocalLoading || isFormInvalid;
 
-  const showToast = (message: string, type: "error" | "warning" | "server" | "network" = "error", retryAction?: () => void) => {
-    toast.custom(
-      (t) => (
-        <div className={`${t.visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"} transform transition-all duration-300 max-w-sm w-full bg-white shadow-xl rounded-xl pointer-events-auto flex border border-slate-200 p-4 gap-3 items-center`}>
-          <div className="flex-shrink-0 flex items-center">
-            {type === "error" && <AlertCircle className="text-red-500" size={24} />}
-            {type === "warning" && <AlertTriangle className="text-amber-500" size={24} />}
-            {type === "server" && <Server className="text-red-500 animate-pulse" size={24} />}
-            {type === "network" && <WifiOff className="text-red-500 animate-pulse" size={24} />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800 leading-normal">{message}</p>
-            {retryAction && (
-              <button type="button" onClick={() => { toast.dismiss(t.id); retryAction(); }} className="mt-2 text-[10px] text-emerald-600 hover:text-emerald-700 font-bold underline cursor-pointer">Coba Lagi</button>
-            )}
-          </div>
-          <button type="button" onClick={() => toast.dismiss(t.id)} className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
-      ),
-      { position: "top-right", duration: type === "server" || type === "network" ? 7000 : 4000 }
-    );
+  const triggerToast = (message: string, type: "error" | "warning" | "server" | "network" = "error") => {
+    if (type === "warning") {
+      showToast.warning(message);
+    } else {
+      showToast.error(message);
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (isStoreLoading || isLocalLoading || showSuccessOverlay) return;
+    if (isStoreLoading || isLocalLoading) return;
 
     const idVal = normalizePhone(identifier);
     if (idVal !== identifier) setIdentifier(idVal);
@@ -587,44 +599,54 @@ const Login: React.FC = () => {
     if (hasError) return;
 
     setIsLocalLoading(true);
-    const startTime = Date.now();
-    const success = await login(idVal, passVal);
+    const success = await login(idVal, passVal, rememberMe);
+    setIsLocalLoading(false);
 
-    const elapsed = Date.now() - startTime;
-    const remaining = Math.max(0, 1000 - elapsed);
-
-    setTimeout(() => {
-      setIsLocalLoading(false);
-      if (success) {
-        setShowSuccessOverlay(true);
-        setTimeout(() => navigate("/dashboard"), 1500);
+    if (success) {
+      const user = useAuthStore.getState().user;
+      const roleLabelMap: Record<string, string> = {
+        DEVELOPER: "Developer",
+        SUPER_USER: "Admin",
+        ADMIN_DLH: "Admin DLH",
+        CAMAT: "Camat",
+        LURAH: "Lurah",
+        RW: "Pengurus RW",
+        RT: "Pengurus RT",
+        DPL: "Dosen Pembimbing (DPL)",
+        PEMIMPIN: "Pimpinan",
+        PANITIA_TASKFORCE: "Task Force",
+      };
+      const displayRole = user?.peran ? (roleLabelMap[user.peran] || user.peran) : "Pengguna";
+      const displayName = user?.name || displayRole;
+      
+      showToast.success(`Selamat datang kembali, ${displayName}!`);
+      navigate("/dashboard");
+    } else {
+      const storeErr = useAuthStore.getState().error;
+      if (storeErr === "USER_NOT_FOUND") {
+        setIdentifierError("Nomor HP tidak terdaftar di sistem");
+      } else if (storeErr === "WRONG_PASSWORD") {
+        setPasswordError("Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'.");
+        setPassword("");
+        setTimeout(() => passwordInputRef.current?.focus(), 50);
+      } else if (storeErr === "ROLE_NOT_ALLOWED_ON_WEB") {
+        triggerToast("Akses Web khusus Admin, Rukun Warga, Dosen Pembimbing Lapangan (DPL), dan Pimpinan. Warga, Mahasiswa, dan Petugas Residu hanya dapat menggunakan aplikasi Mobile.", "warning");
+        setIdentifierError("Akses Web ditutup untuk peran ini (Gunakan Aplikasi Mobile)");
+      } else if (storeErr === "USER_INACTIVE") {
+        triggerToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");
+      } else if (storeErr === "USER_PENDING_APPROVAL") {
+        triggerToast("Akun Anda belum disetujui oleh pengurus RW setempat.", "warning");
+        setIdentifierError("Akun belum disetujui RW setempat");
+      } else if (storeErr === "SERVICE_UNAVAILABLE") {
+        triggerToast("Server sedang bermasalah, silakan coba lagi nanti", "server");
+      } else if (storeErr === "TOO_MANY_ATTEMPTS") {
+        triggerToast("Terlalu banyak percobaan, silakan coba lagi dalam 1 menit", "warning");
+      } else if (storeErr === "NETWORK_ERROR") {
+        triggerToast("Tidak dapat terhubung ke server, periksa koneksi internet Anda", "network");
       } else {
-        const storeErr = useAuthStore.getState().error;
-        if (storeErr === "USER_NOT_FOUND") {
-          setIdentifierError("Nomor HP tidak terdaftar di sistem");
-        } else if (storeErr === "WRONG_PASSWORD") {
-          setPasswordError("Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'.");
-          setPassword("");
-          setTimeout(() => passwordInputRef.current?.focus(), 50);
-        } else if (storeErr === "ROLE_NOT_ALLOWED_ON_WEB") {
-          showToast("Akses Web khusus Admin, Rukun Warga, Dosen Pembimbing Lapangan (DPL), dan Pimpinan. Warga, Mahasiswa, dan Petugas Residu hanya dapat menggunakan aplikasi Mobile.", "warning");
-          setIdentifierError("Akses Web ditutup untuk peran ini (Gunakan Aplikasi Mobile)");
-        } else if (storeErr === "USER_INACTIVE") {
-          showToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");
-        } else if (storeErr === "USER_PENDING_APPROVAL") {
-          showToast("Akun Anda belum disetujui oleh pengurus RW setempat.", "warning");
-          setIdentifierError("Akun belum disetujui RW setempat");
-        } else if (storeErr === "SERVICE_UNAVAILABLE") {
-          showToast("Server sedang bermasalah, silakan coba lagi nanti", "server", handleSubmit);
-        } else if (storeErr === "TOO_MANY_ATTEMPTS") {
-          showToast("Terlalu banyak percobaan, silakan coba lagi dalam 1 menit", "warning");
-        } else if (storeErr === "NETWORK_ERROR") {
-          showToast("Tidak dapat terhubung ke server, periksa koneksi internet Anda", "network", handleSubmit);
-        } else {
-          showToast("Gagal masuk ke sistem. Silakan coba lagi.", "error");
-        }
+        triggerToast("Gagal masuk ke sistem. Silakan coba lagi.", "error");
       }
-    }, remaining);
+    }
   };
 
   return (
@@ -637,64 +659,81 @@ const Login: React.FC = () => {
       {/* Forgot Password Modal */}
       {showForgotModal && <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />}
 
-      {showSuccessOverlay && (
-        <div className="fixed inset-0 bg-gradient-to-br from-emerald-600 to-teal-800 flex flex-col items-center justify-center z-50 transition-all duration-500 animate-in fade-in">
-          <div className="flex flex-col items-center gap-6 text-center text-white px-6">
-            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-bounce shadow-lg border border-white/30">
-              <CheckCircle2 className="text-white" size={64} />
+      {/* Main Split Container Card */}
+      <div className="w-full max-w-[1120px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
+
+        {/* Left Side: Rich Eco Feature Panel (Desktop Eco-Monitoring Showcase) */}
+        <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-[#0f3d2e] via-[#14532d] to-[#064e3b] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
+          {/* Background Decorative Animated Element */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none animate-float" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none animate-float" style={{ animationDelay: "2s" }} />
+
+          <div className="relative z-10 space-y-6 my-auto">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-emerald-300/30 text-white text-xs font-extrabold tracking-wide shadow-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span>Portal Web Resmi TrashCare</span>
             </div>
-            <div>
-              <h2 className="text-3xl font-black tracking-tight mb-2">Login Berhasil!</h2>
-              <p className="text-sm text-emerald-100 max-w-sm mx-auto leading-relaxed font-medium">
-                Mempersiapkan dasbor pemilahan sampah...
+
+            <div className="space-y-3">
+              <h2 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white">
+                Sampah Terdata,<br />Lingkungan Tertata.
+              </h2>
+              <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
+                Sistem pemantauan dan tata kelola sampah terintegrasi di Kecamatan Coblong dalam kerangka kegiatan Kuliah Kerja Nyata (KKN) Berdampak Universitas Komputer Indonesia.
               </p>
             </div>
-            <div className="flex items-center gap-2 mt-4 text-xs font-bold text-emerald-200">
-              <RefreshCcw className="animate-spin text-lg" />
-              <span>Memuat Halaman...</span>
+
+            {/* Feature Highlights Showcase List */}
+            <div className="pt-4 space-y-3 border-t border-white/15">
+              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
+                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">analytics</span>
+                </div>
+                <div>
+                  <p className="font-extrabold text-white text-xs">Monitoring Real-Time</p>
+                  <p className="text-[11px] text-emerald-200/80 font-medium">Pemantauan volume sampah organik &amp; anorganik.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
+                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">stars</span>
+                </div>
+                <div>
+                  <p className="font-extrabold text-white text-xs">Transparansi Audit Poin</p>
+                  <p className="text-[11px] text-emerald-200/80 font-medium">Buku besar poin terpisah bagi insentif warga.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
+                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">handshake</span>
+                </div>
+                <div>
+                  <p className="font-extrabold text-white text-xs">Sinergi Berkelanjutan</p>
+                  <p className="text-[11px] text-emerald-200/80 font-medium">Kolaborasi pemerintah daerah, kampus &amp; warga.</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Main Split Container Card */}
-      <div className="w-full max-w-[1080px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-300">
-
-        {/* Left Side: Rich Eco Feature Panel (Desktop) */}
-        <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-8 flex-col justify-between relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-emerald-200/30 text-white text-xs font-extrabold tracking-wide shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-300 animate-pulse shrink-0"></span>
-              <span>Sistem Monitoring Web TrashCare</span>
-            </div>
-          </div>
-
-          <div className="my-auto space-y-3 relative z-10 py-4">
-            <h2 className="text-3xl font-black leading-tight tracking-tight text-white">
-              Sampah Terdata,<br />Lingkungan Tertata.
-            </h2>
-            <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-              Platform pemantauan terintegrasi khusus Rukun Warga, Dosen Pembimbing Lapangan, dan Pimpinan. Akses untuk Warga, Mahasiswa KKN, dan Petugas Residu melalui Aplikasi Mobile.
-            </p>
-          </div>
-
-          <div className="pt-8 border-t border-white/15 relative z-10 text-[11px] text-emerald-200/80 font-medium">
-            © 2026 UNIVERSITAS KOMPUTER INDONESIA  ALL RIGHTS RESERVED.
+          <div className="pt-6 border-t border-white/15 relative z-10 text-[10px] text-emerald-200/80 font-medium">
+            © 2026 Universitas Komputer Indonesia. Hak Cipta Dilindungi.
           </div>
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
         <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
 
-          <div className="space-y-6">
+          <div className="space-y-5">
 
             {/* Header Brand Block */}
             <div className="flex items-center justify-between flex-wrap gap-3">
               <Link to="/" className="flex items-center gap-2.5 group">
                 <TrashCareLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
                 <span className="text-xl font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-sky-600">Trash</span>
-                  <span className="text-emerald-600">Care</span>
+                  <span className="text-[#0084DC]">Trash</span>
+                  <span className="text-[#009966]">Care</span>
                 </span>
               </Link>
 
@@ -703,10 +742,10 @@ const Login: React.FC = () => {
               </Link>
             </div>
 
-            <div className="space-y-1.5 text-left pt-1">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Selamat Datang</h1>
-              <p className="text-xs text-slate-500 font-medium">
-                Masukkan nomor telepon terdaftar dan kata sandi Anda.
+            <div className="space-y-2 text-left pt-1">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Masuk ke Portal Web</h1>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Portal Web TrashCare diperuntukkan khusus bagi pengelola dan pimpinan, meliputi Admin, Pimpinan Perguruan Tinggi, TaskForce, Dosen Pendamping Lapangan (DPL), Dinas Lingkungan Hidup (DLH), Camat, Lurah, dan Rukun Warga (RW). Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
               </p>
             </div>
 
@@ -717,7 +756,7 @@ const Login: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                    Nomor HP
+                    Nomor HP Terdaftar
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium">
                     Format: 08xxx / +628xxx
@@ -729,19 +768,16 @@ const Login: React.FC = () => {
                     id="login-phone"
                     autoFocus
                     className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
-                    placeholder="08123456789"
+                    placeholder="08123456789 atau +6281234567890"
                     type="text"
                     value={identifier}
                     onChange={(e) => {
-                      // Hanya izinkan angka dan tanda tambah (+)
                       const val = e.target.value.replace(/[^\d+]/g, "");
                       setIdentifier(val);
                       if (val.trim()) setIdentifierError("");
                     }}
                     onKeyDown={(e) => {
-                      // Izinkan kombinasi shortcut (Ctrl+A, Ctrl+C, Ctrl+V, Cmd+A, dll)
                       if (e.ctrlKey || e.metaKey) return;
-                      // Blokir tombol apa pun selain angka, tanda tambah, dan tombol kontrol navigasi/hapus
                       if (!/^[\d+]$/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter", "Home", "End"].includes(e.key)) {
                         e.preventDefault();
                       }
@@ -749,7 +785,6 @@ const Login: React.FC = () => {
                     onBlur={handleIdentifierBlur}
                     disabled={isStoreLoading || isLocalLoading}
                   />
-                  {/* Error diletakkan secara absolute di ruang kosong margin bawah */}
                   {identifierError && (
                     <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 absolute -bottom-[18px] left-0">
                       <AlertTriangle size={11} />
@@ -789,24 +824,50 @@ const Login: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Sub-bar below Password Input: Error / Hint on Left, Forgot Password on Right */}
-                <div className="relative flex items-center justify-end pt-1">
-                  {/* Error diletakkan secara absolute di sisi kiri agar tinggi form ditentukan hanya oleh tombol Lupa Kata Sandi */}
-                  {passwordError && (
-                    <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 absolute left-0 top-1.5">
-                      <AlertTriangle size={11} />
-                      {passwordError}
-                    </p>
-                  )}
+                {passwordError && (
+                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
+                    <AlertTriangle size={11} />
+                    {passwordError}
+                  </p>
+                )}
+              </div>
 
+              {/* Row: Ingat Saya (Kiri) & Lupa Kata Sandi? (Kanan) — 100% Sejajar Presisi */}
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowForgotModal(true)}
-                    className="text-[11px] text-emerald-600 hover:text-emerald-700 font-extrabold transition cursor-pointer ml-auto hover:underline"
+                    role="checkbox"
+                    aria-checked={rememberMe}
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
+                      rememberMe
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
+                        : "bg-white border-slate-300 hover:border-emerald-400"
+                    }`}
                   >
-                    Lupa Kata Sandi?
+                    {rememberMe && (
+                      <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
+                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
                   </button>
+                  <label
+                    className="text-xs text-slate-600 font-bold select-none cursor-pointer flex items-center gap-1"
+                    onClick={() => setRememberMe(!rememberMe)}
+                  >
+                    <span>Ingat Saya</span>
+                    <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">(Tetap masuk)</span>
+                  </label>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-xs text-emerald-600 hover:text-emerald-700 font-extrabold transition cursor-pointer hover:underline"
+                >
+                  Lupa Kata Sandi?
+                </button>
               </div>
 
               {/* Submit Button */}
@@ -819,47 +880,35 @@ const Login: React.FC = () => {
                 {isLocalLoading || isStoreLoading ? (
                   <><RefreshCcw className="animate-spin" size={16} /><span>Memproses...</span></>
                 ) : (
-                  <><LogIn size={18} /><span>Masuk Sistem Web</span></>
+                  <><LogIn size={18} /><span>Masuk ke Portal Web TrashCare</span></>
                 )}
               </button>
             </form>
           </div>
 
-          {/* Akses Mobile Card */}
-          <div className="pt-2">
-            <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 flex flex-col md:flex-row items-center gap-5">
-              {/* Image Placeholder */}
-              <div className="flex-shrink-0 w-44 md:w-56 flex items-center justify-center -ml-2">
-                <img src={ImageTigaRoleMobile} alt="Ilustrasi Warga, Mahasiswa, dan Petugas" className="w-full h-auto object-contain mix-blend-multiply" />
-              </div>
-              
-              <div className="flex-1 space-y-2.5 text-center md:text-left">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-extrabold text-slate-800">Akses Mobile untuk Semua</h3>
-                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                    Warga, Mahasiswa KKN, dan Petugas Residu dapat registrasi dan menggunakan aplikasi TrashCare di perangkat mobile.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-[10px] text-slate-600 font-bold">Unduh aplikasinya di bawah ini:</p>
-                  <Link 
-                    to="/download"
-                    className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
-                  >
-                    <Download size={14} />
-                    <span>Unduh Aplikasi Mobile (APK)</span>
-                  </Link>
-                  <p className="text-[9px] text-slate-400 font-medium flex items-center md:justify-start justify-center gap-1.5">
-                    Tersedia untuk Android <span className="w-1 h-1 rounded-full bg-slate-300"></span> File APK
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
 
+      </div>
+
+      {/* Floating Action Button: Download Aplikasi Mobile APK (Icon-Only Animated) */}
+      <div className="fixed bottom-6 right-8 sm:right-10 z-50 group flex items-center justify-center p-2 overflow-visible">
+        <div className="relative flex items-center justify-center">
+          {/* Outer Animated Ping Ripple Effect */}
+          <span className="absolute -inset-1 rounded-full bg-[#009966]/40 animate-ping opacity-75 pointer-events-none" />
+          
+          <Link
+            to="/download"
+            className="relative w-14 h-14 bg-gradient-to-r from-[#009966] to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-white/40 cursor-pointer shrink-0"
+            aria-label="Unduh Aplikasi Mobile TrashCare (APK)"
+          >
+            <Download size={22} className="text-white group-hover:rotate-12 transition-transform" />
+            
+            {/* Tooltip on Hover */}
+            <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800">
+              Unduh Aplikasi Mobile (APK)
+            </span>
+          </Link>
+        </div>
       </div>
     </div>
   );

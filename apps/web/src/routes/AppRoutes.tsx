@@ -7,7 +7,18 @@
  */
 
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+// Scroll Restoration Helper Component
+export const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+
+  return null;
+};
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Monitoring from "../pages/Monitoring/Monitoring";
@@ -56,6 +67,7 @@ import DplDashboardPage from "../pages/dpl/DplDashboardPage";
 import LandingPage from "../pages/LandingPage/LandingPage";
 import RolePermissionPage from "../pages/SuperUser/RolePermissionPage";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
+import DownloadPage from "../pages/Download/DownloadPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -73,7 +85,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.peran)) {
+  if (allowedRoles && user.peran !== "DEVELOPER" && !allowedRoles.includes(user.peran)) {
     // Redirect role yang tidak diizinkan kembali ke dashboard
     return <Navigate to="/dashboard" replace />;
   }
@@ -101,9 +113,12 @@ const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
 
 const AppRoutes: React.FC = () => {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/download" element={<DownloadPage />} />
       <Route path="/register" element={<Register />} />
       <Route path="/register-mahasiswa" element={<MahasiswaRegistration />} />
       <Route
@@ -182,7 +197,39 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route
+          path="/master-pengguna"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <ManajemenPengguna />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data-pengguna"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <ManajemenPengguna />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/manajemen-pengguna"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <ManajemenPengguna />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <ManajemenPengguna />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <ManajemenPengguna />
@@ -486,6 +533,7 @@ const AppRoutes: React.FC = () => {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </>
   );
 };
 

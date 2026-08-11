@@ -8,9 +8,11 @@ const prisma = new PrismaClient();
 async function main() {
   const baseDir = process.env.INIT_CWD || process.cwd();
   const candidates = [
-    path.resolve(baseDir, '../../Pengelompokan_KKN_2026_Gabungan_Lengkap TERBARU .xlsx'),
-    path.resolve(baseDir, 'Pengelompokan_KKN_2026_Gabungan_Lengkap TERBARU .xlsx'),
-    path.resolve(baseDir, '../Pengelompokan_KKN_2026_Gabungan_Lengkap TERBARU .xlsx'),
+    path.resolve(baseDir, '../../docs/raw_new_data.xlsx'),
+    path.resolve(baseDir, '../docs/raw_new_data.xlsx'),
+    path.resolve(baseDir, 'docs/raw_new_data.xlsx'),
+    path.resolve(baseDir, '../../raw_data_kkn_2026.xlsx'),
+    path.resolve(baseDir, 'raw_data_kkn_2026.xlsx'),
     path.resolve(baseDir, 'scripts/data_kkn.xlsx')
   ];
 

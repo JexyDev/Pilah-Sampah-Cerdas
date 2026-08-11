@@ -8,10 +8,10 @@ import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recy
  */
 
 import React, { useEffect, useState } from "react";
-import { RwDashboard } from "../RwPortal/RwDashboard";
 import { Link, useNavigate } from "react-router-dom";
+import { RwDashboard } from "../RwPortal/RwDashboard";
 import api from "../../services/api";
-import toast from "react-hot-toast";
+import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import KknDashboard from "../KknDashboard/KknDashboard";
@@ -420,7 +420,7 @@ const WargaDashboard: React.FC = () => {
 
     if (editCapMode === "MANUAL") {
       if (!editCapPhoto) {
-        toast.error("Wajib mengunggah foto bukti jika mengubah kapasitas manual!");
+        showToast.error("Wajib mengunggah foto bukti jika mengubah kapasitas manual!");
         return;
       }
       capacityValue = Number(editCapValue);
@@ -444,12 +444,12 @@ const WargaDashboard: React.FC = () => {
         evidencePhotoUrl,
       });
 
-      toast.success("Pengajuan perubahan kapasitas berhasil dikirim! Menunggu validasi.");
+      showToast.success("Pengajuan perubahan kapasitas berhasil dikirim! Menunggu validasi.");
       setShowEditCapModal(false);
       setEditCapPhoto(null);
       fetchMyBins();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengubah kapasitas tempat sampah");
+      showToast.error(err.response?.data?.message || "Gagal mengubah kapasitas tempat sampah");
     } finally {
       setIsUpdatingCap(false);
     }
@@ -570,7 +570,7 @@ const WargaDashboard: React.FC = () => {
   const handleSubmitIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (issueType === "EMPTY_REQUEST" && !issuePhoto) {
-      toast.error("Wajib mengunggah foto bukti tempat sampah penuh!");
+      showToast.error("Wajib mengunggah foto bukti tempat sampah penuh!");
       return;
     }
 
@@ -602,12 +602,12 @@ const WargaDashboard: React.FC = () => {
       }
 
       if (res.data?.success) {
-        toast.success(res.data.data?.message || "Laporan berhasil dikirim!");
+        showToast.success(res.data.data?.message || "Laporan berhasil dikirim!");
         setShowIssueModal(false);
         fetchMyBins();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengirimkan laporan");
+      showToast.error(err.response?.data?.message || "Gagal mengirimkan laporan");
     } finally {
       setIsSubmittingIssue(false);
     }
@@ -617,11 +617,11 @@ const WargaDashboard: React.FC = () => {
     e.preventDefault();
     const pointsToRedeem = parseInt(tukarPoinAmount);
     if (!ewalletPhone.trim()) {
-      toast.error("Masukkan nomor HP E-Wallet!");
+      showToast.error("Masukkan nomor HP E-Wallet!");
       return;
     }
     if (poin < pointsToRedeem) {
-      toast.error("Poin Anda tidak mencukupi!");
+      showToast.error("Poin Anda tidak mencukupi!");
       return;
     }
 
@@ -634,7 +634,7 @@ const WargaDashboard: React.FC = () => {
       });
 
       if (res.data?.success) {
-        toast.success(
+        showToast.success(
           `Berhasil mencairkan Rp ${(pointsToRedeem * 100).toLocaleString("id-ID")} ke ${ewalletType}!`
         );
         setEwalletPhone("");
@@ -645,7 +645,7 @@ const WargaDashboard: React.FC = () => {
         fetchNotifications();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal melakukan penukaran poin");
+      showToast.error(err.response?.data?.message || "Gagal melakukan penukaran poin");
     } finally {
       setIsConverting(false);
     }
@@ -1689,7 +1689,7 @@ const Dashboard: React.FC = () => {
   const handleRegionChange = (newWilayah: string) => {
     if (updateWilayah) {
       updateWilayah(newWilayah);
-      toast.success(`Wilayah aktif diubah ke ${newWilayah}`);
+      showToast.success(`Wilayah aktif diubah ke ${newWilayah}`);
     }
   };
 
@@ -1706,12 +1706,12 @@ const Dashboard: React.FC = () => {
     if (!deleteBinConfirm) return;
     try {
       await api.delete(`/bins/${deleteBinConfirm.id || deleteBinConfirm.kode}`);
-      toast.success("Tempat sampah berhasil dihapus");
+      showToast.success("Tempat sampah berhasil dihapus");
       setRecentBins((prev) =>
         prev.filter((b) => b.id !== deleteBinConfirm.id && b.kode !== deleteBinConfirm.kode)
       );
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
+      showToast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
     } finally {
       setDeleteBinConfirm(null);
     }
@@ -2002,7 +2002,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPengguna?.trend}
           trendLabel={stats?.totalPengguna?.trendLabel}
           trendUp={stats?.totalPengguna?.trendUp}
-          linkTo="/manajemen-pengguna"
+          linkTo="/master-pengguna"
         />
         <KpiCard
           iconName="delete"
@@ -2587,7 +2587,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
                   <Code2 size={16} className="text-slate-500" />
-                  <span>Super User / Task Force</span>
+                  <span>Admin / Task Force</span>
                 </div>
                 <span className="font-black text-slate-900 text-sm">1</span>
               </div>

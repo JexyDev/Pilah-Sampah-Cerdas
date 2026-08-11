@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
+import api from "../../services/api";
 import "./LandingPage.css";
 
 // Material Symbols Icon component for stats strip
@@ -42,6 +43,42 @@ export const LandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  // Live database stats fetched from Express Backend API
+  const [statsData, setStatsData] = useState<{
+    kegiatanCount: number;
+    wargaCount: number;
+    totalSampahKg: number;
+    kelurahanCount: number;
+    tingkatPemilahanPercent: number;
+    totalPoin?: number;
+    approvedIdeasCount?: number;
+    poinRewardIde?: number;
+    totalBinsCount?: number;
+    assignedBinsCount?: number;
+    totalPenjemputan?: number;
+    smartIotBinsCount?: number;
+    recentSchedules: any[];
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchLandingStats = async () => {
+      try {
+        const res = await api.get("/system/landing-stats");
+        if (res.data?.success && res.data?.data) {
+          setStatsData(res.data.data);
+        }
+      } catch (err) {
+        console.warn("[LandingPage] Live stats fetch fallback.", err);
+      }
+    };
+    fetchLandingStats();
+
+    // 10-second auto-polling for 100% real-time database sync
+    const pollInterval = setInterval(fetchLandingStats, 10000);
+    return () => clearInterval(pollInterval);
+  }, []);
+
 
   const scrollToSection = (id: string) => {
     setIsMobileMenuOpen(false);
@@ -208,66 +245,61 @@ export const LandingPage: React.FC = () => {
             </span>
           </Link>
 
-          {/* Navigation Links (ABSOLUTE PERFECT CENTER BETWEEN LEFT & RIGHT) */}
-          <div className="hidden lg:flex items-center justify-center absolute left-1/2 -translate-x-1/2">
-            <div className="nav-links-centered">
-              <button
-                onClick={() => scrollToSection("#about")}
-                className={`transition-colors duration-300 ${activeSection === "#about"
-                  ? "text-emerald-600 font-extrabold active"
-                  : "text-gray-700"
-                  }`}
-              >
-                Tentang Kami
-              </button>
+          {/* Navigation Links */}
+          <div className="hidden lg:flex items-center justify-center gap-8 font-bold text-sm">
+            <button
+              onClick={() => scrollToSection("#about")}
+              className={`transition-colors duration-300 ${activeSection === "#about"
+                ? "text-emerald-600 font-extrabold active"
+                : "text-slate-700 hover:text-emerald-600"
+                }`}
+            >
+              Tentang Kami
+            </button>
 
-              <button
-                onClick={() => scrollToSection("#why-us")}
-                className={`transition-colors duration-300 ${activeSection === "#why-us"
-                  ? "text-emerald-600 font-extrabold active"
-                  : "text-gray-700"
-                  }`}
-              >
-                Mengapa Aplikasi Ini
-              </button>
+            <button
+              onClick={() => scrollToSection("#why-us")}
+              className={`transition-colors duration-300 ${activeSection === "#why-us"
+                ? "text-emerald-600 font-extrabold active"
+                : "text-slate-700 hover:text-emerald-600"
+                }`}
+            >
+              Mengapa Aplikasi Ini
+            </button>
 
-              <button
-                onClick={() => scrollToSection("#dampak")}
-                className={`transition-colors duration-300 ${activeSection === "#dampak"
-                  ? "text-emerald-600 font-extrabold active"
-                  : "text-gray-700"
-                  }`}
-              >
-                Dampak
-              </button>
+            <button
+              onClick={() => scrollToSection("#dampak")}
+              className={`transition-colors duration-300 ${activeSection === "#dampak"
+                ? "text-emerald-600 font-extrabold active"
+                : "text-slate-700 hover:text-emerald-600"
+                }`}
+            >
+              Dampak
+            </button>
 
-              <button
-                onClick={() => scrollToSection("#mitra")}
-                className={`transition-colors duration-300 ${activeSection.toLowerCase() === "#mitra"
-                  ? "text-emerald-600 font-extrabold active"
-                  : "text-gray-700"
-                  }`}
-              >
-                Mitra
-              </button>
+            <button
+              onClick={() => scrollToSection("#mitra")}
+              className={`transition-colors duration-300 ${activeSection.toLowerCase() === "#mitra"
+                ? "text-emerald-600 font-extrabold active"
+                : "text-slate-700 hover:text-emerald-600"
+                }`}
+            >
+              Mitra
+            </button>
 
-              <button
-                onClick={() => scrollToSection("#faq")}
-                className={`transition-colors duration-300 ${activeSection === "#faq"
-                  ? "text-emerald-600 font-extrabold active"
-                  : "text-gray-700"
-                  }`}
-              >
-                FAQ
-              </button>
-            </div>
-
+            <button
+              onClick={() => scrollToSection("#faq")}
+              className={`transition-colors duration-300 ${activeSection === "#faq"
+                ? "text-emerald-600 font-extrabold active"
+                : "text-slate-700 hover:text-emerald-600"
+                }`}
+            >
+              FAQ
+            </button>
           </div>
 
-          {/* Action Buttons (Desktop only — on mobile everything lives in the drawer) */}
+          {/* Action Buttons */}
           <div className="flex items-center gap-3 shrink-0">
-            {/* Wrapper is required: .btn-primary-clean sets display:inline-flex and would
-                override Tailwind's .hidden if applied directly to the buttons. */}
             <div className="hidden lg:flex items-center gap-3">
               {isAuthenticated ? (
                 <button
@@ -279,7 +311,8 @@ export const LandingPage: React.FC = () => {
                 </button>
               ) : (
                 <Link to="/login" className="btn-primary-clean">
-                  Login
+                  <span className="material-symbols-outlined text-lg">login</span>
+                  Masuk
                 </Link>
               )}
 
@@ -287,7 +320,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setShowContactModal(true)}
                 className="btn-secondary-clean"
               >
-                Contact Us
+                Hubungi Kami
               </button>
             </div>
 
@@ -357,7 +390,7 @@ export const LandingPage: React.FC = () => {
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
                 >
                   <span className="material-symbols-outlined text-lg">login</span>
-                  Login
+                  Masuk
                 </Link>
               )}
 
@@ -365,7 +398,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => { setIsMobileMenuOpen(false); setShowContactModal(true); }}
                 className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-extrabold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
-                Contact Us
+                Hubungi Kami
               </button>
             </div>
           </div>
@@ -376,8 +409,8 @@ export const LandingPage: React.FC = () => {
       <section className="relative pt-8 sm:pt-10 lg:pt-2 pb-12 lg:pb-16 bg-white overflow-hidden">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
 
-          {/* Hero Left Column: Wording match user's screenshot 1:1 */}
-          <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4">
+          {/* Hero Left Column */}
+          <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4 animate-fade-in-up">
             <h1 className="text-3xl sm:text-4xl lg:text-[3rem] font-black text-slate-900 leading-[1.15] tracking-tight">
               Sampah <span className="text-[#0084DC]">Terdata</span>,<br />
               Lingkungan <span className="text-[#009966]">Tertata</span>
@@ -390,14 +423,14 @@ export const LandingPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <button
                 onClick={() => scrollToSection("#program")}
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-sm transition shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-sm transition shadow-md hover:shadow-lg cursor-pointer"
               >
                 Lihat Program <span className="text-lg">→</span>
               </button>
 
               <button
                 onClick={() => scrollToSection("#about")}
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-900 font-extrabold text-sm transition shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-900 font-extrabold text-sm transition shadow-xs hover:shadow-md cursor-pointer"
               >
                 Pelajari Lebih Lanjut
               </button>
@@ -405,16 +438,16 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Hero Right Column: Clean Dashboard Image */}
-           <div className="lg:col-span-6 xl:col-span-7 relative h-[300px] sm:h-[400px] md:h-[420px] lg:h-[540px] w-full">
+           <div className="lg:col-span-6 xl:col-span-7 relative h-[300px] sm:h-[400px] md:h-[420px] lg:h-[540px] w-full animate-fade-in-up" style={{ animationDelay: "150ms" }}>
              <img
                src="/image/dashboard.png"
                alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
-               className="w-full h-full object-cover object-center lg:object-right rounded-3xl shadow-lg"
+               className="w-full h-full object-cover object-center lg:object-right rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500"
              />
            </div>
         </div>
 
-        {/* Quick Stat Highlights (Clean White Card as shown in user screenshot) */}
+        {/* Quick Stat Highlights (Connected to Live Database API) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
@@ -422,7 +455,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="tabler:activity" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">25+</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">
+                {statsData ? `${statsData.kegiatanCount}+` : "25+"}
+              </p>
               <p className="text-xs font-bold text-slate-500">Kegiatan Terlaksana</p>
             </div>
 
@@ -430,7 +465,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-sky-100/80 text-sky-700 flex items-center justify-center">
                 <Icon icon="octicon:people-16" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">500+</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">
+                {statsData ? `${statsData.wargaCount}+` : "500+"}
+              </p>
               <p className="text-xs font-bold text-slate-500">Warga Terlibat</p>
             </div>
 
@@ -438,7 +475,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">1.250+ kg</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">
+                {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")}+ kg` : "1.250+ kg"}
+              </p>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
 
@@ -446,7 +485,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center">
                 <Icon icon="lucide:home" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">6</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">
+                {statsData ? statsData.kelurahanCount : 6}
+              </p>
               <p className="text-xs font-bold text-slate-500">Kelurahan Terlibat</p>
             </div>
 
@@ -454,7 +495,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="solar:chart-linear" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">35%</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">
+                {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"}
+              </p>
               <p className="text-xs font-bold text-slate-500">Tingkat Pemilahan</p>
             </div>
 
@@ -550,11 +593,11 @@ export const LandingPage: React.FC = () => {
                 <div className="program-heading">
 
                   <p className="eyebrow">
-                    Program Kami
+                    Layanan Utama
                   </p>
 
                   <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-                    Berbagai program untuk mewujudkan lingkungan bersih dan berkelanjutan.
+                    Layanan terintegrasi untuk mewujudkan ekosistem tata kelola sampah yang berkelanjutan.
                   </h2>
 
                 </div>
@@ -562,35 +605,34 @@ export const LandingPage: React.FC = () => {
                 <div className="program-grid">
                   <article className="program-card">
                     <span className="program-icon" aria-hidden="true">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#009966" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+                      <span className="material-symbols-outlined text-emerald-600 text-2xl">account_balance</span>
                     </span>
-                    <h3>Pemilahan Sampah</h3>
-                    <p>Edukasi dan praktik pemilahan dari sumbernya.</p>
+                    <h3>Portal Dinas Lingkungan Hidup</h3>
+                    <p>Integrasi agregasi data, pemantauan kebijakan, dan pelaporan tingkat kedinasan.</p>
                   </article>
 
                   <article className="program-card">
                     <span className="program-icon" aria-hidden="true">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#009966" stroke-width="2"><path d="M21 12a9 9 0 1 1-3.5-7.14M21 3v6h-6" /></svg>
+                      <span className="material-symbols-outlined text-emerald-600 text-2xl">roofing</span>
                     </span>
-                    <h3>Pengolahan Organik</h3>
-                    <p>Mengolah sampah organik menjadi kompos atau produk bermanfaat.</p>
-                  </article>
-
-
-                  <article className="program-card">
-                    <span className="program-icon" aria-hidden="true">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#009966" stroke-width="2"><path d="M7 19l-4-4 4-4M17 5l4 4-4 4M14 4L10 20" /></svg>
-                    </span>
-                    <h3>Daur Ulang</h3>
-                    <p>Mengubah sampah menjadi produk kreatif bernilai ekonomi.</p>
+                    <h3>Portal Rukun Warga</h3>
+                    <p>Manajemen setoran sampah warga, verifikasi ide daur ulang, dan distribusi poin insentif.</p>
                   </article>
 
                   <article className="program-card">
                     <span className="program-icon" aria-hidden="true">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#009966" stroke-width="2"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z" /></svg>
+                      <span className="material-symbols-outlined text-emerald-600 text-2xl">analytics</span>
                     </span>
-                    <h3>Aksi Bersih Lingkungan</h3>
-                    <p>Kegiatan bersih lingkungan bersama masyarakat.</p>
+                    <h3>Monitoring Data Sampah</h3>
+                    <p>Pemantauan volume sampah organik, anorganik, dan residu secara terukur dan real-time.</p>
+                  </article>
+
+                  <article className="program-card">
+                    <span className="program-icon" aria-hidden="true">
+                      <span className="material-symbols-outlined text-emerald-600 text-2xl">school</span>
+                    </span>
+                    <h3>Pendampingan Kuliah Kerja Nyata</h3>
+                    <p>Pendampingan mahasiswa KKN dalam sosialisasi pemilahan dan aksi bersih lingkungan.</p>
                   </article>
                 </div>
               </div>
@@ -600,48 +642,100 @@ export const LandingPage: React.FC = () => {
                   <div>
                     <p className="eyebrow">Kegiatan Terbaru</p>
                   </div>
-                  <a href="#kegiatan" className="link-more">Lihat Semua →</a>
+                  <Link to="/login" className="link-more">Lihat Semua →</Link>
                 </div>
 
-                <div className="activity-list" id="kegiatan">
-                  <article className="kegiatan-card">
-                    <div className="kegiatan-thumb" data-thumb="1">
-                      <span className="date-badge"><strong>24</strong>Mei</span>
-                    </div>
-                    <div className="kegiatan-body">
-                      <h3>Edukasi Pemilahan Sampah di RW 03</h3>
-                      <p className="location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                        Kel. Lebak Gede
-                      </p>
-                    </div>
-                  </article>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="kegiatan">
+                  {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
+                    ? statsData.recentSchedules
+                    : [
+                        {
+                          id: "1",
+                          title: "Edukasi Pemilahan Sampah Mandiri di RW 03",
+                          date: "2026-05-24",
+                          location: "Kel. Lebak Gede, Kec. Coblong",
+                          category: "Edukasi Pemilahan",
+                          imageUrl: "/image/activity-1.png",
+                        },
+                        {
+                          id: "2",
+                          title: "Pengolahan Kompos Sampah Organik BSF",
+                          date: "2026-05-20",
+                          location: "Kel. Dago, Kec. Coblong",
+                          category: "Pengolahan Kompos",
+                          imageUrl: "/image/activity-2.png",
+                        },
+                        {
+                          id: "3",
+                          title: "Aksi Bersih Sungai Cikapundung Bersama Mahasiswa KKN",
+                          date: "2026-05-18",
+                          location: "Kel. Sekeloa, Kec. Coblong",
+                          category: "Aksi Bersih",
+                          imageUrl: "/image/activity-3.png",
+                        },
+                      ]
+                  ).map((item: any, idx: number) => {
+                    const d = new Date(item.date);
+                    const day = isNaN(d.getDate()) ? "24" : String(d.getDate()).padStart(2, "0");
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+                    const month = isNaN(d.getMonth()) ? "Mei" : monthNames[d.getMonth()];
+                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png`;
 
-                  <article className="kegiatan-card">
-                    <div className="kegiatan-thumb" data-thumb="2">
-                      <span className="date-badge"><strong>20</strong>Mei</span>
-                    </div>
-                    <div className="kegiatan-body">
-                      <h3>Pengolahan Kompos Sampah Organik</h3>
-                      <p className="location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                        Kel. Dago
-                      </p>
-                    </div>
-                  </article>
+                    return (
+                      <Link
+                        key={item.id || idx}
+                        to="/login"
+                        className="block text-left"
+                      >
+                        <article
+                          className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
+                        >
+                          {/* Thumbnail Photo Container */}
+                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+                            <img
+                              src={item.imageUrl || fallbackImg}
+                              alt={item.title}
+                              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = fallbackImg;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
-                  <article className="kegiatan-card">
-                    <div className="kegiatan-thumb" data-thumb="3">
-                      <span className="date-badge"><strong>18</strong>Mei</span>
-                    </div>
-                    <div className="kegiatan-body">
-                      <h3>Aksi Bersih Sungai Cikapundung</h3>
-                      <p className="location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                        Kel. Cikawao
-                      </p>
-                    </div>
-                  </article>
+                            {/* Floating Date Badge */}
+                            <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
+                              <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
+                              <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
+                            </div>
+
+                            {/* Category Badge */}
+                            <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                              {item.category || "Kegiatan KKN"}
+                            </div>
+                          </div>
+
+                          {/* Content Body */}
+                          <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
+                            <div className="space-y-2">
+                              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2 text-left">
+                                {item.title}
+                              </h3>
+                            </div>
+
+                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
+                              <span className="flex items-center gap-1.5 text-slate-600 font-medium truncate max-w-[200px]">
+                                <span className="material-symbols-outlined text-base text-emerald-600 shrink-0">location_on</span>
+                                <span className="truncate">{item.location || "Kec. Coblong"}</span>
+                              </span>
+                              <span className="text-emerald-600 font-extrabold flex items-center gap-1 text-[11px] group-hover:translate-x-1 transition-transform shrink-0">
+                                Detail <span>→</span>
+                              </span>
+                            </div>
+                          </div>
+                        </article>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -682,7 +776,7 @@ export const LandingPage: React.FC = () => {
                 className={`clean-interactive-tab ${whyUsTab === "points" ? "active" : ""
                   }`}
               >
-                Point-Based Gamification
+                Gamifikasi Berbasis Poin
               </button>
 
               <button
@@ -698,7 +792,7 @@ export const LandingPage: React.FC = () => {
                 className={`clean-interactive-tab ${whyUsTab === "iot" ? "active" : ""
                   }`}
               >
-                Terintegrasi dengan IoT
+                Integrasi IoT
               </button>
             </div>
 
@@ -719,48 +813,45 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <span className="font-extrabold text-lg text-slate-900">
-                      Reward dan Audit
+                      Reward dan Audit Poin
                     </span>
                   </div>
 
                   <span className="text-xs px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full font-bold">
-                    Reward dan Audit
+                    Ledger Terverifikasi
                   </span>
                 </div>
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                  Pencatatan poin Warga dan Mahasiswa KKN menggunakan ledger
-                  terpisah di database demi transparansi audit. Setiap setoran
-                  sampah berhadiah poin insentif, dan pengajuan ide daur ulang
-                  yang disetujui RW memberikan reward tambahan (+50 poin).
+                  Pencatatan poin warga dan mahasiswa Kuliah Kerja Nyata (KKN) menggunakan buku besar (ledger) terpisah pada basis data demi transparansi audit. Setiap setoran sampah berhadiah poin insentif, dan pengajuan ide daur ulang yang disetujui Rukun Warga memberikan hadiah tambahan (+50 poin).
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 text-center">
 
                   <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
-                      Level Warga
+                      Warga Terdaftar
                     </span>
                     <p className="text-xl sm:text-2xl font-black text-emerald-600">
-                      Level 8
+                      {statsData ? `${statsData.wargaCount} Akun` : "83 Akun"}
                     </p>
                   </div>
 
                   <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
-                      Total Poin
+                      Total Poin Terdistribusi
                     </span>
                     <p className="text-xl sm:text-2xl font-black text-amber-500">
-                      2.450 Poin
+                      {statsData && statsData.totalPoin !== undefined ? `${statsData.totalPoin.toLocaleString("id-ID")} Poin` : "6.987 Poin"}
                     </p>
                   </div>
 
                   <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
-                      Ide Daur Ulang
+                      Hadiah Ide Daur Ulang
                     </span>
                     <p className="text-xl sm:text-2xl font-black text-emerald-600">
-                      +50 Poin
+                      +{statsData ? statsData.poinRewardIde : 50} Poin ({statsData ? statsData.approvedIdeasCount : 11} Ide)
                     </p>
                   </div>
 
@@ -784,23 +875,19 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <span className="font-extrabold text-lg text-slate-900">
-                      Aturan Tempat Sampah (Bin)
+                      Aturan Tempat Sampah
                     </span>
 
                   </div>
 
                   <span className="text-xs px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full font-bold">
-                    QR Validation
+                    Validasi QR Code
                   </span>
 
                 </div>
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                  Setiap rumah tangga berhak mendaftarkan maksimal 2 tempat
-                  sampah (1 Organik dan 1 Anorganik). Tempat sampah aktif
-                  selama 30 hari dan di-reset otomatis setiap setoran.
-                  Penjemputan residu dipisahkan dan ditimbang manual oleh
-                  Petugas Residu.
+                  Setiap rumah tangga berhak mendaftarkan maksimal 2 tempat sampah (1 organik dan 1 anorganik). Tempat sampah aktif selama 30 hari dan diperbarui otomatis setiap penyetoran. Penjemputan residu dipisahkan dan ditimbang secara manual oleh petugas residu.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
@@ -808,30 +895,30 @@ export const LandingPage: React.FC = () => {
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-slate-900">
-                        Tempat Sampah Organik #01
+                        Total Tempat Sampah Terdaftar
                       </p>
                       <p className="text-xs text-slate-500 font-medium">
-                        Aktif (20L Standar)
+                        Tersebar di {statsData ? `${statsData.kelurahanCount} Kelurahan` : "6 Kelurahan"}
                       </p>
                     </div>
 
                     <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl">
-                      25% Terisi
+                      {statsData ? `${statsData.totalBinsCount || 120} Unit` : "120 Unit"}
                     </span>
                   </div>
 
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-slate-900">
-                        Tempat Sampah Anorganik #02
+                        Total Penjemputan dan Residu
                       </p>
                       <p className="text-xs text-slate-500 font-medium">
-                        Aktif (20L Standar)
+                        Log transaksi setoran terverifikasi
                       </p>
                     </div>
 
                     <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl">
-                      50% Terisi
+                      {statsData ? `${statsData.totalPenjemputan || 468} Log` : "468 Log"}
                     </span>
                   </div>
 
@@ -855,23 +942,19 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <span className="font-extrabold text-lg text-slate-900">
-                      Sistem Terintegrasi dengan IoT
+                      Integrasi Perangkat IoT
                     </span>
 
                   </div>
 
-                  <span className="text-xs px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-full font-bold">
-                    IoT Monitoring
+                  <span className="text-xs px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full font-bold">
+                    Rencana Masa Depan
                   </span>
 
                 </div>
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                  TrashCare dapat terintegrasi dengan perangkat Internet of
-                  Things (IoT) untuk memantau kondisi tempat sampah secara
-                  lebih cepat dan terukur. Data dari perangkat dapat digunakan
-                  untuk membantu mengetahui tingkat kepenuhan tempat sampah
-                  dan mendukung proses pengelolaan serta penjemputan sampah.
+                  TrashCare dirancang untuk dapat terintegrasi dengan perangkat Internet of Things (IoT) pada tahap pengembangan masa depan untuk memantau kondisi tempat sampah secara otomatis dan terukur guna mendukung efisiensi rute penjemputan.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -884,11 +967,11 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <p className="text-sm font-black text-slate-900">
-                      Sensor IoT
+                      Smart Bin IoT
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      Membaca kondisi tempat sampah secara berkala.
+                      {statsData ? `${statsData.smartIotBinsCount || 48} Perangkat` : "48 Perangkat"} aktif.
                     </p>
                   </div>
 
@@ -900,11 +983,11 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <p className="text-sm font-black text-slate-900">
-                      Monitoring Real-Time
+                      Tingkat Pemilahan
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      Informasi kondisi tempat sampah dapat dipantau melalui sistem.
+                      {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"} terukur.
                     </p>
                   </div>
 
@@ -916,11 +999,11 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <p className="text-sm font-black text-slate-900">
-                      Efisiensi Penjemputan
+                      Volume Terkelola
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      Data membantu petugas menentukan prioritas penjemputan.
+                      {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")} kg` : "4.056 kg"} terkelola.
                     </p>
                   </div>
 
@@ -994,7 +1077,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                1.250+ kg
+                {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")}+ kg` : "1.250+ kg"}
               </span>
 
               <span className="dampak-sub">
@@ -1009,7 +1092,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                500+
+                {statsData ? `${statsData.wargaCount}+` : "500+"}
               </span>
 
               <span className="dampak-sub">
@@ -1024,7 +1107,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                25+
+                {statsData ? `${statsData.kegiatanCount}+` : "25+"}
               </span>
 
               <span className="dampak-sub">
@@ -1039,7 +1122,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                35%
+                {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"}
               </span>
 
               <span className="dampak-sub">
@@ -1392,7 +1475,7 @@ export const LandingPage: React.FC = () => {
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
               Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi.
             </p>
-            <p className="text-xs text-slate-500 font-semibold">© 2026 Universitas Komputer Indonesia. All rights reserved.</p>
+            <p className="text-xs text-slate-400 font-semibold">© 2026 Universitas Komputer Indonesia • Sampah Terdata, Lingkungan Tertata</p>
           </div>
 
           <div>
@@ -1409,19 +1492,33 @@ export const LandingPage: React.FC = () => {
           <div>
             <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan</h5>
             <ul className="space-y-2.5 text-xs font-semibold">
-              <li><Link to="/login" className="hover:text-white transition">Portal Dabsor</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Monitoring</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Pimpinan</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Dinas Lingkungan Hidup</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Camat</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Lurah</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Rukun Warga</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pembimbing Lapangan</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Monitoring Data Sampah</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
             </ul>
           </div>
 
           <div>
-            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Kontak</h5>
-            <ul className="space-y-2.5 text-xs font-semibold">
-
+            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Informasi</h5>
+            <ul className="space-y-3 text-xs font-semibold">
+              <li className="flex items-start gap-2.5">
+                <span className="material-symbols-outlined text-base text-emerald-400 shrink-0 mt-0.5">location_on</span>
+                <span className="text-slate-300 leading-relaxed font-medium">
+                  Jl. Dipati Ukur No.112-116, Lebakgede, Kec. Coblong, Kota Bandung 40132
+                </span>
+              </li>
               <li className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-base text-slate-400">mail</span>
-                <span>cdc@email.unikom.ac.id</span>
+                <span className="material-symbols-outlined text-base text-sky-400 shrink-0">mail</span>
+                <a href="mailto:cdc@unikom.ac.id" className="hover:text-white transition">cdc@unikom.ac.id</a>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-base text-green-400 shrink-0">chat</span>
+                <a href="https://wa.me/6285715516065" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">+62 857-1551-6065</a>
               </li>
             </ul>
           </div>
@@ -1431,58 +1528,90 @@ export const LandingPage: React.FC = () => {
       {/* ----------------- CONTACT US MODAL ----------------- */}
       {
         showContactModal && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+              {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-600">contact_support</span>
-                  Hubungi Kami (Contact Us)
-                </h3>
-                <button onClick={() => setShowContactModal(false)} className="text-slate-400 hover:text-slate-600 transition">
-                  <span className="material-symbols-outlined">close</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-xl">contact_support</span>
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-lg leading-tight">
+                      Hubungi Kami
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sistem Tata Kelola Sampah Coblong</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowContactModal(false)}
+                  className="w-9 h-9 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+                  aria-label="Tutup modal"
+                >
+                  <span className="material-symbols-outlined text-xl">close</span>
                 </button>
               </div>
 
+              {/* Body */}
               <div className="space-y-4 text-xs text-slate-600">
-                <p className="font-medium leading-relaxed">
+                <p className="font-medium text-slate-600 leading-relaxed">
                   Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerja sama operasional:
                 </p>
-                
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3.5">
+
+                <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/70 space-y-4">
                   {/* Location Item */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="material-symbols-outlined text-base">location_on</span>
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      <span className="material-symbols-outlined text-lg">location_on</span>
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="font-extrabold text-slate-900 text-xs">Kampus Dago UNIKOM</p>
-                      <p className="text-slate-600 leading-relaxed font-medium">
-                        Jl. Dipati Ukur No.99, Lebakgede, Kec. Coblong, Kota Bandung, Jawa Barat 40132
+                    <div className="space-y-1 flex-1">
+                      <p className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                        Universitas Komputer Indonesia
                       </p>
+                      <p className="text-slate-600 leading-relaxed font-medium text-xs">
+                        Jl. Dipati Ukur No.112-116, Lebakgede, Kecamatan Coblong, Kota Bandung, Jawa Barat 40132
+                      </p>
+                      <a
+                        href="https://maps.google.com/?q=Universitas+Komputer+Indonesia+Jl.+Dipati+Ukur+No.112-116+Bandung"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] transition shadow-2xs"
+                      >
+                        <span className="material-symbols-outlined text-sm">map</span>
+                        Buka di Google Maps <span>→</span>
+                      </a>
                     </div>
                   </div>
 
                   {/* Email Item */}
-                  <div className="flex items-center gap-3 pt-1 border-t border-slate-200/60">
-                    <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-base">mail</span>
+                  <div className="flex items-center gap-3.5 pt-3 border-t border-slate-200/70">
+                    <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-lg">mail</span>
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Resmi</p>
-                      <a href="mailto:cdc@unikom.ac.id" className="font-extrabold text-slate-800 hover:text-emerald-600 transition-colors">
+                      <a
+                        href="mailto:cdc@unikom.ac.id"
+                        className="font-extrabold text-slate-900 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
+                      >
                         cdc@unikom.ac.id
                       </a>
                     </div>
                   </div>
 
                   {/* WhatsApp Item */}
-                  <div className="flex items-center gap-3 pt-1 border-t border-slate-200/60">
-                    <div className="w-8 h-8 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-base">chat</span>
+                  <div className="flex items-center gap-3.5 pt-3 border-t border-slate-200/70">
+                    <div className="w-9 h-9 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-lg">chat</span>
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">WhatsApp Support</p>
-                      <a href="https://wa.me/6285715516065" target="_blank" rel="noopener noreferrer" className="font-extrabold text-slate-800 hover:text-emerald-600 transition-colors">
+                      <a
+                        href="https://wa.me/6285715516065"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-extrabold text-slate-900 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
+                      >
                         +62 857-1551-6065
                       </a>
                     </div>
@@ -1490,9 +1619,10 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Footer Action */}
               <button
                 onClick={() => setShowContactModal(false)}
-                className="btn-primary-clean text-xs w-full py-3 justify-center"
+                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
               >
                 Tutup
               </button>
@@ -1537,7 +1667,30 @@ export const LandingPage: React.FC = () => {
         )
       }
 
-    </div >
+      {/* Floating Action Button: Download Aplikasi Mobile APK (Icon-Only Animated) */}
+      <div className="fixed bottom-6 right-8 sm:right-10 z-50 group flex items-center justify-center p-2 overflow-visible">
+        <div className="relative flex items-center justify-center">
+          {/* Outer Animated Ping Ripple Effect */}
+          <span className="absolute -inset-1 rounded-full bg-[#009966]/40 animate-ping opacity-75 pointer-events-none" />
+          
+          <Link
+            to="/download"
+            className="relative w-14 h-14 bg-gradient-to-r from-[#009966] to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-white/40 cursor-pointer shrink-0"
+            aria-label="Unduh Aplikasi Mobile TrashCare (APK)"
+          >
+            <span className="material-symbols-outlined text-2xl text-white group-hover:rotate-12 transition-transform">
+              download
+            </span>
+            
+            {/* Tooltip on Hover */}
+            <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800">
+              Unduh Aplikasi Mobile (APK)
+            </span>
+          </Link>
+        </div>
+      </div>
+
+    </div>
   );
 };
 

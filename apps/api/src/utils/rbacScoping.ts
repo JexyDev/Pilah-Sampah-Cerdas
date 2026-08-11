@@ -39,8 +39,8 @@ export async function getScopingFilters(user: {
   };
   const role = normalizeRole(user.role);
 
-  // 1. SUPER_USER, ADMIN_DLH, and CAMAT see all data (CAMAT is read-only checked at route level)
-  if (role === "SUPER_USER" || role === "ADMIN_DLH" || role === "CAMAT") {
+  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, CAMAT, PEMIMPIN, PANITIA_TASKFORCE, and DPL see all data
+  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"].includes(role)) {
     return {};
   }
 

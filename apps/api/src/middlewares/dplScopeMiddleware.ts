@@ -25,7 +25,7 @@ export const dplScopeMiddleware = async (
     if (!isAllowed) {
       res.status(403).json({
         error: "FORBIDDEN",
-        message: "Akses Dashboard KKN hanya untuk SUPER USER, DPL, Pemimpin, dan Panitia Taskforce",
+        message: "Akses Dashboard KKN hanya untuk Admin, DPL, Pemimpin, dan Panitia Taskforce",
       });
       return;
     }

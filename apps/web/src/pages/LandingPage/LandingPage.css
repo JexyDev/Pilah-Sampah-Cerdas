@@ -2162,3 +2162,70 @@ html {
     font-size: .75rem;
   }
 }
+
+/* ==========================================================
+   HIGH-PERFORMANCE OPTIMIZED ANIMATIONS (60FPS GPU ACCELERATED)
+   ========================================================== */
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 153, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(0, 153, 102, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+/* Micro-interaction hover cards */
+.kegiatan-card-modern {
+  backface-visibility: hidden;
+  will-change: transform, box-shadow;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clean-interactive-tab {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary-clean, .btn-secondary-clean {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.btn-primary-clean:hover, .btn-secondary-clean:hover {
+  transform: translate3d(0, -2px, 0);
+}

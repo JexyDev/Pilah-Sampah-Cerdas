@@ -7,20 +7,21 @@
 
 import axios from "axios";
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
   if (typeof window !== "undefined") {
     const { protocol, hostname } = window.location;
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      if (protocol === "https:") {
-        return `${protocol}//${hostname}/api/v1`;
-      }
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
       return `${protocol}//${hostname}:3000/api/v1`;
     }
+    if (protocol === "https:") {
+      return `${protocol}//${hostname}/api/v1`;
+    }
+    return `${protocol}//${hostname}:3000/api/v1`;
   }
-  return "http://157.10.252.252:3000/api/v1";
+  return "/api/v1";
 };
 
 const api = axios.create({
@@ -33,10 +34,10 @@ const api = axios.create({
   },
 });
 
-// Request interceptor — tambahkan token jika ada di localStorage
+// Request interceptor — tambahkan token jika ada di localStorage atau sessionStorage
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("psc_access_token");
+    const token = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -57,6 +58,8 @@ api.interceptors.response.use(
     ) {
       localStorage.removeItem("psc_access_token");
       localStorage.removeItem("psc_user");
+      sessionStorage.removeItem("psc_access_token");
+      sessionStorage.removeItem("psc_user");
       
       const publicPaths = ["/", "/login", "/register", "/register-mahasiswa", "/tentang", "/panduan"];
       const currentPath = window.location.pathname;
