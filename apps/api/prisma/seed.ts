@@ -333,7 +333,6 @@ async function main() {
     { roleName: "PANITIA_TASKFORCE", phone: "+628111111127", pass: "password123", name: "Task Force" },
     { roleName: "RW", phone: "+628111111115", pass: "password123", name: "Ketua RW 06 Dago" },
     { roleName: "PETUGAS_RESIDU", phone: "+628111111117", pass: "password123", name: "Petugas Residu" },
-    { roleName: "MAHASISWA_KKN", phone: "+628111111118", pass: "password123", name: "Mahasiswa" },
     { roleName: "WARGA", phone: "+62812001001", pass: "password123", name: "Warga" },
   ];
 

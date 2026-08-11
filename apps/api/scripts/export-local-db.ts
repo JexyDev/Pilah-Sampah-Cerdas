@@ -17,12 +17,12 @@ async function main() {
     rw: await prisma.rw.findMany(),
     rt: await prisma.rt.findMany(),
     kelompokKkn: await prisma.kelompokKkn.findMany(),
-    users: await prisma.user.findMany({
+    users: (await prisma.user.findMany({
       include: {
         studentProfile: true,
         petugasProfile: true
       }
-    }),
+    })).filter(u => u.phone !== "+628111111118" && u.name !== "Mahasiswa"),
     wasteCategories: await prisma.wasteCategory.findMany(),
     systemConfigs: await prisma.systemConfig.findMany()
   };

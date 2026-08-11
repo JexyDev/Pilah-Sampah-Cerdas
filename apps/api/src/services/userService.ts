@@ -252,12 +252,32 @@ export class UserService {
       } else if (u.role?.name === "CAMAT") {
         userWilayah = u.address || "Kecamatan Coblong";
       } else if (u.role?.name === "MAHASISWA_KKN") {
-        if (!u.studentProfile?.kelompokId || !u.studentProfile?.kelompok) {
+        const kel = u.studentProfile?.kelompok;
+        if (!u.studentProfile?.kelompokId || !kel) {
           userWilayah = "-";
-        } else if (u.studentProfile.kelompok.wilayahPenugasan) {
-          userWilayah = u.studentProfile.kelompok.wilayahPenugasan;
-        } else if (u.studentProfile.kelompok.kelurahan) {
-          userWilayah = `Kel. ${u.studentProfile.kelompok.kelurahan}`;
+        } else {
+          let rwStr = "";
+          if (kel.cakupanRw) {
+            let rws: any[] = [];
+            if (Array.isArray(kel.cakupanRw)) {
+              rws = kel.cakupanRw;
+            } else if (typeof kel.cakupanRw === "string") {
+              try { rws = JSON.parse(kel.cakupanRw); } catch { rws = [kel.cakupanRw]; }
+            } else if (typeof kel.cakupanRw === "number") {
+              rws = [kel.cakupanRw];
+            }
+            if (rws.length > 0) {
+              rwStr = `RW ${rws.map((r: any) => String(r).replace(/\D/g, "").padStart(2, "0")).filter(Boolean).join(", RW ")}`;
+            }
+          }
+          const kelStr = kel.kelurahan ? `Kel. ${kel.kelurahan}` : "";
+          if (rwStr || kelStr) {
+            userWilayah = [rwStr, kelStr].filter(Boolean).join(" ");
+          } else if (u.address && u.address !== "-") {
+            userWilayah = u.address;
+          } else {
+            userWilayah = "-";
+          }
         }
       } else if (!userWilayah) {
         const wilayahParts = [rwName, kelurahanName, kecamatanName].filter((p) => p && p !== "-");
