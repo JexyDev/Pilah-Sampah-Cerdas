@@ -605,7 +605,7 @@ const ManajemenPengguna: React.FC = () => {
 
   // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges
   const renderWilayahBadges = (raw?: string) => {
-    if (!raw || raw === "-") return <span className="text-slate-400">-</span>;
+    if (!raw || raw === "-" || raw.trim() === "") return <span className="text-slate-400 font-medium">-</span>;
 
     const str = String(raw).trim();
     
@@ -619,14 +619,15 @@ const ManajemenPengguna: React.FC = () => {
       }
     }
 
-    // Extract RW numbers strictly prefixed with "RW"
-    const rwRegex = /RW\s*(\d+)/gi;
-    let match;
+    // Extract all numeric RW values from string
     const rwNumbers: number[] = [];
-    while ((match = rwRegex.exec(str)) !== null) {
-      const num = parseInt(match[1], 10);
-      if (num > 0 && num <= 70) {
-        rwNumbers.push(num);
+    const matches = str.match(/\d+/g);
+    if (matches) {
+      for (const m of matches) {
+        const num = parseInt(m, 10);
+        if (num > 0 && num <= 100) {
+          rwNumbers.push(num);
+        }
       }
     }
 
@@ -720,19 +721,20 @@ const ManajemenPengguna: React.FC = () => {
     const studentProfile = u.studentProfile;
     const kel = studentProfile?.kelompok;
 
-    // Jika Mahasiswa tidak terikat Kelompok KKN (atau kelompokId null/-), Wilayah Penugasan WAJIB "-"
-    if (!studentProfile?.kelompokId || !kel || !kel.name || kel.name === "-") {
-      return "-";
-    }
-
-    // 1. Cek dari objek kelompok KKN (jika terikat kelompok)
-    if (kel && (kel.cakupanRw || kel.kelurahan || kel.wilayahPenugasan)) {
+    // 1. Cek dari kelompok KKN jika terikat kelompok
+    if (kel) {
       let rwStr = "";
       if (kel.cakupanRw) {
-        if (Array.isArray(kel.cakupanRw) && kel.cakupanRw.length > 0) {
-          rwStr = `RW ${kel.cakupanRw.map((r: any) => String(r).padStart(2, "0")).join(", RW ")}`;
-        } else if (typeof kel.cakupanRw === "number" || typeof kel.cakupanRw === "string") {
-          rwStr = `RW ${String(kel.cakupanRw).padStart(2, "0")}`;
+        let rws: any[] = [];
+        if (Array.isArray(kel.cakupanRw)) {
+          rws = kel.cakupanRw;
+        } else if (typeof kel.cakupanRw === "string") {
+          try { rws = JSON.parse(kel.cakupanRw); } catch { rws = [kel.cakupanRw]; }
+        } else if (typeof kel.cakupanRw === "number") {
+          rws = [kel.cakupanRw];
+        }
+        if (rws.length > 0) {
+          rwStr = `RW ${rws.map((r: any) => String(r).replace(/\D/g, "").padStart(2, "0")).filter(Boolean).join(", RW ")}`;
         }
       }
       const kelStr = kel.kelurahan ? cleanKelurahanName(kel.kelurahan) : "";
@@ -741,6 +743,10 @@ const ManajemenPengguna: React.FC = () => {
       }
       if (kel.wilayahPenugasan) return kel.wilayahPenugasan;
     }
+
+    // 2. Fallback ke u.address atau u.wilayah
+    if (u.address && u.address !== "-") return u.address;
+    if (u.wilayah && u.wilayah !== "-") return u.wilayah;
 
     return "-";
   };
