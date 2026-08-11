@@ -121,6 +121,72 @@ async function main() {
   }
   console.log(`✅ ${dplCount} DPLs seeded with REAL NIP and Program Studi from Excel!`);
 
+  // ── A2. MAP DPL TO KKN GROUPS FROM "Data Ketua Kelompok KKN" ──
+  const groupSheetName = workbook.SheetNames.find(s => s.trim().toLowerCase() === 'data ketua kelompok kkn') || 'Data Ketua Kelompok KKN';
+  const groupSheet = workbook.Sheets[groupSheetName];
+  if (groupSheet) {
+    const groupRawRows: any[] = XLSX.utils.sheet_to_json(groupSheet, { header: 1, defval: '' });
+    console.log(`\n📌 Mapping DPL to KKN Groups from: "${groupSheetName}"...`);
+
+    function cleanNameToken(s: string) {
+      s = s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (const token of ['prof', 'assoc', 'dr', 'dra', 'hj', 'h', 'se', 'si', 'mpd', 'mt', 'msi', 'kom', 'mm', 'pd', 'phd', 'ip', 'sos', 'sh', 'mh', 'sds', 'mds', 'ssn', 'msn', 'spd', 'st', 'mkom', 'mti', 'meng', 'csba', 'cima', 'cdmp', 'ak', 'ca']) {
+        s = s.replace(token, '');
+      }
+      return s;
+    }
+
+    const allDpls = await prisma.user.findMany({ where: { role: { name: 'DPL' } } });
+    let mappedGroupCount = 0;
+
+    for (let r = 1; r < groupRawRows.length; r++) {
+      const row = groupRawRows[r];
+      const kelName = row[1] ? String(row[1]).trim() : '';
+      const kelurahan = row[2] ? String(row[2]).trim() : '';
+      const dplName = row[3] ? String(row[3]).trim() : '';
+
+      if (!kelName || !dplName) continue;
+      if (kelName.toLowerCase() === 'nama kelompok') continue;
+
+      const targetNorm = cleanNameToken(dplName);
+      const matchedDpl = allDpls.find(d => {
+        const candNorm = cleanNameToken(d.name);
+        return targetNorm.slice(0, 5) && candNorm.slice(0, 5) && (candNorm.includes(targetNorm.slice(0, 5)) || targetNorm.includes(candNorm.slice(0, 5)));
+      });
+
+      if (matchedDpl) {
+        // Search KknGroup by name and kelurahan
+        const kknGroups = await prisma.kknGroup.findMany();
+        const matchedGroup = kknGroups.find(g => {
+          const gName = g.name.toLowerCase();
+          const kName = kelName.toLowerCase();
+          const kelur = kelurahan.toLowerCase();
+          return gName.includes(kName) && (gName.includes(kelur) || !kelurahan);
+        });
+
+        if (matchedGroup) {
+          await prisma.kknGroup.update({
+            where: { id: matchedGroup.id },
+            data: { dplId: matchedDpl.id }
+          });
+          mappedGroupCount++;
+        }
+      }
+    }
+    console.log(`✅ ${mappedGroupCount} KKN Groups mapped to their official DPL!`);
+  }
+
+  // ── A3. CLEANUP DUMMY TEST USERS ──
+  await prisma.user.deleteMany({
+    where: {
+      OR: [
+        { name: { contains: 'Qc Test', mode: 'insensitive' } },
+        { name: { contains: 'Camat Qc', mode: 'insensitive' } },
+        { phone: '+6281234567890' }
+      ]
+    }
+  }).catch(() => {});
+
   // ── B. SEED PIMPINAN & TASK FORCE ──
   const executiveUsers = [
     {
