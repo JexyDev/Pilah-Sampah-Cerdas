@@ -52,14 +52,15 @@ jobs:
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
-            pm2 restart psc-backend || pm2 start dist/index.js --name psc-backend || true
+            pm2 delete psc-backend 2>/dev/null || true
+            pm2 start dist/index.js --name psc-backend
             pm2 save || true
 
             echo "=== 4. Preparing Frontend Web Root ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
-            mkdir -p ~/Pilah-Sampah-Cerdas/apps/web/dist
+            mkdir -p ~/Pilah-Sampah-Cerdas/apps/web/dist ~/Pilah-Sampah-Cerdas-new/apps/web/dist 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/assets /var/www/pilah-sampah-cerdas/frontend/dist/assets /tmp/frontend-dist/*
-            rm -rf ~/Pilah-Sampah-Cerdas/apps/web/dist/assets
+            rm -rf ~/Pilah-Sampah-Cerdas/apps/web/dist/assets ~/Pilah-Sampah-Cerdas-new/apps/web/dist/assets 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /tmp/frontend-dist
           EOF
 
@@ -83,12 +84,13 @@ jobs:
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
             cp -r /tmp/frontend-dist/* ~/Pilah-Sampah-Cerdas/apps/web/dist/ 2>/dev/null || true
+            cp -r /tmp/frontend-dist/* ~/Pilah-Sampah-Cerdas-new/apps/web/dist/ 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S rm -rf /tmp/frontend-dist
 
             echo "=== 6. Fixing Permissions & Ownership ==="
             echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
             echo "$VPS_PASS" | sudo -S chmod -R 755 /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            chmod -R 755 ~/Pilah-Sampah-Cerdas/apps/web/dist 2>/dev/null || true
+            chmod -R 755 ~/Pilah-Sampah-Cerdas/apps/web/dist ~/Pilah-Sampah-Cerdas-new/apps/web/dist 2>/dev/null || true
 
             echo "=== 7. Reload Nginx ==="
             echo "$VPS_PASS" | sudo -S systemctl reload nginx || true

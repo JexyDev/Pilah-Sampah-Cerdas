@@ -655,7 +655,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-05-24",
                           location: "Kel. Lebak Gede, Kec. Coblong",
                           category: "Edukasi Pemilahan",
-                          imageUrl: "/image/activity-1.png",
+                          imageUrl: "/image/activity-1.png?v=2",
                         },
                         {
                           id: "2",
@@ -663,7 +663,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-05-20",
                           location: "Kel. Dago, Kec. Coblong",
                           category: "Pengolahan Kompos",
-                          imageUrl: "/image/activity-2.png",
+                          imageUrl: "/image/activity-2.png?v=2",
                         },
                         {
                           id: "3",
@@ -671,7 +671,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-05-18",
                           location: "Kel. Sekeloa, Kec. Coblong",
                           category: "Aksi Bersih",
-                          imageUrl: "/image/activity-3.png",
+                          imageUrl: "/image/activity-3.png?v=2",
                         },
                       ]
                   ).map((item: any, idx: number) => {
@@ -679,7 +679,7 @@ export const LandingPage: React.FC = () => {
                     const day = isNaN(d.getDate()) ? "24" : String(d.getDate()).padStart(2, "0");
                     const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
                     const month = isNaN(d.getMonth()) ? "Mei" : monthNames[d.getMonth()];
-                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png`;
+                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png?v=2`;
 
                     return (
                       <Link
