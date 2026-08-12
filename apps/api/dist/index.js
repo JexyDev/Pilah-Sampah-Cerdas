@@ -38,6 +38,8 @@ import pengangkutanRouter from "./routes/pengangkutanRoutes.js";
 import kelompokRouter from "./routes/kelompokRoutes.js";
 import dplRouter from "./routes/dplRoutes.js";
 import permissionRouter from "./routes/permissionRoutes.js";
+import surveiKknRouter from "./routes/surveiKknRoutes.js";
+import evaluasiDampakRouter from "./routes/evaluasiDampakRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 dotenv.config();
@@ -104,6 +106,8 @@ app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
 app.use("/api/v1/dpl", dplRouter);
 app.use("/api/v1/permissions", permissionRouter);
+app.use("/api/v1/survei-kkn", surveiKknRouter);
+app.use("/api/v1/evaluasi-dampak", evaluasiDampakRouter);
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);

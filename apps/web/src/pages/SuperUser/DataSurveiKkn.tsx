@@ -1,0 +1,195 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search, Loader2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import api from "../../services/api";
+import showToast from "../../utils/showToast";
+
+
+export default function DataSurveiKkn() {
+  const navigate = useNavigate();
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [meta, setMeta] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const limit = 10;
+
+  const fetchSurveys = async (page: number, search: string = "") => {
+    setIsLoading(true);
+    try {
+      const response = await api.get(`/survei-kkn`, {
+        params: { page, limit, search },
+      });
+      if (response.data.success) {
+        setSurveys(response.data.data);
+        setMeta(response.data.meta);
+      }
+    } catch (error: any) {
+      console.error(error);
+      showToast.error(error.response?.data?.message || "Gagal memuat data survei");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Debounce search
+    const handler = setTimeout(() => {
+      setCurrentPage(1);
+      fetchSurveys(1, searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      fetchSurveys(currentPage, "");
+    }
+  }, [currentPage]);
+
+  const handleOpenDetail = (kelurahanId: number) => {
+    navigate(`/superUser/data-survei-kkn/${kelurahanId}`);
+  };
+
+  const renderPagination = () => {
+    if (!meta || meta.totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+        <p className="text-sm text-slate-500 font-medium">
+          Menampilkan baris {(meta.page - 1) * limit + 1} -{" "}
+          {Math.min(meta.page * limit, meta.total)} dari {meta.total} data
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(meta.totalPages, p + 1))}
+            disabled={currentPage === meta.totalPages}
+            className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50/50 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Tabel Data Survei KKN</h1>
+          <p className="text-slate-500 mt-2 font-medium">Manajemen data hasil survei pemilahan sampah dan profil kelurahan oleh mahasiswa KKN.</p>
+        </div>
+
+        {/* Search & Actions */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="relative w-full md:w-96">
+            <input
+              type="text"
+              placeholder="Cari berdasarkan nama kelurahan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] focus:border-transparent transition-all font-medium text-slate-700 placeholder-slate-400"
+            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          </div>
+          <div className="flex gap-3">
+            <div className="bg-[#009966]/10 text-[#009966] px-4 py-2 rounded-xl font-bold text-sm border border-[#009966]/20">
+              Total Data: {meta?.total || 0} Kelurahan
+            </div>
+          </div>
+        </div>
+
+        {/* Table Container */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200">
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">No</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Kelurahan</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Kecamatan</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Tanggal Survei</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Enumerator</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Jml RW/RT</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {isLoading && surveys.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <Loader2 className="animate-spin text-[#009966] mx-auto mb-3" size={32} />
+                      <span className="text-slate-500 font-medium">Memuat data survei...</span>
+                    </td>
+                  </tr>
+                ) : surveys.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Search className="text-slate-400" size={24} />
+                      </div>
+                      <span className="text-slate-500 font-medium text-lg">Tidak ada data ditemukan</span>
+                      <p className="text-slate-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  surveys.map((survey, index) => (
+                    <tr key={survey.kelurahanId} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-500">
+                        {(currentPage - 1) * limit + index + 1}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-extrabold text-slate-800 text-[15px]">{survey.namaKelurahan}</span>
+                        {survey._count?.keyPlayers > 0 && (
+                          <div className="mt-1">
+                            <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                              {survey._count.keyPlayers} Aktor Tersimpan
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-600">{survey.kecamatan || "-"}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {survey.tanggalSurvei ? new Date(survey.tanggalSurvei).toLocaleDateString("id-ID") : "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{survey.enumerator || "-"}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded border border-slate-200">
+                            RW: {survey.jumlahRw || 0}
+                          </span>
+                          <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded border border-slate-200">
+                            RT: {survey.jumlahRt || 0}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleOpenDetail(survey.kelurahanId)}
+                          className="inline-flex items-center gap-2 bg-white border-2 border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:border-[#009966] hover:text-[#009966] transition-all font-bold text-xs"
+                        >
+                          <Eye size={16} /> Lihat Detail
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {renderPagination()}
+        </div>
+      </div>
+    </div>
+  );
+}

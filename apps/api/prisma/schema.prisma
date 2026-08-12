@@ -189,6 +189,9 @@ model User {
   rwOwned               Rw?                  @relation("RwPetugasResidu")
   studentLeaveRequests  StudentLeaveRequest[] @relation("StudentLeaveRequests")
   reviewedLeaveRequests StudentLeaveRequest[] @relation("ReviewedLeaveRequests")
+  importLogs            ImportLog[]          @relation("UserImportLogs")
+  validasiBaseline      SurveiKelurahan[]    @relation("DplBaselineValidasi")
+  validasiEndline       EndlineSurveiKelurahan[] @relation("DplEndlineValidasi")
 
   @@map("pengguna")
 }
@@ -786,6 +789,218 @@ model Violation {
 }
 
 // ─────────────────────────────────────────────
+// SURVEI KKN (Data survei lapangan — terpisah dari master wilayah)
+// ─────────────────────────────────────────────
+
+model SurveiKelurahan {
+  kelurahanId            Int       @id @map("id_kelurahan_survei")
+  namaKelurahan          String    @map("nama_kelurahan") @db.VarChar(100)
+  kecamatan              String?   @db.VarChar(100)
+  jumlahRw               Int?      @map("jumlah_rw")
+  jumlahRt               Int?      @map("jumlah_rt")
+  tanggalSurvei          DateTime? @map("tanggal_survei") @db.Date
+  jumlahKk               Int?      @map("jumlah_kk")
+  jumlahRumahTotal       Int?      @map("jumlah_rumah_total")
+  enumerator             String?   @db.VarChar(100)
+  titikKumpulMahasiswa   String?   @map("titik_kumpul_mahasiswa") @db.VarChar(255)
+  catatanData            String?   @map("catatan_data")
+  validasiDplId          String?   @map("id_validasi_dpl")
+  statusValidasi         String    @default("BELUM_VALIDASI") @map("status_validasi")
+  catatanValidasi        String?   @map("catatan_validasi")
+  createdAt              DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt              DateTime  @updatedAt @map("diperbarui_pada")
+
+  karakteristikWilayah   SurveiKarakteristikWilayah?
+  pemilahanSampah        SurveiPemilahanSampah?
+  bankSampahPengolahan   SurveiBankSampahPengolahan?
+  keyPlayers             SurveiKeyPlayer[]
+  volumeSampah           SurveiVolumeSampah?
+  catatanKesimpulan      SurveiCatatanKesimpulan?
+  validasiDpl            User?     @relation("DplBaselineValidasi", fields: [validasiDplId], references: [id])
+
+  @@map("survei_kelurahan")
+}
+
+model SurveiKarakteristikWilayah {
+  id                              Int              @id @default(autoincrement())
+  kelurahanId                     Int              @unique @map("id_kelurahan_survei")
+  padatPenduduk                   Boolean?         @map("padat_penduduk")
+  banyakKosKontrakan              Boolean?         @map("banyak_kos_kontrakan")
+  banyakUmkmWarungKafe            Boolean?         @map("banyak_umkm_warung_kafe")
+  dekatKampusSekolah              Boolean?         @map("dekat_kampus_sekolah")
+  pasar                           Boolean?
+  bantaranSungai                  Boolean?         @map("bantaran_sungai")
+  karakterLainnyaFlag             Boolean?         @map("karakter_lainnya_flag")
+  karakterLainnyaKeterangan       String?          @map("karakter_lainnya_keterangan")
+  perkiraanJumlahKosKontrakan     String?          @map("perkiraan_jumlah_kos_kontrakan") @db.VarChar(50)
+  perkiraanJumlahUmkmWarungKafe   String?          @map("perkiraan_jumlah_umkm_warung_kafe") @db.VarChar(50)
+  kelurahan                       SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("survei_karakteristik_wilayah")
+}
+
+model SurveiPemilahanSampah {
+  id                       Int              @id @default(autoincrement())
+  kelurahanId              Int              @unique @map("id_kelurahan_survei")
+  jumlahRumahMemilah       Int?             @map("jumlah_rumah_memilah")
+  totalJumlahRumahDiRw     Int?             @map("total_jumlah_rumah_di_rw")
+  persentasePemilahan      Decimal?         @map("persentase_pemilahan") @db.Decimal(5, 4)
+  tingkatPemilahan         String?          @map("tingkat_pemilahan") @db.VarChar(50)
+  catatan                  String?
+  kelurahan                SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("survei_pemilahan_sampah")
+}
+
+model SurveiBankSampahPengolahan {
+  id                             Int              @id @default(autoincrement())
+  kelurahanId                    Int              @unique @map("id_kelurahan_survei")
+  bankSampahAktif                Int?             @map("bank_sampah_aktif")
+  bankSampahTidakAktif           Int?             @map("bank_sampah_tidak_aktif")
+  jumlahUnitKomposter            String?          @map("jumlah_unit_komposter") @db.VarChar(50)
+  jumlahTitikMaggotBsf           String?          @map("jumlah_titik_maggot_bsf") @db.VarChar(100)
+  bioporiLoseda                  Boolean?         @map("biopori_loseda")
+  ecobrickKerajinanDaurUlang     Boolean?         @map("ecobrick_kerajinan_daur_ulang")
+  buruanSae                      Boolean?         @map("buruan_sae")
+  pengepulMitraDaurUlang         Boolean?         @map("pengepul_mitra_daur_ulang")
+  digitalisasiData               Boolean?         @map("digitalisasi_data")
+  aktivitasLainnyaKeterangan     String?          @map("aktivitas_lainnya_keterangan")
+  kelurahan                      SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("survei_bank_sampah_pengolahan")
+}
+
+model SurveiKeyPlayer {
+  id            Int              @id @default(autoincrement())
+  kelurahanId   Int              @map("id_kelurahan_survei")
+  jenisAktor    String?          @map("jenis_aktor") @db.VarChar(100)
+  nama          String?          @db.VarChar(150)
+  kontak        String?          @db.VarChar(50)
+  peran         String?          @db.VarChar(255)
+  kelurahan     SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("survei_key_player")
+}
+
+model SurveiVolumeSampah {
+  id                      Int              @id @default(autoincrement())
+  kelurahanId             Int              @unique @map("id_kelurahan_survei")
+  organikKgPerHari        Decimal?         @map("organik_kg_per_hari") @db.Decimal(10, 2)
+  anorganikKgPerHari      Decimal?         @map("anorganik_kg_per_hari") @db.Decimal(10, 2)
+  residuKgPerHari         Decimal?         @map("residu_kg_per_hari") @db.Decimal(10, 2)
+  totalVolumeKgPerHari    Decimal?         @map("total_volume_kg_per_hari") @db.Decimal(10, 2)
+  catatan                 String?
+  kelurahan               SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("survei_volume_sampah")
+}
+
+model SurveiCatatanKesimpulan {
+  id                            Int              @id @default(autoincrement())
+  kelurahanId                   Int              @unique @map("id_kelurahan_survei")
+  prioritasIntervensi           String?          @map("prioritas_intervensi")
+  catatanTambahanRisikoSosial   String?          @map("catatan_tambahan_risiko_sosial")
+  kelurahan                     SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("survei_catatan_kesimpulan")
+}
+
+// ─────────────────────────────────────────────
+// ENDLINE SURVEI KKN (mirror dari Baseline untuk Evaluasi Dampak)
+// ─────────────────────────────────────────────
+
+model EndlineSurveiKelurahan {
+  kelurahanId            Int       @id @map("id_kelurahan_endline")
+  namaKelurahan          String    @map("nama_kelurahan") @db.VarChar(100)
+  kecamatan              String?   @db.VarChar(100)
+  tanggalSurvei          DateTime? @map("tanggal_survei") @db.Date
+  enumerator             String?   @db.VarChar(100)
+  catatanData            String?   @map("catatan_data")
+  validasiDplId          String?   @map("id_validasi_dpl")
+  statusValidasi         String    @default("BELUM_VALIDASI") @map("status_validasi")
+  catatanValidasi        String?   @map("catatan_validasi")
+  createdAt              DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt              DateTime  @updatedAt @map("diperbarui_pada")
+
+  pemilahanSampah        EndlinePemilahanSampah?
+  volumeSampah           EndlineVolumeSampah?
+  bankSampahPengolahan   EndlineBankSampahPengolahan?
+  catatanKesimpulan      EndlineCatatanKesimpulan?
+  validasiDpl            User?     @relation("DplEndlineValidasi", fields: [validasiDplId], references: [id])
+
+  @@map("endline_survei_kelurahan")
+}
+
+model EndlinePemilahanSampah {
+  id                       Int                       @id @default(autoincrement())
+  kelurahanId              Int                       @unique @map("id_kelurahan_endline")
+  jumlahRumahMemilah       Int?                      @map("jumlah_rumah_memilah")
+  totalJumlahRumahDiRw     Int?                      @map("total_jumlah_rumah_di_rw")
+  persentasePemilahan      Decimal?                  @map("persentase_pemilahan") @db.Decimal(5, 4)
+  tingkatPemilahan         String?                   @map("tingkat_pemilahan") @db.VarChar(50)
+  catatan                  String?
+  kelurahan                EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("endline_pemilahan_sampah")
+}
+
+model EndlineVolumeSampah {
+  id                      Int                       @id @default(autoincrement())
+  kelurahanId             Int                       @unique @map("id_kelurahan_endline")
+  organikKgPerHari        Decimal?                  @map("organik_kg_per_hari") @db.Decimal(10, 2)
+  anorganikKgPerHari      Decimal?                  @map("anorganik_kg_per_hari") @db.Decimal(10, 2)
+  residuKgPerHari         Decimal?                  @map("residu_kg_per_hari") @db.Decimal(10, 2)
+  totalVolumeKgPerHari    Decimal?                  @map("total_volume_kg_per_hari") @db.Decimal(10, 2)
+  catatan                 String?
+  kelurahan               EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("endline_volume_sampah")
+}
+
+model EndlineBankSampahPengolahan {
+  id                             Int                       @id @default(autoincrement())
+  kelurahanId                    Int                       @unique @map("id_kelurahan_endline")
+  bankSampahAktif                Int?                      @map("bank_sampah_aktif")
+  bankSampahTidakAktif           Int?                      @map("bank_sampah_tidak_aktif")
+  jumlahUnitKomposter            String?                   @map("jumlah_unit_komposter") @db.VarChar(50)
+  jumlahTitikMaggotBsf           String?                   @map("jumlah_titik_maggot_bsf") @db.VarChar(100)
+  bioporiLoseda                  Boolean?                  @map("biopori_loseda")
+  ecobrickKerajinanDaurUlang     Boolean?                  @map("ecobrick_kerajinan_daur_ulang")
+  buruanSae                      Boolean?                  @map("buruan_sae")
+  pengepulMitraDaurUlang         Boolean?                  @map("pengepul_mitra_daur_ulang")
+  digitalisasiData               Boolean?                  @map("digitalisasi_data")
+  aktivitasLainnyaKeterangan     String?                   @map("aktivitas_lainnya_keterangan")
+  kelurahan                      EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("endline_bank_sampah_pengolahan")
+}
+
+model EndlineCatatanKesimpulan {
+  id                            Int                       @id @default(autoincrement())
+  kelurahanId                   Int                       @unique @map("id_kelurahan_endline")
+  prioritasIntervensi           String?                   @map("prioritas_intervensi")
+  catatanTambahanRisikoSosial   String?                   @map("catatan_tambahan_risiko_sosial")
+  kelurahan                     EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+
+  @@map("endline_catatan_kesimpulan")
+}
+
+/** Riwayat impor file ke database — untuk audit dan pelacakan */
+model ImportLog {
+  id            String       @id @default(uuid())
+  userId        String       @map("id_pengguna")
+  filename      String       @map("nama_file")
+  status        ImportStatus @default(PENDING)
+  summary       Json?        @map("ringkasan")
+  errorMessages Json?        @map("pesan_error")
+  rowsImported  Int          @default(0) @map("baris_diimpor")
+  createdAt     DateTime     @default(now()) @map("dibuat_pada")
+  user          User         @relation("UserImportLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("catatan_impor")
+}
+
+// ─────────────────────────────────────────────
 // ENUMS
 // ─────────────────────────────────────────────
 
@@ -818,4 +1033,11 @@ enum DispatchStatus {
   CLAIMED
   COMPLETED
   ESCALATED
+}
+
+enum ImportStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  PARTIAL
 }

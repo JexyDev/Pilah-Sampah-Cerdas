@@ -65,21 +65,25 @@ export const kelompokService = {
     });
   },
 
-  createKelompok: async (data: { name: string; dplId?: string }) => {
+  createKelompok: async (data: { name: string; dplId?: string; kelurahan?: string; cakupanRw?: any }) => {
     return prisma.kelompokKkn.create({
       data: {
         name: data.name,
         dplId: data.dplId || null,
+        kelurahan: data.kelurahan || null,
+        cakupanRw: data.cakupanRw || null,
       },
     });
   },
 
-  updateKelompok: async (id: string, data: { name?: string; dplId?: string | null }) => {
+  updateKelompok: async (id: string, data: { name?: string; dplId?: string | null; kelurahan?: string | null; cakupanRw?: any }) => {
     return prisma.kelompokKkn.update({
       where: { id },
       data: {
         name: data.name,
         dplId: data.dplId === "" ? null : data.dplId,
+        kelurahan: data.kelurahan,
+        cakupanRw: data.cakupanRw,
       },
     });
   },

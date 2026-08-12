@@ -1,0 +1,434 @@
+import React, { useState, useEffect } from "react";
+import {
+  BarChart3,
+  Search,
+  CheckCircle,
+  XCircle,
+  Clock,
+  RefreshCw,
+  AlertTriangle,
+  FileCheck,
+  Percent,
+  Weight,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Loader2
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { useAuthStore } from "../../store/useAuthStore";
+import { evaluasiDampakApiService } from "../../services/evaluasiDampakService";
+import type { BaselineData, EndlineData, KomparasiData } from "../../services/evaluasiDampakService";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
+
+type TabType = "BASELINE" | "ENDLINE" | "KOMPARASI";
+
+export const EvaluasiDampakKkn: React.FC = () => {
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<TabType>("BASELINE");
+  
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const [baselineList, setBaselineList] = useState<BaselineData[]>([]);
+  const [endlineList, setEndlineList] = useState<EndlineData[]>([]);
+  const [komparasiList, setKomparasiList] = useState<KomparasiData[]>([]);
+
+  // Validation modal state
+  const [validatingItem, setValidatingItem] = useState<{ id: number; type: "BASELINE" | "ENDLINE" } | null>(null);
+  const [validationNote, setValidationNote] = useState("");
+
+  const isValidator = ["SUPER_USER", "DPL"].includes(user?.peran || "");
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      if (activeTab === "BASELINE") {
+        const data = await evaluasiDampakApiService.getBaseline();
+        setBaselineList(data);
+      } else if (activeTab === "ENDLINE") {
+        const data = await evaluasiDampakApiService.getEndline();
+        setEndlineList(data);
+      } else if (activeTab === "KOMPARASI") {
+        const data = await evaluasiDampakApiService.getKomparasi();
+        setKomparasiList(data);
+      }
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      toast.error("Gagal memuat data evaluasi dampak");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [activeTab]);
+
+  const handleValidate = async (status: "VALID" | "REVISI") => {
+    if (!validatingItem) return;
+    try {
+      if (validatingItem.type === "BASELINE") {
+        await evaluasiDampakApiService.validateBaseline(validatingItem.id, status, validationNote);
+        toast.success(`Data baseline berhasil di-set: ${status}`);
+      } else {
+        await evaluasiDampakApiService.validateEndline(validatingItem.id, status, validationNote);
+        toast.success(`Data endline berhasil di-set: ${status}`);
+      }
+      setValidatingItem(null);
+      setValidationNote("");
+      loadData();
+    } catch (err) {
+      toast.error("Gagal memproses validasi");
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "VALID":
+        return <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><CheckCircle size={12} /> Valid</span>;
+      case "REVISI":
+        return <span className="bg-rose-100 text-rose-700 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><XCircle size={12} /> Perlu Revisi</span>;
+      default:
+        return <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><Clock size={12} /> Menunggu</span>;
+    }
+  };
+
+  const filteredBaseline = baselineList.filter(item => 
+    item.namaKelurahan.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredEndline = endlineList.filter(item => 
+    item.namaKelurahan.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredKomparasi = komparasiList.filter(item => 
+    item.namaKelurahan.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-indigo-100">
+            <BarChart3 size={14} /> Evaluasi & Dampak KKN
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-800">
+            Pemantauan Progres Program KKN
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Validasi data survei kelurahan (Baseline vs Endline) dan lihat perbandingan capaian dampak.
+          </p>
+        </div>
+        <button
+          onClick={loadData}
+          className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition border border-slate-200 flex items-center gap-2 text-xs font-bold"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          Refresh Data
+        </button>
+      </div>
+
+      {/* Tabs & Search */}
+      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center w-full md:w-auto p-1 bg-slate-50 rounded-xl">
+          <button
+            onClick={() => setActiveTab("BASELINE")}
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === "BASELINE"
+                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            Data Baseline
+          </button>
+          <button
+            onClick={() => setActiveTab("ENDLINE")}
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === "ENDLINE"
+                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            Data Endline
+          </button>
+          <button
+            onClick={() => setActiveTab("KOMPARASI")}
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === "KOMPARASI"
+                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            Komparasi Dampak
+          </button>
+        </div>
+
+        <div className="relative w-full md:w-64 px-2 pb-2 md:pb-0 md:pr-2">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 md:translate-y-[-50%] text-slate-400" size={16} />
+          <input
+            type="text"
+            placeholder="Cari kelurahan..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="animate-spin text-indigo-500" size={32} />
+          <p className="text-sm font-medium text-slate-500">Memuat data survei...</p>
+        </div>
+      ) : activeTab === "BASELINE" || activeTab === "ENDLINE" ? (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 font-bold">Kelurahan</th>
+                  <th className="px-4 py-3 font-bold">Tgl Survei</th>
+                  <th className="px-4 py-3 font-bold">Pemilahan</th>
+                  <th className="px-4 py-3 font-bold">Vol. Sampah/Hari</th>
+                  <th className="px-4 py-3 font-bold">Bank Sampah</th>
+                  <th className="px-4 py-3 font-bold">Status Validasi</th>
+                  <th className="px-4 py-3 font-bold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm divide-y divide-slate-100">
+                {(activeTab === "BASELINE" ? filteredBaseline : filteredEndline).map((item: any) => (
+                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 transition">
+                    <td className="px-4 py-3 font-bold text-slate-800">
+                      Kel. {item.namaKelurahan}
+                      <span className="block text-[10px] text-slate-400 font-medium">Kec. {item.kecamatan || "-"}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-"}
+                      <span className="block text-[10px] text-slate-400">Oleh: {item.enumerator || "-"}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {item.pemilahanSampah?.persentasePemilahan !== null && item.pemilahanSampah?.persentasePemilahan !== undefined
+                        ? `${(item.pemilahanSampah.persentasePemilahan * 100).toFixed(1)}%` 
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {item.volumeSampah?.totalVolumeKgPerHari ? `${item.volumeSampah.totalVolumeKgPerHari} Kg` : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {item.bankSampahPengolahan?.bankSampahAktif !== null && item.bankSampahPengolahan?.bankSampahAktif !== undefined
+                        ? `${item.bankSampahPengolahan.bankSampahAktif} Aktif` 
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {getStatusBadge(item.statusValidasi)}
+                      {item.validasiDpl && (
+                        <span className="block text-[10px] text-slate-400 mt-1 truncate max-w-[120px]">
+                          DPL: {item.validasiDpl.name}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 flex items-center justify-center gap-2">
+                      {isValidator && item.statusValidasi !== "VALID" && (
+                        <button
+                          onClick={() => setValidatingItem({ id: item.kelurahanId, type: activeTab })}
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200"
+                        >
+                          <FileCheck size={14} /> Validasi
+                        </button>
+                      )}
+                      {item.statusValidasi === "VALID" && isValidator && (
+                        <button
+                          onClick={() => setValidatingItem({ id: item.kelurahanId, type: activeTab })}
+                          className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200"
+                        >
+                           Revisi
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {(activeTab === "BASELINE" ? filteredBaseline : filteredEndline).length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-slate-500 font-medium">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <AlertTriangle className="text-amber-400 mb-2" size={32} />
+                        Belum ada data {activeTab === "BASELINE" ? "baseline" : "endline"} untuk kelurahan yang dicari.
+                        {activeTab === "ENDLINE" && <span className="text-xs text-slate-400 block mt-1">Mahasiswa perlu mengisi survei akhir (endline).</span>}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* TAB KOMPARASI DAMPAK */
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Chart: Persentase Pemilahan */}
+            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                <Percent size={16} className="text-indigo-600" /> Komparasi Tingkat Pemilahan (%)
+              </h3>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={filteredKomparasi.filter(k => k.hasEndline)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="namaKelurahan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `${val * 100}%`} />
+                    <RechartsTooltip 
+                      formatter={(val: any) => [`${(Number(val) * 100).toFixed(1)}%`, '']}
+                      cursor={{fill: '#f1f5f9'}} 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', fontWeight: 600 }}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                    <Bar dataKey="pemilahan.baseline" name="Baseline" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar dataKey="pemilahan.endline" name="Endline" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Chart: Volume Sampah */}
+            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                <Weight size={16} className="text-rose-600" /> Komparasi Volume Sampah (Kg/Hari)
+              </h3>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={filteredKomparasi.filter(k => k.hasEndline)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="namaKelurahan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                    <RechartsTooltip 
+                      formatter={(val: any) => [`${val} Kg`, '']}
+                      cursor={{fill: '#f1f5f9'}} 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', fontWeight: 600 }}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                    <Bar dataKey="volumeSampah.baseline" name="Baseline" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar dataKey="volumeSampah.endline" name="Endline" fill="#e11d48" radius={[4, 4, 0, 0]} barSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
+             <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                 Tabel Delta (Δ) Perubahan
+               </h3>
+             </div>
+             <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 uppercase tracking-wider font-bold">
+                      <th className="px-4 py-3">Kelurahan</th>
+                      <th className="px-4 py-3">Status Data</th>
+                      <th className="px-4 py-3">Δ Pemilahan</th>
+                      <th className="px-4 py-3">Δ Vol. Sampah</th>
+                      <th className="px-4 py-3">Δ Bank Sampah</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm divide-y divide-slate-100">
+                    {filteredKomparasi.map(item => (
+                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 transition">
+                        <td className="px-4 py-3 font-bold text-slate-800">
+                          Kel. {item.namaKelurahan}
+                        </td>
+                        <td className="px-4 py-3">
+                          {item.hasEndline ? (
+                             <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-bold">Lengkap</span>
+                          ) : (
+                             <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] font-bold">Menunggu Endline</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-semibold">
+                          {item.pemilahan.delta !== null ? (
+                            <span className={item.pemilahan.delta > 0 ? "text-emerald-600 flex items-center gap-1" : item.pemilahan.delta < 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
+                               {item.pemilahan.delta > 0 ? <TrendingUp size={14}/> : item.pemilahan.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
+                               {item.pemilahan.delta > 0 ? '+' : ''}{(item.pemilahan.delta * 100).toFixed(1)}%
+                            </span>
+                          ) : "-"}
+                        </td>
+                        <td className="px-4 py-3 font-semibold">
+                          {item.volumeSampah.delta !== null ? (
+                            <span className={item.volumeSampah.delta < 0 ? "text-emerald-600 flex items-center gap-1" : item.volumeSampah.delta > 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
+                               {item.volumeSampah.delta > 0 ? <TrendingUp size={14}/> : item.volumeSampah.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
+                               {item.volumeSampah.delta > 0 ? '+' : ''}{item.volumeSampah.delta} Kg
+                            </span>
+                          ) : "-"}
+                        </td>
+                        <td className="px-4 py-3 font-semibold">
+                          {item.bankSampahAktif.delta !== null ? (
+                            <span className={item.bankSampahAktif.delta > 0 ? "text-emerald-600 flex items-center gap-1" : item.bankSampahAktif.delta < 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
+                               {item.bankSampahAktif.delta > 0 ? <TrendingUp size={14}/> : item.bankSampahAktif.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
+                               {item.bankSampahAktif.delta > 0 ? '+' : ''}{item.bankSampahAktif.delta} Unit
+                            </span>
+                          ) : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Validasi Modal */}
+      {validatingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100">
+             <div className="flex justify-between items-start mb-4">
+               <div>
+                 <h2 className="text-lg font-extrabold text-slate-800">
+                   Validasi Data {validatingItem.type === "BASELINE" ? "Baseline" : "Endline"}
+                 </h2>
+                 <p className="text-xs text-slate-500">Tentukan status kelayakan data survei yang disubmit.</p>
+               </div>
+               <button onClick={() => setValidatingItem(null)} className="text-slate-400 hover:bg-slate-100 p-1 rounded-lg">
+                 <XCircle size={20} />
+               </button>
+             </div>
+             
+             <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Evaluasi / Revisi (Opsional)</label>
+                  <textarea 
+                    value={validationNote}
+                    onChange={(e) => setValidationNote(e.target.value)}
+                    rows={4}
+                    placeholder="Masukkan catatan jika ada revisi yang perlu dilakukan..."
+                    className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:border-indigo-500 bg-slate-50 focus:bg-white transition"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-3 pt-2">
+                  <button 
+                    onClick={() => handleValidate("REVISI")}
+                    className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-sm transition border border-rose-200"
+                  >
+                    Minta Revisi
+                  </button>
+                  <button 
+                    onClick={() => handleValidate("VALID")}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition shadow-sm"
+                  >
+                    Setujui (Valid)
+                  </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EvaluasiDampakKkn;

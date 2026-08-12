@@ -44,7 +44,7 @@ services:
     container_name: psc-backend
     restart: always
     ports:
-      - '3000:3000'
+      - '3001:3000'
     volumes:
       - ./apps/api:/app
       - /app/node_modules
@@ -70,32 +70,32 @@ services:
     container_name: psc-frontend
     restart: always
     ports:
-      - '5173:5173'
+      - '5174:5173'
     volumes:
       - ./apps/web:/app
       - /app/node_modules
     environment:
-      - VITE_API_BASE_URL=http://localhost:3000/api/v1
+      - VITE_API_BASE_URL=http://localhost:3001/api/v1
     depends_on:
       - api
 
 
-  # 5. AI Model Serving (YOLOv8-seg -> ONNX, FastAPI)
-  ai-model:
-    build:
-      context: ../model
-      dockerfile: serving/Dockerfile
-    container_name: psc-ai-model
-    restart: always
-    ports:
-      - '8000:8000'
-    mem_limit: 700m
-    cpus: 1.0
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+#   # 5. AI Model Serving (YOLOv8-seg -> ONNX, FastAPI)
+#   ai-model:
+#     build:
+#       context: ../model
+#       dockerfile: serving/Dockerfile
+#     container_name: psc-ai-model
+#     restart: always
+#     ports:
+#       - '8000:8000'
+#     mem_limit: 700m
+#     cpus: 1.0
+#     healthcheck:
+#       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
 
 volumes:
   postgres_data:

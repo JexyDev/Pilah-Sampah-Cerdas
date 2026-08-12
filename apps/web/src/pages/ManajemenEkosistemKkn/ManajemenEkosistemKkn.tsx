@@ -19,7 +19,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [isKelompokModalOpen, setIsKelompokModalOpen] = useState(false);
   const [kelompokModalType, setKelompokModalType] = useState<"add" | "edit">("add");
   const [selectedKelompokId, setSelectedKelompokId] = useState<string | null>(null);
-  const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "", ketuaStudentId: "" });
+  const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "" });
   const [currentKelompokStudents, setCurrentKelompokStudents] = useState<any[]>([]);
   const [submittingKelompok, setSubmittingKelompok] = useState(false);
 
@@ -83,7 +83,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   // Kelompok Submit Handlers
   const handleOpenAddKelompok = () => {
     setKelompokModalType("add");
-    setKelompokForm({ name: "", dplId: "", ketuaStudentId: "" });
+    setKelompokForm({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "" });
     setCurrentKelompokStudents([]);
     setSelectedKelompokId(null);
     setIsKelompokModalOpen(true);
@@ -92,7 +92,22 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const handleOpenEditKelompok = (k: any) => {
     setKelompokModalType("edit");
     const ketuaMhs = k.students?.find((s: any) => s.isKetua);
-    setKelompokForm({ name: k.name, dplId: k.dpl?.id || "", ketuaStudentId: ketuaMhs?.id || "" });
+    
+    // Parse cakupanRw JSON if exists
+    let rwStr = "";
+    if (Array.isArray(k.cakupanRw)) {
+      rwStr = k.cakupanRw.join(", ");
+    } else if (typeof k.cakupanRw === "string") {
+      rwStr = k.cakupanRw;
+    }
+    
+    setKelompokForm({ 
+      name: k.name, 
+      dplId: k.dpl?.id || "", 
+      ketuaStudentId: ketuaMhs?.id || "",
+      kelurahan: k.kelurahan || "",
+      cakupanRw: rwStr
+    });
     setCurrentKelompokStudents(k.students || []);
     setSelectedKelompokId(k.id);
     setIsKelompokModalOpen(true);
@@ -115,15 +130,23 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     if (!kelompokForm.name.trim()) return toast.error("Nama kelompok wajib diisi");
 
     setSubmittingKelompok(true);
+    
+    const payload = {
+      name: kelompokForm.name,
+      dplId: kelompokForm.dplId,
+      kelurahan: kelompokForm.kelurahan,
+      cakupanRw: kelompokForm.cakupanRw ? kelompokForm.cakupanRw.split(",").map(r => r.trim()).filter(Boolean) : []
+    };
+    
     try {
       if (kelompokModalType === "add") {
-        const res = await api.post("/kelompok", { name: kelompokForm.name, dplId: kelompokForm.dplId });
+        const res = await api.post("/kelompok", payload);
         if (kelompokForm.ketuaStudentId && res.data?.data?.id) {
           await api.put(`/kelompok/${res.data.data.id}/leader`, { studentId: kelompokForm.ketuaStudentId });
         }
         toast.success("Kelompok berhasil dibuat!");
       } else {
-        await api.put(`/kelompok/${selectedKelompokId}`, { name: kelompokForm.name, dplId: kelompokForm.dplId });
+        await api.put(`/kelompok/${selectedKelompokId}`, payload);
         if (kelompokForm.ketuaStudentId) {
           await api.put(`/kelompok/${selectedKelompokId}/leader`, { studentId: kelompokForm.ketuaStudentId });
         }
@@ -477,6 +500,29 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kelurahan</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Dago"
+                    value={kelompokForm.kelurahan}
+                    onChange={(e) => setKelompokForm({ ...kelompokForm, kelurahan: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cakupan RW</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 01, 02, 05"
+                    value={kelompokForm.cakupanRw}
+                    onChange={(e) => setKelompokForm({ ...kelompokForm, cakupanRw: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  />
+                </div>
               </div>
 
               {kelompokModalType === "edit" && (

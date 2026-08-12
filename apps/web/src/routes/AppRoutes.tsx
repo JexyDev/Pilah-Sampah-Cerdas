@@ -66,8 +66,12 @@ import PanduanPage from "../pages/Panduan/PanduanPage";
 import DplDashboardPage from "../pages/dpl/DplDashboardPage";
 import LandingPage from "../pages/LandingPage/LandingPage";
 import RolePermissionPage from "../pages/SuperUser/RolePermissionPage";
+import ImportSurveiKkn from "../pages/SuperUser/ImportSurveiKkn";
+import DataSurveiKkn from "../pages/SuperUser/DataSurveiKkn";
+import DetailSurveiKkn from "../pages/SuperUser/DetailSurveiKkn";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import DownloadPage from "../pages/Download/DownloadPage";
+import EvaluasiDampakKkn from "../pages/EvaluasiDampak/EvaluasiDampakKkn";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -498,6 +502,38 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <ReviewDiscrepancy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superUser/import-survei-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER"]}>
+              <ImportSurveiKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superUser/data-survei-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL"]}>
+              <DataSurveiKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/evaluasi-dampak-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+              <EvaluasiDampakKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superUser/data-survei-kkn/:id"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL"]}>
+              <DetailSurveiKkn />
             </ProtectedRoute>
           }
         />
