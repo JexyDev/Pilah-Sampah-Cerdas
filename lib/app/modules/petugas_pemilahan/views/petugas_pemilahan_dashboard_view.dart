@@ -560,14 +560,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                       ),
                     )
                   else
-                    ListView.builder(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: state.historyList.length > 5 ? 5 : state.historyList.length,
-                      itemBuilder: (ctx, idx) {
-                        final item = state.historyList[idx];
-                        
+                    Column(
+                      children: state.historyList.take(5).map((item) {
                         final title = item['title']?.toString() ?? item['classification']?.toString() ?? item['kategori']?.toString() ?? 'Setoran Timbangan';
                         final subtitle = item['subtitle']?.toString() ?? item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? item['binCode']?.toString() ?? '';
                         final weight = item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0;
@@ -628,7 +622,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ),
                           ),
                         );
-                      },
+                      }).toList(),
                     ),
                     const SizedBox(height: 40), // Spasi bawah sebelum bottom bar
                 ]),
