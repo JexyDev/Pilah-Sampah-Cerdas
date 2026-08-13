@@ -606,23 +606,15 @@ export default function DetailSurveiKkn() {
                     ))}
                   </div>
                 </div>
-
-                <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-xs shadow-sm hover:shadow-md transition-all transform active:scale-95 cursor-pointer border border-emerald-500/20 shrink-0"
-                >
-                  <Edit3 size={15} />
-                  <span>Edit Data Survei</span>
-                </button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-slate-200 mt-2">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto scrollbar-none" aria-label="Tabs">
+      {/* Tabs Row with Edit Button on the far right */}
+      <div className="border-b border-slate-200 mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <nav className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto scrollbar-none" aria-label="Tabs">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -633,13 +625,21 @@ export default function DetailSurveiKkn() {
                   isActive
                     ? "border-emerald-600 text-emerald-600"
                     : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                } whitespace-nowrap py-4 border-b-2 font-bold text-sm cursor-pointer transition-colors`}
+                } whitespace-nowrap py-3.5 border-b-2 font-bold text-sm cursor-pointer transition-colors`}
               >
                 {tab.label}
               </button>
             );
           })}
         </nav>
+
+        <button
+          onClick={() => setIsEditModalOpen(true)}
+          className="mb-2 sm:mb-0 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all transform active:scale-95 cursor-pointer border border-emerald-500/20 shrink-0 self-start sm:self-auto"
+        >
+          <Edit3 size={15} />
+          <span>Edit Data Survei</span>
+        </button>
       </div>
 
       {/* Content Area */}
