@@ -80,7 +80,10 @@ export const dplService = {
         }
 
         const totalAttendances = await prisma.activityAttendance.count({
-          where: studentUserIds.length > 0 ? { studentId: { in: studentUserIds } } : { id: "impossible-id" },
+          where:
+            studentUserIds.length > 0
+              ? { studentId: { in: studentUserIds } }
+              : { id: "impossible-id" },
         });
 
         const totalSchedules = await prisma.schedule.count();
@@ -91,7 +94,10 @@ export const dplService = {
             : 0;
 
         const pointSum = await prisma.pointHistory.aggregate({
-          where: studentUserIds.length > 0 ? { userId: { in: studentUserIds } } : { id: "impossible-id" },
+          where:
+            studentUserIds.length > 0
+              ? { userId: { in: studentUserIds } }
+              : { id: "impossible-id" },
           _sum: { points: true },
         });
 
@@ -110,7 +116,6 @@ export const dplService = {
 
     return groupSummaries;
   },
-
 
   /**
    * 2. Detail per Mahasiswa
@@ -164,12 +169,19 @@ export const dplService = {
           orderBy: { createdAt: "desc" },
         });
 
-        const sickCount = leaveRequests.filter((r) => r.type === "SAKIT" && r.status === "APPROVED").length;
-        const izinCount = leaveRequests.filter((r) => r.type === "IZIN" && r.status === "APPROVED").length;
+        const sickCount = leaveRequests.filter(
+          (r) => r.type === "SAKIT" && r.status === "APPROVED"
+        ).length;
+        const izinCount = leaveRequests.filter(
+          (r) => r.type === "IZIN" && r.status === "APPROVED"
+        ).length;
 
         const totalSchedules = await prisma.schedule.count();
         const attendedCount = attendances.length;
-        const alphaCount = totalSchedules > 0 ? Math.max(0, totalSchedules - attendedCount - sickCount - izinCount) : 0;
+        const alphaCount =
+          totalSchedules > 0
+            ? Math.max(0, totalSchedules - attendedCount - sickCount - izinCount)
+            : 0;
 
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },
@@ -189,7 +201,10 @@ export const dplService = {
           kelompokName: st.kelompok?.name || "-",
           assessmentScore: Number(st.assessmentScore || 0),
           individualPoints: points._sum.points || 0,
-          attendanceRate: totalSchedules > 0 && attendedCount > 0 ? Math.round((attendedCount / totalSchedules) * 100) : 0,
+          attendanceRate:
+            totalSchedules > 0 && attendedCount > 0
+              ? Math.round((attendedCount / totalSchedules) * 100)
+              : 0,
           attendedCount,
           sickCount,
           izinCount,
@@ -262,7 +277,12 @@ export const dplService = {
         const totalKg = setoranLogs.reduce((acc, curr) => acc + Number(curr.berat || 0), 0);
         const totalPoints = setoranLogs.reduce((acc, curr) => acc + Number(curr.poin || 0), 0);
 
-        const polaBuangSampah = recentSetoranCount >= 3 ? "RUTIN" : setoranLogs.length > 0 ? "KURANG_RUTIN" : "BELUM_SETOR";
+        const polaBuangSampah =
+          recentSetoranCount >= 3
+            ? "RUTIN"
+            : setoranLogs.length > 0
+              ? "KURANG_RUTIN"
+              : "BELUM_SETOR";
 
         return {
           binId: bin.id,
@@ -328,7 +348,8 @@ export const dplService = {
     const allStudentUserIds = groups.flatMap((g) => g.students.map((s) => s.userId));
 
     const bins = await prisma.bin.findMany({
-      where: allStudentUserIds.length > 0 ? { registeredByStudentId: { in: allStudentUserIds } } : {},
+      where:
+        allStudentUserIds.length > 0 ? { registeredByStudentId: { in: allStudentUserIds } } : {},
       take: 200,
       select: {
         id: true,
@@ -375,23 +396,34 @@ export const dplService = {
   getAlerts: async (dplUserId: string, role?: string) => {
     let groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
-      select: { id: true, students: { select: { userId: true, user: { select: { name: true } } } } },
+      select: {
+        id: true,
+        students: { select: { userId: true, user: { select: { name: true } } } },
+      },
     });
 
     if (groups.length === 0) {
       groups = await prisma.kelompokKkn.findMany({
         take: 50,
-        select: { id: true, students: { select: { userId: true, user: { select: { name: true } } } } },
+        select: {
+          id: true,
+          students: { select: { userId: true, user: { select: { name: true } } } },
+        },
       });
     }
 
     const studentMap = new Map<string, string>();
-    groups.forEach((g) => g.students.forEach((s) => studentMap.set(s.userId, s.user?.name || "Mahasiswa")));
+    groups.forEach((g) =>
+      g.students.forEach((s) => studentMap.set(s.userId, s.user?.name || "Mahasiswa"))
+    );
 
     const studentUserIds = Array.from(studentMap.keys());
 
     const pendingRequests = await prisma.studentLeaveRequest.findMany({
-      where: studentUserIds.length > 0 ? { studentId: { in: studentUserIds }, status: "PENDING" } : { status: "PENDING" },
+      where:
+        studentUserIds.length > 0
+          ? { studentId: { in: studentUserIds }, status: "PENDING" }
+          : { status: "PENDING" },
       include: {
         student: { select: { id: true, name: true, phone: true } },
       },
@@ -419,8 +451,8 @@ export const dplService = {
    */
   getApprovalHistory: async (dplUserId: string, role?: string) => {
     const normalizedRole = String(role || "").toUpperCase();
-    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "superUser", "SUPER_USER", "ADMIN"].some((r) =>
-      normalizedRole.includes(r)
+    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "superUser", "SUPER_USER", "ADMIN"].some(
+      (r) => normalizedRole.includes(r)
     );
 
     const history = await prisma.studentLeaveRequest.findMany({
@@ -515,4 +547,3 @@ export const dplService = {
     return updated;
   },
 };
-

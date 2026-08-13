@@ -153,5 +153,3 @@ export const adminMahasiswaService = {
     });
   },
 };
-
-

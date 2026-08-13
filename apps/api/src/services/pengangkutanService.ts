@@ -153,4 +153,3 @@ export class PengangkutanService {
 }
 
 export const pengangkutanService = new PengangkutanService();
-

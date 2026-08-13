@@ -29,10 +29,7 @@ const xlsxFileFilter = (
   if (ALLOWED_XLSX_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new Error("Format file tidak valid. Hanya file .xlsx yang diperbolehkan.") as any,
-      false
-    );
+    cb(new Error("Format file tidak valid. Hanya file .xlsx yang diperbolehkan.") as any, false);
   }
 };
 

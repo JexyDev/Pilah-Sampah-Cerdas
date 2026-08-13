@@ -110,5 +110,3 @@ export class HouseholdService {
 }
 
 export const householdService = new HouseholdService();
-
-

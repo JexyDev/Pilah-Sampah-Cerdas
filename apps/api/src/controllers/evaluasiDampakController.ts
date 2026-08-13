@@ -18,10 +18,7 @@ export const evaluasiDampakController = {
    */
   getBaselineData: async (req: Request, res: Response): Promise<void> => {
     try {
-      const data = await evaluasiDampakService.getBaselineData(
-        getUserId(req),
-        getUserRole(req)
-      );
+      const data = await evaluasiDampakService.getBaselineData(getUserId(req), getUserRole(req));
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[evaluasiDampakController.getBaselineData] error:", error);
@@ -65,10 +62,7 @@ export const evaluasiDampakController = {
    */
   getEndlineData: async (req: Request, res: Response): Promise<void> => {
     try {
-      const data = await evaluasiDampakService.getEndlineData(
-        getUserId(req),
-        getUserRole(req)
-      );
+      const data = await evaluasiDampakService.getEndlineData(getUserId(req), getUserRole(req));
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[evaluasiDampakController.getEndlineData] error:", error);
@@ -112,10 +106,7 @@ export const evaluasiDampakController = {
    */
   getKomparasiDampak: async (req: Request, res: Response): Promise<void> => {
     try {
-      const data = await evaluasiDampakService.getKomparasiDampak(
-        getUserId(req),
-        getUserRole(req)
-      );
+      const data = await evaluasiDampakService.getKomparasiDampak(getUserId(req), getUserRole(req));
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[evaluasiDampakController.getKomparasiDampak] error:", error);

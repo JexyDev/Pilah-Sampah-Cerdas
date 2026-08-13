@@ -16,7 +16,10 @@ export const transactionController = {
 
       const mappedDeposits = deposits.map((d: any) => {
         let wargaName = d.warga?.name || "Warga Coblong";
-        wargaName = wargaName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim();
+        wargaName = wargaName
+          .replace(/^Warga\s+Binaan\s+/i, "")
+          .replace(/^Warga\s+Binaan\s*-\s*/i, "")
+          .trim();
         if (!wargaName) wargaName = "Warga Coblong";
 
         return {
@@ -182,4 +185,3 @@ export const transactionController = {
     }
   },
 };
-

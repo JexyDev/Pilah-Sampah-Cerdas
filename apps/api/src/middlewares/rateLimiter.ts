@@ -16,14 +16,17 @@ interface AttemptRecord {
 const attempts = new Map<string, AttemptRecord>();
 
 // Periodically clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of attempts.entries()) {
-    if (now > record.resetTime) {
-      attempts.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, record] of attempts.entries()) {
+      if (now > record.resetTime) {
+        attempts.delete(key);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 /**
  * Clear login attempts for a specific IP and identifier (e.g., after successful login)

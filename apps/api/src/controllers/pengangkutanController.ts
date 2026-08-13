@@ -121,5 +121,3 @@ export class PengangkutanController {
 }
 
 export const pengangkutanController = new PengangkutanController();
-
-

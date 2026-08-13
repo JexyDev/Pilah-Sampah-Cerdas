@@ -44,11 +44,7 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get(
-  "/kpi",
-  authMiddleware,
-  dashboardController.getKpi
-);
+router.get("/kpi", authMiddleware, dashboardController.getKpi);
 
 /**
  * @swagger
@@ -62,11 +58,7 @@ router.get(
  *       200:
  *         description: Success
  */
-router.get(
-  "/transactions",
-  authMiddleware,
-  dashboardController.getTransactions
-);
+router.get("/transactions", authMiddleware, dashboardController.getTransactions);
 
 /**
  * @swagger
@@ -94,11 +86,7 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
  *       200:
  *         description: Success
  */
-router.get(
-  "/analytics",
-  authMiddleware,
-  dashboardController.getAnalytics
-);
+router.get("/analytics", authMiddleware, dashboardController.getAnalytics);
 
 /**
  * @swagger
@@ -112,11 +100,7 @@ router.get(
  *       200:
  *         description: CSV/Excel dataset file download
  */
-router.get(
-  "/export-dataset",
-  authMiddleware,
-  dashboardController.exportDataset
-);
+router.get("/export-dataset", authMiddleware, dashboardController.exportDataset);
 
 /**
  * @swagger

@@ -250,7 +250,9 @@ export class SuperUserController {
       }
       const adminUserId = req.user!.userId;
       const data = await superUserService.updateBinStatus(id, status, adminUserId);
-      res.status(200).json({ success: true, data, message: "Status tempat sampah berhasil diperbarui" });
+      res
+        .status(200)
+        .json({ success: true, data, message: "Status tempat sampah berhasil diperbarui" });
     } catch (error: any) {
       console.error("[superUserController] updateBinStatus error:", error);
       res.status(500).json({ success: false, message: error.message });
@@ -267,7 +269,9 @@ export class SuperUserController {
       }
       const adminUserId = req.user!.userId;
       const data = await superUserService.replaceBrokenBin(id, newBinId, adminUserId);
-      res.status(200).json({ success: true, data, message: "Penggantian tempat sampah rusak berhasil" });
+      res
+        .status(200)
+        .json({ success: true, data, message: "Penggantian tempat sampah rusak berhasil" });
     } catch (error: any) {
       console.error("[superUserController] replaceBrokenBin error:", error);
       res.status(500).json({ success: false, message: error.message });
@@ -290,7 +294,9 @@ export class SuperUserController {
     try {
       const adminUserId = req.user!.userId;
       const data = await superUserService.checkAndPurgeDuplicateUsers(adminUserId);
-      res.status(200).json({ success: true, data, message: "Data cleansing pengguna ganda selesai" });
+      res
+        .status(200)
+        .json({ success: true, data, message: "Data cleansing pengguna ganda selesai" });
     } catch (error: any) {
       console.error("[superUserController] purgeDuplicates error:", error);
       res.status(500).json({ success: false, message: error.message });

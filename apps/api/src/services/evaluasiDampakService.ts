@@ -124,9 +124,7 @@ export const evaluasiDampakService = {
     ]);
 
     // Merge baseline dan endline per kelurahanId
-    const endlineMap = new Map(
-      endlineData.map((e) => [e.kelurahanId, e])
-    );
+    const endlineMap = new Map(endlineData.map((e) => [e.kelurahanId, e]));
 
     // Helper untuk menghitung jumlah kegiatan pemanfaatan sampah aktif
     const countKegiatan = (bs: any) => {
@@ -137,8 +135,18 @@ export const evaluasiDampakService = {
       if (bs.buruanSae) count++;
       if (bs.pengepulMitraDaurUlang) count++;
       if (bs.digitalisasiData) count++;
-      if (bs.jumlahUnitKomposter && bs.jumlahUnitKomposter !== "0" && bs.jumlahUnitKomposter !== "-") count++;
-      if (bs.jumlahTitikMaggotBsf && bs.jumlahTitikMaggotBsf !== "0" && bs.jumlahTitikMaggotBsf !== "-") count++;
+      if (
+        bs.jumlahUnitKomposter &&
+        bs.jumlahUnitKomposter !== "0" &&
+        bs.jumlahUnitKomposter !== "-"
+      )
+        count++;
+      if (
+        bs.jumlahTitikMaggotBsf &&
+        bs.jumlahTitikMaggotBsf !== "0" &&
+        bs.jumlahTitikMaggotBsf !== "-"
+      )
+        count++;
       if (bs.bankSampahAktif && Number(bs.bankSampahAktif) > 0) count++;
       return count;
     };
@@ -215,9 +223,7 @@ async function buildKelurahanScope(userId: string, userRole: string) {
     select: { kelurahan: true },
   });
 
-  const kelurahanNames = kelompokDpl
-    .map((k) => k.kelurahan)
-    .filter(Boolean) as string[];
+  const kelurahanNames = kelompokDpl.map((k) => k.kelurahan).filter(Boolean) as string[];
 
   if (kelurahanNames.length === 0) {
     return { namaKelurahan: { in: [] } }; // Kosong — DPL belum punya kelompok

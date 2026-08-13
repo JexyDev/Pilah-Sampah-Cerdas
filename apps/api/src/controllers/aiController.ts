@@ -301,14 +301,16 @@ export class AiController {
         imageUrl = `/uploads/${req.file.filename}`;
         imagePath = req.file.path;
       }
-      
+
       const adapter = WasteAiAdapterFactory.getAdapter();
       const result = await adapter.classifyWaste({ imageUrl, imagePath });
 
       // Calculate organik & non-organik percentages if not calculated by adapter (fallback)
-      const organik_percent = (result.rawPayload as any)?.organik_percent ?? 
+      const organik_percent =
+        (result.rawPayload as any)?.organik_percent ??
         (result.detectedType === "ORGANIC" ? 100 : 0);
-      const non_organik_percent = (result.rawPayload as any)?.non_organik_percent ?? 
+      const non_organik_percent =
+        (result.rawPayload as any)?.non_organik_percent ??
         (result.detectedType === "NON_ORGANIC" ? 100 : 0);
 
       res.status(200).json({
@@ -321,15 +323,16 @@ export class AiController {
           non_organik_percent,
           vendorName: result.vendorName,
           annotatedImageBase64: result.annotatedImageBase64,
-          imageUrl
-        }
+          imageUrl,
+        },
       });
     } catch (error: any) {
       if (error.message === "NO_WASTE_DETECTED") {
         res.status(422).json({
           success: false,
           code: "NO_WASTE_DETECTED",
-          message: "Tidak terdeteksi objek sampah pada gambar (Tingkat Keyakinan AI < 40%). Coba foto objek sampah dengan pencahayaan dan jarak yang lebih jelas.",
+          message:
+            "Tidak terdeteksi objek sampah pada gambar (Tingkat Keyakinan AI < 40%). Coba foto objek sampah dengan pencahayaan dan jarak yang lebih jelas.",
         });
       } else if (error.message === "IMAGE_UNREADABLE") {
         res.status(422).json({

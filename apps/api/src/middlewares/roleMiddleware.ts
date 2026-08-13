@@ -31,7 +31,8 @@ export const roleMiddleware = (allowedRoles: string[]) => {
         if (["SUPER_USER", "superUser", "SUPER USER"].includes(upper)) return "SUPER_USER";
         if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper)) return "DPL";
         if (["PEMIMPIN", "PIMPINAN"].includes(upper)) return "PEMIMPIN";
-        if (["PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "TASK_FORCE"].includes(upper)) return "PANITIA_TASKFORCE";
+        if (["PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "TASK_FORCE"].includes(upper))
+          return "PANITIA_TASKFORCE";
         return upper;
       };
       const userRole = normalizeRole(user.role);
@@ -42,7 +43,9 @@ export const roleMiddleware = (allowedRoles: string[]) => {
       }
 
       if (!normalizedAllowed.includes(userRole)) {
-        console.error(`[roleMiddleware 403 DUMP] URL: ${req.originalUrl} | userRole: ${userRole} | allowed: ${JSON.stringify(normalizedAllowed)}`);
+        console.error(
+          `[roleMiddleware 403 DUMP] URL: ${req.originalUrl} | userRole: ${userRole} | allowed: ${JSON.stringify(normalizedAllowed)}`
+        );
         res
           .status(403)
           .json({ error: "FORBIDDEN", message: "Anda tidak memiliki akses ke resource ini" });

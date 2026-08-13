@@ -144,7 +144,9 @@ export class BinController {
     try {
       const { name } = req.body;
       if (!name) {
-        res.status(400).json({ success: false, error: "INVALID_INPUT", message: "Nama Kelurahan wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, error: "INVALID_INPUT", message: "Nama Kelurahan wajib diisi" });
         return;
       }
       const kelurahan = await binService.createKelurahan(name);
@@ -944,4 +946,3 @@ export class BinController {
 }
 
 export const binController = new BinController();
-

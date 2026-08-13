@@ -126,5 +126,3 @@ export class HouseholdController {
 }
 
 export const householdController = new HouseholdController();
-
-

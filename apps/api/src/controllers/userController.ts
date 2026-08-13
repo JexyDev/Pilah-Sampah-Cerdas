@@ -33,7 +33,9 @@ export const userController = {
       res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",
-        message: error?.message ? `Gagal memuat data pengguna: ${error.message}` : "Gagal memuat data pengguna",
+        message: error?.message
+          ? `Gagal memuat data pengguna: ${error.message}`
+          : "Gagal memuat data pengguna",
       });
     }
   },

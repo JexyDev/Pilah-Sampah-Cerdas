@@ -40,7 +40,17 @@ export async function getScopingFilters(user: {
   const role = normalizeRole(user.role);
 
   // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, CAMAT, PEMIMPIN, PANITIA_TASKFORCE, and DPL see all data
-  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"].includes(role)) {
+  if (
+    [
+      "DEVELOPER",
+      "SUPER_USER",
+      "ADMIN_DLH",
+      "CAMAT",
+      "PEMIMPIN",
+      "PANITIA_TASKFORCE",
+      "DPL",
+    ].includes(role)
+  ) {
     return {};
   }
 

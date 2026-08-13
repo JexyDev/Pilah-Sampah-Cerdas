@@ -145,8 +145,7 @@ export class OtpService {
     // Hapus OTP agar single-use
     memDel("otp:reset:" + normalized);
 
-    const resetToken =
-      Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const resetToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
     memSet("reset:token:" + normalized, resetToken, this.RESET_TTL);
 
     return { resetToken };
@@ -155,11 +154,7 @@ export class OtpService {
   /**
    * Reset password dengan token hasil verifikasi OTP.
    */
-  async resetPassword(
-    phone: string,
-    resetToken: string,
-    newPassword: string
-  ): Promise<void> {
+  async resetPassword(phone: string, resetToken: string, newPassword: string): Promise<void> {
     const normalized = normalizePhone(phone);
     const stored = memGet("reset:token:" + normalized);
 

@@ -81,7 +81,12 @@ export const kelompokService = {
     });
   },
 
-  createKelompok: async (data: { name: string; dplId?: string; kelurahan?: string; cakupanRw?: any }) => {
+  createKelompok: async (data: {
+    name: string;
+    dplId?: string;
+    kelurahan?: string;
+    cakupanRw?: any;
+  }) => {
     return prisma.kelompokKkn.create({
       data: {
         name: data.name,
@@ -92,7 +97,10 @@ export const kelompokService = {
     });
   },
 
-  updateKelompok: async (id: string, data: { name?: string; dplId?: string | null; kelurahan?: string | null; cakupanRw?: any }) => {
+  updateKelompok: async (
+    id: string,
+    data: { name?: string; dplId?: string | null; kelurahan?: string | null; cakupanRw?: any }
+  ) => {
     return prisma.kelompokKkn.update({
       where: { id },
       data: {

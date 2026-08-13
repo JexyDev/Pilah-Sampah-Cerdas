@@ -20,7 +20,11 @@ router.use(authMiddleware);
  * GET /api/v1/survei-kkn/
  * Ambil daftar survei KKN.
  */
-router.get("/", roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]), surveiKknController.getAllSurveys);
+router.get(
+  "/",
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]),
+  surveiKknController.getAllSurveys
+);
 
 /**
  * @swagger
@@ -52,19 +56,31 @@ router.get("/", roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]), surv
  *       500:
  *         description: Terjadi kesalahan pada server
  */
-router.get("/mahasiswa/my-survei", roleMiddleware(["MAHASISWA_KKN"]), surveiKknController.getMySurvey);
+router.get(
+  "/mahasiswa/my-survei",
+  roleMiddleware(["MAHASISWA_KKN"]),
+  surveiKknController.getMySurvey
+);
 
 /**
  * GET /api/v1/survei-kkn/:id
  * Ambil detail survei KKN.
  */
-router.get("/:id", roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]), surveiKknController.getSurveyById);
+router.get(
+  "/:id",
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]),
+  surveiKknController.getSurveyById
+);
 
 /**
  * PUT /api/v1/survei-kkn/:id
  * Update detail survei KKN (beserta relasinya).
  */
-router.put("/:id", roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE"]), surveiKknController.updateSurveyById);
+router.put(
+  "/:id",
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE"]),
+  surveiKknController.updateSurveyById
+);
 
 /**
  * PUT /api/v1/survei-kkn/:id
@@ -77,7 +93,12 @@ router.put("/:id", roleMiddleware(["SUPER_USER", "DPL"]), surveiKknController.up
  * Upload dan impor file XLSX survei KKN ke database.
  * Content-Type: multipart/form-data, field "file"
  */
-router.post("/import", roleMiddleware(["SUPER_USER"]), uploadXlsx.single("file"), surveiKknController.importSurveiKkn);
+router.post(
+  "/import",
+  roleMiddleware(["SUPER_USER"]),
+  uploadXlsx.single("file"),
+  surveiKknController.importSurveiKkn
+);
 
 /**
  * GET /api/v1/survei-kkn/import/history

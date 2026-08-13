@@ -276,8 +276,15 @@ export class AuthService {
 
     const rwName = user.rw?.name || user.studentProfile?.assignedRw?.name || "";
     const rtName = user.rt?.name || "";
-    const kelurahanName = user.rw?.kelurahan?.name || user.studentProfile?.assignedRw?.kelurahan?.name || user.studentProfile?.kelompok?.kelurahan || "";
-    const kecamatanName = user.rw?.kelurahan?.kecamatan?.name || user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name || "Coblong";
+    const kelurahanName =
+      user.rw?.kelurahan?.name ||
+      user.studentProfile?.assignedRw?.kelurahan?.name ||
+      user.studentProfile?.kelompok?.kelurahan ||
+      "";
+    const kecamatanName =
+      user.rw?.kelurahan?.kecamatan?.name ||
+      user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name ||
+      "Coblong";
     const rtRwStr = rtName && rwName ? `${rtName} / ${rwName}` : rwName || rtName || "";
 
     return {
@@ -555,9 +562,13 @@ export class AuthService {
     return "123456";
   }
 
-  async resetPassword(phoneInput: string, resetTokenInput?: string, newPassword?: string): Promise<void> {
+  async resetPassword(
+    phoneInput: string,
+    resetTokenInput?: string,
+    newPassword?: string
+  ): Promise<void> {
     if (!newPassword) throw new Error("PASSWORD_REQUIRED");
-    
+
     const phone = phoneInput.trim();
 
     // Validasi resetToken: cek di tabel OtpCode dengan code = resetToken dan used = false
@@ -566,11 +577,7 @@ export class AuthService {
       const altPhone = cleanPhone.startsWith("0") ? "+62" + cleanPhone.substring(1) : cleanPhone;
       const tokenRecord = await prisma.otpCode.findFirst({
         where: {
-          OR: [
-            { phone: phone },
-            { phone: cleanPhone },
-            { phone: altPhone },
-          ],
+          OR: [{ phone: phone }, { phone: cleanPhone }, { phone: altPhone }],
           code: resetTokenInput,
           used: false,
           expiresAt: { gt: new Date() },
@@ -584,7 +591,8 @@ export class AuthService {
 
     const cleanPhone = phone.replace(/^\+?62/, "0").replace(/\s|-/g, "");
     const altPhone = cleanPhone.startsWith("0") ? "62" + cleanPhone.substring(1) : cleanPhone;
-    const subPhone = cleanPhone.length > 5 ? cleanPhone.substring(cleanPhone.length - 8) : cleanPhone;
+    const subPhone =
+      cleanPhone.length > 5 ? cleanPhone.substring(cleanPhone.length - 8) : cleanPhone;
 
     const user = await prisma.user.findFirst({
       where: {
@@ -606,7 +614,11 @@ export class AuthService {
     });
   }
 
-  async changePassword(userId: string, oldPasswordInput: string, newPasswordInput: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    oldPasswordInput: string,
+    newPasswordInput: string
+  ): Promise<void> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("USER_NOT_FOUND");
 
@@ -752,4 +764,3 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
-

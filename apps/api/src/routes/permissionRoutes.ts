@@ -96,11 +96,15 @@ router.get("/", async (req, res) => {
 router.put("/:roleId", async (req, res) => {
   try {
     const roleId = parseInt(req.params.roleId);
-    const permissions: Record<string, { canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }> =
-      req.body.permissions;
+    const permissions: Record<
+      string,
+      { canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }
+    > = req.body.permissions;
 
     if (!permissions || typeof permissions !== "object") {
-      res.status(400).json({ error: "INVALID_PAYLOAD", message: "permissions harus berupa object" });
+      res
+        .status(400)
+        .json({ error: "INVALID_PAYLOAD", message: "permissions harus berupa object" });
       return;
     }
 

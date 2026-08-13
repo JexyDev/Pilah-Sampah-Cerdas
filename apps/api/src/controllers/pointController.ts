@@ -74,7 +74,9 @@ export class PointController {
     try {
       const { userId, points, description } = req.body;
       if (!userId || points === undefined) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "UserId dan jumlah poin wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "VALIDATION_ERROR", message: "UserId dan jumlah poin wajib diisi" });
         return;
       }
 

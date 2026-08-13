@@ -16,34 +16,68 @@ const prisma = new PrismaClient();
 function formatTitleCaseName(name?: string): string {
   if (!name) return "";
   const degrees: Record<string, string> = {
-    "s.kom.": "S.Kom.", "s.kom": "S.Kom.",
-    "m.kom.": "M.Kom.", "m.kom": "M.Kom.",
-    "m.eng.": "M.Eng.", "m.eng": "M.Eng.",
-    "s.e.": "S.E.", "s.e": "S.E.",
-    "m.si.": "M.Si.", "m.si": "M.Si.",
-    "s.t.": "S.T.", "s.t": "S.T.",
-    "m.t.": "M.T.", "m.t": "M.T.",
-    "s.ds.": "S.Ds.", "s.ds": "S.Ds.",
-    "m.ds.": "M.Ds.", "m.ds": "M.Ds.",
-    "s.h.": "S.H.", "s.h": "S.H.",
-    "m.h.": "M.H.", "m.h": "M.H.",
-    "s.si.": "S.Si.", "s.si": "S.Si.",
-    "s.pd.": "S.Pd.", "s.pd": "S.Pd.",
-    "m.pd.": "M.Pd.", "m.pd": "M.Pd.",
-    "s.ip.": "S.IP.", "s.ip": "S.IP.",
-    "m.i.pol.": "M.I.Pol.", "m.i.pol": "M.I.Pol.",
-    "m.i.kom.": "M.I.Kom.", "m.i.kom": "M.I.Kom.",
-    "s.sos.": "S.Sos.", "s.sos": "S.Sos.",
-    "s.stp.": "S.STP.", "s.stp": "S.STP.",
-    "m.ap.": "M.AP.", "m.ap": "M.AP.",
-    "a.ks.": "A.KS.", "a.ks": "A.KS.",
-    "ph.d.": "Ph.D.", "ph.d": "Ph.D.",
-    "cima": "CIMA", "cdmp": "CDMP", "csba": "CSBA",
-    "dr.": "Dr.", "dr": "Dr.", "dra.": "Dra.", "dra": "Dra.",
-    "prof.": "Prof.", "prof": "Prof.",
-    "assoc.": "Assoc.", "assoc": "Assoc.",
-    "h.": "H.", "hj.": "Hj.", "ak.": "Ak.", "ca.": "CA.",
-    "s.s.": "S.S.", "m.hum": "M.Hum.", "m.hum.": "M.Hum."
+    "s.kom.": "S.Kom.",
+    "s.kom": "S.Kom.",
+    "m.kom.": "M.Kom.",
+    "m.kom": "M.Kom.",
+    "m.eng.": "M.Eng.",
+    "m.eng": "M.Eng.",
+    "s.e.": "S.E.",
+    "s.e": "S.E.",
+    "m.si.": "M.Si.",
+    "m.si": "M.Si.",
+    "s.t.": "S.T.",
+    "s.t": "S.T.",
+    "m.t.": "M.T.",
+    "m.t": "M.T.",
+    "s.ds.": "S.Ds.",
+    "s.ds": "S.Ds.",
+    "m.ds.": "M.Ds.",
+    "m.ds": "M.Ds.",
+    "s.h.": "S.H.",
+    "s.h": "S.H.",
+    "m.h.": "M.H.",
+    "m.h": "M.H.",
+    "s.si.": "S.Si.",
+    "s.si": "S.Si.",
+    "s.pd.": "S.Pd.",
+    "s.pd": "S.Pd.",
+    "m.pd.": "M.Pd.",
+    "m.pd": "M.Pd.",
+    "s.ip.": "S.IP.",
+    "s.ip": "S.IP.",
+    "m.i.pol.": "M.I.Pol.",
+    "m.i.pol": "M.I.Pol.",
+    "m.i.kom.": "M.I.Kom.",
+    "m.i.kom": "M.I.Kom.",
+    "s.sos.": "S.Sos.",
+    "s.sos": "S.Sos.",
+    "s.stp.": "S.STP.",
+    "s.stp": "S.STP.",
+    "m.ap.": "M.AP.",
+    "m.ap": "M.AP.",
+    "a.ks.": "A.KS.",
+    "a.ks": "A.KS.",
+    "ph.d.": "Ph.D.",
+    "ph.d": "Ph.D.",
+    cima: "CIMA",
+    cdmp: "CDMP",
+    csba: "CSBA",
+    "dr.": "Dr.",
+    dr: "Dr.",
+    "dra.": "Dra.",
+    dra: "Dra.",
+    "prof.": "Prof.",
+    prof: "Prof.",
+    "assoc.": "Assoc.",
+    assoc: "Assoc.",
+    "h.": "H.",
+    "hj.": "Hj.",
+    "ak.": "Ak.",
+    "ca.": "CA.",
+    "s.s.": "S.S.",
+    "m.hum": "M.Hum.",
+    "m.hum.": "M.Hum.",
   };
 
   return name
@@ -54,7 +88,11 @@ function formatTitleCaseName(name?: string): string {
       if (degrees[wLower]) return degrees[wLower];
       return word
         .split(/([\s\-'\.])/)
-        .map(p => [" ", "-", "'", "."].includes(p) ? p : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+        .map((p) =>
+          [" ", "-", "'", "."].includes(p)
+            ? p
+            : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        )
         .join("");
     })
     .join(" ");
@@ -161,7 +199,9 @@ export class UserService {
         });
       }
 
-      const totalPoin = Array.isArray(u.pointHistory) ? u.pointHistory.reduce((sum: number, p: any) => sum + (p.points || 0), 0) : 0;
+      const totalPoin = Array.isArray(u.pointHistory)
+        ? u.pointHistory.reduce((sum: number, p: any) => sum + (p.points || 0), 0)
+        : 0;
 
       let pendampingKkn = null;
       if (u.bins && u.bins.length > 0) {
@@ -175,22 +215,32 @@ export class UserService {
         }
       }
 
-      const rwObj = u.rw || u.rt?.rw || u.households?.[0]?.rw || u.studentProfile?.assignedRw || u.rwOwned;
+      const rwObj =
+        u.rw || u.rt?.rw || u.households?.[0]?.rw || u.studentProfile?.assignedRw || u.rwOwned;
       let kelurahanName = rwObj?.kelurahan?.name || "-";
-      let kecamatanName = rwObj?.kelurahan?.kecamatan?.name || (kelurahanName !== "-" ? "Kec. Coblong" : "-");
+      let kecamatanName =
+        rwObj?.kelurahan?.kecamatan?.name || (kelurahanName !== "-" ? "Kec. Coblong" : "-");
       let rwName = rwObj?.name || "-";
       let rtName = u.rt?.name || "-";
 
       if (u.role?.name === "CAMAT") {
         kecamatanName = "Kecamatan Coblong";
-        if (kelurahanName === "-") kelurahanName = "Dago, Lebak Gede, Lebak Siliwangi, Sadang Serang, Sekeloa, Cipaganti";
+        if (kelurahanName === "-")
+          kelurahanName = "Dago, Lebak Gede, Lebak Siliwangi, Sadang Serang, Sekeloa, Cipaganti";
       } else if (u.role?.name === "ADMIN_DLH" || u.role?.name === "SUPER_USER") {
         kecamatanName = "Kecamatan Coblong";
         if (kelurahanName === "-") kelurahanName = "Kota Bandung";
       }
 
       if (kelurahanName === "-" && u.address) {
-        const knownKels = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+        const knownKels = [
+          "Cipaganti",
+          "Dago",
+          "Lebak Gede",
+          "Lebak Siliwangi",
+          "Sadang Serang",
+          "Sekeloa",
+        ];
         for (const k of knownKels) {
           if (u.address.toLowerCase().includes(k.toLowerCase())) {
             kelurahanName = k;
@@ -199,7 +249,9 @@ export class UserService {
           }
         }
         if (kelurahanName === "-") {
-          const kelMatch = u.address.match(/(?:Kel\.?|Kelurahan)\s*([A-Za-z\s]+?)(?:,|$|\s+Kec|\s+RW)/i);
+          const kelMatch = u.address.match(
+            /(?:Kel\.?|Kelurahan)\s*([A-Za-z\s]+?)(?:,|$|\s+Kec|\s+RW)/i
+          );
           if (kelMatch && kelMatch[1]) {
             kelurahanName = kelMatch[1].trim();
             kecamatanName = "Kecamatan Coblong";
@@ -228,8 +280,8 @@ export class UserService {
         const cakupan = Array.isArray(kel.cakupanRw)
           ? kel.cakupanRw.join(", ")
           : typeof kel.cakupanRw === "string"
-          ? kel.cakupanRw
-          : "";
+            ? kel.cakupanRw
+            : "";
         if (cakupan) {
           rwName = cakupan;
         }
@@ -239,11 +291,12 @@ export class UserService {
         }
       }
 
-      const activeBinsCount = (u.bins || []).filter(
-        (b: any) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE"
-      ).length + (u.binOwnerships || []).filter(
-        (bo: any) => bo.status === "ACTIVE_BOUND" || bo.status === "ACTIVE"
-      ).length;
+      const activeBinsCount =
+        (u.bins || []).filter((b: any) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE")
+          .length +
+        (u.binOwnerships || []).filter(
+          (bo: any) => bo.status === "ACTIVE_BOUND" || bo.status === "ACTIVE"
+        ).length;
       const binStatus = activeBinsCount > 0 ? "Sudah Teraktivasi" : "Belum Teraktivasi";
 
       let userWilayah = u.address || "";
@@ -262,12 +315,19 @@ export class UserService {
             if (Array.isArray(kel.cakupanRw)) {
               rws = kel.cakupanRw;
             } else if (typeof kel.cakupanRw === "string") {
-              try { rws = JSON.parse(kel.cakupanRw); } catch { rws = [kel.cakupanRw]; }
+              try {
+                rws = JSON.parse(kel.cakupanRw);
+              } catch {
+                rws = [kel.cakupanRw];
+              }
             } else if (typeof kel.cakupanRw === "number") {
               rws = [kel.cakupanRw];
             }
             if (rws.length > 0) {
-              rwStr = `RW ${rws.map((r: any) => String(r).replace(/\D/g, "").padStart(2, "0")).filter(Boolean).join(", RW ")}`;
+              rwStr = `RW ${rws
+                .map((r: any) => String(r).replace(/\D/g, "").padStart(2, "0"))
+                .filter(Boolean)
+                .join(", RW ")}`;
             }
           }
           const kelStr = kel.kelurahan ? `Kel. ${kel.kelurahan}` : "";
@@ -324,17 +384,20 @@ export class UserService {
         wilayah: userWilayah,
         setoran: parseFloat(totalSetoranKg.toFixed(1)),
         totalPoin,
-        petugasResidu: assignedPetugasObj ? {
-          id: assignedPetugasObj.id,
-          name: assignedPetugasObj.name,
-          fotoProfil: assignedPetugasObj.fotoProfil,
-          phone: assignedPetugasObj.phone,
-        } : (u.petugasResidu || null),
-        dplKelompok: (u.dplKelompok && u.dplKelompok.length > 0)
-          ? u.dplKelompok
-          : (u.nip && nipKelompokMap[u.nip])
-          ? nipKelompokMap[u.nip]
-          : [],
+        petugasResidu: assignedPetugasObj
+          ? {
+              id: assignedPetugasObj.id,
+              name: assignedPetugasObj.name,
+              fotoProfil: assignedPetugasObj.fotoProfil,
+              phone: assignedPetugasObj.phone,
+            }
+          : u.petugasResidu || null,
+        dplKelompok:
+          u.dplKelompok && u.dplKelompok.length > 0
+            ? u.dplKelompok
+            : u.nip && nipKelompokMap[u.nip]
+              ? nipKelompokMap[u.nip]
+              : [],
         studentProfile: u.studentProfile
           ? {
               nim: u.studentProfile.nim,
@@ -354,7 +417,10 @@ export class UserService {
                     kelurahan: u.studentProfile.kelompok.kelurahan,
                     cakupanRw: u.studentProfile.kelompok.cakupanRw,
                     dplId: u.studentProfile.kelompok.dplId,
-                    dplName: u.studentProfile.kelompok.dpl?.name || u.studentProfile.kelompok.dplNamaMentah || null,
+                    dplName:
+                      u.studentProfile.kelompok.dpl?.name ||
+                      u.studentProfile.kelompok.dplNamaMentah ||
+                      null,
                     dplFotoProfil: u.studentProfile.kelompok.dpl?.fotoProfil || null,
                     dplNip: u.studentProfile.kelompok.dpl?.nip || null,
                     dplProdi: u.studentProfile.kelompok.dpl?.programStudi || null,
@@ -379,7 +445,23 @@ export class UserService {
   }
 
   async createUser(data: any, currentUser?: { userId: string; role: string }) {
-    const { name, password, phone, roleName, status, rwId, rtRwId, address, nim, studentProfile, nip, institusi, programStudi, jenjangPendidikan, jumlahAnggotaKeluarga } = data;
+    const {
+      name,
+      password,
+      phone,
+      roleName,
+      status,
+      rwId,
+      rtRwId,
+      address,
+      nim,
+      studentProfile,
+      nip,
+      institusi,
+      programStudi,
+      jenjangPendidikan,
+      jumlahAnggotaKeluarga,
+    } = data;
     const effectiveRwId = rwId !== undefined && rwId !== null ? rwId : rtRwId;
 
     if (!phone) {
@@ -392,7 +474,10 @@ export class UserService {
       throw new Error("PHONE_CONFLICT");
     }
 
-    if (["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName) && !["SUPER_USER", "DEVELOPER"].includes(currentUser?.role || "")) {
+    if (
+      ["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName) &&
+      !["SUPER_USER", "DEVELOPER"].includes(currentUser?.role || "")
+    ) {
       throw new Error("FORBIDDEN_ROLE_CREATION");
     }
 
@@ -438,7 +523,10 @@ export class UserService {
           jabatan: data.jabatan || null,
           programStudi: programStudi || null,
           jenjangPendidikan: jenjangPendidikan || null,
-          jumlahAnggotaKeluarga: jumlahAnggotaKeluarga !== undefined && jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null,
+          jumlahAnggotaKeluarga:
+            jumlahAnggotaKeluarga !== undefined && jumlahAnggotaKeluarga !== null
+              ? Number(jumlahAnggotaKeluarga)
+              : null,
         },
         include: { role: { select: { name: true } } },
       });
@@ -456,7 +544,9 @@ export class UserService {
             targetKelompokId = existingKelompok.id;
           } else {
             const dplUser = await tx.user.findUnique({ where: { id: targetDplId } });
-            const kelName = dplUser ? `Kelompok ${dplUser.name}` : `Kelompok ${targetDplId.slice(0, 5)}`;
+            const kelName = dplUser
+              ? `Kelompok ${dplUser.name}`
+              : `Kelompok ${targetDplId.slice(0, 5)}`;
             const newKel = await tx.kelompokKkn.create({
               data: {
                 name: kelName,
@@ -477,7 +567,9 @@ export class UserService {
               fakultas: studentProfile?.fakultas || "-",
               jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || null,
               noWa: studentProfile?.noWa || u.phone || "",
-              startDate: studentProfile?.startDate ? new Date(studentProfile.startDate) : new Date(),
+              startDate: studentProfile?.startDate
+                ? new Date(studentProfile.startDate)
+                : new Date(),
               endDate: studentProfile?.endDate
                 ? new Date(studentProfile.endDate)
                 : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
@@ -529,7 +621,28 @@ export class UserService {
   }
 
   async updateUser(id: string, data: any, currentUser?: { userId: string; role: string }) {
-    const { name, phone, email, password, roleName, status, rwId: inputRwId, rtRwId, address, nim, studentProfile, nip, institusi, programStudi, jenjangPendidikan, jumlahAnggotaKeluarga, fotoProfil, wilayah, kecamatan, petugasResiduId } = data;
+    const {
+      name,
+      phone,
+      email,
+      password,
+      roleName,
+      status,
+      rwId: inputRwId,
+      rtRwId,
+      address,
+      nim,
+      studentProfile,
+      nip,
+      institusi,
+      programStudi,
+      jenjangPendidikan,
+      jumlahAnggotaKeluarga,
+      fotoProfil,
+      wilayah,
+      kecamatan,
+      petugasResiduId,
+    } = data;
     const targetRwId = inputRwId !== undefined && inputRwId !== null ? inputRwId : rtRwId;
 
     const user = await userRepository.findById(id);
@@ -612,7 +725,9 @@ export class UserService {
     if (data.jabatan !== undefined) updateData.jabatan = data.jabatan || null;
     if (programStudi !== undefined) updateData.programStudi = programStudi || null;
     if (jenjangPendidikan !== undefined) updateData.jenjangPendidikan = jenjangPendidikan || null;
-    if (jumlahAnggotaKeluarga !== undefined) updateData.jumlahAnggotaKeluarga = jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null;
+    if (jumlahAnggotaKeluarga !== undefined)
+      updateData.jumlahAnggotaKeluarga =
+        jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null;
     if (fotoProfil !== undefined) updateData.fotoProfil = fotoProfil || null;
 
     const updatedUser = await prisma.$transaction(async (tx) => {
@@ -624,17 +739,20 @@ export class UserService {
 
       if (roleName === "MAHASISWA_KKN" || u.role.name === "MAHASISWA_KKN") {
         const targetNim = studentProfile?.nim || nim;
-        
+
         let targetKelompokId: string | null = null;
         if (data.kelompokId !== undefined) {
           targetKelompokId = data.kelompokId || null;
         } else if (Array.isArray(data.dplKelompokIds)) {
-          targetKelompokId = data.dplKelompokIds.length > 0 && data.dplKelompokIds[0] ? data.dplKelompokIds[0] : null;
+          targetKelompokId =
+            data.dplKelompokIds.length > 0 && data.dplKelompokIds[0]
+              ? data.dplKelompokIds[0]
+              : null;
         } else if (studentProfile?.kelompokId !== undefined) {
           targetKelompokId = studentProfile.kelompokId || null;
         }
 
-        const targetDplId = data.dplId !== undefined ? (data.dplId || null) : null;
+        const targetDplId = data.dplId !== undefined ? data.dplId || null : null;
         if (targetDplId) {
           const existingKelompok = await tx.kelompokKkn.findFirst({
             where: { dplId: targetDplId },
@@ -648,7 +766,9 @@ export class UserService {
             });
           } else {
             const dplUser = await tx.user.findUnique({ where: { id: targetDplId } });
-            const kelName = dplUser ? `Kelompok ${dplUser.name}` : `Kelompok ${targetDplId.slice(0, 5)}`;
+            const kelName = dplUser
+              ? `Kelompok ${dplUser.name}`
+              : `Kelompok ${targetDplId.slice(0, 5)}`;
             const newKel = await tx.kelompokKkn.create({
               data: {
                 name: kelName,
@@ -682,7 +802,7 @@ export class UserService {
               : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
             assignedRwId: studentProfile?.assignedRwId
               ? parseInt(studentProfile.assignedRwId)
-              : (updateData.rwId || u.rwId),
+              : updateData.rwId || u.rwId,
             kelompokId: targetKelompokId,
             whitelistStatus: "APPROVED",
           },
@@ -691,7 +811,9 @@ export class UserService {
             ...(studentProfile?.jurusan && { jurusan: studentProfile.jurusan }),
             ...(studentProfile?.fakultas && { fakultas: studentProfile.fakultas }),
             ...(studentProfile?.noWa && { noWa: studentProfile.noWa }),
-            ...((studentProfile?.jenjangPendidikan || jenjangPendidikan) && { jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan }),
+            ...((studentProfile?.jenjangPendidikan || jenjangPendidikan) && {
+              jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan,
+            }),
             kelompokId: targetKelompokId,
           },
         });
@@ -705,8 +827,19 @@ export class UserService {
         });
       }
 
-      if ((checkRoleName === "DPL" || u.role.name === "DPL") && (data.dplKelompokIds !== undefined || data.kelompokId !== undefined || data.selectedKelompokId !== undefined)) {
-        const targetKelompokIds = data.dplKelompokIds || (data.kelompokId ? [data.kelompokId] : data.selectedKelompokId ? [data.selectedKelompokId] : []);
+      if (
+        (checkRoleName === "DPL" || u.role.name === "DPL") &&
+        (data.dplKelompokIds !== undefined ||
+          data.kelompokId !== undefined ||
+          data.selectedKelompokId !== undefined)
+      ) {
+        const targetKelompokIds =
+          data.dplKelompokIds ||
+          (data.kelompokId
+            ? [data.kelompokId]
+            : data.selectedKelompokId
+              ? [data.selectedKelompokId]
+              : []);
         await tx.kelompokKkn.updateMany({
           where: { dplId: u.id },
           data: { dplId: null },
@@ -791,5 +924,3 @@ export class UserService {
 }
 
 export const userService = new UserService();
-
-

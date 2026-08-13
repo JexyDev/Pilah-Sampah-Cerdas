@@ -58,30 +58,32 @@ export class ResiduController {
         return max > 0 && vol / max >= 0.7;
       });
 
-      const scheduleList = (targetBins.length > 0 ? targetBins : bins).map((b: any, idx: number) => {
-        const vol = Number(b.currentVolumeLiter);
-        const max = Number(b.maxCapacityLiter);
-        const pct = max > 0 ? Math.min(100, Math.round((vol / max) * 100)) : 80;
+      const scheduleList = (targetBins.length > 0 ? targetBins : bins).map(
+        (b: any, idx: number) => {
+          const vol = Number(b.currentVolumeLiter);
+          const max = Number(b.maxCapacityLiter);
+          const pct = max > 0 ? Math.min(100, Math.round((vol / max) * 100)) : 80;
 
-        return {
-          id: b.id,
-          binId: b.id,
-          qrCode: b.qrCode,
-          kodeQr: b.qrCode,
-          kategori: b.category?.name || "Organik",
-          lokasi: b.rw ? `${b.rw.name}` : "RT 01 / RW 01",
-          alamat: b.user?.address || "Jl. Coblong Raya No. " + (idx + 1),
-          wargaNama: b.user?.name || "Warga Dampingan " + (idx + 1),
-          namaWarga: b.user?.name || "Warga Dampingan " + (idx + 1),
-          volumePercent: pct,
-          status: "BELUM_DIANGKUT",
-          currentVolumeLiter: vol,
-          maxCapacityLiter: max,
-          category: b.category,
-          rw: b.rw,
-          user: b.user,
-        };
-      });
+          return {
+            id: b.id,
+            binId: b.id,
+            qrCode: b.qrCode,
+            kodeQr: b.qrCode,
+            kategori: b.category?.name || "Organik",
+            lokasi: b.rw ? `${b.rw.name}` : "RT 01 / RW 01",
+            alamat: b.user?.address || "Jl. Coblong Raya No. " + (idx + 1),
+            wargaNama: b.user?.name || "Warga Dampingan " + (idx + 1),
+            namaWarga: b.user?.name || "Warga Dampingan " + (idx + 1),
+            volumePercent: pct,
+            status: "BELUM_DIANGKUT",
+            currentVolumeLiter: vol,
+            maxCapacityLiter: max,
+            category: b.category,
+            rw: b.rw,
+            user: b.user,
+          };
+        }
+      );
 
       res.status(200).json({
         success: true,
@@ -193,4 +195,3 @@ export class ResiduController {
 }
 
 export const residuController = new ResiduController();
-

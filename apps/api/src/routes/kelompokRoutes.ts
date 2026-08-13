@@ -15,7 +15,11 @@ router.get("/:id", kelompokController.getById);
 
 router.post("/", roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), kelompokController.create);
 router.put("/:id", roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), kelompokController.update);
-router.put("/:id/leader", roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DPL"]), kelompokController.setLeader);
+router.put(
+  "/:id/leader",
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DPL"]),
+  kelompokController.setLeader
+);
 router.delete("/:id", roleMiddleware(["SUPER_USER", "ADMIN_DLH"]), kelompokController.delete);
 
 export default router;

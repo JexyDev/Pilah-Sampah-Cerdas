@@ -667,4 +667,3 @@ export class KknAttendanceService {
 }
 
 export const kknAttendanceService = new KknAttendanceService();
-

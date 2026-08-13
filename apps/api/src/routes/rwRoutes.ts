@@ -218,7 +218,12 @@ router.get("/bins/inactive", async (req, res, next) => {
  */
 router.put("/bins/:id/broken", async (req, res, next) => {
   try {
-    const data = await rwService.markBinBroken(req.params.id, req.user!.userId, req.user!.rwId!, req.user?.role);
+    const data = await rwService.markBinBroken(
+      req.params.id,
+      req.user!.userId,
+      req.user!.rwId!,
+      req.user?.role
+    );
     res.json({ message: "Bin ditandai rusak", data });
   } catch (error) {
     next(error);

@@ -56,7 +56,7 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-  
+
   // Dynamically reflect requested headers from preflight OPTIONS request
   const requestedHeaders = req.headers["access-control-request-headers"];
   if (requestedHeaders) {
@@ -207,7 +207,9 @@ cronService.start();
       },
     });
     if (dummyUser) {
-      console.log("[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Sanitizing to human names...");
+      console.log(
+        "[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Sanitizing to human names..."
+      );
       const { exec } = await import("child_process");
       exec("npx tsx scripts/fix-rt-rw-human-names.ts");
       exec("npx tsx scripts/fix-executive-human-names.ts");

@@ -96,4 +96,3 @@ router.get("/latest-release", systemController.getLatestRelease);
 router.get("/download-apk", systemController.downloadApk);
 
 export default router;
-

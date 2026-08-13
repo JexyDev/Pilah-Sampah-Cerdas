@@ -19,7 +19,17 @@ export const dplScopeMiddleware = async (
 
     const roleName = String(user.role || "").toUpperCase();
 
-    const allowedRoles = ["SUPER_USER", "superUser", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "DPL", "DOSEN_PEMBIMBING"];
+    const allowedRoles = [
+      "SUPER_USER",
+      "superUser",
+      "PEMIMPIN",
+      "PIMPINAN",
+      "PANITIA_TASKFORCE",
+      "PANITIA",
+      "TASKFORCE",
+      "DPL",
+      "DOSEN_PEMBIMBING",
+    ];
     const isAllowed = allowedRoles.some((r) => roleName.includes(r));
 
     if (!isAllowed) {
@@ -33,6 +43,8 @@ export const dplScopeMiddleware = async (
     next();
   } catch (error) {
     console.error("[dplScopeMiddleware] error:", error);
-    res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memverifikasi hak akses" });
+    res
+      .status(500)
+      .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memverifikasi hak akses" });
   }
 };

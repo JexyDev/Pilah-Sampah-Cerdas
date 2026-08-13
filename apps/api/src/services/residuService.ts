@@ -202,8 +202,7 @@ export class ResiduService {
     const totalJadwal = totalJadwalCount > 0 ? totalJadwalCount : 12;
 
     const zoneLabel =
-      petugas.assignedZone ||
-      (rtRwStr ? `${rtRwStr}, Kel. ${kelurahanStr}` : "Kecamatan Coblong");
+      petugas.assignedZone || (rtRwStr ? `${rtRwStr}, Kel. ${kelurahanStr}` : "Kecamatan Coblong");
 
     return {
       // Mobile Flutter model exact keys
@@ -297,7 +296,8 @@ export class ResiduService {
 
       logs.push(
         ...setoranOtomatis.map((s) => {
-          let lat: number | null = null, long: number | null = null;
+          let lat: number | null = null,
+            long: number | null = null;
           if (s.lokasiGps) {
             const parts = s.lokasiGps.split(",");
             if (parts.length === 2) {
@@ -338,7 +338,8 @@ export class ResiduService {
 
       logs.push(
         ...setoranManual.map((s) => {
-          let lat: number | null = null, long: number | null = null;
+          let lat: number | null = null,
+            long: number | null = null;
           if (s.lokasiGps) {
             const parts = s.lokasiGps.split(",");
             if (parts.length === 2) {
@@ -386,12 +387,12 @@ export class ResiduService {
       d.setDate(d.getDate() - i);
       const startOfDay = new Date(d.setHours(0, 0, 0, 0));
       const endOfDay = new Date(d.setHours(23, 59, 59, 999));
-      
+
       const sum = await prisma.setoranManual.aggregate({
         where: { createdAt: { gte: startOfDay, lte: endOfDay } },
         _sum: { berat: true },
       });
-      
+
       trend.push({
         date: dayNames[startOfDay.getDay()],
         weightKg: Number(sum._sum.berat || 0),
@@ -401,21 +402,21 @@ export class ResiduService {
     // 2. Zones Compliance
     const allRw = await prisma.rw.findMany({
       include: { kelurahan: true },
-      take: 5
+      take: 5,
     });
 
     const zones = await Promise.all(
       allRw.map(async (rw) => {
         const violationsCount = await prisma.violation.count({
-          where: { bin: { rwId: rw.id } }
+          where: { bin: { rwId: rw.id } },
         });
-        
+
         // Mock compliance score calculation based on violations
-        const complianceScore = Math.max(0, 100 - (violationsCount * 5));
-        
+        const complianceScore = Math.max(0, 100 - violationsCount * 5);
+
         return {
           id: rw.id,
-          region: `${rw.name} ${rw.kelurahan?.name ? rw.kelurahan.name : ''}`,
+          region: `${rw.name} ${rw.kelurahan?.name ? rw.kelurahan.name : ""}`,
           complianceScore,
           violationsCount,
         };
@@ -546,6 +547,3 @@ export class ResiduService {
 }
 
 export const residuService = new ResiduService();
-
-
-

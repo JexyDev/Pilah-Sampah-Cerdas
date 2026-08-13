@@ -170,7 +170,10 @@ export class AuthController {
           code: "WRONG_PASSWORD",
           message: "Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'.",
         });
-      } else if (error.message === "USER_PENDING_APPROVAL" || error.message?.includes("USER_PENDING_APPROVAL")) {
+      } else if (
+        error.message === "USER_PENDING_APPROVAL" ||
+        error.message?.includes("USER_PENDING_APPROVAL")
+      ) {
         res.status(401).json({
           success: false,
           code: "USER_PENDING_APPROVAL",
@@ -385,7 +388,9 @@ export class AuthController {
       } else if (error.message === "USER_NOT_FOUND") {
         res.status(404).json({ success: false, message: "User tidak ditemukan" });
       } else {
-        res.status(500).json({ success: false, message: error.message || "Terjadi kesalahan pada server" });
+        res
+          .status(500)
+          .json({ success: false, message: error.message || "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -701,8 +706,18 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedRwId, kelurahan, rw: rwName, ...userData } =
-        parsed.data;
+      const {
+        nim,
+        jurusan,
+        fakultas,
+        noWa,
+        startDate,
+        endDate,
+        assignedRwId,
+        kelurahan,
+        rw: rwName,
+        ...userData
+      } = parsed.data;
       const kknData = {
         nim,
         jurusan,
@@ -716,7 +731,8 @@ export class AuthController {
       const result = await authService.registerKkn(userData, kknData);
       res.status(201).json({
         success: true,
-        message: "Pendaftaran akun Mahasiswa KKN berhasil. Akun Anda sedang menunggu verifikasi (whitelist) Admin DLH.",
+        message:
+          "Pendaftaran akun Mahasiswa KKN berhasil. Akun Anda sedang menunggu verifikasi (whitelist) Admin DLH.",
         data: { id: result.user.id, name: result.user.name, role: "MAHASISWA_KKN" },
       });
     } catch (error: any) {
@@ -859,8 +875,6 @@ export class AuthController {
     }
   }
 
-
-
   /**
    * Request OTP via WhatsApp (Fonnte)
    */
@@ -965,14 +979,23 @@ export class AuthController {
         })
         .map((t) => {
           const roleName: string = (t.user as any).role?.name ?? "UNKNOWN";
-          const isMobile = ["WARGA", "PETUGAS_RESIDU", "MAHASISWA_KKN", "DPL", "RT", "RW", "PENGANGKUT"].includes(roleName);
+          const isMobile = [
+            "WARGA",
+            "PETUGAS_RESIDU",
+            "MAHASISWA_KKN",
+            "DPL",
+            "RT",
+            "RW",
+            "PENGANGKUT",
+          ].includes(roleName);
           return {
             id: t.userId,
             name: (t.user as any).name ?? "-",
             phone: (t.user as any).phone ?? "-",
             role: roleName,
             device: isMobile ? "Mobile App (Android)" : "Website (Desktop)",
-            identifier: (t.user as any).studentProfile?.nim ?? (t.user as any).phone ?? t.userId.slice(0, 8),
+            identifier:
+              (t.user as any).studentProfile?.nim ?? (t.user as any).phone ?? t.userId.slice(0, 8),
             loginTime: t.createdAt.toISOString(),
             tokenExpiresAt: t.expiresAt.toISOString(),
           };

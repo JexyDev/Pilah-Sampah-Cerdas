@@ -878,7 +878,8 @@ export class SuperUserService {
         pakanMaggotKg: Math.round(totalMaggotKg * 100) / 100,
         komposOrganikKg: Math.round(totalKomposKg * 100) / 100,
         buruanSaeHidroponikKg: Math.round(totalBuruanSaeKg * 100) / 100,
-        totalUtilizedWasteKg: Math.round((totalMaggotKg + totalKomposKg + totalBuruanSaeKg) * 100) / 100,
+        totalUtilizedWasteKg:
+          Math.round((totalMaggotKg + totalKomposKg + totalBuruanSaeKg) * 100) / 100,
       },
       pemanfaatanDetails: pemanfaatanLogs,
       facilityProductionDetails: facilityLogs,

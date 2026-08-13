@@ -76,4 +76,3 @@ export class PointRepository {
 }
 
 export const pointRepository = new PointRepository();
-

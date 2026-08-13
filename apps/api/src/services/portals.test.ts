@@ -186,4 +186,3 @@ describe("Portals A & B Service Integration Tests", () => {
     });
   });
 });
-

@@ -100,7 +100,10 @@ export class BinRepository {
 
     // Fetch all staff users for fallback matching
     const [lurahUsers, allRwUsers, allPetugasUsers, allKknUsers] = await Promise.all([
-      prisma.user.findMany({ where: { role: { name: "LURAH" } }, include: { rw: { include: { kelurahan: true } } } }),
+      prisma.user.findMany({
+        where: { role: { name: "LURAH" } },
+        include: { rw: { include: { kelurahan: true } } },
+      }),
       prisma.user.findMany({ where: { role: { name: "RW" } } }),
       prisma.user.findMany({ where: { role: { name: "PETUGAS_RESIDU" } } }),
       prisma.user.findMany({ where: { role: { name: "MAHASISWA_KKN" } } }),
@@ -142,7 +145,8 @@ export class BinRepository {
           lurahUsers.find(
             (l) =>
               l.rw?.kelurahanId === area.kelurahanId ||
-              (l.rw?.kelurahan?.name && l.rw.kelurahan.name.toLowerCase() === area.kelurahan.name.toLowerCase())
+              (l.rw?.kelurahan?.name &&
+                l.rw.kelurahan.name.toLowerCase() === area.kelurahan.name.toLowerCase())
           ) || (lurahUsers.length > 0 ? lurahUsers[area.id % lurahUsers.length] : null);
 
         return {
@@ -676,5 +680,3 @@ export class BinRepository {
 }
 
 export const binRepository = new BinRepository();
-
-

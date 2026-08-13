@@ -1498,5 +1498,3 @@ export class BinService {
 }
 
 export const binService = new BinService();
-
-

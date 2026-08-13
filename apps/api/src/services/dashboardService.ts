@@ -78,9 +78,9 @@ export const dashboardService = {
 
     let dateFilter: any = undefined;
     const now = new Date();
-    
+
     if (startDate && endDate) {
-       dateFilter = { gte: new Date(startDate), lte: new Date(endDate) };
+      dateFilter = { gte: new Date(startDate), lte: new Date(endDate) };
     } else if (period === "harian") {
       const start = new Date(now);
       start.setHours(0, 0, 0, 0);
@@ -157,7 +157,10 @@ export const dashboardService = {
     const aiWhere: any = {};
     if (isFiltered)
       aiWhere.user = {
-        OR: [{ rw: getRtRwMatch(wilayah) }, { households: { some: { rw: getRtRwMatch(wilayah) } } }],
+        OR: [
+          { rw: getRtRwMatch(wilayah) },
+          { households: { some: { rw: getRtRwMatch(wilayah) } } },
+        ],
       };
     if (dateFilter) aiWhere.createdAt = dateFilter;
 
@@ -167,7 +170,10 @@ export const dashboardService = {
     const successAiWhere: any = { resultStatus: "SUCCESS" };
     if (isFiltered)
       successAiWhere.user = {
-        OR: [{ rw: getRtRwMatch(wilayah) }, { households: { some: { rw: getRtRwMatch(wilayah) } } }],
+        OR: [
+          { rw: getRtRwMatch(wilayah) },
+          { households: { some: { rw: getRtRwMatch(wilayah) } } },
+        ],
       };
     if (dateFilter) successAiWhere.createdAt = dateFilter;
 
@@ -225,7 +231,10 @@ export const dashboardService = {
     const pointsWhere: any = {};
     if (isFiltered)
       pointsWhere.user = {
-        OR: [{ rw: getRtRwMatch(wilayah) }, { households: { some: { rw: getRtRwMatch(wilayah) } } }],
+        OR: [
+          { rw: getRtRwMatch(wilayah) },
+          { households: { some: { rw: getRtRwMatch(wilayah) } } },
+        ],
       };
     if (dateFilter) pointsWhere.createdAt = dateFilter;
 
@@ -248,10 +257,7 @@ export const dashboardService = {
 
     const residuWhere: any = {};
     if (isFiltered)
-      residuWhere.OR = [
-        { rw: getRtRwMatch(wilayah) },
-        { petugas: { rw: getRtRwMatch(wilayah) } },
-      ];
+      residuWhere.OR = [{ rw: getRtRwMatch(wilayah) }, { petugas: { rw: getRtRwMatch(wilayah) } }];
     if (dateFilter) residuWhere.createdAt = dateFilter;
     if (dateFilter) residuWhere.createdAt = dateFilter;
 
@@ -504,4 +510,3 @@ export const dashboardService = {
     return "id,berat_kg,volume_liter,tanggal\n1,10,20,2026-07-20\n";
   },
 };
-

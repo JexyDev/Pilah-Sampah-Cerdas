@@ -54,7 +54,15 @@ router.post(
 router.get(
   "/dashboard",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getDashboardStats
 );
 
@@ -87,7 +95,15 @@ router.post("/handover", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknC
 router.get(
   "/warga-dampingan",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getRegisteredWarga
 );
 
@@ -103,7 +119,20 @@ router.get(
  *       200:
  *         description: Berhasil mendapatkan list warga
  */
-router.get("/warga", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]), kknController.getWargaList);
+router.get(
+  "/warga",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getWargaList
+);
 
 /**
  * @swagger
@@ -164,7 +193,15 @@ router.post(
 router.get(
   "/warga/:wargaId",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getWargaDetail
 );
 
@@ -183,7 +220,15 @@ router.get(
 router.get(
   "/activity-log",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getActivityLog
 );
 

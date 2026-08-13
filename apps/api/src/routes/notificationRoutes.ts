@@ -507,4 +507,3 @@ router.delete("/all", authMiddleware, async (req, res) => {
 });
 
 export default router;
-

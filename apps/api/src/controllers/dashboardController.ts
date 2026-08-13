@@ -29,9 +29,9 @@ export const dashboardController = {
       }
 
       const kpi = await dashboardService.getKpi(
-        wilayah as string, 
-        period as string, 
-        startDate as string, 
+        wilayah as string,
+        period as string,
+        startDate as string,
         endDate as string
       );
       res.status(200).json({
@@ -128,4 +128,3 @@ export const dashboardController = {
     }
   },
 };
-

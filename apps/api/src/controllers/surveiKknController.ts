@@ -154,7 +154,7 @@ export class SurveiKknController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const search = (req.query.search as string) || "";
-      
+
       const role = req.user?.role;
       const userId = req.user?.userId;
 
@@ -277,12 +277,7 @@ export class SurveiKknController {
       const userId = req.user?.userId;
       const payload = req.body;
 
-      const updated = await surveiKknService.updateSurvey(
-        kelurahanId,
-        payload,
-        role,
-        userId
-      );
+      const updated = await surveiKknService.updateSurvey(kelurahanId, payload, role, userId);
 
       res.status(200).json({
         success: true,
@@ -321,4 +316,3 @@ export class SurveiKknController {
 }
 
 export const surveiKknController = new SurveiKknController();
-

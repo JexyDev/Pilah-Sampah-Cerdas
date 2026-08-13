@@ -482,5 +482,3 @@ export const gamificationService = {
     };
   },
 };
-
-

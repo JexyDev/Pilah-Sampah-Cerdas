@@ -90,21 +90,31 @@ export const systemService = {
       prisma.user.count().catch(() => 83),
       prisma.schedule.count().catch(() => 5),
       prisma.kelurahan.count().catch(() => 6),
-      prisma.setoranManual.aggregate({ _sum: { berat: true } }).catch(() => ({ _sum: { berat: 4056 } })),
-      prisma.setoranOtomatis.aggregate({ _sum: { berat: true } }).catch(() => ({ _sum: { berat: 0 } })),
-      prisma.pemanfaatan.aggregate({ _sum: { volumeBahanBaku: true } }).catch(() => ({ _sum: { volumeBahanBaku: 0 } })),
-      prisma.schedule.findMany({
-        take: 3,
-        orderBy: { date: "desc" },
-        select: {
-          id: true,
-          title: true,
-          date: true,
-          location: true,
-          category: true,
-        },
-      }).catch(() => []),
-      prisma.pointHistory.aggregate({ _sum: { points: true } }).catch(() => ({ _sum: { points: 6987 } })),
+      prisma.setoranManual
+        .aggregate({ _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: 4056 } })),
+      prisma.setoranOtomatis
+        .aggregate({ _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: 0 } })),
+      prisma.pemanfaatan
+        .aggregate({ _sum: { volumeBahanBaku: true } })
+        .catch(() => ({ _sum: { volumeBahanBaku: 0 } })),
+      prisma.schedule
+        .findMany({
+          take: 3,
+          orderBy: { date: "desc" },
+          select: {
+            id: true,
+            title: true,
+            date: true,
+            location: true,
+            category: true,
+          },
+        })
+        .catch(() => []),
+      prisma.pointHistory
+        .aggregate({ _sum: { points: true } })
+        .catch(() => ({ _sum: { points: 6987 } })),
       prisma.ideDaurUlang.count({ where: { statusApproval: "APPROVED" } }).catch(() => 11),
     ]);
 
@@ -113,7 +123,7 @@ export const systemService = {
     const pemanfaatanKg = Number(pemanfaatanAggregate._sum.volumeBahanBaku || 0);
     const totalSampahKg = Math.round(manualKg + otomatisKg + pemanfaatanKg);
     const totalPoin = Number(totalPoinAggregate._sum.points || 0);
-    const totalPenjemputan = (manualPenjemputanCount + otomatisPenjemputanCount) || 142;
+    const totalPenjemputan = manualPenjemputanCount + otomatisPenjemputanCount || 142;
 
     return {
       kegiatanCount: kegiatanCount > 0 ? kegiatanCount : 25,
@@ -132,8 +142,16 @@ export const systemService = {
         id: s.id,
         title: s.title,
         date: s.date,
-        location: s.location || (index === 0 ? "Kel. Lebak Gede, Kec. Coblong" : index === 1 ? "Kel. Dago, Kec. Coblong" : "Kel. Sekeloa, Kec. Coblong"),
-        category: s.category || (index === 0 ? "Edukasi Pemilahan" : index === 1 ? "Pengolahan Kompos" : "Aksi Bersih"),
+        location:
+          s.location ||
+          (index === 0
+            ? "Kel. Lebak Gede, Kec. Coblong"
+            : index === 1
+              ? "Kel. Dago, Kec. Coblong"
+              : "Kel. Sekeloa, Kec. Coblong"),
+        category:
+          s.category ||
+          (index === 0 ? "Edukasi Pemilahan" : index === 1 ? "Pengolahan Kompos" : "Aksi Bersih"),
         imageUrl: `/image/activity-${(index % 3) + 1}.png`,
       })),
     };
@@ -204,8 +222,7 @@ export const systemService = {
     return {
       version: "1.0.4",
       buildNumber: 104,
-      releaseNotes:
-        "Perbaikan performa, pembaruan antarmuka mobile, dan integrasi real-time.",
+      releaseNotes: "Perbaikan performa, pembaruan antarmuka mobile, dan integrasi real-time.",
       apkUrl: "http://localhost:3000/api/v1/system/download-apk",
       fileSizeBytes: 26004512,
       formattedSize: "24.8 MB",
@@ -215,5 +232,3 @@ export const systemService = {
     };
   },
 };
-
-

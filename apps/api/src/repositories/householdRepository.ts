@@ -80,5 +80,3 @@ export class HouseholdRepository {
 }
 
 export const householdRepository = new HouseholdRepository();
-
-

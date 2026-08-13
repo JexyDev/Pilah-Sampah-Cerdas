@@ -56,4 +56,3 @@ describe("Pemanfaatan Service CRUD Tests", () => {
     await expect(pemanfaatanService.getById(created.id)).rejects.toThrow();
   });
 });
-

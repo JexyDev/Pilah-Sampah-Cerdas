@@ -13,4 +13,3 @@ export class PolygonService {
 }
 
 export const polygonService = new PolygonService();
-

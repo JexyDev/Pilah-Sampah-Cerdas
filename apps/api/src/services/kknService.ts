@@ -78,9 +78,7 @@ export class KknService {
         });
     const contributionPoints = pointsSum._sum.points || 0;
 
-    const poskoLat = student?.assignedRw?.latitude
-      ? Number(student.assignedRw.latitude)
-      : -6.8906;
+    const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : -6.8906;
     const poskoLng = student?.assignedRw?.longitude
       ? Number(student.assignedRw.longitude)
       : 107.615;
@@ -385,7 +383,9 @@ export class KknService {
       if (targetKelurahan) {
         orConditions.push({
           households: {
-            some: { rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } } },
+            some: {
+              rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+            },
           },
         });
         orConditions.push({
@@ -407,7 +407,11 @@ export class KknService {
         { name: { contains: s, mode: "insensitive" as const } },
         { phone: { contains: s, mode: "insensitive" as const } },
         { address: { contains: s, mode: "insensitive" as const } },
-        { binOwnerships: { some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } } } },
+        {
+          binOwnerships: {
+            some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } },
+          },
+        },
       ];
       if (where.OR) {
         where.AND = [{ OR: where.OR }, { OR: searchCondition }];
@@ -935,9 +939,7 @@ export class KknService {
 
     const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
 
-    const poskoLat = student.assignedRw?.latitude
-      ? Number(student.assignedRw.latitude)
-      : -6.975412;
+    const poskoLat = student.assignedRw?.latitude ? Number(student.assignedRw.latitude) : -6.975412;
     const poskoLng = student.assignedRw?.longitude
       ? Number(student.assignedRw.longitude)
       : 107.632145;
@@ -1151,5 +1153,3 @@ export class KknService {
 }
 
 export const kknService = new KknService();
-
-

@@ -127,23 +127,23 @@ export class UserRepository {
 
   async findRoleByName(name: string) {
     const normalizedMap: Record<string, string> = {
-      "Developer": "DEVELOPER",
-      "DEVELOPER": "DEVELOPER",
-      "Admin": "SUPER_USER",
-      "ADMIN": "SUPER_USER",
+      Developer: "DEVELOPER",
+      DEVELOPER: "DEVELOPER",
+      Admin: "SUPER_USER",
+      ADMIN: "SUPER_USER",
       "Super User": "SUPER_USER",
       "SUPER USER": "SUPER_USER",
       "Dinas Lingkungan Hidup": "ADMIN_DLH",
-      "Camat": "CAMAT",
-      "Lurah": "LURAH",
+      Camat: "CAMAT",
+      Lurah: "LURAH",
       "Rukun Warga": "RW",
       "Rukun Tetangga": "RT",
       "Dosen Pembimbing Lapangan": "DPL",
       "Petugas Residu": "PETUGAS_RESIDU",
-      "Mahasiswa": "MAHASISWA_KKN",
+      Mahasiswa: "MAHASISWA_KKN",
       "Mahasiswa KKN": "MAHASISWA_KKN",
-      "Warga": "WARGA",
-      "Pimpinan": "PEMIMPIN",
+      Warga: "WARGA",
+      Pimpinan: "PEMIMPIN",
       "Task Force": "PANITIA_TASKFORCE",
     };
 
@@ -231,5 +231,3 @@ export class UserRepository {
 }
 
 export const userRepository = new UserRepository();
-
-

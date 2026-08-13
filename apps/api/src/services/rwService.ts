@@ -200,7 +200,12 @@ export const rwService = {
     });
   },
 
-  verifyPetugas: async (petugasId: string, action: "APPROVED" | "REJECTED", rwId: number, userRole?: string) => {
+  verifyPetugas: async (
+    petugasId: string,
+    action: "APPROVED" | "REJECTED",
+    rwId: number,
+    userRole?: string
+  ) => {
     const areaIds = await getRwAreaIds(rwId, userRole);
     let petugasCheck = await prisma.petugasResidu.findUnique({
       where: { id: petugasId },
@@ -345,7 +350,12 @@ export const rwService = {
     });
   },
 
-  verifyFacility: async (facilityId: string, action: "APPROVED" | "REJECTED", rwId: number, userRole?: string) => {
+  verifyFacility: async (
+    facilityId: string,
+    action: "APPROVED" | "REJECTED",
+    rwId: number,
+    userRole?: string
+  ) => {
     const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
     if (!facilityCheck || !facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId)) {
@@ -407,10 +417,7 @@ export const rwService = {
     // 2. Ambil riwayat setoran manual residu hilir khusus wilayah RW ini
     const logs = await prisma.setoranManual.findMany({
       where: {
-        OR: [
-          { rwId: { in: areaIds } },
-          { petugas: { rwId: { in: areaIds } } },
-        ],
+        OR: [{ rwId: { in: areaIds } }, { petugas: { rwId: { in: areaIds } } }],
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -457,4 +464,3 @@ export const rwService = {
     };
   },
 };
-

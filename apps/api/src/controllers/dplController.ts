@@ -40,7 +40,12 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.getAssistedCitizens] error:", error);
       if (error.message === "STUDENT_NOT_FOUND_OR_FORBIDDEN") {
-        res.status(403).json({ error: "FORBIDDEN", message: "Mahasiswa tidak ditemukan atau bukan bimbingan Anda" });
+        res
+          .status(403)
+          .json({
+            error: "FORBIDDEN",
+            message: "Mahasiswa tidak ditemukan atau bukan bimbingan Anda",
+          });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -90,7 +95,9 @@ export const dplController = {
       const { score, note } = req.body;
 
       if (score === undefined || isNaN(Number(score))) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Skor penilaian (score) wajib diisi angka" });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "Skor penilaian (score) wajib diisi angka" });
         return;
       }
 
@@ -99,7 +106,12 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.assessStudent] error:", error);
       if (error.message === "STUDENT_NOT_FOUND_OR_FORBIDDEN") {
-        res.status(403).json({ error: "FORBIDDEN", message: "Mahasiswa tidak ditemukan atau bukan bimbingan Anda" });
+        res
+          .status(403)
+          .json({
+            error: "FORBIDDEN",
+            message: "Mahasiswa tidak ditemukan atau bukan bimbingan Anda",
+          });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -113,7 +125,9 @@ export const dplController = {
       const { status, note } = req.body;
 
       if (!["APPROVED", "REJECTED"].includes(status)) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Status harus APPROVED atau REJECTED" });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "Status harus APPROVED atau REJECTED" });
         return;
       }
 
@@ -122,7 +136,12 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.decideLeaveRequest] error:", error);
       if (error.message === "FORBIDDEN_NOT_YOUR_STUDENT") {
-        res.status(403).json({ error: "FORBIDDEN", message: "Pengajuan izin ini bukan milik mahasiswa bimbingan Anda" });
+        res
+          .status(403)
+          .json({
+            error: "FORBIDDEN",
+            message: "Pengajuan izin ini bukan milik mahasiswa bimbingan Anda",
+          });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });

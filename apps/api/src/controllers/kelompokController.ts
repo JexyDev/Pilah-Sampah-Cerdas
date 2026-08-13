@@ -58,7 +58,12 @@ export const kelompokController = {
     try {
       const { id } = req.params;
       const { name, dplId, kelurahan, cakupanRw } = req.body;
-      const result = await kelompokService.updateKelompok(id, { name, dplId, kelurahan, cakupanRw });
+      const result = await kelompokService.updateKelompok(id, {
+        name,
+        dplId,
+        kelurahan,
+        cakupanRw,
+      });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[KelompokController] update error:", error);
@@ -108,10 +113,14 @@ export const kelompokController = {
         return;
       }
       const updated = await kelompokService.setLeader(id, studentId);
-      res.status(200).json({ success: true, message: "Ketua kelompok berhasil diperbarui", data: updated });
+      res
+        .status(200)
+        .json({ success: true, message: "Ketua kelompok berhasil diperbarui", data: updated });
     } catch (error: any) {
       console.error("[KelompokController] setLeader error:", error);
-      res.status(500).json({ success: false, message: error.message || "Gagal memperbarui ketua kelompok" });
+      res
+        .status(500)
+        .json({ success: false, message: error.message || "Gagal memperbarui ketua kelompok" });
     }
   },
 };
