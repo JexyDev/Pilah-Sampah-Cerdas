@@ -166,11 +166,34 @@ websocketService.init(server);
 import { cronService } from "./services/cronService.js";
 cronService.start();
 
-// Auto-sanitize RT/RW names to human names if dummy names exist in DB
+// Auto-migrate missing database columns on startup
 (async () => {
   try {
     const { PrismaClient } = await import("@prisma/client");
     const prisma = new PrismaClient();
+
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "harus_ganti_password" BOOLEAN DEFAULT false;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "subtipe_warga" TEXT;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "nip" TEXT;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "institusi" TEXT;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jabatan" TEXT;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "program_studi" TEXT;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;
+      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jumlah_anggota_keluarga" INTEGER;
+
+      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian_dpl" DECIMAL(5,2) DEFAULT 0.0;
+      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false;
+      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;
+      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;
+
+      ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;
+      ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;
+    `);
+    console.log("[AutoMigration] Database columns checked and synced successfully.");
+
     const dummyUser = await prisma.user.findFirst({
       where: {
         OR: [
@@ -189,7 +212,7 @@ cronService.start();
       exec("npx tsx scripts/fix-rt-rw-human-names.ts");
       exec("npx tsx scripts/fix-executive-human-names.ts");
     }
-  } catch (e) {
-    // Non-blocking catch
+  } catch (e: any) {
+    console.error("[AutoMigration Log]", e?.message || e);
   }
 })();
