@@ -19,7 +19,7 @@ async function runE2E_QC() {
   for (const r of roles) {
     const count = await prisma.user.count({ where: { roleId: r.id } });
     roleCounts[r.name] = count;
-    console.log(`[ROLE] ${r.name.padEnd(20)} | ID: ${String(r.id).padStart(2)} | Total User: ${count}`);
+    console.log(`[ROLE] ${r.name.padEnd(22)} | ID: ${String(r.id).padStart(2)} | Total User: ${count}`);
   }
 
   // 2. AUDIT RELASI DPL & KELOMPOK KKN (32 KELOMPOK)
@@ -85,21 +85,25 @@ async function runE2E_QC() {
   const sampleRw = await prisma.rw.findMany({ take: 3, include: { kelurahan: { include: { kecamatan: true } } } });
   console.log("\n  Sample Data RW & Kelurahan:");
   sampleRw.forEach((r) => {
-    console.log(`  - RW ${String(r.nomorRw).padStart(2, "0")} | Kelurahan: ${r.kelurahan.name} | Kecamatan: ${r.kelurahan.kecamatan.name}`);
+    console.log(`  - ${r.name} | Kelurahan: ${r.kelurahan.name} | Kecamatan: ${r.kelurahan.kecamatan.name}`);
   });
 
   // 5. AUDIT MASTER DATA TEMPAT SAMPAH (BINS & OWNERSHIP)
   console.log("\n--- 5. QC MANAJEMEN TEMPAT SAMPAH ---");
   const totalBins = await prisma.bin.count();
   const totalOwners = await prisma.binOwnership.count();
-  const sampleBins = await prisma.bin.findMany({ take: 3, include: { rw: true } });
+  const sampleBins = await prisma.bin.findMany({ take: 3, include: { rw: true, category: true } });
 
   console.log(`Total Tempat Sampah (Bin) : ${totalBins}`);
   console.log(`Total Kepemilikan (Owner) : ${totalOwners}`);
-  console.log("\n  Sample Data Tempat Sampah (Bin):");
-  sampleBins.forEach((b) => {
-    console.log(`  - Code: ${b.code.padEnd(15)} | Type: ${b.binType.padEnd(12)} | Status: ${b.status} | Location: ${b.locationName || "RW " + b.rw?.nomorRw}`);
-  });
+  if (sampleBins.length > 0) {
+    console.log("\n  Sample Data Tempat Sampah (Bin):");
+    sampleBins.forEach((b) => {
+      const qr = b.qrCode || b.id;
+      const type = b.binType || b.category?.name || "Standard Bin";
+      console.log(`  - QR Code: ${qr.padEnd(20)} | Type: ${type.padEnd(15)} | Status: ${b.status} | RW: ${b.rw?.name || "-"}`);
+    });
+  }
 
   // SUMMARY AUDIT STATUS
   console.log("\n=========================================================");
