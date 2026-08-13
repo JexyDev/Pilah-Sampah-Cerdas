@@ -67,7 +67,7 @@ async function runE2E_QC() {
 
   console.log("\n  Sample Data Mahasiswa KKN:");
   sampleStudents.forEach((s) => {
-    console.log(`  - Nama: ${s.user.name.padEnd(25)} | NIM: ${s.nim.padEnd(10)} | Kelompok: ${s.kelompok?.name.padEnd(25)} | DPL: ${s.kelompok?.dpl?.name || s.kelompok?.dplNamaMentah}`);
+    console.log(`  - Nama: ${s.user.name.padEnd(25)} | NIM: ${(s.nim || "").padEnd(10)} | Kelompok: ${s.kelompok?.name.padEnd(25)} | DPL: ${s.kelompok?.dpl?.name || s.kelompok?.dplNamaMentah}`);
   });
 
   // 4. AUDIT MASTER DATA WILAYAH (PROVINSI, KABUPATEN, KECAMATAN, KELURAHAN, RW)
@@ -85,7 +85,7 @@ async function runE2E_QC() {
   const sampleRw = await prisma.rw.findMany({ take: 3, include: { kelurahan: { include: { kecamatan: true } } } });
   console.log("\n  Sample Data RW & Kelurahan:");
   sampleRw.forEach((r) => {
-    console.log(`  - ${r.name} | Kelurahan: ${r.kelurahan.name} | Kecamatan: ${r.kelurahan.kecamatan.name}`);
+    console.log(`  - ${r.name} | Kelurahan: ${r.kelurahan?.name} | Kecamatan: ${r.kelurahan?.kecamatan?.name}`);
   });
 
   // 5. AUDIT MASTER DATA TEMPAT SAMPAH (BINS & OWNERSHIP)

@@ -567,7 +567,19 @@ export class KknService {
         });
       }
 
-      if (latitude != null && longitude != null) {
+      const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
+      if (!existingHh) {
+        const wObj = await tx.user.findUnique({ where: { id: wargaId } });
+        await tx.household.create({
+          data: {
+            userId: wargaId,
+            address: wObj?.address || "Bandung, Jawa Barat",
+            rwId: wObj?.rwId || 1,
+            latitude: latitude ?? -6.8903,
+            longitude: longitude ?? 107.611,
+          },
+        });
+      } else if (latitude != null && longitude != null) {
         await tx.household.updateMany({
           where: { userId: wargaId },
           data: { latitude, longitude },
@@ -653,7 +665,19 @@ export class KknService {
         }
       }
 
-      if (latitude != null && longitude != null) {
+      const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
+      if (!existingHh) {
+        const wObj = await tx.user.findUnique({ where: { id: wargaId } });
+        await tx.household.create({
+          data: {
+            userId: wargaId,
+            address: wObj?.address || "Bandung, Jawa Barat",
+            rwId: wObj?.rwId || 1,
+            latitude: latitude ?? -6.8903,
+            longitude: longitude ?? 107.611,
+          },
+        });
+      } else if (latitude != null && longitude != null) {
         await tx.household.updateMany({
           where: { userId: wargaId },
           data: { latitude, longitude },

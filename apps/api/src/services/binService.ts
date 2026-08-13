@@ -130,8 +130,23 @@ export class BinService {
     evidencePhotoUrl?: string,
     detections?: Array<{ detectedType: string; volumeEstimate: number; confidence?: number }>
   ) {
-    if (userLat === undefined || userLng === undefined) {
-      throw new Error("GPS_COORDINATES_REQUIRED");
+    if (!householdId) {
+      const existingHh = await prisma.household.findFirst({ where: { userId } });
+      if (existingHh) {
+        householdId = existingHh.id;
+      } else {
+        const u = await prisma.user.findUnique({ where: { id: userId } });
+        const newHh = await prisma.household.create({
+          data: {
+            userId,
+            address: u?.address || "Bandung, Jawa Barat",
+            rwId: u?.rwId || 1,
+            latitude: userLat ?? -6.8903,
+            longitude: userLng ?? 107.611,
+          },
+        });
+        householdId = newHh.id;
+      }
     }
 
     // 1. Find the Bin
@@ -591,10 +606,23 @@ export class BinService {
       include: { households: true },
     });
     if (!user) throw new Error("USER_NOT_FOUND");
-    if (!user.households || user.households.length === 0) {
-      throw new Error("HOUSEHOLDS_NOT_FOUND");
+    let household = user.households && user.households.length > 0 ? user.households[0] : null;
+    if (!household) {
+      const rwId = user.rwId || 1;
+      const lat = data.latitude ?? -6.8903;
+      const lng = data.longitude ?? 107.611;
+      const addr = user.address || "Bandung, Jawa Barat";
+
+      household = await prisma.household.create({
+        data: {
+          userId: user.id,
+          address: addr,
+          rwId: rwId,
+          latitude: lat,
+          longitude: lng,
+        },
+      });
     }
-    const household = user.households[0];
 
     const codes = data.qrCodes || (data.qrCode ? [data.qrCode] : []);
     if (codes.length === 0) throw new Error("QR_CODES_REQUIRED");
