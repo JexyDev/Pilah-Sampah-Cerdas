@@ -56,6 +56,7 @@ export const KknWargaMonitoring: React.FC = () => {
                   const totalKg = Number(w.totalKg || (w.recentLogs?.reduce((acc: number, l: any) => acc + (l.beratKg || 0), 0) || 12.5)).toFixed(1);
                   const totalPoin = Number(w.totalPoin || (Number(totalKg) * 100)).toLocaleString("id-ID");
                   const category = w.category || (i % 2 === 0 ? "Organik" : "Anorganik");
+                  const isOrganik = (category || "").toLowerCase().includes("organik");
 
                   return (
                     <tr key={w.id || i} className="hover:bg-slate-50 transition">
@@ -64,8 +65,8 @@ export const KknWargaMonitoring: React.FC = () => {
                         <p className="text-[11px] text-slate-500">{w.address || "Coblong, Bandung"}</p>
                       </td>
                       <td className="p-3.5">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase inline-flex items-center gap-1 ${category.toLowerCase().includes("organik") ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                          {category.toLowerCase().includes("organik") ? <Leaf size={12} /> : <Recycle size={12} />}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase inline-flex items-center gap-1 ${isOrganik ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                          {isOrganik ? <Leaf size={12} /> : <Recycle size={12} />}
                           {category}
                         </span>
                       </td>

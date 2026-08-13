@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, FileText, MapPin, Database, Sprout, Users, AlertTriangle, ArrowRight, Edit, Building, Map, Home, ClipboardList, CheckCircle2, Info, ChevronRight } from "lucide-react";
+import { Loader2, FileText, MapPin, Database, Sprout, Users, AlertTriangle, ArrowRight, Edit, Building, Map, Home, ClipboardList, CheckCircle2, Info, ChevronRight, Edit3 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
+import EditSurveiModal from "./EditSurveiModal";
 
 export default function DetailSurveiKkn() {
   const { id } = useParams<{ id: string }>();
@@ -13,22 +14,24 @@ export default function DetailSurveiKkn() {
   const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const fetchDetail = async () => {
+    if (!id) return;
+    setIsLoadingDetail(true);
+    try {
+      const response = await api.get(`/survei-kkn/${id}`);
+      if (response.data.success) {
+        setSelectedSurvey(response.data.data);
+      }
+    } catch (error: any) {
+      showToast.error("Gagal memuat detail survei");
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
 
   useEffect(() => {
-    if (!id) return;
-    const fetchDetail = async () => {
-      setIsLoadingDetail(true);
-      try {
-        const response = await api.get(`/survei-kkn/${id}`);
-        if (response.data.success) {
-          setSelectedSurvey(response.data.data);
-        }
-      } catch (error: any) {
-        showToast.error("Gagal memuat detail survei");
-      } finally {
-        setIsLoadingDetail(false);
-      }
-    };
     fetchDetail();
   }, [id]);
 
@@ -619,6 +622,16 @@ export default function DetailSurveiKkn() {
             </div>
           )}
         </div>
+
+        {!isLoadingDetail && selectedSurvey && (
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-2 text-xs transition cursor-pointer"
+          >
+            <Edit3 size={15} />
+            Edit Data Survei
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -654,6 +667,18 @@ export default function DetailSurveiKkn() {
           renderTabContent()
         )}
       </div>
+
+      {/* Edit Modal */}
+      {selectedSurvey && (
+        <EditSurveiModal
+          isOpen={isEditModalOpen}
+          kelurahanId={selectedSurvey.kelurahanId}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            fetchDetail();
+          }}
+        />
+      )}
     </div>
   );
 }

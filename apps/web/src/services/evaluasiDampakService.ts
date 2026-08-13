@@ -70,7 +70,7 @@ export interface KomparasiData {
   hasEndline: boolean;
   pemilahan: { baseline: number | null; endline: number | null; delta: number | null };
   volumeSampah: { baseline: number | null; endline: number | null; delta: number | null };
-  bankSampahAktif: { baseline: number | null; endline: number | null; delta: number | null };
+  kegiatanPemanfaatan: { baseline: number | null; endline: number | null; delta: number | null };
 }
 
 /** Service untuk memanggil endpoint evaluasi dampak KKN */

@@ -5,8 +5,9 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../../store/useAuthStore";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import {
   Users,
@@ -20,15 +21,33 @@ import {
   PhoneCall,
   RefreshCw,
   X,
-  FileText,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Layers,
+  Activity,
+  CheckCircle2,
+  Filter,
+  BarChart3,
+  TrendingUp,
+  Sparkles,
+  Eye,
 } from "lucide-react";
-import { KknQrClaim } from "./KknQrClaim";
-import { WargaRegistrationWizard } from "./WargaRegistrationWizard";
-import { HandoverForm } from "./HandoverForm";
-import { BantuFasilitasForm } from "./BantuFasilitasForm";
-import { BantuPetugasForm } from "./BantuPetugasForm";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polygon,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import {
+  CoblongGeo,
+  KELURAHAN_GEODATA,
+  createKelurahanPinIcon,
+} from "../../constants/coblongGeoData";
 import api from "../../services/api";
 import {
   ResponsiveContainer,
@@ -42,11 +61,45 @@ import {
   Tooltip,
 } from "recharts";
 
+// Custom Leaflet Map Controller for Smooth FlyTo
+const MapFlyToController: React.FC<{
+  center: [number, number];
+  zoom: number;
+}> = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, zoom, { duration: 1.0 });
+    }
+  }, [center, zoom, map]);
+  return null;
+};
+
+// Custom Warga Marker Pin Generator (Real Data Based)
+const createWargaMarkerIcon = (compliance: number) => {
+  let color = "#10b981"; // Emerald (High)
+  if (compliance < 60) color = "#ef4444"; // Rose (Low)
+  else if (compliance < 80) color = "#f59e0b"; // Amber (Medium)
+
+  return L.divIcon({
+    className: "custom-warga-pin",
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+        <div style="background: ${color}; border: 2px solid white; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 3px 10px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid ${color}; margin-top: -1px;"></div>
+      </div>
+    `,
+    iconSize: [24, 29],
+    iconAnchor: [12, 29],
+  });
+};
+
 const KknDashboard: React.FC = () => {
+  const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [wargaList, setWargaList] = useState<any[]>([]);
-  const [unregisteredHouses, setUnregisteredHouses] = useState<any[]>([]);
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
 
   // Loading & UI States
@@ -58,55 +111,23 @@ const KknDashboard: React.FC = () => {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterCompliance, setFilterCompliance] = useState("ALL"); // ALL, HIGH (>=80), LOW (<80)
   const [wargaPage, setWargaPage] = useState(1);
-  const wargaRowsPerPage = 7;
+  const [wargaRowsPerPage, setWargaRowsPerPage] = useState(10);
 
-  // Map Layer & Tooltip States
-  const [showRoads, setShowRoads] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
-  const [hoveredZone, setHoveredZone] = useState<string | null>(null);
+  // Map States
+  const [showPolygons, setShowPolygons] = useState(true);
+  const [showWargaPins, setShowWargaPins] = useState(true);
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
+  const [mapCenter, setMapCenter] = useState<[number, number]>(CoblongGeo.CENTER);
+  const [mapZoom, setMapZoom] = useState<number>(CoblongGeo.DEFAULT_ZOOM);
 
-  // Dynamically calculate compliance for each RT/RW
-  const getZoneCompliance = (areaName: string) => {
-    const matches = wargaList.filter((w) => w.rtRw.toLowerCase().includes(areaName.toLowerCase()));
-    if (matches.length === 0) {
-      if (areaName.includes("06")) return 87;
-      if (areaName.includes("02")) return 73;
-      if (areaName.includes("01")) return 49;
-      return 75;
-    }
-    const sum = matches.reduce((acc, curr) => acc + curr.complianceScore, 0);
-    return Math.round(sum / matches.length);
-  };
-
-  const getZoneColor = (score: number) => {
-    if (score >= 80) return { fill: "#e2f5e9", stroke: "#10b981", text: "#047857" };
-    if (score >= 60) return { fill: "#fef9c3", stroke: "#eab308", text: "#a16207" };
-    return { fill: "#fee2e2", stroke: "#ef4444", text: "#b91c1c" };
-  };
-
-  const handleZoneClick = (areaName: string) => {
-    const area = rtRwAreas.find((a) =>
-      (a.rw || a.name).toLowerCase().includes(areaName.toLowerCase())
-    );
-    if (area) {
-      const newId = area.id.toString();
-      setFilterRtRw(newId);
-      api
-        .get("/kkn/warga", {
-          params: {
-            rtRw: area.id,
-            search: filterSearch || undefined,
-          },
-        })
-        .then((res) => {
-          setWargaList(res.data?.data || []);
-        });
-    } else {
-      toast.error(`Wilayah ${areaName} tidak ditemukan di database`);
-    }
-  };
-
-
+  const isSuperOrAdmin =
+    user?.peran === "SUPER_USER" ||
+    user?.peran === "DEVELOPER" ||
+    user?.peran === "ADMIN_DLH" ||
+    user?.peran === "DPL" ||
+    user?.peran === "DOSEN_PEMBIMBING" ||
+    user?.peran === "PEMIMPIN" ||
+    user?.peran === "PANITIA_TASKFORCE";
 
   useEffect(() => {
     fetchInitialData();
@@ -118,18 +139,13 @@ const KknDashboard: React.FC = () => {
       const results = await Promise.allSettled([
         api.get("/kkn/dashboard"),
         api.get("/kkn/warga"),
-        api.get("/kkn/warga", { params: { status: "UNACTIVATED" } }),
-        api.get("/kkn/activity-log"),
         api.get("/bins/locations"),
       ]);
 
       if (results[0].status === "fulfilled") setStats(results[0].value.data?.data);
       if (results[1].status === "fulfilled") setWargaList(results[1].value.data?.data || []);
-      if (results[2].status === "fulfilled") setUnregisteredHouses(results[2].value.data?.data || []);
-      if (results[3].status === "fulfilled") setActivityLogs(results[3].value.data?.data || []);
-      if (results[4].status === "fulfilled") setRtRwAreas(results[4].value.data?.data || []);
+      if (results[2].status === "fulfilled") setRtRwAreas(results[2].value.data?.data || []);
 
-      // Log any failures without crashing
       results.forEach((r, i) => {
         if (r.status === "rejected") console.warn(`KKN fetch[${i}] failed:`, r.reason?.message);
       });
@@ -150,13 +166,12 @@ const KknDashboard: React.FC = () => {
         },
       });
       setWargaList(res.data?.data || []);
+      setWargaPage(1);
     } catch (err) {
       console.error(err);
       toast.error("Gagal menyaring data");
     }
   };
-
-
 
   const handleWargaClick = async (wargaId: string) => {
     try {
@@ -168,773 +183,878 @@ const KknDashboard: React.FC = () => {
     }
   };
 
+  // Filtered Warga List
+  const filteredWargaList = useMemo(() => {
+    return wargaList.filter((w) => {
+      if (filterCompliance === "HIGH" && (w.complianceScore || 0) < 80) return false;
+      if (filterCompliance === "LOW" && (w.complianceScore || 0) >= 80) return false;
+      if (filterSearch) {
+        const query = filterSearch.toLowerCase();
+        const matchName = (w.name || "").toLowerCase().includes(query);
+        const matchAddress = (w.address || "").toLowerCase().includes(query);
+        const matchBin = (w.binCode || "").toLowerCase().includes(query);
+        if (!matchName && !matchAddress && !matchBin) return false;
+      }
+      if (filterRtRw) {
+        const rwStr = String(filterRtRw);
+        const matchRw =
+          String(w.rwId || "").includes(rwStr) ||
+          (w.rtRw || "").toLowerCase().includes(rwStr.toLowerCase()) ||
+          (w.rw || "").toLowerCase().includes(rwStr.toLowerCase());
+        if (!matchRw) return false;
+      }
+      return true;
+    });
+  }, [wargaList, filterCompliance, filterSearch, filterRtRw]);
+
+  // Only plot real Warga Pins with valid non-zero GPS coordinates
+  const wargaWithLocation = useMemo(() => {
+    return wargaList.filter((w) => {
+      const lat = Number(w.latitude || w.lat);
+      const lng = Number(w.longitude || w.lng);
+      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+    });
+  }, [wargaList]);
+
+  // Paginated Warga Items
+  const totalPages = Math.ceil(filteredWargaList.length / wargaRowsPerPage) || 1;
+  const paginatedWarga = useMemo(() => {
+    const start = (wargaPage - 1) * wargaRowsPerPage;
+    return filteredWargaList.slice(start, start + wargaRowsPerPage);
+  }, [filteredWargaList, wargaPage, wargaRowsPerPage]);
+
+  // Real Kelurahan compliance calculator for map polygons
+  const getKelurahanComplianceScore = (kelName: string): number | null => {
+    const matches = wargaList.filter((w) =>
+      (w.address || w.rtRw || w.rw || "").toLowerCase().includes(kelName.toLowerCase())
+    );
+    if (matches.length === 0) return null; // No warga registered in this kelurahan yet -> Return null so it's not yellow!
+
+    const validScores = matches
+      .map((curr) => Number(curr.complianceScore))
+      .filter((score) => !isNaN(score) && score > 0);
+
+    if (validScores.length === 0) return null;
+    const sum = validScores.reduce((acc, curr) => acc + curr, 0);
+    return Math.round(sum / validScores.length);
+  };
+
+  const getComplianceColor = (score: number | null) => {
+    // If null or no data -> Neutral Slate/Gray (Transparent/Subtle)
+    if (score === null || score === undefined) {
+      return { stroke: "#94a3b8", fill: "#94a3b8", fillOpacity: 0.06, text: "#64748b" };
+    }
+    // High: >= 80% (Emerald)
+    if (score >= 80) {
+      return { stroke: "#10b981", fill: "#10b981", fillOpacity: 0.22, text: "#047857" };
+    }
+    // Medium: 60 - 79% (Amber)
+    if (score >= 60) {
+      return { stroke: "#f59e0b", fill: "#f59e0b", fillOpacity: 0.22, text: "#b45309" };
+    }
+    // Low: < 60% (Rose/Red)
+    return { stroke: "#ef4444", fill: "#ef4444", fillOpacity: 0.25, text: "#b91c1c" };
+  };
+
+  const handleSelectKelurahanOnMap = (kelKey: string, centroid: [number, number]) => {
+    setSelectedKelurahan(kelKey);
+    setMapCenter(centroid);
+    setMapZoom(16);
+    toast.success(`Fokus wilayah: Kelurahan ${KELURAHAN_GEODATA[kelKey]?.name || kelKey}`);
+  };
+
+  const handleResetMapFocus = () => {
+    setSelectedKelurahan("ALL");
+    setMapCenter(CoblongGeo.CENTER);
+    setMapZoom(CoblongGeo.DEFAULT_ZOOM);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
-        <RefreshCw className="animate-spin text-primary w-12 h-12" />
-        <p className="text-on-surface-variant font-medium">Memuat Portal Mahasiswa KKN...</p>
+        <RefreshCw className="animate-spin text-emerald-600 w-12 h-12" />
+        <p className="text-slate-600 font-bold text-sm">Memuat Portal & Dashboard KKN...</p>
       </div>
     );
   }
 
   const { studentKkn, stats: kStats } = stats || {};
 
-  // 1. Process Registration Trend Data
+  // Process Real Trend Data for Charts
   const regTrendMap: { [key: string]: number } = {};
   wargaList.forEach((w) => {
     try {
-      const dateStr = new Date(w.registeredAt).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-      });
-      regTrendMap[dateStr] = (regTrendMap[dateStr] || 0) + 1;
+      if (w.registeredAt) {
+        const dateStr = new Date(w.registeredAt).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+        });
+        regTrendMap[dateStr] = (regTrendMap[dateStr] || 0) + 1;
+      }
     } catch (_) {}
   });
 
-  const registrationTrendData = Object.keys(regTrendMap).length > 0 
-    ? Object.keys(regTrendMap).map((date) => ({
-        tanggal: date,
-        warga: regTrendMap[date],
-      })).slice(-7)
-    : [
-        { tanggal: "25 Jul", warga: 0 },
-        { tanggal: "26 Jul", warga: 0 },
-        { tanggal: "27 Jul", warga: 0 },
-        { tanggal: "28 Jul", warga: 0 },
-        { tanggal: "29 Jul", warga: 0 },
-        { tanggal: "30 Jul", warga: 0 },
-        { tanggal: "31 Jul", warga: 0 },
-      ];
+  const registrationTrendData =
+    Object.keys(regTrendMap).length > 0
+      ? Object.keys(regTrendMap)
+          .map((date) => ({
+            tanggal: date,
+            warga: regTrendMap[date],
+          }))
+          .slice(-7)
+      : [];
 
-  // 2. Process Compliance Data
-  const complianceData = wargaList.length > 0
-    ? wargaList.map((w) => ({
-        nama: (w.name || "Warga").split(" ")[0],
-        skor: w.complianceScore || 0,
-      })).slice(0, 10)
-    : [
-        { nama: "Warga 1", skor: 0 },
-        { nama: "Warga 2", skor: 0 },
-      ];
+  const complianceData =
+    wargaList.length > 0
+      ? wargaList
+          .filter((w) => w.complianceScore !== undefined && w.complianceScore !== null)
+          .map((w) => ({
+            nama: (w.name || "Warga").split(" ")[0],
+            skor: Number(w.complianceScore) || 0,
+          }))
+          .slice(0, 10)
+      : [];
 
   return (
-    <div className="space-y-6 pb-12">
-
-
-      {/* Header */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-outline-variant shadow-sm">
+    <div className="space-y-8 pb-16 w-full max-w-[1600px] mx-auto px-2 sm:px-4">
+      {/* ---------------- 1. HEADER SECTION ---------------- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs">
         <div>
-          <h1 className="text-2xl font-black text-on-surface flex items-center gap-2">
-            <Compass className="text-primary w-7 h-7" />
-            Portal Pendampingan KKN
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 shadow-2xs">
+              <Sparkles size={13} />
+              {isSuperOrAdmin ? "Super Admin & Monitoring Terpadu" : "Portal Mahasiswa KKN"}
+            </span>
+            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold">
+              Kecamatan Coblong
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
+            <Compass className="text-emerald-600 w-8 h-8 shrink-0" />
+            Dashboard &amp; Monitoring Pendampingan KKN
           </h1>
-          <p className="text-xs text-on-surface-variant mt-1">
-            NIM: {studentKkn?.nim} • Jurusan: {studentKkn?.jurusan} • Wilayah Tugas:{" "}
-            {studentKkn?.assignedArea}
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+            {isSuperOrAdmin
+              ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan 6 kelurahan di Kecamatan Coblong.`
+              : `NIM: ${studentKkn?.nim || "-"} • Jurusan: ${studentKkn?.jurusan || "-"} • Wilayah: ${studentKkn?.assignedArea || "Coblong"}`}
           </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={fetchInitialData}
+            className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-2xs cursor-pointer"
+          >
+            <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+            Refresh Data
+          </button>
         </div>
       </div>
 
-      {/* KPI Stats Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Progress Card */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+      {/* ---------------- 2. TOP KPI STATS ---------------- */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Card 1 */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">PROGRES PENDAMPINGAN</span>
-            <Users className="text-primary w-5 h-5" />
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
+              Progres Pendampingan
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+              <Users className="w-5 h-5" />
+            </div>
           </div>
-          <div>
-            <h3 className="text-2xl font-black">{kStats?.totalRegistered} Bins</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">
-              Target: {kStats?.maxLimit} (Sisa Kuota: {kStats?.remainingQuota})
+          <div className="my-3">
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900">
+              {kStats?.totalRegistered || wargaList.length || 0}{" "}
+              <span className="text-base font-bold text-slate-500">Bins</span>
+            </h3>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              Target: {kStats?.maxLimit || 100} Bins (Sisa Kuota: {kStats?.remainingQuota ?? 100})
             </p>
           </div>
-          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1">
+          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
             <div
-              className="bg-primary h-full transition-all duration-500"
-              style={{ width: `${kStats?.progressPct}%` }}
+              className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, kStats?.progressPct || 0))}%` }}
             ></div>
           </div>
         </div>
 
-        {/* whitelist status */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        {/* Card 2 */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">STATUS AKUN</span>
-            <ShieldCheck className="text-indigo-600 w-5 h-5" />
-          </div>
-          <div>
-            <span
-              className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${studentKkn?.whitelistStatus === "APPROVED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
-            >
-              Whitelist: {studentKkn?.whitelistStatus}
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
+              Status Program
             </span>
-            <p className="text-[10px] text-on-surface-variant mt-2 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
-              Selesai KKN: {new Date(studentKkn?.endDate).toLocaleDateString("id-ID")}
+            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="my-3">
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-xs font-black ${
+                studentKkn?.whitelistStatus === "APPROVED"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+              }`}
+            >
+              Whitelist: {studentKkn?.whitelistStatus || "APPROVED"}
+            </span>
+            <p className="text-[11px] text-slate-500 font-medium mt-2 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-indigo-500" />
+              Selesai:{" "}
+              <strong className="text-slate-700">
+                {studentKkn?.endDate
+                  ? new Date(studentKkn.endDate).toLocaleDateString("id-ID")
+                  : "30 Hari Kedepan"}
+              </strong>
             </p>
+          </div>
+          <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+            <CheckCircle2 size={13} /> Terverifikasi Sistem KKN
           </div>
         </div>
 
-        {/* contribution points */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        {/* Card 3 */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">POIN KONTRIBUSI</span>
-            <Award className="text-yellow-600 w-5 h-5" />
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
+              Poin Kontribusi
+            </span>
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <Award className="w-5 h-5" />
+            </div>
           </div>
-          <div>
-            <h3 className="text-2xl font-black text-yellow-600">
-              +{kStats?.contributionPoints} Pts
+          <div className="my-3">
+            <h3 className="text-2xl sm:text-3xl font-black text-amber-600 font-mono">
+              +{(kStats?.contributionPoints || 0).toLocaleString("id-ID")}{" "}
+              <span className="text-base font-bold text-amber-500">Pts</span>
             </h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">
-              Diperoleh dari aktivitas lapangan
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              Akumulasi setoran &amp; aktivasi valid
             </p>
+          </div>
+          <div className="text-[10px] text-slate-400 font-semibold">
+            Tercatat di Ledger Gamifikasi
           </div>
         </div>
 
-        {/* assigned area summary */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        {/* Card 4 */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">WILAYAH TUGAS</span>
-            <MapPin className="text-emerald-600 w-5 h-5" />
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
+              Wilayah Tugas
+            </span>
+            <div className="p-2 rounded-xl bg-teal-50 text-teal-600">
+              <MapPin className="w-5 h-5" />
+            </div>
           </div>
-          <div>
-            <h4 className="font-bold text-sm text-on-surface">{studentKkn?.assignedArea}</h4>
-            <p className="text-[10px] text-on-surface-variant mt-1">
-              Status: Aktif Mendampingi Warga
+          <div className="my-3">
+            <h4 className="font-extrabold text-base text-slate-800 leading-tight">
+              {studentKkn?.assignedArea || "Kecamatan Coblong"}
+            </h4>
+            <p className="text-[11px] text-slate-500 font-medium mt-1">
+              {isSuperOrAdmin ? "Cakupan: 6 Kelurahan (60+ RW)" : "Status: Aktif Mendampingi Warga"}
             </p>
           </div>
+          <div className="text-[10px] text-teal-700 font-bold flex items-center gap-1">
+            <Activity size={13} /> Monitoring Aktif Real-time
+          </div>
         </div>
       </div>
 
-      {/* Monitoring & Analitik Pendampingan (Line & Bar Charts) */}
-      <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-6">
-        <div>
-          <h3 className="font-extrabold text-lg flex items-center gap-2">
-            <Compass className="text-primary w-5 h-5" />
-            Grafik Analitik Pendampingan KKN
-          </h3>
-          <p className="text-xs text-on-surface-variant">
-            Visualisasi tren pendaftaran warga dampingan dan skor kepatuhan daur ulang
-          </p>
+      {/* ---------------- 3. ANALITIK & GRAFIK PENDAMPINGAN ---------------- */}
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="font-extrabold text-lg sm:text-xl text-slate-900 flex items-center gap-2">
+              <BarChart3 className="text-emerald-600 w-5 h-5" />
+              Grafik Analitik Pendampingan KKN
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Visualisasi tren pendaftaran warga dampingan dan skor kepatuhan pemilahan sampah
+            </p>
+          </div>
+          <span className="text-[11px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200">
+            Sumber Data: Real Database
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {/* Chart 1: Registration Trend */}
-          <div className="space-y-2">
-            <h4 className="font-bold text-sm text-slate-700 text-center">Tren Registrasi Warga (7 Tanggal Terakhir)</h4>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={registrationTrendData}>
-                  <defs>
-                    <linearGradient id="colorWarga" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="tanggal" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="warga" name="Jumlah Warga" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorWarga)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Chart 2: Compliance Score per citizen */}
-          <div className="space-y-2">
-            <h4 className="font-bold text-sm text-slate-700 text-center">Skor Kepatuhan per Warga Dampingan (Top 10)</h4>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={complianceData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="nama" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <Tooltip />
-                  <Bar dataKey="skor" name="Skor Kepatuhan" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: List + Peta & Checklist */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Citizens list */}
-        <div className="col-span-8 bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="font-extrabold text-lg text-slate-900">Daftar Warga Dampingan</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Total {wargaList.length} warga terdaftar dalam pemantauan KKN</p>
-            </div>
-
-            {/* Interactive Filters Bar */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari nama / kode..."
-                  value={filterSearch}
-                  onChange={(e) => { setFilterSearch(e.target.value); setWargaPage(1); }}
-                  className="bg-slate-50 border border-slate-200 pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-44 transition-all"
-                />
-              </div>
-
-              <select
-                value={filterRtRw}
-                onChange={(e) => { setFilterRtRw(e.target.value); setWargaPage(1); }}
-                className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium text-slate-700"
-              >
-                <option value="">Semua RT/RW</option>
-                {rtRwAreas.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.rw || loc.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filterCompliance}
-                onChange={(e) => { setFilterCompliance(e.target.value); setWargaPage(1); }}
-                className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium text-slate-700"
-              >
-                <option value="ALL">Semua Skor</option>
-                <option value="HIGH">Tinggi (&ge;80 pts)</option>
-                <option value="LOW">Rendah (&lt;80 pts)</option>
-              </select>
-
-              <button
-                onClick={handleFilterSubmit}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center"
-                title="Terapkan Filter"
-              >
-                <Search className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Table Area */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-100 pb-3">
-                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Nama & Alamat</th>
-                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">ID Tempat Sampah</th>
-                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Terdaftar</th>
-                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Status</th>
-                  <th className="pb-3 font-extrabold uppercase text-[10px] tracking-wider">Skor Kepatuhan</th>
-                  <th className="pb-3 text-right font-extrabold uppercase text-[10px] tracking-wider">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {(() => {
-                  let filtered = wargaList.filter((w) => {
-                    if (filterCompliance === "HIGH" && w.complianceScore < 80) return false;
-                    if (filterCompliance === "LOW" && w.complianceScore >= 80) return false;
-                    return true;
-                  });
-
-                  const startIndex = (wargaPage - 1) * wargaRowsPerPage;
-                  const paginated = filtered.slice(startIndex, startIndex + wargaRowsPerPage);
-
-                  if (paginated.length === 0) {
-                    return (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-slate-400 font-medium italic">
-                          Tidak ada data warga dampingan yang sesuai dengan filter.
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  return paginated.map((w) => {
-                    const formattedDate = w.registeredAt && !isNaN(new Date(w.registeredAt).getTime())
-                      ? new Date(w.registeredAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
-                      : "Baru Terdaftar";
-
-                    return (
-                      <tr key={w.wargaId} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3">
-                          <div className="font-bold text-slate-800">{w.name}</div>
-                          <div className="text-[10px] text-slate-500 mt-0.5">
-                            {w.rtRw} • {w.address}
-                          </div>
-                        </td>
-                        <td className="py-3 font-mono font-bold text-emerald-600">{w.binCode || "TS-AUTO"}</td>
-                        <td className="py-3 text-slate-500 font-medium">{formattedDate}</td>
-                        <td className="py-3">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Aktif
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${w.complianceScore >= 80 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
-                            {w.complianceScore} pts
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          <button
-                            onClick={() => handleWargaClick(w.wargaId)}
-                            className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] cursor-pointer shadow-2xs"
-                          >
-                            Detail
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          {(() => {
-            let filtered = wargaList.filter((w) => {
-              if (filterCompliance === "HIGH" && w.complianceScore < 80) return false;
-              if (filterCompliance === "LOW" && w.complianceScore >= 80) return false;
-              return true;
-            });
-            const totalPages = Math.ceil(filtered.length / wargaRowsPerPage) || 1;
-
-            return (
-              <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs">
-                <span className="text-slate-500 font-medium">
-                  Menampilkan <strong className="text-slate-800">{Math.min(filtered.length, (wargaPage - 1) * wargaRowsPerPage + 1)}</strong> - <strong className="text-slate-800">{Math.min(filtered.length, wargaPage * wargaRowsPerPage)}</strong> dari <strong className="text-slate-800">{filtered.length}</strong> Warga
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    disabled={wargaPage === 1}
-                    onClick={() => setWargaPage((p) => Math.max(1, p - 1))}
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-
-                  <span className="px-3 py-1 bg-slate-100 text-slate-800 font-bold rounded-lg text-xs">
-                    {wargaPage} / {totalPages}
-                  </span>
-
-                  <button
-                    disabled={wargaPage >= totalPages}
-                    onClick={() => setWargaPage((p) => Math.min(totalPages, p + 1))}
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Side Panel: Map & Checklist */}
-        <div className="col-span-4 space-y-6">
-          <LeaderboardWidget />
-          
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h4 className="font-extrabold text-sm flex items-center gap-1.5 text-on-surface">
-              <MapPin className="text-primary w-4.5 h-4.5" />
-              Peta Sebaran Dampingan
+          <div className="space-y-3">
+            <h4 className="font-bold text-xs sm:text-sm text-slate-700 flex items-center gap-2">
+              <TrendingUp size={16} className="text-emerald-600" /> Tren Registrasi Warga (7 Tanggal Terakhir)
             </h4>
-            <div className="w-full relative bg-slate-100 rounded-xl overflow-hidden border border-slate-200/80 shadow-inner p-1">
-              {/* Layer / Filter Control in Top-Right */}
-              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs p-2 rounded-lg border border-slate-200 shadow-xs z-10 flex flex-col gap-1.5 text-[9px] font-bold text-slate-700">
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showRoads}
-                    onChange={(e) => setShowRoads(e.target.checked)}
-                    className="rounded text-primary focus:ring-primary w-3 h-3"
-                  />
-                  Tampilkan Jalan
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showLabels}
-                    onChange={(e) => setShowLabels(e.target.checked)}
-                    className="rounded text-primary focus:ring-primary w-3 h-3"
-                  />
-                  Tampilkan Label
-                </label>
-              </div>
-
-              {/* Vector SVG Map Layer */}
-              <svg viewBox="0 0 400 300" className="w-full h-auto bg-slate-50 rounded-lg">
-                {/* Gridlines for texture */}
-                <defs>
-                  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f1f5f9" strokeWidth="1" />
-                  </pattern>
-                </defs>
-                <rect width="400" height="300" fill="url(#grid)" />
-
-                {/* Polygons (Zones) */}
-                {(() => {
-                  const scoreA = getZoneCompliance("RW 06");
-                  const scoreB = getZoneCompliance("RW 02");
-                  const scoreC = getZoneCompliance("RW 01");
-                  const scoreD = getZoneCompliance("RW 03");
-
-                  const colorA = getZoneColor(scoreA);
-                  const colorB = getZoneColor(scoreB);
-                  const colorC = getZoneColor(scoreC);
-                  const colorD = getZoneColor(scoreD);
-
-                  return (
-                    <>
-                      {/* Zone A (RW 06 Dago) */}
-                      <polygon
-                        points="15,15 155,15 125,145 15,145"
-                        fill={colorA.fill}
-                        stroke={hoveredZone === "RW 06" ? "#047857" : colorA.stroke}
-                        strokeWidth={hoveredZone === "RW 06" ? "3" : "1.5"}
-                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
-                        onMouseEnter={() => setHoveredZone("RW 06")}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleZoneClick("RW 06")}
-                      />
-
-                      {/* Zone B (RW 02 Cigadung) */}
-                      <polygon
-                        points="155,15 285,15 255,145 125,145"
-                        fill={colorB.fill}
-                        stroke={hoveredZone === "RW 02" ? "#a16207" : colorB.stroke}
-                        strokeWidth={hoveredZone === "RW 02" ? "3" : "1.5"}
-                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
-                        onMouseEnter={() => setHoveredZone("RW 02")}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleZoneClick("RW 02")}
-                      />
-
-                      {/* Zone C (RW 01 Coblong) */}
-                      <polygon
-                        points="125,145 255,145 225,285 95,285"
-                        fill={colorC.fill}
-                        stroke={hoveredZone === "RW 01" ? "#b91c1c" : colorC.stroke}
-                        strokeWidth={hoveredZone === "RW 01" ? "3" : "1.5"}
-                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
-                        onMouseEnter={() => setHoveredZone("RW 01")}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleZoneClick("RW 01")}
-                      />
-
-                      {/* Zone D (RW 03 Dago) */}
-                      <polygon
-                        points="15,145 125,145 95,285 15,285"
-                        fill={colorD.fill}
-                        stroke={hoveredZone === "RW 03" ? "#047857" : colorD.stroke}
-                        strokeWidth={hoveredZone === "RW 03" ? "3" : "1.5"}
-                        className="transition-all cursor-pointer opacity-90 hover:opacity-100"
-                        onMouseEnter={() => setHoveredZone("RW 03")}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleZoneClick("RW 03")}
-                      />
-
-                      {/* Roads Overlay (If enabled) */}
-                      {showRoads && (
-                        <>
-                          <path
-                            d="M 10,95 Q 200,85 390,100"
-                            stroke="#cbd5e1"
-                            strokeWidth="14"
-                            fill="none"
-                            strokeLinecap="round"
-                            opacity="0.8"
-                          />
-                          <path
-                            d="M 185,10 Q 175,150 155,290"
-                            stroke="#cbd5e1"
-                            strokeWidth="14"
-                            fill="none"
-                            strokeLinecap="round"
-                            opacity="0.8"
-                          />
-
-                          {/* Inner dashed line to look like a real road */}
-                          <path
-                            d="M 10,95 Q 200,85 390,100"
-                            stroke="#ffffff"
-                            strokeWidth="1.5"
-                            strokeDasharray="4,4"
-                            fill="none"
-                            opacity="0.9"
-                          />
-                          <path
-                            d="M 185,10 Q 175,150 155,290"
-                            stroke="#ffffff"
-                            strokeWidth="1.5"
-                            strokeDasharray="4,4"
-                            fill="none"
-                            opacity="0.9"
-                          />
-
-                          {/* Road Names */}
-                          <text
-                            x="50"
-                            y="107"
-                            fill="#64748b"
-                            fontSize="7"
-                            fontWeight="bold"
-                            transform="rotate(2, 50, 107)"
-                          >
-                            Jl. Dago Giri
-                          </text>
-                          <text
-                            x="142"
-                            y="200"
-                            fill="#64748b"
-                            fontSize="7"
-                            fontWeight="bold"
-                            transform="rotate(-77, 142, 200)"
-                          >
-                            Jl. Coblong Raya
-                          </text>
-                        </>
-                      )}
-
-                      {/* Labels (If enabled) */}
-                      {showLabels && (
-                        <>
-                          {/* Area A */}
-                          <g transform="translate(80, 70)" className="pointer-events-none">
-                            <text
-                              textAnchor="middle"
-                              fill={colorA.text}
-                              fontSize="9"
-                              fontWeight="bold"
-                            >
-                              RW 06 Dago
-                            </text>
-                            <text
-                              textAnchor="middle"
-                              y="11"
-                              fill={colorA.text}
-                              fontSize="8"
-                              fontWeight="bold"
-                            >
-                              {scoreA}%
-                            </text>
-                          </g>
-
-                          {/* Area B */}
-                          <g transform="translate(200, 70)" className="pointer-events-none">
-                            <text
-                              textAnchor="middle"
-                              fill={colorB.text}
-                              fontSize="9"
-                              fontWeight="bold"
-                            >
-                              RW 02 Cigadung
-                            </text>
-                            <text
-                              textAnchor="middle"
-                              y="11"
-                              fill={colorB.text}
-                              fontSize="8"
-                              fontWeight="bold"
-                            >
-                              {scoreB}%
-                            </text>
-                          </g>
-
-                          {/* Area C */}
-                          <g transform="translate(170, 205)" className="pointer-events-none">
-                            <text
-                              textAnchor="middle"
-                              fill={colorC.text}
-                              fontSize="9"
-                              fontWeight="bold"
-                            >
-                              RW 01 Coblong
-                            </text>
-                            <text
-                              textAnchor="middle"
-                              y="11"
-                              fill={colorC.text}
-                              fontSize="8"
-                              fontWeight="bold"
-                            >
-                              {scoreC}%
-                            </text>
-                          </g>
-
-                          {/* Area D */}
-                          <g transform="translate(60, 205)" className="pointer-events-none">
-                            <text
-                              textAnchor="middle"
-                              fill={colorD.text}
-                              fontSize="9"
-                              fontWeight="bold"
-                            >
-                              RW 03 Dago
-                            </text>
-                            <text
-                              textAnchor="middle"
-                              y="11"
-                              fill={colorD.text}
-                              fontSize="8"
-                              fontWeight="bold"
-                            >
-                              {scoreD}%
-                            </text>
-                          </g>
-                        </>
-                      )}
-                    </>
-                  );
-                })()}
-              </svg>
-
-              {/* Legend Box in Bottom-Right */}
-              <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-xs p-2 rounded-lg border border-slate-200/80 text-[8px] flex flex-col gap-1 shadow-xs font-bold text-slate-600">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block border border-emerald-600/30"></span>{" "}
-                  Tinggi (&ge; 80%)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block border border-yellow-500/30"></span>{" "}
-                  Sedang (60-79%)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block border border-rose-600/30"></span>{" "}
-                  Rendah (&lt; 60%)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Checklist Warga Belum Registrasi */}
-          <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h4 className="font-extrabold text-sm flex items-center gap-1.5">
-              <FileText className="text-indigo-600 w-4.5 h-4.5" />
-              Checklist Target Lapangan
-            </h4>
-            <div
-              className="space-y-2 max-h-[220px] overflow-y-auto pr-1"
-              style={{ scrollbarWidth: "thin" }}
-            >
-              {unregisteredHouses.map((h) => (
-                <div
-                  key={h.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+            <div className="h-64 w-full bg-slate-50/50 p-2 rounded-2xl border border-slate-100 flex items-center justify-center">
+              {registrationTrendData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={registrationTrendData}>
+                    <defs>
+                      <linearGradient id="colorWargaKkn" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="tanggal" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: "12px",
+                      }}
                     />
-                    <span className="text-xs font-semibold text-slate-700">{h.address}</span>
-                  </div>
-                  <span className="text-[9px] bg-amber-50 text-amber-700 border border-amber-200/80 px-1.5 py-0.5 rounded font-bold">
-                    Target
-                  </span>
+                    <Area
+                      type="monotone"
+                      dataKey="warga"
+                      name="Jumlah Warga"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#colorWargaKkn)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center p-4 text-slate-400 text-xs">
+                  <BarChart3 className="w-8 h-8 text-slate-300 mb-2" />
+                  <p className="font-bold text-slate-600">Belum Ada Data Registrasi</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Grafik tren akan terisi otomatis seiring bertambahnya warga dampingan.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* Riwayat Aktivitas Mahasiswa */}
-          <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h4 className="font-extrabold text-sm flex items-center gap-1.5">
-              <Calendar className="text-primary w-4.5 h-4.5" />
-              Riwayat Aktivitas KKN
+          {/* Chart 2: Compliance Score */}
+          <div className="space-y-3">
+            <h4 className="font-bold text-xs sm:text-sm text-slate-700 flex items-center gap-2">
+              <Sparkles size={16} className="text-sky-600" /> Skor Kepatuhan per Warga Dampingan (Top 10)
             </h4>
-            <div
-              className="space-y-3 max-h-[220px] overflow-y-auto pr-1"
-              style={{ scrollbarWidth: "thin" }}
-            >
-              {activityLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs space-y-1"
-                >
-                  <div className="font-semibold text-slate-700">
-                    {log.action === "ACTIVATE_BIN" ? "Aktivasi Bins" : log.action}
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    {new Date(log.timestamp).toLocaleString("id-ID")}
-                  </div>
+            <div className="h-64 w-full bg-slate-50/50 p-2 rounded-2xl border border-slate-100 flex items-center justify-center">
+              {complianceData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={complianceData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="nama" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar dataKey="skor" name="Skor Kepatuhan" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center p-4 text-slate-400 text-xs">
+                  <Sparkles className="w-8 h-8 text-slate-300 mb-2" />
+                  <p className="font-bold text-slate-600">Belum Ada Data Kepatuhan</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Skor kepatuhan akan muncul setelah ada evaluasi setoran pemilahan sampah.</p>
                 </div>
-              ))}
-              {activityLogs.length === 0 && (
-                <p className="text-[11px] text-slate-500 text-center py-4">
-                  Belum ada riwayat aktivitas.
-                </p>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Aksi Mahasiswa KKN Forms */}
-      <div className="grid grid-cols-1 gap-6 mt-8">
-        <h2 className="text-xl font-bold border-b pb-2">Aksi Mahasiswa KKN</h2>
-        {kStats && kStats.remainingQuota <= 0 ? (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center space-y-3">
-            <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-[28px]">notifications_active</span>
-            </div>
-            <h3 className="font-extrabold text-base text-amber-800">Target Registrasi Tercapai!</h3>
-            <p className="text-xs text-amber-700 max-w-lg mx-auto">
-              Progres pendaftaran warga Anda telah mencapai 100% dari threshold yang ditentukan.
-              Fitur pendaftaran warga baru dinonaktifkan. Silakan fokus melakukan pendampingan, edukasi, 
-              serta pemantauan terhadap warga dampingan Anda.
-            </p>
-            <div className="pt-2">
-              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                Mode Pengingat & Notifikasi Aktif
+      {/* ---------------- 4. DAFTAR WARGA DAMPINGAN (PAGINATED) ---------------- */}
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-extrabold text-lg sm:text-xl text-slate-900">
+                Daftar Warga Dampingan
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200">
+                {filteredWargaList.length} Warga
               </span>
             </div>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Total {wargaList.length} warga terdaftar dalam pemantauan KKN Kecamatan Coblong
+            </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <KknQrClaim onClaimSuccess={fetchInitialData} />
-              <WargaRegistrationWizard 
-                onSuccess={() => {
-                  fetchInitialData();
-                  toast.success("Silahkan kembali ke menu utama.");
-                }} 
-                onCancel={() => {
-                  toast("Registrasi dibatalkan.", { icon: "ℹ️" });
-                }} 
+
+          {/* Interactive Filter Bar */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari nama, alamat, bin..."
+                value={filterSearch}
+                onChange={(e) => {
+                  setFilterSearch(e.target.value);
+                  setWargaPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 pl-9 pr-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-52 transition-all font-medium"
               />
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-              <h3 className="font-extrabold text-lg text-slate-800">Bantuan Fasilitas</h3>
-              <p className="text-xs text-slate-500 mt-2">Daftarkan RT/RW untuk fasilitas daur ulang / Bank Sampah</p>
-              <BantuFasilitasForm onSuccess={fetchInitialData} />
-              
-              <div className="w-full border-t border-slate-100 my-6"></div>
-              
-              <h3 className="font-extrabold text-lg text-slate-800">Daftar Petugas</h3>
-              <p className="text-xs text-slate-500 mt-2">Daftarkan Petugas Residu untuk operasional penjemputan</p>
-              <BantuPetugasForm onSuccess={fetchInitialData} />
 
-              <div className="w-full border-t border-slate-100 my-6"></div>
-              <HandoverForm onSuccess={fetchInitialData} />
-            </div>
+            {/* RT/RW Filter */}
+            <select
+              value={filterRtRw}
+              onChange={(e) => {
+                setFilterRtRw(e.target.value);
+                setWargaPage(1);
+              }}
+              className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-bold text-slate-700"
+            >
+              <option value="">Semua RT/RW</option>
+              {rtRwAreas.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.rw || loc.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Compliance Filter */}
+            <select
+              value={filterCompliance}
+              onChange={(e) => {
+                setFilterCompliance(e.target.value);
+                setWargaPage(1);
+              }}
+              className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-bold text-slate-700"
+            >
+              <option value="ALL">Semua Skor</option>
+              <option value="HIGH">Tinggi (≥ 80 pts)</option>
+              <option value="LOW">Rendah (&lt; 80 pts)</option>
+            </select>
+
+            {/* Rows Per Page */}
+            <select
+              value={wargaRowsPerPage}
+              onChange={(e) => {
+                setWargaRowsPerPage(Number(e.target.value));
+                setWargaPage(1);
+              }}
+              className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-bold text-slate-700"
+              title="Baris per halaman"
+            >
+              <option value={5}>5 baris</option>
+              <option value={10}>10 baris</option>
+              <option value={20}>20 baris</option>
+              <option value={50}>50 baris</option>
+            </select>
+
+            <button
+              onClick={handleFilterSubmit}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5 text-xs font-bold"
+              title="Terapkan Filter"
+            >
+              <Filter size={14} /> Filter
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Warga Table */}
+        <div className="overflow-x-auto rounded-2xl border border-slate-100">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[11px] font-extrabold tracking-wider">
+                <th className="p-3.5">Nama &amp; Alamat</th>
+                <th className="p-3.5">ID Tempat Sampah</th>
+                <th className="p-3.5">Terdaftar</th>
+                <th className="p-3.5">Status</th>
+                <th className="p-3.5">Skor Kepatuhan</th>
+                <th className="p-3.5 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedWarga.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-slate-400 font-medium italic">
+                    Tidak ada data warga dampingan yang sesuai dengan filter.
+                  </td>
+                </tr>
+              ) : (
+                paginatedWarga.map((w) => {
+                  const formattedDate =
+                    w.registeredAt && !isNaN(new Date(w.registeredAt).getTime())
+                      ? new Date(w.registeredAt).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "Baru Terdaftar";
+
+                  const score = Number(w.complianceScore) || 0;
+
+                  return (
+                    <tr key={w.wargaId || w.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3.5">
+                        <div className="font-extrabold text-slate-900">{w.name || w.wargaName}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {w.rtRw || w.rw ? `${w.rtRw || w.rw} • ` : ""}
+                          {w.address || "Coblong, Bandung"}
+                        </div>
+                      </td>
+                      <td className="p-3.5">
+                        <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/80 text-[11px]">
+                          {w.binCode || w.binId || "TS-AUTO"}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-slate-600 font-medium">{formattedDate}</td>
+                      <td className="p-3.5">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Aktif
+                        </span>
+                      </td>
+                      <td className="p-3.5">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                            score >= 80
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : score > 0
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {score} pts
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <button
+                          onClick={() => handleWargaClick(w.wargaId || w.id)}
+                          className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] cursor-pointer shadow-2xs inline-flex items-center gap-1"
+                        >
+                          <Eye size={13} /> Detail
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Robust Pagination Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs">
+          <span className="text-slate-500 font-medium">
+            Menampilkan{" "}
+            <strong className="text-slate-900">
+              {filteredWargaList.length === 0 ? 0 : (wargaPage - 1) * wargaRowsPerPage + 1}
+            </strong>{" "}
+            -{" "}
+            <strong className="text-slate-900">
+              {Math.min(filteredWargaList.length, wargaPage * wargaRowsPerPage)}
+            </strong>{" "}
+            dari <strong className="text-slate-900">{filteredWargaList.length}</strong> Warga
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            {/* First Page */}
+            <button
+              disabled={wargaPage === 1}
+              onClick={() => setWargaPage(1)}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+              title="Halaman Pertama"
+            >
+              <ChevronsLeft size={16} />
+            </button>
+
+            {/* Prev Page */}
+            <button
+              disabled={wargaPage === 1}
+              onClick={() => setWargaPage((p) => Math.max(1, p - 1))}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+              title="Halaman Sebelumnya"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {/* Page Number Buttons */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum = i + 1;
+              if (totalPages > 5) {
+                if (wargaPage > 3) {
+                  pageNum = wargaPage - 3 + i;
+                  if (pageNum > totalPages) pageNum = totalPages - (4 - i);
+                }
+              }
+              return (
+                <button
+                  key={`page-${pageNum}`}
+                  onClick={() => setWargaPage(pageNum)}
+                  className={`w-8 h-8 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                    wargaPage === pageNum
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {/* Next Page */}
+            <button
+              disabled={wargaPage >= totalPages}
+              onClick={() => setWargaPage((p) => Math.min(totalPages, p + 1))}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+              title="Halaman Berikutnya"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            {/* Last Page */}
+            <button
+              disabled={wargaPage >= totalPages}
+              onClick={() => setWargaPage(totalPages)}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+              title="Halaman Terakhir"
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* DETAIL WARGA DRAWER */}
+      {/* ---------------- 5. PETA SEBARAN DAMPINGAN (LEAFLET GIS ASLI) ---------------- */}
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="font-extrabold text-lg sm:text-xl text-slate-900 flex items-center gap-2">
+              <MapPin className="text-emerald-600 w-5 h-5" />
+              Peta Sebaran Dampingan (Leaflet GIS Real-time)
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Pemetaan interaktif poligon 6 kelurahan dan sebaran titik tempat sampah warga di Kecamatan Coblong
+            </p>
+          </div>
+
+          {/* Map Layer Controls & Quick Focus */}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showPolygons}
+                onChange={(e) => setShowPolygons(e.target.checked)}
+                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+              />
+              <Layers size={14} className="text-slate-500" />
+              Poligon Wilayah
+            </label>
+
+            <label className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showWargaPins}
+                onChange={(e) => setShowWargaPins(e.target.checked)}
+                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+              />
+              <Trash2 size={14} className="text-slate-500" />
+              Titik Warga / Bins ({wargaWithLocation.length})
+            </label>
+
+            {selectedKelurahan !== "ALL" && (
+              <button
+                onClick={handleResetMapFocus}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              >
+                Reset Fokus Peta
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Leaflet Interactive Map Container */}
+        <div className="w-full h-[450px] sm:h-[500px] rounded-2xl overflow-hidden border border-slate-200 relative shadow-inner">
+          <MapContainer
+            center={mapCenter}
+            zoom={mapZoom}
+            scrollWheelZoom={true}
+            className="w-full h-full z-0"
+          >
+            <MapFlyToController center={mapCenter} zoom={mapZoom} />
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            {/* 1. KELURAHAN BOUNDARY POLYGONS */}
+            {showPolygons &&
+              Object.entries(KELURAHAN_GEODATA).map(([key, kel]) => {
+                const score = getKelurahanComplianceScore(kel.name);
+                const colors = getComplianceColor(score);
+                const isSelected = selectedKelurahan === key;
+
+                return (
+                  <Polygon
+                    key={`kkn-poly-${key}`}
+                    positions={kel.bounds}
+                    pathOptions={{
+                      color: isSelected ? "#0f172a" : colors.stroke,
+                      fillColor: colors.fill,
+                      fillOpacity: isSelected ? 0.35 : colors.fillOpacity,
+                      weight: isSelected ? 3.5 : 2,
+                      dashArray: score === null ? "4, 4" : undefined,
+                    }}
+                    eventHandlers={{
+                      click: () => handleSelectKelurahanOnMap(key, kel.centroid),
+                    }}
+                  />
+                );
+              })}
+
+            {/* 2. KELURAHAN PIN MARKERS */}
+            {Object.entries(KELURAHAN_GEODATA).map(([key, kel]) => {
+              const score = getKelurahanComplianceScore(kel.name);
+              return (
+                <Marker
+                  key={`kkn-pin-${key}`}
+                  position={kel.centroid}
+                  icon={createKelurahanPinIcon(kel.name, kel.rwCount)}
+                  eventHandlers={{
+                    click: () => handleSelectKelurahanOnMap(key, kel.centroid),
+                  }}
+                >
+                  <Popup>
+                    <div className="p-2 font-sans text-xs space-y-1.5 min-w-[170px]">
+                      <h4 className="font-extrabold text-sm text-slate-900">
+                        Kelurahan {kel.name}
+                      </h4>
+                      <p className="text-slate-500 font-medium">
+                        Total: <strong>{kel.rwCount} RW</strong>
+                      </p>
+                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                        <span className="text-slate-500">Kepatuhan:</span>
+                        {score !== null ? (
+                          <strong className="text-emerald-700 font-bold">{score}% Patuh</strong>
+                        ) : (
+                          <span className="text-slate-400 italic text-[10px]">Belum ada data warga</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setFilterSearch(kel.name);
+                          setWargaPage(1);
+                        }}
+                        className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] py-1.5 px-2 rounded-lg transition text-center cursor-pointer"
+                      >
+                        Saring Warga Kelurahan Ini →
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {/* 3. WARGA / BIN LOCATION MARKERS (Only with real valid coordinates) */}
+            {showWargaPins &&
+              wargaWithLocation.map((w, idx) => {
+                const lat = Number(w.latitude || w.lat);
+                const lng = Number(w.longitude || w.lng);
+                const score = Number(w.complianceScore) || 0;
+
+                return (
+                  <Marker
+                    key={`warga-pin-${w.id || idx}`}
+                    position={[lat, lng]}
+                    icon={createWargaMarkerIcon(score)}
+                  >
+                    <Popup>
+                      <div className="p-2 font-sans text-xs space-y-1.5 min-w-[190px]">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            {w.binCode || "TS-AUTO"}
+                          </span>
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                              score >= 80
+                                ? "bg-emerald-100 text-emerald-800"
+                                : score > 0
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {score} pts
+                          </span>
+                        </div>
+                        <h5 className="font-extrabold text-sm text-slate-900">
+                          {w.name || w.wargaName}
+                        </h5>
+                        <p className="text-slate-500 text-[11px] leading-tight">
+                          {w.rtRw || w.rw ? `${w.rtRw || w.rw}, ` : ""}
+                          {w.address}
+                        </p>
+                        <button
+                          onClick={() => handleWargaClick(w.wargaId || w.id)}
+                          className="w-full mt-2 bg-slate-900 hover:bg-emerald-600 text-white font-bold text-[10px] py-1.5 px-2 rounded-lg transition cursor-pointer"
+                        >
+                          Lihat Detail Warga
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+          </MapContainer>
+
+          {/* Map Legend Overlay */}
+          <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-xs p-3 rounded-2xl border border-slate-200/90 shadow-md z-[1000] text-[10px] flex flex-col gap-1.5 font-bold text-slate-700">
+            <span className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold pb-0.5 border-b border-slate-100">
+              Legenda Kepatuhan
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block border border-emerald-600"></span>{" "}
+              Tinggi (≥ 80%)
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-amber-400 inline-block border border-amber-500"></span>{" "}
+              Sedang (60-79%)
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-rose-500 inline-block border border-rose-600"></span>{" "}
+              Rendah (&lt; 60%)
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-slate-300 inline-block border border-slate-400"></span>{" "}
+              Belum Ada Data / 0
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------------- 6. BOTTOM SECTION: LEADERBOARD & GRAFIK WILAYAH / AKADEMIK ---------------- */}
+      <div className="w-full pt-4">
+        <div className="border-t border-slate-200/80 pt-8 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Peringkat &amp; Evaluasi Wilayah / Akademik KKN
+            </h2>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">
+            Grafik kepatuhan &amp; volume sampah per kelurahan serta leaderboard Top 10 untuk warga, petugas, RW, kelurahan, dan mahasiswa KKN.
+          </p>
+        </div>
+
+        {/* Full-width Leaderboard & Chart Widget */}
+        <LeaderboardWidget />
+      </div>
+
+      {/* ---------------- 7. DETAIL WARGA DRAWER ---------------- */}
       {selectedWarga && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex justify-end z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex justify-end z-[9999] animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md h-full shadow-2xl p-6 flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right duration-250">
             <div
               className="space-y-6 overflow-y-auto flex-1 pr-1"
               style={{ scrollbarWidth: "thin" }}
             >
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                <h3 className="font-extrabold text-lg text-on-surface flex items-center gap-2">
-                  <Users className="text-primary w-5 h-5" /> Detail Warga Dampingan
+                <h3 className="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                  <Users className="text-emerald-600 w-5 h-5" /> Detail Warga Dampingan
                 </h3>
                 <button
                   onClick={() => setSelectedWarga(null)}
@@ -944,44 +1064,45 @@ const KknDashboard: React.FC = () => {
                 </button>
               </div>
 
-              {/* Warga profile detail */}
+              {/* Profile Details */}
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">
+                  <h4 className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
                     Nama Warga
                   </h4>
-                  <p className="font-extrabold text-slate-800 text-sm mt-0.5">
-                    {selectedWarga.name}
+                  <p className="font-black text-slate-900 text-base mt-0.5">
+                    {selectedWarga.name || selectedWarga.wargaName}
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">
-                    Kontak & Alamat
+                  <h4 className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
+                    Kontak &amp; Alamat
                   </h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    {selectedWarga.phone} • {selectedWarga.email}
+                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                    {selectedWarga.phone || "-"} • {selectedWarga.email || "-"}
                   </p>
-                  <p className="text-xs text-slate-700 mt-1">
-                    {selectedWarga.rtRw} • {selectedWarga.address}
+                  <p className="text-xs text-slate-600 font-medium mt-1">
+                    {selectedWarga.rtRw || selectedWarga.rw} • {selectedWarga.address}
                   </p>
                 </div>
+
                 {selectedWarga.bin && (
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                    <h4 className="text-xs text-slate-800 font-bold flex items-center gap-1.5">
-                      <Trash2 className="w-4 h-4 text-primary" />
-                      ID Bin:{" "}
-                      <span className="font-mono text-primary font-bold">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+                    <h4 className="text-xs text-slate-800 font-extrabold flex items-center gap-1.5">
+                      <Trash2 className="w-4 h-4 text-emerald-600" />
+                      ID Tempat Sampah:{" "}
+                      <span className="font-mono text-emerald-700 font-black">
                         {selectedWarga.bin.qrCode}
                       </span>
                     </h4>
                     <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600">
                       <div>
                         <p className="text-[10px] text-slate-400 uppercase font-bold">Kategori</p>
-                        <p className="font-bold text-slate-700">{selectedWarga.bin.category}</p>
+                        <p className="font-bold text-slate-800">{selectedWarga.bin.category}</p>
                       </div>
                       <div>
                         <p className="text-[10px] text-slate-400 uppercase font-bold">Kapasitas</p>
-                        <p className="font-bold text-slate-700">{selectedWarga.bin.capacity}</p>
+                        <p className="font-bold text-slate-800">{selectedWarga.bin.capacity}</p>
                       </div>
                     </div>
                   </div>
@@ -990,7 +1111,7 @@ const KknDashboard: React.FC = () => {
 
               {/* Deposit History */}
               <div className="space-y-3">
-                <h4 className="font-extrabold text-sm border-b border-slate-100 pb-2">
+                <h4 className="font-extrabold text-sm border-b border-slate-100 pb-2 text-slate-800">
                   Riwayat Setoran Sampah
                 </h4>
                 <div className="space-y-2">
@@ -998,22 +1119,22 @@ const KknDashboard: React.FC = () => {
                     selectedWarga.recentLogs.map((log: any) => (
                       <div
                         key={log.id}
-                        className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs"
+                        className="flex justify-between items-center p-3 rounded-2xl border border-slate-100 bg-slate-50/50 text-xs"
                       >
                         <div>
-                          <p className="font-bold text-slate-700">{log.category}</p>
+                          <p className="font-bold text-slate-800">{log.category}</p>
                           <p className="text-[10px] text-slate-400 mt-0.5">
                             {new Date(log.createdAt).toLocaleString("id-ID")}
                           </p>
                         </div>
-                        <span className="font-bold text-primary">
-                          {log.weightKg} kg ({log.volumeLiter}L)
+                        <span className="font-extrabold text-emerald-600 font-mono">
+                          {log.weightKg} kg
                         </span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-slate-500 text-center py-4">
-                      Belum ada riwayat setoran.
+                    <p className="text-xs text-slate-400 text-center py-4 italic">
+                      Belum ada riwayat setoran sampah.
                     </p>
                   )}
                 </div>
@@ -1026,10 +1147,10 @@ const KknDashboard: React.FC = () => {
                 href={`https://wa.me/${selectedWarga.phone?.replace(/[^0-9]/g, "")}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-green-600/20 hover:scale-[1.01] transition-all cursor-pointer text-xs"
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 hover:scale-[1.01] transition-all cursor-pointer text-xs"
               >
                 <PhoneCall className="w-4 h-4" />
-                Hubungi via WhatsApp
+                Hubungi Warga via WhatsApp
               </a>
             </div>
           </div>

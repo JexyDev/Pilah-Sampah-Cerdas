@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2, ChevronLeft, ChevronRight, Eye, Edit } from "lucide-react";
+import { Search, Loader2, ChevronLeft, ChevronRight, Eye, Edit3 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
-
+import EditSurveiModal from "./EditSurveiModal";
 
 export default function DataSurveiKkn() {
   const navigate = useNavigate();
@@ -14,6 +14,8 @@ export default function DataSurveiKkn() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedEditKelurahanId, setSelectedEditKelurahanId] = useState<number | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const limit = 10;
 
@@ -180,21 +182,25 @@ export default function DataSurveiKkn() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenDetail(survey.kelurahanId)}
-                            className="inline-flex items-center gap-2 bg-white border-2 border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:border-[#009966] hover:text-[#009966] transition-all font-bold text-xs"
-                          >
-                            <Eye size={16} /> Lihat Detail
-                          </button>
-                          {(user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE") && (
+                        <div className="flex items-center justify-end gap-2">
+                          {(user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE" || user?.peran === "DPL") && (
                             <button
-                              onClick={() => handleEdit(survey.kelurahanId)}
-                              className="inline-flex items-center gap-2 bg-white border-2 border-slate-200 text-amber-600 px-3 py-1.5 rounded-lg hover:border-amber-500 hover:text-amber-600 transition-all font-bold text-xs"
+                              onClick={() => {
+                                setSelectedEditKelurahanId(survey.kelurahanId);
+                                setIsEditModalOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-all font-bold text-xs cursor-pointer shadow-2xs"
+                              title="Edit Data Survei"
                             >
-                              <Edit size={16} /> Edit
+                              <Edit3 size={14} /> Edit
                             </button>
                           )}
+                          <button
+                            onClick={() => handleOpenDetail(survey.kelurahanId)}
+                            className="inline-flex items-center gap-1.5 bg-white border-2 border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:border-[#009966] hover:text-[#009966] transition-all font-bold text-xs cursor-pointer shadow-2xs"
+                          >
+                            <Eye size={14} /> Lihat Detail
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -206,6 +212,21 @@ export default function DataSurveiKkn() {
           {renderPagination()}
         </div>
       </div>
+
+      {/* Edit Survei Modal */}
+      {selectedEditKelurahanId && (
+        <EditSurveiModal
+          isOpen={isEditModalOpen}
+          kelurahanId={selectedEditKelurahanId}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedEditKelurahanId(null);
+          }}
+          onSuccess={() => {
+            fetchSurveys(currentPage, searchQuery);
+          }}
+        />
+      )}
     </div>
   );
 }

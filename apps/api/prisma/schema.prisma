@@ -144,7 +144,7 @@ model User {
   createdAt             DateTime             @default(now()) @map("dibuat_pada")
   updatedAt             DateTime             @updatedAt @map("diperbarui_pada")
   fotoProfil            String?              @map("foto_profil")
-  rwId                  Int?                 @map("id_rt_rw")
+  rwId                  Int?                 @map("id_rw")
   rtId                  Int?                 @map("id_rt")
   status                String               @default("Aktif")
   address               String?              @map("alamat")

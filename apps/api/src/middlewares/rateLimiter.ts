@@ -15,8 +15,46 @@ interface AttemptRecord {
 
 const attempts = new Map<string, AttemptRecord>();
 
+// Periodically clean up expired entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of attempts.entries()) {
+    if (now > record.resetTime) {
+      attempts.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
+/**
+ * Clear login attempts for a specific IP and identifier (e.g., after successful login)
+ */
+export const clearLoginAttempts = (ip: string, identifier: string): void => {
+  const cleanId = (identifier || "unknown").toString().toLowerCase().trim();
+  const key = `${ip}:${cleanId}`;
+  attempts.delete(key);
+};
+
+/**
+ * Reset all login attempts in memory
+ */
+export const resetAllLoginRateLimits = (): void => {
+  attempts.clear();
+};
+
 export const loginRateLimiter = (req: Request, res: Response, next: NextFunction): void => {
   const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
+
+  // In development / local environment, completely bypass login rate limiting
+  if (
+    process.env.NODE_ENV !== "production" ||
+    ip === "127.0.0.1" ||
+    ip === "::1" ||
+    ip === "::ffff:127.0.0.1" ||
+    ip === "localhost"
+  ) {
+    return next();
+  }
+
   const identifier = (req.body?.phone || req.body?.email || "unknown")
     .toString()
     .toLowerCase()
@@ -38,11 +76,12 @@ export const loginRateLimiter = (req: Request, res: Response, next: NextFunction
   }
 
   if (record.count >= maxAttempts) {
+    const remainingSeconds = Math.max(1, Math.ceil((record.resetTime - now) / 1000));
     res.status(429).json({
       success: false,
       code: "TOO_MANY_ATTEMPTS",
       error: "TOO_MANY_ATTEMPTS",
-      message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 1 menit.",
+      message: `Terlalu banyak percobaan login. Silakan coba lagi dalam ${remainingSeconds} detik.`,
     });
     return;
   }

@@ -67,6 +67,12 @@ router.get("/:id", roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]), s
 router.put("/:id", roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE"]), surveiKknController.updateSurveyById);
 
 /**
+ * PUT /api/v1/survei-kkn/:id
+ * Update data survei KKN (seluruh relasi).
+ */
+router.put("/:id", roleMiddleware(["SUPER_USER", "DPL"]), surveiKknController.updateSurvey);
+
+/**
  * POST /api/v1/survei-kkn/import
  * Upload dan impor file XLSX survei KKN ke database.
  * Content-Type: multipart/form-data, field "file"

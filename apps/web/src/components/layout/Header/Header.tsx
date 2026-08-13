@@ -58,10 +58,18 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   const getBreadcrumbItems = (pathname: string, search: string = ""): string[] => {
     const fullPath = `${pathname}${search}`;
 
-    if (fullPath.includes("/dashboard-kkn")) {
+    if (pathname === "/dashboard-kkn") {
+      return ["Dashboard KKN"];
+    }
+
+    if (pathname === "/manajemen-ekosistem-kkn") {
       if (search.includes("tab=MAHASISWA")) return ["Ekosistem KKN", "Portofolio Mahasiswa"];
       if (search.includes("tab=APPROVAL")) return ["Ekosistem KKN", "Persetujuan Sakit & Izin"];
       return ["Ekosistem KKN", "Kelompok KKN"];
+    }
+
+    if (pathname.startsWith("/superUser/data-survei-kkn/")) {
+      return ["Data Survei KKN", "Detail Survei"];
     }
 
     switch (pathname) {
@@ -71,9 +79,18 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring":
         return ["Pemantauan Wilayah"];
       case "/monitoring-absen":
-        return ["Pemantauan Presensi KKN"];
+        return ["Presensi & Absensi KKN"];
       case "/monitoring-aktivitas":
         return ["Pemantauan Aktivitas"];
+      case "/superUser/data-survei-kkn":
+      case "/data-survei-kkn":
+        return ["Data Survei KKN"];
+      case "/superUser/import-survei-kkn":
+      case "/import-survei-kkn":
+        return ["Impor Survei KKN"];
+      case "/evaluasi-dampak-kkn":
+      case "/evaluasi-dampak":
+        return ["Evaluasi Dampak KKN"];
       case "/manajemen-pengangkutan":
         return ["Pengangkutan Sampah"];
       case "/master-pengguna":
@@ -115,7 +132,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/role-permissions":
         return ["Hak Akses & Peran"];
       case "/manajemen-ekosistem-kkn":
-        return ["Ekosistem KKN"];
+        return ["Ekosistem Program KKN"];
+      case "/kkn-portal":
+        return ["Portal KKN"];
+      case "/residu-portal":
+        return ["Portal Petugas Residu"];
       case "/pemanfaatan-sampah":
         return ["Pemanfaatan Sampah"];
       case "/hasil-pemanfaatan":

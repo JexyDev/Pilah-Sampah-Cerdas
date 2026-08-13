@@ -5,10 +5,11 @@ export const kelompokController = {
   getAll: async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = req.query.limit !== undefined ? parseInt(req.query.limit as string) : 0;
       const search = (req.query.search as string) || "";
+      const kelurahan = (req.query.kelurahan as string) || "";
 
-      const result = await kelompokService.getAllKelompok(page, limit, search);
+      const result = await kelompokService.getAllKelompok(page, limit, search, kelurahan);
       res.status(200).json({ success: true, ...result });
     } catch (error) {
       console.error("[KelompokController] getAll error:", error);

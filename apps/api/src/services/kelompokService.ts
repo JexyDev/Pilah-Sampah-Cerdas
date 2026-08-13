@@ -3,14 +3,24 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const kelompokService = {
-  getAllKelompok: async (page = 1, limit = 10, search = "") => {
-    const skip = (page - 1) * limit;
-
+  getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "") => {
     const whereClause: any = {};
 
     if (search) {
-      whereClause.name = { contains: search, mode: "insensitive" };
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { kelurahan: { contains: search, mode: "insensitive" } },
+        { dpl: { name: { contains: search, mode: "insensitive" } } },
+      ];
     }
+
+    if (kelurahan && kelurahan !== "ALL") {
+      whereClause.kelurahan = kelurahan;
+    }
+
+    const isAll = limit <= 0 || limit >= 1000;
+    const skip = isAll ? undefined : (page - 1) * limit;
+    const take = isAll ? undefined : limit;
 
     const [groups, total] = await Promise.all([
       prisma.kelompokKkn.findMany({
@@ -24,19 +34,25 @@ export const kelompokService = {
             },
           },
           students: {
-            select: {
-              id: true,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                },
+              },
             },
           },
         },
         skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
+        take,
+        orderBy: { name: "asc" },
       }),
       prisma.kelompokKkn.count({ where: whereClause }),
     ]);
 
-    return { groups, total, page, limit };
+    return { groups, total, page, limit: isAll ? total : limit };
   },
 
   getKelompokById: async (id: string) => {
@@ -115,18 +131,19 @@ export const kelompokService = {
   },
 
   getDplList: async () => {
-    let role = await prisma.role.findUnique({ where: { name: "DPL" } });
-    if (!role) {
-      role = await prisma.role.create({ data: { name: "DPL" } });
-    }
     return prisma.user.findMany({
       where: {
-        roleId: role.id,
+        role: {
+          name: { in: ["DPL", "DOSEN_PEMBIMBING"] },
+        },
       },
       select: {
         id: true,
         name: true,
+        phone: true,
+        nip: true,
       },
+      orderBy: { name: "asc" },
     });
   },
 };

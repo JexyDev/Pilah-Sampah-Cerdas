@@ -193,6 +193,7 @@ export const gamificationService = {
         users: {
           include: {
             setoranOtomatis: { select: { berat: true } },
+            pointHistory: { select: { points: true } },
           },
         },
       },
@@ -201,17 +202,23 @@ export const gamificationService = {
     const rtRwLeaderboard = rws
       .map((area: any) => {
         let totalKg = 0;
+        let totalPoin = 0;
         area.users.forEach((u: any) => {
-          totalKg += u.setoranOtomatis.reduce(
+          totalKg += (u.setoranOtomatis || []).reduce(
             (acc: number, cur: any) => acc + Number(cur.berat || 0),
+            0
+          );
+          totalPoin += (u.pointHistory || []).reduce(
+            (acc: number, cur: any) => acc + Number(cur.points || 0),
             0
           );
         });
         return {
           rwId: area.id,
           rtRwName: area.name,
-          kelurahanName: area.kelurahan.name,
-          totalPoints: totalKg,
+          kelurahanName: area.kelurahan?.name || "Coblong",
+          totalPoints: totalPoin > 0 ? totalPoin : totalKg,
+          totalKg,
         };
       })
       .sort((a, b) => b.totalPoints - a.totalPoints)
@@ -328,6 +335,7 @@ export const gamificationService = {
       citizens: citizenLeaderboard,
       regions: kelurahanLeaderboard,
       rw: rtRwLeaderboard,
+      rtRw: rtRwLeaderboard,
       mahasiswa: mahasiswaLeaderboard,
       pengangkut: pengangkutLeaderboard,
     };

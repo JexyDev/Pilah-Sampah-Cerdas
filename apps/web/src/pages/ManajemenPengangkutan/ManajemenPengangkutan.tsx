@@ -430,7 +430,7 @@ export const ManajemenPengangkutan: React.FC = () => {
             activeTab === "requests" ? "border-primary text-primary font-bold" : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
-          <span>Permintaan Pengosongan Warga</span>
+          <span>Permintaan Pengosongan Sampah</span>
           {pendingRequestsCount > 0 && (
             <span className="px-2 py-0.5 text-[11px] font-extrabold bg-rose-500 text-white rounded-full shadow-xs animate-pulse">
               {pendingRequestsCount}
@@ -646,7 +646,7 @@ export const ManajemenPengangkutan: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-800">Daftar Pengajuan pengosongan tempat sampah Warga</h2>
+              <h2 className="text-lg font-bold text-gray-800">Daftar Permintaan Pengosongan Sampah</h2>
               <p className="text-xs text-gray-400 mt-0.5">Permintaan pengosongan yang dikirim langsung dari gawai warga.</p>
             </div>
 

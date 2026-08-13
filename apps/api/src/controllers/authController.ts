@@ -9,6 +9,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { authService } from "../services/authService.js";
 import { PrismaClient } from "@prisma/client";
+import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
 
 const prisma = new PrismaClient();
 
@@ -120,7 +121,11 @@ export class AuthController {
       // 2. Call Service
       const result = await authService.login(phone, password);
 
-      // 3. Set HttpOnly Cookie for Web (Access Token)
+      // 3. Clear rate limit attempts on success
+      const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
+      clearLoginAttempts(ip, phone);
+
+      // 4. Set HttpOnly Cookie for Web (Access Token)
       res.cookie("accessToken", result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -128,7 +133,7 @@ export class AuthController {
         maxAge: 60 * 60 * 1000, // 1 hour
       });
 
-      // 4. Return response (Include refresh token in body for Mobile client to store securely)
+      // 5. Return response (Include refresh token in body for Mobile client to store securely)
       res.status(200).json({
         message: "Login berhasil",
         data: {

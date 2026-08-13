@@ -128,6 +128,21 @@ export const evaluasiDampakService = {
       endlineData.map((e) => [e.kelurahanId, e])
     );
 
+    // Helper untuk menghitung jumlah kegiatan pemanfaatan sampah aktif
+    const countKegiatan = (bs: any) => {
+      if (!bs) return null;
+      let count = 0;
+      if (bs.bioporiLoseda) count++;
+      if (bs.ecobrickKerajinanDaurUlang) count++;
+      if (bs.buruanSae) count++;
+      if (bs.pengepulMitraDaurUlang) count++;
+      if (bs.digitalisasiData) count++;
+      if (bs.jumlahUnitKomposter && bs.jumlahUnitKomposter !== "0" && bs.jumlahUnitKomposter !== "-") count++;
+      if (bs.jumlahTitikMaggotBsf && bs.jumlahTitikMaggotBsf !== "0" && bs.jumlahTitikMaggotBsf !== "-") count++;
+      if (bs.bankSampahAktif && Number(bs.bankSampahAktif) > 0) count++;
+      return count;
+    };
+
     const komparasi = baselineData.map((baseline) => {
       const endline = endlineMap.get(baseline.kelurahanId) || null;
 
@@ -145,8 +160,8 @@ export const evaluasiDampakService = {
         ? Number(endline.volumeSampah.totalVolumeKgPerHari)
         : null;
 
-      const baselineBankSampah = baseline.bankSampahPengolahan?.bankSampahAktif ?? null;
-      const endlineBankSampah = endline?.bankSampahPengolahan?.bankSampahAktif ?? null;
+      const baselineKegiatan = countKegiatan(baseline.bankSampahPengolahan);
+      const endlineKegiatan = endline ? countKegiatan(endline.bankSampahPengolahan) : null;
 
       return {
         kelurahanId: baseline.kelurahanId,
@@ -169,12 +184,12 @@ export const evaluasiDampakService = {
               ? endlineVolume - baselineVolume
               : null,
         },
-        bankSampahAktif: {
-          baseline: baselineBankSampah,
-          endline: endlineBankSampah,
+        kegiatanPemanfaatan: {
+          baseline: baselineKegiatan,
+          endline: endlineKegiatan,
           delta:
-            baselineBankSampah !== null && endlineBankSampah !== null
-              ? endlineBankSampah - baselineBankSampah
+            baselineKegiatan !== null && endlineKegiatan !== null
+              ? endlineKegiatan - baselineKegiatan
               : null,
         },
       };

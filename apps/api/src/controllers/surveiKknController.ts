@@ -259,9 +259,9 @@ export class SurveiKknController {
 
   /**
    * PUT /api/v1/survei-kkn/:id
-   * Update data survei kelurahan berserta relasi-relasinya.
+   * Update data survei kelurahan beserta seluruh relasinya
    */
-  async updateSurveyById(req: Request, res: Response): Promise<void> {
+  async updateSurvey(req: Request, res: Response): Promise<void> {
     try {
       const kelurahanId = parseInt(req.params.id);
       if (isNaN(kelurahanId)) {
@@ -273,15 +273,40 @@ export class SurveiKknController {
         return;
       }
 
-      const survey = await surveiKknService.updateSurveyById(kelurahanId, req.body);
+      const role = req.user?.role;
+      const userId = req.user?.userId;
+      const payload = req.body;
+
+      const updated = await surveiKknService.updateSurvey(
+        kelurahanId,
+        payload,
+        role,
+        userId
+      );
 
       res.status(200).json({
         success: true,
-        data: survey,
         message: "Data survei berhasil diperbarui",
+        data: updated,
       });
     } catch (error: any) {
-      console.error("[surveiKknController] updateSurveyById error:", error);
+      console.error("[surveiKknController] updateSurvey error:", error);
+      if (error.message === "UNAUTHORIZED_ACCESS_SCOPE") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki akses untuk mengubah data kelurahan ini",
+        });
+        return;
+      }
+      if (error.message === "NOT_FOUND") {
+        res.status(404).json({
+          success: false,
+          error: "NOT_FOUND",
+          message: "Data survei kelurahan tidak ditemukan",
+        });
+        return;
+      }
       res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",
@@ -289,6 +314,11 @@ export class SurveiKknController {
       });
     }
   }
+
+  async updateSurveyById(req: Request, res: Response): Promise<void> {
+    return this.updateSurvey(req, res);
+  }
 }
 
 export const surveiKknController = new SurveiKknController();
+

@@ -13,13 +13,16 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Loader2
+  Loader2,
+  Edit3,
+  Sprout,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { evaluasiDampakApiService } from "../../services/evaluasiDampakService";
 import type { BaselineData, EndlineData, KomparasiData } from "../../services/evaluasiDampakService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
+import EditSurveiModal from "../SuperUser/EditSurveiModal";
 
 type TabType = "BASELINE" | "ENDLINE" | "KOMPARASI";
 
@@ -37,6 +40,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
   // Validation modal state
   const [validatingItem, setValidatingItem] = useState<{ id: number; type: "BASELINE" | "ENDLINE" } | null>(null);
   const [validationNote, setValidationNote] = useState("");
+
+  // Edit survey modal state
+  const [selectedEditKelurahanId, setSelectedEditKelurahanId] = useState<number | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isValidator = ["SUPER_USER", "DPL"].includes(user?.peran || "");
 
@@ -231,10 +238,22 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       )}
                     </td>
                     <td className="px-4 py-3 flex items-center justify-center gap-2">
+                      {activeTab === "BASELINE" && (
+                        <button
+                          onClick={() => {
+                            setSelectedEditKelurahanId(item.kelurahanId);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer shadow-2xs"
+                          title="Edit Data Baseline"
+                        >
+                          <Edit3 size={14} /> Edit
+                        </button>
+                      )}
                       {isValidator && item.statusValidasi !== "VALID" && (
                         <button
                           onClick={() => setValidatingItem({ id: item.kelurahanId, type: activeTab })}
-                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200"
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200 cursor-pointer shadow-2xs"
                         >
                           <FileCheck size={14} /> Validasi
                         </button>
@@ -242,7 +261,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       {item.statusValidasi === "VALID" && isValidator && (
                         <button
                           onClick={() => setValidatingItem({ id: item.kelurahanId, type: activeTab })}
-                          className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200"
+                          className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 cursor-pointer shadow-2xs"
                         >
                            Revisi
                         </button>
@@ -268,11 +287,130 @@ export const EvaluasiDampakKkn: React.FC = () => {
       ) : (
         /* TAB KOMPARASI DAMPAK */
         <div className="space-y-6">
+          {/* 3 Delta Summary KPI Cards */}
+          {(() => {
+            const completedItems = komparasiList.filter((k) => k.hasEndline);
+            const avgDeltaPemilahan =
+              completedItems.length > 0
+                ? completedItems.reduce((acc, curr) => acc + (curr.pemilahan?.delta || 0), 0) /
+                  completedItems.length
+                : 0;
+            const avgDeltaVolume =
+              completedItems.length > 0
+                ? completedItems.reduce((acc, curr) => acc + (curr.volumeSampah?.delta || 0), 0) /
+                  completedItems.length
+                : 0;
+            const avgDeltaKegiatan =
+              completedItems.length > 0
+                ? completedItems.reduce(
+                    (acc, curr) => acc + (curr.kegiatanPemanfaatan?.delta || 0),
+                    0
+                  ) / completedItems.length
+                : 0;
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Delta 1: Kepatuhan Pemilahan */}
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-extrabold text-indigo-600 tracking-wider">
+                      1. Δ Kepatuhan Pemilahan
+                    </span>
+                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                      <Percent size={18} />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-2xl font-black text-slate-900">
+                        {avgDeltaPemilahan > 0 ? "+" : ""}
+                        {(avgDeltaPemilahan * 100).toFixed(1)}%
+                      </h3>
+                      <span
+                        className={`text-xs font-bold flex items-center gap-0.5 ${
+                          avgDeltaPemilahan >= 0 ? "text-emerald-600" : "text-rose-600"
+                        }`}
+                      >
+                        {avgDeltaPemilahan >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                        Rata-rata
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Perubahan persentase pemilahan sampah warga (Baseline vs Endline).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Delta 2: Volume Sampah */}
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-extrabold text-rose-600 tracking-wider">
+                      2. Δ Volume Sampah
+                    </span>
+                    <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                      <Weight size={18} />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-2xl font-black text-slate-900">
+                        {avgDeltaVolume > 0 ? "+" : ""}
+                        {avgDeltaVolume.toFixed(1)} Kg
+                      </h3>
+                      <span
+                        className={`text-xs font-bold flex items-center gap-0.5 ${
+                          avgDeltaVolume <= 0 ? "text-emerald-600" : "text-rose-600"
+                        }`}
+                      >
+                        {avgDeltaVolume <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
+                        {avgDeltaVolume <= 0 ? "Tereduksi" : "Bertambah"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Perubahan timbulan sampah total per hari yang dibuang.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Delta 3: Kegiatan Pemanfaatan Sampah */}
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">
+                      3. Δ Kegiatan Pemanfaatan
+                    </span>
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                      <Sprout size={18} />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-2xl font-black text-slate-900">
+                        {avgDeltaKegiatan > 0 ? "+" : ""}
+                        {avgDeltaKegiatan.toFixed(1)} Kegiatan
+                      </h3>
+                      <span
+                        className={`text-xs font-bold flex items-center gap-0.5 ${
+                          avgDeltaKegiatan >= 0 ? "text-emerald-600" : "text-rose-600"
+                        }`}
+                      >
+                        {avgDeltaKegiatan >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                        Fasilitas Aktif
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Penambahan fasilitas kompos, maggot, biopori, dan daur ulang.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chart: Persentase Pemilahan */}
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
               <h3 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
-                <Percent size={16} className="text-indigo-600" /> Komparasi Tingkat Pemilahan (%)
+                <Percent size={16} className="text-indigo-600" /> Komparasi Kepatuhan Pemilahan (%)
               </h3>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -321,7 +459,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                 Tabel Delta (Δ) Perubahan
+                 Tabel 3 Metrik Delta (Δ) Perubahan
                </h3>
              </div>
              <div className="overflow-x-auto">
@@ -330,9 +468,9 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <tr className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 uppercase tracking-wider font-bold">
                       <th className="px-4 py-3">Kelurahan</th>
                       <th className="px-4 py-3">Status Data</th>
-                      <th className="px-4 py-3">Δ Pemilahan</th>
-                      <th className="px-4 py-3">Δ Vol. Sampah</th>
-                      <th className="px-4 py-3">Δ Bank Sampah</th>
+                      <th className="px-4 py-3">Δ Kepatuhan Pemilahan</th>
+                      <th className="px-4 py-3">Δ Volume Sampah</th>
+                      <th className="px-4 py-3">Δ Kegiatan Pemanfaatan</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm divide-y divide-slate-100">
@@ -365,10 +503,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
                           ) : "-"}
                         </td>
                         <td className="px-4 py-3 font-semibold">
-                          {item.bankSampahAktif.delta !== null ? (
-                            <span className={item.bankSampahAktif.delta > 0 ? "text-emerald-600 flex items-center gap-1" : item.bankSampahAktif.delta < 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
-                               {item.bankSampahAktif.delta > 0 ? <TrendingUp size={14}/> : item.bankSampahAktif.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
-                               {item.bankSampahAktif.delta > 0 ? '+' : ''}{item.bankSampahAktif.delta} Unit
+                          {item.kegiatanPemanfaatan?.delta !== null && item.kegiatanPemanfaatan?.delta !== undefined ? (
+                            <span className={item.kegiatanPemanfaatan.delta > 0 ? "text-emerald-600 flex items-center gap-1" : item.kegiatanPemanfaatan.delta < 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
+                               {item.kegiatanPemanfaatan.delta > 0 ? <TrendingUp size={14}/> : item.kegiatanPemanfaatan.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
+                               {item.kegiatanPemanfaatan.delta > 0 ? '+' : ''}{item.kegiatanPemanfaatan.delta} Kegiatan
                             </span>
                           ) : "-"}
                         </td>
@@ -392,7 +530,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                  </h2>
                  <p className="text-xs text-slate-500">Tentukan status kelayakan data survei yang disubmit.</p>
                </div>
-               <button onClick={() => setValidatingItem(null)} className="text-slate-400 hover:bg-slate-100 p-1 rounded-lg">
+               <button onClick={() => setValidatingItem(null)} className="text-slate-400 hover:bg-slate-100 p-1 rounded-lg cursor-pointer">
                  <XCircle size={20} />
                </button>
              </div>
@@ -412,13 +550,13 @@ export const EvaluasiDampakKkn: React.FC = () => {
                 <div className="flex items-center gap-3 pt-2">
                   <button 
                     onClick={() => handleValidate("REVISI")}
-                    className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-sm transition border border-rose-200"
+                    className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-sm transition border border-rose-200 cursor-pointer"
                   >
                     Minta Revisi
                   </button>
                   <button 
                     onClick={() => handleValidate("VALID")}
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition shadow-sm"
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition shadow-sm cursor-pointer"
                   >
                     Setujui (Valid)
                   </button>
@@ -426,6 +564,21 @@ export const EvaluasiDampakKkn: React.FC = () => {
              </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Survei Modal */}
+      {selectedEditKelurahanId && (
+        <EditSurveiModal
+          isOpen={isEditModalOpen}
+          kelurahanId={selectedEditKelurahanId}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedEditKelurahanId(null);
+          }}
+          onSuccess={() => {
+            loadData();
+          }}
+        />
       )}
     </div>
   );

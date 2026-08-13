@@ -393,8 +393,8 @@ export async function getAllSurveys(
   const skip = (page - 1) * limit;
   let where: any = search
     ? {
-        namaKelurahan: { contains: search, mode: "insensitive" as const },
-      }
+      namaKelurahan: { contains: search, mode: "insensitive" as const },
+    }
     : {};
 
   if (role === "DPL" && userId) {
@@ -464,6 +464,9 @@ export async function getSurveyById(kelurahanId: number) {
   });
 }
 
+/**
+ * Ambil data survei kelurahan berdasarkan penugasan Mahasiswa KKN
+ */
 export async function getMySurvey(userId: string) {
   const student = await prisma.studentKkn.findUnique({
     where: { userId },
@@ -502,99 +505,374 @@ export async function getMySurvey(userId: string) {
   });
 }
 
-export async function updateSurveyById(kelurahanId: number, data: any) {
-  return prisma.$transaction(async (tx) => {
-    // 1. Update SurveiKelurahan
-    const surveiInfo = {
-      namaKelurahan: data.namaKelurahan,
-      kecamatan: data.kecamatan,
-      jumlahRw: data.jumlahRw,
-      jumlahRt: data.jumlahRt,
-      jumlahKk: data.jumlahKk,
-      jumlahRumahTotal: data.jumlahRumahTotal,
-      enumerator: data.enumerator,
-      tanggalSurvei: data.tanggalSurvei ? new Date(data.tanggalSurvei) : null,
-      titikKumpulMahasiswa: data.titikKumpulMahasiswa,
-      catatanData: data.catatanData,
-    };
-
-    const updatedKelurahan = await tx.surveiKelurahan.update({
+/**
+ * Update data survei kelurahan beserta seluruh relasinya
+ */
+export async function updateSurvey(
+  kelurahanId: number,
+  payload: any,
+  role?: string,
+  userId?: string
+) {
+  // Validasi jika DPL, pastikan kelurahan ini masuk wilayah bimbingannya
+  if (role === "DPL" && userId) {
+    const existing = await prisma.surveiKelurahan.findUnique({
       where: { kelurahanId },
-      data: surveiInfo,
+    });
+    if (!existing) {
+      throw new Error("NOT_FOUND");
+    }
+
+    const kelompokDpl = await prisma.kelompokKkn.findMany({
+      where: { dplId: userId },
+      select: { kelurahan: true },
+    });
+    const allowedKelurahans = kelompokDpl.map((k) => k.kelurahan).filter(Boolean);
+
+    if (!allowedKelurahans.includes(existing.namaKelurahan)) {
+      throw new Error("UNAUTHORIZED_ACCESS_SCOPE");
+    }
+  }
+
+  const {
+    namaKelurahan,
+    kecamatan,
+    jumlahRw,
+    jumlahRt,
+    jumlahKk,
+    jumlahRumahTotal,
+    tanggalSurvei,
+    enumerator,
+    titikKumpulMahasiswa,
+    catatanData,
+    karakteristikWilayah,
+    pemilahanSampah,
+    bankSampahPengolahan,
+    volumeSampah,
+    catatanKesimpulan,
+    keyPlayers,
+  } = payload;
+
+  return await prisma.$transaction(async (tx) => {
+    // 1. Update SurveiKelurahan
+    await tx.surveiKelurahan.update({
+      where: { kelurahanId },
+      data: {
+        namaKelurahan: namaKelurahan !== undefined ? String(namaKelurahan) : undefined,
+        kecamatan: kecamatan !== undefined ? (kecamatan ? String(kecamatan) : null) : undefined,
+        jumlahRw:
+          jumlahRw !== undefined
+            ? jumlahRw === "" || jumlahRw === null
+              ? null
+              : Number(jumlahRw)
+            : undefined,
+        jumlahRt:
+          jumlahRt !== undefined
+            ? jumlahRt === "" || jumlahRt === null
+              ? null
+              : Number(jumlahRt)
+            : undefined,
+        jumlahKk:
+          jumlahKk !== undefined
+            ? jumlahKk === "" || jumlahKk === null
+              ? null
+              : Number(jumlahKk)
+            : undefined,
+        jumlahRumahTotal:
+          jumlahRumahTotal !== undefined
+            ? jumlahRumahTotal === "" || jumlahRumahTotal === null
+              ? null
+              : Number(jumlahRumahTotal)
+            : undefined,
+        tanggalSurvei:
+          tanggalSurvei !== undefined
+            ? tanggalSurvei
+              ? new Date(tanggalSurvei)
+              : null
+            : undefined,
+        enumerator: enumerator !== undefined ? (enumerator ? String(enumerator) : null) : undefined,
+        titikKumpulMahasiswa:
+          titikKumpulMahasiswa !== undefined
+            ? titikKumpulMahasiswa
+              ? String(titikKumpulMahasiswa)
+              : null
+            : undefined,
+        catatanData: catatanData !== undefined ? (catatanData ? String(catatanData) : null) : undefined,
+      },
     });
 
-    // 2. Upsert Karakteristik Wilayah
-    if (data.karakteristikWilayah) {
-      const kw = data.karakteristikWilayah;
+    // 2. Karakteristik Wilayah
+    if (karakteristikWilayah) {
       await tx.surveiKarakteristikWilayah.upsert({
         where: { kelurahanId },
-        update: kw,
-        create: { ...kw, kelurahanId },
+        create: {
+          kelurahanId,
+          padatPenduduk: karakteristikWilayah.padatPenduduk ?? null,
+          banyakKosKontrakan: karakteristikWilayah.banyakKosKontrakan ?? null,
+          banyakUmkmWarungKafe: karakteristikWilayah.banyakUmkmWarungKafe ?? null,
+          dekatKampusSekolah: karakteristikWilayah.dekatKampusSekolah ?? null,
+          pasar: karakteristikWilayah.pasar ?? null,
+          bantaranSungai: karakteristikWilayah.bantaranSungai ?? null,
+          karakterLainnyaFlag: karakteristikWilayah.karakterLainnyaFlag ?? null,
+          karakterLainnyaKeterangan: karakteristikWilayah.karakterLainnyaKeterangan ?? null,
+          perkiraanJumlahKosKontrakan: karakteristikWilayah.perkiraanJumlahKosKontrakan ?? null,
+          perkiraanJumlahUmkmWarungKafe: karakteristikWilayah.perkiraanJumlahUmkmWarungKafe ?? null,
+        },
+        update: {
+          padatPenduduk: karakteristikWilayah.padatPenduduk ?? null,
+          banyakKosKontrakan: karakteristikWilayah.banyakKosKontrakan ?? null,
+          banyakUmkmWarungKafe: karakteristikWilayah.banyakUmkmWarungKafe ?? null,
+          dekatKampusSekolah: karakteristikWilayah.dekatKampusSekolah ?? null,
+          pasar: karakteristikWilayah.pasar ?? null,
+          bantaranSungai: karakteristikWilayah.bantaranSungai ?? null,
+          karakterLainnyaFlag: karakteristikWilayah.karakterLainnyaFlag ?? null,
+          karakterLainnyaKeterangan: karakteristikWilayah.karakterLainnyaKeterangan ?? null,
+          perkiraanJumlahKosKontrakan: karakteristikWilayah.perkiraanJumlahKosKontrakan ?? null,
+          perkiraanJumlahUmkmWarungKafe: karakteristikWilayah.perkiraanJumlahUmkmWarungKafe ?? null,
+        },
       });
     }
 
-    // 3. Upsert Pemilahan Sampah
-    if (data.pemilahanSampah) {
-      const ps = data.pemilahanSampah;
+    // 3. Pemilahan Sampah
+    if (pemilahanSampah) {
+      const jmlMemilah =
+        pemilahanSampah.jumlahRumahMemilah !== undefined &&
+        pemilahanSampah.jumlahRumahMemilah !== "" &&
+        pemilahanSampah.jumlahRumahMemilah !== null
+          ? Number(pemilahanSampah.jumlahRumahMemilah)
+          : null;
+      const totalRumah =
+        pemilahanSampah.totalJumlahRumahDiRw !== undefined &&
+        pemilahanSampah.totalJumlahRumahDiRw !== "" &&
+        pemilahanSampah.totalJumlahRumahDiRw !== null
+          ? Number(pemilahanSampah.totalJumlahRumahDiRw)
+          : null;
+      const pctMemilah =
+        pemilahanSampah.persentasePemilahan !== undefined &&
+        pemilahanSampah.persentasePemilahan !== "" &&
+        pemilahanSampah.persentasePemilahan !== null
+          ? Number(pemilahanSampah.persentasePemilahan)
+          : pemilahanSampah.persentaseRumahMemilah !== undefined &&
+            pemilahanSampah.persentaseRumahMemilah !== "" &&
+            pemilahanSampah.persentaseRumahMemilah !== null
+          ? Number(pemilahanSampah.persentaseRumahMemilah)
+          : null;
+
       await tx.surveiPemilahanSampah.upsert({
         where: { kelurahanId },
-        update: ps,
-        create: { ...ps, kelurahanId },
+        create: {
+          kelurahanId,
+          jumlahRumahMemilah: jmlMemilah,
+          totalJumlahRumahDiRw: totalRumah,
+          persentasePemilahan: pctMemilah,
+          tingkatPemilahan: pemilahanSampah.tingkatPemilahan ?? null,
+          catatan: pemilahanSampah.catatan ?? pemilahanSampah.keteranganPemilahan ?? null,
+        },
+        update: {
+          jumlahRumahMemilah: jmlMemilah,
+          totalJumlahRumahDiRw: totalRumah,
+          persentasePemilahan: pctMemilah,
+          tingkatPemilahan: pemilahanSampah.tingkatPemilahan ?? null,
+          catatan: pemilahanSampah.catatan ?? pemilahanSampah.keteranganPemilahan ?? null,
+        },
       });
     }
 
-    // 4. Upsert Bank Sampah
-    if (data.bankSampahPengolahan) {
-      const bs = data.bankSampahPengolahan;
+    // 4. Bank Sampah & Pengolahan
+    if (bankSampahPengolahan) {
       await tx.surveiBankSampahPengolahan.upsert({
         where: { kelurahanId },
-        update: bs,
-        create: { ...bs, kelurahanId },
+        create: {
+          kelurahanId,
+          bankSampahAktif:
+            bankSampahPengolahan.bankSampahAktif !== undefined &&
+            bankSampahPengolahan.bankSampahAktif !== null &&
+            bankSampahPengolahan.bankSampahAktif !== ""
+              ? Number(bankSampahPengolahan.bankSampahAktif)
+              : null,
+          bankSampahTidakAktif:
+            bankSampahPengolahan.bankSampahTidakAktif !== undefined &&
+            bankSampahPengolahan.bankSampahTidakAktif !== null &&
+            bankSampahPengolahan.bankSampahTidakAktif !== ""
+              ? Number(bankSampahPengolahan.bankSampahTidakAktif)
+              : null,
+          jumlahUnitKomposter:
+            bankSampahPengolahan.jumlahUnitKomposter != null
+              ? String(bankSampahPengolahan.jumlahUnitKomposter)
+              : null,
+          jumlahTitikMaggotBsf:
+            bankSampahPengolahan.jumlahTitikMaggotBsf != null
+              ? String(bankSampahPengolahan.jumlahTitikMaggotBsf)
+              : null,
+          bioporiLoseda: bankSampahPengolahan.bioporiLoseda ?? bankSampahPengolahan.losida ?? null,
+          ecobrickKerajinanDaurUlang: bankSampahPengolahan.ecobrickKerajinanDaurUlang ?? null,
+          buruanSae: bankSampahPengolahan.buruanSae ?? null,
+          pengepulMitraDaurUlang: bankSampahPengolahan.pengepulMitraDaurUlang ?? null,
+          digitalisasiData: bankSampahPengolahan.digitalisasiData ?? null,
+          aktivitasLainnyaKeterangan:
+            bankSampahPengolahan.aktivitasLainnyaKeterangan ??
+            bankSampahPengolahan.keteranganPengolahan ??
+            null,
+        },
+        update: {
+          bankSampahAktif:
+            bankSampahPengolahan.bankSampahAktif !== undefined &&
+            bankSampahPengolahan.bankSampahAktif !== null &&
+            bankSampahPengolahan.bankSampahAktif !== ""
+              ? Number(bankSampahPengolahan.bankSampahAktif)
+              : null,
+          bankSampahTidakAktif:
+            bankSampahPengolahan.bankSampahTidakAktif !== undefined &&
+            bankSampahPengolahan.bankSampahTidakAktif !== null &&
+            bankSampahPengolahan.bankSampahTidakAktif !== ""
+              ? Number(bankSampahPengolahan.bankSampahTidakAktif)
+              : null,
+          jumlahUnitKomposter:
+            bankSampahPengolahan.jumlahUnitKomposter != null
+              ? String(bankSampahPengolahan.jumlahUnitKomposter)
+              : null,
+          jumlahTitikMaggotBsf:
+            bankSampahPengolahan.jumlahTitikMaggotBsf != null
+              ? String(bankSampahPengolahan.jumlahTitikMaggotBsf)
+              : null,
+          bioporiLoseda: bankSampahPengolahan.bioporiLoseda ?? bankSampahPengolahan.losida ?? null,
+          ecobrickKerajinanDaurUlang: bankSampahPengolahan.ecobrickKerajinanDaurUlang ?? null,
+          buruanSae: bankSampahPengolahan.buruanSae ?? null,
+          pengepulMitraDaurUlang: bankSampahPengolahan.pengepulMitraDaurUlang ?? null,
+          digitalisasiData: bankSampahPengolahan.digitalisasiData ?? null,
+          aktivitasLainnyaKeterangan:
+            bankSampahPengolahan.aktivitasLainnyaKeterangan ??
+            bankSampahPengolahan.keteranganPengolahan ??
+            null,
+        },
       });
     }
 
-    // 5. Upsert Volume Sampah
-    if (data.volumeSampah) {
-      const vs = data.volumeSampah;
+    // 5. Volume Sampah
+    if (volumeSampah) {
+      const volOrganik =
+        volumeSampah.organikKgPerHari !== undefined &&
+        volumeSampah.organikKgPerHari !== null &&
+        volumeSampah.organikKgPerHari !== ""
+          ? Number(volumeSampah.organikKgPerHari)
+          : volumeSampah.estimasiVolumeOrganikKgHari !== undefined &&
+            volumeSampah.estimasiVolumeOrganikKgHari !== null &&
+            volumeSampah.estimasiVolumeOrganikKgHari !== ""
+          ? Number(volumeSampah.estimasiVolumeOrganikKgHari)
+          : null;
+      const volAnorganik =
+        volumeSampah.anorganikKgPerHari !== undefined &&
+        volumeSampah.anorganikKgPerHari !== null &&
+        volumeSampah.anorganikKgPerHari !== ""
+          ? Number(volumeSampah.anorganikKgPerHari)
+          : volumeSampah.estimasiVolumeAnorganikKgHari !== undefined &&
+            volumeSampah.estimasiVolumeAnorganikKgHari !== null &&
+            volumeSampah.estimasiVolumeAnorganikKgHari !== ""
+          ? Number(volumeSampah.estimasiVolumeAnorganikKgHari)
+          : null;
+      const volResidu =
+        volumeSampah.residuKgPerHari !== undefined &&
+        volumeSampah.residuKgPerHari !== null &&
+        volumeSampah.residuKgPerHari !== ""
+          ? Number(volumeSampah.residuKgPerHari)
+          : volumeSampah.estimasiVolumeResiduKgHari !== undefined &&
+            volumeSampah.estimasiVolumeResiduKgHari !== null &&
+            volumeSampah.estimasiVolumeResiduKgHari !== ""
+          ? Number(volumeSampah.estimasiVolumeResiduKgHari)
+          : null;
+      const volTotal =
+        volumeSampah.totalVolumeKgPerHari !== undefined &&
+        volumeSampah.totalVolumeKgPerHari !== null &&
+        volumeSampah.totalVolumeKgPerHari !== ""
+          ? Number(volumeSampah.totalVolumeKgPerHari)
+          : volumeSampah.estimasiTotalKgHari !== undefined &&
+            volumeSampah.estimasiTotalKgHari !== null &&
+            volumeSampah.estimasiTotalKgHari !== ""
+          ? Number(volumeSampah.estimasiTotalKgHari)
+          : null;
+
       await tx.surveiVolumeSampah.upsert({
         where: { kelurahanId },
-        update: vs,
-        create: { ...vs, kelurahanId },
+        create: {
+          kelurahanId,
+          organikKgPerHari: volOrganik,
+          anorganikKgPerHari: volAnorganik,
+          residuKgPerHari: volResidu,
+          totalVolumeKgPerHari: volTotal,
+          catatan: volumeSampah.catatan ?? null,
+        },
+        update: {
+          organikKgPerHari: volOrganik,
+          anorganikKgPerHari: volAnorganik,
+          residuKgPerHari: volResidu,
+          totalVolumeKgPerHari: volTotal,
+          catatan: volumeSampah.catatan ?? null,
+        },
       });
     }
 
-    // 6. Upsert Catatan Kesimpulan
-    if (data.catatanKesimpulan) {
-      const ck = data.catatanKesimpulan;
+    // 6. Catatan Kesimpulan
+    if (catatanKesimpulan) {
       await tx.surveiCatatanKesimpulan.upsert({
         where: { kelurahanId },
-        update: ck,
-        create: { ...ck, kelurahanId },
+        create: {
+          kelurahanId,
+          prioritasIntervensi:
+            catatanKesimpulan.prioritasIntervensi ??
+            catatanKesimpulan.rekomendasiProgram ??
+            null,
+          catatanTambahanRisikoSosial:
+            catatanKesimpulan.catatanTambahanRisikoSosial ??
+            catatanKesimpulan.isuKrusial ??
+            null,
+        },
+        update: {
+          prioritasIntervensi:
+            catatanKesimpulan.prioritasIntervensi ??
+            catatanKesimpulan.rekomendasiProgram ??
+            null,
+          catatanTambahanRisikoSosial:
+            catatanKesimpulan.catatanTambahanRisikoSosial ??
+            catatanKesimpulan.isuKrusial ??
+            null,
+        },
       });
     }
 
-    // 7. Update Key Players (Delete existing and insert new ones)
-    if (data.keyPlayers && Array.isArray(data.keyPlayers)) {
+    // 7. Key Players
+    if (keyPlayers !== undefined) {
       await tx.surveiKeyPlayer.deleteMany({
         where: { kelurahanId },
       });
 
-      const newKeyPlayers = data.keyPlayers.map((kp: any) => ({
-        kelurahanId,
-        nama: kp.nama,
-        peran: kp.peran,
-        kontak: kp.kontak,
-        keterangan: kp.keterangan,
-      }));
-
-      if (newKeyPlayers.length > 0) {
-        await tx.surveiKeyPlayer.createMany({
-          data: newKeyPlayers,
-        });
+      if (Array.isArray(keyPlayers) && keyPlayers.length > 0) {
+        const validKeyPlayers = keyPlayers.filter(
+          (kp: any) => kp && (kp.nama || kp.peran || kp.kontak)
+        );
+        if (validKeyPlayers.length > 0) {
+          await tx.surveiKeyPlayer.createMany({
+            data: validKeyPlayers.map((kp: any) => ({
+              kelurahanId,
+              nama: kp.nama || null,
+              kontak: kp.kontak || null,
+              peran: kp.peran || null,
+            })),
+          });
+        }
       }
     }
 
-    return updatedKelurahan;
+    return tx.surveiKelurahan.findUnique({
+      where: { kelurahanId },
+      include: {
+        karakteristikWilayah: true,
+        pemilahanSampah: true,
+        bankSampahPengolahan: true,
+        keyPlayers: true,
+        volumeSampah: true,
+        catatanKesimpulan: true,
+      },
+    });
   });
 }
 
@@ -606,5 +884,6 @@ export const surveiKknService = {
   getAllSurveys,
   getSurveyById,
   getMySurvey,
-  updateSurveyById,
+  updateSurvey,
+  updateSurveyById: updateSurvey,
 };

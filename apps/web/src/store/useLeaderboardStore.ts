@@ -44,9 +44,10 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await api.get("/gamification/leaderboard");
-      const { citizens, regions, rtRw, mahasiswa, pengangkut } = response.data.data;
+      const { citizens, regions, rw, rtRw, mahasiswa, pengangkut } = response.data.data;
+      const rawRw = rtRw || rw || [];
 
-      const users: LeaderboardUser[] = citizens.map((u: any, index: number) => ({
+      const users: LeaderboardUser[] = (citizens || []).map((u: any, index: number) => ({
         id: u.id,
         rank: index + 1,
         name: u.name || "Unknown",
@@ -57,7 +58,7 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
       set({
         users,
         regions: regions || [],
-        rtRw: rtRw || [],
+        rtRw: rawRw,
         mahasiswa: mahasiswa || [],
         pengangkut: pengangkut || [],
         isLoading: false,

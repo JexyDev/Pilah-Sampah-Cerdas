@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   User,
@@ -42,7 +42,8 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   linkTo = "/leaderboard",
 }) => {
   const displayItems = items.slice(0, 10);
-  const topScore = maxPoints || displayItems[0]?.points || 100;
+  const positivePoints = displayItems.map((i) => i.points).filter((p) => p > 0);
+  const topScore = maxPoints > 0 ? maxPoints : (positivePoints[0] || 100);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const getRankBadge = (rank: number) => {
@@ -108,8 +109,8 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
           </div>
         ) : (
           displayItems.map((item, idx) => {
-            const rawPct = topScore > 0 ? Math.round((item.points / topScore) * 100) : 0;
-            const barPct = Math.min(100, Math.max(8, rawPct));
+            const rawPct = topScore > 0 && item.points > 0 ? Math.round((item.points / topScore) * 100) : 0;
+            const barPct = item.points > 0 ? Math.min(100, Math.max(8, rawPct)) : 0;
             const isHovered = hoveredIndex === idx;
 
             return (
@@ -154,7 +155,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
 
                 {/* Points */}
                 <div className="w-14 sm:w-16 text-right shrink-0">
-                  <span className="font-extrabold text-slate-800 text-[11px] sm:text-[13px] font-mono block leading-none truncate">
+                  <span className={`font-extrabold text-[11px] sm:text-[13px] font-mono block leading-none truncate ${item.points < 0 ? "text-rose-600" : "text-slate-800"}`}>
                     {item.points.toLocaleString("id-ID")}
                   </span>
                   <span className="text-[8px] sm:text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
@@ -222,10 +223,11 @@ export const LeaderboardWidget: React.FC = () => {
           }));
           setPetugasList(apiPetugas);
         }
-        if (d.rtRw) {
-          const apiRw = d.rtRw.map((r: any, i: number) => ({
+        const rawRw = d.rw || d.rtRw;
+        if (rawRw && Array.isArray(rawRw)) {
+          const apiRw = rawRw.map((r: any, i: number) => ({
             rank: i + 1,
-            name: r.rtRwName || `RW ${i + 1}`,
+            name: r.rtRwName || r.name || `RW ${r.rwId || i + 1}`,
             subtitle: `Kel. ${r.kelurahanName || "Coblong"}`,
             points: Number(r.totalPoints || 0),
           }));
@@ -278,6 +280,35 @@ export const LeaderboardWidget: React.FC = () => {
     }
   };
 
+  // Official 6 Kelurahan of Kecamatan Coblong
+  const COBLONG_6_KELURAHAN = [
+    "Cipaganti",
+    "Dago",
+    "Lebak Gede",
+    "Lebak Siliwangi",
+    "Sadang Serang",
+    "Sekeloa",
+  ];
+
+  // Map real database kelurahan data or 0 for each of the 6 kelurahan
+  const kelurahanChartData = useMemo(() => {
+    return COBLONG_6_KELURAHAN.map((kelName) => {
+      const match = kelurahanList.find((k) =>
+        k.name.toLowerCase().includes(kelName.toLowerCase())
+      );
+      return {
+        name: kelName,
+        points: match ? Number(match.points || 0) : 0,
+      };
+    });
+  }, [kelurahanList]);
+
+  const maxVolumeKg = useMemo(() => {
+    const vals = kelurahanChartData.map((k) => k.points);
+    const max = Math.max(...vals, 0);
+    return max > 0 ? max : 10;
+  }, [kelurahanChartData]);
+
   return (
     <div className="space-y-6 w-full">
 
@@ -303,7 +334,7 @@ export const LeaderboardWidget: React.FC = () => {
 
             <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-emerald-600 font-bold uppercase">Status</span>
-              <span className="text-emerald-700">Terverifikasi</span>
+              <span className="text-emerald-700">Terverifikasi Real</span>
             </div>
           </div>
 
@@ -319,15 +350,8 @@ export const LeaderboardWidget: React.FC = () => {
             </div>
 
             <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
-                { name: "Kel. Sekeloa", points: 0 },
-                { name: "Kel. Dago", points: 0 },
-                { name: "Kel. Sadang Serang", points: 0 },
-                { name: "Kel. Sekeloa", points: 0 },
-                { name: "Kel. Lebak Gede", points: 0 },
-                { name: "Kel. Cipaganti", points: 0 },
-              ]).map((d, idx) => {
-                const valPct = d.points > 0 ? Math.min(100, Math.round(d.points * 5)) : 0;
+              {kelurahanChartData.map((d, idx) => {
+                const valPct = d.points > 0 ? Math.min(100, Math.round(d.points)) : 0;
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
                     <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
@@ -346,16 +370,9 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
-              { name: "Sekeloa" },
-              { name: "Dago" },
-              { name: "Sadang Serang" },
-              { name: "Cibeunying" },
-              { name: "Lebak Gede" },
-              { name: "Cipaganti" },
-            ]).map((item, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {item.name.replace("Kelurahan ", "")}
+            {kelurahanChartData.map((item, idx) => (
+              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate" title={item.name}>
+                {item.name}
               </span>
             ))}
           </div>
@@ -381,7 +398,7 @@ export const LeaderboardWidget: React.FC = () => {
             <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
               <span className="text-sky-700">
-                {kelurahanList.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(1)} Kg
+                {kelurahanChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(1)} Kg
               </span>
             </div>
           </div>
@@ -389,24 +406,17 @@ export const LeaderboardWidget: React.FC = () => {
           {/* Bar Chart Area */}
           <div className="pt-4 flex gap-2 items-end">
             <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-40 text-right select-none shrink-0 pb-5">
-              <span>{Math.max(...kelurahanList.map((k) => k.points || 0), 10).toFixed(0)} Kg</span>
-              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.8).toFixed(0)}</span>
-              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.6).toFixed(0)}</span>
-              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.4).toFixed(0)}</span>
-              <span>{(Math.max(...kelurahanList.map((k) => k.points || 0), 10) * 0.2).toFixed(0)}</span>
+              <span>{maxVolumeKg.toFixed(0)} Kg</span>
+              <span>{(maxVolumeKg * 0.8).toFixed(0)}</span>
+              <span>{(maxVolumeKg * 0.6).toFixed(0)}</span>
+              <span>{(maxVolumeKg * 0.4).toFixed(0)}</span>
+              <span>{(maxVolumeKg * 0.2).toFixed(0)}</span>
               <span>0</span>
             </div>
 
             <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
-                { name: "Sekeloa", points: 0 },
-                { name: "Dago", points: 0 },
-                { name: "Sadang Serang", points: 0 },
-                { name: "Cibeunying", points: 0 },
-                { name: "Lebak Gede", points: 0 },
-                { name: "Cipaganti", points: 0 },
-              ]).map((d, idx) => {
-                const maxVol = Math.max(...kelurahanList.map((k) => k.points || 0), 10);
+              {kelurahanChartData.map((d, idx) => {
+                const heightPct = d.points > 0 ? Math.min(100, Math.round((d.points / maxVolumeKg) * 100)) : 0;
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
                     <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
@@ -415,7 +425,7 @@ export const LeaderboardWidget: React.FC = () => {
                     <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
                       <div
                         className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                        style={{ height: `${maxVol > 0 ? ((d.points || 0) / maxVol) * 100 : 0}%` }}
+                        style={{ height: `${heightPct}%` }}
                       ></div>
                     </div>
                   </div>
@@ -425,16 +435,9 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {(kelurahanList.length > 0 ? kelurahanList.slice(0, 6) : [
-              { name: "Sekeloa" },
-              { name: "Dago" },
-              { name: "Sadang Serang" },
-              { name: "Cibeunying" },
-              { name: "Lebak Gede" },
-              { name: "Cipaganti" },
-            ]).map((item, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {item.name.replace("Kelurahan ", "")}
+            {kelurahanChartData.map((item, idx) => (
+              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate" title={item.name}>
+                {item.name}
               </span>
             ))}
           </div>

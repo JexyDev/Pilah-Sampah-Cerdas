@@ -293,7 +293,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dashboard-dpl"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <DplDashboardPage />
             </ProtectedRoute>
           }
@@ -301,8 +301,8 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dashboard-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
-              <DplDashboardPage />
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <KknDashboard />
             </ProtectedRoute>
           }
         />
@@ -461,7 +461,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/kkn-portal"
           element={
-            <ProtectedRoute allowedRoles={["MAHASISWA_KKN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <KknDashboard />
             </ProtectedRoute>
           }

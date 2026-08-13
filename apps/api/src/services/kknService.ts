@@ -13,13 +13,25 @@ const prisma = new PrismaClient();
 
 export class KknService {
   async getDashboardStats(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, rw: true },
+    });
+
+    const isSuperOrAdmin =
+      user?.role?.name === "SUPER_USER" ||
+      user?.role?.name === "ADMIN_DLH" ||
+      user?.role?.name === "DPL" ||
+      user?.role?.name === "DOSEN_PEMBIMBING" ||
+      user?.role?.name === "PEMIMPIN" ||
+      user?.role?.name === "PANITIA_TASKFORCE";
+
     let student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: { assignedRw: true },
     });
 
-    if (!student) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!student && !isSuperOrAdmin) {
       if (user) {
         student = await prisma.studentKkn.create({
           data: {
@@ -39,50 +51,60 @@ export class KknService {
       }
     }
 
-    // Total registered bins from batches assigned to this KKN PIC
-    const totalRegistered = await prisma.bin.count({
-      where: {
-        status: "ACTIVE_BOUND",
-        qrBatch: {
-          assignedPicUserId: userId,
-        },
-      },
-    });
+    // Total registered bins
+    const totalRegistered = isSuperOrAdmin
+      ? await prisma.bin.count({ where: { status: "ACTIVE_BOUND" } })
+      : await prisma.bin.count({
+          where: {
+            status: "ACTIVE_BOUND",
+            qrBatch: {
+              assignedPicUserId: userId,
+            },
+          },
+        });
 
     const maxLimitStr = await configService.getConfig("kkn_max_assignment_per_student");
-    const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : 100;
+    const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : (isSuperOrAdmin ? 500 : 100);
     const remainingQuota = Math.max(0, maxLimit - totalRegistered);
     const progressPct =
       maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(1)) : 0;
 
-    // KKN Points Contribution
-    const pointsSum = await prisma.pointHistory.aggregate({
-      where: { userId },
-      _sum: { points: true },
-    });
+    // Points
+    const pointsSum = isSuperOrAdmin
+      ? await prisma.pointHistory.aggregate({ _sum: { points: true } })
+      : await prisma.pointHistory.aggregate({
+          where: { userId },
+          _sum: { points: true },
+        });
     const contributionPoints = pointsSum._sum.points || 0;
 
-    const poskoLat = student.assignedRw?.latitude
+    const poskoLat = student?.assignedRw?.latitude
       ? Number(student.assignedRw.latitude)
-      : -6.975412;
-    const poskoLng = student.assignedRw?.longitude
+      : -6.8906;
+    const poskoLng = student?.assignedRw?.longitude
       ? Number(student.assignedRw.longitude)
-      : 107.632145;
+      : 107.615;
+
+    const areaName = student?.assignedRw?.name
+      ? student.assignedRw.name
+      : isSuperOrAdmin
+        ? "Kecamatan Coblong (Seluruh Wilayah)"
+        : "Area KKN Coblong";
 
     return {
       studentKkn: {
-        nim: student.nim,
-        jurusan: student.jurusan,
-        fakultas: student.fakultas,
-        whitelistStatus: student.whitelistStatus,
-        endDate: student.endDate,
-        assignedArea: student.assignedRw?.name || "Area KKN Bojongsoang",
+        nim: student?.nim || (isSuperOrAdmin ? (user?.role?.name || "SUPER ADMIN") : "10123000"),
+        jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Terpadu" : "Teknik Lingkungan"),
+        fakultas: student?.fakultas || (isSuperOrAdmin ? "Admin DLH / DPL" : "FTSL"),
+        whitelistStatus: student?.whitelistStatus || "APPROVED",
+        endDate: student?.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        assignedArea: areaName,
         latitude: poskoLat,
         longitude: poskoLng,
         radiusMeter: 5000,
       },
       poskoLocation: {
-        name: student.assignedRw?.name || "Kel. Bojongsoang RT 03 / RW 08",
+        name: areaName,
         latitude: poskoLat,
         longitude: poskoLng,
         radiusMeter: 5000,
@@ -95,8 +117,8 @@ export class KknService {
         maxLimit,
       },
       // Backward compatibility aliases
-      nim: student.nim,
-      jurusan: student.jurusan,
+      nim: student?.nim || (isSuperOrAdmin ? "ADMIN" : "10123000"),
+      jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Lingkungan"),
       totalRegisteredBins: totalRegistered,
       remainingQuota,
       progressPct,
@@ -109,14 +131,27 @@ export class KknService {
   }
 
   async getRegisteredWarga(kknUserId: string, filters: { rwId?: number; search?: string }) {
-    // We get warga whose bins belong to batches assigned to this KKN PIC
+    const user = await prisma.user.findUnique({
+      where: { id: kknUserId },
+      include: { role: true },
+    });
+
+    const isSuperOrAdmin =
+      user?.role?.name === "SUPER_USER" ||
+      user?.role?.name === "ADMIN_DLH" ||
+      user?.role?.name === "DPL" ||
+      user?.role?.name === "DOSEN_PEMBIMBING" ||
+      user?.role?.name === "PEMIMPIN" ||
+      user?.role?.name === "PANITIA_TASKFORCE";
+
+    // Query bins based on role
+    const whereBin: any = { status: "ACTIVE_BOUND" };
+    if (!isSuperOrAdmin) {
+      whereBin.qrBatch = { assignedPicUserId: kknUserId };
+    }
+
     const bins = await prisma.bin.findMany({
-      where: {
-        status: "ACTIVE_BOUND",
-        qrBatch: {
-          assignedPicUserId: kknUserId,
-        },
-      },
+      where: whereBin,
       include: {
         user: {
           include: {
@@ -217,18 +252,33 @@ export class KknService {
       throw new Error("WARGA_NOT_FOUND");
     }
 
-    // Verify data scoping (must belong to batches assigned to this KKN PIC)
-    const binsRegisteredByPic = await prisma.bin.count({
-      where: {
-        userId: wargaId,
-        qrBatch: {
-          assignedPicUserId: kknUserId,
-        },
-      },
+    const caller = await prisma.user.findUnique({
+      where: { id: kknUserId },
+      include: { role: true },
     });
 
-    if (binsRegisteredByPic === 0) {
-      throw new Error("UNAUTHORIZED_ACCESS_SCOPE");
+    const isSuperOrAdmin =
+      caller?.role?.name === "SUPER_USER" ||
+      caller?.role?.name === "ADMIN_DLH" ||
+      caller?.role?.name === "DPL" ||
+      caller?.role?.name === "DOSEN_PEMBIMBING" ||
+      caller?.role?.name === "PEMIMPIN" ||
+      caller?.role?.name === "PANITIA_TASKFORCE";
+
+    if (!isSuperOrAdmin) {
+      // Verify data scoping (must belong to batches assigned to this KKN PIC)
+      const binsRegisteredByPic = await prisma.bin.count({
+        where: {
+          userId: wargaId,
+          qrBatch: {
+            assignedPicUserId: kknUserId,
+          },
+        },
+      });
+
+      if (binsRegisteredByPic === 0) {
+        throw new Error("UNAUTHORIZED_ACCESS_SCOPE");
+      }
     }
 
     const household = warga.households?.[0];
