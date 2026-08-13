@@ -80,10 +80,19 @@ export class BinService {
 
     if (filters) {
       if (filters.status) {
-        whereClause.status = filters.status;
+        const validEnumValues = ["PRINTED", "ACTIVE", "ACTIVE_BOUND", "INACTIVE", "BROKEN", "PENDING_APPROVAL"];
+        if (validEnumValues.includes(filters.status)) {
+          whereClause.status = filters.status;
+        } else if (filters.status === "Rusak") {
+          whereClause.status = "BROKEN";
+        }
+        // Note: Human-friendly status filters like "Penuh", "Sedang", "Normal" are filtered post-fetch in binController
       }
       if (filters.areaId) {
-        whereClause.rwId = parseInt(filters.areaId, 10);
+        const parsedAreaId = parseInt(filters.areaId, 10);
+        if (!isNaN(parsedAreaId)) {
+          whereClause.rwId = parsedAreaId;
+        }
       }
       if (filters.categoryId) {
         whereClause.categoryId = filters.categoryId;
@@ -742,24 +751,77 @@ export class BinService {
     if (!data.categoryId) {
       throw new Error("CATEGORY_ID_REQUIRED");
     }
-    const qrCode = await generateNextQrCode(data.categoryId);
+
+    let catId = data.categoryId;
+    const cat = await prisma.wasteCategory.findFirst({
+      where: {
+        OR: [
+          { id: catId },
+          { name: { contains: catId, mode: "insensitive" } },
+        ],
+      },
+    });
+    if (cat) {
+      catId = cat.id;
+    }
+
+    const count = parseInt(data.count || data.generateCount || "1", 10);
+    if (count > 1) {
+      const createdBins = [];
+      for (let i = 0; i < count; i++) {
+        const qrCode = await generateNextQrCode(catId);
+        let kelurahanId = null;
+        let parsedRwId: number | null = null;
+        if (data.rwId) {
+          const parsed = parseInt(data.rwId, 10);
+          if (!isNaN(parsed)) {
+            parsedRwId = parsed;
+            const area = await binRepository.findRtRwById(parsed);
+            if (area) {
+              kelurahanId = area.kelurahanId;
+            }
+          }
+        }
+        const bin = await binRepository.createBin({
+          qrCode,
+          categoryId: catId,
+          rwId: parsedRwId,
+          kelurahanId,
+          latitude: data.latitude ? parseFloat(data.latitude) : null,
+          longitude: data.longitude ? parseFloat(data.longitude) : null,
+          maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
+          userId: data.userId || null,
+          status: data.status || "PRINTED",
+        });
+        createdBins.push(bin);
+      }
+      return createdBins;
+    }
+
+    const qrCode = await generateNextQrCode(catId);
     let kelurahanId = null;
+    let parsedRwId: number | null = null;
     if (data.rwId) {
-      const area = await binRepository.findRtRwById(parseInt(data.rwId));
-      if (area) {
-        kelurahanId = area.kelurahanId;
+      const parsed = parseInt(data.rwId, 10);
+      if (!isNaN(parsed)) {
+        parsedRwId = parsed;
+        const area = await binRepository.findRtRwById(parsed);
+        if (area) {
+          kelurahanId = area.kelurahanId;
+        }
       }
     }
 
     return binRepository.createBin({
       qrCode,
-      categoryId: data.categoryId,
-      rwId: parseInt(data.rwId),
+      categoryId: catId,
+      rwId: parsedRwId,
       kelurahanId,
       latitude: data.latitude ? parseFloat(data.latitude) : null,
       longitude: data.longitude ? parseFloat(data.longitude) : null,
       maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
       userId: data.userId || null,
+      status: data.status || "PRINTED",
     });
   }
 
@@ -768,21 +830,60 @@ export class BinService {
    */
   async updateBin(id: string, data: any) {
     const updateData: any = {};
-    if (data.qrCode) updateData.qrCode = data.qrCode;
-    if (data.categoryId) updateData.categoryId = data.categoryId;
-    if (data.rwId) {
-      updateData.rwId = parseInt(data.rwId);
-      const area = await binRepository.findRtRwById(parseInt(data.rwId));
-      if (area) {
-        updateData.kelurahanId = area.kelurahanId;
+
+    if (data.categoryId) {
+      const cat = await prisma.wasteCategory.findFirst({
+        where: {
+          OR: [
+            { id: data.categoryId },
+            { name: { contains: data.categoryId, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (cat) {
+        updateData.categoryId = cat.id;
       }
     }
-    if (data.maxCapacityLiter) updateData.maxCapacityLiter = parseFloat(data.maxCapacityLiter);
-    if (data.latitude !== undefined)
-      updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
-    if (data.longitude !== undefined)
-      updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
-    if (data.userId !== undefined) updateData.userId = data.userId || null;
+
+    const rwVal = data.rwId || data.rtRwId;
+    if (rwVal) {
+      const parsed = parseInt(rwVal, 10);
+      if (!isNaN(parsed)) {
+        const area = await binRepository.findRtRwById(parsed);
+        if (area) {
+          updateData.rwId = parsed;
+          updateData.kelurahanId = area.kelurahanId;
+        }
+      }
+    }
+
+    if (data.maxCapacityLiter !== undefined && data.maxCapacityLiter !== null) {
+      const cap = parseFloat(data.maxCapacityLiter);
+      if (!isNaN(cap)) {
+        updateData.maxCapacityLiter = cap;
+      }
+    }
+
+    if (data.status) {
+      const statusUpper = String(data.status).toUpperCase();
+      if (statusUpper === "RUSAK" || statusUpper === "BROKEN") {
+        updateData.status = "BROKEN";
+      } else if (["ACTIVE_BOUND", "ACTIVE", "PRINTED", "INACTIVE", "PENDING_APPROVAL"].includes(statusUpper)) {
+        updateData.status = statusUpper;
+      } else if (data.status === "Normal" || data.status === "Penuh" || data.status === "Sedang") {
+        updateData.status = "ACTIVE_BOUND";
+      }
+    }
+
+    if (data.latitude !== undefined) {
+      updateData.latitude = data.latitude !== null && data.latitude !== "" ? parseFloat(data.latitude) : null;
+    }
+    if (data.longitude !== undefined) {
+      updateData.longitude = data.longitude !== null && data.longitude !== "" ? parseFloat(data.longitude) : null;
+    }
+    if (data.userId !== undefined && data.userId !== "") {
+      updateData.userId = data.userId || null;
+    }
 
     return binRepository.updateBin(id, updateData);
   }

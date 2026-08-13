@@ -11,6 +11,11 @@ const prisma = new PrismaClient();
 export class CategoryService {
   async getAllCategories() {
     let categories = await prisma.wasteCategory.findMany({
+      include: {
+        _count: {
+          select: { bins: true },
+        },
+      },
       orderBy: { name: "asc" },
     });
     if (categories.length === 0) {
@@ -21,6 +26,11 @@ export class CategoryService {
         ],
       });
       categories = await prisma.wasteCategory.findMany({
+        include: {
+          _count: {
+            select: { bins: true },
+          },
+        },
         orderBy: { name: "asc" },
       });
     }

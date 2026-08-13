@@ -542,6 +542,11 @@ export class KknService {
           },
         });
       } else {
+        // Guard: reject if bin already owned by a different warga
+        if (bin.userId && bin.userId !== wargaId && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)) {
+          throw new Error("Tempat sampah ini sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.");
+        }
+
         await tx.bin.update({
           where: { id: bin.id },
           data: {
@@ -628,6 +633,11 @@ export class KknService {
       }
 
       for (const bin of bins) {
+        // Guard: reject if bin already owned by a different warga
+        if (bin.userId && bin.userId !== wargaId && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)) {
+          throw new Error(`Tempat sampah ${bin.qrCode} sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.`);
+        }
+
         await tx.bin.update({
           where: { id: bin.id },
           data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId },
@@ -854,6 +864,11 @@ export class KknService {
             },
           });
         } else {
+          // Guard: reject if bin already owned by a different warga
+          if (bin.userId && bin.userId !== warga.id && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)) {
+            throw new Error(`Tempat sampah ${bin.qrCode} sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.`);
+          }
+
           bin = await tx.bin.update({
             where: { id: bin.id },
             data: {

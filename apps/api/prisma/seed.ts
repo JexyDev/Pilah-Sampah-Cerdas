@@ -82,10 +82,10 @@ async function main() {
   console.log(`✅ Kabupaten/Kota: ${kotaBandung.name}`);
 
   // ─────────────────────────────────────────────
-  // 3. KECAMATAN (hanya Coblong — fokus area TrashCare)
+  // 3. KECAMATAN (hanya Kecamatan Coblong — fokus area TrashCare)
   // ─────────────────────────────────────────────
   const kecamatans = [
-    "Coblong",
+    "Kecamatan Coblong",
   ];
 
   const kecamatanMap: Record<string, number> = {};
@@ -103,12 +103,12 @@ async function main() {
   // 4. KELURAHAN (hanya 6 kelurahan resmi Coblong)
   // ─────────────────────────────────────────────
   const kelurahanData: { name: string; kecamatan: string }[] = [
-    { name: "Dago",             kecamatan: "Coblong" },
-    { name: "Lebak Gede",       kecamatan: "Coblong" },
-    { name: "Lebak Siliwangi",  kecamatan: "Coblong" },
-    { name: "Sadang Serang",    kecamatan: "Coblong" },
-    { name: "Sekeloa",          kecamatan: "Coblong" },
-    { name: "Cipaganti",        kecamatan: "Coblong" },
+    { name: "Dago",             kecamatan: "Kecamatan Coblong" },
+    { name: "Lebak Gede",       kecamatan: "Kecamatan Coblong" },
+    { name: "Lebak Siliwangi",  kecamatan: "Kecamatan Coblong" },
+    { name: "Sadang Serang",    kecamatan: "Kecamatan Coblong" },
+    { name: "Sekeloa",          kecamatan: "Kecamatan Coblong" },
+    { name: "Cipaganti",        kecamatan: "Kecamatan Coblong" },
   ];
 
   const kelurahanMap: Record<string, string> = {};
@@ -362,39 +362,90 @@ async function main() {
   console.log("✅ Test user accounts for all roles created!");
 
   // ─────────────────────────────────────────────
-  // 10. KELOMPOK KKN SEED (Untuk DPL)
+  // 10. REAL DPL UNIKOM & KELOMPOK KKN SEED
   // ─────────────────────────────────────────────
-  const dplUser = await prisma.user.findFirst({ where: { phone: "+628111111128" } });
-  if (dplUser) {
-    await prisma.kelompokKkn.upsert({
-      where: { name: "Kelompok 1 - Dago" },
-      update: {
-        dplId: dplUser.id,
-        kelurahan: "Dago" // Sesuai dengan data kelurahan seed
-      },
-      create: {
-        name: "Kelompok 1 - Dago",
-        dplId: dplUser.id,
-        kelurahan: "Dago"
-      }
-    });
-    console.log("✅ Kelompok KKN (Dago) for DPL created!");
+  const realDplData = [
+    { name: "Muhammad Aksan Ipaenin, S.T. M.Sc", phone: "+6285294754801", nip: "4127.99.90.268", prodi: "S1 Teknik Sipil", kelompok: "Kel 1 Lebak Gede", kelurahan: "Lebak Gede" },
+    { name: "Assoc.Prof. Dr. Wartika S.Kom.,MT", phone: "+62895337560201", nip: "4127.70.26.002", prodi: "S1 Sistem Informasi", kelompok: "Kel 2 Lebak Gede", kelurahan: "Lebak Gede" },
+    { name: "Myrna Dwi Rahmatya, S.Kom.,M.Kom", phone: "+6285320322236", nip: "4127.70.26.111", prodi: "D3 Manajemen Informatika", kelompok: "Kel 3 Lebak Gede", kelurahan: "Lebak Gede" },
+    { name: "Alif Finandhita, S.Kom., M.T.", phone: "+6282115865070", nip: "4127.70.06.025", prodi: "S1 Teknik Informatika", kelompok: "Kel 4 Lebak Gede", kelurahan: "Lebak Gede" },
+    { name: "Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D", phone: "+6281318920636", nip: "4127.70.06.024", prodi: "S1 Teknik Informatika", kelompok: "Kel 1 Sekeloa", kelurahan: "Sekeloa" },
+    { name: "Dr. Eng. Siswanti Zuraida, S.Pd., M.T.", phone: "+6288210288162", nip: "4127.88.80.717", prodi: "S1 Teknik Arsitektur", kelompok: "Kel 2 Sekeloa", kelurahan: "Sekeloa" },
+    { name: "Dr. Olih Solihin, S.Sos., M.I.Kom.", phone: "+6289656618667", nip: "4127.35.30.016", prodi: "S1 Ilmu Komunikasi", kelompok: "Kel 3 Sekeloa", kelurahan: "Sekeloa" },
+    { name: "Hery Dwi Yulianto, S.T., M.Kom.", phone: "+628382821127", nip: "4127.70.67.004", prodi: "D3 Komputerisasi Akuntansi", kelompok: "Kel 4 Sekeloa", kelurahan: "Sekeloa" },
+    { name: "John Adler, S.Si., M.Si.", phone: "+6282130536915", nip: "4127.70.05.007", prodi: "D3 Teknik Komputer", kelompok: "Kel 5 Sekeloa", kelurahan: "Sekeloa" },
+    { name: "Dr. Henike Primawati, S.IP., M.I.Pol.", phone: "+628118748686", nip: "4127.35.32.011", prodi: "S1 Hubungan Internasional", kelompok: "Kel 6 Sekeloa", kelurahan: "Sekeloa" },
+    { name: "Fenny Febrianti, S.S.,M.Hum", phone: "+6282121822503", nip: "4127.20.04.004", prodi: "S1 Sastra Jepang", kelompok: "Kel 1 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
+    { name: "Dr. Tatik Fidowaty, S.IP., M.Si", phone: "+62817616930", nip: "4127.35.31.009", prodi: "S1 Ilmu Pemerintahan", kelompok: "Kel 2 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
+    { name: "Dr. Nungki Heriyati, S.S.S.,I.Kom.,M.A.", phone: "+6281322752828", nip: "4127.20.03.020", prodi: "S1 Sastra Inggris", kelompok: "Kel 3 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
+    { name: "Dr. Agus Mulyana, S.Kom, M.T.", phone: "+6282116871007", nip: "4127.70.05.017", prodi: "D3 Teknik Komputer", kelompok: "Sadang Serang 1", kelurahan: "Sadang Serang" },
+    { name: "Amilia Widya, S.Pd., M.T.", phone: "+6281344706038", nip: "4127.70.17.015", prodi: "S1 Teknik Perencanaan Wilayah dan Kota", kelompok: "Sadang Serang 2", kelurahan: "Sadang Serang" },
+    { name: "Wahyudi, S.H., M.H.", phone: "+6281321920848", nip: "4127.33.00.019", prodi: "S1 Ilmu Hukum", kelompok: "Sadang Serang 3", kelurahan: "Sadang Serang" },
+    { name: "Richi Dwi Agustia, S.Kom., M.Kom.", phone: "+6285780084003", nip: "4127.70.06.132", prodi: "S1 Teknik Informatika", kelompok: "Sadang Serang 4", kelurahan: "Sadang Serang" },
+    { name: "Assoc. Prof., Dr. Manap Solihat, Drs., M.Si.", phone: "+6281321911449", nip: "4127.35.30.007", prodi: "S1 Ilmu Komunikasi", kelompok: "Sadang Serang 5", kelurahan: "Sadang Serang" },
+    { name: "Cherry Dharmawan, S.Sn., M.Sn.", phone: "+6282118047608", nip: "4127.32.04.002", prodi: "S1 Desain Interior", kelompok: "Sadang Serang 6", kelurahan: "Sadang Serang" },
+    { name: "Assoc. Prof. Dr. Sri Dewi Anggadini, S.E., M.Si., Ak., CA", phone: "+628122421004", nip: "4127.34.03.003", prodi: "S1 Akuntansi", kelompok: "Sadang Serang 7", kelurahan: "Sadang Serang" },
+    { name: "Dr.H.Tatang Supriyadi,S.E.,M.M", phone: "+6281222927778", nip: "4127.34.02.075", prodi: "D3 Manajemen Pemasaran", kelompok: "Sadang Serang 8", kelurahan: "Sadang Serang" },
+    { name: "Dr. Wendi Zaman,M.Si", phone: "+628157131405", nip: "4127.70.05.010", prodi: "S1 Sistem Komputer", kelompok: "Sadang Serang 9", kelurahan: "Sadang Serang" },
+    { name: "Arif Try Cahyadi, S.Ds., M.Ds.", phone: "+6282298522354", nip: "4127.32.06.087", prodi: "S1 Desain Komunikasi Visual", kelompok: "Sadang Serang 10", kelurahan: "Sadang Serang" },
+    { name: "Ayub Subandi, S.Si., M.T., Ph.D.", phone: "+6289612270264", nip: "4127.70.05.030", prodi: "S1 Teknik Elektro", kelompok: "Sadang Serang 11", kelurahan: "Sadang Serang" },
+    { name: "Iyan Andriana, S.T., M.T.", phone: "+628112334224", nip: "4127.70.03.009", prodi: "S1 Teknik Industri", kelompok: "Cipaganti 1", kelurahan: "Cipaganti" },
+    { name: "Hanhan Maulana, M.Kom., Ph.D.", phone: "+6285222267759", nip: "4127.70.06.134", prodi: "S1 Teknik Informatika", kelompok: "Cipaganti 2", kelurahan: "Cipaganti" },
+    { name: "Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.", phone: "+6289670059709", nip: "4127.32.06.011", prodi: "D3 Desain Grafis", kelompok: "Cipaganti 3", kelurahan: "Cipaganti" },
+    { name: "Rangga Sidik, S.Kom., M.Kom., M.Eng", phone: "+6285624088878", nip: "4127.70.26.113", prodi: "S1 Sistem Informasi", kelompok: "Cipaganti 4", kelurahan: "Cipaganti" },
+    { name: "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd", phone: "+6281213143636", nip: "4127.34.02.015", prodi: "S1 Manajemen", kelompok: "Dago 1", kelurahan: "Dago" },
+    { name: "Assoc Prof. Dr. Agus Riyanto S.E., M.S.i", phone: "+6285759996154", nip: "4127.70.03.007", prodi: "S1 Manajemen", kelompok: "Dago 2", kelurahan: "Dago" },
+    { name: "Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP", phone: "+6281223216029", nip: "4127.34.02.006", prodi: "S1 Manajemen", kelompok: "Dago 3", kelurahan: "Dago" },
+    { name: "Dr. Linna Ismawati, S.E., M.Si.", phone: "+6281221471617", nip: "4127.34.02.008", prodi: "S1 Manajemen", kelompok: "Dago 4", kelurahan: "Dago" },
+  ];
+
+  const dplRoleObj = roleMap["DPL"] ? { id: roleMap["DPL"] } : await prisma.role.findUnique({ where: { name: "DPL" } });
+  if (dplRoleObj) {
+    const defaultDplPass = await bcrypt.hash("password123", 10);
+    for (const d of realDplData) {
+      const u = await prisma.user.upsert({
+        where: { phone: d.phone },
+        update: {
+          name: d.name,
+          nip: d.nip,
+          institusi: "Universitas Komputer Indonesia",
+          programStudi: d.prodi,
+          roleId: dplRoleObj.id,
+          status: "Aktif",
+        },
+        create: {
+          name: d.name,
+          phone: d.phone,
+          nip: d.nip,
+          institusi: "Universitas Komputer Indonesia",
+          programStudi: d.prodi,
+          password: defaultDplPass,
+          roleId: dplRoleObj.id,
+          status: "Aktif",
+        },
+      });
+      await prisma.kelompokKkn.upsert({
+        where: { name: d.kelompok },
+        update: { dplId: u.id, dplNamaMentah: u.name, kelurahan: d.kelurahan },
+        create: { name: d.kelompok, dplId: u.id, dplNamaMentah: u.name, kelurahan: d.kelurahan },
+      });
+    }
+    console.log(`✅ ${realDplData.length} Real DPL & Kelompok KKN Unikom seeded with NIP & Prodi!`);
   }
 
   // ─────────────────────────────────────────────
   // 11. WASTE CATEGORIES
   // ─────────────────────────────────────────────
   const categories = [
-    { name: "Organik", pointsPerKg: 5 },
-    { name: "Anorganik", pointsPerKg: 8 },
-    { name: "Residu", pointsPerKg: 2 },
-    { name: "B3 (Limbah Berbahaya)", pointsPerKg: 10 },
+    { name: "Organik", pointsPerKg: 10, description: "Sampah sisa makanan, buah, daun, dan sisa bahan organik mudah terurai." },
+    { name: "Anorganik", pointsPerKg: 15, description: "Botol plastik, kardus, kertas, kaleng, dan bahan daur ulang anorganik." },
+    { name: "Residu", pointsPerKg: 20, description: "Sampah B3, popok, tisu kotor, dan limbah residu yang tidak dapat didaur ulang." },
   ];
 
   for (const cat of categories) {
     await prisma.wasteCategory.upsert({
       where: { name: cat.name },
-      update: {},
+      update: { pointsPerKg: cat.pointsPerKg, description: cat.description },
       create: cat,
     });
   }

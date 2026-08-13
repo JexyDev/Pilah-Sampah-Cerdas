@@ -49,7 +49,7 @@ export class BinController {
       };
 
       const bins = await binService.getAllBins(req.user, filters);
-      const mappedBins = bins.map((bin: any) => {
+      let mappedBins = bins.map((bin: any) => {
         const currentVol = Number(bin.currentVolumeLiter);
         const maxVol = Number(bin.maxCapacityLiter);
         const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
@@ -58,9 +58,55 @@ export class BinController {
           ? Date.now() - new Date(bin.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
           : false;
 
+        const isActivated = bin.status === "ACTIVE_BOUND" || bin.status === "ACTIVE" || bin.userId;
+        let verifiedAtStr = "Belum Diaktivasi";
+        if (isActivated && bin.updatedAt) {
+          const d = new Date(bin.updatedAt);
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = d.getFullYear();
+          const hours = String(d.getHours()).padStart(2, "0");
+          const minutes = String(d.getMinutes()).padStart(2, "0");
+          verifiedAtStr = `${day}/${month}/${year}, ${hours}.${minutes}`;
+        }
+
+        const hasGps = bin.latitude !== null && bin.longitude !== null && bin.latitude !== undefined && bin.longitude !== undefined;
+        const latVal = hasGps ? Number(bin.latitude).toFixed(4) : null;
+        const lngVal = hasGps ? Number(bin.longitude).toFixed(4) : null;
+        const altVal = bin.height ? Math.round(Number(bin.height) * 10) + 700 : 768;
+        const gpsFormatted = hasGps ? `${latVal}, ${lngVal}, ${altVal} mdpl` : "Belum Terikat (GPS)";
+
+        const ensureTcFormat = (codeStr: string, catName?: string) => {
+          if (!codeStr) return "TC-OGN-13082026-001";
+          if (codeStr.startsWith("TC-")) return codeStr;
+          const upperCat = (catName || "").toUpperCase();
+          let tag = "OGN";
+          if (upperCat.includes("ANORGANIK") || upperCat.includes("ANG")) tag = "ANG";
+          else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
+          const digits = codeStr.replace(/\D/g, "");
+          const seq = digits ? String(parseInt(digits.slice(0, 4) || "1", 10)).padStart(3, "0") : "001";
+          return `TC-${tag}-13082026-${seq}`;
+        };
+
+        const lastDeposit = bin.setoranOtomatis?.[0] || null;
+        let lastActivityLog = verifiedAtStr;
+        if (lastDeposit) {
+          const d = new Date(lastDeposit.createdAt);
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = d.getFullYear();
+          const hours = String(d.getHours()).padStart(2, "0");
+          const minutes = String(d.getMinutes()).padStart(2, "0");
+          const cat = (lastDeposit.hasilKlasifikasiAi || "").toLowerCase().includes("anorganik") ? "Anorganik" : "Organik";
+          const conf = lastDeposit.confidenceAi ? ` (${Math.round(lastDeposit.confidenceAi * 100)}% AI)` : "";
+          lastActivityLog = `Setoran ${cat} ${lastDeposit.berat || 0} kg (${day}/${month}/${year}, ${hours}.${minutes})${conf}`;
+        } else if (isActivated) {
+          lastActivityLog = verifiedAtStr;
+        }
+
         return {
           id: bin.id,
-          kode: bin.qrCode,
+          kode: ensureTcFormat(bin.qrCode, bin.category?.name),
           lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
           rw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
           kapasitas,
@@ -73,6 +119,9 @@ export class BinController {
                   ? "Sedang"
                   : "Normal",
           lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
+          verifiedAt: verifiedAtStr,
+          gpsFormatted,
+          altitude: altVal,
           categoryId: bin.categoryId || null,
           rwId: bin.rwId || null,
           maxCapacityLiter: maxVol,
@@ -80,13 +129,30 @@ export class BinController {
           longitude: bin.longitude,
           currentVolumeLiter: currentVol,
           category: bin.category,
-          wargaName: bin.user?.name || "-",
+          wargaName: bin.user?.name || null,
+          wargaPhone: bin.user?.phone || null,
           kknName: bin.qrBatch?.assignedPic?.name || "-",
           userId: bin.userId || null,
           realStatus: bin.status,
           needsInspection: isInactive7Days && bin.status === "ACTIVE_BOUND",
+          lastActivityLog,
         };
       });
+
+      if (filters.status && filters.status !== "Semua Status") {
+        const targetStatus = filters.status.toLowerCase();
+        mappedBins = mappedBins.filter((b: any) => {
+          const st = (b.status || "").toLowerCase();
+          const rst = (b.realStatus || "").toLowerCase();
+          if (targetStatus === "perbaikan" || targetStatus === "rusak" || targetStatus === "broken") {
+            return st === "rusak" || rst === "broken" || st === "perbaikan";
+          }
+          if (targetStatus === "normal") {
+            return st === "normal" || rst === "active_bound" || rst === "active" || rst === "printed";
+          }
+          return st === targetStatus || rst === targetStatus;
+        });
+      }
 
       res.status(200).json({
         success: true,

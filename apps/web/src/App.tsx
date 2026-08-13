@@ -24,10 +24,34 @@ const App: React.FC = () => {
         toastOptions={{
           duration: 4000,
           style: {
-            background: "transparent",
-            boxShadow: "none",
-            padding: 0,
-            maxWidth: "420px",
+            borderRadius: "9999px",
+            padding: "10px 24px",
+            fontSize: "13px",
+            fontWeight: "800",
+            maxWidth: "500px",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.03)",
+          },
+          success: {
+            style: {
+              background: "#e6f9f0",
+              color: "#005c3d",
+              border: "1.5px solid #10b981",
+            },
+            iconTheme: {
+              primary: "#009966",
+              secondary: "#ffffff",
+            },
+          },
+          error: {
+            style: {
+              background: "#fef2f2",
+              color: "#991b1b",
+              border: "1.5px solid #f87171",
+            },
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#ffffff",
+            },
           },
         }}
       />

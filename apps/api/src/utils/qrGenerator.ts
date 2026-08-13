@@ -6,51 +6,43 @@ export async function generateNextQrCode(categoryId: string): Promise<string> {
     where: { id: categoryId },
   });
 
-  if (!category) {
-    throw new Error("CATEGORY_NOT_FOUND");
+  const catName = (category?.name || categoryId).toUpperCase();
+  let codeTag = "OGN";
+  if (catName.includes("ANORGANIK") || catName.includes("ANG") || categoryId === "anorganik") {
+    codeTag = "ANG";
+  } else if (catName.includes("RESIDU") || catName.includes("RSD") || categoryId === "residu") {
+    codeTag = "RSD";
+  } else {
+    codeTag = "OGN";
   }
 
-  const categoryName = category.name.toUpperCase();
-  const isOrganic =
-    categoryName.includes("ORGANIK") &&
-    !categoryName.includes("ANORGANIK") &&
-    !categoryName.includes("NON");
-
-  // Prefixes
-  const currentPrefix = isOrganic ? "ORG" : "ANORG";
-  // We should also look for older formats (QR-ORG- and QR-ANO-) to continue the sequence
-  const legacyPrefix = isOrganic ? "QR-ORG-" : "QR-ANO-";
-  const demoPrefix = isOrganic ? "QR-DEMO-O-" : "QR-DEMO-A-";
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = String(now.getFullYear());
+  const dateStr = `${day}${month}${year}`;
 
   const allBins = await prisma.bin.findMany({
     select: { qrCode: true },
   });
 
   let maxNum = 0;
-
   for (const bin of allBins) {
     const code = bin.qrCode.toUpperCase();
-    let numStr = "";
-
-    if (code.startsWith(currentPrefix)) {
-      numStr = code.substring(currentPrefix.length);
-    } else if (code.startsWith(legacyPrefix)) {
-      numStr = code.substring(legacyPrefix.length);
-    } else if (code.startsWith(demoPrefix)) {
-      numStr = code.substring(demoPrefix.length);
-    }
-
-    // Clean numStr to keep only digits
-    const cleaned = numStr.replace(/[^0-9]/g, "");
-    if (cleaned) {
-      const parsed = parseInt(cleaned, 10);
-      if (!isNaN(parsed) && parsed > maxNum) {
-        maxNum = parsed;
+    if (code.includes(codeTag)) {
+      const parts = code.split("-");
+      const lastPart = parts[parts.length - 1];
+      const cleaned = lastPart ? lastPart.replace(/\D/g, "") : "";
+      if (cleaned) {
+        const parsed = parseInt(cleaned, 10);
+        if (!isNaN(parsed) && parsed > maxNum) {
+          maxNum = parsed;
+        }
       }
     }
   }
 
   const nextNum = maxNum + 1;
-  const paddedNum = String(nextNum).padStart(8, "0");
-  return `${currentPrefix}${paddedNum}`;
+  const paddedSeq = String(nextNum).padStart(3, "0");
+  return `TC-${codeTag}-${dateStr}-${paddedSeq}`;
 }

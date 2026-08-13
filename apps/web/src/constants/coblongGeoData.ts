@@ -185,3 +185,35 @@ export const createKknMhsIcon = (status: "PRESENT" | "SICK" | "PERMIT" | "ABSENT
     iconAnchor: [14, 14],
   });
 };
+
+export const createRealBinIcon = (categoryName: string, status: string, isPenuh: boolean, isRusak: boolean) => {
+  const cat = (categoryName || "").toLowerCase();
+  let bgColor = "#10b981"; // Emerald Green for Organik
+  let label = "O";
+
+  if (cat.includes("anorganik") || cat.includes("non_organic")) {
+    bgColor = "#f59e0b"; // Yellow Amber for Anorganik
+    label = "A";
+  } else if (cat.includes("residu") || cat.includes("b3")) {
+    bgColor = "#64748b"; // Grey Slate for Residu
+    label = "R";
+  }
+
+  if (isRusak || status === "BROKEN" || status === "Rusak") {
+    bgColor = "#e11d48"; // Rose for Rusak
+    label = "!";
+  } else if (isPenuh || status === "Penuh") {
+    bgColor = "#ef4444"; // Red for Penuh
+  }
+
+  return L.divIcon({
+    className: "custom-micro-bin-icon",
+    html: `
+      <div style="background: ${bgColor}; border: 1.5px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9.5px; font-weight: 900; font-family: monospace; cursor: pointer; transition: transform 0.15s ease;">
+        <span style="line-height: 1;">${label}</span>
+      </div>
+    `,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+};

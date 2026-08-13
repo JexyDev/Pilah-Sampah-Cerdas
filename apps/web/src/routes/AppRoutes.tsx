@@ -32,6 +32,11 @@ import Register from "../pages/Registration/Register";
 
 import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
 import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
+import MasterProvinsi from "../pages/MasterProvinsi/MasterProvinsi";
+import MasterKabupaten from "../pages/MasterKabupaten/MasterKabupaten";
+import MasterKecamatan from "../pages/MasterKecamatan/MasterKecamatan";
+import MasterKelurahan from "../pages/MasterKelurahan/MasterKelurahan";
+import MasterRw from "../pages/MasterRw/MasterRw";
 import ManajemenLokasi from "../pages/ManajemenLokasi/ManajemenLokasi";
 import JadwalKegiatan from "../pages/JadwalKegiatan/JadwalKegiatan";
 import RekapSetoran from "../pages/RekapSetoran/RekapSetoran";
@@ -266,6 +271,101 @@ const AppRoutes: React.FC = () => {
               ]}
             >
               <ManajemenTempatSampah />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-provinsi"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterProvinsi />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-kabupaten"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterKabupaten />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-kecamatan"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterKecamatan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-kelurahan"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterKelurahan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-rw"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterRw />
             </ProtectedRoute>
           }
         />

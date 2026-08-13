@@ -121,7 +121,17 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Master Pengguna"];
       }
       case "/manajemen-tempat-sampah":
-        return ["Manajemen Tempat Sampah"];
+        return ["Master Data", "Manajemen Tempat Sampah"];
+      case "/master-provinsi":
+        return ["Master Data", "Provinsi"];
+      case "/master-kabupaten":
+        return ["Master Data", "Kota, Kabupaten"];
+      case "/master-kecamatan":
+        return ["Master Data", "Kecamatan"];
+      case "/master-kelurahan":
+        return ["Master Data", "Kelurahan"];
+      case "/master-rw":
+        return ["Master Data", "Rukun Warga"];
       case "/manajemen-lokasi":
       case "/peta":
         return ["Manajemen Lokasi"];

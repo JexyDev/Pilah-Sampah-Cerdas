@@ -160,15 +160,21 @@ const ManajemenPengguna: React.FC = () => {
   const [areasList, setAreasList] = useState<any[]>([]);
   const [petugasResiduList, setPetugasResiduList] = useState<any[]>([]);
   const [dplList, setDplList] = useState<any[]>([]);
+  const [provinsiList, setProvinsiList] = useState<any[]>([]);
+  const [kabupatenList, setKabupatenList] = useState<any[]>([]);
+  const [kecamatanList, setKecamatanList] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [resK, resA, resP, resD] = await Promise.all([
+        const [resK, resA, resP, resD, resProv, resKab, resKec] = await Promise.all([
           api.get("/kelompok?limit=100"),
           api.get("/areas/rt-rw"),
           api.get("/users?roleName=PETUGAS_RESIDU"),
-          api.get("/users?roleName=DPL")
+          api.get("/users?roleName=DPL"),
+          api.get("/areas/provinsi"),
+          api.get("/areas/kabupaten"),
+          api.get("/areas/kecamatan"),
         ]);
         const listK = resK.data?.groups || resK.data?.data || [];
         setKelompokList(listK);
@@ -178,6 +184,12 @@ const ManajemenPengguna: React.FC = () => {
         setPetugasResiduList(listP);
         const listD = resD.data?.data || resD.data || [];
         setDplList(listD);
+        const listProv = resProv.data?.data || resProv.data || [];
+        setProvinsiList(listProv.length > 0 ? listProv : [{ id: 1, name: "Jawa Barat" }]);
+        const listKab = resKab.data?.data || resKab.data || [];
+        setKabupatenList(listKab.length > 0 ? listKab : [{ id: 1, name: "Kota Bandung" }]);
+        const listKec = resKec.data?.data || resKec.data || [];
+        setKecamatanList(listKec.length > 0 ? listKec : [{ id: 1, name: "Kecamatan Coblong" }]);
       } catch (err) {
         console.error("Error fetching reference data:", err);
       }
@@ -1692,21 +1704,27 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
                             <select
-                              value={formData.provinsi || "Jawa Barat"}
+                              value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                               onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              <option value="Jawa Barat">Jawa Barat</option>
+                              {provinsiList.map((p: any) => (
+                                <option key={p.id} value={p.name || p.nama}>
+                                  {p.name || p.nama}
+                                </option>
+                              ))}
                             </select>
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
                             <select
-                              value={formData.kabupaten || "Kota Bandung"}
+                              value={formData.kabupaten || (kabupatenList[0]?.name || "Kota Bandung")}
                               onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              <option value="Kota Bandung">Kota Bandung</option>
+                              {kabupatenList.map((kb: any) => (
+                                <option key={kb.id} value={kb.name}>{kb.name}</option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -1719,32 +1737,40 @@ const ManajemenPengguna: React.FC = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
                               <select
-                                value={formData.provinsi || "Jawa Barat"}
+                                value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
-                                <option value="Jawa Barat">Jawa Barat</option>
+                                {provinsiList.map((p: any) => (
+                                  <option key={p.id} value={p.name || p.nama}>
+                                    {p.name || p.nama}
+                                  </option>
+                                ))}
                               </select>
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
                               <select
-                                value={formData.kabupaten || "Kota Bandung"}
+                                value={formData.kabupaten || (kabupatenList[0]?.name || "Kota Bandung")}
                                 onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
-                                <option value="Kota Bandung">Kota Bandung</option>
+                                {kabupatenList.map((kb: any) => (
+                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                ))}
                               </select>
                             </div>
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
                             <select
-                              value={formData.kecamatan || "Kecamatan Coblong"}
+                              value={formData.kecamatan || (kecamatanList[0]?.name || "Kecamatan Coblong")}
                               onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              <option value="Kecamatan Coblong">Kecamatan Coblong</option>
+                              {kecamatanList.map((kc: any) => (
+                                <option key={kc.id} value={kc.name}>{kc.name}</option>
+                              ))}
                             </select>
                           </div>
                           <div>
@@ -1768,21 +1794,27 @@ const ManajemenPengguna: React.FC = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
                               <select
-                                value={formData.provinsi || "Jawa Barat"}
+                                value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
-                                <option value="Jawa Barat">Jawa Barat</option>
+                                {provinsiList.map((p: any) => (
+                                  <option key={p.id} value={p.name || p.nama}>
+                                    {p.name || p.nama}
+                                  </option>
+                                ))}
                               </select>
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
                               <select
-                                value={formData.kabupaten || "Kota Bandung"}
+                                value={formData.kabupaten || (kabupatenList[0]?.name || "Kota Bandung")}
                                 onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
-                                <option value="Kota Bandung">Kota Bandung</option>
+                                {kabupatenList.map((kb: any) => (
+                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                ))}
                               </select>
                             </div>
                           </div>
@@ -1791,11 +1823,13 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
                             <select
-                              value={formData.kecamatan || "Kecamatan Coblong"}
+                              value={formData.kecamatan || (kecamatanList[0]?.name || "Kecamatan Coblong")}
                               onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              <option value="Kecamatan Coblong">Kecamatan Coblong</option>
+                              {kecamatanList.map((kc: any) => (
+                                <option key={kc.id} value={kc.name}>{kc.name}</option>
+                              ))}
                             </select>
                           </div>
 

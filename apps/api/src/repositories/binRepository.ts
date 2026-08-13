@@ -43,6 +43,10 @@ export class BinRepository {
             kelurahan: true,
           },
         },
+        setoranOtomatis: {
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
         user: {
           select: {
             id: true,
@@ -467,9 +471,18 @@ export class BinRepository {
     });
   }
 
-  async updateBin(id: string, data: any) {
+  async updateBin(idOrQrCode: string, data: any) {
+    const existing = await prisma.bin.findFirst({
+      where: {
+        OR: [{ id: idOrQrCode }, { qrCode: idOrQrCode }],
+      },
+    });
+    if (!existing) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
     return prisma.bin.update({
-      where: { qrCode: id },
+      where: { id: existing.id },
       data,
     });
   }
@@ -499,9 +512,18 @@ export class BinRepository {
     });
   }
 
-  async deleteBin(id: string) {
+  async deleteBin(idOrQrCode: string) {
+    const existing = await prisma.bin.findFirst({
+      where: {
+        OR: [{ id: idOrQrCode }, { qrCode: idOrQrCode }],
+      },
+    });
+    if (!existing) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
     return prisma.bin.delete({
-      where: { qrCode: id },
+      where: { id: existing.id },
     });
   }
 

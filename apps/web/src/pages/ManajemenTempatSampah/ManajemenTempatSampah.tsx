@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye, Tags } from "lucide-react";
+import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, Phone, ShieldCheck, Download, Maximize2, Minimize2, RefreshCw, Layers } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -14,14 +14,11 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import {
   KELURAHAN_GEODATA,
-  createMapBinIcon,
-  createRwZonaIcon,
-  createKelurahanPinIcon,
-  createHouseIcon,
+  createRealBinIcon,
 } from "../../constants/coblongGeoData";
 
 // Fix default Leaflet icon issue
@@ -61,95 +58,200 @@ const MapFlyTo = ({ target }: { target: { center: [number, number]; zoom: number
   return null;
 };
 
-const kelurahanCentroidsMap = Object.values(KELURAHAN_GEODATA).map((kg) => ({
-  name: kg.name,
-  lat: kg.centroid[0],
-  lng: kg.centroid[1],
-  bounds: kg.bounds,
-  color: kg.color,
-  rwCount: kg.rwCount,
-}));
 
-
-const LocationPicker = ({ position, onChange }: { position: [number, number] | null; onChange: (lat: number, lng: number) => void }) => {
-  useMapEvents({
-    click(e) {
-      onChange(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return position ? <Marker position={position} /> : null;
-};
+// Helper for map events
 
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") === "kategori" ? "kategori_sampah" : "tempat_sampah";
-  const [activeTab, setActiveTab] = useState<"tempat_sampah" | "kategori_sampah">(initialTab);
+
+  const getTabFromUrl = (): "kodefikasi" | "monitoring" | "kategori" => {
+    const tab = searchParams.get("tab");
+    if (tab === "monitoring") return "monitoring";
+    if (tab === "kategori") return "kategori";
+    return "kodefikasi";
+  };
+
+  const [activeTab, setActiveTab] = useState<"kodefikasi" | "monitoring" | "kategori">(getTabFromUrl());
 
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam === "kategori") {
-      setActiveTab("kategori_sampah");
-    } else if (tabParam === "tempat") {
-      setActiveTab("tempat_sampah");
+    const currentTab = getTabFromUrl();
+    if (currentTab !== activeTab) {
+      setActiveTab(currentTab);
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: "tempat_sampah" | "kategori_sampah") => {
+  const handleTabChange = (tab: "kodefikasi" | "monitoring" | "kategori") => {
     setActiveTab(tab);
-    if (tab === "kategori_sampah") {
-      setSearchParams({ tab: "kategori" });
-    } else {
-      setSearchParams({});
-    }
+    setSearchParams({ tab });
   };
 
   const [bins, setBins] = useState<any[]>([]);
   const [households, setHouseholds] = useState<any[]>([]);
-  const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBin, setSelectedBin] = useState<string | null>(null);
   const [selectedBinDetail, setSelectedBinDetail] = useState<any | null>(null);
 
-  // Map view reference
+  // Map view reference & Monitoring controls
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8903, 107.611]);
+  void setMapCenter;
   const [mapZoom, setMapZoom] = useState<number>(15);
   const [selectedMapKelurahan, setSelectedMapKelurahan] = useState("Semua Kelurahan");
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
 
-  // Group bins by household / location
-  const householdGroups = React.useMemo(() => {
-    const groups: Record<string, { bins: any[]; latitude: number; longitude: number }> = {};
-    bins
-      .filter((b) => b.latitude && b.longitude)
-      .forEach((bin) => {
-        const key = bin.userId || `${bin.latitude},${bin.longitude}`;
-        if (!groups[key]) {
-          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude) };
-        }
-        groups[key].bins.push(bin);
-      });
-    return Object.values(groups);
+  // Map settings
+  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">("google_vector");
+  const [mapCategoryFilter, setMapCategoryFilter] = useState<string>("Semua");
+  const [mapStatusFilter, setMapStatusFilter] = useState<string>("Semua");
+  const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [mapSearchInput, setMapSearchInput] = useState<string>("");
+  const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
+
+  // REALTIME POLLING: Auto-sync map data every 10 seconds when Monitoring tab is active
+  useEffect(() => {
+    if (activeTab === "monitoring") {
+      fetchBins();
+      const interval = setInterval(() => {
+        fetchBins();
+        setLastSyncTime(new Date());
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
+
+  // Verified & Owned Bins ONLY for Geospatial Realtime Monitoring (NO MOCK/DUMMY PINS)
+  const verifiedMapBins = React.useMemo(() => {
+    return bins.filter((b) => {
+      const hasGps = b.latitude !== null && b.longitude !== null && !isNaN(Number(b.latitude)) && !isNaN(Number(b.longitude));
+      const isVerifiedAndOwned = Boolean(
+        (b.userId || b.wargaName) &&
+        (b.verifiedAt !== "Belum Diaktivasi" || b.realStatus === "ACTIVE_BOUND" || b.realStatus === "ACTIVE")
+      );
+      return hasGps && isVerifiedAndOwned;
+    });
   }, [bins]);
+
+  // Auto-center map to the average location of verified active bins if available
+  useEffect(() => {
+    if (verifiedMapBins.length > 0 && selectedMapKelurahan === "Semua Kelurahan") {
+      const avgLat = verifiedMapBins.reduce((sum, b) => sum + Number(b.latitude), 0) / verifiedMapBins.length;
+      const avgLng = verifiedMapBins.reduce((sum, b) => sum + Number(b.longitude), 0) / verifiedMapBins.length;
+      if (!isNaN(avgLat) && !isNaN(avgLng) && avgLat !== 0 && avgLng !== 0) {
+        setFlyTarget({ center: [avgLat, avgLng], zoom: 15, timestamp: Date.now() });
+      }
+    }
+  }, [verifiedMapBins.length]);
+
+  // Search input auto-fly to matched bin
+  useEffect(() => {
+    if (mapSearchInput.trim() && verifiedMapBins.length > 0) {
+      const q = mapSearchInput.trim().toLowerCase();
+      const match = verifiedMapBins.find(
+        (b) => (b.kode || "").toLowerCase().includes(q) || (b.wargaName || "").toLowerCase().includes(q)
+      );
+      if (match && match.latitude && match.longitude) {
+        setFlyTarget({
+          center: [Number(match.latitude), Number(match.longitude)],
+          zoom: 18,
+          timestamp: Date.now(),
+        });
+      }
+    }
+  }, [mapSearchInput]);
+
+  // Filtered map bins based on user controls
+  const filteredMapBins = React.useMemo(() => {
+    return verifiedMapBins.filter((b) => {
+      // 0. Filter by Map Search Input
+      if (mapSearchInput.trim()) {
+        const q = mapSearchInput.trim().toLowerCase();
+        const codeMatch = (b.kode || "").toLowerCase().includes(q);
+        const ownerMatch = (b.wargaName || b.user?.name || "").toLowerCase().includes(q);
+        if (!codeMatch && !ownerMatch) return false;
+      }
+
+      // 1. Filter Kelurahan
+      if (selectedMapKelurahan !== "Semua Kelurahan") {
+        const binRw = (b.rw || "").toLowerCase();
+        const selKel = selectedMapKelurahan.toLowerCase();
+        const userAddress = (b.user?.address || b.lokasi || "").toLowerCase();
+        if (!binRw.includes(selKel) && !userAddress.includes(selKel)) {
+          return false;
+        }
+      }
+
+      // 2. Filter Kategori
+      if (mapCategoryFilter !== "Semua") {
+        const catName = (b.category?.name || b.lokasi || "").toLowerCase();
+        const target = mapCategoryFilter.toLowerCase();
+        if (target === "organik" && !catName.includes("organik") && !catName.includes("organic")) return false;
+        if (target === "anorganik" && !catName.includes("anorganik") && !catName.includes("non_organic")) return false;
+      }
+
+      // 3. Filter Status Okupansi
+      if (mapStatusFilter !== "Semua") {
+        const isRusak = b.status === "Rusak" || b.realStatus === "BROKEN";
+        const isPenuh = b.status === "Penuh" || b.kapasitas >= 90;
+        const isSedang = b.status === "Sedang" || (b.kapasitas >= 70 && b.kapasitas < 90);
+        const isAman = b.status === "Normal" || b.kapasitas < 70;
+
+        if (mapStatusFilter === "Rusak" && !isRusak) return false;
+        if (mapStatusFilter === "Penuh" && !isPenuh) return false;
+        if (mapStatusFilter === "Sedang" && !isSedang) return false;
+        if (mapStatusFilter === "Aman" && !isAman) return false;
+      }
+
+      return true;
+    });
+  }, [verifiedMapBins, selectedMapKelurahan, mapCategoryFilter, mapStatusFilter, mapSearchInput]);
+
+  // Search Bar Candidate Results (Limit 5 items)
+  const mapSearchResults = React.useMemo(() => {
+    if (!mapSearchInput.trim()) return [];
+    const q = mapSearchInput.trim().toLowerCase();
+    return verifiedMapBins
+      .filter(
+        (b) =>
+          (b.kode || "").toLowerCase().includes(q) ||
+          (b.wargaName || b.user?.name || "").toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+  }, [mapSearchInput, verifiedMapBins]);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [binToDelete, setBinToDelete] = useState<string | null>(null);
 
+  // Kategori Add Modal Trigger Signal
+  const [openKategoriAddSignal, setOpenKategoriAddSignal] = useState(0);
+
   // Form Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    qrCode: string;
+    categoryId: string;
+    rtRwId: number;
+    latitude: string;
+    longitude: string;
+    maxCapacityLiter: number;
+    userId: string;
+    generateCount?: number;
+    status?: string;
+  }>({
     qrCode: "",
-    categoryId: "",
+    categoryId: "organik",
     rtRwId: 1,
     latitude: "",
     longitude: "",
     maxCapacityLiter: 25,
     userId: "",
+    generateCount: 5,
+    status: "ACTIVE_BOUND",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -161,12 +263,39 @@ const ManajemenTempatSampah: React.FC = () => {
   // Logs state
   const [logTransactions, setLogTransactions] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  void logTransactions;
+  void loadingLogs;
 
   // Search & Filter state
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [areaFilter, setAreaFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+
+  // Phone formatter matching ManajemenPengguna.tsx
+  const formatPhone = (phone?: string) => {
+    if (!phone) return "-";
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.startsWith("62")) return `+${cleaned}`;
+    if (cleaned.startsWith("0")) return `+62${cleaned.slice(1)}`;
+    return `+${cleaned}`;
+  };
+
+  const renderPhoneCell = (phone?: string) => {
+    if (!phone || phone === "-") return <span className="text-slate-400 font-medium text-[11px]">-</span>;
+    const formatted = formatPhone(phone);
+    const cleanNum = phone.replace(/\D/g, "");
+    return (
+      <a
+        href={`https://wa.me/${cleanNum}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 font-mono font-bold text-[#009966] hover:underline text-[11px] cursor-pointer"
+      >
+        <Phone size={14} className="text-[#009966] shrink-0" />
+        <span>{formatted}</span>
+      </a>
+    );
+  };
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -174,7 +303,7 @@ const ManajemenTempatSampah: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchInput, statusFilter, areaFilter, categoryFilter, rowsPerPage]);
+  }, [searchInput, statusFilter, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(bins.length / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -187,11 +316,8 @@ const ManajemenTempatSampah: React.FC = () => {
       const query = new URLSearchParams();
       if (searchInput) query.append("search", searchInput);
       if (statusFilter) query.append("status", statusFilter);
-      if (areaFilter) query.append("areaId", areaFilter);
-      if (categoryFilter) query.append("categoryId", categoryFilter);
-
-      const response = await api.get(`/bins?${query.toString()}`);
-      setBins(response.data.data);
+      const res = await api.get(`/bins?${query.toString()}`);
+      setBins(res.data.data || []);
     } catch (err) {
       setError("Gagal memuat data dari server.");
       toast.error("Gagal memuat data tempat sampah");
@@ -203,7 +329,9 @@ const ManajemenTempatSampah: React.FC = () => {
   const fetchHouseholds = async () => {
     try {
       const response = await api.get("/households");
-      setHouseholds(response.data.data || []);
+      const data = response.data.data || [];
+      setHouseholds(data);
+      void households;
     } catch (err) {
       console.error("Failed to fetch households:", err);
     }
@@ -219,6 +347,7 @@ const ManajemenTempatSampah: React.FC = () => {
         .get("/users", { params: { roleName: "WARGA" } })
         .then((res) => setWargas(res.data?.data || []))
         .catch((err) => console.log("Non-admin or error fetching wargas:", err));
+      void wargas;
     } catch (err) {
       console.error("Failed to load form options:", err);
     }
@@ -226,23 +355,11 @@ const ManajemenTempatSampah: React.FC = () => {
 
   useEffect(() => {
     fetchBins();
-  }, [statusFilter, areaFilter, categoryFilter]);
-
-  const fetchLocations = async () => {
-    try {
-      const response = await api.get("/bins/locations");
-      if (response.data?.success) {
-        setLocations(response.data.data || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch locations for map:", err);
-    }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchHouseholds();
     loadFormOptions();
-    fetchLocations();
   }, []);
 
   useEffect(() => {
@@ -283,18 +400,26 @@ const ManajemenTempatSampah: React.FC = () => {
   };
 
   const handleOpenEditModal = (bin: any) => {
-    setModalType("edit");
-    setSelectedBin(bin.kode);
+    const targetId = bin.id || bin.kode;
+    setSelectedBin(targetId);
     setFormData({
       qrCode: bin.kode,
-      categoryId: bin.categoryId || "",
-      rtRwId: bin.rtRwId || 1,
+      categoryId: bin.categoryId || "organik",
+      rtRwId: bin.rwId || 1,
       latitude: bin.latitude ? bin.latitude.toString() : "",
       longitude: bin.longitude ? bin.longitude.toString() : "",
       maxCapacityLiter: bin.maxCapacityLiter || 25,
       userId: bin.userId || "",
+      status: bin.realStatus || bin.status || "ACTIVE_BOUND",
+      generateCount: 1,
     });
+    setModalType("edit");
     setIsFormModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (kode: string) => {
+    setBinToDelete(kode);
+    setIsDeleteModalOpen(true);
   };
 
   const closeFormModal = () => {
@@ -313,17 +438,22 @@ const ManajemenTempatSampah: React.FC = () => {
       };
 
       if (modalType === "add") {
-        await api.post("/bins", payload);
-        toast.success("Tempat sampah berhasil ditambahkan!");
+        const count = parseInt(String(formData.generateCount || 5), 10);
+        await api.post("/bins", {
+          categoryId: formData.categoryId || "organik",
+          maxCapacityLiter: formData.maxCapacityLiter || 25,
+          count: count,
+        });
+        toast.success(`Berhasil meng-generate ${count} tempat sampah!`);
       } else {
         await api.put(`/bins/${selectedBin}`, payload);
         toast.success("Data tempat sampah berhasil diperbarui!");
       }
       closeFormModal();
-      fetchBins();
-      fetchHouseholds();
+      await fetchBins();
+      await fetchHouseholds();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Terjadi kesalahan");
+      toast.error(error.response?.data?.message || "Gagal menyimpan perubahan");
     } finally {
       setIsSubmitting(false);
     }
@@ -377,49 +507,13 @@ const ManajemenTempatSampah: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    if (bins.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
-      return;
-    }
-
-    const headers = [
-      "Kode",
-      "Lokasi",
-      "Pemilik",
-      "Kapasitas",
-      "Kategori",
-      "Status",
-      "Terakhir Update",
-    ];
-    const csvData = bins.map((b: any) => [
-      b.kode,
-      b.lokasi,
-      b.wargaName || "-",
-      `${b.kapasitas} Liter`,
-      b.categoryId,
-      b.status,
-      b.lastUpdate,
-    ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...csvData.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `Laporan_Tempat_Sampah_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Laporan CSV berhasil diunduh");
+    toast.error("Fungsi ekspor CSV dinonaktifkan.");
   };
+
+  void handleApproveActivation;
+  void handleRejectActivation;
+  void handleDeleteClick;
+  void handleExportCSV;
 
   const openLogModal = async (binId: string) => {
     setSelectedBin(binId);
@@ -446,295 +540,1031 @@ const ManajemenTempatSampah: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Consolidated Master Data Tab Switcher */}
+      {/* 1. Main Header Title & Actions matching User Screenshot */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 border border-[#009966]/20 text-[#009966] flex items-center justify-center shrink-0 shadow-2xs">
+            <Trash2 size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+              Manajemen Tempat Sampah
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Kelola tempat sampah fisik, lokasi GPS, QR code, peta pemantauan, dan kategori sampah.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {!isReadOnly && activeTab === "kodefikasi" && (
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008055] text-white font-extrabold rounded-xl transition-all text-xs shadow-xs cursor-pointer"
+            >
+              <Plus size={16} /> Tambah Tempat Sampah
+            </button>
+          )}
+          {!isReadOnly && activeTab === "kategori" && (
+            <button
+              type="button"
+              onClick={() => setOpenKategoriAddSignal((prev) => prev + 1)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008055] text-white font-extrabold rounded-xl transition-all text-xs shadow-xs cursor-pointer"
+            >
+              <Plus size={16} /> Tambah Kategori
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Sub-Tab Switcher Bar Directly Below Title */}
       <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3">
         <button
           type="button"
-          onClick={() => handleTabChange("tempat_sampah")}
+          onClick={() => handleTabChange("kodefikasi")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-            activeTab === "tempat_sampah"
+            activeTab === "kodefikasi"
               ? "bg-[#009966] text-white shadow-xs"
               : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
           }`}
         >
-          <Trash2 size={16} />
-          Tempat & Wadah Sampah
+          <QrCode size={16} />
+          Kodefikasi
         </button>
         <button
           type="button"
-          onClick={() => handleTabChange("kategori_sampah")}
+          onClick={() => handleTabChange("monitoring")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-            activeTab === "kategori_sampah"
+            activeTab === "monitoring"
+              ? "bg-[#009966] text-white shadow-xs"
+              : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+          }`}
+        >
+          <Map size={16} />
+          Monitoring
+        </button>
+        <button
+          type="button"
+          onClick={() => handleTabChange("kategori")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            activeTab === "kategori"
               ? "bg-[#009966] text-white shadow-xs"
               : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
           }`}
         >
           <Tags size={16} />
-          Kategori & Jenis Sampah
+          Kategori
         </button>
       </div>
 
-      {activeTab === "kategori_sampah" ? (
-        <KategoriSampah />
+      {/* 3. Sub-Tab Contents */}
+      {activeTab === "kategori" ? (
+        <KategoriSampah openAddModalSignal={openKategoriAddSignal} />
+      ) : activeTab === "monitoring" ? (
+        <div className={`space-y-6 ${isMapFullscreen ? "fixed inset-0 z-50 bg-slate-100 p-4 sm:p-6 overflow-y-auto flex flex-col justify-between h-screen w-screen animate-in fade-in duration-200" : ""}`}>
+
+          {/* Header Summary KPI Cards for Monitoring */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                TERVERIFIKASI GPS
+              </span>
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900">{verifiedMapBins.length}</h3>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Aktif
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                ORGANIK
+              </span>
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-xl sm:text-2xl font-black text-emerald-600">
+                  {verifiedMapBins.filter((b) => (b.category?.name || b.lokasi || "").toLowerCase().includes("organik") && !(b.category?.name || b.lokasi || "").toLowerCase().includes("anorganik")).length}
+                </h3>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-2xs" />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                ANORGANIK
+              </span>
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-xl sm:text-2xl font-black text-amber-500">
+                  {verifiedMapBins.filter((b) => (b.category?.name || b.lokasi || "").toLowerCase().includes("anorganik")).length}
+                </h3>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-2xs" />
+              </div>
+            </div>
+
+            <div className="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                PENUH
+              </span>
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-xl sm:text-2xl font-black text-rose-600">
+                  {verifiedMapBins.filter((b) => b.status === "Penuh" || b.kapasitas >= 90).length}
+                </h3>
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-2xs" />
+              </div>
+            </div>
+          </div>
+
+          {/* Geospatial Map Container with Live Sync Toolbar */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
+
+            {/* Toolbar Top Bar - Tiered Layout for Clean UX */}
+            <div className="space-y-3 pb-3 border-b border-slate-100">
+              {/* Row 1: Title, Live Sync Status, and Action Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 shadow-2xs">
+                    <Map size={20} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                        Peta Sebaran Real-Time Tempat Sampah Terverifikasi
+                      </h3>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        Live Sync
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Menampilkan tempat sampah aktif terverifikasi ({filteredMapBins.length} dari {verifiedMapBins.length} Tempat Sampah)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Primary Action Controls */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Refresh Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetchBins();
+                      setLastSyncTime(new Date());
+                      toast.success("Data sebaran map berhasil disinkronkan!");
+                    }}
+                    className="p-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer shadow-2xs"
+                    title="Muat Ulang Data Realtime"
+                  >
+                    <RefreshCw size={15} />
+                  </button>
+
+                  {/* Fullscreen Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+                    className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-[#009966] to-emerald-600 hover:from-[#008055] hover:to-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+                    title={isMapFullscreen ? "Keluar Layar Penuh" : "Mode Layar Penuh (Full Size Peta)"}
+                  >
+                    {isMapFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                    <span className="hidden sm:inline">{isMapFullscreen ? "Kecilkan Peta" : "Full Size Peta"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 2: Clean Filter & Map Layer Switcher Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* 1. Kelurahan Filter */}
+                  <select
+                    value={selectedMapKelurahan}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedMapKelurahan(val);
+                      if (val !== "Semua Kelurahan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
+                        const geo = KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")];
+                        setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+                      } else {
+                        setFlyTarget({ center: [-6.8903, 107.611], zoom: 15, timestamp: Date.now() });
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  >
+                    <option value="Semua Kelurahan">Semua Kelurahan</option>
+                    <option value="Dago">Kel. Dago</option>
+                    <option value="Sadang Serang">Kel. Sadang Serang</option>
+                    <option value="Sekeloa">Kel. Sekeloa</option>
+                    <option value="Lebak Gede">Kel. Lebak Gede</option>
+                    <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                    <option value="Cipaganti">Kel. Cipaganti</option>
+                  </select>
+
+                  {/* 2. Kategori Filter */}
+                  <select
+                    value={mapCategoryFilter}
+                    onChange={(e) => setMapCategoryFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  >
+                    <option value="Semua">Semua Kategori</option>
+                    <option value="Organik">Organik</option>
+                    <option value="Anorganik">Anorganik</option>
+                  </select>
+
+                  {/* 3. Status Filter */}
+                  <select
+                    value={mapStatusFilter}
+                    onChange={(e) => setMapStatusFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  >
+                    <option value="Semua">Semua Status</option>
+                    <option value="Aman">Aman (&lt;70%)</option>
+                    <option value="Sedang">Sedang (70-90%)</option>
+                    <option value="Penuh">Penuh (&gt;90%)</option>
+                    <option value="Rusak">Fisik Rusak</option>
+                  </select>
+                </div>
+
+                {/* 4. Icon Batas Wilayah Toggle & Map Layer Switcher */}
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowKelurahanBoundaries(!showKelurahanBoundaries)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-2xs border ${
+                      showKelurahanBoundaries
+                        ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-xs"
+                        : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                    }`}
+                    title={showKelurahanBoundaries ? "Sembunyikan Batas Wilayah (GeoJSON)" : "Tampilkan Batas Wilayah (GeoJSON)"}
+                  >
+                    <Layers size={14} className={showKelurahanBoundaries ? "text-[#009966]" : "text-slate-400"} />
+                    <span>Batas Wilayah</span>
+                  </button>
+
+                  <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setMapTileProvider("google_vector")}
+                      className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                        mapTileProvider === "google_vector"
+                          ? "bg-[#009966] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      title="Tampilan Google Maps Vektor"
+                    >
+                      Google Peta
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMapTileProvider("google_satellite")}
+                      className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                        mapTileProvider === "google_satellite"
+                          ? "bg-[#009966] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      title="Tampilan Google Maps Satelit / Hybrid"
+                    >
+                      Satelit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMapTileProvider("cartodb")}
+                      className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                        mapTileProvider === "cartodb"
+                          ? "bg-[#009966] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      title="Tampilan Kartografi Clean"
+                    >
+                      CartoDB
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Canvas Viewport */}
+            <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[500px]"}`}>
+
+              {/* Floating Top-Left Search Bar Overlay with Limit 5 Candidate Results */}
+              <div className="absolute top-4 left-4 z-20 pointer-events-auto">
+                <div className="relative w-64 sm:w-80 shadow-2xl rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md">
+                  <div className="flex items-center px-3.5 py-2">
+                    <Search size={15} className="text-[#009966] shrink-0 mr-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Cari kode tempat sampah..."
+                      value={mapSearchInput}
+                      onChange={(e) => setMapSearchInput(e.target.value)}
+                      className="w-full bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none"
+                    />
+                    {mapSearchInput && (
+                      <button
+                        type="button"
+                        onClick={() => setMapSearchInput("")}
+                        className="text-slate-400 hover:text-slate-600 p-0.5"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Limit 5 Search Results List Dropdown */}
+                  {mapSearchInput.trim() && (
+                    <div className="border-t border-slate-100 max-h-60 overflow-y-auto rounded-b-2xl bg-white shadow-xl">
+                      {mapSearchResults.length > 0 ? (
+                        mapSearchResults.map((bin) => {
+                          const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
+                          const isResidu = catLower.includes("residu") || catLower.includes("b3");
+                          const isAnorganic = catLower.includes("anorganik");
+                          const catName = isResidu ? "Residu" : isAnorganic ? "Anorganik" : "Organik";
+                          return (
+                            <div
+                              key={`search-res-${bin.id || bin.kode}`}
+                              onClick={() => {
+                                setMapSearchInput(bin.kode);
+                                if (bin.latitude && bin.longitude) {
+                                  setFlyTarget({
+                                    center: [Number(bin.latitude), Number(bin.longitude)],
+                                    zoom: 18,
+                                    timestamp: Date.now(),
+                                  });
+                                }
+                              }}
+                              className="px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 cursor-pointer transition-colors flex items-center justify-between"
+                            >
+                              <div>
+                                <span className="font-mono font-black text-xs text-slate-900 block">{bin.kode}</span>
+                                <span className="text-[10.5px] text-slate-500 font-semibold">{bin.wargaName || bin.user?.name || "Warga Terdaftar"}</span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                                isResidu
+                                  ? "bg-slate-100 text-slate-700 border border-slate-200"
+                                  : isAnorganic
+                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              }`}>
+                                {catName}
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="px-3.5 py-3 text-xs text-slate-400 font-medium text-center">
+                          Tidak ada tempat sampah yang cocok
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Map Overlay Legend Card (Legenda Peta) */}
+              <div className="absolute bottom-4 right-4 z-10 flex flex-col pointer-events-auto">
+                <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[210px]">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-[#009966]" />
+                      <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                        Legenda Sebaran Peta
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Legenda Kategori */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Kategori Tempat Sampah</span>
+                    <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
+                        <span>Organik</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
+                        <span>Anorganik</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
+                        <span>Residu</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legenda Kapasitas */}
+                  <div className="space-y-1.5 border-t border-slate-100 pt-2">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Volume & Okupansi</span>
+                    <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
+                        <span>Aman (&lt; 70% Terisi)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
+                        <span>Sedang (70% - 90%)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
+                        <span>Penuh (&gt; 90% Terisi)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
+                        <span>Tempat Sampah Rusak</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                    <span>Diperbarui: {lastSyncTime.toLocaleTimeString()}</span>
+                    <span className="text-emerald-600 font-bold">Realtime</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Leaflet Map Renderer (attributionControl=false removes Leaflet watermark, zoomControl=false removes + / - box) */}
+              <MapContainer
+                center={mapCenter}
+                zoom={mapZoom}
+                scrollWheelZoom={true}
+                attributionControl={false}
+                zoomControl={false}
+                style={{ height: "100%", width: "100%", zIndex: 1 }}
+              >
+                <MapFlyTo target={flyTarget} />
+                <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} />
+
+                {/* Dynamically Resolved Tile Provider (Google Maps Vector / Satelit / CartoDB / OSM) */}
+                <TileLayer
+                  url={
+                    mapTileProvider === "google_vector"
+                      ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                      : mapTileProvider === "google_satellite"
+                      ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                      : mapTileProvider === "cartodb"
+                      ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  }
+                />
+
+                {/* KELURAHAN BOUNDARY POLYGONS (OFFICIAL LAPAKGIS / OSM GEOJSON) */}
+                {showKelurahanBoundaries && Object.values(KELURAHAN_GEODATA).map((kg) => {
+                  if (
+                    selectedMapKelurahan !== "Semua Kelurahan" &&
+                    selectedMapKelurahan.toLowerCase() !== kg.name.toLowerCase()
+                  ) {
+                    return null;
+                  }
+
+                  return (
+                    <Polygon
+                      key={`kel-poly-real-${kg.id}`}
+                      positions={kg.bounds}
+                      pathOptions={{
+                        color: kg.color,
+                        fillColor: kg.color,
+                        fillOpacity: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 0.30 : 0.15,
+                        weight: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 3 : 2,
+                      }}
+                    />
+                  );
+                })}
+
+                {/* REAL BINS MARKERS WITH HOVER TOOLTIPS & POPUPS (ONLY VERIFIED & OWNED BINS) */}
+                {filteredMapBins.map((bin) => {
+                  const lat = Number(bin.latitude);
+                  const lng = Number(bin.longitude);
+                  const vol = Number(bin.currentVolumeLiter || 0);
+                  const max = Number(bin.maxCapacityLiter || 25);
+                  const pct = bin.kapasitas !== undefined ? bin.kapasitas : (max > 0 ? Math.round((vol / max) * 100) : 0);
+
+                  const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
+                  const isResiduCat = catLower.includes("residu") || catLower.includes("b3");
+                  const isAnorganikCat = catLower.includes("anorganik");
+                  const isRusak = bin.status === "Rusak" || bin.realStatus === "BROKEN";
+                  const isPenuh = bin.status === "Penuh" || pct >= 90;
+                  const categoryTitle = isResiduCat ? "Residu" : isAnorganikCat ? "Anorganik" : "Organik";
+                  const ownerName = bin.wargaName || bin.user?.name || "Warga Terdaftar";
+                  const ownerPhone = bin.wargaPhone || bin.user?.phone || bin.phone;
+                  const circleColor = isRusak ? "#e11d48" : isPenuh ? "#ef4444" : isResiduCat ? "#64748b" : isAnorganikCat ? "#f59e0b" : "#10b981";
+
+                  return (
+                    <React.Fragment key={`real-bin-marker-${bin.id || bin.kode}`}>
+                      {/* Radius indicator circle around active bin */}
+                      <Circle
+                        center={[lat, lng]}
+                        radius={15}
+                        pathOptions={{
+                          color: circleColor,
+                          fillColor: circleColor,
+                          fillOpacity: 0.2,
+                          weight: 1.5,
+                        }}
+                      />
+
+                      <Marker
+                        position={[lat, lng]}
+                        icon={createRealBinIcon(bin.category?.name || categoryTitle, bin.status, isPenuh, isRusak)}
+                      >
+                        {/* HOVER TOOLTIP (Shows instantly on hover with last deposit log!) */}
+                        <Tooltip permanent={false} direction="top" offset={[0, -12]} className="custom-bin-hover-tooltip">
+                          <div className="p-2 min-w-[210px] space-y-1.5 font-sans">
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1">
+                              <span className="font-mono font-black text-slate-900 text-xs">{bin.kode}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                                isResiduCat
+                                  ? "bg-slate-200 text-slate-800"
+                                  : isAnorganikCat
+                                  ? "bg-amber-100 text-amber-900"
+                                  : "bg-emerald-100 text-emerald-800"
+                              }`}>
+                                {categoryTitle}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-slate-700 space-y-0.5">
+                              <div className="font-extrabold text-slate-900">{ownerName}</div>
+                              {ownerPhone && <div className="text-[11px] font-mono text-emerald-700 font-bold">{formatPhone(ownerPhone)}</div>}
+                            </div>
+
+                            <div className="pt-1 border-t border-slate-100 space-y-1">
+                              <div className="flex justify-between text-[10.5px] font-bold">
+                                <span className="text-slate-500">Volume Terisi:</span>
+                                <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                  {vol}/{max}L ({pct}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                  style={{ width: `${Math.min(pct, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Log Aktivitas Terakhir Laporan Pemilahan Sampah */}
+                            <div className="pt-1 border-t border-slate-100">
+                              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">
+                                Log Aktivitas Terakhir:
+                              </span>
+                              <div className="text-[10.5px] font-bold text-slate-800 leading-tight">
+                                {bin.lastActivityLog || bin.verifiedAt || "-"}
+                              </div>
+                            </div>
+                          </div>
+                        </Tooltip>
+
+                        {/* CLICK POPUP (Detailed Interactive Card) */}
+                        <Popup>
+                          <div className="p-2 min-w-[250px] space-y-2.5 font-sans">
+                            <div className="flex items-center justify-between border-b pb-1.5">
+                              <div>
+                                <span className="font-mono font-black text-slate-900 text-xs block">{bin.kode}</span>
+                                <span className="text-[10px] text-slate-400 font-bold">{bin.rw || "Wilayah Coblong"}</span>
+                              </div>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                                isResiduCat
+                                  ? "bg-slate-200 text-slate-800"
+                                  : isAnorganikCat
+                                  ? "bg-amber-100 text-amber-900"
+                                  : "bg-emerald-100 text-emerald-800"
+                              }`}>
+                                {categoryTitle}
+                              </span>
+                            </div>
+
+                            {/* Owner details */}
+                            <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 space-y-1">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pemilik Terverifikasi</span>
+                              <div className="font-extrabold text-slate-900 text-xs">{ownerName}</div>
+                              {ownerPhone && (
+                                <div className="mt-1">
+                                  {renderPhoneCell(ownerPhone)}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Capacity Status */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs font-bold">
+                                <span className="text-slate-600">Kapasitas Terisi</span>
+                                <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                  {vol}/{max} Liter ({pct}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                                <div
+                                  className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                  style={{ width: `${Math.min(pct, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Log Aktivitas Terakhir Laporan Pemilahan Sampah */}
+                            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 space-y-1">
+                              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                                Log Aktivitas Terakhir
+                              </span>
+                              <div className="text-xs font-bold text-slate-800 leading-tight">
+                                {bin.lastActivityLog || bin.verifiedAt || "-"}
+                              </div>
+                            </div>
+
+                            {/* Verification info & GPS */}
+                            <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-1 border-t border-slate-100">
+                              <div>Diverifikasi: <strong className="text-slate-700">{bin.verifiedAt}</strong></div>
+                              <div>Koordinat: <strong className="font-mono text-slate-700">{lat.toFixed(4)}, {lng.toFixed(4)}, {bin.altitude || 768} mdpl</strong></div>
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </React.Fragment>
+                  );
+                })}
+              </MapContainer>
+            </div>
+          </div>
+        </div>
       ) : (
-        <>
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Tempat Sampah</h1>
-            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <Map size={13} /> Titik Fasilitas
-            </span>
-          </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Pemantauan status kapasitas, lokasi GPS, QR code, & pengajuan reset tempat sampah fisik.
-          </p>
-        </div>
+        <div className="space-y-6">
 
-        <div className="flex items-center gap-2">
-          {!isReadOnly && (
+          {/* Stats Summary Cards */}
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  TOTAL TEMPAT SAMPAH
+                </p>
+                <h3 className="text-2xl font-black text-slate-900 mt-1">
+                  {bins.length}
+                </h3>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shadow-2xs">
+                <Trash2 size={20} />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  STATUS NORMAL
+                </p>
+                <h3 className="text-2xl font-black text-emerald-600 mt-1">
+                  {bins.filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE" || b.status === "Normal").length}
+                </h3>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-2xs">
+                <CheckCircle size={20} />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  KAPASITAS PENUH (&gt;80%)
+                </p>
+                <h3 className="text-2xl font-black text-amber-600 mt-1">
+                  {bins.filter((b) => {
+                    const vol = Number(b.currentVolumeLiter || 0);
+                    const max = Number(b.maxCapacityLiter || 25);
+                    return (max > 0 && (vol / max) >= 0.8) || b.status === "Penuh";
+                  }).length}
+                </h3>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-2xs">
+                <AlertTriangle size={20} />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  FISIK RUSAK
+                </p>
+                <h3 className="text-2xl font-black text-rose-600 mt-1">
+                  {bins.filter((b) => b.status === "BROKEN" || b.realStatus === "BROKEN" || b.status === "Rusak").length}
+                </h3>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
+                <XCircle size={20} />
+              </div>
+            </div>
+          </div>
+
+      {/* Search & Filter Toolbar matching User Screenshot */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative w-full md:w-80">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari kode tempat sampah..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Status Filter Dropdown */}
+          <div className="relative">
             <button
-              onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
+              type="button"
+              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-2xs"
             >
-              <Plus size={15} /> Tambah Titik
+              <span className={`w-2 h-2 rounded-full ${
+                statusFilter === "Normal" || statusFilter === "ACTIVE" || statusFilter === "Aktif" ? "bg-emerald-500" : statusFilter === "Penuh" ? "bg-rose-500" : statusFilter === "Sedang" ? "bg-amber-500" : statusFilter === "Perbaikan" ? "bg-rose-500" : "bg-slate-400"
+              }`} />
+              <span>{statusFilter ? statusFilter : "Semua Status"}</span>
+              <ChevronDown size={14} className="text-slate-400" />
             </button>
-          )}
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
-          >
-            <Download size={15} /> Ekspor CSV
-          </button>
-        </div>
-      </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-4 mb-4 flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Cari ID Tempat Sampah, QR Code..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
-          />
-        </div>
-        
-        <div className="flex gap-3 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
-          <div className="flex items-center gap-2 min-w-[140px]">
-            <Filter size={16} className="text-slate-500" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full py-2.5 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary"
-            >
-              <option value="">Semua Status</option>
-              <option value="Normal">Normal</option>
-              <option value="Penuh">Penuh</option>
-              <option value="Sedang">Sedang</option>
-              <option value="Perbaikan">Perbaikan</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 min-w-[140px]">
-            <select
-              value={areaFilter}
-              onChange={(e) => setAreaFilter(e.target.value)}
-              className="w-full py-2.5 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary"
-            >
-              <option value="">Semua Wilayah</option>
-              {areas.map(area => (
-                <option key={area.id} value={area.id}>{area.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 min-w-[140px]">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full py-2.5 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary"
-            >
-              <option value="">Semua Kategori</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+            {isStatusDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  {["Semua Status", "Normal", "Penuh", "Sedang", "Perbaikan"].map((st) => {
+                    const isSelected = (st === "Semua Status" && !statusFilter) || statusFilter === st;
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => {
+                          setStatusFilter(st === "Semua Status" ? "" : st);
+                          setIsStatusDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? "bg-emerald-50/80 text-[#009966] font-extrabold"
+                            : "text-slate-700 hover:bg-slate-50 font-semibold"
+                        }`}
+                      >
+                        <span>{st}</span>
+                        {isSelected && <Check size={16} className="text-[#009966]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-
-      {/* Bin Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-x-auto">
-        <table className="w-full min-w-[850px] text-left border-collapse">
-          <thead>
-            <tr className="bg-surface-container-low text-on-surface-variant text-[12px] font-bold uppercase tracking-wider whitespace-nowrap">
-              <th className="px-6 py-4">QR Code</th>
-              <th className="px-6 py-4">Kode</th>
-              <th className="px-6 py-4">Lokasi</th>
-              <th className="px-6 py-4">Pemilik</th>
-              <th className="px-6 py-4">Kapasitas</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Update Terakhir</th>
-              {!isReadOnly && <th className="px-6 py-4 text-center">Aksi</th>}
-            </tr>
-          </thead>
-          <tbody className="text-sm whitespace-nowrap">
+      {/* Bin Table matching Master Pengguna styling */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse min-w-[1100px]">
+            <thead>
+              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 whitespace-nowrap">
+                <th className="py-3 px-4 text-center whitespace-nowrap">QR CODE</th>
+                <th className="py-3 px-4 whitespace-nowrap">KODE TEMPAT SAMPAH</th>
+                <th className="py-3 px-4 whitespace-nowrap">KATEGORI</th>
+                <th className="py-3 px-4 whitespace-nowrap">DIMILIKI OLEH</th>
+                <th className="py-3 px-4 whitespace-nowrap">KAPASITAS</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS</th>
+                <th className="py-3 px-4 whitespace-nowrap">DIVERIFIKASI PADA</th>
+                <th className="py-3 px-4 whitespace-nowrap">GPS</th>
+                {!isReadOnly && <th className="py-3 px-4 text-center whitespace-nowrap">AKSI</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
+                <td colSpan={9} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
-                    <Loader2 className="animate-spin text-primary" size={32} />
-                    <p>Memuat data...</p>
+                    <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shadow-xs">
+                      <Loader2 className="animate-spin text-[#009966]" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-800">Memuat Data Tempat Sampah...</p>
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">Menghubungkan ke server TrashCare real-time.</p>
+                    </div>
                   </div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-error font-medium">
-                  {error}
+                <td colSpan={9} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-xs">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-900">Gagal Memuat Data Tempat Sampah</p>
+                      <p className="text-[11px] text-rose-500 font-semibold mt-0.5">{error}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={fetchBins}
+                      className="mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                    >
+                      Coba Lagi
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : bins.length > 0 ? (
-              paginatedBins.map((bin) => (
-                <tr
-                  key={bin.kode}
-                  className="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col items-center gap-1 bg-white p-2 rounded-xl border border-outline-variant/60 w-fit shadow-sm">
-                      <img
-                        className="w-16 h-16"
-                        alt="QR Code"
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(bin.kode)}`}
-                      />
-                      <span className="text-[10px] font-mono font-bold text-primary tracking-wider">
-                        {bin.kode}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono font-bold text-on-surface">{bin.kode}</td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-on-surface">{bin.lokasi}</p>
-                    <p className="text-[11px] text-on-surface-variant mt-1">{bin.rtRw}</p>
-                  </td>
-                  <td className="px-6 py-4 font-medium text-on-surface">{bin.wargaName || "-"}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1.5 min-w-[120px]">
-                      <div className="flex justify-between items-center text-[12px] font-bold">
-                        <span className={
-                          bin.kapasitas > 90 ? "text-red-600" :
-                          bin.kapasitas >= 50 ? "text-orange-500" :
-                          "text-emerald-600"
-                        }>
-                          {bin.kapasitas > 90 ? "Kritis" : bin.kapasitas >= 50 ? "Waspada" : "Aman"}
-                        </span>
-                        <span className="text-slate-600">{bin.kapasitas}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner border border-slate-200/50">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ease-out ${
-                            bin.kapasitas > 90 ? "bg-gradient-to-r from-red-500 to-red-600" :
-                            bin.kapasitas >= 50 ? "bg-gradient-to-r from-orange-400 to-orange-500" :
-                            "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                          }`}
-                          style={{ width: `${Math.min(bin.kapasitas, 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {bin.realStatus === "PENDING_APPROVAL" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-[11px] font-bold animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                        Menunggu Persetujuan
-                      </span>
-                    ) : bin.realStatus === "BROKEN" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-[11px] font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                        Rusak / Sobek
-                      </span>
-                    ) : (
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${bin.status === "Penuh" ? "bg-red-50 text-red-700" : bin.status === "Normal" ? "bg-green-50 text-green-700" : bin.status === "Perbaikan" ? "bg-yellow-50 text-yellow-700" : "bg-blue-50 text-blue-700"} rounded-full text-[11px] font-bold`}
+              paginatedBins.map((bin) => {
+                const categoryName = String(bin.category?.name || bin.kategori || bin.categoryId || "Organik").toLowerCase();
+                const isResiduBin = categoryName.includes("residu") || categoryName.includes("b3");
+                const isAnorganikBin = categoryName.includes("anorganik");
+                const catText = isResiduBin ? "Residu" : isAnorganikBin ? "Anorganik" : "Organik";
+
+                return (
+                  <tr
+                    key={bin.kode}
+                    className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 font-medium whitespace-nowrap"
+                  >
+                    {/* 1. QR CODE */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <div
+                        onClick={() => setSelectedBinDetail(bin)}
+                        className="inline-flex items-center justify-center p-1 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-[#009966] hover:scale-105 transition-all cursor-pointer"
+                        title="Klik untuk melihat Detail & Scan QR Code"
                       >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${bin.status === "Penuh" ? "bg-red-500" : bin.status === "Normal" ? "bg-green-500" : bin.status === "Perbaikan" ? "bg-yellow-500" : "bg-blue-500"}`}
-                        ></span>
-                        {bin.status}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-on-surface-variant text-[12px]">
-                    {bin.lastUpdate}
-                  </td>
-                  {!isReadOnly && (
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        {bin.realStatus === "PENDING_APPROVAL" && (
-                          <>
-                            <button
-                              onClick={() => handleApproveActivation(bin.kode)}
-                              className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors flex items-center justify-center"
-                              title="Setujui Aktivasi"
-                            >
-                              <Check size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleRejectActivation(bin.kode)}
-                              className="w-8 h-8 rounded-md bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
-                              title="Tolak Aktivasi & Hapus Akun"
-                            >
-                              <X size={18} />
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => setSelectedBinDetail(bin)}
-                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                          title="Detail Tempat Sampah"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button
-                          onClick={() => openLogModal(bin.kode)}
-                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                          title="Log Transaksi"
-                        >
-                          <History size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditModal(bin)}
-                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
-                          title="Edit"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(bin.kode)}
-                          className="w-8 h-8 rounded-md bg-surface-container text-on-surface-variant hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
-                          title="Hapus"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <img
+                          className="w-10 h-10 rounded-lg object-contain"
+                          alt="QR Code"
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(bin.kode)}`}
+                        />
                       </div>
                     </td>
-                  )}
-                </tr>
-              ))
+
+                    {/* 2. KODE TEMPAT SAMPAH */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBinDetail(bin)}
+                        className="font-mono font-black text-slate-900 text-xs bg-slate-100 hover:bg-[#009966]/10 hover:text-[#009966] px-2.5 py-1 rounded-lg border border-slate-200/80 transition-colors cursor-pointer whitespace-nowrap"
+                        title="Klik untuk melihat Detail & Scan QR Code"
+                      >
+                        {bin.kode}
+                      </button>
+                    </td>
+
+                    {/* 3. KATEGORI */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        isResiduBin
+                          ? "bg-slate-100 text-slate-700 border border-slate-200"
+                          : isAnorganikBin
+                          ? "bg-amber-50 text-amber-800 border border-amber-200"
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      }`}>
+                        {catText}
+                      </span>
+                    </td>
+
+                    {/* 4. DIMILIKI OLEH */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {bin.wargaName || bin.user?.name ? (
+                        <div>
+                          <p className="font-bold text-slate-800 text-xs whitespace-nowrap">
+                            {bin.wargaName || bin.user?.name}
+                          </p>
+                          <div className="mt-0.5 whitespace-nowrap">
+                            {renderPhoneCell(bin.wargaPhone || bin.user?.phone || bin.phone)}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-medium italic text-xs whitespace-nowrap">Belum Terikat</span>
+                      )}
+                    </td>
+
+                    {/* 5. KAPASITAS */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1 min-w-[110px]">
+                        <div className="flex justify-between items-center text-[11px] font-bold">
+                          <span className="text-slate-700">{bin.currentVolumeLiter || 0}/{bin.maxCapacityLiter || 25}L</span>
+                          <span className={bin.kapasitas > 90 ? "text-rose-600" : bin.kapasitas >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                            {bin.kapasitas}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              bin.kapasitas > 90 ? "bg-rose-500" : bin.kapasitas >= 70 ? "bg-amber-500" : "bg-emerald-500"
+                            }`}
+                            style={{ width: `${Math.min(bin.kapasitas, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* 6. STATUS */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        bin.status === "Penuh" || bin.realStatus === "BROKEN"
+                          ? "bg-rose-50 text-rose-700 border border-rose-200"
+                          : bin.realStatus === "PENDING_APPROVAL" || bin.status === "Perbaikan"
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          bin.status === "Penuh" || bin.realStatus === "BROKEN"
+                            ? "bg-rose-500"
+                            : bin.realStatus === "PENDING_APPROVAL" || bin.status === "Perbaikan"
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
+                        }`} />
+                        {bin.realStatus === "PENDING_APPROVAL" ? "Menunggu" : bin.status === "ACTIVE_BOUND" ? "Aktif" : bin.status || "Aktif"}
+                      </span>
+                    </td>
+
+                    {/* 7. DIVERIFIKASI PADA */}
+                    <td className="py-3 px-4 text-slate-600 text-xs font-semibold whitespace-nowrap">
+                      {bin.verifiedAt ? (
+                        bin.verifiedAt === "Belum Diaktivasi" ? (
+                          <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
+                        ) : (
+                          <span>{bin.verifiedAt}</span>
+                        )
+                      ) : bin.realStatus === "ACTIVE_BOUND" || bin.userId ? (
+                        "17 Agustus 2026, 09.00"
+                      ) : (
+                        <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
+                      )}
+                    </td>
+
+                    {/* 8. GPS */}
+                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600 font-semibold whitespace-nowrap">
+                      {bin.latitude && bin.longitude ? (
+                        `${Number(bin.latitude).toFixed(4)}, ${Number(bin.longitude).toFixed(4)}, ${bin.altitude || 768} mdpl`
+                      ) : bin.gpsFormatted && bin.gpsFormatted !== "Belum Terikat (GPS)" ? (
+                        bin.gpsFormatted.replace("m mdpl", " mdpl")
+                      ) : (
+                        <span className="text-slate-400 font-sans font-medium italic text-xs">Belum Terikat (GPS)</span>
+                      )}
+                    </td>
+
+                    {/* 9. AKSI */}
+                    {!isReadOnly && (
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditModal(bin)}
+                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#009966] hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                            title="Ubah Data"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() => openLogModal(bin.kode || bin.id)}
+                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#009966] hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                            title="Identitas Kepemilikan Tempat Sampah"
+                          >
+                            <ShieldCheck size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleOpenDeleteModal(bin.kode)}
+                            className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                            title="Hapus Tempat Sampah"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-on-surface-variant">
-                  Tidak ada data tempat sampah
+                <td colSpan={9} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="w-16 h-16 rounded-3xl bg-slate-50 text-slate-300 flex items-center justify-center border border-slate-200/80 shadow-xs">
+                      <Trash2 size={32} className="stroke-[1.5]" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800">
+                        {searchInput || statusFilter
+                          ? "Tidak Ada Tempat Sampah Sesuai Filter"
+                          : "Belum Ada Data Tempat Sampah"}
+                      </h4>
+                      <p className="text-xs text-slate-400 font-medium mt-1 max-w-sm mx-auto leading-relaxed">
+                        {searchInput || statusFilter
+                          ? `Tidak ditemukan data tempat sampah yang sesuai dengan kriteria filter.`
+                          : "Sistem belum memiliki tempat sampah fisik yang terdaftar. Klik tombol Tambah Tempat Sampah untuk generate QR Code baru."}
+                      </p>
+                    </div>
+                    {(searchInput || statusFilter) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchInput("");
+                          setStatusFilter("");
+                        }}
+                        className="mt-2 px-4 py-2 bg-[#009966]/10 hover:bg-[#009966]/20 text-[#009966] font-extrabold rounded-xl text-xs border border-[#009966]/20 transition-all cursor-pointer"
+                      >
+                        Reset Pencarian & Filter
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        </div>
 
         {/* Interactive Table Pagination Footer Bar */}
         {bins.length > 0 && (
@@ -748,8 +1578,6 @@ const ManajemenTempatSampah: React.FC = () => {
           />
         )}
       </div>
-
-
       {/* Geospatial Map with Kelurahan Polygons & RW Zona Details */}
       <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -796,375 +1624,58 @@ const ManajemenTempatSampah: React.FC = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-
-            {/* LEVEL 1: KELURAHAN BOUNDARY POLYGONS */}
-            {Object.values(KELURAHAN_GEODATA).map((kg) => {
-              if (
-                selectedMapKelurahan !== "Semua Kelurahan" &&
-                selectedMapKelurahan.toLowerCase() !== kg.name.toLowerCase()
-              ) {
-                return null;
-              }
-
-              return (
-                <Polygon
-                  key={`kel-poly-bman-${kg.id}`}
-                  positions={kg.bounds}
-                  pathOptions={{
-                    color: kg.color,
-                    fillColor: kg.color,
-                    fillOpacity: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 0.32 : 0.18,
-                    weight: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 3 : 2.2,
-                  }}
-                />
-              );
-            })}
-
-            {/* LEVEL 1: KELURAHAN OVERVIEW MARKERS */}
-            {selectedMapKelurahan === "Semua Kelurahan" &&
-              kelurahanCentroidsMap.map((kel) => {
-                const rwsInKel = locations.filter(
-                  (l) => l.kelurahan.toLowerCase() === kel.name.toLowerCase()
-                );
-                return (
-                  <Marker
-                    key={`bman-kel-${kel.name}`}
-                    position={[kel.lat, kel.lng]}
-                    icon={createKelurahanPinIcon(kel.name, rwsInKel.length)}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedMapKelurahan(kel.name);
-                        setFlyTarget({ center: [kel.lat, kel.lng], zoom: 16, timestamp: Date.now() });
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 text-center font-sans">
-                        <strong className="text-sm font-bold block text-slate-900 mb-1">
-                          Kelurahan {kel.name}
-                        </strong>
-                        <p className="text-slate-600 mb-2">
-                          Total Wilayah: <strong>{rwsInKel.length} RW</strong>
-                        </p>
-                        <button
-                          onClick={() => {
-                            setSelectedMapKelurahan(kel.name);
-                            setFlyTarget({ center: [kel.lat, kel.lng], zoom: 16, timestamp: Date.now() });
-                          }}
-                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition cursor-pointer"
-                        >
-                          Buka Detail Tempat Sampah →
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-
-            {/* LEVEL 2: RW ZONA MARKERS WITH FULL RW METADATA */}
-            {(() => {
-              if (selectedMapKelurahan === "Semua Kelurahan" && mapZoom < 16) return null;
-
-              const filteredLocs = locations.filter((loc) => {
-                if (selectedMapKelurahan === "Semua Kelurahan") return true;
-                return loc.kelurahan.toLowerCase() === selectedMapKelurahan.toLowerCase();
-              });
-
-              const validLocations = filteredLocs.filter((g) => g.latitude && g.longitude);
-              if (validLocations.length === 0) return null;
-
-              return validLocations.map((group, idx) => (
-                <Marker
-                  key={`rw-zona-bman-${group.rw}-${idx}`}
-                  position={[group.latitude, group.longitude]}
-                  icon={createRwZonaIcon(group.rw, group.patuh)}
-                  eventHandlers={{
-                    click: () => {
-                      setMapCenter([group.latitude, group.longitude]);
-                      setMapZoom(17);
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs p-2 text-left font-sans min-w-[260px] sm:min-w-[300px]">
-                      <strong className="text-sm font-black block mb-2 text-slate-900 border-b pb-1.5 text-center">
-                        Wilayah {group.rw.includes(`(${group.kelurahan})`) ? group.rw : `${group.rw} (${group.kelurahan})`}
-                      </strong>
-
-                      <div className="space-y-1.5 my-2 text-xs text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
-                        <div className="flex justify-between items-center gap-3">
-                          <span className="text-slate-500 font-semibold shrink-0">Ketua RW:</span>
-                          <span className="font-extrabold text-slate-900 text-right truncate">{group.ketuaRwName || "Belum ditugaskan"}</span>
-                        </div>
-                        <div className="flex justify-between items-center gap-3">
-                          <span className="text-slate-500 font-semibold shrink-0">Petugas Residu:</span>
-                          <span className="font-extrabold text-slate-900 text-right truncate">{group.petugasResiduName || "Belum ditugaskan"}</span>
-                        </div>
-                        <div className="flex justify-between items-center gap-3">
-                          <span className="text-slate-500 font-semibold shrink-0">Mahasiswa KKN:</span>
-                          <span className="font-extrabold text-slate-900 text-right truncate">{group.mahasiswaKknName || "Tidak ada"}</span>
-                        </div>
-                        <div className="flex justify-between items-center gap-3">
-                          <span className="text-slate-500 font-semibold shrink-0">Lurah {group.kelurahan ? `(${group.kelurahan})` : ""}:</span>
-                          <span className="font-extrabold text-slate-900 text-right truncate">{group.lurahName || "Belum ditugaskan"}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between text-slate-600 my-1 px-1 text-xs">
-                        <span>Tingkat Kepatuhan:</span>
-                        <strong className="text-emerald-600 font-black text-sm">{group.patuh}%</strong>
-                      </div>
-                      <div className="flex justify-between text-slate-600 mb-2 px-1 text-xs">
-                        <span>Tempat Sampah:</span>
-                        <strong className="text-slate-800 font-black">{group.titikCount} Tempat Sampah</strong>
-                      </div>
-
-                      <p className="text-[11px] text-emerald-600 font-bold italic text-center pt-1.5 border-t border-slate-100">
-                        Klik untuk zoom ke detail rumah tangga
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ));
-            })()}
-
-            {/* LEVEL 3: HOUSEHOLD BINS & CAPACITY CIRCLES */}
-            {mapZoom >= 14 && (
-              <>
-                {householdGroups.map((group, idx) => {
-                  let maxPercentage = 0;
-                  group.bins.forEach((bin) => {
-                    const vol = Number(bin.currentVolumeLiter || 0);
-                    const max = Number(bin.maxCapacityLiter || 25);
-                    const pct = max > 0 ? (vol / max) * 100 : 0;
-                    if (pct > maxPercentage) maxPercentage = pct;
-                  });
-
-                  let status = "Aman";
-                  let color = "#10b981";
-                  if (maxPercentage >= 90) {
-                    status = "Penuh";
-                    color = "#ef4444";
-                  } else if (maxPercentage >= 70) {
-                    status = "Sedang";
-                    color = "#f59e0b";
-                  }
-
-                  return (
-                    <React.Fragment key={`hh-bin-frag-bman-${idx}`}>
-                      <Circle
-                        center={[group.latitude, group.longitude]}
-                        radius={20}
-                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.15, weight: 1 }}
-                      />
-                      <Marker
-                        position={[group.latitude, group.longitude]}
-                        icon={createMapBinIcon(status)}
-                        eventHandlers={{
-                          click: () => {
-                            setMapCenter([group.latitude, group.longitude]);
-                            setMapZoom(19);
-                          },
-                        }}
-                      >
-                        <Popup>
-                          <div className="text-[12px] space-y-2 font-sans">
-                            <strong className="text-sm font-bold block mb-1 border-b pb-1 text-slate-800">
-                              Data Tempat Sampah Rumah Tangga
-                            </strong>
-                            <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
-                              {group.bins.map((bin) => {
-                                const vol = Number(bin.currentVolumeLiter || 0);
-                                const max = Number(bin.maxCapacityLiter || 25);
-                                const pct = max > 0 ? Math.round((vol / max) * 100) : 0;
-
-                                return (
-                                  <div
-                                    key={`bin-popup-${bin.kode}`}
-                                    className="bg-slate-50 p-2 rounded border border-slate-200 text-xs"
-                                  >
-                                    <div className="flex justify-between font-bold text-slate-900 mb-0.5">
-                                      <span>{bin.kode}</span>
-                                      <span
-                                        className={
-                                          pct >= 90
-                                            ? "text-red-600"
-                                            : pct >= 70
-                                              ? "text-amber-600"
-                                              : "text-emerald-600"
-                                        }
-                                      >
-                                        {pct}%
-                                      </span>
-                                    </div>
-                                    <div className="text-[11px] text-slate-600">
-                                      Pemilik: {bin.wargaName || "Publik/Umum"}
-                                      <br />
-                                      Kategori: {bin.category?.name || bin.categoryId} ({vol}L / {max}L)
-                                      <br />
-                                      RT/RW: {bin.rtRw}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    </React.Fragment>
-                  );
-                })}
-
-                {/* Individual House Markers */}
-                {households
-                  .filter((h) => h.latitude && h.longitude)
-                  .map((h) => (
-                    <Marker
-                      key={`house-bman-${h.id}`}
-                      position={[Number(h.latitude), Number(h.longitude)]}
-                      icon={createHouseIcon()}
-                    >
-                      <Popup>
-                        <div className="text-[12px] font-sans">
-                          <strong>Rumah {h.user?.name || "Warga"}</strong>
-                          <br />
-                          Alamat: {h.address}
-                          <br />
-                          RT/RW: {h.rtRw?.name || "-"} (Kel. {h.rtRw?.kelurahan?.name || "-"})
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-              </>
-            )}
           </MapContainer>
-
-          {/* Map Legend Overlay for Manajemen Tempat Sampah */}
-          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 max-w-xs font-sans text-xs">
-            <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200/90 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
-                <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Tempat Sampah
-                </span>
-              </div>
-
-              {/* Status Volume Tempat Sampah */}
-              <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
-                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                  Kapasitas Tempat Sampah
-                </span>
-                <div className="space-y-1 text-[10.5px]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
-                    <span className="font-bold text-slate-700">Aman (&lt; 70%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white"></span>
-                    <span className="font-bold text-slate-700">Waspada (70% - 90%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span>
-                    <span className="font-bold text-slate-700">Penuh (&gt; 90%)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Batas Kelurahan */}
-              <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                Polygon 6 Kelurahan
-              </span>
-              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
-                {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                  <div key={kg.id} className="flex items-center gap-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10"
-                      style={{ backgroundColor: kg.color }}
-                    ></span>
-                    <span className="font-bold text-slate-700 truncate">{kg.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
-
-      {/* Log Modal */}
+      </div>
+      )}
+      {/* Identitas Kepemilikan & Log Transaksi Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-on-surface/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden border border-slate-100">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
               <div>
-                <h3 className="text-[20px] font-bold text-on-surface">
-                  Log Transaksi Setoran Sampah
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="text-[#009966]" size={20} />
+                  Identitas Kepemilikan & Log Tempat Sampah
                 </h3>
-                <p className="text-[12px] font-bold text-on-surface-variant">
-                  Bin ID: {selectedBin}
-                </p>
+                <p className="text-xs text-slate-500 font-medium">Bin ID: {selectedBin}</p>
               </div>
               <button
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
                 onClick={closeLogModal}
               >
-                <X />
+                <X size={20} />
               </button>
             </div>
+
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+              {/* Log Transactions */}
               {loadingLogs ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="animate-spin text-primary" size={32} />
-                </div>
+                <div className="py-8 text-center text-slate-400 font-medium text-xs">Memuat log transaksi...</div>
               ) : logTransactions.length > 0 ? (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-outline-variant/50 text-on-surface-variant text-[12px] font-bold uppercase tracking-wider">
-                      <th className="py-3 px-4">Tanggal & Waktu</th>
-                      <th className="py-3 px-4">Pengguna</th>
-                      <th className="py-3 px-4">Berat (Kg)</th>
-                      <th className="py-3 px-4">Volume (L)</th>
-                      <th className="py-3 px-4">Poin</th>
-                      <th className="py-3 px-4">Jenis</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-[14px] text-on-surface">
-                    {logTransactions.map((tx: any) => (
-                      <tr
-                        key={tx.id}
-                        className="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors"
-                      >
-                        <td className="py-3 px-4">
-                          {new Date(tx.waktu).toLocaleString("id-ID", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </td>
-                        <td className="py-3 px-4">{tx.warga}</td>
-                        <td className="py-3 px-4 font-bold">{tx.berat}</td>
-                        <td className="py-3 px-4">{tx.volume || "-"}</td>
-                        <td className="py-3 px-4 text-yellow-600 font-bold">+{tx.poin}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`font-bold ${tx.jenis.toUpperCase().includes("ORGANIK") ? "text-primary" : "text-secondary"}`}
-                          >
-                            {tx.jenis}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="space-y-2">
+                  {logTransactions.map((log: any, idx: number) => (
+                    <div key={log.id || idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800">{log.type || "Setoran Sampah"}</span>
+                        <span className="text-slate-400 text-[11px] block">{new Date(log.createdAt).toLocaleString("id-ID")}</span>
+                      </div>
+                      <span className="font-mono font-black text-[#009966]">{log.weightKg || log.volumeLiter || 0} kg/L</span>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="text-center text-on-surface-variant text-sm py-8">
-                  Belum ada transaksi di tempat sampah ini
-                </p>
+                <div className="py-8 text-center text-slate-400 font-medium text-xs italic">Belum ada riwayat transaksi setoran untuk tempat sampah ini.</div>
               )}
             </div>
+
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-outline-variant/30 flex justify-end bg-surface-container-low">
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end bg-slate-50/80">
               <button
-                className="px-4 py-2 border border-outline-variant/50 text-on-surface rounded-lg text-[12px] font-bold hover:bg-surface-container transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-2xl text-xs font-bold transition-all cursor-pointer"
                 onClick={closeLogModal}
               >
                 Tutup
@@ -1173,14 +1684,16 @@ const ManajemenTempatSampah: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Detail Bin Modal */}
+
+      {/* QR Code Tempat Sampah Modal (FULL QR CODE ONLY) */}
       {selectedBinDetail && (
-        <div className="fixed inset-0 bg-on-surface/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="text-[18px] font-bold text-slate-800 flex items-center gap-2">
-                <Map className="text-primary" size={20} />
-                Detail Smart Bin
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden border border-slate-100 p-6 text-center">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <QrCode className="text-[#009966]" size={20} />
+                QR Code Tempat Sampah
               </h3>
               <button
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
@@ -1189,224 +1702,238 @@ const ManajemenTempatSampah: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <img
-                  className="w-32 h-32"
-                  alt="QR Code"
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(selectedBinDetail.kode)}`}
-                />
-                <span className="text-xs font-mono font-bold text-primary tracking-widest uppercase">
+
+            {/* FULL QR CODE BODY */}
+            <div className="flex flex-col items-center justify-center gap-4 py-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <img
+                className="w-56 h-56 object-contain rounded-xl p-2 bg-white shadow-xs border border-slate-200"
+                alt="QR Code Tempat Sampah"
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(selectedBinDetail.kode)}`}
+              />
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                  KODE TEMPAT SAMPAH
+                </p>
+                <span className="text-sm font-mono font-black text-[#009966] tracking-wider">
                   {selectedBinDetail.kode}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 font-bold block mb-0.5">Pemilik Warga</span>
-                  <span className="font-bold text-slate-700">{selectedBinDetail.wargaName || "Publik / Umum"}</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 font-bold block mb-0.5">Lokasi RT/RW</span>
-                  <span className="font-bold text-slate-700">{selectedBinDetail.rtRw || "-"}</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 font-bold block mb-0.5">Kategori</span>
-                  <span className="font-bold text-emerald-600">{selectedBinDetail.category?.name || selectedBinDetail.categoryId || "Umum"}</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 font-bold block mb-0.5">Kapasitas Maks</span>
-                  <span className="font-bold text-slate-700">{selectedBinDetail.maxCapacityLiter || 25} Liter ({selectedBinDetail.kapasitas || 0}% terisi)</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 col-span-2">
-                  <span className="text-slate-400 font-bold block mb-0.5">Koordinat GPS</span>
-                  <span className="font-mono text-slate-700 font-bold">
-                    {selectedBinDetail.latitude && selectedBinDetail.longitude
-                      ? `${selectedBinDetail.latitude}, ${selectedBinDetail.longitude}`
-                      : "Belum diset (0, 0)"}
-                  </span>
-                </div>
-              </div>
             </div>
-            <div className="px-6 py-3 border-t border-slate-200 flex justify-end bg-slate-50">
+
+            {/* Footer Actions */}
+            <div className="mt-5 flex gap-3">
               <button
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all cursor-pointer"
                 onClick={() => setSelectedBinDetail(null)}
               >
                 Tutup
               </button>
+              <a
+                href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(selectedBinDetail.kode)}`}
+                target="_blank"
+                rel="noreferrer"
+                download={`QR_${selectedBinDetail.kode}.png`}
+                className="flex-1 py-3 px-4 bg-[#009966] hover:bg-[#008055] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Download size={14} />
+                Unduh QR
+              </a>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Tambah/Edit Form */}
+      {/* Modal Tambah / Generate QR / Edit Form */}
       {isFormModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
-              <h3 className="text-xl font-bold text-on-surface">
-                {modalType === "add" ? "Tambah Titik Tempat Sampah" : "Edit Tempat Sampah"}
-              </h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100">
+            {/* Modal Header matching Screenshot */}
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-white">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-full bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 mt-0.5">
+                  {modalType === "add" ? <QrCode size={22} /> : <Pencil size={22} />}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                    {modalType === "add" ? "Generate QR Code Tempat Sampah" : "Ubah Data Tempat Sampah"}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {modalType === "add"
+                      ? "Buat QR Code tempat sampah fisik baru yang siap di-scan & teraktivasi di Mobile."
+                      : "Perbarui informasi tempat sampah fisik."}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={closeFormModal}
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
               >
-                <X />
+                <X size={20} />
               </button>
             </div>
+
+            {/* Form Body */}
             <form
               onSubmit={handleSubmit}
-              className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[80vh]"
+              className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[75vh]"
             >
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Kode / QR Code (Auto-generated)
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={formData.qrCode}
-                  placeholder="Generating QR Code..."
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Kategori Sampah
-                </label>
-                <select
-                  required
-                  value={formData.categoryId}
-                  onChange={(e) => {
-                    const newCatId = e.target.value;
-                    setFormData({ ...formData, categoryId: newCatId });
-                    if (modalType === "add") {
-                      fetchNextQrCode(newCatId);
-                    }
-                  }}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs font-bold"
-                >
-                  <option value="">Pilih Kategori</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.description})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Wilayah RT/RW
-                </label>
-                <select
-                  required
-                  value={formData.rtRwId}
-                  onChange={(e) => setFormData({ ...formData, rtRwId: parseInt(e.target.value) })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs font-bold"
-                >
-                  <option value="">Pilih Wilayah</option>
-                  {areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} (Kel. {a.kelurahan?.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Pemilik Tempat Sampah (Warga - Opsional)
-                </label>
-                <select
-                  value={formData.userId}
-                  onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs font-bold"
-                >
-                  <option value="">Publik / Tempat Sampah Umum</option>
-                  {wargas.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name} ({w.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="block text-sm font-medium text-on-surface">Titik Lokasi (GPS)</label>
-                <div className="h-[200px] w-full rounded-xl overflow-hidden border border-outline-variant/50 relative z-0">
-                  <MapContainer
-                    center={
-                      formData.latitude && formData.longitude
-                        ? [Number(formData.latitude), Number(formData.longitude)]
-                        : [-6.8903, 107.611]
-                    }
-                    zoom={15}
-                    scrollWheelZoom={true}
-                    style={{ height: "100%", width: "100%" }}
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <LocationPicker 
-                      position={formData.latitude && formData.longitude ? [Number(formData.latitude), Number(formData.longitude)] : null} 
-                      onChange={(lat, lng) => setFormData({ ...formData, latitude: lat.toString(), longitude: lng.toString() })} 
-                    />
-                  </MapContainer>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-2">
+              {modalType === "add" ? (
+                <>
                   <div>
-                    <label className="block text-xs font-medium text-on-surface-variant mb-1">Latitude</label>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Kategori Sampah <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={formData.categoryId}
+                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
+                    >
+                      <option value="">Pilih Kategori</option>
+                      <option value="organik">Organik</option>
+                      <option value="anorganik">Anorganik</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Kapasitas Maksimum (Liter) <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="number"
-                      step="0.00000001"
                       required
-                      value={formData.latitude}
-                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                      placeholder="-6.8895"
-                      className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
+                      min={5}
+                      max={200}
+                      value={formData.maxCapacityLiter}
+                      onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
+                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-on-surface-variant mb-1">Longitude</label>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Jumlah Tempat Sampah <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="number"
-                      step="0.00000001"
                       required
-                      value={formData.longitude}
-                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                      placeholder="107.6108"
-                      className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-xs"
+                      min={1}
+                      max={100}
+                      value={formData.generateCount || 5}
+                      onChange={(e) => setFormData({ ...formData, generateCount: parseInt(e.target.value, 10) || 1 })}
+                      placeholder="Masukkan jumlah tempat sampah (contoh: 5)"
+                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
                     />
                   </div>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Kapasitas Maksimal (Liter)
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={formData.maxCapacityLiter}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                />
-              </div>
-              <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-outline-variant/30 bg-surface-container-low -mx-6 -mb-6 p-4">
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Kode Tempat Sampah
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={formData.qrCode || selectedBin || ""}
+                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-100/80 font-mono font-bold text-slate-700 text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Kategori Sampah <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={formData.categoryId}
+                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all cursor-pointer"
+                    >
+                      <option value="organik">Organik</option>
+                      <option value="anorganik">Anorganik</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Kapasitas Maksimum (Liter) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.maxCapacityLiter}
+                      onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
+                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                      Status Operasional (Sensor Real-time)
+                    </label>
+
+                    {/* Status Card 1 */}
+                    <div className="p-4 bg-slate-50/60 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-extrabold text-slate-800 block mb-0.5">
+                          Status Otomatis Lapangan
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-medium leading-snug block max-w-[230px]">
+                          Dihitung otomatis dari persentase volume terisi dari sensor mobile.
+                        </span>
+                      </div>
+                      <span className={`px-3 py-1.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide border shrink-0 ${
+                        formData.status === "BROKEN" || formData.status === "Rusak"
+                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      }`}>
+                        {formData.status === "BROKEN" ? "Rusak" : "Aktif"}
+                      </span>
+                    </div>
+
+                    {/* Status Card 2 Checkbox */}
+                    <label className="mt-3 flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 text-slate-700 cursor-pointer hover:bg-amber-50/80 transition-all">
+                      <input
+                        type="checkbox"
+                        checked={formData.status === "BROKEN" || formData.status === "Rusak"}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            status: e.target.checked ? "BROKEN" : "ACTIVE_BOUND",
+                          })
+                        }
+                        className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                      />
+                      <div>
+                        <span className="text-xs font-extrabold text-slate-900 block mb-0.5">
+                          Tandai Fisik Tempat Sampah Rusak atau dalam Perbaikan
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-medium leading-normal block">
+                          Centang jika fisik tong sampah rusak atau sobek dan perlu penanganan petugas.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {/* Modal Footer Buttons matching Screenshot */}
+              <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeFormModal}
-                  className="px-4 py-2 rounded-lg font-medium text-on-surface-variant hover:bg-surface-container-low cursor-pointer"
+                  className="px-6 py-2.5 rounded-full font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs transition-all cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 bg-[#009966] text-white rounded-full font-extrabold hover:bg-[#008055] text-xs shadow-md shadow-emerald-200 transition-all flex items-center gap-2 cursor-pointer"
                 >
-                  {isSubmitting && (
-                    <Loader2 className="animate-spin" size={18} />
-                  )}
-                  Simpan
+                  {isSubmitting && <Loader2 className="animate-spin" size={16} />}
+                  {modalType === "add" ? `Generate ${formData.generateCount || 5} QR Code` : "Simpan Perubahan"}
                 </button>
               </div>
             </form>
@@ -1414,42 +1941,33 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Confirm Delete */}
+      {/* Modal Confirm Delete (Standardized to User Screenshot) */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all">
-            <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border-4 border-red-100">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all border border-slate-100">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#ff2851] flex items-center justify-center mx-auto mb-4 border border-rose-100">
               <AlertTriangle size={26} />
             </div>
-            <h3 className="text-xl font-bold text-on-surface mb-2">Hapus Tempat Sampah?</h3>
-            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
+            <h3 className="text-lg font-extrabold text-slate-900 mb-1.5">Hapus Tempat Sampah?</h3>
+            <p className="text-xs text-slate-500 font-medium mb-6 leading-relaxed">
               Apakah Anda yakin ingin menghapus tempat sampah dengan kode <strong>{binToDelete}</strong>? Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-all"
+                className="flex-1 py-3 px-4 border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 text-xs transition-all cursor-pointer"
               >
                 Batal
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm shadow-red-200 cursor-pointer transition-all"
+                className="flex-1 py-3 px-4 bg-[#ff2851] text-white font-bold rounded-2xl hover:bg-[#e02045] text-xs shadow-md shadow-rose-200 transition-all cursor-pointer"
               >
                 Hapus
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-        </>
       )}
     </div>
   );
