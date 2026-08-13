@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, FileText, MapPin, Database, Sprout, Users, AlertTriangle, ArrowRight, Edit, Building, Map, Home, ClipboardList, CheckCircle2, Info, ChevronRight, Edit3 } from "lucide-react";
+import { Loader2, FileText, MapPin, Database, Sprout, Users, AlertTriangle, ArrowRight, Building, Map, CheckCircle2, ChevronRight, Edit3, Home, ClipboardList, Info } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
-import { useAuthStore } from "../../store/useAuthStore";
 import EditSurveiModal from "./EditSurveiModal";
 
 export default function DetailSurveiKkn() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
 
   const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
@@ -587,7 +585,7 @@ export default function DetailSurveiKkn() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm min-w-[280px]">
+                <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-xs min-w-[280px]">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Kelengkapan Data</span>
                     <span className="text-sm font-black text-slate-800">{completion.percentage}%</span>
@@ -609,29 +607,17 @@ export default function DetailSurveiKkn() {
                   </div>
                 </div>
 
-                {(user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE") && (
-                  <button
-                    onClick={() => navigate(`/superUser/data-survei-kkn/edit/${id}`)}
-                    className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-sm whitespace-nowrap"
-                  >
-                    <Edit size={18} />
-                    Edit Survei
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-xs shadow-sm hover:shadow-md transition-all transform active:scale-95 cursor-pointer border border-emerald-500/20 shrink-0"
+                >
+                  <Edit3 size={15} />
+                  <span>Edit Data Survei</span>
+                </button>
               </div>
             </div>
           )}
         </div>
-
-        {!isLoadingDetail && selectedSurvey && (
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-2 text-xs transition cursor-pointer"
-          >
-            <Edit3 size={15} />
-            Edit Data Survei
-          </button>
-        )}
       </div>
 
       {/* Tabs */}
