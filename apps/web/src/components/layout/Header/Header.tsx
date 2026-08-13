@@ -56,8 +56,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
   // EYD & KBBI Indonesian Standard Page Breadcrumb Titles
   const getBreadcrumbItems = (pathname: string, search: string = ""): string[] => {
-    const fullPath = `${pathname}${search}`;
-
     if (pathname === "/dashboard-kkn") {
       return ["Dashboard KKN"];
     }
