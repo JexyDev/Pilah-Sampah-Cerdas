@@ -279,6 +279,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PENGOLAHAN & KKN",
       items: [
+        { to: "/kkn-portal", icon: LayoutDashboard, label: "Dashboard KKN", allowed: ["SUPER_USER", "MAHASISWA_KKN", "DPL"] as UserRole[] },
         { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Program KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
         { to: "/superUser/data-survei-kkn", icon: FileText, label: "Data Survei KKN", allowed: ["SUPER_USER", "DPL"] as UserRole[] },
         { to: "/superUser/import-survei-kkn", icon: FileText, label: "Impor Survei KKN", allowed: ["SUPER_USER"] as UserRole[] },
@@ -311,6 +312,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-pengguna?role=warga", label: "Warga" },
           ],
         },
+        { to: "/master-wilayah", icon: MapPin, label: "Master Data Wilayah", allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
         { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Tempat & Wadah Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
         { to: "/manajemen-lokasi", icon: Compass, label: "Wilayah & Titik TPS", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
         { to: "/kategori-sampah", icon: Tags, label: "Kategori & Jenis Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
