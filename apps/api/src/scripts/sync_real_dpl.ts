@@ -1,6 +1,7 @@
 /**
  * Script untuk menyelaraskan 32 Data Dosen Pembimbing Lapangan (DPL) Real
  * dengan nomor HP, nama lengkap, dan kelompok KKN sesuai data resmi Unikom.
+ * Menggunakan EXACT MATCHING untuk mencegah bentrokan string 'Sadang Serang 1' vs 'Sadang Serang 10'.
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -43,7 +44,7 @@ const REAL_32_DPL = [
 ];
 
 async function syncDpl() {
-  console.log("=== SINKRONISASI 32 DATA DPL REAL UNIKOM ===");
+  console.log("=== SINKRONISASI 32 DATA DPL REAL UNIKOM (EXACT MATCH) ===");
 
   const dplRole = await prisma.role.findUnique({ where: { name: "DPL" } });
   if (!dplRole) {
@@ -69,13 +70,13 @@ async function syncDpl() {
     if (!existingUser) {
       existingUser = await prisma.user.findFirst({
         where: {
-          name: { contains: item.name.split(",")[0].split(".")[0], mode: "insensitive" },
+          name: { equals: item.name, mode: "insensitive" },
         },
       });
     }
 
     if (existingUser) {
-      await prisma.user.update({
+      existingUser = await prisma.user.update({
         where: { id: existingUser.id },
         data: {
           name: item.name,
@@ -85,7 +86,7 @@ async function syncDpl() {
           institusi: "Universitas Komputer Indonesia",
         },
       });
-      console.log(`[UPDATED #${item.no}] ${item.name} (${item.phone})`);
+      console.log(`[UPDATED USER #${item.no}] ${item.name} (${item.phone})`);
     } else {
       try {
         existingUser = await prisma.user.create({
@@ -98,21 +99,18 @@ async function syncDpl() {
             institusi: "Universitas Komputer Indonesia",
           },
         });
-        console.log(`[CREATED #${item.no}] ${item.name} (${item.phone})`);
+        console.log(`[CREATED USER #${item.no}] ${item.name} (${item.phone})`);
       } catch (err) {
-        console.warn(`[SKIP CREATE #${item.no}] Phone constraint: ${item.phone}`);
+        console.warn(`[SKIP CREATE USER #${item.no}] Phone constraint: ${item.phone}`);
         continue;
       }
     }
 
-    // 2. Hubungkan atau buat Kelompok KKN dengan upsert
+    // 2. Hubungkan atau buat Kelompok KKN dengan EXACT NAME MATCH ONLY
     if (existingUser) {
-      const existingKel = await prisma.kelompokKkn.findFirst({
+      let existingKel = await prisma.kelompokKkn.findFirst({
         where: {
-          OR: [
-            { name: item.kelompok },
-            { name: { contains: item.kelompok, mode: "insensitive" } },
-          ],
+          name: { equals: item.kelompok, mode: "insensitive" },
         },
       });
 
@@ -120,26 +118,23 @@ async function syncDpl() {
         await prisma.kelompokKkn.update({
           where: { id: existingKel.id },
           data: {
-            dplId: existingUser.id,
-            dplNamaMentah: item.name,
-            kelurahan: item.kelurahan,
-          },
-        });
-      } else {
-        await prisma.kelompokKkn.upsert({
-          where: { name: item.kelompok },
-          update: {
-            dplId: existingUser.id,
-            dplNamaMentah: item.name,
-            kelurahan: item.kelurahan,
-          },
-          create: {
             name: item.kelompok,
             dplId: existingUser.id,
             dplNamaMentah: item.name,
             kelurahan: item.kelurahan,
           },
         });
+        console.log(`  └─ [LINKED KELOMPOK] ${item.kelompok} -> DPL: ${item.name}`);
+      } else {
+        await prisma.kelompokKkn.create({
+          data: {
+            name: item.kelompok,
+            dplId: existingUser.id,
+            dplNamaMentah: item.name,
+            kelurahan: item.kelurahan,
+          },
+        });
+        console.log(`  └─ [CREATED KELOMPOK] ${item.kelompok} -> DPL: ${item.name}`);
       }
     }
   }
