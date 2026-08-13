@@ -21,7 +21,6 @@ import {
   createKelurahanPinIcon,
   createHouseIcon,
 } from "../../constants/coblongGeoData";
-import { Layers } from "lucide-react";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -730,32 +729,6 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
 
         <div className="h-[350px] sm:h-[480px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
-          {/* Map Overlay Legend Card */}
-          <div className="absolute bottom-3 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-10 flex flex-col pointer-events-auto">
-            <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-100/80 flex flex-col gap-1.5 sm:gap-3 sm:min-w-[200px]">
-              <div className="flex items-center gap-1.5 sm:gap-2 border-b border-slate-100 pb-1.5 sm:pb-2">
-                <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 flex-shrink-0" />
-                <p className="text-[9px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-wider leading-tight">
-                  Kapasitas Tempat Sampah / Zona
-                </p>
-              </div>
-              <div className="flex flex-wrap sm:flex-col gap-x-3 gap-y-1.5 sm:gap-3 mt-0.5 sm:mt-0">
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-emerald-500 ring-2 sm:ring-4 ring-emerald-100 shadow-sm"></div>
-                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">&lt; 70% (Aman)</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-amber-500 ring-2 sm:ring-4 ring-amber-100 shadow-sm"></div>
-                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">70-90% (Siaga)</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-rose-500 ring-2 sm:ring-4 ring-rose-100 shadow-sm"></div>
-                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">&gt; 90% (Penuh)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
