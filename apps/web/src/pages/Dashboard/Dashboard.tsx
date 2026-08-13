@@ -17,6 +17,7 @@ import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
+import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { IconRenderer } from "../../components/common/IconRenderer";
@@ -1909,6 +1910,11 @@ const Dashboard: React.FC = () => {
   // Render DPL Dashboard
   if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") {
     return <DplDashboardPage />;
+  }
+
+  // Render Taskforce Dashboard
+  if (user?.peran === "PANITIA_TASKFORCE") {
+    return <TaskforceDashboardPage />;
   }
 
   // Scaling factors for Trend SVG

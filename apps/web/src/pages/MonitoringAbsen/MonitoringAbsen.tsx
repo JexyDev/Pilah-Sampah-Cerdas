@@ -12,6 +12,7 @@ import { Loader2, Calendar, MapPin, Search, Activity, RefreshCw, Plus, Trash2, X
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { Pagination } from "../../components/common/Pagination";
+import { useAuthStore } from "../../store/useAuthStore";
 
 import {
   KELURAHAN_GEODATA,
@@ -135,6 +136,7 @@ const ChangeMapView: React.FC<{ center: [number, number]; zoom: number }> = ({ c
 };
 
 const MonitoringAbsen: React.FC = () => {
+  const { user } = useAuthStore();
   const [schedules, setSchedules] = useState<ScheduleActivity[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -150,7 +152,7 @@ const MonitoringAbsen: React.FC = () => {
   // Export Attendance Rekap to CSV
   const handleExportCSV = () => {
     if (!attendance || attendance.length === 0) {
-      toast.error("Tidak ada data presensi untuk diunduh");
+      toast.error("Tidak ada data presensi pada kegiatan/periode ini untuk diekspor.");
       return;
     }
     const headers = ["Nama Mahasiswa", "NIM", "Status Absensi", "Waktu Masuk (Tm)", "Waktu Pulang (Ts)", "Durasi (Menit)"];
@@ -411,6 +413,10 @@ const MonitoringAbsen: React.FC = () => {
     );
   }
 
+  const canManageSchedules = ["SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(
+    String(user?.peran || (user as any)?.role || "").toUpperCase()
+  );
+
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-6 bg-surface-container">
       {/* Tengah/Kanan: Peta */}
@@ -668,13 +674,15 @@ const MonitoringAbsen: React.FC = () => {
                 {schedules.length} Jadwal Tersedia
               </p>
             </div>
-            <button
-              onClick={handleOpenAddModal}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-colors shadow-xs uppercase tracking-wider cursor-pointer"
-            >
-              <Plus size={16} />
-              Tambah
-            </button>
+            {canManageSchedules && (
+              <button
+                onClick={handleOpenAddModal}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-colors shadow-xs uppercase tracking-wider cursor-pointer"
+              >
+                <Plus size={16} />
+                Tambah
+              </button>
+            )}
           </div>
 
           <div className="relative">
@@ -711,20 +719,22 @@ const MonitoringAbsen: React.FC = () => {
                       {schedule.category}
                     </span>
                   </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={(e) => handleOpenEditModal(e, schedule)}
-                      className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, schedule.id)}
-                      className="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  {canManageSchedules && (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={(e) => handleOpenEditModal(e, schedule)}
+                        className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(e, schedule.id)}
+                        className="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-3 text-xs text-slate-500 space-y-1 font-medium">
                   <p className="flex items-center gap-1.5">

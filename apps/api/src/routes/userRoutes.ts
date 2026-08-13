@@ -9,6 +9,8 @@ import { Router } from "express";
 import { userController } from "../controllers/userController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { taskforceRoleGuard } from "../middlewares/taskforceRoleGuard.js";
+import { authController } from "../controllers/authController.js";
 
 const router = Router();
 
@@ -61,11 +63,15 @@ router.get(
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
+ *     description: |
+ *       SUPER_USER & PEMIMPIN bisa buat semua role.
+ *       PANITIA_TASKFORCE hanya bisa buat DPL dan MAHASISWA_KKN.
  */
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  taskforceRoleGuard,
   userController.createUser
 );
 
@@ -87,7 +93,7 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
   userController.deleteUser
 );
 
@@ -109,7 +115,8 @@ router.delete(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  taskforceRoleGuard,
   userController.updateUser
 );
 
@@ -128,8 +135,6 @@ router.put(
  *         schema:
  *           type: string
  */
-import { authController } from "../controllers/authController.js";
-
 router.put("/profile", authMiddleware, authController.updateProfile);
 router.get("/:id/onboarding-status", authMiddleware, userController.getOnboardingStatus);
 

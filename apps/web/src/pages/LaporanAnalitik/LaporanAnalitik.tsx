@@ -49,15 +49,23 @@ const LaporanAnalitik: React.FC = () => {
   }
 
   const handleExportCSV = async () => {
+    if (!data) {
+      toast.error("Tidak ada data analitik dalam tabel untuk diekspor.");
+      return;
+    }
     try {
       toast.loading("Menyiapkan CSV...", { id: "export" });
       const response = await api.get("/dashboard/export-dataset", {
         responseType: "blob",
       });
+      if (!response.data || response.data.size === 0) {
+        toast.error("Tidak ada data untuk diekspor pada periode ini.", { id: "export" });
+        return;
+      }
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "waste_dataset.csv");
+      link.setAttribute("download", `laporan_analitik_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

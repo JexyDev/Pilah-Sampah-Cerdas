@@ -122,7 +122,7 @@ router.post(
 router.get(
   "/mahasiswa/lokasi-aktif",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   kknAttendanceController.getActiveStudentsLocations
 );
 
@@ -147,7 +147,7 @@ router.get(
 router.get(
   "/kegiatan/:id/absen",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   kknAttendanceController.getAttendanceList
 );
 
@@ -176,10 +176,13 @@ router.post(
 router.get(
   "/warga-dampingan",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING"]),
   async (req, res) => {
     try {
-      const result = await kknAttendanceServiceInstance.getWargaDampingan(req.user!.userId);
+      const result = await kknAttendanceServiceInstance.getWargaDampingan(
+        req.user!.userId,
+        req.user!.role
+      );
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

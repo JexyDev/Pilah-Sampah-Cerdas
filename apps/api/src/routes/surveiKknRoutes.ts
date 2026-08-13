@@ -22,7 +22,7 @@ router.use(authMiddleware);
  */
 router.get(
   "/",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   surveiKknController.getAllSurveys
 );
 
@@ -68,7 +68,7 @@ router.get(
  */
 router.get(
   "/:id",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   surveiKknController.getSurveyById
 );
 

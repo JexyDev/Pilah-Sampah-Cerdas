@@ -65,10 +65,25 @@ export class KknAttendanceService {
     return { success: true, message: "Lokasi berhasil dilacak" };
   }
 
-  async getWargaDampingan(userId: string) {
-    // Ambil warga yang di-register oleh mahasiswa ini
+  async getWargaDampingan(userId: string, role?: string) {
+    let whereCondition: any = { registeredByStudentId: userId };
+
+    if (role === "DPL" || role === "DOSEN_PEMBIMBING") {
+      const groups = await prisma.kelompokKkn.findMany({
+        where: { dplId: userId },
+        include: {
+          students: {
+            select: { userId: true },
+          },
+        },
+      });
+      const studentIds = groups.flatMap((g) => g.students.map((s) => s.userId));
+      whereCondition = { registeredByStudentId: { in: studentIds } };
+    }
+
+    // Ambil warga yang di-register oleh mahasiswa kelompok binaan DPL / mahasiswa ybs
     const bins = await prisma.bin.findMany({
-      where: { registeredByStudentId: userId },
+      where: whereCondition,
       include: {
         user: {
           include: { households: true },
@@ -339,14 +354,31 @@ export class KknAttendanceService {
 
   /**
    * Get all student locations recorded in the last 24 hours.
+   * If dplUserId is provided, filters to students in DPL's assigned kelompok.
    */
-  async getActiveStudentsLocations() {
+  async getActiveStudentsLocations(dplUserId?: string) {
     const cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+    // If DPL, find student user IDs belonging to DPL's kelompok
+    let targetStudentIds: string[] | null = null;
+    if (dplUserId) {
+      const kelompokBinaan = await prisma.kelompokKkn.findMany({
+        where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
+        select: { id: true },
+      });
+      const kelompokIds = kelompokBinaan.map((k) => k.id);
+      const students = await prisma.studentKkn.findMany({
+        where: { kelompokId: { in: kelompokIds } },
+        select: { userId: true },
+      });
+      targetStudentIds = students.map((s) => s.userId);
+    }
 
     // Get active logged-in user IDs from RefreshToken
     const activeSessions = await prisma.refreshToken.findMany({
       where: {
         expiresAt: { gte: new Date() },
+        ...(targetStudentIds ? { userId: { in: targetStudentIds } } : {}),
       },
       select: { userId: true },
     });
@@ -358,6 +390,7 @@ export class KknAttendanceService {
         recordedAt: {
           gte: cutoff,
         },
+        ...(targetStudentIds ? { studentId: { in: targetStudentIds } } : {}),
       },
       orderBy: {
         recordedAt: "desc",
@@ -479,10 +512,29 @@ export class KknAttendanceService {
 
   /**
    * Get list of attendances for a schedule
+   * Get list of attendances for a schedule (Scoped to DPL kelompok if dplUserId provided)
    */
-  async getAttendanceList(scheduleId: string) {
+  async getAttendanceList(scheduleId: string, dplUserId?: string) {
+    let dplStudentUserIds: string[] | undefined;
+    if (dplUserId) {
+      const dplGroups = await prisma.kelompokKkn.findMany({
+        where: { dplId: dplUserId },
+        include: {
+          students: {
+            select: { userId: true },
+          },
+        },
+      });
+      dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
+    }
+
+    const attendanceWhere: any = { scheduleId };
+    if (dplStudentUserIds) {
+      attendanceWhere.studentId = { in: dplStudentUserIds };
+    }
+
     const list = await prisma.activityAttendance.findMany({
-      where: { scheduleId },
+      where: attendanceWhere,
       include: {
         student: {
           select: {
@@ -505,7 +557,7 @@ export class KknAttendanceService {
     });
 
     const attendedStudentIds = new Set(list.map((a) => a.studentId));
-    const locations = await this.getActiveStudentsLocations();
+    const locations = await this.getActiveStudentsLocations(dplUserId);
     const locMap = new Map(locations.map((l) => [l.studentId, l]));
     const scheduleLoc = await this.getActivityLocation(scheduleId);
 
@@ -561,7 +613,12 @@ export class KknAttendanceService {
 
     let studentWhereCondition: any = { role: { name: "MAHASISWA_KKN" } };
 
-    if (schedule?.kelompok?.students && schedule.kelompok.students.length > 0) {
+    if (dplStudentUserIds) {
+      studentWhereCondition = {
+        id: { in: dplStudentUserIds },
+        role: { name: "MAHASISWA_KKN" },
+      };
+    } else if (schedule?.kelompok?.students && schedule.kelompok.students.length > 0) {
       const groupUserIds = schedule.kelompok.students.map((s) => s.userId);
       studentWhereCondition = {
         id: { in: groupUserIds },

@@ -45,7 +45,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
   const [selectedEditKelurahanId, setSelectedEditKelurahanId] = useState<number | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const isValidator = ["SUPER_USER", "DPL"].includes(user?.peran || "");
+  const isValidator = ["SUPER_USER", "PANITIA_TASKFORCE"].includes(user?.peran || "");
+  const canEdit = ["SUPER_USER", "PANITIA_TASKFORCE"].includes(user?.peran || "");
 
   const loadData = async () => {
     setLoading(true);
@@ -238,7 +239,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       )}
                     </td>
                     <td className="px-4 py-3 flex items-center justify-center gap-2">
-                      {activeTab === "BASELINE" && (
+                      {canEdit && activeTab === "BASELINE" && (
                         <button
                           onClick={() => {
                             setSelectedEditKelurahanId(item.kelurahanId);
@@ -265,6 +266,9 @@ export const EvaluasiDampakKkn: React.FC = () => {
                         >
                            Revisi
                         </button>
+                      )}
+                      {!canEdit && !isValidator && (
+                        <span className="text-slate-400 text-xs italic">Read-Only</span>
                       )}
                     </td>
                   </tr>

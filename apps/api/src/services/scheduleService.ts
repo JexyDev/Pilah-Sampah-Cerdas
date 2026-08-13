@@ -10,8 +10,30 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const scheduleService = {
-  getAllSchedules: async () => {
+  getAllSchedules: async (dplUserId?: string) => {
+    let kelompokIds: string[] | null = null;
+    if (dplUserId) {
+      const kelompokBinaan = await prisma.kelompokKkn.findMany({
+        where: { dplId: dplUserId },
+        select: { id: true },
+      });
+      kelompokIds = kelompokBinaan.map((k) => k.id);
+    }
+
+    const whereClause: any =
+      kelompokIds !== null
+        ? {
+            OR: [{ kelompokId: { in: kelompokIds } }, { kelompokId: null }],
+          }
+        : {};
+
     return prisma.schedule.findMany({
+      where: whereClause,
+      include: {
+        kelompok: {
+          select: { id: true, name: true, kelurahan: true },
+        },
+      },
       orderBy: { date: "asc" },
     });
   },
@@ -26,9 +48,15 @@ export const scheduleService = {
     longitude?: number;
     radius?: number;
     polygon?: any;
+    kelompokId?: string;
   }) => {
     return prisma.schedule.create({
       data,
+      include: {
+        kelompok: {
+          select: { id: true, name: true, kelurahan: true },
+        },
+      },
     });
   },
 
@@ -50,11 +78,17 @@ export const scheduleService = {
       longitude?: number;
       radius?: number;
       polygon?: any;
+      kelompokId?: string;
     }
   ) => {
     return prisma.schedule.update({
       where: { id },
       data,
+      include: {
+        kelompok: {
+          select: { id: true, name: true, kelurahan: true },
+        },
+      },
     });
   },
 };

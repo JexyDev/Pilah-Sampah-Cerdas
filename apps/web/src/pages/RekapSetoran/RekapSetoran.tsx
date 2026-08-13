@@ -111,8 +111,8 @@ export default function RekapSetoran() {
   const totalPoints = useMemo(() => Math.round(filteredDeposits.reduce((acc, curr) => acc + (Number(curr.poin) || 0), 0)), [filteredDeposits]);
 
   const handleExportCSV = () => {
-    if (filteredDeposits.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
+    if (!filteredDeposits || filteredDeposits.length === 0) {
+      toast.error("Tidak ada data setoran untuk diekspor pada periode/filter yang dipilih.");
       return;
     }
 

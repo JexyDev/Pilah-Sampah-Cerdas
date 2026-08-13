@@ -80,6 +80,12 @@ const createFacilityIcon = (jenis: string) => {
   } else if (jenis === "bank_sampah" || jenis === "daur_ulang") {
     bgColor = "#3b82f6";
     svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19H3v-2a3 3 0 0 1 3-3h1m4-4h6m-3-3v6m4 4h3v2a3 3 0 0 1-3 3h-1"/></svg>`;
+  } else if (jenis === "tps" || jenis === "TPS") {
+    bgColor = "#0d9488";
+    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+  } else if (jenis === "incinerator" || jenis === "INCINERATOR") {
+    bgColor = "#ea580c";
+    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3 2.5 4.5 4 6 1.5 1.5 2 3.5 2 5a6 6 0 1 1-12 0c0-1.5.5-3.5 2-5 1.5-1.5 3-3 4-6z"/></svg>`;
   } else if (jenis === "tpa" || jenis === "residu") {
     bgColor = "#ef4444";
     svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
@@ -756,6 +762,8 @@ const Monitoring: React.FC = () => {
                   else if (f.jenis === "LOSEDA") { zoneColor = "#059669"; zoneRadius = 100; }
                   else if (f.jenis === "MAGGOT") { zoneColor = "#d97706"; zoneRadius = 200; }
                   else if (f.jenis === "BANK_SAMPAH") { zoneColor = "#2563eb"; zoneRadius = 300; }
+                  else if (f.jenis === "TPS" || f.jenis === "tps") { zoneColor = "#0d9488"; zoneRadius = 250; }
+                  else if (f.jenis === "INCINERATOR" || f.jenis === "incinerator") { zoneColor = "#ea580c"; zoneRadius = 150; }
                   else if (f.jenis === "TERNAK") { zoneColor = "#9333ea"; zoneRadius = 180; }
 
                   return (
@@ -813,10 +821,10 @@ const Monitoring: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Fasilitas GIS */}
+                {/* Fasilitas Pengolahan Sampah */}
                 <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
                   <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                    Fasilitas Pengolahan GIS
+                    Fasilitas Pengolahan Sampah
                   </span>
                   <div className="grid grid-cols-2 gap-y-1 text-[10.5px]">
                     <div className="flex items-center gap-1.5">
@@ -834,6 +842,14 @@ const Monitoring: React.FC = () => {
                     <div className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-xs bg-blue-600"></span>
                       <span className="font-bold text-slate-700">Bank Sampah</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-teal-600"></span>
+                      <span className="font-bold text-slate-700">TPS</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-orange-600"></span>
+                      <span className="font-bold text-slate-700">Incinerator</span>
                     </div>
                   </div>
                 </div>

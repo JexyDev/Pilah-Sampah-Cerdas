@@ -96,9 +96,9 @@ export const RwDashboard: React.FC = () => {
             </p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-indigo-50 text-xs shadow-sm">
-            <span className="font-bold text-emerald-600 block mb-1">Fasilitas Pengolahan</span>
+            <span className="font-bold text-emerald-600 block mb-1">Fasilitas Pengolahan Sampah</span>
             <p className="text-slate-600">
-              {loading ? "Memuat..." : `Total ${facilities.length} fasilitas terdata di wilayah Anda (Bata Terawang, Loseda, Rumah Maggot, Bank Sampah).`}
+              {loading ? "Memuat..." : `Total ${facilities.length} fasilitas terdata di wilayah Anda (Bata Terawang, Loseda, Rumah Maggot, Bank Sampah, TPS, Incinerator).`}
             </p>
           </div>
         </div>
