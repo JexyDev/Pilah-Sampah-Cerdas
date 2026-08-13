@@ -131,10 +131,14 @@ async function updateRwAndTitlecase() {
     }
 
     if (st.nim !== cleanNim) {
-      await prisma.studentKkn.update({
-        where: { id: st.id },
-        data: { nim: cleanNim },
-      });
+      try {
+        await prisma.studentKkn.update({
+          where: { id: st.id },
+          data: { nim: cleanNim },
+        });
+      } catch {
+        // Ignore unique constraint if duplicate NIM exists
+      }
     }
     titleCaseCount++;
   }
