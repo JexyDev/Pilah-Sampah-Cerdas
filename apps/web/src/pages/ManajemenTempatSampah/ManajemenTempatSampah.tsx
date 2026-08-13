@@ -1606,61 +1606,66 @@ const ManajemenTempatSampah: React.FC = () => {
             {/* Modal Body */}
             <div className="p-6 space-y-5 overflow-y-auto max-h-[75vh]">
               {/* Card 1: Identitas Pemilik Tempat Sampah (Sama Seperti Master Pengguna Warga) */}
-              <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <User size={15} className="text-[#009966]" /> Identitas Pemilik Tempat Sampah
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                    selectedBinObj?.wargaName || selectedBinObj?.user?.name ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-200 text-slate-600"
-                  }`}>
-                    {selectedBinObj?.wargaName || selectedBinObj?.user?.name ? "Terikat Pemilik" : "Belum Terikat"}
-                  </span>
-                </div>
+              {(() => {
+                const isBound = Boolean(selectedBinObj?.wargaName || selectedBinObj?.user?.name || selectedBinObj?.userId);
+                return (
+                  <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <User size={15} className="text-[#009966]" /> Identitas Pemilik Tempat Sampah
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                        isBound ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-200 text-slate-600 border border-slate-300"
+                      }`}>
+                        {isBound ? "Terikat Pemilik" : "Belum Terikat"}
+                      </span>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Nama Lengkap</span>
-                    <span className="font-extrabold text-slate-800 text-sm">
-                      {selectedBinObj?.wargaName || selectedBinObj?.user?.name || "Ahmad Hidayat"}
-                    </span>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">Nama Lengkap</span>
+                        <span className="font-extrabold text-slate-800 text-sm">
+                          {selectedBinObj?.wargaName || selectedBinObj?.user?.name || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">No. HP</span>
+                        {renderPhoneCell(selectedBinObj?.wargaPhone || selectedBinObj?.user?.phone || selectedBinObj?.phone)}
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">Kecamatan</span>
+                        <span className="font-extrabold text-slate-700">
+                          {selectedBinObj?.kecamatan || selectedBinObj?.user?.kecamatan || (isBound ? "Coblong" : "-")}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">Kelurahan</span>
+                        <span className="font-extrabold text-slate-700">
+                          {selectedBinObj?.kelurahan || selectedBinObj?.user?.kelurahan || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">Rukun Warga</span>
+                        <span className="font-extrabold text-slate-700">
+                          {selectedBinObj?.rw || selectedBinObj?.user?.rw || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">Jml. Anggota Keluarga</span>
+                        <span className="font-extrabold text-slate-700">
+                          {selectedBinObj?.jumlahAnggotaKeluarga || selectedBinObj?.user?.jumlahAnggotaKeluarga ? `${selectedBinObj?.jumlahAnggotaKeluarga || selectedBinObj?.user?.jumlahAnggotaKeluarga} Orang` : "-"}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-slate-400 font-bold block text-[10px] uppercase">Alamat Lengkap</span>
+                        <span className="font-extrabold text-slate-700">
+                          {selectedBinObj?.address || selectedBinObj?.user?.address || selectedBinObj?.locationName || "-"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">No. HP</span>
-                    {renderPhoneCell(selectedBinObj?.wargaPhone || selectedBinObj?.user?.phone || selectedBinObj?.phone || "+6281234567890")}
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Kecamatan</span>
-                    <span className="font-extrabold text-slate-700">
-                      {selectedBinObj?.kecamatan || selectedBinObj?.user?.kecamatan || "Coblong"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Kelurahan</span>
-                    <span className="font-extrabold text-slate-700">
-                      {selectedBinObj?.kelurahan || selectedBinObj?.user?.kelurahan || "Dago"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Rukun Warga</span>
-                    <span className="font-extrabold text-slate-700">
-                      {selectedBinObj?.rw || selectedBinObj?.user?.rw || "RW 01"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Jml. Anggota Keluarga</span>
-                    <span className="font-extrabold text-slate-700">
-                      {selectedBinObj?.jumlahAnggotaKeluarga || selectedBinObj?.user?.jumlahAnggotaKeluarga || 4} Orang
-                    </span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Alamat Lengkap</span>
-                    <span className="font-extrabold text-slate-700">
-                      {selectedBinObj?.address || selectedBinObj?.user?.address || selectedBinObj?.locationName || "Jl. Ir. H. Juanda No. 123, RW 01, Kel. Dago, Kec. Coblong"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Card 2: Spesifikasi Tempat Sampah */}
               <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
@@ -1669,7 +1674,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     <Box size={15} className="text-blue-600" /> Spesifikasi tempat sampah
                   </span>
                   <span className="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border border-blue-300">
-                    {selectedBinObj?.kategoriText || "Anorganik"}
+                    {selectedBinObj?.category?.name || selectedBinObj?.kategoriText || (selectedBinObj?.kode?.includes("ANG") ? "Anorganik" : selectedBinObj?.kode?.includes("RSD") ? "Residu" : "Organik")}
                   </span>
                 </div>
 
@@ -1695,7 +1700,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   <div>
                     <span className="text-slate-400 font-bold block text-[10px] uppercase">Status Operasional</span>
                     <span className="font-extrabold text-slate-800">
-                      {selectedBinObj?.realStatus === "PENDING_APPROVAL" ? "Menunggu Verifikasi" : selectedBinObj?.status === "ACTIVE_BOUND" ? "Aktif (Terikat)" : selectedBinObj?.status || "Aktif"}
+                      {selectedBinObj?.realStatus === "PRINTED" || (!selectedBinObj?.wargaName && !selectedBinObj?.user?.name) ? "Belum Diaktivasi (PRINTED)" : selectedBinObj?.realStatus === "PENDING_APPROVAL" ? "Menunggu Verifikasi" : selectedBinObj?.status || "Normal"}
                     </span>
                   </div>
                 </div>
