@@ -1186,7 +1186,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4 text-slate-700 font-semibold">
                           {u.dplKelompok && u.dplKelompok.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {u.dplKelompok.map((k: any, i: number) => (
+                              {Array.from(new Map(u.dplKelompok.map((k: any) => [k.id || k.name, k])).values()).map((k: any, i: number) => (
                                 <span key={i} className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                   {k.name}

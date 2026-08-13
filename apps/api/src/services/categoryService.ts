@@ -37,19 +37,20 @@ export class CategoryService {
     return categories;
   }
 
-  async createCategory(data: { name: string; pointsPerKg: number; description?: string }) {
+  async createCategory(data: { name: string; pointsPerKg: number; description?: string; imageUrl?: string }) {
     return prisma.wasteCategory.create({
       data: {
         name: data.name,
         pointsPerKg: data.pointsPerKg,
         description: data.description,
+        ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
       },
     });
   }
 
   async updateCategory(
     id: string,
-    data: { name?: string; pointsPerKg?: number; description?: string }
+    data: { name?: string; pointsPerKg?: number; description?: string; imageUrl?: string }
   ) {
     return prisma.wasteCategory.update({
       where: { id },

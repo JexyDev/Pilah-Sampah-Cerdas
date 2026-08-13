@@ -27,7 +27,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: "", pointsPerKg: 10, description: "" });
+  const [formData, setFormData] = useState({ name: "", pointsPerKg: 10, description: "", imageUrl: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Detail Modal State
@@ -63,7 +63,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
 
   const openAddModal = () => {
     setModalType("add");
-    setFormData({ name: "", pointsPerKg: 10, description: "" });
+    setFormData({ name: "", pointsPerKg: 10, description: "", imageUrl: "" });
     setSelectedId(null);
     setIsModalOpen(true);
   };
@@ -74,6 +74,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
       name: cat.name,
       pointsPerKg: cat.pointsPerKg,
       description: cat.description || "",
+      imageUrl: cat.imageUrl || "",
     });
     setSelectedId(cat.id);
     setIsModalOpen(true);
@@ -405,6 +406,19 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  URL Foto / Gambar Kategori (Opsional)
+                </label>
+                <input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
+                  placeholder="https://images.unsplash.com/... (atau URL gambar Anda)"
+                />
               </div>
 
               <div>
