@@ -56,9 +56,6 @@ export default function DataSurveiKkn() {
     navigate(`/superUser/data-survei-kkn/${kelurahanId}`);
   };
 
-  const handleEdit = (kelurahanId: number) => {
-    navigate(`/superUser/data-survei-kkn/edit/${kelurahanId}`);
-  };
 
   const renderPagination = () => {
     if (!meta || meta.totalPages <= 1) return null;

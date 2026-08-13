@@ -393,8 +393,8 @@ export async function getAllSurveys(
   const skip = (page - 1) * limit;
   let where: any = search
     ? {
-      namaKelurahan: { contains: search, mode: "insensitive" as const },
-    }
+        namaKelurahan: { contains: search, mode: "insensitive" as const },
+      }
     : {};
 
   if (role === "DPL" && userId) {
@@ -597,7 +597,8 @@ export async function updateSurvey(
               ? String(titikKumpulMahasiswa)
               : null
             : undefined,
-        catatanData: catatanData !== undefined ? (catatanData ? String(catatanData) : null) : undefined,
+        catatanData:
+          catatanData !== undefined ? (catatanData ? String(catatanData) : null) : undefined,
       },
     });
 
@@ -653,10 +654,10 @@ export async function updateSurvey(
         pemilahanSampah.persentasePemilahan !== null
           ? Number(pemilahanSampah.persentasePemilahan)
           : pemilahanSampah.persentaseRumahMemilah !== undefined &&
-            pemilahanSampah.persentaseRumahMemilah !== "" &&
-            pemilahanSampah.persentaseRumahMemilah !== null
-          ? Number(pemilahanSampah.persentaseRumahMemilah)
-          : null;
+              pemilahanSampah.persentaseRumahMemilah !== "" &&
+              pemilahanSampah.persentaseRumahMemilah !== null
+            ? Number(pemilahanSampah.persentaseRumahMemilah)
+            : null;
 
       await tx.surveiPemilahanSampah.upsert({
         where: { kelurahanId },
@@ -756,40 +757,40 @@ export async function updateSurvey(
         volumeSampah.organikKgPerHari !== ""
           ? Number(volumeSampah.organikKgPerHari)
           : volumeSampah.estimasiVolumeOrganikKgHari !== undefined &&
-            volumeSampah.estimasiVolumeOrganikKgHari !== null &&
-            volumeSampah.estimasiVolumeOrganikKgHari !== ""
-          ? Number(volumeSampah.estimasiVolumeOrganikKgHari)
-          : null;
+              volumeSampah.estimasiVolumeOrganikKgHari !== null &&
+              volumeSampah.estimasiVolumeOrganikKgHari !== ""
+            ? Number(volumeSampah.estimasiVolumeOrganikKgHari)
+            : null;
       const volAnorganik =
         volumeSampah.anorganikKgPerHari !== undefined &&
         volumeSampah.anorganikKgPerHari !== null &&
         volumeSampah.anorganikKgPerHari !== ""
           ? Number(volumeSampah.anorganikKgPerHari)
           : volumeSampah.estimasiVolumeAnorganikKgHari !== undefined &&
-            volumeSampah.estimasiVolumeAnorganikKgHari !== null &&
-            volumeSampah.estimasiVolumeAnorganikKgHari !== ""
-          ? Number(volumeSampah.estimasiVolumeAnorganikKgHari)
-          : null;
+              volumeSampah.estimasiVolumeAnorganikKgHari !== null &&
+              volumeSampah.estimasiVolumeAnorganikKgHari !== ""
+            ? Number(volumeSampah.estimasiVolumeAnorganikKgHari)
+            : null;
       const volResidu =
         volumeSampah.residuKgPerHari !== undefined &&
         volumeSampah.residuKgPerHari !== null &&
         volumeSampah.residuKgPerHari !== ""
           ? Number(volumeSampah.residuKgPerHari)
           : volumeSampah.estimasiVolumeResiduKgHari !== undefined &&
-            volumeSampah.estimasiVolumeResiduKgHari !== null &&
-            volumeSampah.estimasiVolumeResiduKgHari !== ""
-          ? Number(volumeSampah.estimasiVolumeResiduKgHari)
-          : null;
+              volumeSampah.estimasiVolumeResiduKgHari !== null &&
+              volumeSampah.estimasiVolumeResiduKgHari !== ""
+            ? Number(volumeSampah.estimasiVolumeResiduKgHari)
+            : null;
       const volTotal =
         volumeSampah.totalVolumeKgPerHari !== undefined &&
         volumeSampah.totalVolumeKgPerHari !== null &&
         volumeSampah.totalVolumeKgPerHari !== ""
           ? Number(volumeSampah.totalVolumeKgPerHari)
           : volumeSampah.estimasiTotalKgHari !== undefined &&
-            volumeSampah.estimasiTotalKgHari !== null &&
-            volumeSampah.estimasiTotalKgHari !== ""
-          ? Number(volumeSampah.estimasiTotalKgHari)
-          : null;
+              volumeSampah.estimasiTotalKgHari !== null &&
+              volumeSampah.estimasiTotalKgHari !== ""
+            ? Number(volumeSampah.estimasiTotalKgHari)
+            : null;
 
       await tx.surveiVolumeSampah.upsert({
         where: { kelurahanId },
@@ -818,23 +819,15 @@ export async function updateSurvey(
         create: {
           kelurahanId,
           prioritasIntervensi:
-            catatanKesimpulan.prioritasIntervensi ??
-            catatanKesimpulan.rekomendasiProgram ??
-            null,
+            catatanKesimpulan.prioritasIntervensi ?? catatanKesimpulan.rekomendasiProgram ?? null,
           catatanTambahanRisikoSosial:
-            catatanKesimpulan.catatanTambahanRisikoSosial ??
-            catatanKesimpulan.isuKrusial ??
-            null,
+            catatanKesimpulan.catatanTambahanRisikoSosial ?? catatanKesimpulan.isuKrusial ?? null,
         },
         update: {
           prioritasIntervensi:
-            catatanKesimpulan.prioritasIntervensi ??
-            catatanKesimpulan.rekomendasiProgram ??
-            null,
+            catatanKesimpulan.prioritasIntervensi ?? catatanKesimpulan.rekomendasiProgram ?? null,
           catatanTambahanRisikoSosial:
-            catatanKesimpulan.catatanTambahanRisikoSosial ??
-            catatanKesimpulan.isuKrusial ??
-            null,
+            catatanKesimpulan.catatanTambahanRisikoSosial ?? catatanKesimpulan.isuKrusial ?? null,
         },
       });
     }
