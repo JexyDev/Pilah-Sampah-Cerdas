@@ -17,17 +17,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build Frontend Web (GitHub Actions)
+      - name: Build & Package Frontend Web (GitHub Actions)
         run: |
           cd apps/web
           npm install --silent
           npm run build
           test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
+          tar -czf dist.tar.gz -C dist .
 
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Deploy Backend & Prepare VPS
+      - name: Upload Frontend Archive to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
+
+      - name: Update Backend & Deploy Web on VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
@@ -49,9 +58,8 @@ jobs:
             npm install --silent
             npx prisma generate
             npx prisma db push --skip-generate --accept-data-loss
-            npx prisma db seed
+            npx prisma db seed || true
             npx tsx scripts/seed-complete-master-data.ts || true
-            npx tsx scripts/sync-nims-now.ts || true
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
@@ -59,53 +67,25 @@ jobs:
             $PM2_BIN start dist/index.js --name psc-backend
             $PM2_BIN save || true
 
-            echo "=== 4. Preparing Frontend Web Root ==="
+            echo "=== 4. Deploying Frontend Web to Nginx ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
-            mkdir -p ~/Pilah-Sampah-Cerdas/apps/web/dist ~/Pilah-Sampah-Cerdas-new/apps/web/dist 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/assets /var/www/html/image /var/www/pilah-sampah-cerdas/frontend/dist/assets /var/www/pilah-sampah-cerdas/frontend/dist/image /tmp/frontend-dist/*
-            rm -rf ~/Pilah-Sampah-Cerdas/apps/web/dist/assets ~/Pilah-Sampah-Cerdas-new/apps/web/dist/assets 2>/dev/null || true
+            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/* /tmp/frontend-dist/*
             echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /tmp/frontend-dist
-          EOF
+            tar -xzf /tmp/frontend-dist.tar.gz -C /tmp/frontend-dist/
+            rm -f /tmp/frontend-dist.tar.gz
 
-      - name: Upload Frontend Dist to VPS
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
-        run: |
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -r apps/web/dist/* "$VPS_USER@$VPS_HOST":/tmp/frontend-dist/
-          sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "test -f /tmp/frontend-dist/index.html" || { echo "SCP Upload failed"; exit 1; }
-
-      - name: Finalize Web Deployment & Fix Permissions
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
-        run: |
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
-            NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
-            export PATH=$PATH:/usr/local/bin:$NODE_BIN_DIR
-            PM2_BIN="$NODE_BIN_DIR/pm2"
-            if ! command -v "$PM2_BIN" &> /dev/null; then PM2_BIN="pm2"; fi
-
-            echo "=== 5. Moving Uploaded Files to Web Root ==="
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
-            cp -r /tmp/frontend-dist/* ~/Pilah-Sampah-Cerdas/apps/web/dist/ 2>/dev/null || true
+            mkdir -p ~/Pilah-Sampah-Cerdas-new/apps/web/dist 2>/dev/null || true
             cp -r /tmp/frontend-dist/* ~/Pilah-Sampah-Cerdas-new/apps/web/dist/ 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S rm -rf /tmp/frontend-dist
 
-            echo "=== 6. Fixing Permissions & Ownership ==="
+            echo "=== 5. Fixing Permissions & Reloading Nginx ==="
             echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
             echo "$VPS_PASS" | sudo -S chmod -R 755 /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            chmod -R 755 ~/Pilah-Sampah-Cerdas/apps/web/dist ~/Pilah-Sampah-Cerdas-new/apps/web/dist 2>/dev/null || true
-
-            echo "=== 7. Reloading & Restarting Nginx ==="
             echo "$VPS_PASS" | sudo -S systemctl restart nginx || echo "$VPS_PASS" | sudo -S systemctl reload nginx || true
 
-            echo "=== 8. Verification & PM2 Status ==="
+            echo "=== 6. Verification & Status ==="
             test -f /var/www/html/index.html && echo "Deployment verified: /var/www/html/index.html exists"
             $PM2_BIN status || true
           EOF
-
-
