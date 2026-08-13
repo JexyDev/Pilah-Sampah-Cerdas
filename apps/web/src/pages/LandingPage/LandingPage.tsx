@@ -412,8 +412,8 @@ export const LandingPage: React.FC = () => {
           {/* Hero Left Column */}
           <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4 animate-fade-in-up">
             <h1 className="text-3xl sm:text-4xl lg:text-[3rem] font-black text-slate-900 leading-[1.15] tracking-tight">
-              Sampah <span className="text-[#0084DC]">Terdata</span>,<br />
-              Lingkungan <span className="text-[#009966]">Tertata</span>
+              Sampah <span className="text-[#0073E6]">Terdata</span>,<br />
+              Lingkungan <span className="text-[#59B828]">Tertata</span>
             </h1>
 
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
@@ -437,12 +437,14 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Hero Right Column: Clean Dashboard Image */}
+           {/* Hero Right Column: Clean Dashboard Image with Subtle Left Edge Soft Fade */}
            <div className="lg:col-span-6 xl:col-span-7 relative h-[300px] sm:h-[400px] md:h-[420px] lg:h-[540px] w-full animate-fade-in-up" style={{ animationDelay: "150ms" }}>
+             {/* Subtle Left Edge Gradient Overlay - Soft & Clean Blend */}
+             <div className="absolute inset-y-0 left-0 w-16 sm:w-24 bg-gradient-to-r from-white via-white/40 to-transparent z-10 pointer-events-none" />
              <img
-               src="/image/dashboard.png"
+               src="/image/landingpagenew.jpeg"
                alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
-               className="w-full h-full object-cover object-center lg:object-right rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500"
+               className="w-full h-full object-cover object-center lg:object-right transition-all duration-500 [mask-image:linear-gradient(to_right,transparent_0%,black_8%)]"
              />
            </div>
         </div>

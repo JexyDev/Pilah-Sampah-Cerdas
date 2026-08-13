@@ -6,7 +6,13 @@
  */
 
 import * as XLSX from "xlsx";
-import { PrismaClient, ImportStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+export enum ImportStatus {
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+  FAILED = "FAILED",
+}
 
 const prisma = new PrismaClient();
 

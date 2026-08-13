@@ -144,7 +144,7 @@ const DownloadPage: React.FC = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2.5 group shrink-0">
               <TrashCareLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
-              <span className="text-2xl sm:text-[1.75rem] font-black tracking-tight leading-normal relative -top-[2px]">
+              <span className="text-2xl font-black tracking-tight leading-none text-left relative -top-[1px]">
                 <span className="text-[#0073E6]">Trash</span>
                 <span className="text-[#59B828]">Care</span>
               </span>
