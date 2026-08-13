@@ -23,7 +23,6 @@ import {
   createKelurahanPinIcon,
   createHouseIcon,
 } from "../../constants/coblongGeoData";
-import { Layers } from "lucide-react";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -785,32 +784,6 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
 
         <div className="h-[350px] sm:h-[480px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
-          {/* Map Overlay Legend Card */}
-          <div className="absolute bottom-3 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-10 flex flex-col pointer-events-auto">
-            <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-100/80 flex flex-col gap-1.5 sm:gap-3 sm:min-w-[200px]">
-              <div className="flex items-center gap-1.5 sm:gap-2 border-b border-slate-100 pb-1.5 sm:pb-2">
-                <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 flex-shrink-0" />
-                <p className="text-[9px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-wider leading-tight">
-                  Kapasitas Tempat Sampah / Zona
-                </p>
-              </div>
-              <div className="flex flex-wrap sm:flex-col gap-x-3 gap-y-1.5 sm:gap-3 mt-0.5 sm:mt-0">
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-emerald-500 ring-2 sm:ring-4 ring-emerald-100 shadow-sm"></div>
-                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">&lt; 70% (Aman)</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-amber-500 ring-2 sm:ring-4 ring-amber-100 shadow-sm"></div>
-                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">70-90% (Siaga)</span>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0 rounded-full bg-rose-500 ring-2 sm:ring-4 ring-rose-100 shadow-sm"></div>
-                  <span className="text-[9px] sm:text-[12px] font-semibold text-slate-700">&gt; 90% (Penuh)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -1065,6 +1038,54 @@ const ManajemenTempatSampah: React.FC = () => {
               </>
             )}
           </MapContainer>
+
+          {/* Map Legend Overlay for Manajemen Tempat Sampah */}
+          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 max-w-xs font-sans text-xs">
+            <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200/90 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
+                <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Tempat Sampah
+                </span>
+              </div>
+
+              {/* Status Volume Tempat Sampah */}
+              <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
+                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  Kapasitas Tempat Sampah
+                </span>
+                <div className="space-y-1 text-[10.5px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
+                    <span className="font-bold text-slate-700">Aman (&lt; 70%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white"></span>
+                    <span className="font-bold text-slate-700">Waspada (70% - 90%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span>
+                    <span className="font-bold text-slate-700">Penuh (&gt; 90%)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Batas Kelurahan */}
+              <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                Polygon 6 Kelurahan
+              </span>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
+                {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                  <div key={kg.id} className="flex items-center gap-1.5">
+                    <span
+                      className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10"
+                      style={{ backgroundColor: kg.color }}
+                    ></span>
+                    <span className="font-bold text-slate-700 truncate">{kg.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
