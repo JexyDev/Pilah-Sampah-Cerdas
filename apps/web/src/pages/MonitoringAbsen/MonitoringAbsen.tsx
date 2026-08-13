@@ -8,7 +8,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, Calendar, MapPin, Search, Activity, RefreshCw, Plus, Trash2, X, Pencil } from "lucide-react";
+import { Loader2, Calendar, MapPin, Search, Activity, RefreshCw, Plus, Trash2, X, Pencil, Download, Navigation } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { Pagination } from "../../components/common/Pagination";
@@ -144,9 +144,70 @@ const MonitoringAbsen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
-  
-  // Dynamic minimum attendance duration threshold configured by Super User (default 4 Hours)
   const minHoursRequired = Number(localStorage.getItem("TRASHCARE_MIN_ATTENDANCE_HOURS") || localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
+  const [attendanceFilterTab, setAttendanceFilterTab] = useState<"ALL" | "ACTIVE" | "COMPLETED" | "NOT_ATTENDED">("ALL");
+
+  // Export Attendance Rekap to CSV
+  const handleExportCSV = () => {
+    if (!attendance || attendance.length === 0) {
+      toast.error("Tidak ada data presensi untuk diunduh");
+      return;
+    }
+    const headers = ["Nama Mahasiswa", "NIM", "Status Absensi", "Waktu Masuk (Tm)", "Waktu Pulang (Ts)", "Durasi (Menit)"];
+    const rows = attendance.map((rec) => {
+      const isAttended = Boolean(rec.attendedAt);
+      const isCompleted = Boolean(rec.completedAt);
+      const durationMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      let statusStr = "Belum Absen";
+      if (isAttended && !isCompleted) statusStr = "Sedang di Lapangan";
+      else if (isCompleted) statusStr = durationMins >= minHoursRequired * 60 ? "Selesai (Memenuhi)" : "Selesai (Kurang Durasi)";
+
+      return [
+        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
+        `"${rec.student?.studentProfile?.nim || "-"}"`,
+        `"${statusStr}"`,
+        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
+        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        durationMins,
+      ].join(",");
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Laporan Presensi CSV berhasil diunduh");
+  };
+
+  // Fly Map to Mahasiswa Location
+  const handleFocusMahasiswaMap = (rec: AttendanceRecord) => {
+    const lat = Number(rec.latitude);
+    const lng = Number(rec.longitude);
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      setMapCenter([lat, lng]);
+      toast.success(`Fokus lokasi ke: ${rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()}`);
+    } else {
+      toast.error("Koordinat GPS lokasi absensi mahasiswa belum tersedia");
+    }
+  };
+
+  // Filtered Attendance List based on Selected Filter Tab
+  const filteredAttendance = useMemo(() => {
+    return attendance.filter((rec) => {
+      const isAttended = Boolean(rec.attendedAt);
+      const isCompleted = Boolean(rec.completedAt);
+      const isActivePresence = isAttended && !isCompleted;
+
+      if (attendanceFilterTab === "ACTIVE") return isActivePresence;
+      if (attendanceFilterTab === "COMPLETED") return isCompleted;
+      if (attendanceFilterTab === "NOT_ATTENDED") return !isAttended;
+      return true;
+    });
+  }, [attendance, attendanceFilterTab]);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -402,40 +463,129 @@ const MonitoringAbsen: React.FC = () => {
             {/* Active Student Presence Markers */}
             {activeStudentMarkers}
           </MapContainer>
+
+          {/* Map Controls & Color Legend Overlay */}
+          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+            <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/90 shadow-xl max-w-xs font-sans text-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Peta &amp; Wilayah
+                </span>
+              </div>
+
+              {/* Status Markers Legend */}
+              <div className="space-y-1.5 mb-2.5 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-sm shrink-0"></span>
+                  <span className="text-[11px] font-bold text-slate-700">🟢 Mahasiswa Aktif di Lapangan</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded-md bg-blue-500 border-2 border-white shadow-sm shrink-0"></span>
+                  <span className="text-[11px] font-bold text-slate-700">🔵 Zona Kegiatan KKN (Radius)</span>
+                </div>
+              </div>
+
+              {/* Kelurahan Colors Legend */}
+              <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1.5">
+                Batas 6 Kelurahan Coblong
+              </span>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
+                {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                  <div key={kg.id} className="flex items-center gap-1.5">
+                    <span
+                      className="w-3 h-3 rounded-md shrink-0 border border-black/10 shadow-2xs"
+                      style={{ backgroundColor: kg.color }}
+                    ></span>
+                    <span className="font-bold text-slate-700 truncate">{kg.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Panel Bawah: Detail Presensi & Durasi Tm - Ts */}
         {activeSchedule && (
           <div className="bg-white/95 backdrop-blur-md border-t border-slate-200 z-20 p-4 shadow-lg max-h-64 flex flex-col">
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-black text-slate-900">
-                    Rekap Presensi & Keberadaan Lapangan
+                    Rekap Presensi &amp; Keberadaan Lapangan
                   </h3>
                   <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
                     Syarat Minimum: {minHoursRequired} Jam (\(\Delta T = T_s - T_m\))
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium">
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
                   {attendance.length} Mahasiswa Terdata • {attendance.filter((a) => Boolean(a.attendedAt) && !a.completedAt).length} Sedang Berada di Lapangan
                 </p>
               </div>
-              <button  
-                onClick={() => fetchAttendanceAndLocations(selectedScheduleId)}
-                className={`p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer ${
-                  refreshing ? "animate-spin text-blue-600" : "text-slate-500"
-                }`}
-                title="Refresh Data"
-              >
-                <RefreshCw size={16} />
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Filter Tabs */}
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-[10px] font-bold text-slate-600">
+                  <button
+                    onClick={() => setAttendanceFilterTab("ALL")}
+                    className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                      attendanceFilterTab === "ALL" ? "bg-white text-slate-900 shadow-xs" : "hover:text-slate-900"
+                    }`}
+                  >
+                    Semua ({attendance.length})
+                  </button>
+                  <button
+                    onClick={() => setAttendanceFilterTab("ACTIVE")}
+                    className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                      attendanceFilterTab === "ACTIVE" ? "bg-white text-emerald-700 shadow-xs font-black" : "hover:text-slate-900"
+                    }`}
+                  >
+                    🟢 Lapangan ({attendance.filter((a) => Boolean(a.attendedAt) && !a.completedAt).length})
+                  </button>
+                  <button
+                    onClick={() => setAttendanceFilterTab("COMPLETED")}
+                    className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                      attendanceFilterTab === "COMPLETED" ? "bg-white text-blue-700 shadow-xs font-black" : "hover:text-slate-900"
+                    }`}
+                  >
+                    🔵 Selesai ({attendance.filter((a) => Boolean(a.completedAt)).length})
+                  </button>
+                  <button
+                    onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
+                    className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                      attendanceFilterTab === "NOT_ATTENDED" ? "bg-white text-slate-800 shadow-xs font-black" : "hover:text-slate-900"
+                    }`}
+                  >
+                    ⚪ Belum Absen ({attendance.filter((a) => !a.attendedAt).length})
+                  </button>
+                </div>
+
+                {/* CSV Download Button */}
+                <button
+                  onClick={handleExportCSV}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl flex items-center gap-1 shadow-xs transition cursor-pointer"
+                  title="Unduh Laporan Rekap Presensi (CSV)"
+                >
+                  <Download size={13} />
+                  <span>CSV</span>
+                </button>
+
+                {/* Refresh Button */}
+                <button
+                  onClick={() => fetchAttendanceAndLocations(selectedScheduleId)}
+                  className={`p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer ${
+                    refreshing ? "animate-spin text-blue-600" : "text-slate-500"
+                  }`}
+                  title="Refresh Data Presensi"
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-y-auto flex-1 pr-1">
-              {attendance.length > 0 ? (
+              {filteredAttendance.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {attendance.map((rec) => {
+                  {filteredAttendance.map((rec) => {
                     const isAttended = Boolean(rec.attendedAt);
                     const isCompleted = Boolean(rec.completedAt);
                     const isActivePresence = isAttended && !isCompleted;
@@ -458,12 +608,15 @@ const MonitoringAbsen: React.FC = () => {
                     return (
                       <div
                         key={rec.id}
-                        className="border border-slate-200 rounded-xl p-3 bg-white shadow-2xs flex flex-col justify-between"
+                        onClick={() => handleFocusMahasiswaMap(rec)}
+                        className="border border-slate-200 hover:border-emerald-500 rounded-xl p-3 bg-white hover:bg-emerald-50/30 transition-all shadow-2xs flex flex-col justify-between cursor-pointer group"
+                        title="Klik untuk fokus lokasi di peta"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h4 className="text-xs font-black text-slate-900 line-clamp-1">
+                            <h4 className="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1">
                               {rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()}
+                              <Navigation size={11} className="opacity-0 group-hover:opacity-100 text-emerald-600 transition-opacity" />
                             </h4>
                             <p className="text-[10px] text-slate-400 font-mono font-semibold">
                               NIM: {rec.student.studentProfile?.nim || "-"}
@@ -497,7 +650,7 @@ const MonitoringAbsen: React.FC = () => {
               ) : (
                 <div className="text-center py-6 text-slate-400 text-xs flex flex-col items-center gap-2">
                   <Activity size={24} className="text-slate-300" />
-                  Belum ada data kehadiran pada kegiatan ini.
+                  Tidak ada data presensi yang sesuai dengan filter ini.
                 </div>
               )}
             </div>
