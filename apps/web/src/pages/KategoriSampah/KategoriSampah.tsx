@@ -1,4 +1,4 @@
-import { Loader2, Trash2, X, Pencil, Tags, Coins, QrCode, AlertTriangle, Eye, Layers, Sparkles, Check } from "lucide-react";
+import { Loader2, Trash2, X, Pencil, Tags, Coins, QrCode, AlertTriangle, Eye, Layers, Sparkles, Check, Upload } from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -410,15 +410,61 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
 
               <div>
                 <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                  URL Foto / Gambar Kategori (Opsional)
+                  Foto / Gambar Kategori (Opsional)
                 </label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
-                  placeholder="https://images.unsplash.com/... (atau URL gambar Anda)"
-                />
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formData.imageUrl}
+                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                      placeholder="URL Gambar (https://...) atau Unggah Berkas"
+                      className="flex-1 h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
+                    />
+                    <label className="h-11 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#009966] border border-emerald-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
+                      <Upload size={15} />
+                      <span>Unggah Berkas</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFormData({ ...formData, imageUrl: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {formData.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                        className="h-11 px-3 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 text-xs font-bold transition-colors cursor-pointer"
+                        title="Hapus Foto"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  {formData.imageUrl && (
+                    <div className="relative w-full h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 mt-1 shadow-2xs">
+                      <img
+                        src={formData.imageUrl}
+                        alt="Preview Kategori"
+                        className="w-full h-full object-cover"
+                        onError={(e) => handleImageError(e, formData.name || "Kategori")}
+                      />
+                      <span className="absolute bottom-2 left-2 bg-slate-900/80 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        Preview Foto Kategori
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

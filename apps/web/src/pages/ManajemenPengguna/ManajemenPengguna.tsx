@@ -668,6 +668,19 @@ const ManajemenPengguna: React.FC = () => {
     return cleaned.length > 0 ? cleaned : prodi;
   };
 
+  // Helper function for cleaning redundant KKN Group names
+  const cleanKknDisplayName = (name?: string, kelurahan?: string) => {
+    if (!name || name === "-") return "-";
+    let clean = name.trim();
+    clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing (Kelurahan) suffix
+    clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
+    
+    if (kelurahan && !clean.toLowerCase().includes(kelurahan.toLowerCase())) {
+      return `${clean} (${kelurahan})`;
+    }
+    return clean;
+  };
+
   // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges
   const renderWilayahBadges = (raw?: string) => {
     if (!raw || raw === "-" || raw.trim() === "") return <span className="text-slate-400 font-medium">-</span>;
@@ -1186,10 +1199,17 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4 text-slate-700 font-semibold">
                           {u.dplKelompok && u.dplKelompok.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {Array.from(new Map(u.dplKelompok.map((k: any) => [k.id || k.name, k])).values()).map((k: any, i: number) => (
+                              {Array.from(
+                                new Map(
+                                  u.dplKelompok.map((k: any) => {
+                                    const cleaned = cleanKknDisplayName(k.name, k.kelurahan);
+                                    return [cleaned, cleaned];
+                                  })
+                                ).values()
+                              ).map((groupName: any, i: number) => (
                                 <span key={i} className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  {k.name}
+                                  {groupName}
                                 </span>
                               ))}
                             </div>
@@ -1314,7 +1334,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">
                           {u.studentProfile?.kelompok?.name && u.studentProfile.kelompok.name !== "-" ? (
                             <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                              {u.studentProfile.kelompok.name}
+                              {cleanKknDisplayName(u.studentProfile.kelompok.name, u.studentProfile.kelompok.kelurahan)}
                             </span>
                           ) : (
                             <span className="text-slate-400 font-medium">-</span>
