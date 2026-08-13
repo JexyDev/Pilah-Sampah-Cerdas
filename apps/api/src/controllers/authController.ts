@@ -188,7 +188,7 @@ export class AuthController {
         res.status(500).json({
           success: false,
           code: "INTERNAL_SERVER_ERROR",
-          message: "Terjadi kesalahan pada server",
+          message: error?.message || "Terjadi kesalahan pada server",
         });
       }
     }

@@ -37,7 +37,17 @@ export class AuthService {
       throw new Error("USER_INACTIVE");
     }
 
-    const isPasswordValid = await comparePassword(password, user.password);
+    if (!user.password) {
+      throw new Error("WRONG_PASSWORD");
+    }
+
+    let isPasswordValid = false;
+    try {
+      isPasswordValid = await comparePassword(password, user.password);
+    } catch {
+      isPasswordValid = false;
+    }
+
     if (!isPasswordValid) {
       throw new Error("WRONG_PASSWORD");
     }
@@ -55,8 +65,12 @@ export class AuthService {
     const accessToken = generateAccessToken(payload);
     const { token: refreshToken, expiresAt } = generateRefreshToken(user.id);
 
-    // Save refresh token to DB
-    await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
+    // Save refresh token to DB (non-blocking failure)
+    try {
+      await authRepository.createRefreshToken(user.id, refreshToken, expiresAt);
+    } catch (err) {
+      console.error("[AuthService] Gagal menyimpan refresh token ke DB:", err);
+    }
 
     return {
       accessToken,
