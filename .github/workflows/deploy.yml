@@ -34,7 +34,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
+          sshpass -p "$VPS_PASS" scp -C -o StrictHostKeyChecking=no -o IPQoS=throughput apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
 
       - name: Update Backend & Deploy Web on VPS
         env:
