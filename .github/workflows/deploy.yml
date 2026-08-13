@@ -57,9 +57,7 @@ jobs:
             cd apps/api
             npm install --silent
             npx prisma generate
-            npx prisma db push --skip-generate --accept-data-loss
-            npx prisma db seed || true
-            npx tsx scripts/seed-complete-master-data.ts || true
+            npx prisma db push --skip-generate
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="

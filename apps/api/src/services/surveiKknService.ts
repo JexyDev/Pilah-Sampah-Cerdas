@@ -207,7 +207,9 @@ export async function importToDatabase(
 
       // karakteristik_wilayah (1:1)
       const karakteristikRows = normalizeRows("karakteristik_wilayah", data.karakteristik_wilayah);
-      await tx.surveiKarakteristikWilayah.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+      await tx.surveiKarakteristikWilayah.deleteMany({
+        where: { kelurahanId: { in: kelurahanIds } },
+      });
       for (const row of karakteristikRows) {
         await tx.surveiKarakteristikWilayah.create({
           data: {
@@ -219,9 +221,18 @@ export async function importToDatabase(
             pasar: row.pasar as boolean | null,
             bantaranSungai: row.bantaran_sungai as boolean | null,
             karakterLainnyaFlag: row.karakter_lainnya_flag as boolean | null,
-            karakterLainnyaKeterangan: row.karakter_lainnya_keterangan != null ? String(row.karakter_lainnya_keterangan) : null,
-            perkiraanJumlahKosKontrakan: row.perkiraan_jumlah_kos_kontrakan != null ? String(row.perkiraan_jumlah_kos_kontrakan) : null,
-            perkiraanJumlahUmkmWarungKafe: row.perkiraan_jumlah_umkm_warung_kafe != null ? String(row.perkiraan_jumlah_umkm_warung_kafe) : null,
+            karakterLainnyaKeterangan:
+              row.karakter_lainnya_keterangan != null
+                ? String(row.karakter_lainnya_keterangan)
+                : null,
+            perkiraanJumlahKosKontrakan:
+              row.perkiraan_jumlah_kos_kontrakan != null
+                ? String(row.perkiraan_jumlah_kos_kontrakan)
+                : null,
+            perkiraanJumlahUmkmWarungKafe:
+              row.perkiraan_jumlah_umkm_warung_kafe != null
+                ? String(row.perkiraan_jumlah_umkm_warung_kafe)
+                : null,
           },
         });
       }
@@ -235,7 +246,8 @@ export async function importToDatabase(
             kelurahanId: row.kelurahan_id as number,
             jumlahRumahMemilah: (row.jumlah_rumah_memilah as number) || null,
             totalJumlahRumahDiRw: (row.total_jumlah_rumah_di_rw as number) || null,
-            persentasePemilahan: row.persentase_pemilahan != null ? row.persentase_pemilahan as number : null,
+            persentasePemilahan:
+              row.persentase_pemilahan != null ? (row.persentase_pemilahan as number) : null,
             tingkatPemilahan: (row.tingkat_pemilahan as string) || null,
             catatan: (row.catatan as string) || null,
           },
@@ -245,15 +257,19 @@ export async function importToDatabase(
 
       // bank_sampah_pengolahan (1:1)
       const bankSampahRows = normalizeRows("bank_sampah_pengolahan", data.bank_sampah_pengolahan);
-      await tx.surveiBankSampahPengolahan.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+      await tx.surveiBankSampahPengolahan.deleteMany({
+        where: { kelurahanId: { in: kelurahanIds } },
+      });
       for (const row of bankSampahRows) {
         await tx.surveiBankSampahPengolahan.create({
           data: {
             kelurahanId: row.kelurahan_id as number,
             bankSampahAktif: (row.bank_sampah_aktif as number) || null,
             bankSampahTidakAktif: (row.bank_sampah_tidak_aktif as number) || null,
-            jumlahUnitKomposter: row.jumlah_unit_komposter != null ? String(row.jumlah_unit_komposter) : null,
-            jumlahTitikMaggotBsf: row.jumlah_titik_maggot_bsf != null ? String(row.jumlah_titik_maggot_bsf) : null,
+            jumlahUnitKomposter:
+              row.jumlah_unit_komposter != null ? String(row.jumlah_unit_komposter) : null,
+            jumlahTitikMaggotBsf:
+              row.jumlah_titik_maggot_bsf != null ? String(row.jumlah_titik_maggot_bsf) : null,
             bioporiLoseda: row.biopori_loseda as boolean | null,
             ecobrickKerajinanDaurUlang: row.ecobrick_kerajinan_daur_ulang as boolean | null,
             buruanSae: row.buruan_sae as boolean | null,
@@ -286,10 +302,16 @@ export async function importToDatabase(
         await tx.surveiVolumeSampah.create({
           data: {
             kelurahanId: row.kelurahan_id as number,
-            organikKgPerHari: row.organik_kg_per_hari != null ? row.organik_kg_per_hari as number : null,
-            anorganikKgPerHari: row.anorganik_kg_per_hari != null ? row.anorganik_kg_per_hari as number : null,
-            residuKgPerHari: row.residu_kg_per_hari != null ? row.residu_kg_per_hari as number : null,
-            totalVolumeKgPerHari: row.total_volume_kg_per_hari != null ? row.total_volume_kg_per_hari as number : null,
+            organikKgPerHari:
+              row.organik_kg_per_hari != null ? (row.organik_kg_per_hari as number) : null,
+            anorganikKgPerHari:
+              row.anorganik_kg_per_hari != null ? (row.anorganik_kg_per_hari as number) : null,
+            residuKgPerHari:
+              row.residu_kg_per_hari != null ? (row.residu_kg_per_hari as number) : null,
+            totalVolumeKgPerHari:
+              row.total_volume_kg_per_hari != null
+                ? (row.total_volume_kg_per_hari as number)
+                : null,
             catatan: (row.catatan as string) || null,
           },
         });
@@ -361,7 +383,13 @@ export async function getImportHistory(limit: number = 20) {
 /**
  * Ambil daftar semua survei kelurahan (dengan pagination & pencarian)
  */
-export async function getAllSurveys(page: number = 1, limit: number = 10, search: string = "", role?: string, userId?: string) {
+export async function getAllSurveys(
+  page: number = 1,
+  limit: number = 10,
+  search: string = "",
+  role?: string,
+  userId?: string
+) {
   const skip = (page - 1) * limit;
   let where: any = search
     ? {
@@ -374,7 +402,7 @@ export async function getAllSurveys(page: number = 1, limit: number = 10, search
       where: { dplId: userId },
       select: { kelurahan: true },
     });
-    
+
     const kelurahanList = kelompokKkn
       .map((k) => k.kelurahan)
       .filter((k) => k !== null && k.trim() !== "") as string[];

@@ -10,6 +10,11 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
+    console.error("⛔ SEED BLOCKED: Executing seed scripts in production environment is prohibited to protect real VPS data.");
+    process.exit(1);
+  }
+
   console.log("🌱 Seeding data wilayah TrashCare...\n");
 
   // ─────────────────────────────────────────────

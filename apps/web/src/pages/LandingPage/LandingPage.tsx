@@ -442,7 +442,7 @@ export const LandingPage: React.FC = () => {
              {/* Subtle Left Edge Gradient Overlay - Soft & Clean Blend */}
              <div className="absolute inset-y-0 left-0 w-16 sm:w-24 bg-gradient-to-r from-white via-white/40 to-transparent z-10 pointer-events-none" />
              <img
-               src="/image/landingpagenew.jpeg"
+               src="/image/landingpage.png"
                alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
                className="w-full h-full object-cover object-center lg:object-right transition-all duration-500 [mask-image:linear-gradient(to_right,transparent_0%,black_8%)]"
              />
