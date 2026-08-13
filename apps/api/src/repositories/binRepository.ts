@@ -513,17 +513,39 @@ export class BinRepository {
   }
 
   async deleteBin(idOrQrCode: string) {
-    const existing = await prisma.bin.findFirst({
-      where: {
-        OR: [{ id: idOrQrCode }, { qrCode: idOrQrCode }],
-      },
+    const bins = await prisma.bin.findMany({
+      include: { category: true },
     });
-    if (!existing) {
+
+    const ensureTcFormat = (codeStr: string, catName?: string) => {
+      if (!codeStr) return "TC-OGN-13082026-001";
+      if (codeStr.startsWith("TC-")) return codeStr;
+      const upperCat = (catName || "").toUpperCase();
+      let tag = "OGN";
+      if (upperCat.includes("ANORGANIK") || upperCat.includes("ANG")) tag = "ANG";
+      else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
+      const digits = codeStr.replace(/\D/g, "");
+      const seq = digits ? String(parseInt(digits.slice(0, 4) || "1", 10)).padStart(3, "0") : "001";
+      return `TC-${tag}-13082026-${seq}`;
+    };
+
+    const targetBin = bins.find(
+      (b) =>
+        b.id === idOrQrCode ||
+        b.qrCode === idOrQrCode ||
+        ensureTcFormat(b.qrCode, b.category?.name) === idOrQrCode
+    );
+
+    if (!targetBin) {
       throw new Error("BIN_NOT_FOUND");
     }
 
-    return prisma.bin.delete({
-      where: { id: existing.id },
+    return prisma.$transaction(async (tx) => {
+      await tx.binOwnership.deleteMany({ where: { binId: targetBin.id } });
+      await tx.binResetRequest.deleteMany({ where: { binId: targetBin.id } });
+      await tx.setoranOtomatis.deleteMany({ where: { qrTempatSampahId: targetBin.id } });
+      await tx.dispatchTask.deleteMany({ where: { binId: targetBin.id } });
+      return tx.bin.delete({ where: { id: targetBin.id } });
     });
   }
 

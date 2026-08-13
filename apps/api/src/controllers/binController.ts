@@ -544,11 +544,13 @@ export class BinController {
       const { id } = req.params;
       await binService.deleteBin(id);
       res.status(200).json({ success: true, message: "tempat sampah berhasil dihapus" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("[BinController] deleteBin error:", error);
-      res
-        .status(500)
-        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tempat sampah" });
+      if (error.message === "BIN_NOT_FOUND") {
+        res.status(404).json({ success: false, error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+      } else {
+        res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tempat sampah" });
+      }
     }
   }
 
