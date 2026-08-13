@@ -10,6 +10,7 @@ import '../../../core/widgets/searchable_dropdown.dart';
 import '../../../routes/app_routes.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../shared/widgets/password_strength_widget.dart';
 
 /// Layar registrasi Warga baru.
 /// Input: Nama Lengkap + No. Telepon + Kata Sandi.
@@ -944,6 +945,13 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   return null;
                                 },
                               ),
+                              const SizedBox(height: 12),
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _passwordController,
+                                builder: (context, value, child) {
+                                  return PasswordStrengthWidget(password: value.text);
+                                },
+                              ),
                               const SizedBox(height: 16),
 
                               // Field Konfirmasi Kata Sandi
@@ -1157,4 +1165,3 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     );
   }
 }
-

@@ -264,10 +264,42 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
-                                                                  ],
+                                ],
                                 decoration: InputDecoration(
-                                  hintText: 'Misal: 0812... atau 13011...',
-                                  prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGreen),
+                                  hintText: '81112345678',
+                                  prefixIcon: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: Colors.grey.shade300),
+                                            color: Colors.white,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                          child: const Text('🇮🇩', style: TextStyle(fontSize: 16)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          '+62',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          height: 20,
+                                          width: 1,
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        const SizedBox(width: 8),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
