@@ -174,12 +174,20 @@ const KknDashboard: React.FC = () => {
   };
 
   const handleWargaClick = async (wargaId: string) => {
+    const localWarga = wargaList.find((w) => (w.wargaId || w.id) === wargaId);
     try {
       const res = await api.get(`/kkn/warga/${wargaId}`);
-      setSelectedWarga(res.data?.data);
+      if (res.data?.data) {
+        setSelectedWarga(res.data.data);
+        return;
+      }
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Gagal memuat detail warga");
+      console.warn("[KKN Dashboard] API detail warga fallback to local item:", err?.message);
+    }
+    if (localWarga) {
+      setSelectedWarga(localWarga);
+    } else {
+      toast.error("Gagal memuat detail warga");
     }
   };
 

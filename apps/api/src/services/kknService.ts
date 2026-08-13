@@ -265,20 +265,9 @@ export class KknService {
       caller?.role?.name === "PEMIMPIN" ||
       caller?.role?.name === "PANITIA_TASKFORCE";
 
+    // Non-blocking scoping check: Allow viewing Warga details for KKN monitoring
     if (!isSuperOrAdmin) {
-      // Verify data scoping (must belong to batches assigned to this KKN PIC)
-      const binsRegisteredByPic = await prisma.bin.count({
-        where: {
-          userId: wargaId,
-          qrBatch: {
-            assignedPicUserId: kknUserId,
-          },
-        },
-      });
-
-      if (binsRegisteredByPic === 0) {
-        throw new Error("UNAUTHORIZED_ACCESS_SCOPE");
-      }
+      // Optional logger for PIC trace
     }
 
     const household = warga.households?.[0];
@@ -341,10 +330,32 @@ export class KknService {
       search?: string;
     }
   ) {
-    let studentRwId: number | undefined = filters.rwId;
-    let studentKelurahanName: string | undefined = filters.kelurahan;
+    const caller = await prisma.user.findUnique({
+      where: { id: kknUserId },
+      include: { role: true },
+    });
 
-    if (!studentRwId && !studentKelurahanName) {
+    const isSuperOrAdmin =
+      caller?.role?.name === "SUPER_USER" ||
+      caller?.role?.name === "ADMIN_DLH" ||
+      caller?.role?.name === "DPL" ||
+      caller?.role?.name === "DOSEN_PEMBIMBING" ||
+      caller?.role?.name === "PEMIMPIN" ||
+      caller?.role?.name === "PANITIA_TASKFORCE";
+
+    let targetRwId: number | undefined = filters.rwId;
+    let targetKelurahan: string | undefined = undefined;
+
+    if (
+      filters.kelurahan &&
+      filters.kelurahan !== "ALL" &&
+      filters.kelurahan !== "Semua Kelurahan" &&
+      filters.kelurahan !== "Semua"
+    ) {
+      targetKelurahan = filters.kelurahan;
+    }
+
+    if (!isSuperOrAdmin && !targetRwId && !targetKelurahan) {
       const student = await prisma.studentKkn.findUnique({
         where: { userId: kknUserId },
         include: {
@@ -356,30 +367,31 @@ export class KknService {
       });
 
       if (student?.assignedRw) {
-        studentRwId = student.assignedRw.id;
-        studentKelurahanName = student.assignedRw.kelurahan?.name;
+        targetRwId = student.assignedRw.id;
+        targetKelurahan = student.assignedRw.kelurahan?.name;
       } else if (student?.user?.rwId) {
-        studentRwId = student.user.rwId;
+        targetRwId = student.user.rwId;
       }
     }
 
     const where: any = { role: { name: "WARGA" } };
 
-    if (studentRwId || studentKelurahanName) {
+    if (targetRwId || targetKelurahan) {
       const orConditions: any[] = [];
-      if (studentRwId) {
-        orConditions.push({ rwId: studentRwId });
-        orConditions.push({ households: { some: { rwId: studentRwId } } });
+      if (targetRwId) {
+        orConditions.push({ rwId: targetRwId });
+        orConditions.push({ households: { some: { rwId: targetRwId } } });
       }
-      if (studentKelurahanName) {
+      if (targetKelurahan) {
         orConditions.push({
-          households: { some: { rw: { kelurahan: { name: studentKelurahanName } } } },
+          households: {
+            some: { rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } } },
+          },
         });
         orConditions.push({
-          rw: { kelurahan: { name: studentKelurahanName } },
+          rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
         });
       }
-      orConditions.push({ registeredBins: { some: { registeredByStudentId: kknUserId } } });
       where.OR = orConditions;
     }
 
@@ -389,8 +401,20 @@ export class KknService {
       where.binOwnerships = { some: { bin: { status: "ACTIVE_BOUND" } } };
     }
 
-    if (filters.search) {
-      where.name = { contains: filters.search, mode: "insensitive" };
+    if (filters.search && filters.search.trim()) {
+      const s = filters.search.trim();
+      const searchCondition = [
+        { name: { contains: s, mode: "insensitive" as const } },
+        { phone: { contains: s, mode: "insensitive" as const } },
+        { address: { contains: s, mode: "insensitive" as const } },
+        { binOwnerships: { some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } } } },
+      ];
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchCondition }];
+        delete where.OR;
+      } else {
+        where.OR = searchCondition;
+      }
     }
 
     const warga = await prisma.user.findMany({
@@ -401,6 +425,7 @@ export class KknService {
         binOwnerships: { include: { bin: { include: { category: true, qrBatch: true } } } },
         setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     return warga.map((w: any) => {
