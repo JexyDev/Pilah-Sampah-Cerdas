@@ -4,6 +4,7 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
+import '../../../core/utils/network_exception_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
 
@@ -69,7 +70,7 @@ class PemanfaatanSampahNotifier extends StateNotifier<PemanfaatanSampahState> {
       final msg = e.response?.data?['message']?.toString() ?? 'Gagal mengirim laporan pemanfaatan sampah.';
       state = state.copyWith(isLoading: false, error: msg);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: NetworkExceptionHelper.getErrorMessage(e));
     }
     return false;
   }

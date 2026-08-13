@@ -19,6 +19,7 @@ import '../notifikasi/controllers/warga_notifikasi_controller.dart';
 import '../shared/widgets/app_error.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
+import '../../core/utils/network_exception_helper.dart';
 import '../../core/utils/scan_guard.dart';
 
 /// Halaman beranda ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â sesuai desain:
@@ -81,7 +82,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       borderRadius: BorderRadius.all(Radius.circular(16)),
                     ),
                     error: (e, __) => AppError(
-                      message: e.toString(),
+                      message: NetworkExceptionHelper.getErrorMessage(e),
                       onRetry: () => ref.invalidate(totalPointsProvider),
                     ),
                   ),

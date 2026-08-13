@@ -91,5 +91,5 @@ class BinException implements Exception {
   final String? message;
 
   @override
-  String toString() => 'BinException($code): $message';
+  String toString() => message != null && message!.isNotEmpty ? message! : 'Terjadi kendala pada data tempat sampah. Silakan coba beberapa saat lagi.';
 }

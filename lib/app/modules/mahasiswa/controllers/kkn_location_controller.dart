@@ -12,6 +12,7 @@ import '../../../data/models/user_entity.dart';
 import 'mahasiswa_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
 import '../../../data/services/notification_engine.dart';
+import '../../../core/utils/network_exception_helper.dart';
 
 class KknLocationState {
   final Position? currentPosition;
@@ -506,7 +507,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final msg = e.response?.data?['message']?.toString() ?? 'Gagal absensi kegiatan.';
       state = state.copyWith(error: msg);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
     }
     return false;
   }

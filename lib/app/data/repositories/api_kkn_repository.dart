@@ -41,7 +41,7 @@ class ApiKknRepository implements KknRepository {
         await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
         return KknDashboardData.fromJson(data);
       }
-      throw Exception('Invalid response');
+      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
     } catch (e) {
       final prefs = await SharedPreferences.getInstance();
       final cachedStr = prefs.getString(_cacheKeyDashboard);
@@ -134,7 +134,7 @@ class ApiKknRepository implements KknRepository {
         await prefs.setString(_cacheKeyActivityLog, jsonEncode(list));
         return list;
       }
-      throw Exception('Invalid response');
+      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
     } catch (e) {
       final prefs = await SharedPreferences.getInstance();
       final cachedStr = prefs.getString(_cacheKeyActivityLog);

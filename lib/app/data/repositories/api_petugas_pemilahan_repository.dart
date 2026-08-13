@@ -51,7 +51,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
 
         return PetugasPemilahanDashboard.fromJson(data);
       }
-      throw Exception('Invalid response');
+      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
     } catch (e) {
       final prefs = await SharedPreferences.getInstance();
       final cachedStr = prefs.getString(_cacheKeyDashboard);
@@ -102,7 +102,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       }
       return [];
     }
-    throw Exception('Invalid response');
+    throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
   }
 
   @override
@@ -168,7 +168,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
 
         return true;
       }
-      throw Exception('Failed to submit log: ${response.statusCode}');
+      throw Exception('Gagal menyimpan data log timbangan.');
     } catch (e) {
       debugPrint('[ApiPetugasPemilahanRepository] Error caught: $e');
       rethrow;
@@ -211,7 +211,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         }
         return [];
       }
-      throw Exception('Invalid response');
+      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
     } catch (e) {
       rethrow;
     }
@@ -230,7 +230,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       }
-      throw Exception('Failed to change password: ${response.statusCode}');
+      throw Exception('Gagal memperbarui kata sandi. Periksa kata sandi lama Anda.');
     } catch (e) {
       rethrow;
     }

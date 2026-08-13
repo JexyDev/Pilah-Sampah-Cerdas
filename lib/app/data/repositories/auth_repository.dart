@@ -66,5 +66,5 @@ class AuthException implements Exception {
   final String? message;
 
   @override
-  String toString() => 'AuthException($code): $message';
+  String toString() => message != null && message!.isNotEmpty ? message! : 'Terjadi kesalahan autentikasi. Silakan periksa kembali data Anda.';
 }
