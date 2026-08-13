@@ -22,6 +22,7 @@ import {
   DownloadCloud,
   RefreshCcw,
   Clock,
+  HardDrive,
 } from "lucide-react";
 import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp";
 import api from "../../services/api";
@@ -200,7 +201,7 @@ const DownloadPage: React.FC = () => {
               </h1>
 
               <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-2xl">
-                Platform layanan mobile terintegrasi bagi <strong className="text-emerald-700 font-bold">Warga Masyarakat</strong>, <strong className="text-emerald-700 font-bold">Mahasiswa Kuliah Kerja Nyata (KKN) Berdampak</strong>, dan <strong className="text-emerald-700 font-bold">Petugas Residu</strong> di Kecamatan Coblong.
+                Platform layanan mobile terintegrasi bagi <strong className="text-emerald-700 font-bold">Warga</strong>, <strong className="text-emerald-700 font-bold">Mahasiswa Kuliah Kerja Nyata (KKN) Berdampak</strong>, dan <strong className="text-emerald-700 font-bold">Petugas Residu</strong> di Kecamatan Coblong.
               </p>
 
               {/* Primary Download CTA Button & Real-time Metadata */}
@@ -237,7 +238,10 @@ const DownloadPage: React.FC = () => {
                     {release.minAndroidVersion || "Android 7.0+"}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                  <span className="text-slate-900 font-bold">Ukuran: {release.formattedSize}</span>
+                  <span className="flex items-center gap-1.5 text-slate-900 font-bold">
+                    <HardDrive size={16} className="text-emerald-700 shrink-0" />
+                    {release.formattedSize}
+                  </span>
                 </div>
 
                 {/* Real-time Release Notes Alert Box */}
@@ -365,7 +369,7 @@ const DownloadPage: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-lg font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
-                    Warga Masyarakat
+                    Warga
                   </h3>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
                     Pengajuan ide daur ulang kreatif, pencatatan setoran sampah harian, dan akumulasi penukaran insentif poin warga.

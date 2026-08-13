@@ -1,4 +1,4 @@
-import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye } from "lucide-react";
+import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter, AlertTriangle, Pencil, Eye, Tags } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -8,10 +8,12 @@ import { Loader2, Check, X, History, Trash2, Map, Plus, Download, Search, Filter
  */
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
+import KategoriSampah from "../KategoriSampah/KategoriSampah";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import {
@@ -81,6 +83,27 @@ const LocationPicker = ({ position, onChange }: { position: [number, number] | n
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") === "kategori" ? "kategori_sampah" : "tempat_sampah";
+  const [activeTab, setActiveTab] = useState<"tempat_sampah" | "kategori_sampah">(initialTab);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "kategori") {
+      setActiveTab("kategori_sampah");
+    } else if (tabParam === "tempat") {
+      setActiveTab("tempat_sampah");
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: "tempat_sampah" | "kategori_sampah") => {
+    setActiveTab(tab);
+    if (tab === "kategori_sampah") {
+      setSearchParams({ tab: "kategori" });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const [bins, setBins] = useState<any[]>([]);
   const [households, setHouseholds] = useState<any[]>([]);
@@ -423,6 +446,38 @@ const ManajemenTempatSampah: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* Consolidated Master Data Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3">
+        <button
+          type="button"
+          onClick={() => handleTabChange("tempat_sampah")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            activeTab === "tempat_sampah"
+              ? "bg-[#009966] text-white shadow-xs"
+              : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+          }`}
+        >
+          <Trash2 size={16} />
+          Tempat & Wadah Sampah
+        </button>
+        <button
+          type="button"
+          onClick={() => handleTabChange("kategori_sampah")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            activeTab === "kategori_sampah"
+              ? "bg-[#009966] text-white shadow-xs"
+              : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+          }`}
+        >
+          <Tags size={16} />
+          Kategori & Jenis Sampah
+        </button>
+      </div>
+
+      {activeTab === "kategori_sampah" ? (
+        <KategoriSampah />
+      ) : (
+        <>
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
@@ -1394,6 +1449,8 @@ const ManajemenTempatSampah: React.FC = () => {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+        </>
+      )}
     </div>
   );
 };

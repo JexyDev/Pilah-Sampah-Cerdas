@@ -6,25 +6,25 @@
  */
 
 import React, { useMemo } from "react";
-import { 
-  LayoutDashboard, 
-  Trash2, 
-  Users, 
-  Settings, 
-  MapPin, 
-  FileText, 
-  LogOut, 
-  Sprout, 
-  LineChart, 
-  Trophy, 
-  Info, 
-  Bell, 
-  Sliders, 
-  QrCode, 
-  ClipboardCheck, 
-  Star, 
-  Lightbulb, 
-  Calendar, 
+import {
+  LayoutDashboard,
+  Trash2,
+  Users,
+  Settings,
+  MapPin,
+  FileText,
+  LogOut,
+  Sprout,
+  LineChart,
+  Trophy,
+  Info,
+  Bell,
+  Sliders,
+  QrCode,
+  ClipboardCheck,
+  Star,
+  Lightbulb,
+  Calendar,
   Tags,
   Activity,
   Receipt,
@@ -36,7 +36,8 @@ import {
   Shield,
   ChevronDown,
   Clock,
-  BarChart3
+  BarChart3,
+  Recycle
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -74,21 +75,21 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
   return (
     <Link
       to={to}
-      className={`relative flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 text-[13px] group overflow-hidden ${
+      className={`relative flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 ease-out text-[13px] group overflow-hidden transform-gpu ${
         isCurrentActive
-          ? "bg-[#e5f7ed] text-[#009966] font-extrabold shadow-2xs"
-          : "text-slate-600 hover:text-[#009966] hover:bg-slate-50/80 hover:translate-x-1 font-semibold active:scale-[0.98]"
+          ? "bg-emerald-50/90 text-[#009966] font-extrabold shadow-[0_2px_10px_rgba(0,153,102,0.12)] border border-[#009966]/15 scale-[1.01]"
+          : "text-slate-600 hover:text-[#009966] hover:bg-slate-50 hover:translate-x-1.5 font-semibold active:scale-[0.98]"
       }`}
     >
       {/* Left Curved Green Accent Indicator */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] rounded-r-full" />
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] rounded-r-full shadow-xs" />
       )}
 
-      <Icon className={`shrink-0 transition-colors ${isCurrentActive ? "text-[#009966]" : "text-slate-500 group-hover:text-[#009966]"}`} size={19} />
-      <span className="flex-1 truncate">{label}</span>
+      <Icon className={`shrink-0 transition-transform duration-200 ease-out ${isCurrentActive ? "text-[#009966] scale-110" : "text-slate-500 group-hover:text-[#009966] group-hover:scale-110 group-hover:-rotate-3"}`} size={19} />
+      <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#009966] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{badge}</span>
+        <span className="bg-[#009966] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
       )}
     </Link>
   );
@@ -299,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "RW", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[],
           children: [
             { to: "/master-pengguna?role=developer", label: "Developer" },
-            { to: "/master-pengguna?role=admin", label: "Super User" },
+            { to: "/master-pengguna?role=su", label: "Super User" },
             { to: "/master-pengguna?role=pimpinan", label: "Pimpinan" },
             { to: "/master-pengguna?role=taskforce", label: "Task Force" },
             { to: "/master-pengguna?role=dpl", label: "Dosen Pembimbing Lapangan" },
@@ -312,10 +313,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-pengguna?role=warga", label: "Warga" },
           ],
         },
-        { to: "/master-wilayah", icon: MapPin, label: "Master Data Wilayah", allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
-        { to: "/manajemen-tempat-sampah", icon: Trash2, label: "Tempat & Wadah Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
+        {
+          type: "group",
+          label: "Master Data",
+          icon: Trash2,
+          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "RW", "PETUGAS_RESIDU"] as UserRole[],
+          children: [
+            { to: "/master-provinsi", label: "Provinsi" },
+            { to: "/master-kabupaten", label: "Kota, Kabupaten" },
+            { to: "/master-kecamatan", label: "Kecamatan" },
+            { to: "/master-kelurahan", label: "Kelurahan" },
+            { to: "/master-rw", label: "Rukun Warga" },
+            { to: "/manajemen-tempat-sampah", label: "Tempat Sampah" },
+          ],
+        },
         { to: "/manajemen-lokasi", icon: Compass, label: "Wilayah & Titik TPS", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
-        { to: "/kategori-sampah", icon: Tags, label: "Kategori & Jenis Sampah", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
       ],
     },
     {
@@ -457,12 +469,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               <div className="absolute top-4 right-4 opacity-30 text-teal-600 animate-pulse pointer-events-none" style={{ animationDuration: "2.8s" }}>
                 <Tags size={14} />
               </div>
+              <div className="absolute bottom-3 left-4 opacity-35 text-emerald-600 animate-pulse pointer-events-none" style={{ animationDuration: "3.8s", animationDelay: "0.6s" }}>
+                <Recycle size={15} />
+              </div>
 
-              <div className="relative z-10 w-15 h-15 mb-1.5 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+              <div className="relative z-10 w-14 h-14 mb-1 flex items-center justify-center transition-all duration-300 transform-gpu group-hover:scale-108 group-hover:-rotate-2">
                 <img
                   src="/image/trashcare-icon.png"
                   alt="TrashCare Logo"
-                  className="w-full h-full object-contain drop-shadow-sm"
+                  className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,153,102,0.2)]"
                 />
               </div>
 
@@ -470,9 +485,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 <span className="text-[#0284c7]">Trash</span>
                 <span className="text-[#009966]">Care</span>
               </h1>
-              <p className="relative z-10 text-[11px] font-bold text-[#009966] tracking-tight mt-0.5">
-                Sistem Pemantauan Pemilahan Sampah
-              </p>
             </div>
 
             {/* Navigation Menu */}

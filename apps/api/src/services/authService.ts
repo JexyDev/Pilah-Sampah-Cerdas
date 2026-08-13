@@ -295,11 +295,11 @@ export class AuthService {
       address: user.address,
       fotoProfil: user.fotoProfil,
       qrCode: `USER:${user.id}`,
+      provinsi: "Jawa Barat",
+      kabupaten: "Kota Bandung",
+      kecamatan: kecamatanName,
       kelurahan: kelurahanName,
       rw: rwName,
-      rt: rtName,
-      rtRw: rtRwStr,
-      kecamatan: kecamatanName,
       streakInfo,
     };
   }

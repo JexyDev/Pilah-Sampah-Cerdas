@@ -34,7 +34,6 @@ import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
 import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
 import ManajemenLokasi from "../pages/ManajemenLokasi/ManajemenLokasi";
 import JadwalKegiatan from "../pages/JadwalKegiatan/JadwalKegiatan";
-import KategoriSampah from "../pages/KategoriSampah/KategoriSampah";
 import RekapSetoran from "../pages/RekapSetoran/RekapSetoran";
 import PoinWarga from "../pages/PoinWarga/PoinWarga";
 import LaporanAnalitik from "../pages/LaporanAnalitik/LaporanAnalitik";
@@ -386,11 +385,7 @@ const AppRoutes: React.FC = () => {
 
         <Route
           path="/kategori-sampah"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
-              <KategoriSampah />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/manajemen-tempat-sampah?tab=kategori" replace />}
         />
         <Route
           path="/rekap-setoran"

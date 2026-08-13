@@ -41,6 +41,33 @@ const cleanKelurahanName = (raw: string | undefined | null) => {
   return clean ? `Kel. ${clean}` : "-";
 };
 
+const detectKelurahanName = (u: any): string => {
+  if (u?.kelurahan && u.kelurahan !== "-") {
+    return cleanKelurahanName(u.kelurahan);
+  }
+  
+  const combinedText = `${u?.name || ""} ${u?.address || ""} ${u?.wilayah || ""} ${u?.rw || ""}`.toLowerCase();
+  
+  const knownKelurahans = [
+    { name: "Sadang Serang", label: "Kel. Sadang Serang" },
+    { name: "Sedang Serang", label: "Kel. Sadang Serang" },
+    { name: "Cipaganti", label: "Kel. Cipaganti" },
+    { name: "Dago", label: "Kel. Dago" },
+    { name: "Lebak Gede", label: "Kel. Lebak Gede" },
+    { name: "Lebak Siliwangi", label: "Kel. Lebak Siliwangi" },
+    { name: "Sekeloa", label: "Kel. Sekeloa" },
+  ];
+
+  for (const k of knownKelurahans) {
+    if (combinedText.includes(k.name.toLowerCase())) {
+      return k.label;
+    }
+  }
+
+  const fallback = cleanKelurahanName(u?.address);
+  return fallback !== "-" ? fallback : "Kel. Sadang Serang";
+};
+
 const getCleanKelName = (raw: string | undefined | null) => {
   if (!raw || raw === "-" || raw === "Kel. -") return "Cipaganti";
   let clean = String(raw)
@@ -49,6 +76,28 @@ const getCleanKelName = (raw: string | undefined | null) => {
     .replace(/^Kelurahan\s*/i, "")
     .trim();
   return clean && clean !== "-" ? clean : "Cipaganti";
+};
+
+const formatKecamatanName = (raw: string | undefined | null): string => {
+  if (!raw || raw === "-") return "Kecamatan Coblong";
+  const str = String(raw);
+  if (str.toLowerCase().includes("coblong")) return "Kecamatan Coblong";
+  const clean = str.trim();
+  if (clean.toLowerCase().startsWith("kecamatan")) return clean;
+  return `Kecamatan ${clean}`;
+};
+
+const getCleanKabupatenName = (raw: string | undefined | null): string => {
+  if (!raw || raw === "-") return "Kota Bandung";
+  const str = String(raw);
+  if (str.toLowerCase().includes("bandung")) return "Kota Bandung";
+  if (str.toLowerCase().includes("jakarta")) return "DKI Jakarta";
+  if (str.toLowerCase().includes("bogor")) return "Kota Bogor";
+  if (str.toLowerCase().includes("cimahi")) return "Kota Cimahi";
+  if (str.toLowerCase().includes("bekasi")) return "Kota Bekasi";
+  if (str.toLowerCase().includes("depok")) return "Kota Depok";
+  if (!str.includes(",")) return str.trim();
+  return "Kota Bandung";
 };
 
 const KELURAHAN_RW_MAP: Record<string, string[]> = {
@@ -68,7 +117,7 @@ const normalizeRoleFromUrl = (param: string | null): string => {
   if (!param) return "SUPER_USER";
   const p = param.trim().toLowerCase();
   if (["developer", "dev"].includes(p)) return "DEVELOPER";
-  if (["admin", "superuser", "super_user", "super-user"].includes(p)) return "SUPER_USER";
+  if (["su", "admin", "superuser", "super_user", "super-user"].includes(p)) return "SUPER_USER";
   if (["pimpinan", "pemimpin", "rektor"].includes(p)) return "PEMIMPIN";
   if (["taskforce", "task-force", "panitia_taskforce"].includes(p)) return "PANITIA_TASKFORCE";
   if (["dpl", "dosen"].includes(p)) return "DPL";
@@ -156,6 +205,8 @@ const ManajemenPengguna: React.FC = () => {
     jumlahAnggotaKeluarga: "",
     programStudi: "",
     fotoProfil: "",
+    provinsi: "Jawa Barat",
+    kabupaten: "Kota Bandung",
     wilayah: "Kota Bandung",
     kecamatan: "Kecamatan Coblong",
     petugasResiduId: "",
@@ -327,6 +378,8 @@ const ManajemenPengguna: React.FC = () => {
       jumlahAnggotaKeluarga: "",
       programStudi: "",
       fotoProfil: "",
+      provinsi: "Jawa Barat",
+      kabupaten: "Kota Bandung",
       wilayah: defaultRole === "ADMIN_DLH" ? "Kota Bandung" : "",
       kecamatan: defaultRole === "CAMAT" ? "Kecamatan Coblong" : "",
       petugasResiduId: "",
@@ -397,6 +450,8 @@ const ManajemenPengguna: React.FC = () => {
       jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga?.toString() || "",
       programStudi: cleanedProdi,
       fotoProfil: u.fotoProfil || "",
+      provinsi: u.provinsi || "Jawa Barat",
+      kabupaten: u.kabupaten || u.wilayah || "Kota Bandung",
       wilayah: u.wilayah || (u.role === "ADMIN_DLH" ? "Kota Bandung" : ""),
       kecamatan: u.kecamatan || (u.role === "CAMAT" ? "Kecamatan Coblong" : ""),
       petugasResiduId: u.petugasResidu?.id || "",
@@ -434,7 +489,7 @@ const ManajemenPengguna: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Password validation check
     if (!isPasswordValid) {
       if (modalType === "add" && !formData.password) {
@@ -452,11 +507,9 @@ const ManajemenPengguna: React.FC = () => {
     try {
       const parsedAreaId = formData.rtRwId ? parseInt(formData.rtRwId) : null;
       let finalAddress = formData.address;
-      if (modalKelurahan) {
+      if (!finalAddress && modalKelurahan) {
         const cleanKel = modalKelurahan.replace(/^Kel\.\s*/i, "").trim();
-        if (!finalAddress.toLowerCase().includes(cleanKel.toLowerCase())) {
-          finalAddress = finalAddress ? `${finalAddress}, Kel. ${cleanKel}` : `Kel. ${cleanKel}`;
-        }
+        finalAddress = `Kel. ${cleanKel}`;
       }
 
       const payload: any = {
@@ -608,7 +661,7 @@ const ManajemenPengguna: React.FC = () => {
     if (!raw || raw === "-" || raw.trim() === "") return <span className="text-slate-400 font-medium">-</span>;
 
     const str = String(raw).trim();
-    
+
     // Extract Kelurahan
     const knownKels = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
     let foundKel = "";
@@ -682,10 +735,7 @@ const ManajemenPengguna: React.FC = () => {
             <span>{initials}</span>
           )}
         </div>
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-800 text-xs leading-tight">{name}</span>
-          <span className="text-[10px] text-slate-400 font-medium leading-tight">Petugas Residu</span>
-        </div>
+        <span className="font-bold text-slate-800 text-xs leading-tight">{name}</span>
       </div>
     );
   };
@@ -1004,7 +1054,8 @@ const ManajemenPengguna: React.FC = () => {
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NO. HP</th>
-                    <th className="py-3 px-4">WILAYAH</th>
+                    <th className="py-3 px-4">PROVINSI</th>
+                    <th className="py-3 px-4">KOTA / KABUPATEN</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
@@ -1012,6 +1063,7 @@ const ManajemenPengguna: React.FC = () => {
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KOTA / KABUPATEN</th>
                     <th className="py-3 px-4">KECAMATAN</th>
                     <th className="py-3 px-4">KELURAHAN</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
@@ -1021,6 +1073,7 @@ const ManajemenPengguna: React.FC = () => {
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
                     <th className="py-3 px-4">KELURAHAN</th>
                     <th className="py-3 px-4">RUKUN WARGA</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
@@ -1102,7 +1155,7 @@ const ManajemenPengguna: React.FC = () => {
                         <span className="font-bold text-slate-800 text-xs">{u.name}</span>
                       </div>
                     </td>
-                    
+
                     {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
@@ -1138,12 +1191,30 @@ const ManajemenPengguna: React.FC = () => {
                     ) : selectedRole === "ADMIN_DLH" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">{u.wilayah || "Kota Bandung"}</td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-md text-[10px] border border-teal-200/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {u.provinsi || "Jawa Barat"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-sky-50 text-sky-700 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {getCleanKabupatenName(u.kabupaten || u.wilayah)}
+                          </span>
+                        </td>
                       </>
                     ) : selectedRole === "CAMAT" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">Kecamatan Coblong</td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-sky-50 text-sky-700 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {getCleanKabupatenName(u.kabupaten || u.wilayah)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
                           <div className="flex flex-wrap gap-1 max-w-md">
                             {["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].map((kel, i) => (
@@ -1158,8 +1229,13 @@ const ManajemenPengguna: React.FC = () => {
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
                           <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                            {cleanKelurahanName(u.kelurahan || u.address)}
+                            {detectKelurahanName(u)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
@@ -1177,7 +1253,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
                           <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                            {cleanKelurahanName(u.kelurahan || u.address)}
+                            {detectKelurahanName(u)}
                           </span>
                         </td>
                         <td className="py-3 px-4">
@@ -1195,10 +1271,14 @@ const ManajemenPengguna: React.FC = () => {
                     ) : selectedRole === "PETUGAS_RESIDU" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">{u.kecamatan || "Kecamatan Coblong"}</td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
                           <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                            {cleanKelurahanName(u.kelurahan || u.address) || "Cipaganti"}
+                            {detectKelurahanName(u)}
                           </span>
                         </td>
                         <td className="py-3 px-4">
@@ -1210,7 +1290,7 @@ const ManajemenPengguna: React.FC = () => {
                             <span className="text-slate-400 font-medium">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-semibold">{u.wilayah || u.address || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700">{u.wilayah || (u.rw ? `${u.rw}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
                         <td className="py-3 px-4 text-slate-700">{u.address || "-"}</td>
                       </>
                     ) : selectedRole === "MAHASISWA_KKN" ? (
@@ -1236,10 +1316,14 @@ const ManajemenPengguna: React.FC = () => {
                     ) : (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">{u.kecamatan || "Kecamatan Coblong"}</td>
+                        <td className="py-3 px-4 text-slate-800 font-bold">
+                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
                           <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                            {cleanKelurahanName(u.kelurahan || u.address)}
+                            {detectKelurahanName(u)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
@@ -1251,7 +1335,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4 text-center font-bold text-slate-800">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
                       </>
                     )}
-                    
+
                     <td className="py-3 px-4 text-center">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                         (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
@@ -1264,7 +1348,7 @@ const ManajemenPengguna: React.FC = () => {
                         {u.status || "Aktif"}
                       </span>
                     </td>
-                    
+
                     {!isReadOnly && (
                       <td className="py-3 px-4 text-center">
                         <div className="flex justify-center gap-1">
@@ -1604,15 +1688,55 @@ const ManajemenPengguna: React.FC = () => {
 
                       {/* ADMIN_DLH Fields */}
                       {formData.roleName === "ADMIN_DLH" && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Wilayah Penugasan</label>
-                          <input type="text" value={formData.wilayah} onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })} placeholder="Kota Bandung" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
+                            <select
+                              value={formData.provinsi || "Jawa Barat"}
+                              onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                            >
+                              <option value="Jawa Barat">Jawa Barat</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                            <select
+                              value={formData.kabupaten || "Kota Bandung"}
+                              onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                            >
+                              <option value="Kota Bandung">Kota Bandung</option>
+                            </select>
+                          </div>
                         </div>
                       )}
 
                       {/* CAMAT Location Controls */}
                       {formData.roleName === "CAMAT" && (
                         <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
+                              <select
+                                value={formData.provinsi || "Jawa Barat"}
+                                onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              >
+                                <option value="Jawa Barat">Jawa Barat</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                              <select
+                                value={formData.kabupaten || "Kota Bandung"}
+                                onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              >
+                                <option value="Kota Bandung">Kota Bandung</option>
+                              </select>
+                            </div>
+                          </div>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
                             <select
@@ -1640,6 +1764,29 @@ const ManajemenPengguna: React.FC = () => {
                       {/* Cascading Location Controls for Specific Location Roles (Lurah, RW, Petugas Residu, Warga) */}
                       {["WARGA", "RW", "LURAH", "PETUGAS_RESIDU"].includes(formData.roleName) && (
                         <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
+                              <select
+                                value={formData.provinsi || "Jawa Barat"}
+                                onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              >
+                                <option value="Jawa Barat">Jawa Barat</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                              <select
+                                value={formData.kabupaten || "Kota Bandung"}
+                                onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              >
+                                <option value="Kota Bandung">Kota Bandung</option>
+                              </select>
+                            </div>
+                          </div>
+
                           {/* 1. Kecamatan (Dropdown) */}
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
@@ -1660,7 +1807,7 @@ const ManajemenPengguna: React.FC = () => {
                               onChange={(e) => {
                                 const selectedKel = e.target.value;
                                 setModalKelurahan(selectedKel);
-                                
+
                                 const cleanKel = selectedKel.toLowerCase();
                                 const matchedRws = areasList.filter((a: any) => {
                                   const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
@@ -1672,7 +1819,7 @@ const ManajemenPengguna: React.FC = () => {
                                   const newRtRwId = firstRw ? firstRw.id.toString() : "";
                                   const newRwName = firstRw ? firstRw.name : "";
                                   const updatedSelectedRws = prev.roleName === "MAHASISWA_KKN" ? [] : prev.selectedRws;
-                                  
+
                                   let newWilayah = prev.wilayah;
                                   if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
                                     newWilayah = `${newRwName ? `${newRwName}, ` : ""}Kel. ${selectedKel}`;
@@ -1700,7 +1847,7 @@ const ManajemenPengguna: React.FC = () => {
                           {/* 3. Rukun Warga (RW) (Dropdown - Cascading Level 2 derived from selected Kelurahan!) */}
                           {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Rukun Warga (RW) Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Rukun Warga Penugasan *</label>
                               <select
                                 value={formData.rtRwId || ""}
                                 onChange={(e) => {

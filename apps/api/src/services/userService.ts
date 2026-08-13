@@ -268,12 +268,6 @@ export class UserService {
           rwName = `RW ${rwMatch[1].padStart(2, "0")}`;
         }
       }
-      if (rtName === "-" && u.address) {
-        const rtMatch = u.address.match(/RT\s*(\d+)/i);
-        if (rtMatch) {
-          rtName = `RT ${rtMatch[1].padStart(2, "0")}`;
-        }
-      }
 
       if (rwName === "-" && u.studentProfile?.kelompok) {
         const kel = u.studentProfile.kelompok;
@@ -299,11 +293,11 @@ export class UserService {
         ).length;
       const binStatus = activeBinsCount > 0 ? "Sudah Teraktivasi" : "Belum Teraktivasi";
 
-      let userWilayah = u.address || "";
+      let userWilayah = "";
       if (u.role?.name === "ADMIN_DLH") {
-        userWilayah = u.address || "Kota Bandung";
+        userWilayah = "Kota Bandung";
       } else if (u.role?.name === "CAMAT") {
-        userWilayah = u.address || "Kecamatan Coblong";
+        userWilayah = "Kecamatan Coblong";
       } else if (u.role?.name === "MAHASISWA_KKN") {
         const kel = u.studentProfile?.kelompok;
         if (!u.studentProfile?.kelompokId || !kel) {
@@ -331,19 +325,11 @@ export class UserService {
             }
           }
           const kelStr = kel.kelurahan ? `Kel. ${kel.kelurahan}` : "";
-          if (rwStr || kelStr) {
-            userWilayah = [rwStr, kelStr].filter(Boolean).join(" ");
-          } else if (u.address && u.address !== "-") {
-            userWilayah = u.address;
-          } else {
-            userWilayah = "-";
-          }
+          userWilayah = [rwStr, kelStr].filter(Boolean).join(" ") || "-";
         }
-      } else if (!userWilayah) {
-        const wilayahParts = [rwName, kelurahanName, kecamatanName].filter((p) => p && p !== "-");
-        if (wilayahParts.length > 0) {
-          userWilayah = wilayahParts.join(", ");
-        }
+      } else {
+        const parts = [rwName !== "-" ? rwName : "", kelurahanName !== "-" ? kelurahanName : ""].filter(Boolean);
+        userWilayah = parts.length > 0 ? parts.join(", ") : u.address || "-";
       }
 
       let assignedPetugasObj: any = null;
@@ -356,6 +342,21 @@ export class UserService {
             fotoProfil: u.rw.petugasResidu.fotoProfil || null,
             phone: u.rw.petugasResidu.phone,
           };
+        }
+      }
+
+      let formattedAddress = (u.address && u.address !== "-") ? u.address : "";
+      if (!formattedAddress) {
+        if (["WARGA", "RW", "PETUGAS_RESIDU"].includes(u.role?.name)) {
+          const locationParts = [
+            rwName !== "-" ? rwName : "",
+            kelurahanName !== "-" ? kelurahanName : "",
+            "Kecamatan Coblong",
+            "Kota Bandung"
+          ].filter(Boolean);
+          formattedAddress = locationParts.length > 0 ? `Sekretariat ${locationParts.join(", ")}` : "Kecamatan Coblong, Kota Bandung";
+        } else {
+          formattedAddress = u.address || "-";
         }
       }
 
@@ -376,11 +377,12 @@ export class UserService {
         status: u.status,
         binStatus,
         activeBinsCount,
-        address: u.address || "",
+        provinsi: "Jawa Barat",
+        kabupaten: "Kota Bandung",
         kecamatan: kecamatanName,
         kelurahan: kelurahanName,
         rw: rwName,
-        rt: rtName,
+        address: formattedAddress,
         wilayah: userWilayah,
         setoran: parseFloat(totalSetoranKg.toFixed(1)),
         totalPoin,
@@ -713,12 +715,12 @@ export class UserService {
     if (targetRwId !== undefined) {
       updateData.rwId = targetRwId ? parseInt(targetRwId) : null;
     }
-    if (wilayah !== undefined) {
+    if (address !== undefined) {
+      updateData.address = address || null;
+    } else if (wilayah !== undefined) {
       updateData.address = wilayah || null;
     } else if (kecamatan !== undefined) {
       updateData.address = kecamatan || null;
-    } else if (address !== undefined) {
-      updateData.address = address || null;
     }
     if (nip !== undefined) updateData.nip = nip || null;
     if (institusi !== undefined) updateData.institusi = institusi || null;
@@ -736,6 +738,18 @@ export class UserService {
         data: updateData,
         include: { role: { select: { name: true } } },
       });
+
+      if (updateData.address !== undefined || updateData.rwId !== undefined) {
+        const householdData: any = {};
+        if (updateData.address !== undefined) householdData.address = updateData.address || "";
+        if (updateData.rwId !== undefined && updateData.rwId !== null) householdData.rwId = updateData.rwId;
+        if (Object.keys(householdData).length > 0) {
+          await tx.household.updateMany({
+            where: { userId: id },
+            data: householdData,
+          });
+        }
+      }
 
       if (roleName === "MAHASISWA_KKN" || u.role.name === "MAHASISWA_KKN") {
         const targetNim = studentProfile?.nim || nim;
