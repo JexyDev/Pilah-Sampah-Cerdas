@@ -735,12 +735,32 @@ class ApiAuthRepository implements AuthRepository {
     final String fakultas = userMap['fakultas']?.toString() ?? sp?['fakultas']?.toString() ?? userMap['profile']?['fakultas']?.toString() ?? '';
     final String universitas = userMap['universitas']?.toString() ?? sp?['universitas']?.toString() ?? userMap['profile']?['universitas']?.toString() ?? '';
 
+    String extractRawRole() {
+      final candidates = [
+        userMap['role'],
+        userMap['userRole'],
+        userMap['roleName'],
+        userMap['type'],
+        userMap['profile']?['role'],
+        sp?['role'],
+      ];
+      for (final c in candidates) {
+        if (c != null) {
+          final str = c.toString().trim();
+          if (str.isNotEmpty && str.toLowerCase() != 'null') {
+            return str;
+          }
+        }
+      }
+      return 'WARGA';
+    }
+
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       phone: userMap['phone']?.toString() ?? '',
       email: userMap['email']?.toString(),
-      role: UserRoleExtension.fromApi(userMap['role']?.toString() ?? 'WARGA'),
+      role: UserRoleExtension.fromApi(extractRawRole()),
       fotoProfil: userMap['fotoProfil']?.toString(),
       kecamatan: userMap['kecamatan']?.toString() ?? '',
       kelurahan: userMap['kelurahan']?.toString() ?? '',

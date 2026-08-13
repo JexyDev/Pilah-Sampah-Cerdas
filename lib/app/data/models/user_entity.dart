@@ -137,20 +137,39 @@ extension UserRoleExtension on UserRole {
 
   /// Parse role string dari backend response.
   static UserRole fromApi(String value) {
-    switch (value.toUpperCase()) {
+    final v = value.trim().toUpperCase();
+    switch (v) {
       case 'ADMIN':
         return UserRole.admin;
       case 'PETUGAS_KELURAHAN':
+      case 'KELURAHAN':
         return UserRole.petugasKelurahan;
       case 'PETUGAS_RW':
+      case 'RW':
         return UserRole.petugasRw;
       case 'PETUGAS_RT':
+      case 'RT':
         return UserRole.petugasRt;
       case 'MAHASISWA_KKN':
+      case 'MAHASISWA':
+      case 'KKN':
         return UserRole.mahasiswaKkn;
       case 'PETUGAS_PEMILAHAN':
+      case 'PETUGAS_RESIDU':
+      case 'PETUGAS_RESIDU_PEMILAHAN':
+      case 'PETUGAS_SAMPAH':
+      case 'PETUGAS':
+      case 'RESIDU':
+      case 'PEMILAHAN':
+      case 'OFFICER':
         return UserRole.petugasPemilahan;
       default:
+        if (v.contains('PETUGAS') || v.contains('RESIDU') || v.contains('PEMILAHAN')) {
+          return UserRole.petugasPemilahan;
+        }
+        if (v.contains('MAHASISWA') || v.contains('KKN')) {
+          return UserRole.mahasiswaKkn;
+        }
         return UserRole.warga;
     }
   }
