@@ -20,7 +20,7 @@ jobs:
       - name: Build & Package Frontend Web (GitHub Actions)
         run: |
           cd apps/web
-          npm install --silent
+          npm ci --prefer-offline --no-audit || npm install --silent
           npm run build
           test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
           tar -czf dist.tar.gz -C dist .
@@ -55,14 +55,12 @@ jobs:
 
             echo "=== 2. Updating Backend (apps/api) ==="
             cd apps/api
-            npm install --silent
+            if [ ! -d "node_modules" ]; then npm install --silent; fi
             npx prisma generate
-            npx prisma db push --accept-data-loss --skip-generate
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
-            $PM2_BIN delete psc-backend 2>/dev/null || true
-            $PM2_BIN start dist/index.js --name psc-backend
+            $PM2_BIN restart psc-backend || $PM2_BIN start dist/index.js --name psc-backend
             $PM2_BIN save || true
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
