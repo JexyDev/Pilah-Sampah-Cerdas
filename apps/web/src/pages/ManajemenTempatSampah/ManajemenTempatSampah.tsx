@@ -1578,55 +1578,6 @@ const ManajemenTempatSampah: React.FC = () => {
           />
         )}
       </div>
-      {/* Geospatial Map with Kelurahan Polygons & RW Zona Details */}
-      <div className="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h3 className="font-bold text-[15px] sm:text-[18px] text-on-surface flex items-start gap-2 leading-snug">
-            <Map className="text-primary flex-shrink-0 mt-0.5" size={20} />
-            <span>Peta Sebaran Tempat Sampah & Detail RW/Zona (Geospatial)</span>
-          </h3>
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedMapKelurahan}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSelectedMapKelurahan(val);
-                if (val !== "Semua Kelurahan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
-                  const geo = KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")];
-                  setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
-                } else {
-                  setFlyTarget({ center: [-6.8903, 107.611], zoom: 15, timestamp: Date.now() });
-                }
-              }}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white shadow-2xs cursor-pointer hover:border-primary focus:outline-none"
-            >
-              <option value="Semua Kelurahan">Semua Kelurahan</option>
-              <option value="Dago">Kel. Dago</option>
-              <option value="Sadang Serang">Kel. Sadang Serang</option>
-              <option value="Sekeloa">Kel. Sekeloa</option>
-              <option value="Lebak Gede">Kel. Lebak Gede</option>
-              <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-              <option value="Cipaganti">Kel. Cipaganti</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="h-[350px] sm:h-[480px] w-full rounded-xl overflow-hidden border border-outline-variant/30 relative">
-          <MapContainer
-            center={mapCenter}
-            zoom={mapZoom}
-            scrollWheelZoom={true}
-            style={{ height: "100%", width: "100%", zIndex: 1 }}
-          >
-            <MapFlyTo target={flyTarget} />
-            <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          </MapContainer>
-        </div>
-      </div>
       </div>
       )}
       {/* Identitas Kepemilikan & Log Transaksi Modal */}
