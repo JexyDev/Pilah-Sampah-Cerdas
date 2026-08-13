@@ -464,6 +464,140 @@ export async function getSurveyById(kelurahanId: number) {
   });
 }
 
+export async function getMySurvey(userId: string) {
+  const student = await prisma.studentKkn.findUnique({
+    where: { userId },
+    include: {
+      kelompok: true,
+      assignedRw: {
+        include: { kelurahan: true },
+      },
+    },
+  });
+
+  if (!student) {
+    throw new Error("Data mahasiswa tidak ditemukan");
+  }
+
+  let kelurahanName = student.kelompok?.kelurahan;
+
+  if (!kelurahanName && student.assignedRw?.kelurahan?.name) {
+    kelurahanName = student.assignedRw.kelurahan.name;
+  }
+
+  if (!kelurahanName) {
+    return null;
+  }
+
+  return prisma.surveiKelurahan.findFirst({
+    where: { namaKelurahan: kelurahanName },
+    include: {
+      karakteristikWilayah: true,
+      pemilahanSampah: true,
+      bankSampahPengolahan: true,
+      keyPlayers: true,
+      volumeSampah: true,
+      catatanKesimpulan: true,
+    },
+  });
+}
+
+export async function updateSurveyById(kelurahanId: number, data: any) {
+  return prisma.$transaction(async (tx) => {
+    // 1. Update SurveiKelurahan
+    const surveiInfo = {
+      namaKelurahan: data.namaKelurahan,
+      kecamatan: data.kecamatan,
+      jumlahRw: data.jumlahRw,
+      jumlahRt: data.jumlahRt,
+      jumlahKk: data.jumlahKk,
+      jumlahRumahTotal: data.jumlahRumahTotal,
+      enumerator: data.enumerator,
+      tanggalSurvei: data.tanggalSurvei ? new Date(data.tanggalSurvei) : null,
+      titikKumpulMahasiswa: data.titikKumpulMahasiswa,
+      catatanData: data.catatanData,
+    };
+
+    const updatedKelurahan = await tx.surveiKelurahan.update({
+      where: { kelurahanId },
+      data: surveiInfo,
+    });
+
+    // 2. Upsert Karakteristik Wilayah
+    if (data.karakteristikWilayah) {
+      const kw = data.karakteristikWilayah;
+      await tx.surveiKarakteristikWilayah.upsert({
+        where: { kelurahanId },
+        update: kw,
+        create: { ...kw, kelurahanId },
+      });
+    }
+
+    // 3. Upsert Pemilahan Sampah
+    if (data.pemilahanSampah) {
+      const ps = data.pemilahanSampah;
+      await tx.surveiPemilahanSampah.upsert({
+        where: { kelurahanId },
+        update: ps,
+        create: { ...ps, kelurahanId },
+      });
+    }
+
+    // 4. Upsert Bank Sampah
+    if (data.bankSampahPengolahan) {
+      const bs = data.bankSampahPengolahan;
+      await tx.surveiBankSampahPengolahan.upsert({
+        where: { kelurahanId },
+        update: bs,
+        create: { ...bs, kelurahanId },
+      });
+    }
+
+    // 5. Upsert Volume Sampah
+    if (data.volumeSampah) {
+      const vs = data.volumeSampah;
+      await tx.surveiVolumeSampah.upsert({
+        where: { kelurahanId },
+        update: vs,
+        create: { ...vs, kelurahanId },
+      });
+    }
+
+    // 6. Upsert Catatan Kesimpulan
+    if (data.catatanKesimpulan) {
+      const ck = data.catatanKesimpulan;
+      await tx.surveiCatatanKesimpulan.upsert({
+        where: { kelurahanId },
+        update: ck,
+        create: { ...ck, kelurahanId },
+      });
+    }
+
+    // 7. Update Key Players (Delete existing and insert new ones)
+    if (data.keyPlayers && Array.isArray(data.keyPlayers)) {
+      await tx.surveiKeyPlayer.deleteMany({
+        where: { kelurahanId },
+      });
+
+      const newKeyPlayers = data.keyPlayers.map((kp: any) => ({
+        kelurahanId,
+        nama: kp.nama,
+        peran: kp.peran,
+        kontak: kp.kontak,
+        keterangan: kp.keterangan,
+      }));
+
+      if (newKeyPlayers.length > 0) {
+        await tx.surveiKeyPlayer.createMany({
+          data: newKeyPlayers,
+        });
+      }
+    }
+
+    return updatedKelurahan;
+  });
+}
+
 export const surveiKknService = {
   parseWorkbook,
   validateData,
@@ -471,4 +605,6 @@ export const surveiKknService = {
   getImportHistory,
   getAllSurveys,
   getSurveyById,
+  getMySurvey,
+  updateSurveyById,
 };

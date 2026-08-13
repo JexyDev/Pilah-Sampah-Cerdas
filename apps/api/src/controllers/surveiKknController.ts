@@ -215,6 +215,80 @@ export class SurveiKknController {
       });
     }
   }
+
+  /**
+   * GET /api/v1/survei-kkn/mahasiswa/my-survei
+   * Ambil data survei kelurahan berdasarkan kelurahan yang di-assign ke Mahasiswa KKN.
+   */
+  async getMySurvey(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: "UNAUTHORIZED",
+          message: "Akses ditolak, user tidak valid",
+        });
+        return;
+      }
+
+      const survey = await surveiKknService.getMySurvey(userId);
+
+      if (!survey) {
+        res.status(404).json({
+          success: false,
+          error: "NOT_FOUND",
+          message: "Data survei tidak ditemukan untuk wilayah penugasan Anda",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: survey,
+      });
+    } catch (error: any) {
+      console.error("[surveiKknController] getMySurvey error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal memuat detail survei mahasiswa",
+      });
+    }
+  }
+
+  /**
+   * PUT /api/v1/survei-kkn/:id
+   * Update data survei kelurahan berserta relasi-relasinya.
+   */
+  async updateSurveyById(req: Request, res: Response): Promise<void> {
+    try {
+      const kelurahanId = parseInt(req.params.id);
+      if (isNaN(kelurahanId)) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "ID Kelurahan tidak valid",
+        });
+        return;
+      }
+
+      const survey = await surveiKknService.updateSurveyById(kelurahanId, req.body);
+
+      res.status(200).json({
+        success: true,
+        data: survey,
+        message: "Data survei berhasil diperbarui",
+      });
+    } catch (error: any) {
+      console.error("[surveiKknController] updateSurveyById error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal memperbarui data survei",
+      });
+    }
+  }
 }
 
 export const surveiKknController = new SurveiKknController();

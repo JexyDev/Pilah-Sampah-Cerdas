@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Search, Loader2, ChevronLeft, ChevronRight, Eye, Edit } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import { useAuthStore } from "../../store/useAuthStore";
 
 
 export default function DataSurveiKkn() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [surveys, setSurveys] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +52,10 @@ export default function DataSurveiKkn() {
 
   const handleOpenDetail = (kelurahanId: number) => {
     navigate(`/superUser/data-survei-kkn/${kelurahanId}`);
+  };
+
+  const handleEdit = (kelurahanId: number) => {
+    navigate(`/superUser/data-survei-kkn/edit/${kelurahanId}`);
   };
 
   const renderPagination = () => {
@@ -174,12 +180,22 @@ export default function DataSurveiKkn() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleOpenDetail(survey.kelurahanId)}
-                          className="inline-flex items-center gap-2 bg-white border-2 border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:border-[#009966] hover:text-[#009966] transition-all font-bold text-xs"
-                        >
-                          <Eye size={16} /> Lihat Detail
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenDetail(survey.kelurahanId)}
+                            className="inline-flex items-center gap-2 bg-white border-2 border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:border-[#009966] hover:text-[#009966] transition-all font-bold text-xs"
+                          >
+                            <Eye size={16} /> Lihat Detail
+                          </button>
+                          {(user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE") && (
+                            <button
+                              onClick={() => handleEdit(survey.kelurahanId)}
+                              className="inline-flex items-center gap-2 bg-white border-2 border-slate-200 text-amber-600 px-3 py-1.5 rounded-lg hover:border-amber-500 hover:text-amber-600 transition-all font-bold text-xs"
+                            >
+                              <Edit size={16} /> Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

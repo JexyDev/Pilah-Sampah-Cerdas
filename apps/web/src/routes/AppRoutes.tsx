@@ -69,6 +69,7 @@ import RolePermissionPage from "../pages/SuperUser/RolePermissionPage";
 import ImportSurveiKkn from "../pages/SuperUser/ImportSurveiKkn";
 import DataSurveiKkn from "../pages/SuperUser/DataSurveiKkn";
 import DetailSurveiKkn from "../pages/SuperUser/DetailSurveiKkn";
+import EditSurveiKkn from "../pages/SuperUser/EditSurveiKkn";
 import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import DownloadPage from "../pages/Download/DownloadPage";
 import EvaluasiDampakKkn from "../pages/EvaluasiDampak/EvaluasiDampakKkn";
@@ -516,7 +517,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/data-survei-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]}>
               <DataSurveiKkn />
             </ProtectedRoute>
           }
@@ -532,8 +533,16 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/data-survei-kkn/:id"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]}>
               <DetailSurveiKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superUser/data-survei-kkn/edit/:id"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE"]}>
+              <EditSurveiKkn />
             </ProtectedRoute>
           }
         />
