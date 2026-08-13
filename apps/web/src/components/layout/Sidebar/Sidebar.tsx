@@ -324,7 +324,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-kecamatan", label: "Kecamatan" },
             { to: "/master-kelurahan", label: "Kelurahan" },
             { to: "/master-rw", label: "Rukun Warga" },
-            { to: "/manajemen-tempat-sampah", label: "Tempat Sampah" },
+            { to: "/manajemen-tempat-sampah", label: "Manajemen Tempat Sampah" },
           ],
         },
         { to: "/manajemen-lokasi", icon: Compass, label: "Wilayah & Titik TPS", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
