@@ -10,25 +10,46 @@ import { redisService } from "./redisService.js";
 
 const prisma = new PrismaClient();
 
-async function resolveAreaIds(wilayah?: string): Promise<number[]> {
-  if (!wilayah) return [];
+function isWilayahFiltered(wilayah?: string): boolean {
+  if (!wilayah) return false;
+  const cleaned = wilayah.trim().toLowerCase();
   if (
-    wilayah === "Kecamatan Coblong" ||
-    wilayah === "Sistem Pusat" ||
-    wilayah === "Area KKN Dago" ||
-    wilayah === "Dinas Lingkungan Hidup"
+    !cleaned ||
+    cleaned === "undefined" ||
+    cleaned === "null" ||
+    cleaned === "kecamatan coblong" ||
+    cleaned === "sistem pusat" ||
+    cleaned === "area kkn dago" ||
+    cleaned === "dinas lingkungan hidup" ||
+    cleaned === "semua wilayah" ||
+    cleaned === "seluruh wilayah" ||
+    cleaned === "sistem kota (semua wilayah)" ||
+    cleaned === "sistem kota" ||
+    cleaned === "kota bandung" ||
+    cleaned === "semua" ||
+    cleaned === "all" ||
+    cleaned.includes("semua wilayah") ||
+    cleaned.includes("seluruh wilayah") ||
+    cleaned.includes("sistem kota")
   ) {
-    return [];
+    return false;
   }
+  return true;
+}
 
-  const match = wilayah.match(/(\d+)/);
+async function resolveAreaIds(wilayah?: string): Promise<number[]> {
+  if (!isWilayahFiltered(wilayah)) return [];
+
+  const cleanWilayah = wilayah!.trim();
+  const match = cleanWilayah.match(/(\d+)/);
   const rwNum = match ? match[1].padStart(2, "0") : null;
   const rawNum = match ? parseInt(match[1]).toString() : null;
 
   const areas = await prisma.rw.findMany({
     where: {
       OR: [
-        { name: { contains: wilayah, mode: "insensitive" } },
+        { name: { contains: cleanWilayah, mode: "insensitive" } },
+        { kelurahan: { name: { contains: cleanWilayah, mode: "insensitive" } } },
         ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
         ...(rawNum ? [{ name: { contains: `RW ${rawNum}`, mode: "insensitive" as const } }] : []),
       ],
@@ -41,23 +62,24 @@ async function resolveAreaIds(wilayah?: string): Promise<number[]> {
 
 export const dashboardService = {
   getKpi: async (wilayah?: string, period?: string, startDate?: string, endDate?: string) => {
-    const isFiltered =
-      wilayah &&
-      wilayah !== "Kecamatan Coblong" &&
-      wilayah !== "Sistem Pusat" &&
-      wilayah !== "Area KKN Dago" &&
-      wilayah !== "Dinas Lingkungan Hidup";
-
+    const isFiltered = isWilayahFiltered(wilayah);
     const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
 
-    const getRtRwMatch = (wilayahStr: string) => {
+    const getRtRwMatch = (wilayahStr?: string) => {
+      const str = wilayahStr || "";
       if (areaIds.length > 0) return { id: { in: areaIds } };
-      return { name: { contains: wilayahStr, mode: "insensitive" as const } };
+      return {
+        OR: [
+          { name: { contains: str, mode: "insensitive" as const } },
+          { kelurahan: { name: { contains: str, mode: "insensitive" as const } } },
+        ],
+      };
     };
 
-    const getRtRwIdMatch = (wilayahStr: string) => {
+    const getRtRwIdMatch = (wilayahStr?: string) => {
+      const str = wilayahStr || "";
       if (areaIds.length > 0) return { rwId: { in: areaIds } };
-      return { rw: { name: { contains: wilayahStr, mode: "insensitive" as const } } };
+      return { rw: { name: { contains: str, mode: "insensitive" as const } } };
     };
 
     let dateFilter: any = undefined;
@@ -290,17 +312,12 @@ export const dashboardService = {
   },
 
   getRecentTransactions: async (wilayah?: string) => {
-    const isFiltered =
-      wilayah &&
-      wilayah !== "Kecamatan Coblong" &&
-      wilayah !== "Sistem Pusat" &&
-      wilayah !== "Area KKN Dago" &&
-      wilayah !== "Dinas Lingkungan Hidup";
+    const isFiltered = isWilayahFiltered(wilayah);
     const transactions = await prisma.setoranOtomatis.findMany({
       where: isFiltered
         ? {
             warga: {
-              rw: { name: wilayah },
+              rw: { name: { contains: wilayah, mode: "insensitive" } },
             },
           }
         : undefined,
@@ -319,7 +336,7 @@ export const dashboardService = {
 
     return transactions.map((trx: any) => ({
       id: trx.id,
-      nama: trx.warga.name,
+      nama: trx.warga?.name || "Warga",
       waktu: trx.createdAt,
       tipe: trx.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
       volume: "-",
@@ -328,12 +345,7 @@ export const dashboardService = {
   },
 
   getTrend: async (weeks: number = 8, wilayah?: string) => {
-    const isFiltered =
-      wilayah &&
-      wilayah !== "Kecamatan Coblong" &&
-      wilayah !== "Sistem Pusat" &&
-      wilayah !== "Area KKN Dago" &&
-      wilayah !== "Dinas Lingkungan Hidup";
+    const isFiltered = isWilayahFiltered(wilayah);
     const result = [];
     const now = new Date();
 
