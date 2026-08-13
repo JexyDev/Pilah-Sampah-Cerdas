@@ -441,30 +441,6 @@ const ManajemenLokasi: React.FC = () => {
     <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-6 bg-slate-50 font-sans">
       {/* Left Panel: Map Container */}
       <div className="flex-1 relative flex flex-col bg-slate-100 border-r border-slate-200">
-        {/* Map Overlay / Legendary Legend Card */}
-        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-          <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-slate-100/80 flex flex-col gap-3 min-w-[200px]">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <Layers className="w-4 h-4 text-emerald-600" />
-              <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                Kapasitas Tempat Sampah / Zona
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shadow-sm"></div>
-              <span className="text-[12px] font-semibold text-slate-700">&lt; 70% (Aman)</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100 shadow-sm"></div>
-              <span className="text-[12px] font-semibold text-slate-700">70% - 90% (Siaga)</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100 shadow-sm"></div>
-              <span className="text-[12px] font-semibold text-slate-700">&gt; 90% (Penuh)</span>
-            </div>
-          </div>
-        </div>
-
         {/* Leaflet Map */}
         <div className="w-full h-full relative z-0">
           <MapContainer
