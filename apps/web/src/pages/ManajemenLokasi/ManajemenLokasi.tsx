@@ -676,6 +676,54 @@ const ManajemenLokasi: React.FC = () => {
               </>
             ) : null}
           </MapContainer>
+
+          {/* Map Legend Overlay for Manajemen Lokasi */}
+          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 max-w-xs font-sans text-xs">
+            <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200/90 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
+                <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Manajemen Lokasi
+                </span>
+              </div>
+
+              {/* Status Wilayah RW */}
+              <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
+                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  Kepatuhan Wilayah RW
+                </span>
+                <div className="space-y-1 text-[10.5px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
+                    <span className="font-bold text-slate-700">Tinggi (≥85% Patuh)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white"></span>
+                    <span className="font-bold text-slate-700">Sedang (60% - 84%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span>
+                    <span className="font-bold text-slate-700">Perlu Perhatian (&lt;60%)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Batas Kelurahan */}
+              <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                Polygon 6 Kelurahan
+              </span>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
+                {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                  <div key={kg.id} className="flex items-center gap-1.5">
+                    <span
+                      className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10"
+                      style={{ backgroundColor: kg.color }}
+                    ></span>
+                    <span className="font-bold text-slate-700 truncate">{kg.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
