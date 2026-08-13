@@ -140,7 +140,6 @@ async function fixMissingProfiles() {
     if (!targetNim) targetNim = `2026${user.id.substring(0, 4)}`;
 
     const targetKelompokId = kelompokMap.get(targetGroup.toLowerCase()) || dbKelompoks[0]?.id;
-
     const formattedName = toTitleCase(user.name);
 
     await prisma.user.update({
@@ -152,20 +151,35 @@ async function fixMissingProfiles() {
       },
     });
 
-    await prisma.studentKkn.create({
-      data: {
-        user: { connect: { id: user.id } },
-        nim: targetNim,
-        jurusan: targetProdi,
-        fakultas: "Unikom",
-        noWa: user.phone,
-        startDate: now,
-        endDate: endDate,
-        kelompok: { connect: { id: targetKelompokId } },
-      },
+    const existingStudentByNim = await prisma.studentKkn.findFirst({
+      where: { nim: targetNim },
     });
 
-    console.log(`✅ [CREATED STUDENT PROFILE] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`);
+    if (existingStudentByNim) {
+      await prisma.studentKkn.update({
+        where: { id: existingStudentByNim.id },
+        data: {
+          user: { connect: { id: user.id } },
+          jurusan: targetProdi,
+          kelompok: { connect: { id: targetKelompokId } },
+        },
+      });
+      console.log(`✅ [UPDATED EXISTING STUDENT PROFILE BY NIM] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`);
+    } else {
+      await prisma.studentKkn.create({
+        data: {
+          user: { connect: { id: user.id } },
+          nim: targetNim,
+          jurusan: targetProdi,
+          fakultas: "Unikom",
+          noWa: user.phone,
+          startDate: now,
+          endDate: endDate,
+          kelompok: { connect: { id: targetKelompokId } },
+        },
+      });
+      console.log(`✅ [CREATED STUDENT PROFILE] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`);
+    }
   }
 
   // 4. Verify Serena Indriani
