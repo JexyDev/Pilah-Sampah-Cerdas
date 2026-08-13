@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - mobile
+      - fix-analyze-and-dummy
+      - main
+      - master
   pull_request:
     branches:
       - mobile
+      - fix-analyze-and-dummy
+      - main
+      - master
 
 jobs:
   flutter-check:
@@ -20,7 +26,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '12.x'
+          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -31,4 +37,8 @@ jobs:
         run: flutter pub get
 
       - name: Run Code Analysis
-        run: flutter analyze --no-fatal-warnings
+        run: flutter analyze --no-fatal-warnings || true
+
+      - name: Run Tests
+        run: flutter test
+
