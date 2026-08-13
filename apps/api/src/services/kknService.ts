@@ -64,7 +64,7 @@ export class KknService {
         });
 
     const maxLimitStr = await configService.getConfig("kkn_max_assignment_per_student");
-    const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : (isSuperOrAdmin ? 500 : 100);
+    const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : isSuperOrAdmin ? 500 : 100;
     const remainingQuota = Math.max(0, maxLimit - totalRegistered);
     const progressPct =
       maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(1)) : 0;
@@ -93,7 +93,7 @@ export class KknService {
 
     return {
       studentKkn: {
-        nim: student?.nim || (isSuperOrAdmin ? (user?.role?.name || "SUPER ADMIN") : "10123000"),
+        nim: student?.nim || (isSuperOrAdmin ? user?.role?.name || "SUPER ADMIN" : "10123000"),
         jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Terpadu" : "Teknik Lingkungan"),
         fakultas: student?.fakultas || (isSuperOrAdmin ? "Admin DLH / DPL" : "FTSL"),
         whitelistStatus: student?.whitelistStatus || "APPROVED",

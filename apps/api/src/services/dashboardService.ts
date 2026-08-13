@@ -76,12 +76,6 @@ export const dashboardService = {
       };
     };
 
-    const getRtRwIdMatch = (wilayahStr?: string) => {
-      const str = wilayahStr || "";
-      if (areaIds.length > 0) return { rwId: { in: areaIds } };
-      return { rw: { name: { contains: str, mode: "insensitive" as const } } };
-    };
-
     let dateFilter: any = undefined;
     const now = new Date();
     

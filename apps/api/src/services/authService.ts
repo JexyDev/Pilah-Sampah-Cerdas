@@ -278,7 +278,7 @@ export class AuthService {
     const rtName = user.rt?.name || "";
     const kelurahanName = user.rw?.kelurahan?.name || user.studentProfile?.assignedRw?.kelurahan?.name || user.studentProfile?.kelompok?.kelurahan || "";
     const kecamatanName = user.rw?.kelurahan?.kecamatan?.name || user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name || "Coblong";
-    const rtRwStr = rtName && rwName ? `${rtName} / ${rwName}` : (rwName || rtName || "");
+    const rtRwStr = rtName && rwName ? `${rtName} / ${rwName}` : rwName || rtName || "";
 
     return {
       id: user.id,
