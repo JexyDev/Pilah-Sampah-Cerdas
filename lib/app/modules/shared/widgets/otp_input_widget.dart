@@ -107,8 +107,10 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(widget.length, (index) {
         return Padding(
           padding: EdgeInsets.symmetric(
@@ -122,6 +124,7 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
           ),
         );
       }),
+      ),
     );
   }
 }
