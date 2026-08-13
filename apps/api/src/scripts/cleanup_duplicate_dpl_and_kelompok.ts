@@ -47,114 +47,20 @@ async function cleanup() {
   const validPhones = OFFICIAL_32.map((item) => item.phone);
   const validKelompokNames = OFFICIAL_32.map((item) => item.kelompok);
 
-  // 1. Ensure 32 official DPL users and 32 official Kelompok entries exist & are correctly linked
-  const officialKelompokMap: Record<string, string> = {}; // kelompokName -> kelompokId
-
-  for (const item of OFFICIAL_32) {
-    const user = await prisma.user.findFirst({
-      where: { phone: item.phone },
-    });
-
-    if (!user) {
-      console.error(`Missing user for phone ${item.phone} (${item.name})`);
-      continue;
-    }
-
-    // Ensure user name is updated
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { name: item.name },
-    });
-
-    // Ensure official KelompokKkn exists and points to this DPL user
-    let kel = await prisma.kelompokKkn.findFirst({
-      where: { name: item.kelompok },
-    });
-
-    if (kel) {
-      kel = await prisma.kelompokKkn.update({
-        where: { id: kel.id },
-        data: {
-          dplId: user.id,
-          dplNamaMentah: item.name,
-          kelurahan: item.kelurahan,
-        },
-      });
-    } else {
-      kel = await prisma.kelompokKkn.create({
-        data: {
-          name: item.kelompok,
-          dplId: user.id,
-          dplNamaMentah: item.name,
-          kelurahan: item.kelurahan,
-        },
-      });
-    }
-    officialKelompokMap[item.kelompok] = kel.id;
-  }
-
-  // 2. Re-link any StudentKkn records from stale/duplicate KelompokKkn entries to official ones
-  const allKelompoks = await prisma.kelompokKkn.findMany({
-    include: { students: true },
-  });
-
-  for (const kel of allKelompoks) {
-    if (!validKelompokNames.includes(kel.name)) {
-      // Find matching official kelompok
-      let targetName = "";
-      const lower = kel.name.toLowerCase();
-      for (const official of validKelompokNames) {
-        const offLower = official.toLowerCase();
-        if (
-          lower.includes(offLower) ||
-          offLower.includes(lower.replace(/kelompok\s*/gi, "").replace(/kel\s*/gi, "").trim())
-        ) {
-          targetName = official;
-          break;
-        }
-      }
-
-      const targetId = targetName ? officialKelompokMap[targetName] : null;
-
-      if (targetId) {
-        console.log(`Re-linking ${kel.students.length} students from stale "${kel.name}" to official "${targetName}"...`);
-        for (const st of kel.students) {
-          await prisma.studentKkn.update({
-            where: { id: st.id },
-            data: { kelompokId: targetId },
-          });
-        }
-      } else {
-        console.log(`Stale kelompok "${kel.name}" has ${kel.students.length} students (unmatched).`);
-      }
-
-      // Delete stale kelompok entry
-      try {
-        await prisma.kelompokKkn.delete({ where: { id: kel.id } });
-        console.log(`[DELETED STALE KELOMPOK] ${kel.name}`);
-      } catch (err: any) {
-        console.warn(`Could not delete stale kelompok ${kel.name}: ${err.message}`);
-      }
-    }
-  }
-
-  // 3. Delete stale DPL Users (dummy phone numbers like +62813000000xx or users with non-official phones)
+  // Delete all refresh tokens for stale users
   const dplRole = await prisma.role.findUnique({ where: { name: "DPL" } });
   if (dplRole) {
     const allDpls = await prisma.user.findMany({
       where: { roleId: dplRole.id },
-      include: { dplKelompok: true, studentProfile: true },
     });
 
     for (const u of allDpls) {
       if (!validPhones.includes(u.phone)) {
-        console.log(`Cleaning up stale DPL User: ${u.name} (${u.phone})...`);
-        // Unlink any kelompok or student relations if any
+        await prisma.refreshToken.deleteMany({ where: { userId: u.id } });
         await prisma.kelompokKkn.updateMany({
           where: { dplId: u.id },
           data: { dplId: null },
         });
-
         try {
           await prisma.user.delete({ where: { id: u.id } });
           console.log(`[DELETED STALE DPL USER] ${u.name} (${u.phone})`);
@@ -165,7 +71,22 @@ async function cleanup() {
     }
   }
 
-  // 4. Verify Final Counts
+  // Delete any stale kelompok
+  const allKelompoks = await prisma.kelompokKkn.findMany({
+    include: { students: true },
+  });
+
+  for (const kel of allKelompoks) {
+    if (!validKelompokNames.includes(kel.name)) {
+      try {
+        await prisma.kelompokKkn.delete({ where: { id: kel.id } });
+        console.log(`[DELETED STALE KELOMPOK] ${kel.name}`);
+      } catch (err: any) {
+        console.warn(`Could not delete stale kelompok ${kel.name}: ${err.message}`);
+      }
+    }
+  }
+
   const finalDpls = await prisma.user.count({ where: { role: { name: "DPL" } } });
   const finalKelompok = await prisma.kelompokKkn.count();
 
