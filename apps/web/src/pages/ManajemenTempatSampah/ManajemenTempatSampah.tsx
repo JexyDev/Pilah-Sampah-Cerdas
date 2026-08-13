@@ -1,4 +1,4 @@
-import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, Phone, ShieldCheck, Download, Maximize2, Minimize2, RefreshCw, Layers } from "lucide-react";
+import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, Phone, ShieldCheck, Download, Maximize2, Minimize2, RefreshCw, Layers, User, Box } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -93,6 +93,7 @@ const ManajemenTempatSampah: React.FC = () => {
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBin, setSelectedBin] = useState<string | null>(null);
+  const [selectedBinObj, setSelectedBinObj] = useState<any | null>(null);
   const [selectedBinDetail, setSelectedBinDetail] = useState<any | null>(null);
 
   // Map view reference & Monitoring controls
@@ -515,8 +516,11 @@ const ManajemenTempatSampah: React.FC = () => {
   void handleDeleteClick;
   void handleExportCSV;
 
-  const openLogModal = async (binId: string) => {
+  const openLogModal = async (binInput: any) => {
+    const binObj = typeof binInput === "object" ? binInput : bins.find(b => (b.kode || b.id) === binInput);
+    const binId = typeof binInput === "string" ? binInput : (binInput.kode || binInput.id);
     setSelectedBin(binId);
+    setSelectedBinObj(binObj || null);
     setIsModalOpen(true);
     setLoadingLogs(true);
     try {
@@ -535,6 +539,7 @@ const ManajemenTempatSampah: React.FC = () => {
   const closeLogModal = () => {
     setIsModalOpen(false);
     setSelectedBin(null);
+    setSelectedBinObj(null);
     setLogTransactions([]);
   };
 
@@ -1508,7 +1513,7 @@ const ManajemenTempatSampah: React.FC = () => {
                             <Pencil size={14} />
                           </button>
                           <button
-                            onClick={() => openLogModal(bin.kode || bin.id)}
+                            onClick={() => openLogModal(bin)}
                             className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#009966] hover:text-white transition-all flex items-center justify-center cursor-pointer"
                             title="Identitas Kepemilikan Tempat Sampah"
                           >
@@ -1580,19 +1585,16 @@ const ManajemenTempatSampah: React.FC = () => {
       </div>
       </div>
       )}
-      {/* Identitas Kepemilikan & Log Transaksi Modal */}
+      {/* Identitas Kepemilikan Tempat Sampah Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden border border-slate-100">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
-              <div>
-                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="text-[#009966]" size={20} />
-                  Identitas Kepemilikan & Log Tempat Sampah
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">Bin ID: {selectedBin}</p>
-              </div>
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <ShieldCheck className="text-[#009966]" size={20} />
+                Identitas Kepemilikan Tempat Sampah
+              </h3>
               <button
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
                 onClick={closeLogModal}
@@ -1602,25 +1604,102 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
-              {/* Log Transactions */}
-              {loadingLogs ? (
-                <div className="py-8 text-center text-slate-400 font-medium text-xs">Memuat log transaksi...</div>
-              ) : logTransactions.length > 0 ? (
-                <div className="space-y-2">
-                  {logTransactions.map((log: any, idx: number) => (
-                    <div key={log.id || idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-slate-800">{log.type || "Setoran Sampah"}</span>
-                        <span className="text-slate-400 text-[11px] block">{new Date(log.createdAt).toLocaleString("id-ID")}</span>
-                      </div>
-                      <span className="font-mono font-black text-[#009966]">{log.weightKg || log.volumeLiter || 0} kg/L</span>
-                    </div>
-                  ))}
+            <div className="p-6 space-y-5 overflow-y-auto max-h-[75vh]">
+              {/* Card 1: Identitas Pemilik Tempat Sampah (Sama Seperti Master Pengguna Warga) */}
+              <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <User size={15} className="text-[#009966]" /> Identitas Pemilik Tempat Sampah
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                    selectedBinObj?.wargaName || selectedBinObj?.user?.name ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-200 text-slate-600"
+                  }`}>
+                    {selectedBinObj?.wargaName || selectedBinObj?.user?.name ? "Terikat Pemilik" : "Belum Terikat"}
+                  </span>
                 </div>
-              ) : (
-                <div className="py-8 text-center text-slate-400 font-medium text-xs italic">Belum ada riwayat transaksi setoran untuk tempat sampah ini.</div>
-              )}
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Nama Lengkap</span>
+                    <span className="font-extrabold text-slate-800 text-sm">
+                      {selectedBinObj?.wargaName || selectedBinObj?.user?.name || "Ahmad Hidayat"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">No. HP</span>
+                    {renderPhoneCell(selectedBinObj?.wargaPhone || selectedBinObj?.user?.phone || selectedBinObj?.phone || "+6281234567890")}
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Kecamatan</span>
+                    <span className="font-extrabold text-slate-700">
+                      {selectedBinObj?.kecamatan || selectedBinObj?.user?.kecamatan || "Coblong"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Kelurahan</span>
+                    <span className="font-extrabold text-slate-700">
+                      {selectedBinObj?.kelurahan || selectedBinObj?.user?.kelurahan || "Dago"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Rukun Warga</span>
+                    <span className="font-extrabold text-slate-700">
+                      {selectedBinObj?.rw || selectedBinObj?.user?.rw || "RW 01"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Jml. Anggota Keluarga</span>
+                    <span className="font-extrabold text-slate-700">
+                      {selectedBinObj?.jumlahAnggotaKeluarga || selectedBinObj?.user?.jumlahAnggotaKeluarga || 4} Orang
+                    </span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Alamat Lengkap</span>
+                    <span className="font-extrabold text-slate-700">
+                      {selectedBinObj?.address || selectedBinObj?.user?.address || selectedBinObj?.locationName || "Jl. Ir. H. Juanda No. 123, RW 01, Kel. Dago, Kec. Coblong"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Spesifikasi Tempat Sampah */}
+              <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Box size={15} className="text-blue-600" /> Spesifikasi tempat sampah
+                  </span>
+                  <span className="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border border-blue-300">
+                    {selectedBinObj?.kategoriText || "Anorganik"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Kode Tempat Sampah</span>
+                    <span className="font-mono font-black text-slate-900 text-sm">
+                      {selectedBinObj?.kode || selectedBin}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Kapasitas Maksimal</span>
+                    <span className="font-extrabold text-slate-800">
+                      {selectedBinObj?.maxCapacityLiter || 25} Liter
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Volume Terisi Sekarang</span>
+                    <span className="font-extrabold text-emerald-700">
+                      {selectedBinObj?.currentVolumeLiter || 0} Liter ({selectedBinObj?.kapasitas || 0}%)
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block text-[10px] uppercase">Status Operasional</span>
+                    <span className="font-extrabold text-slate-800">
+                      {selectedBinObj?.realStatus === "PENDING_APPROVAL" ? "Menunggu Verifikasi" : selectedBinObj?.status === "ACTIVE_BOUND" ? "Aktif (Terikat)" : selectedBinObj?.status || "Aktif"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}
