@@ -20,6 +20,8 @@ class WasteLogEntity extends Equatable {
     this.isValidated = true,
     this.location,
     this.qrActivationTimestamp,
+    this.discrepancyStatus = 'NONE',
+    this.aiConfidence = 0.0,
   });
 
   final String id;
@@ -38,8 +40,12 @@ class WasteLogEntity extends Equatable {
   final bool isValidated;
   final String? location;
   final DateTime? qrActivationTimestamp;
+  final String discrepancyStatus;
+  final double aiConfidence;
 
   DateTime get date => createdAt;
+
+  bool get isCorrect => discrepancyStatus.toUpperCase() == 'NONE';
 
   @override
   List<Object?> get props => [id];

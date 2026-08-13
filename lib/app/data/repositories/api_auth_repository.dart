@@ -12,10 +12,10 @@ import '../providers/api_client.dart';
 /// Implementasi AuthRepository yang terhubung ke backend Express.js.
 ///
 /// Endpoint yang digunakan:
-///   POST /api/v1/auth/login        — phone + password → accessToken + refreshToken
-///   GET  /api/v1/households/me     — householdId warga (dipanggil setelah login)
-///   POST /api/v1/auth/refresh      — refreshToken → accessToken baru
-///   POST /api/v1/auth/logout       — invalidate refreshToken
+///   POST /api/v1/auth/login        â€” phone + password â†’ accessToken + refreshToken
+///   GET  /api/v1/households/me     â€” householdId warga (dipanggil setelah login)
+///   POST /api/v1/auth/refresh      â€” refreshToken â†’ accessToken baru
+///   POST /api/v1/auth/logout       â€” invalidate refreshToken
 class ApiAuthRepository implements AuthRepository {
   const ApiAuthRepository({
     required this.apiClient,
@@ -25,7 +25,7 @@ class ApiAuthRepository implements AuthRepository {
   final ApiClient apiClient;
   final SafeStorage secureStorage;
 
-  // ─── Login ────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<UserEntity> login({
@@ -34,11 +34,41 @@ class ApiAuthRepository implements AuthRepository {
   }) async {
     apiClient.clearTokenCache();
     final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
+    
     try {
-      final response = await apiClient.dio.post(
-        '/auth/login',
-        data: {'phone': cleanPhone, 'password': password},
-      );
+      Response response;
+      try {
+        response = await apiClient.dio.post(
+          '/auth/login',
+          data: {
+            'phone': cleanPhone, 
+            'nim': cleanPhone, 
+            'identifier': cleanPhone,
+            'email': cleanPhone,
+            'password': password
+          },
+        );
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+          if (cleanPhone.startsWith('+62')) {
+            final altPhone = '0' + cleanPhone.substring(3);
+            response = await apiClient.dio.post(
+              '/auth/login',
+              data: {
+                'phone': altPhone, 
+                'nim': altPhone, 
+                'identifier': altPhone,
+                'email': altPhone,
+                'password': password
+              },
+            );
+          } else {
+            rethrow;
+          }
+        } else {
+          rethrow;
+        }
+      }
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -150,7 +180,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── Register ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Register â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   @override
@@ -162,7 +192,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       String endpoint = '/auth/register/warga'; // Default
       if (role == 'Mahasiswa') endpoint = '/auth/register/mahasiswa-kkn';
-      if (role == 'Petugas Residu' || role == 'Petugas') endpoint = '/auth/register/petugas-residu';
+      if (role == 'Petugas Pemilahan' || role == 'Petugas') endpoint = '/auth/register/petugas-pemilahan';
       
       final response = await apiClient.dio.post(
         endpoint,
@@ -171,11 +201,11 @@ class ApiAuthRepository implements AuthRepository {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
         
-        if (role == 'Mahasiswa' || role == 'Petugas Residu' || role == 'Petugas') {
+        if (role == 'Mahasiswa' || role == 'Petugas Pemilahan' || role == 'Petugas') {
           return UserEntity(
             id: data['id']?.toString() ?? '',
             name: data['name']?.toString() ?? '',
-            role: role == 'Mahasiswa' ? UserRole.mahasiswaKkn : UserRole.petugasResidu,
+            role: role == 'Mahasiswa' ? UserRole.mahasiswaKkn : UserRole.petugasPemilahan,
           );
         }
 
@@ -230,7 +260,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── OTP (Login Warga / Reset Password) ────────────────────────────────────
+  // â”€â”€â”€ OTP (Login Warga / Reset Password) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<void> requestOtp({required String phone}) async {
@@ -307,7 +337,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── Logout ───────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Logout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<void> logout() async {
@@ -334,7 +364,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── isLoggedIn ───────────────────────────────────────────────────────────
+  // â”€â”€â”€ isLoggedIn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<bool> isLoggedIn() async {
@@ -342,7 +372,7 @@ class ApiAuthRepository implements AuthRepository {
     return token != null && token.isNotEmpty;
   }
 
-  // ─── getCurrentUser ───────────────────────────────────────────────────────
+  // â”€â”€â”€ getCurrentUser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<UserEntity?> getCurrentUser() async {
@@ -390,7 +420,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── refreshAccessToken ───────────────────────────────────────────────────
+  // â”€â”€â”€ refreshAccessToken â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<String> refreshAccessToken() async {
@@ -428,9 +458,9 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── Private: fetch household setelah login ───────────────────────────────
+  // â”€â”€â”€ Private: fetch household setelah login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  /// GET /api/v1/households/me → ambil householdId + rw + kelurahan
+  /// GET /api/v1/households/me â†’ ambil householdId + rw + kelurahan
   /// dari household pertama milik user.
   Future<UserEntity> _fetchAndAttachHousehold(UserEntity user) async {
     // Household ID khusus untuk role Warga. Hindari memanggil endpoint ini untuk role lain agar tidak terkena 401/403.
@@ -443,7 +473,7 @@ class ApiAuthRepository implements AuthRepository {
             response.data['data'] as List<dynamic>? ?? [];
         if (data.isNotEmpty) {
           final hh = data.first as Map<String, dynamic>;
-          final householdId = hh['id']?.toString() ?? '';
+          final householdId = hh['householdId']?.toString() ?? hh['id']?.toString() ?? '';
           
           String rw = '';
           String kelurahan = '';
@@ -457,6 +487,17 @@ class ApiAuthRepository implements AuthRepository {
             }
           }
 
+          String pendampingName = '';
+          if (hh['pendamping'] != null) {
+            if (hh['pendamping'] is Map) {
+              pendampingName = (hh['pendamping'] as Map<String, dynamic>)['name']?.toString() ?? '';
+            } else if (hh['pendamping'] is String) {
+              pendampingName = hh['pendamping'].toString();
+            }
+          } else if (hh['pendampingName'] != null) {
+            pendampingName = hh['pendampingName'].toString();
+          }
+
           if (householdId.isNotEmpty) {
             await secureStorage.write(
               key: AppConfig.householdIdKey,
@@ -467,17 +508,18 @@ class ApiAuthRepository implements AuthRepository {
               rw: rw,
               kecamatan: user.kecamatan,
               kelurahan: kelurahan,
+              pendampingName: pendampingName.isNotEmpty ? pendampingName : null,
             );
           }
         }
       }
     } catch (_) {
-      // Tidak fatal — warga baru mungkin belum punya household
+      // Tidak fatal â€” warga baru mungkin belum punya household
     }
     return user;
   }
 
-  // ─── Fetch Profile ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Fetch Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   @override
   Future<UserEntity> fetchProfile() {
     return _fetchAndAttachHousehold(const UserEntity(
@@ -503,7 +545,7 @@ class ApiAuthRepository implements AuthRepository {
     });
   }
 
-  // ─── Upload Avatar ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Upload Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   @override
   Future<void> uploadAvatar(String imagePath) async {
     try {
@@ -632,7 +674,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // ─── Helper ───────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   UserEntity _mapUser(Map<String, dynamic> userMap) {
     // Ekstrak kelurahan & rw dari berbagai kemungkinan struktur response:
@@ -719,7 +761,7 @@ class ApiAuthRepository implements AuthRepository {
       final response = await apiClient.dio.get('/auth/me');
       debugPrint('[DEBUG /auth/me] status=${response.statusCode} data=${response.data}');
       if (response.statusCode == 200) {
-        // Backend return {success, message, user: {...}} — bukan {data: {...}}
+        // Backend return {success, message, user: {...}} â€” bukan {data: {...}}
         final rawData = response.data;
         Map<String, dynamic> userMap = {};
         if (rawData is Map) {
@@ -893,3 +935,4 @@ class ApiAuthRepository implements AuthRepository {
     };
   }
 }
+

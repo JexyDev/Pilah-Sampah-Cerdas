@@ -79,6 +79,9 @@ flutter:
   uses-material-design: true
 
   assets:
+    # Gambar Onboarding (Mockup UI)
+    - assets/on_boarding/
+
     # Logo aplikasi
     - assets/logos.webp
     - assets/logos.jpeg

@@ -5,6 +5,7 @@ import '../../../core/values/app_dimensions.dart';
 
 import '../../../routes/app_routes.dart';
 import '../controllers/kkn_location_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -16,15 +17,30 @@ class KknAttendanceView extends ConsumerStatefulWidget {
 class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
   final String _selectedScheduleId = 'SCH-TODAY';
   final String _selectedScheduleTitle = 'Kegiatan KKN Posko';
+  
+  final TextEditingController _rtRwCtrl = TextEditingController();
+  final TextEditingController _kodeZonaCtrl = TextEditingController(text: 'ZONA-KKN-POSKO');
+  String _selectedKelurahan = 'Bojongsoang';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = ref.read(kknLocationProvider.notifier);
-      notifier.startTracking(context);
-      notifier.setActiveSchedule(_selectedScheduleId);
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        _rtRwCtrl.text = user.rw.isNotEmpty ? user.rw : '';
+        if (user.kelurahan.isNotEmpty) {
+          _selectedKelurahan = user.kelurahan;
+        }
+      }
     });
+  }
+  
+  @override
+  void dispose() {
+    _rtRwCtrl.dispose();
+    _kodeZonaCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -36,7 +52,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text(
-          'Absensi Radius KKN',
+          'Presensi KKN',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: AppColors.primaryGreen,
@@ -45,14 +61,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              locationNotifier.setActiveSchedule(_selectedScheduleId);
-            },
-          )
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppDimensions.md),
@@ -65,12 +73,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
 
 
   Widget _buildAttendanceDetail(KknLocationState state, KknLocationNotifier notifier) {
-    final activity = state.activeActivity;
-    final pos = state.currentPosition;
-    final activityTitle = activity != null 
-        ? (activity['namaKegiatan'] ?? activity['title'] ?? activity['judul'] ?? activity['name'] ?? _selectedScheduleTitle).toString()
-        : _selectedScheduleTitle;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -78,7 +80,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
-            activityTitle,
+            _selectedScheduleTitle,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
         ),
@@ -112,12 +114,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   const Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 64),
                   const SizedBox(height: 16),
                   const Text(
-                    'Absensi Berhasil Tercatat!',
+                    'Presensi Berhasil Tercatat!',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Waktu Absen: ${state.attendanceTime}',
+                    'Waktu Presensi: ${state.attendanceTime}',
                     style: const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 4),
@@ -132,258 +134,84 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           ),
           const SizedBox(height: 24),
         ] else ...[
-          // Warning Reset
-          if (state.zoneResetWarning != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.dangerRed.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.dangerRed),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      state.zoneResetWarning!,
-                      style: const TextStyle(fontSize: 12, color: AppColors.dangerRed, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Tracking state card
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Status GPS Tracking:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: state.isTracking
-                              ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                              : AppColors.warningOrange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          state.isTracking ? 'AKTIF' : 'NON-AKTIF',
-                          style: TextStyle(
-                            color: state.isTracking ? AppColors.primaryGreen : AppColors.warningOrange,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-
-                  // Coordinates info
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Posisi Anda:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      Text(
-                        pos != null
-                            ? '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}'
-                            : 'Mencari lokasi...',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Target Location Coordinates info
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Target Lokasi:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      Text(
-                        activity != null
-                            ? '${((activity['latitude'] as num?)?.toDouble() ?? -6.96772).toStringAsFixed(5)}, ${((activity['longitude'] as num?)?.toDouble() ?? 107.65906).toStringAsFixed(5)}'
-                            : '-6.96772, 107.65906',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Radius
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Radius Toleransi:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      Text(
-                        activity != null ? '${activity['radius'] ?? 500} meter' : '500 meter',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Geofence status banner
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: state.isInsideRadius
-                  ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                  : AppColors.warningOrange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.warningOrange,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  state.isInsideRadius ? Icons.verified_user : Icons.warning_amber_rounded,
-                  color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.warningOrange,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        state.isInsideRadius
-                            ? 'Kamu berada di dalam radius lokasi'
-                            : 'Kamu belum berada di lokasi kegiatan',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.warningOrange,
-                        ),
-                      ),
-                      if (pos != null && activity != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Jarak Anda: ${state.distanceToTarget.toStringAsFixed(1)}m dari titik pusat',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: state.isInsideRadius
-                                ? AppColors.primaryGreen.withValues(alpha: 0.8)
-                                : AppColors.warningOrange.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Live Duration Progress Bar (2-Hour Validation)
-          if (state.isInsideRadius) ...[
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: state.isEligibleForAttendance
-                      ? AppColors.primaryGreen
-                      : AppColors.warningOrange,
-                ),
-              ),
-              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            state.isEligibleForAttendance
-                                ? Icons.check_circle_rounded
-                                : Icons.timer_rounded,
-                            color: state.isEligibleForAttendance
-                                ? AppColors.primaryGreen
-                                : AppColors.warningOrange,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Durasi Terdeteksi di Zona:',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '${(state.inZoneDurationSeconds / 60).floor()} / ${state.targetDurationMinutes} Menit',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: state.isEligibleForAttendance
-                              ? AppColors.primaryGreen
-                              : AppColors.warningOrange,
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Validasi Zona',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: (state.inZoneDurationSeconds / (state.targetDurationMinutes * 60)).clamp(0.0, 1.0),
-                      minHeight: 8,
-                      backgroundColor: Colors.grey.shade200,
-                      color: state.isEligibleForAttendance
-                          ? AppColors.primaryGreen
-                          : AppColors.warningOrange,
+                  const Text(
+                    'Pilih zona presensi sesuai lokasi kegiatan Anda saat ini.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedKelurahan,
+                    decoration: InputDecoration(
+                      labelText: 'Kelurahan',
+                      prefixIcon: const Icon(Icons.location_city_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Bojongsoang', child: Text('Bojongsoang')),
+                      DropdownMenuItem(value: 'Bojongsari', child: Text('Bojongsari')),
+                      DropdownMenuItem(value: 'Cipagalo', child: Text('Cipagalo')),
+                      DropdownMenuItem(value: 'Lengkong', child: Text('Lengkong')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _selectedKelurahan = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _rtRwCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'RW',
+                      prefixIcon: const Icon(Icons.tag_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    state.isEligibleForAttendance
-                        ? '✓ Syarat durasi ${state.targetDurationMinutes % 60 == 0 ? '${state.targetDurationMinutes ~/ 60} jam' : '${state.targetDurationMinutes} menit'} kontinu telah terpenuhi. Silakan tekan tombol Absen.'
-                        : 'Waktu tersisa: ${(((state.targetDurationMinutes * 60) - state.inZoneDurationSeconds) / 60).ceil()} menit lagi sebelum tombol absen terbuka.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: state.isEligibleForAttendance
-                          ? AppColors.primaryGreen
-                          : AppColors.textSecondary,
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _kodeZonaCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Kode Zona',
+                      prefixIcon: const Icon(Icons.pin_drop_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-          ],
-
+          ),
+          const SizedBox(height: 16),
           // Manual check-in button
           SizedBox(
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: state.isEligibleForAttendance
-                  ? () => _showWilayahDialog(notifier, state)
-                  : null,
+              onPressed: () async {
+                if (_rtRwCtrl.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap isi RW.')));
+                  return;
+                }
+                await notifier.recordAttendance(
+                  method: 'MANUAL_ZONA',
+                  kodeZona: _kodeZonaCtrl.text.trim(),
+                  rw: _rtRwCtrl.text.trim(),
+                  kelurahan: _selectedKelurahan,
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
-                disabledBackgroundColor: Colors.grey.shade300,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Row(
@@ -392,22 +220,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   Icon(Icons.location_on_rounded, size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'Absen Sekarang (Kirim ke DPL)',
+                    'Kirim Presensi Sekarang',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
-          if (!state.isInsideRadius) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'Tombol absen dinonaktifkan karena Anda berada di luar radius lokasi.',
-              style: TextStyle(fontSize: 11, color: AppColors.dangerRed, fontStyle: FontStyle.italic),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
           const SizedBox(height: 16),
           // Tombol Pengajuan Tidak Hadir / Sakit / Izin
           SizedBox(
@@ -420,7 +239,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                   AppRoutes.pengajuanIzin,
                   arguments: {
                     'scheduleId': _selectedScheduleId,
-                    'scheduleTitle': activityTitle,
+                    'scheduleTitle': _selectedScheduleTitle,
                   },
                 );
               },
@@ -438,142 +257,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           ),
         ],
       ],
-    );
-  }
-
-  void _showWilayahDialog(KknLocationNotifier notifier, KknLocationState state) {
-    final activity = state.activeActivity;
-    final activityTitle = activity?['title']?.toString() ?? 'Kegiatan KKN';
-    
-    final kodeZonaCtrl = TextEditingController(text: activity?['kodeZona']?.toString() ?? 'ZONA-KKN-TERKUNCI');
-    final rtRwCtrl = TextEditingController(text: activity?['rtRw']?.toString() ?? 'Sesuai Penugasan');
-    final selectedKelurahan = activity?['kelurahan']?.toString() ?? 'Bojongsoang';
-    
-    final formKey = GlobalKey<FormState>();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                20,
-                20,
-                MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Data Wilayah Terkunci API',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Anda berada di zona: $activityTitle.\nData wilayah telah disesuaikan dengan koordinat GPS Anda.',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      initialValue: selectedKelurahan,
-                      readOnly: true,
-                      enabled: false,
-                      decoration: InputDecoration(
-                        labelText: 'Kelurahan (Terkunci)',
-                        prefixIcon: const Icon(Icons.location_city_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: rtRwCtrl,
-                      readOnly: true,
-                      enabled: false,
-                      decoration: InputDecoration(
-                        labelText: 'RW (Terkunci)',
-                        prefixIcon: const Icon(Icons.tag_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: kodeZonaCtrl,
-                      readOnly: true,
-                      enabled: false,
-                      decoration: InputDecoration(
-                        labelText: 'Kode Zona (Terkunci)',
-                        prefixIcon: const Icon(Icons.pin_drop_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () async {
-                          if (!formKey.currentState!.validate()) return;
-                          Navigator.pop(context);
-                          await notifier.recordAttendance(
-                            method: 'GEOFENCE_2HRS',
-                            kodeZona: kodeZonaCtrl.text.trim(),
-                            rw: rtRwCtrl.text.trim(),
-                            kelurahan: selectedKelurahan,
-                          );
-                        },
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.send_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'KIRIM ABSENSI SEKARANG',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

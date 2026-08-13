@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/models/petugas_residu_models.dart';
+import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../services/petugas_residu_fcm_service.dart';
+import '../services/petugas_pemilahan_fcm_service.dart';
 
-class PetugasResiduState {
-  const PetugasResiduState({
+class PetugasPemilahanState {
+  const PetugasPemilahanState({
     this.isLoading = false,
     this.dashboard,
     this.jadwalList = const [],
@@ -15,14 +15,14 @@ class PetugasResiduState {
   });
 
   final bool isLoading;
-  final PetugasResiduDashboard? dashboard;
-  final List<ResiduBinPickup> jadwalList;
+  final PetugasPemilahanDashboard? dashboard;
+  final List<PemilahanBinPickup> jadwalList;
   final List<Map<String, dynamic>> historyList;
   final String? errorMessage;
   final String selectedDateRange;
   final String selectedTypeFilter;
 
-  /// Window waktu penjemputan: 06:00–08:00 dan 16:00–18:00
+  /// Window waktu penjemputan: 06:00â€“08:00 dan 16:00â€“18:00
   bool get isPickupWindowActive {
     final now = DateTime.now();
     final hour = now.hour;
@@ -31,17 +31,17 @@ class PetugasResiduState {
     return (hour >= 6 && hour < 8) || (hour >= 16 && hour < 18);
   }
 
-  PetugasResiduState copyWith({
+  PetugasPemilahanState copyWith({
     bool? isLoading,
-    PetugasResiduDashboard? dashboard,
-    List<ResiduBinPickup>? jadwalList,
+    PetugasPemilahanDashboard? dashboard,
+    List<PemilahanBinPickup>? jadwalList,
     List<Map<String, dynamic>>? historyList,
     String? errorMessage,
     String? selectedDateRange,
     String? selectedTypeFilter,
     bool clearError = false,
   }) {
-    return PetugasResiduState(
+    return PetugasPemilahanState(
       isLoading: isLoading ?? this.isLoading,
       dashboard: dashboard ?? this.dashboard,
       jadwalList: jadwalList ?? this.jadwalList,
@@ -53,18 +53,18 @@ class PetugasResiduState {
   }
 }
 
-class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
-  PetugasResiduNotifier(this._ref) : super(const PetugasResiduState()) {
+class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
+  PetugasPemilahanNotifier(this._ref) : super(const PetugasPemilahanState()) {
     refreshAll();
     
-    // Inisialisasi notifikasi latar belakang khusus role Petugas Residu
-    _ref.read(petugasResiduFcmServiceProvider).registerFcmToken();
+    // Inisialisasi notifikasi latar belakang khusus role Petugas Pemilahan
+    _ref.read(petugasPemilahanFcmServiceProvider).registerFcmToken();
   }
 
   final Ref _ref;
 
   Future<void> refreshAll() async {
-    final repo = _ref.read(petugasResiduRepositoryProvider);
+    final repo = _ref.read(petugasPemilahanRepositoryProvider);
     
     // 1. Load from cache first
     final cachedDash = await repo.getCachedDashboard();
@@ -103,7 +103,7 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
 
   Future<void> fetchJadwal({String? kelurahan, String? rw}) async {
     try {
-      final repo = _ref.read(petugasResiduRepositoryProvider);
+      final repo = _ref.read(petugasPemilahanRepositoryProvider);
       final list = await repo.getJadwalHarian(kelurahan: kelurahan, rw: rw);
       state = state.copyWith(jadwalList: list);
     } catch (e) {
@@ -121,7 +121,7 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final repo = _ref.read(petugasResiduRepositoryProvider);
+      final repo = _ref.read(petugasPemilahanRepositoryProvider);
       final success = await repo.submitLog(
         binId: binId,
         actualWeightKg: actualWeightKg,
@@ -135,7 +135,7 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
         await refreshAll();
         return true;
       }
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengirim timbangan residu.');
+      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengirim timbangan pemilahan.');
       return false;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Terjadi kesalahan saat submit log.');
@@ -148,7 +148,7 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
     final newDateRange = dateRange ?? state.selectedDateRange;
     final newTypeFilter = type ?? state.selectedTypeFilter;
     
-    final repo = _ref.read(petugasResiduRepositoryProvider);
+    final repo = _ref.read(petugasPemilahanRepositoryProvider);
     final cachedList = await repo.getCachedHistory(dateRange: newDateRange, type: newTypeFilter);
     if (cachedList != null && cachedList.isNotEmpty) {
       state = state.copyWith(
@@ -181,7 +181,7 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final repo = _ref.read(petugasResiduRepositoryProvider);
+      final repo = _ref.read(petugasPemilahanRepositoryProvider);
       final success = await repo.changePassword(
         oldPassword: oldPassword,
         newPassword: newPassword,
@@ -196,9 +196,24 @@ class PetugasResiduNotifier extends StateNotifier<PetugasResiduState> {
       return false;
     }
   }
+
+  Future<bool> claimPengajuanReset(String pengajuanId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repo = _ref.read(petugasPemilahanRepositoryProvider);
+      final ok = await repo.claimPengajuanReset(pengajuanId);
+      await refreshAll();
+      state = state.copyWith(isLoading: false);
+      return ok;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Gagal menerima pengajuan reset.');
+      return false;
+    }
+  }
 }
 
-final petugasResiduControllerProvider =
-    StateNotifierProvider<PetugasResiduNotifier, PetugasResiduState>((ref) {
-  return PetugasResiduNotifier(ref);
+final petugasPemilahanControllerProvider =
+    StateNotifierProvider<PetugasPemilahanNotifier, PetugasPemilahanState>((ref) {
+  return PetugasPemilahanNotifier(ref);
 });
+

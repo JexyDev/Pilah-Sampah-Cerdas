@@ -608,8 +608,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Skor Kepatuhan Dampingan (X: Nama, Y: Skor %)',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary),
+            'Grafik Kepatuhan Pemilahan Sampah',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -619,11 +619,24 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               child: Center(child: Text('Data tidak cukup untuk menampilkan grafik.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary))),
             )
           else
-            SizedBox(
-              height: 180,
-              child: CustomPaint(
-                painter: _CustomXYChartPainter(chartData),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Skor (%)', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 180,
+                  child: CustomPaint(
+                    painter: _CustomXYChartPainter(chartData),
+                  ),
+                ),
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('Nama Warga', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ),
         ],
       ),

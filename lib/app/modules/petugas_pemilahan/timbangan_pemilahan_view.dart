@@ -9,22 +9,22 @@ import '../../core/values/app_colors.dart';
 import '../../core/values/app_dimensions.dart';
 import '../../data/services/location_service.dart';
 import '../shared/controllers/connectivity_controller.dart';
-import 'controllers/petugas_residu_controller.dart';
+import 'controllers/petugas_pemilahan_controller.dart';
 
-class TimbanganResiduView extends ConsumerStatefulWidget {
-  const TimbanganResiduView({super.key});
+class TimbanganPemilahanView extends ConsumerStatefulWidget {
+  const TimbanganPemilahanView({super.key});
 
   @override
-  ConsumerState<TimbanganResiduView> createState() => _TimbanganResiduViewState();
+  ConsumerState<TimbanganPemilahanView> createState() => _TimbanganPemilahanViewState();
 }
 
-class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
+class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView> {
   final _formKey = GlobalKey<FormState>();
   final _weightController = TextEditingController();
   
   String? _photoPath;
   Position? _currentLocation;
-  String _selectedClassification = 'Residu Non-B3';
+  String _selectedClassification = 'Pemilahan Non-B3';
   bool _isSubmitting = false;
   SharedPreferences? _prefs;
   
@@ -36,10 +36,10 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   }
 
   final List<String> _classifications = [
-    'Residu Non-B3',
-    'Residu B3',
-    'Residu Popok/Pembalut',
-    'Residu Lainnya',
+    'Pemilahan Non-B3',
+    'Pemilahan B3',
+    'Pemilahan Popok/Pembalut',
+    'Pemilahan Lainnya',
   ];
 
   @override
@@ -51,9 +51,9 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
   Future<void> _loadDraft() async {
     _prefs = await SharedPreferences.getInstance();
-    final weight = _prefs?.getString('draft_weight_residu');
-    final classification = _prefs?.getString('draft_class_residu');
-    final photo = _prefs?.getString('draft_photo_residu');
+    final weight = _prefs?.getString('draft_weight_pemilahan');
+    final classification = _prefs?.getString('draft_class_pemilahan');
+    final photo = _prefs?.getString('draft_photo_pemilahan');
 
     if (mounted) {
       setState(() {
@@ -68,19 +68,19 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
   }
 
   void _saveDraft() {
-    _prefs?.setString('draft_weight_residu', _weightController.text);
-    _prefs?.setString('draft_class_residu', _selectedClassification);
+    _prefs?.setString('draft_weight_pemilahan', _weightController.text);
+    _prefs?.setString('draft_class_pemilahan', _selectedClassification);
     if (_photoPath != null) {
-      _prefs?.setString('draft_photo_residu', _photoPath!);
+      _prefs?.setString('draft_photo_pemilahan', _photoPath!);
     } else {
-      _prefs?.remove('draft_photo_residu');
+      _prefs?.remove('draft_photo_pemilahan');
     }
   }
 
   void _clearDraft() {
-    _prefs?.remove('draft_weight_residu');
-    _prefs?.remove('draft_class_residu');
-    _prefs?.remove('draft_photo_residu');
+    _prefs?.remove('draft_weight_pemilahan');
+    _prefs?.remove('draft_class_pemilahan');
+    _prefs?.remove('draft_photo_pemilahan');
   }
 
   @override
@@ -94,10 +94,12 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     final weightStr = _weightController.text.trim().replaceAll(',', '.');
     final weight = double.tryParse(weightStr) ?? 0.0;
     
-    // Rumus: Poin = (Berat * 2) + (Foto Valid ? 10 : 0)
-    int points = (weight * 2).toInt();
-    if (_photoPath != null) {
-      points += 10;
+    // Skala KPI Petugas: 1 Poin per 1 Kg (Dibulatkan)
+    int points = weight.round();
+    
+    // Bonus kehadiran & foto bukti di titik kumpul
+    if (weight > 0 && _photoPath != null) {
+      points += 2;
     }
     
     if (points != _estimatedPoints) {
@@ -138,7 +140,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     if (_photoPath == null) {
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Foto bukti timbangan residu wajib diambil!'),
+          content: Text('Foto bukti timbangan pemilahan wajib diambil!'),
           backgroundColor: AppColors.dangerRed,
         ),
       );
@@ -169,7 +171,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
     setState(() => _isSubmitting = true);
 
-    final success = await ref.read(petugasResiduControllerProvider.notifier).submitLog(
+    final success = await ref.read(petugasPemilahanControllerProvider.notifier).submitLog(
       binId: 'GLOBAL_BIN_RT_RW', 
       actualWeightKg: weight,
       classification: _selectedClassification,
@@ -200,7 +202,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
 
   Future<void> _showSuccessDialog(double weight) async {
     // Ambil data dashboard untuk akumulasi global
-    final dashboard = ref.read(petugasResiduControllerProvider).dashboard;
+    final dashboard = ref.read(petugasPemilahanControllerProvider).dashboard;
     final double baseAccumulation = dashboard?.totalWeightKg ?? 0.0;
     // Total akumulasi = base + weight yang baru saja disubmit
     final double newTotal = baseAccumulation + weight;
@@ -280,7 +282,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                 
                 // 3. Subjudul
                 const Text(
-                  'Data residu fisik telah tercatat\ndi Tempat Sampah Residu Global RW.',
+                  'Data pemilahan fisik telah tercatat\ndi Tempat Sampah Pemilahan Global RW.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -322,7 +324,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                           const SizedBox(width: 4),
                           const Padding(
                             padding: EdgeInsets.only(bottom: 2),
-                            child: Text('Kg', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                            child: Text('kg', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
                           ),
                         ],
                       ),
@@ -354,7 +356,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Akumulasi Tempat Sampah Residu Global', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+                            const Text('Akumulasi Tempat Sampah Pemilahan Global', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
                             const SizedBox(height: 2),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -364,7 +366,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen, height: 1),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Text('Kg', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                  const Text('kg', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
                                 ],
                               ),
                           ],
@@ -377,7 +379,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '↑ +${weight.toStringAsFixed(1)} Kg',
+                          '↑ +${weight.toStringAsFixed(1)} kg',
                           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                         ),
                       ),
@@ -451,7 +453,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Input manual hasil timbangan fisik residu untuk terakumulasi ke Tempat Sampah Residu Global RW.',
+                        'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke Tempat Sampah Pemilahan Global RW.',
                         style: TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -478,7 +480,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Tempat Sampah Residu Global RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('Tempat Sampah Pemilahan Global RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           Text('Tercatat di Audit Trail Monitoring RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                         ],
                       ),
@@ -511,8 +513,8 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 3. Klasifikasi Residu
-              const Text('Klasifikasi Kategori Residu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 3. Klasifikasi Pemilahan
+              const Text('Klasifikasi Kategori Pemilahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _selectedClassification,
@@ -689,7 +691,7 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : const Icon(Icons.check_circle_rounded, color: Colors.white),
                   label: Text(
-                    _isSubmitting ? 'Mengirim Data...' : 'Simpan Timbangan Residu',
+                    _isSubmitting ? 'Mengirim Data...' : 'Simpan Timbangan Pemilahan',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -706,3 +708,4 @@ class _TimbanganResiduViewState extends ConsumerState<TimbanganResiduView> {
     );
   }
 }
+

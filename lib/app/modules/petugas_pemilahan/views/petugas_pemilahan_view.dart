@@ -4,20 +4,16 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../../data/models/petugas_residu_models.dart';
-import '../controllers/petugas_residu_controller.dart';
-import '../widgets/petugas_whitelist_guard_widget.dart';
-
-class PetugasResiduView extends ConsumerWidget {
-  const PetugasResiduView({super.key});
+import '../../../data/models/petugas_pemilahan_models.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
+class PetugasPemilahanView extends ConsumerWidget {
+  const PetugasPemilahanView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
-    final state = ref.watch(petugasResiduControllerProvider);
+    final state = ref.watch(petugasPemilahanControllerProvider);
     final dashboard = state.dashboard;
-
-    final bool isApproved = dashboard?.isApproved ?? true;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -30,7 +26,7 @@ class PetugasResiduView extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Halo, ${user?.name ?? "Petugas Residu"} 👋',
+              'Halo, ${user?.name ?? "Petugas Pemilahan"} 👋',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
             ),
             Text(
@@ -47,17 +43,17 @@ class PetugasResiduView extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
+        onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
         color: AppColors.primaryGreen,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── 2. Time Window Banner Indicator ───────────────────────────
+              // â”€â”€ 2. Time Window Banner Indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _buildTimeWindowBanner(context, state.isPickupWindowActive),
 
-              // ── 3. Quick Summary Cards & KPI ──────────────────────────────
+              // â”€â”€ 3. Quick Summary Cards & KPI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: AppDimensions.sm),
                 child: Column(
@@ -91,7 +87,7 @@ class PetugasResiduView extends ConsumerWidget {
                     Row(
                       children: [
                         _buildStatCard(
-                          title: 'Total Residu',
+                          title: 'Total Pemilahan',
                           value: '${dashboard?.totalWeightKg ?? 42.5}',
                           unit: 'Kg',
                           icon: Icons.scale_outlined,
@@ -102,13 +98,13 @@ class PetugasResiduView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: AppDimensions.lg),
-                    // Single Main Action Button: Input Timbangan Residu
+                    // Single Main Action Button: Input Timbangan Pemilahan
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: isApproved ? () => Navigator.pushNamed(context, AppRoutes.timbanganResidu) : null,
+                        onPressed: () => Navigator.pushNamed(context, AppRoutes.timbanganPemilahan),
                         icon: const Icon(Icons.scale_rounded, size: 22),
-                        label: const Text('Input Timbangan Sampah Residu RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        label: const Text('Input Timbangan Sampah Pemilahan RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
                           foregroundColor: Colors.white,
@@ -120,12 +116,12 @@ class PetugasResiduView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.xl),
 
-                    // Daftar Residu RW Header
+                    // Daftar Pemilahan RW Header
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Daftar Residu RW (Input Timbangan)',
+                          'Daftar Pemilahan RW (Input Timbangan)',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                         ),
                         Text(
@@ -141,7 +137,7 @@ class PetugasResiduView extends ConsumerWidget {
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(24.0),
-                          child: Text('Tidak ada tempat sampah residu yang siap diinput timbangan saat ini.', style: TextStyle(color: AppColors.textSecondary)),
+                          child: Text('Tidak ada tempat sampah pemilahan yang siap diinput timbangan saat ini.', style: TextStyle(color: AppColors.textSecondary)),
                         ),
                       )
                     else
@@ -151,7 +147,7 @@ class PetugasResiduView extends ConsumerWidget {
                         itemCount: state.jadwalList.length,
                         itemBuilder: (ctx, idx) {
                           final item = state.jadwalList[idx];
-                          return _buildJadwalTile(context, item, isApproved);
+                          return _buildJadwalTile(context, item);
                         },
                       ),
                   ],
@@ -180,7 +176,7 @@ class PetugasResiduView extends ConsumerWidget {
           Expanded(
             child: Text(
               isActive
-                  ? 'Window Input Timbangan Aktif (06:00–08:00 & 16:00–18:00)'
+                  ? 'Window Input Timbangan Aktif (06:00â€“08:00 & 16:00â€“18:00)'
                   : 'Di Luar Window Waktu Input Timbangan (Status Read-Only)',
               style: TextStyle(
                 fontSize: 12,
@@ -305,7 +301,7 @@ class PetugasResiduView extends ConsumerWidget {
     );
   }
 
-  Widget _buildJadwalTile(BuildContext context, ResiduBinPickup bin, bool isApproved) {
+  Widget _buildJadwalTile(BuildContext context, PemilahanBinPickup bin) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -383,11 +379,11 @@ class PetugasResiduView extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            if (!bin.isPickedUp && isApproved)
+            if (!bin.isPickedUp)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.timbanganResidu),
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.timbanganPemilahan),
                   icon: const Icon(Icons.scale_rounded, size: 16),
                   label: const Text('Input Timbangan Fisik'),
                   style: ElevatedButton.styleFrom(
@@ -404,3 +400,4 @@ class PetugasResiduView extends ConsumerWidget {
     );
   }
 }
+

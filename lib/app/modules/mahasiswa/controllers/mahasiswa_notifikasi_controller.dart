@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -14,7 +14,7 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
   final desc = notif.desc.toUpperCase();
 
   // Keyword & Tipe yang DILARANG untuk Mahasiswa KKN (Milik Warga / Petugas)
-  final isForbidden = type.contains('TIMBANGAN_RESIDU') ||
+  final isForbidden = type.contains('TIMBANGAN_PEMILAHAN') ||
       type.contains('VIOLATION') ||
       type.contains('JADWAL') ||
       type.contains('JEMPUT') ||
@@ -125,3 +125,4 @@ final mahasiswaUnreadNotificationCountProvider = Provider<int>((ref) {
     error: (_, __) => 0,
   );
 });
+

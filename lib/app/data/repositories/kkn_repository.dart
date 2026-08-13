@@ -76,4 +76,7 @@ abstract class KknRepository {
     required String deskripsi,
     required String fotoPath,
   });
+
+  /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
+  Future<DampakKelurahanData> getDampakKelurahan();
 }

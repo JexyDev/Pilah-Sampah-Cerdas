@@ -189,6 +189,8 @@ class ApiWasteLogRepository implements WasteLogRepository {
       pointsAwarded: poin,
       createdAt: createdAt,
       kelurahan: binLocation,
+      discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
+      aiConfidence: (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

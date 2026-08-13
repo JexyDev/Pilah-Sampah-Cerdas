@@ -102,9 +102,16 @@ class _SplashViewState extends ConsumerState<SplashView>
     if (!mounted) return;
 
     final authState = ref.read(authProvider);
-    Navigator.of(context).pushReplacementNamed(
-      authState.isAuthenticated ? AppRoutes.main : AppRoutes.login,
-    );
+    if (authState.isAuthenticated) {
+      final user = authState.user;
+      if (user != null) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      }
+    } else {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+    }
   }
 
   @override

@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
-import '../controllers/petugas_residu_controller.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
 
-class PetugasResiduPoinView extends ConsumerWidget {
-  const PetugasResiduPoinView({super.key});
+class PetugasPemilahanPoinView extends ConsumerWidget {
+  const PetugasPemilahanPoinView({super.key});
 
   String _formatDateTime(String? rawStr) {
     if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
@@ -20,7 +20,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(petugasResiduControllerProvider);
+    final state = ref.watch(petugasPemilahanControllerProvider);
     final dashboard = state.dashboard;
 
     final int totalPoints = dashboard?.totalPoints ?? 0;
@@ -36,7 +36,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
         title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
+        onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
         color: AppColors.primaryGreen,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -67,7 +67,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
-                      'Total Poin Insentif Residu',
+                      'Total Poin Insentif Pemilahan',
                       style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
@@ -173,7 +173,7 @@ class PetugasResiduPoinView extends ConsumerWidget {
                           ),
                         ),
                         title: Text(
-                          item['title']?.toString() ?? 'Timbangan Residu',
+                          item['title']?.toString() ?? 'Timbangan Pemilahan',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         subtitle: Text(
@@ -218,3 +218,4 @@ class PetugasResiduPoinView extends ConsumerWidget {
     );
   }
 }
+

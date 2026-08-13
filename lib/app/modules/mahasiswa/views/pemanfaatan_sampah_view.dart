@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -51,7 +51,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
     'Organik',
     'Anorganik',
     'Daur Ulang Plastik/Kertas',
-    'Residu Non-B3',
+    'Pemilahan Non-B3',
   ];
 
   final List<String> _satuanList = [
@@ -654,3 +654,4 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
     );
   }
 }
+

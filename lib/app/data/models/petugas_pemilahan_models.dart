@@ -1,6 +1,6 @@
-import 'package:equatable/equatable.dart';
+﻿import 'package:equatable/equatable.dart';
 
-/// State whitelist & status akun Petugas Residu
+/// State whitelist & status akun Petugas Pemilahan
 enum WhitelistStatus { pending, approved, rejected }
 
 extension WhitelistStatusExtension on WhitelistStatus {
@@ -27,9 +27,9 @@ extension WhitelistStatusExtension on WhitelistStatus {
   }
 }
 
-/// Model Ringkasan Dashboard Petugas Residu
-class PetugasResiduDashboard extends Equatable {
-  const PetugasResiduDashboard({
+/// Model Ringkasan Dashboard Petugas Pemilahan
+class PetugasPemilahanDashboard extends Equatable {
+  const PetugasPemilahanDashboard({
     required this.petugasId,
     required this.name,
     required this.assignedZone,
@@ -62,14 +62,14 @@ class PetugasResiduDashboard extends Equatable {
   int get sisaJadwal => totalJadwal > sudahDiambil ? totalJadwal - sudahDiambil : 0;
   bool get isApproved => whitelistStatus == WhitelistStatus.approved;
 
-  factory PetugasResiduDashboard.fromJson(Map<String, dynamic> json) {
+  factory PetugasPemilahanDashboard.fromJson(Map<String, dynamic> json) {
     final double timeScore = (json['ketepatanWaktuScore'] as num?)?.toDouble() ?? 0.0;
     final double accScore = (json['akurasiScore'] as num?)?.toDouble() ?? 0.0;
     final double calculatedKpi = (0.6 * timeScore) + (0.4 * accScore);
 
-    return PetugasResiduDashboard(
+    return PetugasPemilahanDashboard(
       petugasId: json['petugasId']?.toString() ?? '',
-      name: json['name']?.toString() ?? 'Petugas Residu',
+      name: json['name']?.toString() ?? 'Petugas Pemilahan',
       assignedZone: json['assignedZone']?.toString() ?? json['rw']?.toString() ?? json['rtRw']?.toString() ?? '-',
       whitelistStatus: WhitelistStatusExtension.fromApi(json['whitelistStatus']?.toString() ?? 'PENDING'),
       accountStatus: json['accountStatus']?.toString() ?? 'PENDING',
@@ -100,8 +100,8 @@ class PetugasResiduDashboard extends Equatable {
 }
 
 /// Model Item Tempat Sampah dalam Jadwal Penjemputan Hilir
-class ResiduBinPickup extends Equatable {
-  const ResiduBinPickup({
+class PemilahanBinPickup extends Equatable {
+  const PemilahanBinPickup({
     required this.binId,
     required this.binCode,
     required this.wargaName,
@@ -114,7 +114,7 @@ class ResiduBinPickup extends Equatable {
     this.lastPickedUpTime,
     this.latitude,
     this.longitude,
-    this.wasteCategory = 'RESIDU',
+    this.wasteCategory = 'PEMILAHAN',
   });
 
   final String binId;
@@ -133,10 +133,10 @@ class ResiduBinPickup extends Equatable {
 
   bool get isHighVolume => volumePercentage >= 70.0;
 
-  factory ResiduBinPickup.fromJson(Map<String, dynamic> json) {
-    return ResiduBinPickup(
+  factory PemilahanBinPickup.fromJson(Map<String, dynamic> json) {
+    return PemilahanBinPickup(
       binId: json['binId']?.toString() ?? json['id']?.toString() ?? '',
-      binCode: json['binCode']?.toString() ?? json['qrCode']?.toString() ?? 'BIN-RESIDU',
+      binCode: json['binCode']?.toString() ?? json['qrCode']?.toString() ?? 'BIN-PEMILAHAN',
       wargaName: json['namaWarga']?.toString() ?? json['wargaName']?.toString() ?? json['user']?['name']?.toString() ?? 'Warga',
       address: json['alamat']?.toString() ?? json['address']?.toString() ?? 'Jl. Raya Bojongsoang No. 12',
       kecamatan: json['kecamatan']?.toString() ?? '',
@@ -147,7 +147,7 @@ class ResiduBinPickup extends Equatable {
       lastPickedUpTime: DateTime.tryParse(json['lastPickedUpTime']?.toString() ?? ''),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      wasteCategory: json['kategori']?.toString() ?? json['wasteCategory']?.toString() ?? 'RESIDU',
+      wasteCategory: json['kategori']?.toString() ?? json['wasteCategory']?.toString() ?? 'PEMILAHAN',
     );
   }
 
@@ -155,9 +155,9 @@ class ResiduBinPickup extends Equatable {
   List<Object?> get props => [binId, binCode, volumePercentage, isPickedUp];
 }
 
-/// Model Log Timbangan Fisik Residu
-class ResiduSubmitLog extends Equatable {
-  const ResiduSubmitLog({
+/// Model Log Timbangan Fisik Pemilahan
+class PemilahanSubmitLog extends Equatable {
+  const PemilahanSubmitLog({
     required this.id,
     required this.binId,
     required this.actualWeightKg,
@@ -173,12 +173,12 @@ class ResiduSubmitLog extends Equatable {
   final String photoUrl;
   final DateTime submittedAt;
 
-  factory ResiduSubmitLog.fromJson(Map<String, dynamic> json) {
-    return ResiduSubmitLog(
+  factory PemilahanSubmitLog.fromJson(Map<String, dynamic> json) {
+    return PemilahanSubmitLog(
       id: json['id']?.toString() ?? '',
       binId: json['binId']?.toString() ?? '',
       actualWeightKg: (json['actualWeightKg'] as num?)?.toDouble() ?? 0.0,
-      classification: json['classification']?.toString() ?? 'Residu Non-B3',
+      classification: json['classification']?.toString() ?? 'Pemilahan Non-B3',
       photoUrl: json['photoUrl']?.toString() ?? '',
       submittedAt: DateTime.tryParse(json['submittedAt']?.toString() ?? '') ?? DateTime.now(),
     );
@@ -187,3 +187,4 @@ class ResiduSubmitLog extends Equatable {
   @override
   List<Object?> get props => [id, binId, actualWeightKg, classification];
 }
+

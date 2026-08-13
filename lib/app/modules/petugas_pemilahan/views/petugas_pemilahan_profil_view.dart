@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,16 +8,16 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../controllers/petugas_residu_controller.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
 
-class PetugasResiduProfilView extends ConsumerStatefulWidget {
-  const PetugasResiduProfilView({super.key});
+class PetugasPemilahanProfilView extends ConsumerStatefulWidget {
+  const PetugasPemilahanProfilView({super.key});
 
   @override
-  ConsumerState<PetugasResiduProfilView> createState() => _PetugasResiduProfilViewState();
+  ConsumerState<PetugasPemilahanProfilView> createState() => _PetugasPemilahanProfilViewState();
 }
 
-class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilView> {
+class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanProfilView> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
   File? _localImage;
@@ -108,7 +108,7 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Keluar Akun'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun Petugas Residu?'),
+        content: const Text('Apakah Anda yakin ingin keluar dari akun Petugas Pemilahan?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -136,7 +136,7 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final state = ref.watch(petugasResiduControllerProvider);
+    final state = ref.watch(petugasPemilahanControllerProvider);
     final dashboard = state.dashboard;
 
     return Scaffold(
@@ -203,7 +203,7 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    user?.name ?? 'Petugas Residu',
+                    user?.name ?? 'Petugas Pemilahan',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 4),
@@ -214,7 +214,7 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
-                      'PETUGAS RESIDU RW',
+                      'PETUGAS PEMILAHAN RW',
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                     ),
                   ),
@@ -280,7 +280,7 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
               ),
               child: Column(
                 children: [
-                  // Ganti Password khusus Petugas Residu
+                  // Ganti Password khusus Petugas Pemilahan
                   ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -291,9 +291,9 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
                       child: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryGreen, size: 20),
                     ),
                     title: const Text('Ganti Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text('Ubah kata sandi akun Petugas Residu', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    subtitle: const Text('Ubah kata sandi akun Petugas Pemilahan', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                     trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.petugasResiduGantiPassword),
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.petugasPemilahanGantiPassword),
                   ),
                   const Divider(height: 1, indent: 56),
 
@@ -333,7 +333,7 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
 
             const Center(
               child: Text(
-                '© 2026 TrashCare • Modul Petugas Residu',
+                'Â© 2026 TrashCare â€¢ Modul Petugas Pemilahan',
                 style: TextStyle(fontSize: 11, color: AppColors.textHint),
               ),
             ),
@@ -359,3 +359,4 @@ class _PetugasResiduProfilViewState extends ConsumerState<PetugasResiduProfilVie
     );
   }
 }
+

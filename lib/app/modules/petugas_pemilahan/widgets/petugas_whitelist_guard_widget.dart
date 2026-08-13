@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 
-/// State UI khusus jika Akun Petugas Residu belum di-approve oleh Admin/RW
+/// State UI khusus jika Akun Petugas Pemilahan belum di-approve oleh Admin/RW
 class PetugasWhitelistGuardWidget extends StatelessWidget {
   const PetugasWhitelistGuardWidget({
     super.key,
@@ -63,8 +63,8 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isRejected
-                ? 'Pengajuan akun Petugas Residu Anda ditolak oleh Admin. Silakan hubungi pengurus RW setempat untuk informasi lebih lanjut.'
-                : 'Akun Anda telah terdaftar sebagai Petugas Residu dan sedang dalam tahap verifikasi Whitelist RW/Admin. Fitur input sampah residu ke RW akan otomatis aktif setelah akun Anda disetujui.',
+                ? 'Pengajuan akun Petugas Pemilahan Anda ditolak oleh Admin. Silakan hubungi pengurus RW setempat untuk informasi lebih lanjut.'
+                : 'Akun Anda telah terdaftar sebagai Petugas Pemilahan dan sedang dalam tahap verifikasi Whitelist RW/Admin. Fitur input sampah pemilahan ke RW akan otomatis aktif setelah akun Anda disetujui.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
@@ -91,3 +91,4 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
     );
   }
 }
+

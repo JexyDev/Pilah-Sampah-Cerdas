@@ -226,6 +226,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         return 'QR Code tempat sampah tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
         return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
+      case 'HOUSEHOLDS_NOT_FOUND':
+      case 'HOUSEHOLD_REQUIRED':
+        return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap hubungi Mahasiswa Pendamping/Admin untuk pendaftaran rumah Anda terlebih dahulu.';
       default:
         if (msg != null && msg.isNotEmpty && !msg.startsWith('BIN_ALREADY_USED')) {
           return msg;
@@ -314,7 +317,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Tempat Sampah Berhasil Di-scan',
+                            'Tempat Sampah Berhasil Dipindai',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -334,7 +337,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                               color: Colors.white54,
                             ),
                             label: const Text(
-                              'Scan Ulang',
+                              'Pindai Ulang',
                               style: TextStyle(color: Colors.white54),
                             ),
                           ),
@@ -404,11 +407,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         Text(
           _step == 1
               ? (_hasAnorganic 
-                  ? 'Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda' 
-                  : 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda')
+                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda' 
+                  : 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda')
               : (_hasOrganic 
-                  ? 'Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda' 
-                  : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda'),
+                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda' 
+                  : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -434,7 +437,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             },
             icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed),
             label: const Text(
-              'Ulangi Scan dari Awal',
+              'Ulangi Pemindaian dari Awal',
               style: TextStyle(color: AppColors.dangerRed),
             ),
           ),

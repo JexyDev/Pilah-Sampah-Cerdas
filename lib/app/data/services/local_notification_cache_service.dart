@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import '../models/notification_entity.dart';
 
 /// Service untuk menyimpan dan mengelola riwayat notifikasi lokal per user/role.
@@ -16,7 +16,7 @@ class LocalNotificationCacheService {
   String _normalizeRole(String role) {
     final r = role.toUpperCase().replaceAll('_', '').replaceAll(' ', '');
     if (r.contains('MAHASISWA') || r.contains('KKN')) return 'MAHASISWA';
-    if (r.contains('PETUGAS') || r.contains('RESIDU')) return 'PETUGAS';
+    if (r.contains('PETUGAS') || r.contains('PEMILAHAN')) return 'PETUGAS';
     if (r.contains('WARGA')) return 'WARGA';
     return r;
   }
@@ -93,10 +93,11 @@ class LocalNotificationCacheService {
     final typeUpper = type.toUpperCase();
     if (typeUpper.contains('POIN')) return 'star';
     if (typeUpper.contains('TONG') || typeUpper.contains('KRITIS')) return 'warning';
-    if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('RESIDU')) return 'scale';
+    if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN')) return 'scale';
     if (typeUpper.contains('IZIN') || typeUpper.contains('DPL')) return 'assignment_turned_in';
     if (typeUpper.contains('PRESENSI')) return 'location_on';
     if (typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN')) return 'qr_code_scanner';
     return 'info';
   }
 }
+

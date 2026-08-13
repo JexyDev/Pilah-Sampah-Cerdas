@@ -9,28 +9,27 @@ import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/user_entity.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../controllers/petugas_residu_controller.dart';
-import '../controllers/petugas_residu_notifikasi_controller.dart';
-import '../widgets/petugas_whitelist_guard_widget.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
+import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'petugas_notification_view.dart';
 
 import '../../shared/controllers/connectivity_controller.dart';
 
-class PetugasResiduDashboardView extends ConsumerStatefulWidget {
-  const PetugasResiduDashboardView({super.key});
+class PetugasPemilahanDashboardView extends ConsumerStatefulWidget {
+  const PetugasPemilahanDashboardView({super.key});
 
   @override
-  ConsumerState<PetugasResiduDashboardView> createState() => _PetugasResiduDashboardViewState();
+  ConsumerState<PetugasPemilahanDashboardView> createState() => _PetugasPemilahanDashboardViewState();
 }
 
-class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashboardView> with WidgetsBindingObserver {
+class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahanDashboardView> with WidgetsBindingObserver {
   
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Silent reload on first load
-    Future.microtask(() => ref.read(petugasResiduControllerProvider.notifier).refreshAll());
+    Future.microtask(() => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll());
   }
 
   @override
@@ -43,7 +42,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // Silent reload on resume
-      ref.read(petugasResiduControllerProvider.notifier).refreshAll();
+      ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
     }
   }
 
@@ -93,8 +92,8 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, UserEntity? user, int unreadCount) {
-    final name = user?.name ?? 'Petugas Residu';
-    const roleName = 'Petugas Residu';
+    final name = user?.name ?? 'Petugas Pemilahan';
+    const roleName = 'Petugas Pemilahan';
     final fotoUrl = user?.fotoProfil;
 
     return Container(
@@ -356,16 +355,14 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final state = ref.watch(petugasResiduControllerProvider);
+    final state = ref.watch(petugasPemilahanControllerProvider);
     final unreadCount = ref.watch(petugasUnreadNotificationCountProvider);
     final dashboard = state.dashboard;
-
-    final bool isApproved = dashboard?.isApproved ?? true;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
-        onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
+        onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
         color: AppColors.primaryGreen,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -392,7 +389,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Pencatatan timbangan residu fisik terakumulasi otomatis ke Tempat Sampah Residu Global RW.',
+                            'Pencatatan timbangan pemilahan fisik terakumulasi otomatis ke Tempat Sampah Pemilahan Global RW.',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -429,7 +426,96 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
+
+                  // ── Requirement C item 5: Klaim / Terima Pengajuan Reset Warga ──
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.restore_rounded, color: AppColors.warningOrange, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Pengajuan Reset Tempat Sampah',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'Permintaan Warga',
+                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.warningOrange.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Colors.white,
+                                child: Icon(Icons.person_outline_rounded, color: AppColors.warningOrange, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Warga RT 02 / RW 05',
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Pengajuan reset tempat sampah penuh',
+                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final ok = await ref.read(petugasPemilahanControllerProvider.notifier).claimPengajuanReset('reset_req_01');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(ok ? 'Pengajuan reset berhasil diterima & diproses!' : 'Gagal memproses pengajuan reset.'),
+                                        backgroundColor: ok ? AppColors.primaryGreen : AppColors.dangerRed,
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Terima', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
 
                   // Riwayat Aktivitas Terbaru
                   Row(
@@ -445,7 +531,7 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        onPressed: () => Navigator.pushNamed(context, AppRoutes.riwayatPetugasResidu),
+                        onPressed: () => Navigator.pushNamed(context, AppRoutes.riwayatPetugasPemilahan),
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
@@ -554,3 +640,4 @@ class _PetugasResiduDashboardViewState extends ConsumerState<PetugasResiduDashbo
     );
   }
 }
+

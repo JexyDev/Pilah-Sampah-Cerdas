@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
-import '../controllers/petugas_residu_controller.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
 
-class RiwayatPetugasResiduView extends ConsumerStatefulWidget {
-  const RiwayatPetugasResiduView({super.key});
+class RiwayatPetugasPemilahanView extends ConsumerStatefulWidget {
+  const RiwayatPetugasPemilahanView({super.key});
 
   @override
-  ConsumerState<RiwayatPetugasResiduView> createState() => _RiwayatPetugasResiduViewState();
+  ConsumerState<RiwayatPetugasPemilahanView> createState() => _RiwayatPetugasPemilahanViewState();
 }
 
-class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduView> {
+class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemilahanView> {
   String _dateRange = 'HARI_INI';
   String _typeFilter = 'SEMUA';
 
@@ -148,7 +148,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(petugasResiduControllerProvider);
+    final state = ref.watch(petugasPemilahanControllerProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -161,7 +161,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
         shadowColor: Colors.black12,
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(petugasResiduControllerProvider.notifier).refreshAll(),
+        onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
         color: AppColors.primaryGreen,
         child: Column(
           children: [
@@ -206,7 +206,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                       onChanged: (v) {
                         if (v != null) {
                           setState(() => _dateRange = v);
-                          ref.read(petugasResiduControllerProvider.notifier).setHistoryFilters(dateRange: v);
+                          ref.read(petugasPemilahanControllerProvider.notifier).setHistoryFilters(dateRange: v);
                         }
                       },
                     ),
@@ -235,7 +235,7 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
                       onChanged: (v) {
                         if (v != null) {
                           setState(() => _typeFilter = v);
-                          ref.read(petugasResiduControllerProvider.notifier).setHistoryFilters(type: v);
+                          ref.read(petugasPemilahanControllerProvider.notifier).setHistoryFilters(type: v);
                         }
                       },
                     ),
@@ -374,3 +374,4 @@ class _RiwayatPetugasResiduViewState extends ConsumerState<RiwayatPetugasResiduV
     );
   }
 }
+

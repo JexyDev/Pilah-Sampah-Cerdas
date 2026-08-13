@@ -119,7 +119,7 @@ class PoinView extends ConsumerWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Poin akan anda dapatkan setelah Setor Sampah menggunakan Tempat Sampah yang sesuai.',
+                            'Poin akan Anda dapatkan setelah menyetor sampah menggunakan tempat sampah yang sesuai.',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.primaryGreen,

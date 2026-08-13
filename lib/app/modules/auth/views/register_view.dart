@@ -28,6 +28,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _alamatController = TextEditingController();
+  final _familySizeController = TextEditingController(text: '1');
   
   // Mahasiswa fields
   final _nimController = TextEditingController();
@@ -82,17 +83,17 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   void _onPhoneChanged() {
     String text = _phoneController.text;
     String clean = text.replaceAll(RegExp(r'[^\d]'), '');
-
     bool changed = false;
-    if (clean.startsWith('0')) {
+
+    if (clean.startsWith('08')) {
       clean = clean.substring(1);
       changed = true;
-    } else if (clean.startsWith('62')) {
+    } else if (clean.startsWith('628')) {
       clean = clean.substring(2);
       changed = true;
     }
 
-    if (changed) {
+    if (text != clean || changed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _phoneController.value = TextEditingValue(
           text: clean,
@@ -160,6 +161,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _alamatController.dispose();
+    _familySizeController.dispose();
     _nimController.dispose();
     _jurusanController.dispose();
     _fakultasController.dispose();
@@ -208,7 +210,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedRole == 'Warga' || _selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
+    if (_selectedRole == 'Warga' || _selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
       if (_selectedKelurahan == null) {
         _showToast('Kelurahan wajib dipilih');
         return;
@@ -250,6 +252,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['rw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
+      data['familySize'] = int.tryParse(_familySizeController.text) ?? 1;
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = InputSanitizer.sanitize(_nimController.text);
       data['fakultas'] = InputSanitizer.sanitize(_fakultasController.text);
@@ -263,7 +266,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['kelurahan'] = _selectedKelurahan ?? '';
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
-    } else if (_selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
+    } else if (_selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
       data['rw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
@@ -277,7 +280,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
         );
 
     if (ok && mounted) {
-      if (_selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Petugas') {
+      if (_selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -297,6 +300,14 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
             ],
           ),
         );
+      } else if (_selectedRole == 'Warga') {
+        final okOtp = await ref.read(authProvider.notifier).requestOtp(phone: normalizedPhone);
+        if (okOtp) {
+          _showOtpDialog(normalizedPhone);
+        } else {
+          _showToast('Gagal meminta OTP. Silakan coba login/request OTP kembali nanti.');
+          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
+        }
       } else {
         Navigator.of(context).pushNamedAndRemoveUntil(
           AppRoutes.main,
@@ -315,6 +326,67 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       }
       _showToast(errorText);
     }
+  }
+
+  void _showOtpDialog(String phone) {
+    String otpInput = '';
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          final authState = ref.watch(authProvider);
+          return AlertDialog(
+            title: const Text('Verifikasi OTP'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Masukkan kode OTP yang dikirim ke $phone'),
+                const SizedBox(height: 16),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  onChanged: (val) => otpInput = val,
+                  decoration: const InputDecoration(
+                    hintText: 'Kode OTP',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (authState.errorCode != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Error: ${authState.errorCode}',
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: authState.isLoading ? null : () {
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: authState.isLoading ? null : () async {
+                  if (otpInput.length < 4) return;
+                  final ok = await ref.read(authProvider.notifier).verifyOtp(phone: phone, otp: otpInput);
+                  if (ok && mounted) {
+                    Navigator.pop(ctx);
+                    Navigator.of(this.context).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
+                  }
+                },
+                child: authState.isLoading 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
+                  : const Text('Verifikasi'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
   }
 
   @override
@@ -434,7 +506,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 initialValue: _selectedRole,
                                 items: const [
                                   DropdownMenuItem(value: 'Warga', child: Text('Warga')),
-                                  DropdownMenuItem(value: 'Petugas Residu', child: Text('Petugas Residu')),
+                                  DropdownMenuItem(value: 'Petugas Pemilahan', child: Text('Petugas Pemilahan')),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setState(() => _selectedRole = val);
@@ -483,6 +555,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
+                                  PhonePrefixFormatter(),
                                 ],
                                 decoration: InputDecoration(
                                   hintText: '81234567890',
@@ -547,9 +620,31 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
+                                _buildLabel('JUMLAH ANGGOTA KELUARGA (DALAM 1 RUMAH)'),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _familySizeController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  decoration: const InputDecoration(
+                                    hintText: 'Contoh: 4',
+                                    prefixIcon: Icon(Icons.family_restroom_rounded, color: AppColors.textSecondary, size: 20),
+                                  ),
+                                  validator: (v) {
+                                    if (_selectedRole == 'Warga') {
+                                      if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                                      final num = int.tryParse(v);
+                                      if (num == null || num < 1) return 'Minimal 1 orang';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
                               ],
 
-                              if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Residu' || _selectedRole == 'Mahasiswa') ...[
+                              if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Mahasiswa') ...[
                                 _buildLabel('KECAMATAN'),
                                 const SizedBox(height: 6),
                                 SearchableDropdownField<String>(
@@ -972,7 +1067,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 TrashCare. All rights reserved.',
+                          'Â© 2026 TrashCare. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,
@@ -1062,3 +1157,4 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     );
   }
 }
+

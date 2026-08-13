@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -6,7 +6,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
-import '../../petugas_residu/controllers/petugas_residu_notifikasi_controller.dart';
+import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
 import '../../../data/services/firebase_notification_service.dart';
 
 final Set<String> _shownNotifIds = {};
@@ -22,7 +22,7 @@ bool _isWargaNotification(NotificationEntity notif) {
     return true;
   }
 
-  // Dilarang total untuk Warga (Penjemputan Petugas, Mahasiswa KKN & Petugas Residu)
+  // Dilarang total untuk Warga (Penjemputan Petugas, Mahasiswa KKN & Petugas Pemilahan)
   final isForbidden = type.contains('JEMPUT') ||
       type.contains('PENGANGKUTAN') ||
       type.contains('KKN') ||
@@ -30,7 +30,7 @@ bool _isWargaNotification(NotificationEntity notif) {
       type.contains('IZIN') ||
       type.contains('PRESENSI') ||
       type.contains('PEMANFAATAN') ||
-      type.contains('TIMBANGAN_RESIDU') ||
+      type.contains('TIMBANGAN_PEMILAHAN') ||
       type.contains('VIOLATION') ||
       type.contains('PELANGGARAN') ||
       type.contains('WHITELIST') ||
@@ -41,7 +41,7 @@ bool _isWargaNotification(NotificationEntity notif) {
       title.contains('KKN') ||
       title.contains('DPL') ||
       title.contains('PRESENSI') ||
-      title.contains('TIMBANGAN RESIDU') ||
+      title.contains('TIMBANGAN PEMILAHAN') ||
       title.contains('WHITELIST') ||
       desc.contains('JEMPUT') ||
       desc.contains('PENGANGKUTAN') ||
@@ -64,7 +64,7 @@ void clearNotificationCache() {
   _shownNotifIds.clear();
 }
 
-// ─── Notifications List Provider ──────────────────────────────────────────────
+// â”€â”€â”€ Notifications List Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Provider daftar notifikasi user yang login.
 /// Memanggil GET /api/v1/notifications dari backend.
@@ -124,7 +124,7 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
   );
 });
 
-// ─── Mark As Read (Single) ────────────────────────────────────────────────────
+// â”€â”€â”€ Mark As Read (Single) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class MarkReadState {
   const MarkReadState({
@@ -160,7 +160,7 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
       // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
       _ref.invalidate(notificationsProvider);
       _ref.invalidate(mahasiswaNotificationsProvider);
-      _ref.invalidate(petugasResiduNotificationsProvider);
+      _ref.invalidate(petugasPemilahanNotificationsProvider);
       state = const MarkReadState();
     }
   }
@@ -181,7 +181,7 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
       // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
       _ref.invalidate(notificationsProvider);
       _ref.invalidate(mahasiswaNotificationsProvider);
-      _ref.invalidate(petugasResiduNotificationsProvider);
+      _ref.invalidate(petugasPemilahanNotificationsProvider);
       state = const MarkReadState();
     }
   }
@@ -192,13 +192,14 @@ final markReadProvider =
   return MarkReadNotifier(ref.watch(notificationRepositoryProvider), ref);
 });
 
-// ─── Register Device Token ────────────────────────────────────────────────────
+// â”€â”€â”€ Register Device Token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Kirim FCM token ke backend (fire-and-forget, tidak perlu watch di UI).
 Future<void> registerFcmToken(NotificationRepository repo, String token) async {
   try {
     await repo.registerDeviceToken(token);
   } catch (_) {
-    // Non-critical — abaikan error, jangan crash app
+    // Non-critical â€” abaikan error, jangan crash app
   }
 }
+

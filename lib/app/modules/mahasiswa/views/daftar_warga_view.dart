@@ -26,10 +26,14 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     super.dispose();
   }
 
+  int _activationFilterIndex = 0; // 0=Semua, 1=Sudah, 2=Belum
+
   List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKecamatan, String userKelurahan, String userRw, String userId, String userNim) {
-    // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa
-    var activatedOnly = list.where((w) {
-      if (!w.isActivated) return false;
+    // Tampilkan Warga Dampingan mahasiswa sesuai filter aktivasi
+    var filtered = list.where((w) {
+      // Filter Aktivasi
+      if (_activationFilterIndex == 1 && !w.isActivated) return false;
+      if (_activationFilterIndex == 2 && w.isActivated) return false;
 
       final mhsId = w.mahasiswaId.trim();
       if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
@@ -62,9 +66,9 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
       );
     }).toList();
 
-    if (_searchQuery.isEmpty) return activatedOnly;
+    if (_searchQuery.isEmpty) return filtered;
     final query = _searchQuery.toLowerCase();
-    return activatedOnly
+    return filtered
         .where((w) =>
             w.wargaName.toLowerCase().contains(query) ||
             w.address.toLowerCase().contains(query))
@@ -146,6 +150,25 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                     ),
                   ),
                 ),
+                
+                // ── Filter Aktivasi ─────────────────────────────
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                    child: Row(
+                      children: [
+                        _filterChip('Semua', 0),
+                        const SizedBox(width: 8),
+                        _filterChip('Sudah Aktivasi', 1),
+                        const SizedBox(width: 8),
+                        _filterChip('Belum Aktivasi', 2),
+                      ],
+                    ),
+                  ),
+                ),
 
                 // ── List ────────────────────────────────────────
                 Expanded(
@@ -198,6 +221,40 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _filterChip(String label, int index) {
+    final bool active = _activationFilterIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _activationFilterIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: active ? AppColors.primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? AppColors.primaryGreen : AppColors.border,
+          ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }

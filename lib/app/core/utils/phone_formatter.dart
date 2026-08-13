@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 class PhoneFormatter {
   /// Memformat input untuk Login (Sesuai aturan baru: WAJIB format "+62" disamakan dengan OTP).
   static String prepareLoginPhoneInput(String raw) {
@@ -16,10 +18,10 @@ class PhoneFormatter {
     String phone = raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
     if (phone.isEmpty) return phone;
     
-    // Check if it's likely a NIM. NIMs are 8-10 digits and usually don't start with 08.
+    // Check if it's likely a NIM. NIMs are 8-16 digits and usually don't start with 08.
     String digitsOnly = phone.replaceAll('+', '');
-    bool isNimLength = digitsOnly.length >= 8 && digitsOnly.length <= 10;
-    bool isPhoneNumberPrefix = digitsOnly.startsWith('08') || digitsOnly.startsWith('628') || digitsOnly.startsWith('8');
+    bool isNimLength = digitsOnly.length >= 8 && digitsOnly.length <= 16;
+    bool isPhoneNumberPrefix = digitsOnly.startsWith('08') || digitsOnly.startsWith('628') || (digitsOnly.startsWith('8') && digitsOnly.length >= 9 && digitsOnly.length <= 14);
     
     if (isNimLength && !isPhoneNumberPrefix) {
       return phone; // Return NIM as-is
@@ -41,5 +43,31 @@ class PhoneFormatter {
     }
 
     return phone;
+  }
+}
+
+/// TextInputFormatter untuk menghapus awalan '0' atau '62' secara otomatis saat user mengetik,
+/// karena UI sudah memiliki prefix '+62' permanen.
+class PhonePrefixFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    String text = newValue.text;
+    
+    // Hapus awalan 0
+    if (text.startsWith('0')) {
+      text = text.substring(1);
+    }
+    // Hapus awalan 62
+    if (text.startsWith('62')) {
+      text = text.substring(2);
+    }
+    
+    if (text != newValue.text) {
+      return TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    }
+    return newValue;
   }
 }

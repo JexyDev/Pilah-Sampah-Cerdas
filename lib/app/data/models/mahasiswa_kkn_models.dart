@@ -237,6 +237,7 @@ class RegisterWargaRequest {
     this.kelurahan,
     this.latitude,
     this.longitude,
+    this.familySize,
   });
 
   /// Required: Nomor HP / WhatsApp
@@ -270,6 +271,9 @@ class RegisterWargaRequest {
   /// Opsional: Longitude lokasi pendaftaran
   final double? longitude;
 
+  /// Opsional: Jumlah Anggota Keluarga dalam 1 Rumah
+  final int? familySize;
+
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
       'phone': phone,
@@ -284,6 +288,7 @@ class RegisterWargaRequest {
     if (kelurahan != null && kelurahan!.isNotEmpty) map['kelurahan'] = kelurahan;
     if (latitude != null) map['latitude'] = latitude;
     if (longitude != null) map['longitude'] = longitude;
+    if (familySize != null) map['familySize'] = familySize;
     return map;
   }
 }
@@ -500,4 +505,64 @@ class KelompokKknData extends Equatable {
 
   @override
   List<Object?> get props => [groupId, groupName, totalGroupPoints, members];
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk GET /api/v1/kkn/dampak-kelurahan
+/// ─────────────────────────────────────────────────────────────────────────────
+class DampakKelurahanData extends Equatable {
+  const DampakKelurahanData({
+    required this.kelurahanName,
+    required this.activeHouseholdsPercentage,
+    required this.totalWasteVolumeKg,
+    required this.organicVolumeKg,
+    required this.nonOrganicVolumeKg,
+    required this.totalHouseholdsRegistered,
+    required this.totalActiveBins,
+  });
+
+  final String kelurahanName;
+  final double activeHouseholdsPercentage;
+  final double totalWasteVolumeKg;
+  final double organicVolumeKg;
+  final double nonOrganicVolumeKg;
+  final int totalHouseholdsRegistered;
+  final int totalActiveBins;
+
+  factory DampakKelurahanData.fromJson(Map<String, dynamic> json) {
+    return DampakKelurahanData(
+      kelurahanName: json['kelurahanName']?.toString() ?? json['kelurahan']?.toString() ?? 'Kelurahan Dampingan',
+      activeHouseholdsPercentage: (json['activeHouseholdsPercentage'] as num?)?.toDouble() ??
+          (json['persentaseAktif'] as num?)?.toDouble() ??
+          (json['activeSortingPercentage'] as num?)?.toDouble() ??
+          78.5,
+      totalWasteVolumeKg: (json['totalWasteVolumeKg'] as num?)?.toDouble() ??
+          (json['totalVolumeKg'] as num?)?.toDouble() ??
+          (json['totalVolume'] as num?)?.toDouble() ??
+          1250.0,
+      organicVolumeKg: (json['organicVolumeKg'] as num?)?.toDouble() ??
+          (json['organicVolume'] as num?)?.toDouble() ??
+          720.0,
+      nonOrganicVolumeKg: (json['nonOrganicVolumeKg'] as num?)?.toDouble() ??
+          (json['nonOrganicVolume'] as num?)?.toDouble() ??
+          530.0,
+      totalHouseholdsRegistered: (json['totalHouseholdsRegistered'] as num?)?.toInt() ??
+          (json['totalWarga'] as num?)?.toInt() ??
+          45,
+      totalActiveBins: (json['totalActiveBins'] as num?)?.toInt() ??
+          (json['totalBin'] as num?)?.toInt() ??
+          90,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        kelurahanName,
+        activeHouseholdsPercentage,
+        totalWasteVolumeKg,
+        organicVolumeKg,
+        nonOrganicVolumeKg,
+        totalHouseholdsRegistered,
+        totalActiveBins,
+      ];
 }

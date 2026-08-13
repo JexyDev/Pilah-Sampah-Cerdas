@@ -13,7 +13,7 @@ import '../../shared/widgets/app_loading.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/location_ping_controller.dart';
 import '../controllers/kkn_location_controller.dart';
-import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
 
@@ -139,7 +139,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   SliverAppBar _buildAppBar(MahasiswaState state) {
     final dashboard = state.dashboard;
     final user = ref.watch(authProvider).user;
-    final unreadCount = ref.watch(unreadNotificationCountProvider);
+    final unreadCount = ref.watch(mahasiswaUnreadNotificationCountProvider);
     final isOnline = ref.watch(isOnlineProvider);
 
     final name = (user?.name != null && user!.name.trim().isNotEmpty)
@@ -408,7 +408,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         Expanded(
           child: _SummaryCard(
             icon: Icons.stars_rounded,
-            label: 'Poin KKN',
+            label: 'Poin Personal',
             value: '${d?.contributionPoints ?? 0}',
             color: AppColors.success,
           ),
@@ -567,6 +567,30 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 subtitle: 'Individu & Pemanfaatan',
                 gradientColors: const [Color(0xFF0284C7), Color(0xFF0C4A6E)],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.pie_chart_rounded,
+                title: 'Dampak Kelurahan',
+                subtitle: 'Statistik Real-Time',
+                gradientColors: const [AppColors.primaryGreen, Color(0xFF007A52)],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringDampakKelurahan),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.rule_rounded,
+                title: 'Pengajuan Izin',
+                subtitle: 'Izin/Sakit DPL',
+                gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
               ),
             ),
           ],

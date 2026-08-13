@@ -1,11 +1,11 @@
-class ApiEndpoints {
+﻿class ApiEndpoints {
   ApiEndpoints._();
 
   // Auth
   static const String login = '/auth/login';
   static const String registerWarga = '/auth/register/warga';
   static const String registerMahasiswa = '/auth/register/mahasiswa-kkn';
-  static const String registerPetugas = '/auth/register/petugas-residu';
+  static const String registerPetugas = '/auth/register/petugas-pemilahan';
   static const String requestOtp = '/auth/request-otp';
   static const String verifyOtp = '/auth/verify-otp';
   static const String refresh = '/auth/refresh';
@@ -61,11 +61,11 @@ class ApiEndpoints {
   static String kegiatanLokasi(String id) => '/schedules/$id/lokasi';
   static String kegiatanAbsen(String id) => '/schedules/$id/absen';
 
-  // Petugas Residu
-  static const String petugasDashboard = '/petugas-residu/dashboard';
-  static const String petugasJadwalHarian = '/petugas-residu/jadwal-harian';
-  static const String petugasSubmitLog = '/petugas-residu/submit-log';
-  static const String petugasRiwayat = '/petugas-residu/riwayat';
+  // Petugas Pemilahan
+  static const String petugasDashboard = '/petugas-pemilahan/dashboard';
+  static const String petugasJadwalHarian = '/petugas-pemilahan/jadwal-harian';
+  static const String petugasSubmitLog = '/petugas-pemilahan/submit-log';
+  static const String petugasRiwayat = '/petugas-pemilahan/riwayat';
 
   // Notifications
   static const String notifications = '/notifications';
@@ -74,3 +74,4 @@ class ApiEndpoints {
   static const String notificationsUnregisterToken = '/notifications/unregister-token';
   static String notificationsRead(String id) => '/notifications/$id/read';
 }
+

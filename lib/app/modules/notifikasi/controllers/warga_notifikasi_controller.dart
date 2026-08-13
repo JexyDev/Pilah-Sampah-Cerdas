@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -38,7 +38,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
         type.contains('IZIN') ||
         type.contains('PRESENSI') ||
         type.contains('PEMANFAATAN') ||
-        type.contains('TIMBANGAN_RESIDU') ||
+        type.contains('TIMBANGAN_PEMILAHAN') ||
         type.contains('VIOLATION') ||
         type.contains('PELANGGARAN') ||
         type.contains('WHITELIST') ||
@@ -49,7 +49,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
         title.contains('KKN') ||
         title.contains('DPL') ||
         title.contains('PRESENSI') ||
-        title.contains('TIMBANGAN RESIDU') ||
+        title.contains('TIMBANGAN PEMILAHAN') ||
         title.contains('WHITELIST') ||
         desc.contains('JEMPUT') ||
         desc.contains('PENGANGKUTAN') ||
@@ -115,3 +115,4 @@ final wargaUnreadNotificationCountProvider = Provider<int>((ref) {
     error: (_, __) => 0,
   );
 });
+

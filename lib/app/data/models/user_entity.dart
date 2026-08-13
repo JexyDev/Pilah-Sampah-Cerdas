@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Entitas pengguna — sesuai schema backend tabel `users`.
+/// Entitas pengguna â€” sesuai schema backend tabel `users`.
 /// Backend menggunakan email sebagai identifier login (bukan NIK).
 class UserEntity extends Equatable {
   const UserEntity({
@@ -21,6 +21,8 @@ class UserEntity extends Equatable {
     this.fakultas = '',
     this.universitas = '',
     this.kecamatan = 'Coblong',
+    this.pendampingName,
+    this.familySize = 1,
   });
 
   final String id;
@@ -40,6 +42,8 @@ class UserEntity extends Equatable {
   final String prodi;
   final String fakultas;
   final String universitas;
+  final String? pendampingName;
+  final int familySize;
 
 
 
@@ -61,6 +65,7 @@ class UserEntity extends Equatable {
     String? prodi,
     String? fakultas,
     String? universitas,
+    String? pendampingName,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -80,15 +85,16 @@ class UserEntity extends Equatable {
       prodi: prodi ?? this.prodi,
       fakultas: fakultas ?? this.fakultas,
       universitas: universitas ?? this.universitas,
+      pendampingName: pendampingName ?? this.pendampingName,
     );
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kecamatan, kelurahan, rw];
+  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kecamatan, kelurahan, rw, pendampingName];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
-enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasResidu }
+enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan }
 
 extension UserRoleExtension on UserRole {
   String get displayName {
@@ -105,8 +111,8 @@ extension UserRoleExtension on UserRole {
         return 'Warga';
       case UserRole.mahasiswaKkn:
         return 'Mahasiswa KKN';
-      case UserRole.petugasResidu:
-        return 'Petugas Residu';
+      case UserRole.petugasPemilahan:
+        return 'Petugas Pemilahan';
     }
   }
 
@@ -124,8 +130,8 @@ extension UserRoleExtension on UserRole {
         return 'WARGA';
       case UserRole.mahasiswaKkn:
         return 'MAHASISWA_KKN';
-      case UserRole.petugasResidu:
-        return 'PETUGAS_RESIDU';
+      case UserRole.petugasPemilahan:
+        return 'PETUGAS_PEMILAHAN';
     }
   }
 
@@ -142,10 +148,11 @@ extension UserRoleExtension on UserRole {
         return UserRole.petugasRt;
       case 'MAHASISWA_KKN':
         return UserRole.mahasiswaKkn;
-      case 'PETUGAS_RESIDU':
-        return UserRole.petugasResidu;
+      case 'PETUGAS_PEMILAHAN':
+        return UserRole.petugasPemilahan;
       default:
         return UserRole.warga;
     }
   }
 }
+

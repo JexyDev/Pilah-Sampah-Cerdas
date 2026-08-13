@@ -185,6 +185,14 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           bold: true,
                         ),
                         _divider(),
+                        if (user?.role == UserRole.warga) ...[
+                          _InfoTile(
+                            Icons.family_restroom_rounded,
+                            'Jumlah Anggota Keluarga',
+                            '${user?.familySize ?? 1} Orang',
+                          ),
+                          _divider(),
+                        ],
                         if (user?.role != UserRole.warga && user?.role != UserRole.mahasiswaKkn) ...[
                           _InfoTile(
                             Icons.email_outlined,
@@ -260,7 +268,14 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                                 : 'Belum diatur',
                           ),
                           _divider(),
-
+                          _InfoTile(
+                            Icons.school_outlined,
+                            'Mahasiswa Pendamping',
+                            user?.pendampingName != null && user!.pendampingName!.isNotEmpty
+                                ? user.pendampingName!
+                                : '-',
+                          ),
+                          _divider(),
                         ],
                         _InfoTile(
                           Icons.badge_outlined,

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
-import '../controllers/petugas_residu_controller.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
 
 class GantiPasswordPetugasView extends ConsumerStatefulWidget {
   const GantiPasswordPetugasView({super.key});
@@ -35,7 +35,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
 
     setState(() => _isSubmitting = true);
 
-    final success = await ref.read(petugasResiduControllerProvider.notifier).changePassword(
+    final success = await ref.read(petugasPemilahanControllerProvider.notifier).changePassword(
           oldPassword: _oldPasswordController.text.trim(),
           newPassword: _newPasswordController.text.trim(),
         );
@@ -45,14 +45,14 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     if (success && mounted) {
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kata sandi Petugas Residu berhasil diperbarui!'),
+          content: Text('Kata sandi Petugas Pemilahan berhasil diperbarui!'),
           backgroundColor: AppColors.primaryGreen,
           duration: Duration(seconds: 3),
         ),
       );
       Navigator.pop(context);
     } else if (mounted) {
-      final errorMsg = ref.read(petugasResiduControllerProvider).errorMessage ??
+      final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage ??
           'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.';
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -102,7 +102,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Untuk keamanan akun Petugas Residu RT/RW, gunakan kata sandi yang kuat (minimal 8 karakter).',
+                        'Untuk keamanan akun Petugas Pemilahan RT/RW, gunakan kata sandi yang kuat (minimal 8 karakter).',
                         style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.3),
                       ),
                     ),
@@ -212,3 +212,4 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     );
   }
 }
+

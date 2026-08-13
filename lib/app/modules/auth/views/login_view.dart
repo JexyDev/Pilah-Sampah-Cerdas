@@ -36,17 +36,17 @@ class _LoginViewState extends ConsumerState<LoginView> {
   void _onPhoneChanged() {
     String text = _phoneController.text;
     String clean = text.replaceAll(RegExp(r'[^\d]'), '');
-
     bool changed = false;
-    if (clean.startsWith('0')) {
+
+    if (clean.startsWith('08')) {
       clean = clean.substring(1);
       changed = true;
-    } else if (clean.startsWith('62')) {
+    } else if (clean.startsWith('628')) {
       clean = clean.substring(2);
       changed = true;
     }
 
-    if (changed) {
+    if (text != clean || changed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _phoneController.value = TextEditingValue(
           text: clean,
@@ -113,7 +113,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
         );
 
     if (ok && mounted) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      }
     } else if (mounted) {
       final authState = ref.read(authProvider);
       String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
@@ -233,7 +238,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Masukkan nomor HP atau NIM terdaftar Anda',
+                                'Masukkan nomor telepon terdaftar Anda',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -241,14 +246,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Field No. Telepon / NIM
-                              Text(
-                                _phoneController.text.isEmpty
-                                    ? 'NOMOR TELEPON ATAU NIM'
-                                    : (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
-                                        ? 'NOMOR TELEPON'
-                                        : 'NIM',
-                                style: const TextStyle(
+                              // Field No. Telepon
+                              const Text(
+                                'NOMOR TELEPON',
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textSecondary,
@@ -263,68 +264,20 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
-                                ],
+                                                                  ],
                                 decoration: InputDecoration(
-                                  hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13) 
-                                      ? '81234567890' 
-                                      : '1301210000',
-                                  prefixIcon: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: const BoxDecoration(
-                                      border: Border(
-                                        right: BorderSide(color: Color(0xFFE5E7EB)),
-                                      ),
-                                    ),
-                                    child: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
-                                        ? const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text('🇮🇩', style: TextStyle(fontSize: 18)),
-                                              SizedBox(width: 6),
-                                              Text(
-                                                '+62',
-                                                style: TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        : const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.badge_outlined, size: 18, color: AppColors.textPrimary),
-                                              SizedBox(width: 6),
-                                              Text(
-                                                'NIM',
-                                                style: TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                  ),
+                                  hintText: 'Misal: 0812... atau 13011...',
+                                  prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGreen),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'Nomor telepon atau NIM wajib diisi';
                                   }
-                                  final clean = v.trim();
-                                  if (clean.startsWith('0')) {
-                                    return 'Mohon tidak menggunakan awalan 0 atau 62';
+                                  final clean = v.trim().replaceAll(RegExp(r'[^\d]'), '');
+                                  if (clean.length >= 8 && clean.length <= 16) {
+                                    return null; // Valid
                                   }
-                                  final digits = clean.replaceAll(RegExp(r'[^\d]'), '');
-                                  if (digits.length >= 10 && digits.length <= 13) {
-                                    return null; // Phone number valid
-                                  }
-                                  if (clean.length >= 8 && clean.length <= 10) {
-                                    return null; // NIM valid
-                                  }
-                                  return 'Format tidak valid (12 digit No. HP atau 8-10 digit NIM)';
+                                  return 'Format tidak valid (8-16 digit)';
                                 },
                               ),
                               const SizedBox(height: 18),
@@ -367,10 +320,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 ),
                                 validator: (v) {
                                   if (v == null || v.isEmpty) {
-                                    return 'Password wajib diisi';
+                                    return 'Kata sandi wajib diisi';
                                   }
                                   if (v.length < 6) {
-                                    return 'Password minimal 6 karakter';
+                                    return 'Kata sandi minimal 6 karakter';
                                   }
                                   return null;
                                 },

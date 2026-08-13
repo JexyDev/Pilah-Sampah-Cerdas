@@ -3,6 +3,7 @@ import '../modules/splash/splash_view.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/register_view.dart';
 import '../modules/auth/views/forgot_password_view.dart';
+import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/dashboard/dashboard_view.dart';
 import '../modules/scan/views/scan_flow_view.dart';
 import '../modules/aktivasi/views/aktivasi_bin_view.dart';
@@ -11,7 +12,7 @@ import '../modules/mahasiswa/views/aktivasi_warga_view.dart';
 import '../modules/profil/kelola_bin_view.dart';
 import '../modules/auth/views/reset_bin_view.dart';
 import '../modules/notifikasi/views/notifikasi_view.dart';
-import '../modules/petugas_residu/timbangan_residu_view.dart';
+import '../modules/petugas_pemilahan/timbangan_pemilahan_view.dart';
 import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_view.dart';
 import '../modules/mahasiswa/views/monitoring_warga_view.dart';
@@ -22,12 +23,13 @@ import '../modules/mahasiswa/views/detail_warga_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
 import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
-import '../modules/petugas_residu/views/riwayat_petugas_residu_view.dart';
-import '../modules/petugas_residu/views/ganti_password_petugas_view.dart';
+import '../modules/mahasiswa/views/monitoring_dampak_kelurahan_view.dart';
+import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
+import '../modules/petugas_pemilahan/views/ganti_password_petugas_view.dart';
 import 'app_routes.dart';
 
 import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
-import '../modules/petugas_residu/views/petugas_notification_view.dart';
+import '../modules/petugas_pemilahan/views/petugas_notification_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 class AppPages {
@@ -39,6 +41,8 @@ class AppPages {
     switch (settings.name) {
       case AppRoutes.splash:
         return _buildRoute(const SplashView(), settings);
+      case AppRoutes.onboarding:
+        return _buildRoute(const OnboardingView(), settings);
       case AppRoutes.login:
         return _buildRoute(const LoginView(), settings);
       case AppRoutes.register:
@@ -63,8 +67,8 @@ class AppPages {
         return _buildRoute(const MahasiswaNotifikasiView(), settings);
       case AppRoutes.petugasNotifikasi:
         return _buildRoute(const PetugasNotificationView(), settings);
-      case AppRoutes.timbanganResidu:
-        return _buildRoute(const TimbanganResiduView(), settings);
+      case AppRoutes.timbanganPemilahan:
+        return _buildRoute(const TimbanganPemilahanView(), settings);
       case AppRoutes.tentang:
         return _buildRoute(const TentangAplikasiView(), settings);
       case AppRoutes.kknAttendance:
@@ -94,10 +98,12 @@ class AppPages {
           ),
           settings,
         );
-      case AppRoutes.riwayatPetugasResidu:
-        return _buildRoute(const RiwayatPetugasResiduView(), settings);
-      case AppRoutes.petugasResiduGantiPassword:
+      case AppRoutes.riwayatPetugasPemilahan:
+        return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
+      case AppRoutes.petugasPemilahanGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
+      case AppRoutes.monitoringDampakKelurahan:
+        return _buildRoute(const MonitoringDampakKelurahanView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }
@@ -133,3 +139,4 @@ class _NotFoundScreen extends StatelessWidget {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/values/app_assets.dart';
 import '../../core/values/app_colors.dart';
@@ -16,13 +16,13 @@ import '../auth/controllers/auth_controller.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
 import '../mahasiswa/views/mahasiswa_poin_view.dart';
-import '../petugas_residu/views/petugas_residu_dashboard_view.dart';
-import '../petugas_residu/views/riwayat_petugas_residu_view.dart';
-import '../petugas_residu/views/petugas_residu_poin_view.dart';
-import '../petugas_residu/views/petugas_residu_profil_view.dart';
+import '../petugas_pemilahan/views/petugas_pemilahan_dashboard_view.dart';
+import '../petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
+import '../petugas_pemilahan/views/petugas_pemilahan_poin_view.dart';
+import '../petugas_pemilahan/views/petugas_pemilahan_profil_view.dart';
 import '../../routes/app_routes.dart';
 
-/// Shell utama — Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
+/// Shell utama â€” Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
 class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
@@ -37,21 +37,21 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   List<Widget> _getScreens(UserRole role) => [
     role == UserRole.mahasiswaKkn 
         ? const MahasiswaView() 
-        : (role == UserRole.petugasResidu 
-            ? const PetugasResiduDashboardView() 
+        : (role == UserRole.petugasPemilahan 
+            ? const PetugasPemilahanDashboardView() 
             : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
     role == UserRole.mahasiswaKkn 
         ? const MahasiswaPoinView() 
-        : (role == UserRole.petugasResidu 
-            ? const RiwayatPetugasResiduView() 
+        : (role == UserRole.petugasPemilahan 
+            ? const RiwayatPetugasPemilahanView() 
             : const RiwayatView()),
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn 
         ? const MonitoringWargaView() 
-        : (role == UserRole.petugasResidu 
-            ? const PetugasResiduPoinView() 
+        : (role == UserRole.petugasPemilahan 
+            ? const PetugasPemilahanPoinView() 
             : const PoinView()),
-    role == UserRole.petugasResidu ? const PetugasResiduProfilView() : const ProfilView(),
+    role == UserRole.petugasPemilahan ? const PetugasPemilahanProfilView() : const ProfilView(),
   ];
 
   void _onTabTap(int index) {
@@ -97,7 +97,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   Widget _buildMobileShell(bool isOnline, UserRole role) {
     final screens = _getScreens(role);
-    final bool showFab = role == UserRole.warga || role == UserRole.petugasResidu;
+    final bool showFab = role == UserRole.warga || role == UserRole.petugasPemilahan;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: Column(
@@ -113,7 +113,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   Widget _buildFab(bool isOnline, UserRole role) {
-    final fabColor = (role == UserRole.petugasResidu) ? AppColors.dangerRed : AppColors.primaryGreen;
+    final fabColor = (role == UserRole.petugasPemilahan) ? AppColors.dangerRed : AppColors.primaryGreen;
 
     return Container(
       width: 60,
@@ -138,15 +138,15 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         child: InkWell(
           onTap: isOnline
               ? () {
-                  if (role == UserRole.petugasResidu) {
-                    Navigator.pushNamed(context, AppRoutes.timbanganResidu);
+                  if (role == UserRole.petugasPemilahan) {
+                    Navigator.pushNamed(context, AppRoutes.timbanganPemilahan);
                   } else {
                     ScanGuard.handleScanNavigation(context, ref);
                   }
                 }
               : null,
           child: Icon(
-            role == UserRole.petugasResidu ? Icons.scale_rounded : Icons.qr_code_scanner_rounded,
+            role == UserRole.petugasPemilahan ? Icons.scale_rounded : Icons.qr_code_scanner_rounded,
             color: Colors.white,
             size: 26,
           ),
@@ -157,7 +157,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   BottomAppBar _buildBottomBar(UserRole role) {
     final bool isWarga = role == UserRole.warga;
-    final bool isPetugas = role == UserRole.petugasResidu;
+    final bool isPetugas = role == UserRole.petugasPemilahan;
     return BottomAppBar(
       shape: (isWarga || isPetugas) ? const CircularNotchedRectangle() : null,
       notchMargin: (isWarga || isPetugas) ? 8 : 0,
@@ -176,13 +176,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                     0, 
                     Icons.home_rounded, 
                     Icons.home_outlined, 
-                    role == UserRole.petugasResidu ? 'Beranda' : 'Home'
+                    role == UserRole.petugasPemilahan ? 'Beranda' : 'Home'
                   ),
                   _navItem(
                     1,
                     role == UserRole.mahasiswaKkn ? Icons.stars_rounded : Icons.history_rounded,
                     role == UserRole.mahasiswaKkn ? Icons.stars_outlined : Icons.history_outlined,
-                    role == UserRole.mahasiswaKkn ? 'Poin KKN' : (role == UserRole.petugasResidu ? 'Riwayat' : 'History'),
+                    role == UserRole.mahasiswaKkn ? 'Poin KKN' : (role == UserRole.petugasPemilahan ? 'Riwayat' : 'History'),
                   ),
                 ],
               ),
@@ -195,17 +195,17 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   _navItem(
                     3,
                     role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
-                    (role == UserRole.petugasResidu ? Icons.monetization_on_rounded : Icons.stars_rounded),
+                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : Icons.stars_rounded),
                     role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
-                    (role == UserRole.petugasResidu ? Icons.monetization_on_outlined : Icons.stars_outlined),
+                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : Icons.stars_outlined),
                     role == UserRole.mahasiswaKkn ? 'Monitoring' : 
-                    (role == UserRole.petugasResidu ? 'Poin' : 'Poin'),
+                    (role == UserRole.petugasPemilahan ? 'Poin' : 'Poin'),
                   ),
                   _navItem(
                     4,
                     Icons.person_rounded,
                     Icons.person_outline_rounded,
-                    role == UserRole.petugasResidu ? 'Profil' : 'Profile',
+                    role == UserRole.petugasPemilahan ? 'Profil' : 'Profile',
                   ),
                 ],
               ),
@@ -246,7 +246,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
-  // ─── Tablet (NavigationRail) ──────────────────────────────────────────────
+  // â”€â”€â”€ Tablet (NavigationRail) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildTabletShell(bool isOnline, UserRole role) {
     final screens = _getScreens(role);
     return Scaffold(
@@ -347,11 +347,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         ),
         NavigationRailDestination(
           icon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
-                     role == UserRole.petugasResidu ? Icons.map_outlined : Icons.stars_outlined),
+                     role == UserRole.petugasPemilahan ? Icons.map_outlined : Icons.stars_outlined),
           selectedIcon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
-                             role == UserRole.petugasResidu ? Icons.map_rounded : Icons.stars_rounded),
+                             role == UserRole.petugasPemilahan ? Icons.map_rounded : Icons.stars_rounded),
           label: Text(role == UserRole.mahasiswaKkn ? 'Monitoring' : 
-                      role == UserRole.petugasResidu ? 'Peta' : 'Poin'),
+                      role == UserRole.petugasPemilahan ? 'Peta' : 'Poin'),
         ),
         const NavigationRailDestination(
           icon: Icon(Icons.person_outline_rounded),
@@ -362,5 +362,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 }
+
 
 

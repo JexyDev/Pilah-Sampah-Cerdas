@@ -5,6 +5,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../controllers/kelompok_kkn_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart';
 
 /// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
@@ -16,14 +17,18 @@ class MahasiswaPoinView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mhsState = ref.watch(mahasiswaControllerProvider);
+    final kelompokState = ref.watch(kelompokKknProvider);
     final user = ref.watch(authProvider).user;
-    final totalPoints = mhsState.dashboard?.contributionPoints ?? 0;
+    
+    final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
+    final groupPoints = kelompokState.kelompok?.calculatedTotalPoints ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+          await ref.read(kelompokKknProvider.notifier).fetchKelompok();
           if (user != null) {
             ref.invalidate(pointHistoryProvider);
           }
@@ -33,7 +38,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           slivers: [
             // ── 1. Header Putih Bersih ──────────────────────────────
             SliverToBoxAdapter(
-              child: _buildHeader(context, user?.name ?? 'Mahasiswa KKN', totalPoints),
+              child: _buildHeader(context, user?.name ?? 'Mahasiswa KKN', personalPoints, groupPoints),
             ),
 
             SliverPadding(
@@ -68,7 +73,7 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String name, int totalPoints) {
+  Widget _buildHeader(BuildContext context, String name, int personalPoints, int groupPoints) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -102,37 +107,89 @@ class MahasiswaPoinView extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'TOTAL POIN KKN TERKUMPUL',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 11,
-              letterSpacing: 0.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 20),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                NumberFormat('#,###').format(totalPoints),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'POIN PERSONAL',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          NumberFormat('#,###').format(personalPoints),
+                          style: const TextStyle(
+                            color: AppColors.primaryGreen,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4, bottom: 4),
+                          child: Text(
+                            'PTS',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 6, bottom: 4),
-                child: Text(
-                  'PTS',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'POIN KELOMPOK',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          NumberFormat('#,###').format(groupPoints),
+                          style: const TextStyle(
+                            color: AppColors.primaryBlueDark,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4, bottom: 4),
+                          child: Text(
+                            'PTS',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -147,37 +204,133 @@ class MahasiswaPoinView extends ConsumerWidget {
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
     int laporanCount = 0;
+    int izinCount = 0;
     if (asyncHistory.value != null) {
-      laporanCount = asyncHistory.value!.where((h) => h.description.toLowerCase().contains('pemanfaatan')).length;
+      final list = asyncHistory.value!;
+      laporanCount = list.where((h) => h.description.toLowerCase().contains('pemanfaatan')).length;
+      izinCount = list.where((h) => h.description.toLowerCase().contains('izin') || h.description.toLowerCase().contains('sakit')).length;
     }
 
-    return Row(
+    // Total Input = Laporan Pemanfaatan Sampah + Warga Binaan yang Diaktivasi
+    final totalInputCount = laporanCount + wargaCount;
+
+    return Column(
       children: [
-        Expanded(
-          child: _StatCard(
-            topText: 'Hari',
-            middleText: '${(points / 10).floor()}',
-            bottomText: 'Presensi',
-            color: AppColors.primaryGreen,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                topText: 'Hari',
+                middleText: '${(points / 10).floor()}',
+                bottomText: 'Presensi',
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _StatCard(
+                topText: 'Warga',
+                middleText: '$wargaCount',
+                bottomText: 'Tempat Sampah',
+                color: AppColors.primaryBlueDark,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _StatCard(
+                topText: 'Laporan',
+                middleText: '$laporanCount',
+                bottomText: 'Pemanfaatan',
+                color: AppColors.warningOrange,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _StatCard(
-            topText: 'Warga',
-            middleText: '$wargaCount',
-            bottomText: 'Tempat Sampah',
-            color: AppColors.primaryBlueDark,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _StatCard(
-            topText: 'Laporan',
-            middleText: '$laporanCount',
-            bottomText: 'Pemanfaatan',
-            color: AppColors.warningOrange,
-          ),
+        const SizedBox(height: 10),
+
+        // ── Requirement B: Statistik Tambahan (Pengajuan Izin & Total Input Data) ──
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningYellow.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.note_alt_rounded, color: AppColors.warningYellow, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'IZIN / SAKIT',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$izinCount Kali',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.post_add_rounded, color: AppColors.primaryGreen, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'TOTAL INPUT',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$totalInputCount Kali',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

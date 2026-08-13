@@ -120,7 +120,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         id: 2,
-        title: 'Jadwal Buang Sampah Sore! 🌆',
+        title: 'Jadwal Buang Sampah Sore! 🌇',
         body: 'Pengingat warga: Cek kembali tempat sampah Anda dan segera buang sore ini.',
         scheduledDate: scheduledSore,
         notificationDetails: const NotificationDetails(android: androidSore),
@@ -203,7 +203,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: 5, // ID untuk notif penalti/punishment
-        title: 'Penalti: Poin Berkurang! ⚠️',
+        title: 'Penalti: Poin Berkurang! âš ï¸',
         body: 'Anda tidak melakukan setor sampah hari ini. Poin Anda berkurang -$points poin.',
         notificationDetails: platformDetails,
       );
@@ -229,7 +229,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: 6,
-        title: 'Pengajuan Pengosongan Terkirim ⏳',
+        title: 'Pengajuan Pengosongan Terkirim â³',
         body: 'Pengajuan pengosongan tempat sampah Anda sedang diproses oleh petugas.',
         notificationDetails: platformDetails,
       );
@@ -245,8 +245,8 @@ class NotificationEngine {
     try {
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'timbangan_channel',
-        'Log Timbangan Residu',
-        channelDescription: 'Notifikasi konfirmasi pengunggahan timbangan residu',
+        'Log Timbangan Pemilahan',
+        channelDescription: 'Notifikasi konfirmasi pengunggahan timbangan pemilahan',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
@@ -258,7 +258,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title: 'Log Timbangan Berhasil Disimpan! ⚖️',
+        title: 'Log Timbangan Berhasil Disimpan! âš–ï¸',
         body: 'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
         notificationDetails: platformDetails,
       );
@@ -341,3 +341,4 @@ class NotificationEngine {
     } catch (e) { debugPrint('Silenced error: $e'); }
   }
 }
+

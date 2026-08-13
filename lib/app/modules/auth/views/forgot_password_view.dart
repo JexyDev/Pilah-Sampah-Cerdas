@@ -206,7 +206,7 @@ class _ForgotPasswordViewState
         );
 
     if (ok && mounted) {
-      _showToast('Kata sandi berhasil diperbarui! Silakan login.', isError: false);
+      _showToast('Kata sandi berhasil diperbarui! Silakan masuk.', isError: false);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.of(context).pop();
       });
@@ -554,6 +554,7 @@ class _ForgotPasswordViewState
             onFieldSubmitted: (_) => _onRequestOtp(),
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
+              PhonePrefixFormatter(),
             ],
             decoration: InputDecoration(
               hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)

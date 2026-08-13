@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/values/app_colors.dart';
 
-/// Modal Bottom Sheet SOP & Panduan Penggunaan Petugas Residu Hilir.
+/// Modal Bottom Sheet SOP & Panduan Penggunaan Petugas Pemilahan Hilir.
 /// Didesain dengan tampilan modern, jelas, dan user-friendly.
 class SopKerjaPetugasWidget extends StatelessWidget {
   const SopKerjaPetugasWidget({super.key});
@@ -74,7 +74,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Petunjuk kerja penimbangan residu hilir',
+                        'Petunjuk kerja penimbangan pemilahan hilir',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -100,7 +100,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                 children: [
                   _buildStepCard(
                     stepNumber: '1',
-                    title: 'Input Timbangan Residu (Kg)',
+                    title: 'Input Timbangan Pemilahan (Kg)',
                     icon: Icons.scale_rounded,
                     color: AppColors.primaryGreen,
                     description:
@@ -114,7 +114,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     icon: Icons.report_problem_rounded,
                     color: AppColors.dangerRed,
                     description:
-                        'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tempat sampah residu, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
+                        'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tempat sampah pemilahan, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
                     tips: 'Tips: Laporan ini membantu edukasi warga oleh Ketua RW.',
                   ),
                   const SizedBox(height: 14),
@@ -257,3 +257,4 @@ class SopKerjaPetugasWidget extends StatelessWidget {
     );
   }
 }
+

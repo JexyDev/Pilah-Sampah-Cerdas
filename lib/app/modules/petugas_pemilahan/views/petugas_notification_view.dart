@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
-import '../controllers/petugas_residu_notifikasi_controller.dart';
+import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 
-/// Halaman Notifikasi Khusus Petugas Residu Hilir.
+/// Halaman Notifikasi Khusus Petugas Pemilahan Hilir.
 class PetugasNotificationView extends ConsumerStatefulWidget {
   const PetugasNotificationView({super.key});
 
@@ -23,14 +23,14 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
 
   @override
   Widget build(BuildContext context) {
-    final notifAsync = ref.watch(petugasResiduNotificationsProvider);
+    final notifAsync = ref.watch(petugasPemilahanNotificationsProvider);
     final markState = ref.watch(markReadProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text(
-          'Notifikasi Petugas Residu',
+          'Notifikasi Petugas Pemilahan',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
         ),
         backgroundColor: Colors.white,
@@ -45,18 +45,18 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                 ? null
                 : () async {
                     await ref.read(markReadProvider.notifier).markAllRead();
-                    ref.invalidate(petugasResiduNotificationsProvider);
+                    ref.invalidate(petugasPemilahanNotificationsProvider);
                   },
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: () => ref.invalidate(petugasResiduNotificationsProvider),
+            onPressed: () => ref.invalidate(petugasPemilahanNotificationsProvider),
           ),
         ],
       ),
       body: Column(
         children: [
-          // ─── Filter Chips Bar ──────────────────────────────────────────────
+          // â”€â”€â”€ Filter Chips Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -90,10 +90,10 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
           ),
           const Divider(height: 1),
 
-          // ─── Body List Notifikasi ──────────────────────────────────────────
+          // â”€â”€â”€ Body List Notifikasi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(petugasResiduNotificationsProvider),
+              onRefresh: () async => ref.invalidate(petugasPemilahanNotificationsProvider),
               child: notifAsync.when(
                 data: (list) {
                   final filteredList = list.where((n) {
@@ -102,7 +102,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                     final titleLower = n.title.toLowerCase();
 
                     if (_selectedFilter == 'Input Timbangan') {
-                      return typeUpper.contains('TIMBANGAN') || typeUpper.contains('RESIDU') || titleLower.contains('timbangan') || titleLower.contains('residu') || titleLower.contains('log');
+                      return typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN') || titleLower.contains('timbangan') || titleLower.contains('pemilahan') || titleLower.contains('log');
                     }
                     if (_selectedFilter == 'Pelanggaran & Anomali') {
                       return typeUpper.contains('VIOLATION') || typeUpper.contains('PELANGGARAN') || titleLower.contains('pelanggaran') || titleLower.contains('anomali');
@@ -150,7 +150,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                   onTap: () async {
                     if (!notif.isRead) {
                       await ref.read(markReadProvider.notifier).markRead(notif.id);
-                      ref.invalidate(petugasResiduNotificationsProvider);
+                      ref.invalidate(petugasPemilahanNotificationsProvider);
                     }
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -233,3 +233,4 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
     );
   }
 }
+

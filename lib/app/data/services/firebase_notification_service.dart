@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_entity.dart';
@@ -17,7 +17,7 @@ class FirebaseNotificationService {
   String _normalizeRole(String role) {
     final r = role.toUpperCase().replaceAll('_', '').replaceAll(' ', '');
     if (r.contains('MAHASISWA') || r.contains('KKN')) return 'MAHASISWA';
-    if (r.contains('PETUGAS') || r.contains('RESIDU')) return 'PETUGAS';
+    if (r.contains('PETUGAS') || r.contains('PEMILAHAN')) return 'PETUGAS';
     if (r.contains('WARGA')) return 'WARGA';
     return r;
   }
@@ -163,10 +163,11 @@ class FirebaseNotificationService {
     final t = type.toUpperCase();
     if (t.contains('POIN')) return 'star';
     if (t.contains('TONG') || t.contains('KRITIS')) return 'warning';
-    if (t.contains('TIMBANGAN') || t.contains('RESIDU')) return 'scale';
+    if (t.contains('TIMBANGAN') || t.contains('PEMILAHAN')) return 'scale';
     if (t.contains('IZIN') || t.contains('DPL')) return 'assignment_turned_in';
     if (t.contains('PRESENSI')) return 'location_on';
     if (t.contains('AKTIVASI') || t.contains('BIN')) return 'qr_code_scanner';
     return 'info';
   }
 }
+
