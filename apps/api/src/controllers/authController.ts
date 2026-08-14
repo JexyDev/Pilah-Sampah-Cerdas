@@ -518,10 +518,24 @@ export class AuthController {
       }
 
       const user = await authService.getCurrentUser(req.user.userId);
+      const fSize = (user as any).jumlahAnggotaKeluarga || (user as any).familySize || 1;
+
+      const formattedUser = {
+        ...user,
+        familySize: fSize,
+        jumlahAnggotaKeluarga: fSize,
+      };
+
       res.status(200).json({
         success: true,
         message: "Authenticated",
-        user,
+        familySize: fSize,
+        jumlahAnggotaKeluarga: fSize,
+        data: {
+          ...formattedUser,
+          user: formattedUser,
+        },
+        user: formattedUser,
       });
     } catch (error: any) {
       if (error.message === "USER_NOT_FOUND") {

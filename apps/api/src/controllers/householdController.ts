@@ -8,6 +8,9 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { householdService } from "../services/householdService.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 // Validation Schema for Registration
 const registerSchema = z.object({
@@ -67,11 +70,23 @@ export class HouseholdController {
   async getMyHouseholds(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { jumlahAnggotaKeluarga: true },
+      });
+      const familySize = user?.jumlahAnggotaKeluarga || 1;
       const households = await householdService.getHouseholdsByUser(userId);
 
       res.status(200).json({
+        success: true,
         message: "Berhasil mengambil data",
+        familySize,
+        jumlahAnggotaKeluarga: familySize,
         data: households,
+        user: {
+          familySize,
+          jumlahAnggotaKeluarga: familySize,
+        },
       });
     } catch (error) {
       console.error("[HouseholdController] getMyHouseholds error:", error);

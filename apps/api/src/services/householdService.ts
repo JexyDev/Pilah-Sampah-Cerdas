@@ -43,7 +43,29 @@ export class HouseholdService {
    * Get households by user.
    */
   async getHouseholdsByUser(userId: string) {
-    return householdRepository.findHouseholdsByUserId(userId);
+    const households = await householdRepository.findHouseholdsByUserId(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { jumlahAnggotaKeluarga: true },
+    });
+    const defaultFamilySize = user?.jumlahAnggotaKeluarga || 1;
+
+    return households.map((h: any) => {
+      const fSize = h.user?.jumlahAnggotaKeluarga ?? defaultFamilySize;
+      return {
+        ...h,
+        familySize: fSize,
+        jumlahAnggotaKeluarga: fSize,
+        user: h.user ? {
+          ...h.user,
+          familySize: fSize,
+          jumlahAnggotaKeluarga: fSize,
+        } : {
+          familySize: fSize,
+          jumlahAnggotaKeluarga: fSize,
+        },
+      };
+    });
   }
 
   /**

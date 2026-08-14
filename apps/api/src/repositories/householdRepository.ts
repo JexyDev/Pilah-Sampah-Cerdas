@@ -39,12 +39,20 @@ export class HouseholdRepository {
   /**
    * Get all households for a user.
    */
-  async findHouseholdsByUserId(userId: string): Promise<Household[]> {
+  async findHouseholdsByUserId(userId: string): Promise<any[]> {
     return prisma.household.findMany({
       where: { userId },
       include: {
         rw: {
           include: { kelurahan: true },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            jumlahAnggotaKeluarga: true,
+          },
         },
       },
     });
