@@ -138,8 +138,17 @@ const AppRoutes: React.FC = () => {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dasbor" element={<Dashboard />} />
         <Route
           path="/monitoring"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MAHASISWA_KKN", "PETUGAS_RESIDU"]}>
+              <Monitoring />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/monitoring-wilayah"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MAHASISWA_KKN", "PETUGAS_RESIDU"]}>
               <Monitoring />
@@ -180,6 +189,23 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/pengangkutan-residu"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "PETUGAS_RESIDU",
+                "PANITIA_TASKFORCE",
+              ]}
+            >
+              <ManajemenPengangkutan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/master-qr"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"]}>
@@ -204,6 +230,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/peringkat" element={<Leaderboard />} />
         <Route
           path="/master-pengguna"
           element={
@@ -446,6 +473,29 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/penyetoran-sampah"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "RT",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DPL",
+                "WARGA",
+              ]}
+            >
+              <SetorSampah />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/setor-sampah"
           element={
             <ProtectedRoute
@@ -487,6 +537,28 @@ const AppRoutes: React.FC = () => {
           element={<Navigate to="/manajemen-tempat-sampah?tab=kategori" replace />}
         />
         <Route
+          path="/rekapitulasi-setoran"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "RT",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DPL",
+              ]}
+            >
+              <RekapSetoran />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/rekap-setoran"
           element={
             <ProtectedRoute
@@ -510,6 +582,14 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/poin-warga" element={<PoinWarga />} />
         <Route
+          path="/monitoring-pemilahan"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <LaporanAnalitik />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/laporan-analitik"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
@@ -517,6 +597,155 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/pengelolaan-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <PemanfaatanSampah />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/manajemen-tempat-sampah"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "RT",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+              ]}
+            >
+              <ManajemenTempatSampah />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/rule-engine"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]}>
+              <ManageConfigs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/provinsi"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterProvinsi />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/kota-kabupaten"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterKabupaten />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/kecamatan"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterKecamatan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/kelurahan"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterKelurahan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/rukun-warga"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DEVELOPER",
+              ]}
+            >
+              <MasterRw />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dataset/hasil-klasifikasi"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]}>
+              <SimulasiModelAI />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/log-aktivitas"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <AktivitasMonitoring />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/informasi" element={<TentangAplikasi />} />
         <Route path="/notifikasi" element={<Notifikasi />} />
         <Route
           path="/pengaturan"
