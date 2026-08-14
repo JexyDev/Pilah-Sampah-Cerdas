@@ -14,17 +14,20 @@ export const dashboardController = {
       let { wilayah, period, startDate, endDate } = req.query;
       const user = req.user;
 
-      if (!wilayah && user) {
-        if (user.role === "LURAH" && user.rwId) {
-          const { PrismaClient } = await import("@prisma/client");
-          const prisma = new PrismaClient();
-          const userArea = await prisma.rw.findUnique({
-            where: { id: user.rwId },
-            include: { kelurahan: true },
-          });
-          if (userArea?.kelurahan) wilayah = userArea.kelurahan.name;
-        } else if (user.role === "CAMAT") {
-          wilayah = "Kecamatan Coblong";
+      if (!wilayah && user && (user.role === "LURAH" || user.role === "CAMAT") && user.rwId) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const userArea = await prisma.rw.findUnique({
+          where: { id: user.rwId },
+          include: { kelurahan: { include: { kecamatan: true } } },
+        });
+        if (user.role === "LURAH" && userArea?.kelurahan) {
+          wilayah = userArea.kelurahan.name;
+        } else if (user.role === "CAMAT" && userArea?.kelurahan?.kecamatan) {
+          // Kecamatan.name is already stored as "Kecamatan <nama>" (e.g. "Kecamatan Coblong"),
+          // which isWilayahFiltered() in dashboardService recognizes as a no-filter sentinel
+          // (see all data within that kecamatan) — do not re-prefix it here.
+          wilayah = userArea.kelurahan.kecamatan.name;
         }
       }
 

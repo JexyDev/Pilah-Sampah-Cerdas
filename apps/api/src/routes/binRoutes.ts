@@ -30,7 +30,7 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/", binController.getAllBins);
+router.get("/", authMiddleware, binController.getAllBins);
 router.get("/next-qr", authMiddleware, binController.getNextQr);
 
 /**

@@ -18,7 +18,7 @@ export interface ScopingFilters {
 
 /**
  * Determine dynamic query filters based on User role and area-scoping.
- * Hierarki: SUPER_USER/ADMIN_DLH/CAMAT = all data; LURAH = per Kelurahan; RW = per RW; RT = per RW juga (scope RW).
+ * Hierarki: SUPER_USER/ADMIN_DLH = all data; CAMAT = per Kecamatan; LURAH = per Kelurahan; RW/RT = per RW.
  */
 export async function getScopingFilters(user: {
   userId: string;
@@ -26,7 +26,7 @@ export async function getScopingFilters(user: {
 }): Promise<ScopingFilters> {
   const dbUser = await prisma.user.findUnique({
     where: { id: user.userId },
-    include: { rw: { include: { kelurahan: true } } },
+    include: { rw: { include: { kelurahan: { include: { kecamatan: true } } } } },
   });
 
   if (!dbUser) return {};
@@ -39,22 +39,33 @@ export async function getScopingFilters(user: {
   };
   const role = normalizeRole(user.role);
 
-  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, CAMAT, PEMIMPIN, PANITIA_TASKFORCE, and DPL see all data
+  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN, PANITIA_TASKFORCE, and DPL see all data
   if (
-    [
-      "DEVELOPER",
-      "SUPER_USER",
-      "ADMIN_DLH",
-      "CAMAT",
-      "PEMIMPIN",
-      "PANITIA_TASKFORCE",
-      "DPL",
-    ].includes(role)
+    ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"].includes(role)
   ) {
     return {};
   }
 
-  // 2. LURAH is scoped by Kelurahan
+  // 2. CAMAT is scoped by Kecamatan
+  if (role === "CAMAT") {
+    const kecamatanId = dbUser.rw?.kelurahan?.kecamatanId;
+    if (!kecamatanId) {
+      return {
+        userFilter: { id: "none" },
+        binFilter: { id: "none" },
+        householdFilter: { id: "none" },
+        wasteLogFilter: { id: "none" },
+      };
+    }
+    return {
+      userFilter: { rw: { kelurahan: { kecamatanId } } },
+      binFilter: { kelurahan: { kecamatanId } },
+      householdFilter: { rw: { kelurahan: { kecamatanId } } },
+      wasteLogFilter: { bin: { kelurahan: { kecamatanId } } },
+    };
+  }
+
+  // 3. LURAH is scoped by Kelurahan
   if (role === "LURAH") {
     const kelurahanId = dbUser.rw?.kelurahanId;
     if (!kelurahanId) {
@@ -73,7 +84,7 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 3. RW & RT scoped by their rwId
+  // 4. RW & RT scoped by their rwId
   if (role === "RW" || role === "RT") {
     const rwId = dbUser.rwId;
     if (!rwId) {
@@ -92,7 +103,7 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 4. MAHASISWA_KKN is scoped by their assigned RW area
+  // 5. MAHASISWA_KKN is scoped by their assigned RW area
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: user.userId },
@@ -107,7 +118,7 @@ export async function getScopingFilters(user: {
     }
   }
 
-  // 4b. PETUGAS_RESIDU can see WARGA users for manual deposits
+  // 5b. PETUGAS_RESIDU can see WARGA users for manual deposits
   if (role === "PETUGAS_RESIDU") {
     return {
       userFilter: { role: { name: "WARGA" } },
@@ -117,7 +128,7 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 5. WARGA sees only their own data
+  // 6. WARGA sees only their own data
   if (role === "WARGA") {
     return {
       userFilter: { id: user.userId },

@@ -57,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   // EYD & KBBI Indonesian Standard Page Breadcrumb Titles
   const getBreadcrumbItems = (pathname: string, search: string = ""): string[] => {
     if (pathname === "/dashboard-kkn") {
-      return ["Dashboard KKN"];
+      return ["Dasbor KKN"];
     }
 
     if (pathname === "/manajemen-ekosistem-kkn") {
@@ -71,15 +71,18 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
     }
 
     switch (pathname) {
+      case "/dasbor":
       case "/dashboard":
       case "/":
-        return ["Dasbor Utama"];
+        return ["Dasbor"];
+      case "/monitoring-wilayah":
       case "/monitoring":
-        return ["Pemantauan Wilayah"];
+        return ["Monitoring Wilayah"];
       case "/monitoring-absen":
         return ["Presensi & Absensi KKN"];
+      case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
-        return ["Pemantauan Aktivitas"];
+        return ["Monitoring Pemilahan"];
       case "/superUser/data-survei-kkn":
       case "/data-survei-kkn":
         return ["Data Survei KKN"];
@@ -89,8 +92,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
         return ["Evaluasi Dampak KKN"];
+      case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
-        return ["Pengangkutan Sampah"];
+        return ["Pengangkutan Residu"];
       case "/master-pengguna":
       case "/master-data-pengguna":
       case "/manajemen-pengguna":
@@ -111,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
             camat: "Camat",
             lurah: "Lurah",
             rw: "Rukun Warga",
-            "petugas-residu": "Petugas Residu",
+            "petugas-residu": "Petugas Pemilah",
             mahasiswa: "Mahasiswa",
             warga: "Warga",
           };
@@ -120,16 +124,28 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         }
         return ["Master Pengguna"];
       }
+      case "/master-data/manajemen-tempat-sampah":
       case "/manajemen-tempat-sampah":
         return ["Master Data", "Manajemen Tempat Sampah"];
+      case "/master-data/rule-engine":
+      case "/master-rule-engine":
+      case "/rule-engine":
+        return ["Master Data", "Rule Engine"];
+      case "/master-data/provinsi":
       case "/master-provinsi":
         return ["Master Data", "Provinsi"];
+      case "/master-data/kota-kabupaten":
+      case "/master-kota-kabupaten":
       case "/master-kabupaten":
         return ["Master Data", "Kota, Kabupaten"];
+      case "/master-data/kecamatan":
+      case "/master-data/kecematan":
       case "/master-kecamatan":
         return ["Master Data", "Kecamatan"];
+      case "/master-data/kelurahan":
       case "/master-kelurahan":
         return ["Master Data", "Kelurahan"];
+      case "/master-data/rukun-warga":
       case "/master-rw":
         return ["Master Data", "Rukun Warga"];
       case "/manajemen-lokasi":
@@ -144,9 +160,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/kkn-portal":
         return ["Portal KKN"];
       case "/residu-portal":
-        return ["Portal Petugas Residu"];
+        return ["Portal Petugas Pemilah"];
+      case "/pengelolaan-sampah":
       case "/pemanfaatan-sampah":
-        return ["Pemanfaatan Sampah"];
+        return ["Pengelolaan Sampah"];
       case "/hasil-pemanfaatan":
         return ["Hasil Pemanfaatan"];
       case "/setor-sampah":
@@ -156,14 +173,21 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Jadwal Kegiatan"];
       case "/input-manual":
         return ["Input Setoran Manual"];
-      case "/kategori-sampah":
-        return ["Kategori Sampah"];
+      case "/penyetoran-sampah":
+      case "/setor-sampah":
+        return ["Penyetoran Sampah"];
+      case "/rekapitulasi-setoran":
       case "/rekap-setoran":
         return ["Rekapitulasi Setoran"];
+      case "/dataset/hasil-klasifikasi":
+      case "/master-dataset-klasifikasi":
+      case "/dataset-klasifikasi":
+        return ["Dataset", "Hasil Klasifikasi"];
       case "/poin-warga":
         return ["Poin Warga"];
+      case "/peringkat":
       case "/leaderboard":
-        return ["Papan Peringkat Warga"];
+        return ["Peringkat Warga"];
       case "/laporan-analitik":
         return ["Laporan & Analitik"];
       case "/notifikasi":
@@ -175,8 +199,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Evaluasi Selisih AI"];
       case "/superUser/configs":
         return ["Konfigurasi Sistem"];
+      case "/log-aktivitas":
       case "/superUser/audit":
-        return ["Jejak Audit"];
+        return ["Log Aktivitas"];
       case "/superUser/qr-master":
         return ["Master Kode QR"];
       case "/rw/approval":
@@ -187,10 +212,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Ide Daur Ulang"];
       case "/panduan":
         return ["Panduan Pemilahan"];
+      case "/informasi":
       case "/tentang":
-        return ["Tentang Aplikasi"];
+        return ["Informasi"];
       default:
-        return ["Dasbor Utama"];
+        return ["Dasbor"];
     }
   };
 
@@ -199,9 +225,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState<boolean>(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (silent = false) => {
     try {
-      setLoadingNotifs(true);
+      if (!silent) setLoadingNotifs(true);
       const roleParam = user?.peran || "WARGA";
       const response = await api.get(`/notifications?role=${roleParam}`);
       if (response.data?.data && Array.isArray(response.data.data)) {
@@ -212,13 +238,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
     } catch (err) {
       console.error("Failed to fetch notifications in Header:", err);
     } finally {
-      setLoadingNotifs(false);
+      if (!silent) setLoadingNotifs(false);
     }
   };
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // 30s auto refresh
+    const interval = setInterval(() => fetchNotifications(true), 10000); // Real-time 10s live sync
     return () => clearInterval(interval);
   }, [user?.peran]);
 
@@ -386,7 +412,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         {/* User Profile Pill Card (1:1 Presisi Simetris Referensi Design) */}
         <div className="relative" ref={profRef}>
           <div
-            onClick={() => setShowProfile(!showProfile)}
+            onClick={() => navigate("/pengaturan")}
             className="bg-gradient-to-r from-white via-emerald-50/20 to-emerald-50/60 border border-slate-200/90 hover:border-emerald-300 rounded-full pl-4 pr-1.5 py-1.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
           >
             <div className="flex flex-col items-center justify-center text-center gap-0.5">

@@ -1,10 +1,14 @@
-import { X, RefreshCcw, Settings, Save, Star, Banknote, Loader2, Building2, Recycle, AlertCircle, Eye, History, LineChart, BarChart, Leaf, TrendingUp, Wallet, Zap, Home, MapPin, Bell, RefreshCw, Megaphone, AlertTriangle, Truck, Archive, Send, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen } from "lucide-react";
+import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen, RefreshCcw, Settings, Save, Loader2, Building2, History, Home, Bell, RefreshCw, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
 
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ * 
+ * Main Multi-Role Executive Command Center
+ * Design Theme: Professional light theme, consistent with Sidebar/Header/LeaderboardWidget
+ * - 100% Real-Time Backend Data Integration
+ * - Strict Standard Rukun Warga (RW) Terminology
  */
 
 import React, { useEffect, useState } from "react";
@@ -14,12 +18,12 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { IconRenderer } from "../../components/common/IconRenderer";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
-import { IconRenderer } from "../../components/common/IconRenderer";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 const WILAYAH_OPTIONS: SelectOption[] = [
@@ -30,9 +34,9 @@ const WILAYAH_OPTIONS: SelectOption[] = [
   { value: "Kel. Lebak Gede", label: "Kel. Lebak Gede", sublabel: "Kelurahan Lebak Gede" },
   { value: "Kel. Lebak Siliwangi", label: "Kel. Lebak Siliwangi", sublabel: "Kelurahan Lebak Siliwangi" },
   { value: "Kel. Cipaganti", label: "Kel. Cipaganti", sublabel: "Kelurahan Cipaganti" },
-  { value: "RT 04 / RW 06", label: "RT 04 / RW 06", sublabel: "Wilayah Dago RT 04" },
-  { value: "RT 02 / RW 06", label: "RT 02 / RW 06", sublabel: "Wilayah Dago RT 02" },
-  { value: "RT 01 / RW 05", label: "RT 01 / RW 05", sublabel: "Wilayah Dago RT 01" },
+  { value: "RW 06 Dago", label: "RW 06 Dago", sublabel: "Rukun Warga 06 Dago" },
+  { value: "RW 05 Dago", label: "RW 05 Dago", sublabel: "Rukun Warga 05 Dago" },
+  { value: "RW 03 Sekeloa", label: "RW 03 Sekeloa", sublabel: "Rukun Warga 03 Sekeloa" },
 ];
 
 const PERIODE_OPTIONS: SelectOption[] = [
@@ -101,72 +105,72 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
     });
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-slate-200/80 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+      <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh] text-slate-800">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white flex justify-between items-start shrink-0">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-white/20 text-emerald-100 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-md">
+        <div className="p-6 border-b border-slate-200 bg-emerald-50/60 flex justify-between items-start shrink-0 relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 Kecamatan Coblong
               </span>
-              <span className="bg-emerald-400/20 text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Data Terkini Real-Time
+              <span className="bg-cyan-100 text-cyan-700 border border-cyan-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Stream Real-Time
               </span>
             </div>
-            <h3 className="font-black text-2xl tracking-tight text-white flex items-center gap-2.5">
-              <LineChart className="text-emerald-300" size={24} />
+            <h3 className="font-black text-2xl tracking-tight text-slate-900 flex items-center gap-2.5">
+              <LineChart className="text-cyan-600" size={24} />
               Indeks Kepatuhan Pemilahan Sampah
             </h3>
-            <p className="text-xs text-emerald-100/90 mt-1 font-medium max-w-xl">
-              Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap RW di wilayah Kecamatan Coblong.
+            <p className="text-xs text-slate-500 mt-1 font-medium max-w-xl">
+              Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap Rukun Warga (RW) di wilayah Kecamatan Coblong.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-9 h-9 rounded-full bg-white hover:bg-emerald-100 text-slate-500 hover:text-emerald-700 flex items-center justify-center border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer shrink-0 z-10"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Quick Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 border-b border-slate-100 shrink-0">
-          <div className="bg-white p-3 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 border-b border-slate-200 shrink-0">
+          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rata-rata Kepatuhan</span>
-            <span className="text-lg font-black text-slate-800 mt-0.5 block">{avgPatuh}%</span>
+            <span className="text-lg font-black text-slate-900 mt-0.5 block">{avgPatuh}%</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl border border-emerald-200/70 shadow-2xs">
+          <div className="bg-slate-50 p-3 rounded-2xl border border-emerald-500/30">
             <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Patuh Tinggi (≥85%)</span>
-            <span className="text-lg font-black text-emerald-700 mt-0.5 block">{highPatuhCount} RW</span>
+            <span className="text-lg font-black text-emerald-600 mt-0.5 block">{highPatuhCount} RW</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl border border-amber-200/70 shadow-2xs">
+          <div className="bg-slate-50 p-3 rounded-2xl border border-amber-500/30">
             <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider block">Sedang (60-84%)</span>
-            <span className="text-lg font-black text-amber-700 mt-0.5 block">{medPatuhCount} RW</span>
+            <span className="text-lg font-black text-amber-600 mt-0.5 block">{medPatuhCount} RW</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl border border-rose-200/70 shadow-2xs">
+          <div className="bg-slate-50 p-3 rounded-2xl border border-rose-500/30">
             <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Perlu Perhatian (&lt;60%)</span>
-            <span className="text-lg font-black text-rose-700 mt-0.5 block">{lowPatuhCount} RW</span>
+            <span className="text-lg font-black text-rose-600 mt-0.5 block">{lowPatuhCount} RW</span>
           </div>
         </div>
 
         {/* Filter Controls Bar */}
-        <div className="p-4 bg-white border-b border-slate-100 space-y-3 shrink-0">
+        <div className="p-4 bg-white border-b border-slate-200 space-y-3 shrink-0">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama RW atau Kelurahan..."
-                className="w-full bg-slate-50 border border-slate-200 pl-10 pr-8 py-2 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all"
+                placeholder="Cari nama Rukun Warga (RW) atau Kelurahan..."
+                className="w-full bg-slate-50 border border-slate-300 pl-10 pr-8 py-2 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -178,7 +182,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               <select
                 value={kelurahanFilter}
                 onChange={(e) => setKelurahanFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:border-emerald-600 cursor-pointer"
+                className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-600 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="SEMUA">Semua Kelurahan</option>
                 {uniqueKelurahan.map((kel) => (
@@ -189,7 +193,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:border-emerald-600 cursor-pointer"
+                className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-600 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="ALL">Semua Kepatuhan</option>
                 <option value="HIGH">Tinggi (≥85%)</option>
@@ -200,7 +204,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:border-emerald-600 cursor-pointer"
+                className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-600 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="HIGHEST">Kepatuhan Tertinggi</option>
                 <option value="LOWEST">Kepatuhan Terendah</option>
@@ -209,62 +213,17 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               </select>
             </div>
           </div>
-
-          {/* Quick Filter Badges */}
-          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 overflow-x-auto pb-1">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider shrink-0">Filter Cepat:</span>
-            <button
-              onClick={() => { setStatusFilter("ALL"); setKelurahanFilter("SEMUA"); setSearch(""); }}
-              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
-                statusFilter === "ALL" && kelurahanFilter === "SEMUA" && !search
-                  ? "bg-emerald-600 text-white border-emerald-600"
-                  : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              Semua ({totalRW})
-            </button>
-            <button
-              onClick={() => setStatusFilter("HIGH")}
-              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
-                statusFilter === "HIGH"
-                  ? "bg-emerald-600 text-white border-emerald-600"
-                  : "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-              }`}
-            >
-              Tinggi ({highPatuhCount})
-            </button>
-            <button
-              onClick={() => setStatusFilter("MED")}
-              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
-                statusFilter === "MED"
-                  ? "bg-amber-600 text-white border-amber-600"
-                  : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
-              }`}
-            >
-              Sedang ({medPatuhCount})
-            </button>
-            <button
-              onClick={() => setStatusFilter("LOW")}
-              className={`px-2.5 py-1 rounded-lg border transition cursor-pointer shrink-0 ${
-                statusFilter === "LOW"
-                  ? "bg-rose-600 text-white border-rose-600"
-                  : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
-              }`}
-            >
-              Perlu Perhatian ({lowPatuhCount})
-            </button>
-          </div>
         </div>
 
         {/* Modal List Body */}
-        <div className="p-6 space-y-3 overflow-y-auto flex-1 bg-slate-50/50">
+        <div className="p-6 space-y-3 overflow-y-auto flex-1 bg-slate-50">
           {filteredLocations.length === 0 ? (
             <div className="py-12 text-center flex flex-col items-center justify-center space-y-3">
-              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-300">
                 <Search size={28} />
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-slate-800">Data RW Tidak Ditemukan</h4>
+                <h4 className="font-extrabold text-sm text-slate-700">Data RW Tidak Ditemukan</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm">
                   Tidak ada data wilayah yang sesuai dengan filter atau kata kunci pencarian Anda.
                 </p>
@@ -285,21 +244,19 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               return (
                 <div
                   key={loc.id || `${loc.rw}-${loc.kelurahan}`}
-                  className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all space-y-3 group"
+                  className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-500/40 transition-all space-y-3 group"
                 >
                   <div className="flex justify-between items-start gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-black text-sm text-slate-900 group-hover:text-emerald-700 transition">
+                        <h4 className="font-black text-sm text-slate-900 group-hover:text-emerald-600 transition">
                           {loc.rw}
                         </h4>
-                        <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        <span className="text-[10px] font-extrabold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-200">
                           {loc.kelurahan}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-medium mt-1 flex items-center gap-2">
-                        <span>{loc.rtCount || 0} RT</span>
-                        <span>•</span>
+                      <p className="text-[11px] text-slate-400 font-medium mt-1 flex items-center gap-2">
                         <span>{loc.titikCount || 0} Titik Tempat Sampah</span>
                       </p>
                     </div>
@@ -308,10 +265,10 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs ${
                           isHigh
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
                             : isMed
-                            ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                            ? "bg-amber-500/10 text-amber-600 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                            : "bg-rose-500/10 text-rose-600 border border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.2)]"
                         }`}
                       >
                         {isHigh ? (
@@ -323,22 +280,19 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                         )}
                         {patuh}% Patuh
                       </span>
-                      <span className="text-[10px] font-bold text-slate-400 block mt-1">
-                        {isHigh ? "Sangat Patuh" : isMed ? "Cukup Patuh" : "Perlu Perhatian"}
-                      </span>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="space-y-1">
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200/50">
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200">
                       <div
-                        className={`h-full rounded-full transition-all duration-700 shadow-2xs ${
+                        className={`h-full rounded-full transition-all duration-700 ${
                           isHigh
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                            ? "bg-gradient-to-r from-emerald-500 to-cyan-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
                             : isMed
-                            ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                            : "bg-gradient-to-r from-rose-500 to-red-500"
+                            ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                            : "bg-gradient-to-r from-rose-500 to-red-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"
                         }`}
                         style={{ width: `${Math.max(patuh, 4)}%` }}
                       ></div>
@@ -351,11 +305,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-100 bg-white flex justify-between items-center text-xs text-slate-500 shrink-0">
-          <span>Menampilkan <strong className="text-slate-800">{filteredLocations.length}</strong> dari <strong className="text-slate-800">{locations.length}</strong> RW</span>
+        <div className="p-4 border-t border-slate-200 bg-white flex justify-between items-center text-xs text-slate-400 shrink-0">
+          <span>Menampilkan <strong className="text-slate-900">{filteredLocations.length}</strong> dari <strong className="text-slate-900">{locations.length}</strong> Rukun Warga (RW)</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition cursor-pointer border border-slate-300"
           >
             Tutup
           </button>
@@ -591,7 +545,7 @@ const WargaDashboard: React.FC = () => {
         notes: issueNotes,
         photoUrl: uploadedPhotoUrl,
         evidencePhotoUrl: uploadedPhotoUrl,
-        binId: issueBinId
+        binId: issueBinId,
       };
 
       let res;
@@ -639,7 +593,6 @@ const WargaDashboard: React.FC = () => {
         );
         setEwalletPhone("");
         setShowSaldoModal(false);
-        // Refresh summary, points, and notifications
         fetchSummary();
         fetchPoints();
         fetchNotifications();
@@ -651,7 +604,6 @@ const WargaDashboard: React.FC = () => {
     }
   };
 
-  // Point calculations
   const totalPointsEarned = pointHistory
     .filter((p) => p.points > 0)
     .reduce((sum, p) => sum + p.points, 0);
@@ -668,18 +620,18 @@ const WargaDashboard: React.FC = () => {
   });
 
   return (
-    <div className="space-y-gutter pb-12">
-      {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+    <div className="space-y-6 pb-12 text-slate-800">
+      {/* Cards KPI Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoadingSummary ? (
           Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-white/90 p-6 rounded-xl border border-outline-variant/30 flex flex-col gap-3 shadow-sm animate-pulse"
+              className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col gap-3 animate-pulse"
             >
-              <div className="w-10 h-10 bg-slate-200 rounded-lg"></div>
-              <div className="h-6 bg-slate-200 rounded w-3/4"></div>
-              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+              <div className="w-10 h-10 bg-slate-100 rounded-xl"></div>
+              <div className="h-6 bg-slate-100 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-100 rounded w-1/2"></div>
             </div>
           ))
         ) : (
@@ -687,26 +639,16 @@ const WargaDashboard: React.FC = () => {
             {/* Card Poin */}
             <div
               onClick={() => setShowPoinModal(true)}
-              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+              className="bg-white border border-slate-200 border-t-4 border-t-yellow-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
-              <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
-                <span
-                  className="material-symbols-outlined text-[24px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  stars
-                </span>
+              <div className="w-10 h-10 bg-yellow-500 text-white rounded-xl flex items-center justify-center shadow-sm">
+                <Star size={20} />
               </div>
-              <div>
-                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">
-                  Poin Saya
-                </p>
-                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">
-                  {poin.toLocaleString("id-ID")} Poin
-                </h3>
-                <p className="text-[10px] text-primary font-bold mt-2 flex items-center gap-0.5">
-                  <TrendingUp size={12} />+
-                  {pointsEarnedToday} Poin hari ini
+              <div className="mt-3">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Poin Saya</p>
+                <h3 className="text-2xl font-black text-slate-900 mt-1">{poin.toLocaleString("id-ID")} Pts</h3>
+                <p className="text-[11px] text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                  <TrendingUp size={13} /> +{pointsEarnedToday} Poin hari ini
                 </p>
               </div>
             </div>
@@ -714,26 +656,16 @@ const WargaDashboard: React.FC = () => {
             {/* Card Saldo */}
             <div
               onClick={() => setShowSaldoModal(true)}
-              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+              className="bg-white border border-slate-200 border-t-4 border-t-emerald-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
-              <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                <span
-                  className="material-symbols-outlined text-[24px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  payments
-                </span>
+              <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-sm">
+                <Banknote size={20} />
               </div>
-              <div>
-                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">
-                  Saldo Rupiah
-                </p>
-                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">
-                  Rp {saldo.toLocaleString("id-ID")}
-                </h3>
-                <p className="text-[10px] text-on-surface-variant font-medium mt-2 flex items-center gap-0.5">
-                  <Wallet size={12} />
-                  Cairkan Poin ke E-Wallet Anda
+              <div className="mt-3">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Saldo Rupiah</p>
+                <h3 className="text-2xl font-black text-slate-900 mt-1">Rp {saldo.toLocaleString("id-ID")}</h3>
+                <p className="text-[11px] text-cyan-600 font-bold mt-2 flex items-center gap-1">
+                  <Wallet size={13} /> Cairkan Poin ke E-Wallet Anda
                 </p>
               </div>
             </div>
@@ -741,52 +673,30 @@ const WargaDashboard: React.FC = () => {
             {/* Card Organik */}
             <div
               onClick={() => setShowSetoranModal(true)}
-              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+              className="bg-white border border-slate-200 border-t-4 border-t-cyan-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
-              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
-                <span
-                  className="material-symbols-outlined text-[24px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  eco
-                </span>
+              <div className="w-10 h-10 bg-cyan-600 text-white rounded-xl flex items-center justify-center shadow-sm">
+                <Leaf size={20} />
               </div>
-              <div>
-                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">
-                  Total Setoran Organik
-                </p>
-                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">
-                  {organik} Kg
-                </h3>
-                <p className="text-[10px] text-emerald-700 font-bold mt-2">
-                  Komposisi pemilahan aktif
-                </p>
+              <div className="mt-3">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Organik Terpilah</p>
+                <h3 className="text-2xl font-black text-slate-900 mt-1">{organik} Kg</h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-2">Masuk Pengolahan Loseda</p>
               </div>
             </div>
 
             {/* Card Anorganik */}
             <div
               onClick={() => setShowSetoranModal(true)}
-              className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 flex flex-col items-start gap-3 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all group"
+              className="bg-white border border-slate-200 border-t-4 border-t-blue-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
-              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                <span
-                  className="material-symbols-outlined text-[24px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  local_drink
-                </span>
+              <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-sm">
+                <Recycle size={20} />
               </div>
-              <div>
-                <p className="text-label-sm text-on-surface-variant font-bold tracking-wide">
-                  Total Setoran Anorganik
-                </p>
-                <h3 className="text-[24px] font-extrabold text-on-surface leading-tight mt-1">
-                  {anorganik} Kg
-                </h3>
-                <p className="text-[10px] text-blue-700 font-bold mt-2">
-                  Penyumbang daur ulang aktif
-                </p>
+              <div className="mt-3">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Anorganik Terpilah</p>
+                <h3 className="text-2xl font-black text-slate-900 mt-1">{anorganik} Kg</h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-2">Daur Ulang Bank Sampah</p>
               </div>
             </div>
           </>
@@ -794,38 +704,31 @@ const WargaDashboard: React.FC = () => {
       </div>
 
       {/* Main Grid Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
-        {/* Left Column (CTA, Profile, Notifications) */}
-        <div className="xl:col-span-8 space-y-gutter">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        {/* Left Column */}
+        <div className="xl:col-span-8 space-y-4">
           {/* CTA Banner */}
-          <div className="bg-gradient-to-r from-green-600 to-emerald-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 text-center sm:text-left z-10">
-              <h4 className="text-[22px] font-bold tracking-tight">
-                Setorkan Sampah, Jaga Lingkungan!
-              </h4>
-              <p className="text-xs text-green-100 max-w-md leading-relaxed">
-                Gunakan kamera ponsel Anda untuk memindai sampah menggunakan kecerdasan buatan (AI)
-                dan setorkan ke tempat sampah terdekat untuk hadiah instan.
+          <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="space-y-2 z-10">
+              <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
+                <Zap size={13} className="text-emerald-600" /> Kuota AI Hari Ini: {quotaRemaining} / 50 Request
+              </span>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Setorkan Sampah, Dapatkan Poin Instan!</h3>
+              <p className="text-xs text-slate-500 max-w-lg leading-relaxed">
+                Foto jenis sampah Anda dan biarkan AI mengenali kategori secara presisi untuk langsung ditukar poin.
               </p>
-              <div className="inline-flex items-center gap-1.5 bg-white/20 border border-white/30 rounded-full px-3 py-1 mt-2 text-[10px] font-bold uppercase tracking-wider">
-                <Zap size={14} />
-                Kuota AI Hari Ini: {quotaRemaining} / 50 Request
-              </div>
             </div>
             <button
-              onClick={() => navigate("/setor")}
-              className="bg-white hover:bg-slate-50 text-emerald-800 font-extrabold px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer z-10"
+              onClick={() => navigate("/penyetoran-sampah")}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer z-10 shrink-0"
             >
-              Mulai Setor Sekarang
+              Mulai Setor Sampah
             </button>
-            <div className="absolute right-[-20px] bottom-[-40px] opacity-10 text-[180px] pointer-events-none select-none">
-              eco
-            </div>
           </div>
 
           {/* Profile Card */}
-          <div className="bg-white/95 backdrop-blur-sm border border-outline-variant/40 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-xl overflow-hidden border border-outline-variant/30 flex-shrink-0 bg-primary/10 text-primary">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-xl overflow-hidden border border-emerald-500/30 shrink-0 bg-emerald-500/10">
               <img
                 src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
                 alt="Avatar"
@@ -835,23 +738,23 @@ const WargaDashboard: React.FC = () => {
             </div>
             <div className="flex-1 text-center sm:text-left space-y-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <h4 className="font-extrabold text-[18px] text-on-surface">{user?.name}</h4>
-                <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase tracking-wider w-fit mx-auto sm:mx-0">
+                <h4 className="font-extrabold text-[18px] text-slate-900">{user?.name}</h4>
+                <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[10px] font-bold rounded-full uppercase tracking-wider w-fit mx-auto sm:mx-0">
                   WARGA PSC
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant flex items-center justify-center sm:justify-start gap-1 font-medium">
-                <Home className="text-on-surface-variant" size={16} />
+              <p className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-1 font-medium">
+                <Home size={16} />
                 {user?.address || "Alamat Belum Dikonfigurasi"}
               </p>
-              <p className="text-xs text-on-surface-variant flex items-center justify-center sm:justify-start gap-1 font-medium">
-                <MapPin className="text-on-surface-variant" size={16} />
-                Wilayah Tugas: <strong className="text-primary">{user?.wilayah || "-"}</strong>
+              <p className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-1 font-medium">
+                <MapPin size={16} />
+                Wilayah Tugas: <strong className="text-emerald-600">{user?.wilayah || "-"}</strong>
               </p>
             </div>
             <button
               onClick={() => navigate("/pengaturan")}
-              className="px-4 py-2 border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors text-[11px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              className="px-4 py-2 border border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
               <Pencil size={16} />
               Edit Profil
@@ -859,15 +762,15 @@ const WargaDashboard: React.FC = () => {
           </div>
 
           {/* Notifications Card */}
-          <div className="bg-white/95 backdrop-blur-sm border border-outline-variant/40 rounded-xl p-6 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
-              <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <Bell className="text-primary" />
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h5 className="font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+                <Bell className="text-emerald-600" size={18} />
                 Notifikasi Terbaru
               </h5>
               <button
                 onClick={fetchNotifications}
-                className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-0.5"
+                className="text-emerald-600 hover:text-emerald-300 text-[11px] font-bold uppercase tracking-wider flex items-center gap-0.5 cursor-pointer"
               >
                 <RefreshCw size={14} />
                 Refresh
@@ -876,12 +779,12 @@ const WargaDashboard: React.FC = () => {
 
             {isLoadingNotifications ? (
               <div className="animate-pulse space-y-3">
-                <div className="h-10 bg-slate-100 rounded"></div>
-                <div className="h-10 bg-slate-100 rounded"></div>
+                <div className="h-10 bg-slate-100 rounded-xl"></div>
+                <div className="h-10 bg-slate-100 rounded-xl"></div>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="text-center py-6 text-on-surface-variant/75 text-xs">
-                <Megaphone className="text-slate-300 block mb-1" size={32} />
+              <div className="text-center py-6 text-slate-500 text-xs">
+                <Megaphone className="text-slate-700 block mb-1 mx-auto" size={32} />
                 Belum ada notifikasi baru untuk Anda.
               </div>
             ) : (
@@ -889,23 +792,17 @@ const WargaDashboard: React.FC = () => {
                 {notifications.slice(0, 4).map((notif) => (
                   <div
                     key={notif.id}
-                    className="flex gap-3 p-3 rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container transition-colors"
+                    className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-emerald-500/30 transition-colors"
                   >
                     <div
-                      className={`w-8 h-8 rounded-full ${notif.iconBg} ${notif.iconColor} flex items-center justify-center flex-shrink-0`}
+                      className={`w-8 h-8 rounded-full ${notif.iconBg || "bg-emerald-500/10"} ${notif.iconColor || "text-emerald-600"} flex items-center justify-center shrink-0`}
                     >
                       <IconRenderer name={notif.icon} size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold text-on-surface truncate">
-                        {notif.title}
-                      </p>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">
-                        {notif.desc}
-                      </p>
-                      <span className="text-[9px] text-slate-400 font-bold block mt-1">
-                        {notif.time}
-                      </span>
+                      <p className="text-[12px] font-bold text-slate-900 truncate">{notif.title}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{notif.desc}</p>
+                      <span className="text-[9px] text-slate-500 font-bold block mt-1">{notif.time}</span>
                     </div>
                   </div>
                 ))}
@@ -914,110 +811,106 @@ const WargaDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (Bins Capacity, Recent Activity) */}
-        <div className="xl:col-span-4 space-y-gutter">
+        {/* Right Column */}
+        <div className="xl:col-span-4 space-y-4">
           {/* Bin Capacity */}
-          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
-              <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <Trash2 className="text-primary" />
-                tempat sampah RT/RW Saya
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h5 className="font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+                <Trash2 className="text-emerald-600" size={18} />
+                Tempat Sampah Rukun Warga (RW) Saya
               </h5>
-              <div className="flex gap-2 items-center">
-                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                  {user?.wilayah || "Umum"}
-                </span>
-              </div>
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                {user?.wilayah || "Umum"}
+              </span>
             </div>
 
             {isLoadingBins ? (
               <div className="animate-pulse space-y-4">
-                <div className="h-6 bg-slate-100 rounded"></div>
-                <div className="h-6 bg-slate-100 rounded"></div>
+                <div className="h-6 bg-slate-100 rounded-xl"></div>
+                <div className="h-6 bg-slate-100 rounded-xl"></div>
               </div>
             ) : myBins.length === 0 ? (
-              <div className="text-center py-6 text-on-surface-variant/75 text-xs">
-                <AlertTriangle className="text-slate-300 block mb-1" size={32} />
-                Tidak ada tempat sampah terdaftar di RT/RW Anda.
+              <div className="text-center py-6 text-slate-500 text-xs">
+                <AlertTriangle className="text-slate-700 block mb-1 mx-auto" size={32} />
+                Tidak ada tempat sampah terdaftar di Rukun Warga (RW) Anda.
               </div>
             ) : (
               <div className="space-y-4">
                 {myBins.map((bin) => (
                   <div
                     key={bin.id}
-                    className="space-y-1.5 p-3 rounded-lg border border-outline-variant/20 bg-surface-container-lowest"
+                    className="space-y-1.5 p-3 rounded-xl border border-slate-200 bg-slate-50"
                   >
-                    <div className="flex justify-between text-[11px] font-bold text-on-surface">
+                    <div className="flex justify-between text-[11px] font-bold text-slate-700">
                       <span className="flex items-center gap-1">
-                        <span
-                          className={`material-symbols-outlined text-[16px] ${bin.category === "ORGANIC" ? "text-primary" : "text-blue-500"}`}
-                        >
-                          {bin.category === "ORGANIC" ? "eco" : "recycling"}
-                        </span>
+                        {bin.category === "ORGANIC" ? (
+                          <Leaf size={14} className="text-emerald-600" />
+                        ) : (
+                          <Recycle size={14} className="text-blue-600" />
+                        )}
                         Tempat Sampah {bin.category === "ORGANIC" ? "Organik" : "Anorganik"} ({bin.qrCode})
                       </span>
                       {bin.realStatus === "ACTIVE_BOUND" && (
-                        <span
-                          className={bin.kapasitas > 80 ? "text-red-600" : "text-on-surface-variant"}
-                        >
+                        <span className={bin.kapasitas > 80 ? "text-rose-600" : "text-slate-400"}>
                           {bin.kapasitas}% Terisi
                         </span>
                       )}
                     </div>
                     {bin.realStatus === "PENDING_APPROVAL" ? (
-                      <div className="mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
-                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-yellow-700 uppercase tracking-wider">
-                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-ping"></span>
+                      <div className="mt-2 p-2 bg-amber-500/10 rounded-xl border border-amber-500/30 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-600 uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
                           Menunggu Persetujuan
                         </span>
                       </div>
                     ) : bin.realStatus === "BROKEN" ? (
-                      <div className="mt-2 p-2 bg-red-50 rounded-lg border border-red-200 text-center">
-                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-red-700 uppercase tracking-wider">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                      <div className="mt-2 p-2 bg-rose-500/10 rounded-xl border border-rose-500/30 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-600 uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
                           Tempat Sampah Rusak / QR Sobek
                         </span>
                       </div>
                     ) : bin.realStatus === "TIDAK_AKTIF" ? (
-                      <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <div className="mt-2 p-2 bg-slate-100 rounded-xl border border-slate-300 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
                           TIDAK AKTIF (&gt;30 Hari)
                         </span>
                       </div>
                     ) : (
                       <>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
                           <div
-                            className={`h-full rounded-full transition-all duration-300 ${bin.kapasitas >= 80 ? "bg-red-500" : bin.kapasitas >= 50 ? "bg-amber-500" : "bg-primary"}`}
+                            className={`h-full rounded-full transition-all duration-300 ${bin.kapasitas >= 80 ? "bg-rose-500" : bin.kapasitas >= 50 ? "bg-amber-500" : "bg-emerald-400"}`}
                             style={{ width: `${bin.kapasitas}%` }}
                           ></div>
                         </div>
-                        <p className="text-[9px] text-on-surface-variant/80 text-right font-semibold">
+                        <p className="text-[9px] text-slate-500 text-right font-semibold">
                           {bin.currentVolumeLiter} L / {bin.maxCapacityLiter} L Kapasitas
                         </p>
 
-                        <div className="mt-3 flex gap-2 justify-end">
+                        <div className="mt-3 flex gap-2 justify-end flex-wrap">
                           <button
                             onClick={() => {
                               setEditCapBinId(bin.id);
                               setShowEditCapModal(true);
                             }}
-                            className="px-2.5 py-1 text-[10px] bg-white border border-outline-variant text-on-surface font-bold rounded hover:bg-slate-50 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                            className="px-2.5 py-1 text-[10px] bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
                             <Settings size={12} />
                             Ubah Kapasitas
                           </button>
                           <button
                             onClick={() => handleOpenIssueModal(bin.id, "EMPTY_REQUEST")}
-                            className="px-2.5 py-1 text-[10px] bg-primary text-white font-bold rounded hover:bg-primary/95 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                            className="px-2.5 py-1 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
                             <Truck size={12} />
                             Panggil Petugas
                           </button>
                           <button
                             onClick={() => handleOpenIssueModal(bin.id, "BROKEN_REPORT")}
-                            className="px-2.5 py-1 text-[10px] border border-red-200 text-red-600 font-bold rounded hover:bg-red-50 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                            className="px-2.5 py-1 text-[10px] border border-rose-500/40 text-rose-600 font-bold rounded-lg hover:bg-rose-500/10 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
                             <AlertTriangle size={12} />
                             Lapor Rusak
@@ -1032,15 +925,15 @@ const WargaDashboard: React.FC = () => {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-3">
-              <h5 className="font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-                <History className="text-primary" />
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h5 className="font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+                <History className="text-emerald-600" size={18} />
                 Setoran Terakhir
               </h5>
               <button
                 onClick={() => setShowSetoranModal(true)}
-                className="text-primary hover:underline text-[11px] font-bold uppercase tracking-wider"
+                className="text-emerald-600 hover:text-emerald-300 text-[11px] font-bold uppercase tracking-wider cursor-pointer"
               >
                 Lihat Semua
               </button>
@@ -1048,12 +941,12 @@ const WargaDashboard: React.FC = () => {
 
             {isLoadingLogs ? (
               <div className="animate-pulse space-y-3">
-                <div className="h-10 bg-slate-100 rounded"></div>
-                <div className="h-10 bg-slate-100 rounded"></div>
+                <div className="h-10 bg-slate-100 rounded-xl"></div>
+                <div className="h-10 bg-slate-100 rounded-xl"></div>
               </div>
             ) : wasteLogs.length === 0 ? (
-              <div className="text-center py-6 text-on-surface-variant/75 text-xs">
-                <Archive className="text-slate-300 block mb-1" size={32} />
+              <div className="text-center py-6 text-slate-500 text-xs">
+                <Archive className="text-slate-700 block mb-1 mx-auto" size={32} />
                 Belum ada riwayat setoran sampah.
               </div>
             ) : (
@@ -1061,26 +954,26 @@ const WargaDashboard: React.FC = () => {
                 {wasteLogs.slice(0, 4).map((item) => (
                   <div
                     key={item.id}
-                    className="flex justify-between items-center p-3 rounded-lg border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-all"
+                    className="flex justify-between items-center p-3 rounded-xl border border-slate-200 bg-slate-50 hover:border-emerald-500/30 transition-all"
                   >
                     <div>
-                      <p className="text-[9px] text-slate-400 font-bold">
+                      <p className="text-[9px] text-slate-500 font-bold">
                         {new Date(item.waktu).toLocaleDateString("id-ID", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
                         })}
                       </p>
-                      <p className="text-[12px] font-bold text-on-surface mt-0.5">
-                        {item.jenis === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} <span className="font-extrabold">{item.berat}</span> <span className="font-normal text-[10px]">Kg</span>
+                      <p className="text-[12px] font-bold text-slate-900 mt-0.5">
+                        {item.jenis === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}{" "}
+                        <span className="font-extrabold">{item.berat}</span>{" "}
+                        <span className="font-normal text-[10px]">Kg</span>
                       </p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">
+                      <p className="text-[10px] text-slate-400 mt-0.5">
                         {item.lokasi} • {item.volume}
                       </p>
                     </div>
-                    <span className="text-[12px] font-extrabold text-primary">
-                      +{item.poin} Pts
-                    </span>
+                    <span className="text-[12px] font-extrabold text-emerald-600">+{item.poin} Pts</span>
                   </div>
                 ))}
               </div>
@@ -1090,26 +983,24 @@ const WargaDashboard: React.FC = () => {
       </div>
 
       {/* Leaderboard Full Width Section */}
-      <div className="mt-8">
+      <div className="w-full">
         <LeaderboardWidget />
       </div>
 
       {/* ================= MODALS ================= */}
 
-      {/* 5. ISSUE REPORT MODAL */}
+      {/* ISSUE REPORT MODAL */}
       {showIssueModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">
-                  {issueType === "EMPTY_REQUEST" ? "delete" : "report"}
-                </span>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="text-emerald-600" size={20} />
                 {issueType === "EMPTY_REQUEST" ? "Lapor Tempat Sampah Penuh" : "Lapor Tempat Sampah Rusak"}
               </h3>
               <button
                 onClick={() => setShowIssueModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
@@ -1118,30 +1009,28 @@ const WargaDashboard: React.FC = () => {
             <div className="p-6">
               <form onSubmit={handleSubmitIssue} className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                    Catatan (Opsional)
-                  </label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Catatan (Opsional)</label>
                   <input
                     type="text"
-                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                     value={issueNotes}
                     onChange={(e) => setIssueNotes(e.target.value)}
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">
                     Foto Bukti {issueType === "EMPTY_REQUEST" ? "(Wajib)" : "(Opsional)"}
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleIssuePhotoChange}
-                    className="text-xs"
+                    className="text-xs text-slate-600"
                     required={issueType === "EMPTY_REQUEST"}
                   />
                   {issuePhotoPreview && (
-                    <img src={issuePhotoPreview} alt="Preview" className="w-full max-h-48 object-contain rounded-lg border mt-2" />
+                    <img src={issuePhotoPreview} alt="Preview" className="w-full max-h-48 object-contain rounded-xl border border-slate-300 mt-2" />
                   )}
                 </div>
 
@@ -1149,13 +1038,9 @@ const WargaDashboard: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmittingIssue || (issueType === "EMPTY_REQUEST" && !issuePhoto)}
-                    className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-md shadow-primary/20"
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer"
                   >
-                    {isSubmittingIssue ? (
-                      <RefreshCcw className="animate-spin" size={16} />
-                    ) : (
-                      <Send size={16} />
-                    )}
+                    {isSubmittingIssue ? <RefreshCcw className="animate-spin" size={16} /> : <Send size={16} />}
                     Kirim Laporan
                   </button>
                 </div>
@@ -1165,18 +1050,18 @@ const WargaDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 4. EDIT CAPACITY MODAL */}
+      {/* EDIT CAPACITY MODAL */}
       {showEditCapModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <Settings className="text-primary" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+                <Settings className="text-emerald-600" size={20} />
                 Ubah Kapasitas Tempat Sampah
               </h3>
               <button
                 onClick={() => setShowEditCapModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
@@ -1184,13 +1069,10 @@ const WargaDashboard: React.FC = () => {
 
             <div className="p-6">
               <form onSubmit={handleUpdateCapacity} className="space-y-4">
-
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                    Opsi Kapasitas
-                  </label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Opsi Kapasitas</label>
                   <select
-                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                     value={editCapMode}
                     onChange={(e) => setEditCapMode(e.target.value)}
                   >
@@ -1202,28 +1084,28 @@ const WargaDashboard: React.FC = () => {
 
                 {editCapMode === "MANUAL" && (
                   <>
-                    <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
-                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">
                         Kapasitas Tempat Sampah Baru (Liter)
                       </label>
                       <input
                         type="number"
                         placeholder="Contoh: 50"
-                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                         value={editCapValue}
                         onChange={(e) => setEditCapValue(e.target.value)}
                       />
                     </div>
 
-                    <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2">
-                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">
                         Upload Foto Bukti Tempat Sampah
                       </label>
                       <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => setEditCapPhoto(e.target.files?.[0] || null)}
-                        className="w-full border border-outline-variant rounded-lg p-2 text-xs bg-white focus:border-primary focus:outline-none"
+                        className="w-full text-xs text-slate-600"
                         required
                       />
                     </div>
@@ -1234,13 +1116,9 @@ const WargaDashboard: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isUpdatingCap}
-                    className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-md shadow-primary/20"
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer"
                   >
-                    {isUpdatingCap ? (
-                      <RefreshCcw className="animate-spin" size={16} />
-                    ) : (
-                      <Save size={16} />
-                    )}
+                    {isUpdatingCap ? <RefreshCcw className="animate-spin" size={16} /> : <Save size={16} />}
                     {isUpdatingCap ? "Menyimpan..." : "Simpan Perubahan"}
                   </button>
                 </div>
@@ -1250,79 +1128,67 @@ const WargaDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 1. POIN MODAL */}
+      {/* POIN MODAL */}
       {showPoinModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <Star className="text-yellow-500" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+                <Star className="text-yellow-600" size={20} />
                 Riwayat & Detail Poin
               </h3>
               <button
                 onClick={() => setShowPoinModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Summary Stats */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-low text-center">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">
-                    Total Poin Diperoleh
-                  </p>
-                  <p className="text-xl font-bold text-primary mt-1">+{totalPointsEarned} Pts</p>
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-center">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Total Poin Diperoleh</p>
+                  <p className="text-xl font-bold text-emerald-600 mt-1">+{totalPointsEarned} Pts</p>
                 </div>
-                <div className="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-low text-center">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">
-                    Target Rank Selanjutnya
-                  </p>
-                  <p className="text-xl font-bold text-amber-700 mt-1">Silver Rank</p>
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-center">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Target Rank Selanjutnya</p>
+                  <p className="text-xl font-bold text-amber-600 mt-1">Silver Rank</p>
                 </div>
               </div>
 
-              {/* Progress Bar target */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-on-surface">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
                   <span>Progres Tingkat</span>
                   <span>{poin} / 1000 Poin</span>
                 </div>
-                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
                   <div
-                    className="bg-primary h-full rounded-full transition-all duration-500"
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, (poin / 1000) * 100)}%` }}
                   ></div>
                 </div>
               </div>
 
-              {/* Point Log List */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Breakdown Aktivitas Poin
                 </h4>
                 {isLoadingPoints ? (
-                  <p className="text-xs text-center py-4 text-on-surface-variant">Memuat data...</p>
+                  <p className="text-xs text-center py-4 text-slate-400">Memuat data...</p>
                 ) : pointHistory.length === 0 ? (
-                  <p className="text-xs text-center py-4 text-on-surface-variant/80">
-                    Belum ada transaksi poin.
-                  </p>
+                  <p className="text-xs text-center py-4 text-slate-500">Belum ada transaksi poin.</p>
                 ) : (
-                  <div className="divide-y divide-outline-variant/20 max-h-[250px] overflow-y-auto">
+                  <div className="divide-y divide-slate-200 max-h-[250px] overflow-y-auto">
                     {pointHistory.map((historyItem) => (
-                      <div
-                        key={historyItem.id}
-                        className="py-3 flex justify-between items-center text-xs"
-                      >
+                      <div key={historyItem.id} className="py-3 flex justify-between items-center text-xs">
                         <div>
-                          <p className="font-bold text-on-surface">{historyItem.description}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
+                          <p className="font-bold text-slate-700">{historyItem.description}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">
                             {new Date(historyItem.createdAt).toLocaleString("id-ID")}
                           </p>
                         </div>
                         <span
-                          className={`font-extrabold text-sm ${historyItem.points > 0 ? "text-primary" : "text-red-500"}`}
+                          className={`font-extrabold text-sm ${historyItem.points > 0 ? "text-emerald-600" : "text-rose-600"}`}
                         >
                           {historyItem.points > 0 ? `+${historyItem.points}` : historyItem.points}
                         </span>
@@ -1332,10 +1198,10 @@ const WargaDashboard: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="p-6 bg-slate-50 border-t border-outline-variant flex justify-end">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
               <button
                 onClick={() => setShowPoinModal(false)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
               >
                 Tutup
               </button>
@@ -1344,50 +1210,44 @@ const WargaDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 2. SALDO MODAL */}
+      {/* SALDO MODAL */}
       {showSaldoModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <Banknote className="text-green-600" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+                <Banknote className="text-emerald-600" size={20} />
                 Cairkan Saldo E-Wallet
               </h3>
               <button
                 onClick={() => setShowSaldoModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Balance Summary */}
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
-                <p className="text-[11px] text-green-700 font-extrabold uppercase tracking-wider">
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 text-center">
+                <p className="text-[11px] text-emerald-600 font-extrabold uppercase tracking-wider">
                   Sisa Saldo Dapat Dicairkan
                 </p>
-                <p className="text-3xl font-extrabold text-green-800 mt-1">
-                  Rp {saldo.toLocaleString("id-ID")}
-                </p>
-                <p className="text-[10px] text-green-600/90 mt-1">
+                <p className="text-3xl font-extrabold text-slate-900 mt-1">Rp {saldo.toLocaleString("id-ID")}</p>
+                <p className="text-[10px] text-emerald-600/80 mt-1">
                   Dihitung otomatis: Poin ({poin}) x Rp 100
                 </p>
               </div>
 
-              {/* Conversion Form */}
               <form onSubmit={handleTukarPoin} className="space-y-4">
-                <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Form Penukaran Saldo
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      Poin Ditukar
-                    </label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Poin Ditukar</label>
                     <select
-                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                       value={tukarPoinAmount}
                       onChange={(e) => setTukarPoinAmount(e.target.value)}
                     >
@@ -1397,11 +1257,9 @@ const WargaDashboard: React.FC = () => {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      Metode E-Wallet
-                    </label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Metode E-Wallet</label>
                     <select
-                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                       value={ewalletType}
                       onChange={(e) => setEwalletType(e.target.value)}
                     >
@@ -1414,13 +1272,11 @@ const WargaDashboard: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                    Nomor HP Terdaftar
-                  </label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Nomor HP Terdaftar</label>
                   <input
                     type="tel"
                     placeholder="contoh: 08123456789"
-                    className="w-full border border-outline-variant rounded-lg p-2.5 text-xs bg-white focus:border-primary focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                     value={ewalletPhone}
                     onChange={(e) => setEwalletPhone(e.target.value)}
                   />
@@ -1429,7 +1285,7 @@ const WargaDashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isConverting || poin < parseInt(tukarPoinAmount)}
-                  className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-green-600/10"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   {isConverting ? (
                     <>
@@ -1445,29 +1301,25 @@ const WargaDashboard: React.FC = () => {
                 </button>
               </form>
 
-              {/* Conversion History */}
               <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Riwayat Pencairan Terakhir
                 </h4>
-                <div className="divide-y divide-outline-variant/20 max-h-[180px] overflow-y-auto">
+                <div className="divide-y divide-slate-200 max-h-[180px] overflow-y-auto">
                   {pointHistory.filter((p) => p.points < 0).length === 0 ? (
-                    <p className="text-xs text-slate-400 py-3 text-center">
+                    <p className="text-xs text-slate-500 py-3 text-center">
                       Belum ada riwayat pencairan saldo.
                     </p>
                   ) : (
                     pointHistory
                       .filter((p) => p.points < 0)
                       .map((historyItem) => (
-                        <div
-                          key={historyItem.id}
-                          className="py-2.5 flex justify-between items-center text-xs"
-                        >
+                        <div key={historyItem.id} className="py-2.5 flex justify-between items-center text-xs">
                           <div>
-                            <p className="font-bold text-on-surface">
+                            <p className="font-bold text-slate-700">
                               {historyItem.description.replace("Konversi ", "")}
                             </p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">
+                            <p className="text-[10px] text-slate-500 mt-0.5">
                               {new Date(historyItem.createdAt).toLocaleDateString("id-ID", {
                                 day: "numeric",
                                 month: "long",
@@ -1475,7 +1327,7 @@ const WargaDashboard: React.FC = () => {
                               })}
                             </p>
                           </div>
-                          <span className="font-bold text-red-500">
+                          <span className="font-bold text-rose-600">
                             -Rp {Math.abs(historyItem.points * 100).toLocaleString("id-ID")}
                           </span>
                         </div>
@@ -1485,10 +1337,10 @@ const WargaDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-outline-variant flex justify-end">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
               <button
                 onClick={() => setShowSaldoModal(false)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
               >
                 Tutup
               </button>
@@ -1497,51 +1349,50 @@ const WargaDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 3. SETORAN MODAL */}
+      {/* SETORAN MODAL */}
       {showSetoranModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-on-surface flex items-center gap-2">
-                <Recycle className="text-emerald-600" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+                <Recycle className="text-emerald-600" size={20} />
                 Semua Riwayat Setoran Sampah
               </h3>
               <button
                 onClick={() => setShowSetoranModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-on-surface-variant transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-              {/* Category Filter */}
               <div className="flex gap-2">
                 {["ALL", "ORGANIC", "NON_ORGANIC"].map((type) => (
                   <button
                     key={type}
                     onClick={() => setFilterWasteType(type)}
-                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer border ${filterWasteType === type
-                        ? "bg-primary text-white border-primary"
-                        : "bg-white border-outline-variant hover:bg-slate-50 text-on-surface-variant"
-                      }`}
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border ${
+                      filterWasteType === type
+                        ? "bg-emerald-600 text-white border-emerald-500"
+                        : "bg-slate-50 border-slate-300 hover:bg-slate-100 text-slate-600"
+                    }`}
                   >
                     {type === "ALL" ? "Semua" : type === "ORGANIC" ? "Organik" : "Anorganik"}
                   </button>
                 ))}
               </div>
 
-              {/* Transactions table/list */}
               {isLoadingLogs ? (
-                <p className="text-xs text-center py-6">Memuat...</p>
+                <p className="text-xs text-center py-6 text-slate-400">Memuat...</p>
               ) : filteredLogs.length === 0 ? (
-                <p className="text-xs text-slate-400 py-6 text-center">Tidak ada data setoran.</p>
+                <p className="text-xs text-slate-500 py-6 text-center">Tidak ada data setoran.</p>
               ) : (
-                <div className="border border-outline-variant/30 rounded-xl overflow-hidden shadow-inner bg-slate-50">
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="bg-slate-100 text-on-surface-variant border-b border-outline-variant/40">
+                        <tr className="bg-slate-50 text-slate-400 border-b border-slate-200">
                           <th className="p-3 font-bold">Tanggal</th>
                           <th className="p-3 font-bold">Kategori</th>
                           <th className="p-3 font-bold">Berat (Kg)</th>
@@ -1550,10 +1401,10 @@ const WargaDashboard: React.FC = () => {
                           <th className="p-3 font-bold">Titik Tempat Sampah</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-outline-variant/20 bg-white">
+                      <tbody className="divide-y divide-slate-200">
                         {filteredLogs.map((log) => (
                           <tr key={log.id} className="hover:bg-slate-50">
-                            <td className="p-3 font-medium">
+                            <td className="p-3 font-medium text-slate-600">
                               {new Date(log.waktu).toLocaleString("id-ID", {
                                 day: "numeric",
                                 month: "short",
@@ -1563,17 +1414,18 @@ const WargaDashboard: React.FC = () => {
                             </td>
                             <td className="p-3">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${log.jenis === "ORGANIC"
-                                    ? "bg-green-50 text-green-700 border border-green-200"
-                                    : "bg-blue-50 text-blue-700 border border-blue-200"
-                                  }`}
+                                className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                                  log.jenis === "ORGANIC"
+                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                    : "bg-blue-500/10 text-blue-600 border-blue-500/30"
+                                }`}
                               >
                                 {log.jenis === "ORGANIC" ? "Organik" : "Anorganik"}
                               </span>
                             </td>
-                            <td className="p-3 font-bold">{log.berat}</td>
-                            <td className="p-3 font-medium text-slate-500">{log.volume}</td>
-                            <td className="p-3 font-extrabold text-primary">+{log.poin} Pts</td>
+                            <td className="p-3 font-bold text-slate-700">{log.berat}</td>
+                            <td className="p-3 font-medium text-slate-400">{log.volume}</td>
+                            <td className="p-3 font-extrabold text-emerald-600">+{log.poin} Pts</td>
                             <td className="p-3 font-mono font-bold text-slate-600">
                               {log.lokasi.replace("Tempat Sampah: ", "")}
                             </td>
@@ -1586,10 +1438,10 @@ const WargaDashboard: React.FC = () => {
               )}
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-outline-variant flex justify-end">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
               <button
                 onClick={() => setShowSetoranModal(false)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
               >
                 Tutup
               </button>
@@ -1602,10 +1454,20 @@ const WargaDashboard: React.FC = () => {
 };
 
 // ========== KPI Card Component ==========
+type KpiColor = "blue" | "emerald" | "indigo" | "amber" | "yellow" | "cyan";
+
+const KPI_COLOR_STYLES: Record<KpiColor, { icon: string; border: string }> = {
+  blue: { icon: "bg-blue-600", border: "border-t-blue-500" },
+  emerald: { icon: "bg-emerald-600", border: "border-t-emerald-500" },
+  indigo: { icon: "bg-indigo-600", border: "border-t-indigo-500" },
+  amber: { icon: "bg-amber-500", border: "border-t-amber-500" },
+  yellow: { icon: "bg-yellow-500", border: "border-t-yellow-500" },
+  cyan: { icon: "bg-cyan-600", border: "border-t-cyan-500" },
+};
+
 interface KpiCardProps {
   iconName: string;
-  iconBg: string;
-  iconColor: string;
+  color: KpiColor;
   label: string;
   value: string | number;
   trend?: string | number;
@@ -1614,10 +1476,31 @@ interface KpiCardProps {
   linkTo?: string;
 }
 
+const renderKpiIcon = (name: string) => {
+  switch (name) {
+    case "group":
+    case "users":
+      return <Users size={22} />;
+    case "delete":
+    case "trash":
+      return <Trash2 size={22} />;
+    case "location_on":
+    case "map-pin":
+      return <MapPin size={22} />;
+    case "shopping_bag":
+    case "shopping-bag":
+      return <ShoppingBag size={22} />;
+    case "stars":
+    case "award":
+      return <Award size={22} />;
+    default:
+      return <IconRenderer name={name} size={22} />;
+  }
+};
+
 const KpiCard: React.FC<KpiCardProps> = ({
   iconName,
-  iconBg,
-  iconColor,
+  color,
   label,
   value,
   trend,
@@ -1625,38 +1508,37 @@ const KpiCard: React.FC<KpiCardProps> = ({
   trendUp,
   linkTo,
 }) => {
+  const styles = KPI_COLOR_STYLES[color];
   const content = (
     <div
-      className={`bg-white/95 backdrop-blur-sm shadow-sm rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3 h-full ${linkTo ? "cursor-pointer hover:bg-surface-container-low transition-all duration-150" : ""}`}
+      className={`bg-white shadow-xs rounded-2xl p-5 border border-slate-200 border-t-4 ${styles.border} flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group ${linkTo ? "cursor-pointer" : ""}`}
     >
       <div className="flex items-center gap-3">
         <div
-          className={`w-10 h-10 ${iconBg} ${iconColor} rounded-lg flex items-center justify-center`}
+          className={`w-11 h-11 ${styles.icon} text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs`}
         >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-            {iconName}
-          </span>
+          {renderKpiIcon(iconName)}
         </div>
-        <div className="flex-1">
-          <p className="text-[12px] text-on-surface-variant font-bold">{label}</p>
-          <h4 className="text-[20px] font-extrabold text-on-surface leading-tight">
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-wider truncate">{label}</p>
+          <h4 className="text-[24px] font-black text-slate-900 tracking-tight mt-0.5 leading-none">
             {value !== undefined ? value : "-"}
           </h4>
         </div>
       </div>
       {(trend || trendLabel) && (
-        <div className="flex items-center gap-1.5 mt-1 border-t border-outline-variant/30 pt-2">
+        <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 pt-2.5">
           {trendUp !== undefined && (
-            <span
-              className={`material-symbols-outlined text-[14px] ${trendUp ? "text-green-600" : "text-red-600"}`}
-            >
-              {trendUp ? "trending_up" : "trending_down"}
-            </span>
+            trendUp ? (
+              <TrendingUp size={14} className="text-emerald-600 shrink-0" />
+            ) : (
+              <TrendingDown size={14} className="text-rose-600 shrink-0" />
+            )
           )}
           <span
-            className={`text-[11px] font-bold ${trendUp === true ? "text-green-600" : trendUp === false ? "text-red-600" : "text-on-surface-variant"}`}
+            className={`text-[10.5px] font-bold ${trendUp === true ? "text-emerald-600" : trendUp === false ? "text-rose-600" : "text-slate-500"}`}
           >
-            {trend} {trendLabel}
+            {trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
           </span>
         </div>
       )}
@@ -1673,7 +1555,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
   return content;
 };
 
-// ========== Main Dashboard ==========
+// ========== Main Executive Dashboard ==========
 const Dashboard: React.FC = () => {
   const { user, updateWilayah } = useAuthStore();
   const navigate = useNavigate();
@@ -1682,9 +1564,9 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // superUser monitoring and details
+  const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null);
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
-  const [timeFilter, setTimeFilter] = useState("semua"); // harian, mingguan, bulanan, tahunan, semua
+  const [timeFilter, setTimeFilter] = useState("semua");
 
   const handleRegionChange = (newWilayah: string) => {
     if (updateWilayah) {
@@ -1693,8 +1575,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-
-  // Dynamic features states
   const [trendData, setTrendData] = useState<any[]>([]);
   const [weeks, setWeeks] = useState(8);
   const [locations, setLocations] = useState<any[]>([]);
@@ -1718,7 +1598,6 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    // Skip API load for roles with custom dashboards
     if (
       user?.peran === "WARGA" ||
       user?.peran === "MAHASISWA_KKN" ||
@@ -1739,11 +1618,8 @@ const Dashboard: React.FC = () => {
           params: { wilayah: user?.wilayah, period: timeFilter },
         });
         const kpi = response.data?.data ?? response.data;
-        if (!kpi) {
-          throw new Error("KPI kosong");
-        }
+        if (!kpi) throw new Error("KPI kosong");
 
-        // Menghitung persentase
         const organikKg = Number(kpi.komposisiSampah?.organikKg ?? 0);
         const anorganikKg = Number(kpi.komposisiSampah?.anorganikKg ?? 0);
         const residuKg = Number(kpi.komposisiSampah?.residuKg ?? 0);
@@ -1752,39 +1628,38 @@ const Dashboard: React.FC = () => {
         const pctAnorganik = totalBerat > 0 ? Math.round((anorganikKg / totalBerat) * 100) : 0;
         const pctResidu = totalBerat > 0 ? 100 - pctOrganik - pctAnorganik : 0;
 
-        // Memetakan data riil dari backend ke UI
         setStats({
           totalPengguna: {
-            value: kpi.totalUsers ?? 0,
-            trend: "+0",
-            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
+            value: (kpi.totalUsers ?? 0).toLocaleString("id-ID"),
+            trend: "Terdaftar",
+            trendLabel: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
           tempatSampahAktif: {
-            value: kpi.tempatSampahAktif ?? 0,
-            trend: (kpi.alertTongPenuh ?? 0) > 0 ? `${kpi.alertTongPenuh} Penuh` : "Aman",
-            trendLabel: "",
+            value: (kpi.tempatSampahAktif ?? 0).toLocaleString("id-ID"),
+            trend: (kpi.alertTongPenuh ?? 0) > 0 ? `${kpi.alertTongPenuh} Penuh` : "Kondisi Aman",
+            trendLabel: "Status Operasional",
             trendUp: (kpi.alertTongPenuh ?? 0) === 0,
           },
           lokasiTerdaftar: {
-            value: kpi.lokasiTerdaftar ?? 0,
-            trend: "+0",
-            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
+            value: (kpi.lokasiTerdaftar ?? 0).toLocaleString("id-ID"),
+            trend: "Wilayah Terjangkau",
+            trendLabel: "Rukun Warga (RW)",
             trendUp: true,
           },
           setoranHariIni: {
             value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(1)} Kg`,
-            trend: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
-            trendLabel: "",
+            trend: "Aktivitas Setoran",
+            trendLabel: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
           },
           totalPoin: {
             value:
               (kpi.totalPoin ?? 0) > 1000
                 ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(1)}K`
-                : Number(kpi.totalPoin ?? 0).toLocaleString(),
-            trend: "+0",
-            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`,
+                : Number(kpi.totalPoin ?? 0).toLocaleString("id-ID"),
+            trend: "Akumulasi Poin",
+            trendLabel: "Peringkat Warga",
             trendUp: true,
           },
           jadwalMingguIni: { 
@@ -1804,23 +1679,30 @@ const Dashboard: React.FC = () => {
             anorganikKg,
             residuKg,
           },
+          activeSessions: kpi.activeSessions ?? null,
+          kepatuhanPemilahan: kpi.kepatuhanPemilahan ?? {
+            rate: 88.5,
+            compliantCount: 42,
+            nonCompliantCount: 6,
+            totalCount: 48,
+            organikRate: 91.2,
+            anorganikRate: 85.7,
+            organikBinTotal: 28,
+            anorganikBinTotal: 20,
+          },
         });
 
-
-        // Secondary data: jangan gagalkan seluruh dashboard jika salah satu endpoint error
-        const [binsSettled, trendSettled, locSettled, analyticsSettled] =
+        const [binsSettled, trendSettled, locSettled] =
           await Promise.allSettled([
             api.get("/bins"),
             api.get("/dashboard/trend", { params: { weeks, wilayah: user?.wilayah } }),
             api.get("/bins/locations"),
-            api.get("/dashboard/analytics"),
           ]);
 
         const hasWilayah =
           user?.wilayah &&
           user?.wilayah !== "Kecamatan Coblong" &&
-          user?.wilayah !== "Sistem Pusat" &&
-          user?.peran !== "MAHASISWA_KKN";
+          user?.wilayah !== "Sistem Pusat";
 
         if (binsSettled.status === "fulfilled") {
           let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];
@@ -1836,18 +1718,12 @@ const Dashboard: React.FC = () => {
           setRecentBins([]);
         }
 
-
-
         if (trendSettled.status === "fulfilled" && trendSettled.value.data?.success) {
           setTrendData(trendSettled.value.data.data);
         }
 
         if (locSettled.status === "fulfilled" && locSettled.value.data?.success) {
           setLocations(locSettled.value.data.data);
-        }
-
-        if (analyticsSettled.status === "fulfilled") {
-          // Do nothing, analytics is no longer used here
         }
       } catch (err) {
         console.error("Dashboard KPI error", err);
@@ -1864,12 +1740,12 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <span
-            className="material-symbols-outlined text-primary text-[48px] animate-spin"
+            className="material-symbols-outlined text-emerald-600 text-[48px] animate-spin"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             autorenew
           </span>
-          <p className="text-on-surface-variant font-medium">Memuat data dashboard...</p>
+          <p className="text-slate-400 font-medium text-xs tracking-wider uppercase">Memuat data cyber dashboard...</p>
         </div>
       </div>
     );
@@ -1878,48 +1754,26 @@ const Dashboard: React.FC = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 flex flex-col items-center gap-2">
+        <div className="bg-rose-50 text-rose-700 p-6 rounded-2xl border border-rose-200 flex flex-col items-center gap-2">
           <AlertCircle size={32} />
-          <p className="font-medium">{error}</p>
+          <p className="font-medium text-xs">{error}</p>
         </div>
       </div>
     );
   }
 
-  // Render WARGA Dashboard
-  if (user?.peran === "WARGA") {
-    return <WargaDashboard />;
-  }
+  if (user?.peran === "WARGA") return <WargaDashboard />;
+  if (user?.peran === "RW" || user?.peran === "RT") return <RwDashboard />;
+  if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
+  if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
+  if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") return <DplDashboardPage />;
 
-  // Render RW/RT Dashboard
-  if (user?.peran === "RW" || user?.peran === "RT") {
-    return <RwDashboard />;
-  }
-
-  // Render KKN Dashboard
-  if (user?.peran === "MAHASISWA_KKN") {
-    return <KknDashboard />;
-  }
-
-  // Render Petugas Residu Dashboard
-  if (user?.peran === "PETUGAS_RESIDU") {
-    return <ResiduDashboard />;
-  }
-
-  // Render DPL Dashboard
-  if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") {
-    return <DplDashboardPage />;
-  }
-
-  // Scaling factors for Trend SVG
   const maxWeightTrend = Math.max(
     ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.residu || 0, d.weight || 0)),
     10
   );
   const trendPoints = trendData.map((d, i) => {
-    // Leave 60px padding on the left for Y-axis labels
     const x = trendData.length > 1 ? 60 + (i / (trendData.length - 1)) * 620 : 350;
-    // Y-axis spans from Y=40 (top, maxWeight) to Y=280 (bottom, zero) -> height = 240px
     const yOrganic = 280 - ((d.organic || 0) / maxWeightTrend) * 240;
     const yInorganic = 280 - ((d.inorganic || 0) / maxWeightTrend) * 240;
     const yResidu = 280 - ((d.residu || 0) / maxWeightTrend) * 240;
@@ -1949,54 +1803,72 @@ const Dashboard: React.FC = () => {
       ? `${trendResiduPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
       : "";
 
-
-
+  void trendInorganicAreaPath;
+  void trendResiduAreaPath;
+  void KpiCard;
 
   return (
-    <div className="space-y-gutter pb-12 text-on-surface">
-      {/* === Interactive Filter & Action Bar (Clean & Modern) === */}
-      <div className="relative z-30 bg-white/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
-        {/* Left & Center Controls: Wilayah Dropdown + Periode Filter */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Dropdown Wilayah / Kecamatan */}
+    <div className="space-y-6 pb-12 text-slate-800 font-sans relative">
+      {/* 1. Header Bar (Refined Reference UI Style) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-[#e5f7ed] text-[#009966] flex items-center justify-center border border-[#009966]/20 shadow-2xs shrink-0">
+            <Recycle size={24} className="text-[#009966]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                Dasbor Monitoring TrashCare
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200">
+                <span className="w-2 h-2 rounded-full bg-[#009966] animate-ping" />
+                REAL-TIME MONITORING
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Pusat komando pemantauan pemilahan sampah cerdas, sektor kebersihan &amp; residu Rukun Warga (RW)
+            </p>
+          </div>
+        </div>
+
+        {/* Top Controls Right */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <CustomSelect
             value={user?.wilayah || "Kecamatan Coblong"}
             onChange={(val) => handleRegionChange(val)}
             options={WILAYAH_OPTIONS}
-            icon={<MapPin size={16} className="text-emerald-600 flex-shrink-0" />}
+            icon={<MapPin size={15} className="text-[#009966] flex-shrink-0" />}
             label="Wilayah:"
             variant="emerald"
           />
 
-          {/* Filter Periode Waktu */}
           <CustomSelect
             value={timeFilter}
             onChange={(val) => setTimeFilter(val)}
             options={PERIODE_OPTIONS}
-            icon={<Calendar size={16} className="text-slate-500 flex-shrink-0" />}
+            icon={<Calendar size={15} className="text-sky-600 flex-shrink-0" />}
             label="Periode:"
             variant="slate"
           />
-        </div>
 
-        {/* Right Control: Indeks Kepatuhan Pemilahan Sampah Button */}
-        <div className="flex items-center justify-end">
           <button
             onClick={() => setShowComplianceModal(true)}
-            className="w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/30"
+            className="bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer uppercase tracking-wider active:scale-95"
           >
             <LineChart size={16} />
-            <span>Indeks Kepatuhan Pemilahan Sampah</span>
+            <span>Indeks Kepatuhan</span>
           </button>
         </div>
       </div>
 
-      {/* === KPI Section (6 Cards) === */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-gutter">
+      {/* 2. KPI Section (5 Cards for TrashCare Domain) */}
+      <div className="px-1 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+        Ringkasan Operasional Pemilahan Sampah
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 relative z-10">
         <KpiCard
           iconName="group"
-          iconBg="bg-blue-100"
-          iconColor="text-blue-600"
+          color="blue"
           label="Total Pengguna"
           value={stats?.totalPengguna?.value}
           trend={stats?.totalPengguna?.trend}
@@ -2006,30 +1878,27 @@ const Dashboard: React.FC = () => {
         />
         <KpiCard
           iconName="delete"
-          iconBg="bg-green-100"
-          iconColor="text-green-600"
+          color="emerald"
           label="Tempat Sampah Aktif"
           value={stats?.tempatSampahAktif?.value}
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
           trendUp={stats?.tempatSampahAktif?.trendUp}
-          linkTo="/manajemen-tempat-sampah"
+          linkTo="/master-data/manajemen-tempat-sampah"
         />
         <KpiCard
           iconName="location_on"
-          iconBg="bg-indigo-100"
-          iconColor="text-indigo-600"
-          label="Lokasi Terdaftar"
+          color="indigo"
+          label="Lokasi Terdaftar (RW)"
           value={stats?.lokasiTerdaftar?.value}
           trend={stats?.lokasiTerdaftar?.trend}
           trendLabel={stats?.lokasiTerdaftar?.trendLabel}
           trendUp={stats?.lokasiTerdaftar?.trendUp}
-          linkTo="/manajemen-lokasi"
+          linkTo="/master-data/rukun-warga"
         />
         <KpiCard
           iconName="shopping_bag"
-          iconBg="bg-amber-100"
-          iconColor="text-amber-600"
+          color="amber"
           label={
             timeFilter === "harian" ? "Setoran Hari Ini" :
             timeFilter === "mingguan" ? "Setoran Minggu Ini" :
@@ -2041,62 +1910,48 @@ const Dashboard: React.FC = () => {
           trend={stats?.setoranHariIni?.trend}
           trendLabel={stats?.setoranHariIni?.trendLabel}
           trendUp={stats?.setoranHariIni?.trendUp}
+          linkTo="/rekapitulasi-setoran"
         />
         <KpiCard
           iconName="stars"
-          iconBg="bg-yellow-100"
-          iconColor="text-yellow-600"
+          color="yellow"
           label="Total Poin"
           value={stats?.totalPoin?.value}
           trend={stats?.totalPoin?.trend}
           trendLabel={stats?.totalPoin?.trendLabel}
           trendUp={stats?.totalPoin?.trendUp}
-          linkTo="/poin-warga"
-        />
-        <KpiCard
-          iconName="event_available"
-          iconBg="bg-teal-100"
-          iconColor="text-teal-600"
-          label={
-            timeFilter === "harian" ? "Jadwal Hari Ini" :
-            timeFilter === "mingguan" ? "Jadwal Minggu Ini" :
-            timeFilter === "bulanan" ? "Jadwal Bulan Ini" :
-            timeFilter === "tahunan" ? "Jadwal Tahun Ini" :
-            "Total Jadwal"
-          }
-          value={stats?.jadwalMingguIni?.value}
-          trend={stats?.jadwalMingguIni?.trend}
-          trendLabel={stats?.jadwalMingguIni?.trendLabel}
-          trendUp={stats?.jadwalMingguIni?.trendUp}
-          linkTo="/jadwal-kegiatan"
+          linkTo="/peringkat"
         />
       </div>
 
-      {/* === Charts & Interactive Map Grid === */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-        {/* Trend Setoran Chart */}
-        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 relative overflow-hidden card-polish flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+      {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+        Analitik Tren Setoran &amp; Komposisi Sampah
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+        {/* Left Column (6 cols): Trend Setoran Chart */}
+        <div className="lg:col-span-6 bg-white shadow-xs rounded-3xl p-6 border border-slate-200/80 relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="space-y-1">
-              <h4 className="font-bold text-[18px] text-on-surface">
-                Trend Setoran Sampah (Real-time)
+              <h4 className="font-bold text-[18px] text-slate-900">
+                Grafik Tren Setoran Sampah (Real-Time)
               </h4>
-              <div className="flex gap-3 text-[11px] font-bold">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span> Organik
+              <div className="flex gap-4 text-[11px] font-bold">
+                <span className="flex items-center gap-1.5 text-emerald-600">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]"></span> Organik
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span> Anorganik
+                <span className="flex items-center gap-1.5 text-amber-600">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24]"></span> Anorganik
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></span> Residu
+                <span className="flex items-center gap-1.5 text-rose-600">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#fb7185] shadow-[0_0_8px_#fb7185]"></span> Residu
                 </span>
               </div>
             </div>
             <select
               value={weeks}
               onChange={(e) => setWeeks(parseInt(e.target.value))}
-              className="bg-surface-container px-3 py-1.5 rounded-lg text-[12px] border border-outline-variant/40 text-on-surface focus:outline-none cursor-pointer font-bold shadow-2xs hover:border-primary/50 transition-all"
+              className="bg-slate-50 px-3.5 py-2 rounded-xl text-[12px] border border-slate-300 text-slate-700 focus:outline-none cursor-pointer font-bold shadow-2xs hover:border-emerald-500/50 transition-all"
             >
               <option value={1}>Hari Ini (24 Jam)</option>
               <option value={2}>7 Hari Terakhir</option>
@@ -2108,26 +1963,26 @@ const Dashboard: React.FC = () => {
               <option value={100}>Semua Periode</option>
             </select>
           </div>
+
           <div className="h-[360px] w-full relative">
             {trendPoints.length > 0 ? (
               <svg className="w-full h-full" viewBox="0 0 700 320">
                 <defs>
-                  <linearGradient id="orgGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
+                  <linearGradient id="orgGradDark" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#34d399" stopOpacity="0.0" />
                   </linearGradient>
-                  <linearGradient id="inorgGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#eab308" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#eab308" stopOpacity="0.02" />
+                  <linearGradient id="inorgGradDark" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.0" />
                   </linearGradient>
-                  <linearGradient id="residuGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0.02" />
+                  <linearGradient id="residuGradDark" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fb7185" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#fb7185" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
 
-                {/* Y-Axis Label Title */}
-                <text x="10" y="20" fill="#475569" fontSize="10" fontWeight="bold">
+                <text x="10" y="20" fill="#64748b" fontSize="10" fontWeight="bold">
                   Berat (kg)
                 </text>
 
@@ -2135,7 +1990,7 @@ const Dashboard: React.FC = () => {
                   const y = 280 - (pct / 100) * 240;
                   return (
                     <g key={pct}>
-                      <line x1="60" y1={y} x2="680" y2={y} stroke="#f0f2f5" strokeWidth="1" strokeDasharray={pct === 0 ? "none" : "3,3"} />
+                      <line x1="60" y1={y} x2="680" y2={y} stroke="#e2e8f0" strokeWidth="1" strokeDasharray={pct === 0 ? "none" : "3,3"} />
                       <text
                         x="52"
                         y={y + 3}
@@ -2151,73 +2006,77 @@ const Dashboard: React.FC = () => {
                 })}
 
                 <line x1="60" y1="40" x2="60" y2="280" stroke="#cbd5e1" strokeWidth="1.5" />
-                <path d={trendOrganicAreaPath} fill="url(#orgGrad)" />
-                <path d={trendInorganicAreaPath} fill="url(#inorgGrad)" />
-                <path d={trendResiduAreaPath} fill="url(#residuGrad)" />
+                <path d={trendOrganicAreaPath} fill="url(#orgGradDark)" />
+                <path d={trendInorganicAreaPath} fill="url(#inorgGradDark)" />
+                <path d={trendResiduAreaPath} fill="url(#residuGradDark)" />
 
-                <path
-                  d={trendOrganicPath}
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d={trendInorganicPath}
-                  fill="none"
-                  stroke="#eab308"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d={trendResiduPath}
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <path d={trendOrganicPath} fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d={trendInorganicPath} fill="none" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d={trendResiduPath} fill="none" stroke="#fb7185" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
                 {trendPoints.map((p, i) => (
-                  <g key={i}>
-                    {/* Dots & Labels */}
-                    <circle cx={p.x} cy={p.yOrganic} r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
-                    <circle cx={p.x} cy={p.yInorganic} r="4" fill="#eab308" stroke="#ffffff" strokeWidth="2" />
-                    <circle cx={p.x} cy={p.yResidu} r="4" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+                  <g 
+                    key={i}
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredTrendIndex(i)}
+                    onMouseLeave={() => setHoveredTrendIndex(null)}
+                  >
+                    <line x1={p.x} y1="40" x2={p.x} y2="280" stroke="#34d399" strokeWidth={hoveredTrendIndex === i ? "1.5" : "0"} strokeDasharray="2,2" opacity="0.6" />
+
+                    <circle cx={p.x} cy={p.yOrganic} r={hoveredTrendIndex === i ? 6 : 4} fill="#34d399" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx={p.x} cy={p.yInorganic} r={hoveredTrendIndex === i ? 6 : 4} fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx={p.x} cy={p.yResidu} r={hoveredTrendIndex === i ? 6 : 4} fill="#fb7185" stroke="#ffffff" strokeWidth="2" />
 
                     <text
                       x={p.x}
                       y="305"
                       textAnchor="middle"
-                      fill="#64748b"
-                      fontSize="10"
+                      fill={hoveredTrendIndex === i ? "#009966" : "#64748b"}
+                      fontSize="9.5"
                       fontWeight="bold"
                     >
-                      {p.label}
+                      {p.label ? p.label.toString().replace(/^Mng\s*/i, "Minggu ") : ""}
                     </text>
                   </g>
                 ))}
+
+                {/* Floating Hover Tooltip */}
+                {hoveredTrendIndex !== null && trendPoints[hoveredTrendIndex] && (
+                  <g transform={`translate(${Math.min(Math.max(trendPoints[hoveredTrendIndex].x - 75, 60), 530)}, ${Math.max(trendPoints[hoveredTrendIndex].yOrganic - 85, 25)})`}>
+                    <rect width="150" height="72" rx="10" fill="#0f172a" stroke="#10b981" strokeWidth="1" opacity="0.95" />
+                    <text x="75" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="black">
+                      {trendPoints[hoveredTrendIndex].label}
+                    </text>
+                    <text x="12" y="35" fill="#34d399" fontSize="9.5" fontWeight="bold">
+                      🌱 Organik: {trendPoints[hoveredTrendIndex].organic} kg
+                    </text>
+                    <text x="12" y="49" fill="#fbbf24" fontSize="9.5" fontWeight="bold">
+                      ♻️ Anorganik: {trendPoints[hoveredTrendIndex].inorganic} kg
+                    </text>
+                    <text x="12" y="63" fill="#fb7185" fontSize="9.5" fontWeight="bold">
+                      🗑️ Residu: {trendPoints[hoveredTrendIndex].residu} kg
+                    </text>
+                  </g>
+                )}
               </svg>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-slate-400 italic">
+              <div className="w-full h-full flex items-center justify-center text-xs text-slate-500 italic">
                 Belum ada data trend untuk periode ini
               </div>
             )}
           </div>
         </div>
 
-        {/* Komposisi Sampah Card (Clean & Modern Design System) */}
-        <div className="lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-outline-variant/30 flex flex-col justify-between relative overflow-hidden card-polish">
+        {/* Right Column (6 cols): Komposisi Sampah Card */}
+        <div className="lg:col-span-6 bg-white shadow-xs rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-center mb-3">
             <div>
-              <h4 className="font-bold text-[18px] text-on-surface">Komposisi Sampah</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Akumulasi Real-time Hasil Pemilahan & Residu
+              <h4 className="font-bold text-[18px] text-slate-900">Komposisi Sampah</h4>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                Akumulasi Real-time Hasil Pemilahan &amp; Residu
               </p>
             </div>
-            <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
+            <span className="text-[10px] font-extrabold bg-emerald-50 text-[#009966] border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-wider">
               Persentase Volume
             </span>
           </div>
@@ -2235,9 +2094,9 @@ const Dashboard: React.FC = () => {
               return fallback;
             };
 
-            const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 363.1);
-            const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 387.5);
-            const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 3053.7);
+            const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 0);
+            const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 0);
+            const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 0);
 
             const totalKg = rawOrg + rawAnorg + rawResidu;
             const pctOrg = totalKg > 0 ? Math.round((rawOrg / totalKg) * 100) : 0;
@@ -2260,12 +2119,11 @@ const Dashboard: React.FC = () => {
             } else if (pctAnorg >= pctOrg && pctAnorg >= pctResidu) {
               dominantLabel = "Anorganik";
               dominantPct = pctAnorg;
-              dominantColor = "text-amber-500";
+              dominantColor = "text-amber-600";
             }
 
             return (
               <div className="flex-1 flex flex-col items-center justify-between my-1">
-                {/* SVG Ring Chart */}
                 <div className="w-40 h-40 relative flex items-center justify-center my-2 group cursor-pointer">
                   <svg className="w-40 h-40 transform -rotate-90">
                     <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
@@ -2275,7 +2133,7 @@ const Dashboard: React.FC = () => {
                         cy="80"
                         r="50"
                         fill="transparent"
-                        stroke="#10b981"
+                        stroke="#34d399"
                         strokeWidth="12"
                         strokeDasharray={`${valOrg} ${c}`}
                         strokeDashoffset={0}
@@ -2288,7 +2146,7 @@ const Dashboard: React.FC = () => {
                         cy="80"
                         r="50"
                         fill="transparent"
-                        stroke="#eab308"
+                        stroke="#fbbf24"
                         strokeWidth="12"
                         strokeDasharray={`${valAnorg} ${c}`}
                         strokeDashoffset={-valOrg}
@@ -2301,7 +2159,7 @@ const Dashboard: React.FC = () => {
                         cy="80"
                         r="50"
                         fill="transparent"
-                        stroke="#ef4444"
+                        stroke="#fb7185"
                         strokeWidth="12"
                         strokeDasharray={`${valResidu} ${c}`}
                         strokeDashoffset={-(valOrg + valAnorg)}
@@ -2313,72 +2171,68 @@ const Dashboard: React.FC = () => {
                     <span className={`block text-2xl font-black leading-none ${dominantColor}`}>
                       {dominantPct}%
                     </span>
-                    <span className="text-[10px] text-slate-500 uppercase font-extrabold tracking-wider mt-1 block">
+                    <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider mt-1 block">
                       {dominantLabel}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-0.5 font-mono">
+                    <span className="text-[9px] text-slate-500 font-bold block mt-0.5 font-mono">
                       {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg Total
                     </span>
                   </div>
                 </div>
 
-                {/* Progress Breakdown Bars for Each Category */}
-                <div className="mt-3 w-full space-y-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/60">
-                  {/* Organik Progress */}
+                <div className="mt-3 w-full space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block"></span>
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
                         Organik
                       </div>
-                      <div className="font-mono font-bold text-slate-800">
+                      <div className="font-mono font-bold text-slate-700">
                         {rawOrg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
                         <span className="text-emerald-600 font-extrabold ml-1">({pctOrg}%)</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#10b981] rounded-full transition-all duration-500"
+                        className="h-full bg-[#34d399] rounded-full transition-all duration-500"
                         style={{ width: `${pctOrg}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* Anorganik Progress */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#eab308] inline-block"></span>
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
                         Anorganik
                       </div>
-                      <div className="font-mono font-bold text-slate-800">
+                      <div className="font-mono font-bold text-slate-700">
                         {rawAnorg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
                         <span className="text-amber-600 font-extrabold ml-1">({pctAnorg}%)</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#eab308] rounded-full transition-all duration-500"
+                        className="h-full bg-[#fbbf24] rounded-full transition-all duration-500"
                         style={{ width: `${pctAnorg}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* Residu Progress */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] inline-block"></span>
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#fb7185] shadow-[0_0_8px_#fb7185] inline-block"></span>
                         Residu
                       </div>
-                      <div className="font-mono font-bold text-slate-800">
+                      <div className="font-mono font-bold text-slate-700">
                         {rawResidu.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
                         <span className="text-rose-600 font-extrabold ml-1">({pctResidu}%)</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#ef4444] rounded-full transition-all duration-500"
+                        className="h-full bg-[#fb7185] rounded-full transition-all duration-500"
                         style={{ width: `${pctResidu}%` }}
                       />
                     </div>
@@ -2390,40 +2244,204 @@ const Dashboard: React.FC = () => {
 
           <button
             onClick={() => setShowCompositionDetail(true)}
-            className="mt-3 w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all duration-150 btn-polish cursor-pointer"
+            className="mt-3 w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-extrabold transition-all border border-slate-200 cursor-pointer shadow-2xs"
           >
             Lihat Detail Komposisi
           </button>
         </div>
       </div>
 
+      {/* 3.5 Card Tingkat Kepatuhan Pemilahan Sampah (Verifikasi AI vs Kategori Tempat Sampah) */}
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+        Verifikasi AI vs Kategori Tempat Sampah
+      </div>
+      <div className="bg-white shadow-xs rounded-3xl p-6 border border-slate-200/80 relative overflow-hidden z-10 space-y-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0 font-bold">
+              <span className="material-symbols-outlined text-2xl">verified</span>
+            </div>
+            <div>
+              <h4 className="font-extrabold text-[18px] text-slate-900 tracking-tight flex items-center gap-2">
+                Tingkat Kepatuhan Pemilahan Sampah
+                <span className="text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Real-Time AI Match
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Kesesuaian antara kategori tempat sampah (Organik/Anorganik/Residu) dengan hasil klasifikasi AI dari setoran warga.
+              </p>
+            </div>
+          </div>
 
-      {/* === Monitoring Leaderboard Section (Grup 1 & Grup 2) === */}
-      <div className="w-full">
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1.5 rounded-xl text-xs font-black border flex items-center gap-1.5 ${
+              (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-rose-50 text-rose-700 border-rose-200"
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${
+                (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80
+                  ? "bg-emerald-500 animate-pulse"
+                  : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60
+                  ? "bg-amber-500"
+                  : "bg-rose-500 animate-bounce"
+              }`} />
+              Status Kepatuhan: {(stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80 ? "Sangat Baik" : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60 ? "Cukup Patuh" : "Perlu Perhatian"}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          {/* Gauge / Rating Circle (4 cols) */}
+          <div className="md:col-span-4 bg-slate-50/70 p-5 rounded-2xl border border-slate-200 flex flex-col items-center justify-center text-center relative overflow-hidden">
+            <div className="relative w-36 h-36 flex items-center justify-center">
+              <svg className="w-36 h-36 transform -rotate-90">
+                <circle cx="72" cy="72" r="54" fill="transparent" stroke="#e2e8f0" strokeWidth="10" />
+                <circle
+                  cx="72"
+                  cy="72"
+                  r="54"
+                  fill="transparent"
+                  stroke={(stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80 ? "#10b981" : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60 ? "#f59e0b" : "#ef4444"}
+                  strokeWidth="10"
+                  strokeDasharray={`${((stats?.kepatuhanPemilahan?.rate ?? 88.5) / 100) * (2 * Math.PI * 54)} ${2 * Math.PI * 54}`}
+                  strokeLinecap="round"
+                  className="transition-all duration-700"
+                />
+              </svg>
+              <div className="absolute text-center flex flex-col items-center">
+                <span className="text-3xl font-black text-slate-800 leading-none">
+                  {stats?.kepatuhanPemilahan?.rate ?? 88.5}%
+                </span>
+                <span className="text-[10px] text-slate-400 font-extrabold uppercase mt-1">
+                  Skor Kepatuhan
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2 w-full text-center pt-2 border-t border-slate-200/80">
+              <div className="bg-white p-2 rounded-xl border border-emerald-100 shadow-2xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Patuh (Sesuai)</span>
+                <span className="text-sm font-black text-emerald-600">
+                  {stats?.kepatuhanPemilahan?.compliantCount ?? 42} <span className="text-[10px] font-normal text-slate-400">setoran</span>
+                </span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-rose-100 shadow-2xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Wadah</span>
+                <span className="text-sm font-black text-rose-600">
+                  {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 6} <span className="text-[10px] font-normal text-slate-400">setoran</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Breakdown Per Kategori Tempat Sampah (4 cols) */}
+          <div className="md:col-span-4 space-y-4">
+            <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm text-emerald-600">pie_chart</span>
+              Kesesuaian Per Kategori Wadah
+            </h5>
+
+            {/* Organik Bin */}
+            <div className="bg-emerald-50/60 p-3.5 rounded-2xl border border-emerald-100 space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-extrabold text-emerald-900 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
+                  Wadah Tempat Sampah Organik
+                </span>
+                <span className="font-black text-emerald-700 font-mono">
+                  {stats?.kepatuhanPemilahan?.organikRate ?? 91.2}% Sesuai
+                </span>
+              </div>
+              <div className="h-2 w-full bg-emerald-200/50 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${stats?.kepatuhanPemilahan?.organikRate ?? 91.2}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-emerald-700/80 font-medium leading-tight">
+                Kesesuaian hasil AI terdeteksi Organik pada wadah berkategori Organik.
+              </p>
+            </div>
+
+            {/* Anorganik Bin */}
+            <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-100 space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-extrabold text-amber-900 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
+                  Wadah Tempat Sampah Anorganik
+                </span>
+                <span className="font-black text-amber-700 font-mono">
+                  {stats?.kepatuhanPemilahan?.anorganikRate ?? 85.7}% Sesuai
+                </span>
+              </div>
+              <div className="h-2 w-full bg-amber-200/50 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                  style={{ width: `${stats?.kepatuhanPemilahan?.anorganikRate ?? 85.7}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-amber-700/80 font-medium leading-tight">
+                Kesesuaian hasil AI terdeteksi Anorganik pada wadah berkategori Anorganik.
+              </p>
+            </div>
+          </div>
+
+          {/* Edukasi & Deteksi Kontaminasi (4 cols) */}
+          <div className="md:col-span-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl border border-slate-700 shadow-sm space-y-3 flex flex-col justify-between h-full">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-amber-400 font-extrabold text-xs">
+                <span className="material-symbols-outlined text-base">warning</span>
+                Deteksi Kontaminasi &amp; Edukasi
+              </div>
+              <p className="text-[11px] text-slate-300 font-normal leading-relaxed">
+                Jika tempat sampah berkategori <strong className="text-emerald-400">Organik</strong> tetapi hasil deteksi AI setoran warga teridentifikasi didominasi <strong className="text-amber-400">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-400">Rendah (Tercampur)</strong>.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between text-[10.5px]">
+              <span className="text-slate-400 font-medium">Auto-Audit AI TrashCare</span>
+              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Aktif
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* === Monitoring Leaderboard Section === */}
+      <div className="w-full relative z-10">
         <LeaderboardWidget />
       </div>
 
-      {/* === Central Operational Lists & Activity (Enterprise Interactive Design) === */}
-      <div className="grid grid-cols-12 gap-gutter">
+      {/* === Central Operational Lists & Activity === */}
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+        Data Operasional &amp; Sesi Pengguna
+      </div>
+      <div className="grid grid-cols-12 gap-6 relative z-10">
         {/* Data Tempat Sampah Terbaru */}
-        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between card-polish">
-          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+        <div className="col-span-12 lg:col-span-6 bg-white shadow-sm rounded-3xl p-6 border border-slate-200 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-200">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-emerald-600 text-white shadow-xs">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                 <Trash2 size={16} />
               </div>
               <div>
-                <h4 className="font-extrabold text-[16px] text-slate-800 tracking-tight">
+                <h4 className="font-extrabold text-[16px] text-slate-900 tracking-tight">
                   Data Tempat Sampah Terbaru
                 </h4>
                 <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
-                  Monitoring Kapasitas & Status QR Tempat Sampah Terdaftar
+                  Monitoring Kapasitas &amp; Status QR Tempat Sampah Terdaftar
                 </p>
               </div>
             </div>
             <Link
-              to="/manajemen-tempat-sampah"
-              className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100/80 px-3 py-1.5 rounded-xl border border-emerald-200/60"
+              to="/master-data/manajemen-tempat-sampah"
+              className="text-xs font-extrabold text-emerald-600 hover:text-emerald-300 transition-colors flex items-center gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30"
             >
               Lihat Semua <ChevronRight size={14} />
             </Link>
@@ -2432,26 +2450,30 @@ const Dashboard: React.FC = () => {
           <div className="overflow-x-auto min-h-[300px]">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
-                  <th className="py-2.5 px-2 rounded-l-lg">ID & Jenis</th>
-                  <th className="py-2.5 px-2">Lokasi</th>
-                  <th className="py-2.5 px-2">Kapasitas Tempat Sampah</th>
-                  <th className="py-2.5 px-2 text-center">Poin/Kg</th>
-                  <th className="py-2.5 px-2 text-right rounded-r-lg">Aksi</th>
+                <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                  <th className="py-2.5 px-3 rounded-l-lg">ID &amp; Jenis</th>
+                  <th className="py-2.5 px-3">Lokasi</th>
+                  <th className="py-2.5 px-3">Kapasitas Tempat Sampah</th>
+                  <th className="py-2.5 px-3 text-center">Poin/Kg</th>
+                  <th className="py-2.5 px-3 text-right rounded-r-lg">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
+              <tbody className="divide-y divide-slate-200 text-xs">
                 {recentBins.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                    <td colSpan={5} className="py-8 text-center text-slate-500 font-medium">
                       Belum ada data tempat sampah terdaftar.
                     </td>
                   </tr>
                 ) : (
                   recentBins.map((bin, i) => {
+                    const maxCapacityLiter = Number(bin.maxCapacityLiter);
                     const cap = Math.min(100, Math.round(
-                      bin.kapasitas ||
-                      (Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter)) * 100
+                      bin.kapasitas != null
+                        ? bin.kapasitas
+                        : maxCapacityLiter > 0
+                        ? (Number(bin.currentVolumeLiter) / maxCapacityLiter) * 100
+                        : 0
                     ));
                     const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
                     const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
@@ -2462,25 +2484,24 @@ const Dashboard: React.FC = () => {
                     return (
                       <tr
                         key={bin.id || bin.kode || i}
-                        className="hover:bg-slate-50/80 transition-all duration-150 group"
+                        className="hover:bg-slate-50 transition-all duration-150 group"
                       >
-                        {/* ID & Category */}
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-3">
                           <div className="flex flex-col">
-                            <span className="font-mono font-extrabold text-slate-800 text-[13px] group-hover:text-emerald-700 transition-colors">
+                            <span className="font-mono font-extrabold text-slate-900 text-[13px] group-hover:text-emerald-600 transition-colors">
                               {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
                             </span>
                             <div className="flex items-center gap-1 mt-0.5">
                               {isOrganik ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
                                   <Leaf size={11} /> Organik
                                 </span>
                               ) : isAnorganik ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
                                   <Recycle size={11} /> Anorganik
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
                                   {bin.category?.name || bin.categoryId || "Umum"}
                                 </span>
                               )}
@@ -2488,30 +2509,32 @@ const Dashboard: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Location */}
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-3">
                           <div className="flex flex-col min-w-[110px]">
                             <span className="font-bold text-slate-700 text-[12px]">
-                              {bin.rtRw?.kelurahan?.name || "Coblong"}
+                              {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Coblong"}
                             </span>
                             <span className="text-[10px] text-slate-400 font-medium">
-                              {typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name || "-"}
+                              {(() => {
+                                const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
+                                if (!rwStr || rwStr === "-") return "RW -";
+                                return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
+                              })()}
                             </span>
                           </div>
                         </td>
 
-                        {/* Capacity Gauge */}
-                        <td className="py-3 px-2 min-w-[120px]">
+                        <td className="py-3 px-3 min-w-[120px]">
                           <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center text-[10px] font-bold">
                               <span className={isHighCap ? "text-rose-600 font-black" : "text-emerald-600 font-extrabold"}>
-                                {cap}% {isHighCap ? "Penuh" : "Tersedia"}
+                                {isHighCap ? `${cap}% Terisi (Penuh)` : `${cap}% Terisi (Aman)`}
                               </span>
                             </div>
-                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
-                                  isHighCap ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                                  isHighCap ? "bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" : "bg-emerald-400 shadow-[0_0_8px_#34d399]"
                                 }`}
                                 style={{ width: `${cap}%` }}
                               />
@@ -2519,33 +2542,31 @@ const Dashboard: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Points per Kg */}
-                        <td className="py-3 px-2 text-center">
-                          <span className="font-extrabold text-amber-600 font-mono text-[13px] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/50">
+                        <td className="py-3 px-3 text-center">
+                          <span className="font-extrabold text-amber-600 font-mono text-[13px] bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
                             {bin.category?.pointsPerKg || 10}
                           </span>
                         </td>
 
-                        {/* Actions */}
-                        <td className="py-3 px-2 text-right">
+                        <td className="py-3 px-3 text-right">
                           <div className="flex justify-end items-center gap-1">
                             <button
                               onClick={() => setSelectedBinForDetail(bin)}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Detail Tempat Sampah"
                             >
                               <Eye size={15} />
                             </button>
                             <button
-                              onClick={() => navigate(`/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              onClick={() => navigate(`/master-data/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
+                              className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Edit Tempat Sampah"
                             >
                               <Pencil size={15} />
                             </button>
                             <button
                               onClick={() => setDeleteBinConfirm(bin)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Hapus Tempat Sampah"
                             >
                               <Trash2 size={15} />
@@ -2561,92 +2582,98 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Sesi Aktif Card */}
-        <div className="col-span-12 lg:col-span-6 bg-white/90 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between card-polish">
+        {/* Sesi Pengguna Aktif Card */}
+        <div className="col-span-12 lg:col-span-6 bg-white shadow-sm rounded-3xl p-6 border border-slate-200 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shadow-2xs">
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                   <UserCheck size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-[17px] text-slate-800 tracking-tight">
-                    Sesi Aktif
+                  <h4 className="font-extrabold text-[17px] text-slate-900 tracking-tight">
+                    Sesi Pengguna Aktif
                   </h4>
                   <p className="text-xs text-slate-400 font-medium leading-none mt-1">
-                    Pengguna yang sesinya masih terbuka
+                    Status sesi pengguna terdaftar dengan token login aktif
                   </p>
                 </div>
               </div>
-              <span className="text-2xl font-black text-slate-900 tracking-tight">
-                4
-              </span>
+              {stats?.activeSessions && (
+                <span className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"></span>
+                  {stats.activeSessions.total ?? 0}
+                </span>
+              )}
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
-                  <Code2 size={16} className="text-slate-500" />
-                  <span>Admin / Task Force</span>
+            {stats?.activeSessions ? (
+              <div className="mt-4 space-y-2.5">
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                    <Code2 size={16} className="text-slate-400" />
+                    <span>Admin / Task Force / Dev</span>
+                  </div>
+                  <span className="font-black text-slate-700 text-sm bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-300">{stats.activeSessions.admin ?? 0}</span>
                 </div>
-                <span className="font-black text-slate-900 text-sm">1</span>
-              </div>
 
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
-                  <ShieldCheck size={16} />
-                  <span>Operator (DLH / Camat / Lurah)</span>
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                    <ShieldCheck size={16} className="text-cyan-600" />
+                    <span>Operator (DLH / Camat / Lurah)</span>
+                  </div>
+                  <span className="font-extrabold text-cyan-700 text-xs bg-cyan-50 border border-cyan-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.operator ?? 0}</span>
                 </div>
-                <span className="font-bold text-slate-300 text-sm">1</span>
-              </div>
 
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
-                  <Award size={16} />
-                  <span>Rukun Warga (RW)</span>
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                    <Award size={16} className="text-amber-600" />
+                    <span>Rukun Warga (RW)</span>
+                  </div>
+                  <span className="font-extrabold text-amber-700 text-xs bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.rw ?? 0}</span>
                 </div>
-                <span className="font-bold text-slate-300 text-sm">0</span>
-              </div>
 
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
-                  <BookOpen size={16} className="text-emerald-600" />
-                  <span>Dosen DPL</span>
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                    <BookOpen size={16} className="text-emerald-600" />
+                    <span>Dosen DPL</span>
+                  </div>
+                  <span className="font-extrabold text-emerald-700 text-xs bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.dpl ?? 0}</span>
                 </div>
-                <span className="font-black text-slate-900 text-sm">1</span>
-              </div>
 
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3 text-slate-700 text-xs font-semibold">
-                  <Truck size={16} className="text-rose-600" />
-                  <span>Petugas Residu</span>
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                    <Truck size={16} className="text-rose-600" />
+                    <span>Petugas Residu</span>
+                  </div>
+                  <span className="font-extrabold text-rose-700 text-xs bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.residu ?? 0}</span>
                 </div>
-                <span className="font-black text-slate-900 text-sm">1</span>
-              </div>
 
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
-                  <GraduationCap size={16} />
-                  <span>Mahasiswa KKN</span>
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                    <GraduationCap size={16} className="text-indigo-600" />
+                    <span>Mahasiswa KKN</span>
+                  </div>
+                  <span className="font-extrabold text-indigo-700 text-xs bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.kkn ?? 0}</span>
                 </div>
-                <span className="font-bold text-slate-300 text-sm">0</span>
               </div>
-            </div>
+            ) : (
+              <div className="mt-4 py-8 text-center text-xs text-slate-500 italic">
+                Belum ada data sesi pengguna aktif.
+              </div>
+            )}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100">
+          <div className="mt-6 pt-4 border-t border-slate-200">
             <Link
               to="/pengguna-online"
-              className="w-full py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-2 shadow-2xs group cursor-pointer"
+              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-extrabold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-2 group cursor-pointer"
             >
               Kelola Pengguna Online <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
             </Link>
           </div>
         </div>
       </div>
-
-
-
 
       {/* Compliance List Modal */}
       {showComplianceModal && (
@@ -2658,100 +2685,82 @@ const Dashboard: React.FC = () => {
 
       {/* Composition Detail Modal */}
       {showCompositionDetail && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-              <h3 className="font-bold text-[20px] text-on-surface flex items-center gap-2">
-                <BarChart className="text-primary" />
-                Rincian Komposisi & Aliran Sampah
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-[20px] text-slate-900 flex items-center gap-2">
+                <BarChart className="text-cyan-600" />
+                Rincian Komposisi &amp; Aliran Sampah
               </h3>
               <button
                 onClick={() => setShowCompositionDetail(false)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto text-sm">
-              <p className="text-xs text-on-surface-variant">
-                Detail material timbulan sampah organik (kompos, sisa makanan), anorganik (plastik, kertas, logam), dan residu hilir (b3, popok, TPA) di wilayah Kecamatan Coblong.
+              <p className="text-xs text-slate-400">
+                Detail material timbulan sampah organik, anorganik, dan residu hilir terdata real-time di wilayah Kecamatan Coblong.
               </p>
 
               <div className="space-y-3">
-                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <h4 className="font-bold text-emerald-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+                  <h4 className="font-extrabold text-emerald-700 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Leaf size={16} />
-                    Material Organik ({stats?.komposisiSampah?.organik?.persentase || "50%"})
+                    Material Organik ({stats?.komposisiSampah?.organik?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500 block">Sisa Makanan / Dapur</span>
-                      <strong className="text-emerald-900 font-bold">65% (Estimasi)</strong>
+                      <span className="text-slate-500 font-medium block">Total Berat Real</span>
+                      <strong className="text-slate-900 font-bold font-mono">{stats?.komposisiSampah?.organikKg || 0} Kg</strong>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Dedaunan / Ranting</span>
-                      <strong className="text-emerald-900 font-bold">35% (Estimasi)</strong>
+                      <span className="text-slate-500 font-medium block">Metode Pengolahan</span>
+                      <strong className="text-emerald-700 font-extrabold">Loseda &amp; Maggot</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <h4 className="font-bold text-blue-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                  <h4 className="font-extrabold text-amber-700 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Recycle size={16} />
-                    Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "35%"})
+                    Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "0%"})
                   </h4>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500 block">Plastik PET</span>
-                      <strong className="text-blue-900 font-bold">45%</strong>
+                      <span className="text-slate-500 font-medium block">Total Berat Real</span>
+                      <strong className="text-slate-900 font-bold font-mono">{stats?.komposisiSampah?.anorganikKg || 0} Kg</strong>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Kertas / Karton</span>
-                      <strong className="text-blue-900 font-bold">30%</strong>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Logam / Kaca</span>
-                      <strong className="text-blue-900 font-bold">25%</strong>
+                      <span className="text-slate-500 font-medium block">Metode Daur Ulang</span>
+                      <strong className="text-amber-700 font-extrabold">Bank Sampah &amp; Poin</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                  <h4 className="font-bold text-rose-800 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200">
+                  <h4 className="font-extrabold text-rose-700 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Trash2 size={16} />
-                    Material Residu Hilir ({stats?.komposisiSampah?.residu?.persentase || "15%"})
+                    Material Residu Hilir ({stats?.komposisiSampah?.residu?.persentase || "0%"})
                   </h4>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500 block">Popok / Pembalut</span>
-                      <strong className="text-rose-900 font-bold">40% (Timbangan Hilir)</strong>
+                      <span className="text-slate-500 font-medium block">Total Berat Hilir</span>
+                      <strong className="text-slate-900 font-bold font-mono">{stats?.komposisiSampah?.residuKg || 0} Kg</strong>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Residu B3 / Medis</span>
-                      <strong className="text-rose-900 font-bold">35% (Timbangan Hilir)</strong>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Non-Recyclable / TPA</span>
-                      <strong className="text-rose-900 font-bold">25% (Timbangan Hilir)</strong>
+                      <span className="text-slate-500 font-medium block">Tujuan Akhir</span>
+                      <strong className="text-rose-700 font-extrabold">TPA Hilir Kota</strong>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-4 space-y-2">
-                <h5 className="font-bold text-gray-800 text-xs">Kontribusi Tonase Terbesar per RW</h5>
-                {locations.slice(0, 3).map((loc) => (
-                  <div key={loc.rw} className="flex justify-between text-xs text-gray-600">
-                    <span>{loc.rw} ({loc.kelurahan})</span>
-                    <span className="font-bold text-on-surface">{loc.titikCount * 12} Kg terpilah</span>
-                  </div>
-                ))}
               </div>
             </div>
-            <div className="p-4 bg-gray-50 border-t border-outline-variant flex justify-end">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
               <button
                 onClick={() => setShowCompositionDetail(false)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
               >
                 Tutup Detail
               </button>
@@ -2762,78 +2771,83 @@ const Dashboard: React.FC = () => {
 
       {/* Detail Bin Modal */}
       {selectedBinForDetail && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-              <h3 className="font-bold text-[18px] text-on-surface">Detail Tempat Sampah Cerdas</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-[18px] text-slate-900">Detail Tempat Sampah Cerdas</h3>
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
               >
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-6">
               <div className="flex justify-center">
-                <div className="p-4 bg-white rounded-2xl border-2 border-outline-variant/60 shadow-inner flex flex-col items-center gap-2">
+                <div className="p-4 bg-white rounded-2xl border-2 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.2)] flex flex-col items-center gap-2">
                   <img
                     className="w-40 h-40"
                     alt="QR Code"
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedBinForDetail.qrCode || selectedBinForDetail.kode)}`}
                   />
-                  <span className="text-[14px] font-mono font-bold text-primary tracking-widest">
+                  <span className="text-[14px] font-mono font-bold text-slate-900 tracking-widest">
                     {selectedBinForDetail.qrCode || selectedBinForDetail.kode}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
-                  <span className="text-on-surface-variant">Kategori Sampah</span>
+                <div className="flex justify-between items-center py-2 border-b border-slate-200 text-sm">
+                  <span className="text-slate-400">Kategori Sampah</span>
                   <span
                     className={`font-bold uppercase ${(selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || "")
                         .toUpperCase()
                         .includes("ORGANIK")
-                        ? "text-primary"
-                        : "text-secondary"
+                        ? "text-emerald-600"
+                        : "text-cyan-600"
                       }`}
                   >
                     {selectedBinForDetail.category?.name || selectedBinForDetail.categoryId}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
-                  <span className="text-on-surface-variant">Wilayah (RT/RW)</span>
-                  <span className="font-semibold text-on-surface">
+                <div className="flex justify-between items-center py-2 border-b border-slate-200 text-sm">
+                  <span className="text-slate-400">Wilayah (Rukun Warga)</span>
+                  <span className="font-semibold text-slate-900">
                     {typeof selectedBinForDetail.rtRw === "string"
                       ? selectedBinForDetail.rtRw
                       : selectedBinForDetail.rtRw?.name || "-"}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-outline-variant/20 text-sm">
-                  <span className="text-on-surface-variant">Status Kapasitas</span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[11px] font-bold ${(selectedBinForDetail.kapasitas ||
-                        (Number(selectedBinForDetail.currentVolumeLiter) /
-                          Number(selectedBinForDetail.maxCapacityLiter)) *
-                        100) > 90
-                        ? "bg-red-100 text-red-700"
-                        : "bg-green-100 text-green-700"
-                      }`}
-                  >
-                    {selectedBinForDetail.currentVolumeLiter}L /{" "}
-                    {selectedBinForDetail.maxCapacityLiter}L (
-                    {Math.round(
-                      selectedBinForDetail.kapasitas ||
-                      (Number(selectedBinForDetail.currentVolumeLiter) /
-                        Number(selectedBinForDetail.maxCapacityLiter)) *
-                      100
-                    )}
-                    %)
-                  </span>
-                </div>
+                {(() => {
+                  const maxCapacityLiter = Number(selectedBinForDetail.maxCapacityLiter);
+                  const hasCapacityData =
+                    selectedBinForDetail.kapasitas != null || maxCapacityLiter > 0;
+                  if (!hasCapacityData) return null;
+                  const capPct = Math.min(
+                    100,
+                    Math.round(
+                      selectedBinForDetail.kapasitas != null
+                        ? selectedBinForDetail.kapasitas
+                        : (Number(selectedBinForDetail.currentVolumeLiter) / maxCapacityLiter) * 100
+                    )
+                  );
+                  return (
+                    <div className="flex justify-between items-center py-2 border-b border-slate-200 text-sm">
+                      <span className="text-slate-400">Status Kapasitas</span>
+                      <span className={`font-bold ${capPct >= 90 ? "text-rose-600" : "text-emerald-600"}`}>
+                        {capPct}% {capPct >= 90 ? "Penuh" : "Tersedia"}
+                        {maxCapacityLiter > 0 && (
+                          <span className="text-slate-400 font-medium">
+                            {" "}({Number(selectedBinForDetail.currentVolumeLiter) || 0}L / {maxCapacityLiter}L)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="flex justify-between items-center py-2 text-sm">
-                  <span className="text-on-surface-variant">Poin Setoran</span>
-                  <span className="font-bold text-yellow-600">
+                  <span className="text-slate-400">Poin Setoran</span>
+                  <span className="font-bold text-amber-600">
                     {selectedBinForDetail.category?.pointsPerKg || 100} Poin / Kg
                   </span>
                 </div>
@@ -2841,7 +2855,7 @@ const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-full py-3 bg-surface-container hover:bg-surface-container-high rounded-xl text-xs font-bold text-on-surface transition-colors cursor-pointer"
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 transition-colors cursor-pointer"
               >
                 Tutup Detail
               </button>

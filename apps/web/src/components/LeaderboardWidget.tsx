@@ -39,7 +39,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   items,
   maxPoints,
   unitLabel = "Poin",
-  linkTo = "/leaderboard",
+  linkTo = "/peringkat",
 }) => {
   const displayItems = items.slice(0, 10);
   const positivePoints = displayItems.map((i) => i.points).filter((p) => p > 0);
@@ -225,21 +225,31 @@ export const LeaderboardWidget: React.FC = () => {
         }
         const rawRw = d.rw || d.rtRw;
         if (rawRw && Array.isArray(rawRw)) {
-          const apiRw = rawRw.map((r: any, i: number) => ({
-            rank: i + 1,
-            name: r.rtRwName || r.name || `RW ${r.rwId || i + 1}`,
-            subtitle: `Kel. ${r.kelurahanName || "Coblong"}`,
-            points: Number(r.totalPoints || 0),
-          }));
+          const apiRw = rawRw.map((r: any, i: number) => {
+            const rawName = r.rtRwName || r.name || `${r.rwId || i + 1}`;
+            const cleanRw = rawName.toLowerCase().startsWith("rw") ? rawName : `RW ${rawName}`;
+            const rawKel = r.kelurahanName || "Coblong";
+            const cleanKel = rawKel.toLowerCase().startsWith("kel") ? rawKel : `Kel. ${rawKel}`;
+            return {
+              rank: i + 1,
+              name: cleanRw,
+              subtitle: cleanKel,
+              points: Number(r.totalPoints || 0),
+            };
+          });
           setRwList(apiRw);
         }
         if (d.regions) {
-          const apiKel = d.regions.map((k: any, i: number) => ({
-            rank: i + 1,
-            name: `Kelurahan ${k.kelurahanName}`,
-            subtitle: "Kecamatan Coblong",
-            points: Number(k.totalPoints || 0),
-          }));
+          const apiKel = d.regions.map((k: any, i: number) => {
+            const rawKel = k.kelurahanName || `${i + 1}`;
+            const cleanKel = rawKel.toLowerCase().startsWith("kelurahan") ? rawKel : `Kelurahan ${rawKel}`;
+            return {
+              rank: i + 1,
+              name: cleanKel,
+              subtitle: "Kecamatan Coblong",
+              points: Number(k.totalPoints || 0),
+            };
+          });
           setKelurahanList(apiKel);
         }
       }
@@ -248,21 +258,36 @@ export const LeaderboardWidget: React.FC = () => {
       if (resKkn.data?.success && resKkn.data.data) {
         const d = resKkn.data.data;
         if (d.students) {
-          const apiMhs = d.students.map((s: any, i: number) => ({
-            rank: i + 1,
-            name: s.name,
-            subtitle: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : "Mahasiswa KKN",
-            points: Number(s.finalScore || 0),
-          }));
+          const apiMhs = d.students.map((s: any, i: number) => {
+            const rawK = s.kelompok;
+            const cleanK =
+              rawK && rawK !== "Tanpa Kelompok" && rawK !== "N/A"
+                ? rawK.trim().toLowerCase().startsWith("kelompok")
+                  ? rawK.trim()
+                  : `Kelompok ${rawK.trim()}`
+                : "Mahasiswa KKN";
+            return {
+              rank: i + 1,
+              name: s.name,
+              subtitle: cleanK,
+              points: Number(s.finalScore || 0),
+            };
+          });
           setMahasiswaList(apiMhs);
         }
         if (d.groups) {
-          const apiGrp = d.groups.map((g: any, i: number) => ({
-            rank: i + 1,
-            name: g.name,
-            subtitle: "Tim Dampingan KKN",
-            points: Number(g.avgScore || 0),
-          }));
+          const apiGrp = d.groups.map((g: any, i: number) => {
+            const rawG = g.name || `Kelompok ${i + 1}`;
+            const cleanG = rawG.trim().toLowerCase().startsWith("kelompok")
+              ? rawG.trim()
+              : `Kelompok ${rawG.trim()}`;
+            return {
+              rank: i + 1,
+              name: cleanG,
+              subtitle: g.dplName || "Tim Dampingan KKN",
+              points: Number(g.avgScore || 0),
+            };
+          });
           setKelompokList(apiGrp);
         }
         if (d.dpl) {
@@ -445,7 +470,7 @@ export const LeaderboardWidget: React.FC = () => {
 
       </div>
 
-      {/* GRUP 1 — Top 10 Warga & Wilayah */}
+      {/* Top 10 Warga & Wilayah */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-xl bg-emerald-600 text-white shadow-xs">
@@ -453,7 +478,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
           <div>
             <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Grup 1 — Top 10 Warga &amp; Wilayah
+              Top 10 Warga &amp; Wilayah
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">
               Ranking dan performa warga serta wilayah berdasarkan perolehan poin.
@@ -470,18 +495,18 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={wargaList}
             maxPoints={wargaList[0]?.points || 0}
-            linkTo="/leaderboard?system=system1&tab=citizens"
+            linkTo="/peringkat?system=system1&tab=citizens"
           />
 
           {/* 2. Top 10 Petugas Residu */}
           <ColumnCard
-            title="Top 10 Petugas Residu"
+            title="Top 10 Petugas Pemilah"
             icon={<Truck size={14} />}
             iconBg="bg-rose-500"
             barColor="#ef4444"
             items={petugasList}
             maxPoints={petugasList[0]?.points || 0}
-            linkTo="/leaderboard?system=system1&tab=pengangkut"
+            linkTo="/peringkat?system=system1&tab=pengangkut"
           />
 
           {/* 3. Top 10 RW */}
@@ -492,7 +517,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={rwList}
             maxPoints={rwList[0]?.points || 0}
-            linkTo="/leaderboard?system=system1&tab=rtrw"
+            linkTo="/peringkat?system=system1&tab=rtrw"
           />
 
           {/* 4. Top 10 Kelurahan */}
@@ -503,12 +528,12 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#3b82f6"
             items={kelurahanList}
             maxPoints={kelurahanList[0]?.points || 0}
-            linkTo="/leaderboard?system=system1&tab=kelurahan"
+            linkTo="/peringkat?system=system1&tab=kelurahan"
           />
         </div>
       </div>
 
-      {/* GRUP 2 — Top 10 Akademik & Pendampingan */}
+      {/* Top 10 Akademik & Pendampingan */}
       <div className="space-y-3 pt-1">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-xl bg-emerald-700 text-white shadow-xs">
@@ -516,7 +541,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
           <div>
             <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Grup 2 — Top 10 Akademik &amp; Pendampingan
+              Top 10 Akademik &amp; Pendampingan
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">
               Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
@@ -533,7 +558,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={mahasiswaList}
             maxPoints={mahasiswaList[0]?.points || 0}
-            linkTo="/leaderboard?system=system2&tab=students"
+            linkTo="/peringkat?system=system2&tab=students"
           />
 
           {/* 2. Top 10 Kelompok Mahasiswa */}
@@ -544,7 +569,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={kelompokList}
             maxPoints={kelompokList[0]?.points || 0}
-            linkTo="/leaderboard?system=system2&tab=groups"
+            linkTo="/peringkat?system=system2&tab=groups"
           />
 
           {/* 3. Top 10 Dosen Pendamping Lapangan (DPL) */}
@@ -555,7 +580,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={dplList}
             maxPoints={dplList[0]?.points || 0}
-            linkTo="/leaderboard?system=system2&tab=students"
+            linkTo="/peringkat?system=system2&tab=students"
           />
         </div>
       </div>
