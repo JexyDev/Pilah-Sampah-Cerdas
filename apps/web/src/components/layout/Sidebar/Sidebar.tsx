@@ -289,9 +289,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         {
           type: "group",
-          label: "Master Pengguna",
+          label: "Master Data Pengguna",
           icon: Users,
-          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "RW", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[],
+          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW"] as UserRole[],
           children: [
             { to: "/master-pengguna?role=developer", label: "Developer" },
             { to: "/master-pengguna?role=su", label: "Super User" },
@@ -309,9 +309,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Master Data",
+          label: "Master Data Wilayah & Tempat Sampah",
           icon: Trash2,
-          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "RW", "PETUGAS_RESIDU"] as UserRole[],
+          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "PETUGAS_RESIDU"] as UserRole[],
           children: [
             { to: "/master-data/manajemen-tempat-sampah", label: "Manajemen Tempat Sampah" },
             { to: "/master-data/rule-engine", label: "Rule Engine" },
@@ -479,23 +479,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 return (
                   <div key={sec.header} className="space-y-0.5">
                     <SectionHeader label={sec.header} />
-                    {visibleItems.map((item: any) =>
-                      item.type === "group" ? (
-                        <NavGroup
-                          key={item.label}
-                          icon={item.icon}
-                          label={item.label}
-                          items={item.children}
-                        />
-                      ) : (
-                        <NavItem
-                          key={item.to}
-                          to={item.to}
-                          icon={item.icon}
-                          label={item.label}
-                        />
-                      )
-                    )}
+                    {visibleItems.map((item: any) => {
+                      if (item.type === "group") {
+                        const KKN_PENGGUNA = [
+                          "/master-pengguna?role=taskforce",
+                          "/master-pengguna?role=dpl",
+                          "/master-pengguna?role=mahasiswa",
+                        ];
+                        const KKN_WILAYAH = ["/manajemen-tempat-sampah"];
+                        const childrenToRender =
+                          item.label === "Master Data Pengguna" && (userRole === "PANITIA_TASKFORCE" || userRole === "PEMIMPIN")
+                            ? item.children.filter((c: any) => KKN_PENGGUNA.includes(c.to))
+                            : item.label === "Master Data Wilayah & Tempat Sampah" && (userRole === "PANITIA_TASKFORCE" || userRole === "PEMIMPIN")
+                            ? item.children.filter((c: any) => KKN_WILAYAH.includes(c.to))
+                            : item.children;
+                        return (
+                          <NavGroup
+                            key={item.label}
+                            icon={item.icon}
+                            label={item.label}
+                            items={childrenToRender}
+                          />
+                        );
+                      }
+                      return (
+                        <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+                      );
+                    })}
                   </div>
                 );
               })}

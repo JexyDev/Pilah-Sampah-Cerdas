@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 function getKelompokWhere(dplUserId: string, role?: string) {
   const normalizedRole = String(role || "").toUpperCase();
-  const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "superUser", "SUPER_USER", "ADMIN"].some((r) =>
+  const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some((r) =>
     normalizedRole.includes(r)
   );
 
@@ -19,10 +19,10 @@ function getKelompokWhere(dplUserId: string, role?: string) {
 
 export const dplService = {
   /**
-   * 1. Ringkasan Kelompok Bimbingan
+   * 1. Ringkasan Kelompok Bimbingan (Murni scoped ke kelompok DPL sendiri)
    */
   getGroupSummary: async (dplUserId: string, role?: string) => {
-    let groups = await prisma.kelompokKkn.findMany({
+    const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
       include: {
         students: {
@@ -35,29 +35,13 @@ export const dplService = {
       },
     });
 
-    // Fallback: If 0 groups found for DPL account, return first 50 groups so dashboard works smoothly
     if (groups.length === 0) {
-      groups = await prisma.kelompokKkn.findMany({
-        take: 50,
-        include: {
-          students: {
-            include: {
-              user: {
-                select: { id: true, name: true, phone: true },
-              },
-            },
-          },
-        },
-      });
+      return [];
     }
-
-    const totalSystemStudents = await prisma.studentKkn.count();
-    const totalSystemBins = await prisma.bin.count({ where: { status: "ACTIVE_BOUND" } });
 
     const groupSummaries = await Promise.all(
       groups.map(async (grp, idx) => {
         const studentUserIds = grp.students.map((s) => s.userId);
-
         const studentCount = grp.students.length;
 
         let activatedBinsCount = 0;
@@ -104,8 +88,8 @@ export const dplService = {
         return {
           id: grp.id,
           name: grp.name,
-          kelurahan: grp.kelurahan || "Dago",
-          cakupanRw: grp.cakupanRw || [`RW ${(idx % 12) + 1}`],
+          kelurahan: grp.kelurahan || null,
+          cakupanRw: grp.cakupanRw || [],
           studentCount,
           activatedBinsCount,
           avgAttendanceRate,
@@ -118,28 +102,25 @@ export const dplService = {
   },
 
   /**
-   * 2. Detail per Mahasiswa
+   * 2. Detail per Mahasiswa Bimbingan DPL
    */
   getStudentDetails: async (dplUserId: string, groupId?: string, role?: string) => {
     const whereGroup: any = getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
-    let myGroups = await prisma.kelompokKkn.findMany({
+    const myGroups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
       select: { id: true },
     });
 
     if (myGroups.length === 0) {
-      myGroups = await prisma.kelompokKkn.findMany({
-        take: 50,
-        select: { id: true },
-      });
+      return [];
     }
 
     const myGroupIds = myGroups.map((g) => g.id);
 
     const students = await prisma.studentKkn.findMany({
-      where: myGroupIds.length > 0 ? { kelompokId: { in: myGroupIds } } : {},
+      where: { kelompokId: { in: myGroupIds } },
       include: {
         user: {
           select: {
@@ -194,8 +175,8 @@ export const dplService = {
           name: st.user?.name || "Mahasiswa KKN",
           phone: st.user?.phone || "-",
           nim: st.nim || "-",
-          jurusan: st.jurusan || "Informatika",
-          fakultas: st.fakultas || "Informatika",
+          jurusan: st.jurusan || "-",
+          fakultas: st.fakultas || "-",
           fotoProfil: st.user?.fotoProfil || null,
           isKetua: Boolean(st.isKetua),
           kelompokName: st.kelompok?.name || "-",
@@ -318,10 +299,10 @@ export const dplService = {
   },
 
   /**
-   * 4. Peta Sebaran (RW Polygons & Activated Bins)
+   * 4. Peta Sebaran (Hanya Wilayah & Kelompok DPL)
    */
   getMapCoverage: async (dplUserId: string, role?: string) => {
-    let groups = await prisma.kelompokKkn.findMany({
+    const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
       select: {
         id: true,
@@ -333,23 +314,16 @@ export const dplService = {
     });
 
     if (groups.length === 0) {
-      groups = await prisma.kelompokKkn.findMany({
-        take: 50,
-        select: {
-          id: true,
-          name: true,
-          kelurahan: true,
-          cakupanRw: true,
-          students: { select: { userId: true } },
-        },
-      });
+      return { groups: [], rwAreas: [], bins: [] };
     }
 
     const allStudentUserIds = groups.flatMap((g) => g.students.map((s) => s.userId));
 
     const bins = await prisma.bin.findMany({
       where:
-        allStudentUserIds.length > 0 ? { registeredByStudentId: { in: allStudentUserIds } } : {},
+        allStudentUserIds.length > 0
+          ? { registeredByStudentId: { in: allStudentUserIds } }
+          : { id: "impossible-id" },
       take: 200,
       select: {
         id: true,
@@ -361,7 +335,13 @@ export const dplService = {
       },
     });
 
+    const groupKelurahans = groups.map((g) => g.kelurahan).filter(Boolean) as string[];
+
     const rwAreas = await prisma.rw.findMany({
+      where:
+        groupKelurahans.length > 0
+          ? { kelurahan: { name: { in: groupKelurahans, mode: "insensitive" } } }
+          : {},
       include: { kelurahan: true },
     });
 
@@ -369,32 +349,32 @@ export const dplService = {
       groups: groups.map((g) => ({
         id: g.id,
         name: g.name,
-        kelurahan: g.kelurahan || "Bojongsoang",
+        kelurahan: g.kelurahan || null,
         cakupanRw: g.cakupanRw,
       })),
       rwAreas: rwAreas.map((rw) => ({
         id: rw.id,
         name: rw.name,
-        kelurahan: rw.kelurahan?.name || "Coblong",
-        latitude: Number(rw.latitude || -6.89),
-        longitude: Number(rw.longitude || 107.61),
+        kelurahan: rw.kelurahan?.name || null,
+        latitude: rw.latitude ? Number(rw.latitude) : null,
+        longitude: rw.longitude ? Number(rw.longitude) : null,
       })),
       bins: bins.map((b) => ({
         id: b.id,
         qrCode: b.qrCode,
         status: b.status,
-        latitude: Number(b.latitude || -6.891),
-        longitude: Number(b.longitude || 107.612),
+        latitude: b.latitude ? Number(b.latitude) : null,
+        longitude: b.longitude ? Number(b.longitude) : null,
         wargaNama: b.user?.name || "Warga",
       })),
     };
   },
 
   /**
-   * 5. Notifikasi / Alert DPL
+   * 5. Notifikasi / Alert DPL (Hanya Pengajuan Izin dari Mahasiswa Bimbingan DPL)
    */
   getAlerts: async (dplUserId: string, role?: string) => {
-    let groups = await prisma.kelompokKkn.findMany({
+    const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
       select: {
         id: true,
@@ -403,13 +383,7 @@ export const dplService = {
     });
 
     if (groups.length === 0) {
-      groups = await prisma.kelompokKkn.findMany({
-        take: 50,
-        select: {
-          id: true,
-          students: { select: { userId: true, user: { select: { name: true } } } },
-        },
-      });
+      return { pendingApprovalsCount: 0, pendingRequests: [] };
     }
 
     const studentMap = new Map<string, string>();
@@ -418,12 +392,12 @@ export const dplService = {
     );
 
     const studentUserIds = Array.from(studentMap.keys());
+    if (studentUserIds.length === 0) {
+      return { pendingApprovalsCount: 0, pendingRequests: [] };
+    }
 
     const pendingRequests = await prisma.studentLeaveRequest.findMany({
-      where:
-        studentUserIds.length > 0
-          ? { studentId: { in: studentUserIds }, status: "PENDING" }
-          : { status: "PENDING" },
+      where: { studentId: { in: studentUserIds }, status: "PENDING" },
       include: {
         student: { select: { id: true, name: true, phone: true } },
       },
@@ -447,18 +421,30 @@ export const dplService = {
   },
 
   /**
-   * 6. Riwayat Approval Log DPL
+   * 6. Riwayat Approval Log DPL (Hanya Riwayat Kelompok DPL)
    */
   getApprovalHistory: async (dplUserId: string, role?: string) => {
     const normalizedRole = String(role || "").toUpperCase();
-    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "superUser", "SUPER_USER", "ADMIN"].some(
+    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some(
       (r) => normalizedRole.includes(r)
     );
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(dplUserId, role),
+      select: { students: { select: { userId: true } } },
+    });
+
+    const studentUserIds = groups.flatMap((g) => g.students.map((s) => s.userId));
 
     const history = await prisma.studentLeaveRequest.findMany({
       where: isAdmin
         ? { reviewedAt: { not: null } }
-        : { OR: [{ reviewedById: dplUserId }, { status: { in: ["APPROVED", "REJECTED"] } }] },
+        : {
+            AND: [
+              { studentId: { in: studentUserIds } },
+              { OR: [{ reviewedById: dplUserId }, { status: { in: ["APPROVED", "REJECTED", "ESCALATED"] } }] },
+            ],
+          },
       include: {
         student: { select: { name: true } },
       },
@@ -509,12 +495,12 @@ export const dplService = {
   },
 
   /**
-   * Decide (Approve/Reject) Leave Request
+   * Decide (Approve/Reject/Escalate) Leave Request
    */
   decideLeaveRequest: async (
     dplUserId: string,
     requestId: string,
-    status: "APPROVED" | "REJECTED",
+    status: "APPROVED" | "REJECTED" | "ESCALATED",
     rejectionReason?: string
   ) => {
     const req = await prisma.studentLeaveRequest.findUnique({
@@ -540,7 +526,7 @@ export const dplService = {
         status,
         reviewedById: dplUserId,
         reviewedAt: new Date(),
-        rejectionReason: status === "REJECTED" ? rejectionReason : null,
+        rejectionReason: status === "REJECTED" || status === "ESCALATED" ? rejectionReason : null,
       },
     });
 

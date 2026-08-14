@@ -163,8 +163,12 @@ export const kknAttendanceController = {
 
   getActiveStudentsLocations: async (req: Request, res: Response): Promise<void> => {
     try {
-      // Read-only monitoring allowed for SUPER_USER, ADMIN_DLH, CAMAT, LURAH, RW
-      const result = await kknAttendanceService.getActiveStudentsLocations();
+      const rawRole = (req as any).user?.role;
+      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const dplUserId = isDpl ? ((req as any).user?.userId || (req as any).user?.id) : undefined;
+
+      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId);
       res.status(200).json({
         success: true,
         data: result,
@@ -191,7 +195,14 @@ export const kknAttendanceController = {
         return;
       }
 
-      const result = await kknAttendanceService.getAttendanceList(id);
+      const rawRole = (req as any).user?.role;
+      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      let dplUserId: string | undefined = undefined;
+      if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
+        dplUserId = (req as any).user?.userId || (req as any).user?.id;
+      }
+
+      const result = await kknAttendanceService.getAttendanceList(id, dplUserId);
       res.status(200).json({
         success: true,
         data: result,

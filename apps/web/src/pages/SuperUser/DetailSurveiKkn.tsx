@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, FileText, MapPin, Database, Sprout, Users, AlertTriangle, ArrowRight, Building, Map, CheckCircle2, ChevronRight, Edit3, Home, ClipboardList, Info } from "lucide-react";
+import { Loader2, FileText, MapPin, Database, Sprout, Users, AlertTriangle, ArrowRight, Building, Map, CheckCircle2, Edit3, Home, ClipboardList, Info } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import EditSurveiModal from "./EditSurveiModal";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export default function DetailSurveiKkn() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const canEdit = user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE";
 
   const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
@@ -562,11 +565,12 @@ export default function DetailSurveiKkn() {
       {/* Header Area */}
       <div className="flex flex-col gap-6">
         <div>
-          <div className="flex items-center text-sm text-slate-500 mb-4 cursor-pointer font-medium" onClick={() => navigate("/superUser/data-survei-kkn")}>
-            <span className="hover:text-emerald-600 transition-colors">Data Survei KKN</span>
-            <ChevronRight size={14} className="mx-2" />
-            <span className="text-slate-800 font-bold">Kecamatan {selectedSurvey?.kecamatan || "..."}</span>
-          </div>
+          <button
+            onClick={() => navigate("/superUser/data-survei-kkn")}
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-600 font-bold mb-4 transition-colors cursor-pointer"
+          >
+            ← Kembali ke Data Survei KKN
+          </button>
           
           {isLoadingDetail ? (
             <div className="h-9 w-64 bg-slate-200 animate-pulse rounded-lg"></div>
@@ -580,7 +584,6 @@ export default function DetailSurveiKkn() {
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${completion.percentage === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                     {completion.percentage === 100 ? 'Lengkap' : 'Belum Lengkap'}
                   </span>
-                  <span className="text-sm font-medium text-slate-500">Kecamatan {selectedSurvey.kecamatan}</span>
                 </div>
               </div>
               
@@ -633,13 +636,15 @@ export default function DetailSurveiKkn() {
           })}
         </nav>
 
-        <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="mb-2 sm:mb-0 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all transform active:scale-95 cursor-pointer border border-emerald-500/20 shrink-0 self-start sm:self-auto"
-        >
-          <Edit3 size={15} />
-          <span>Edit Data Survei</span>
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="mb-2 sm:mb-0 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all transform active:scale-95 cursor-pointer border border-emerald-500/20 shrink-0 self-start sm:self-auto"
+          >
+            <Edit3 size={15} />
+            <span>Edit Data Survei</span>
+          </button>
+        )}
       </div>
 
       {/* Content Area */}

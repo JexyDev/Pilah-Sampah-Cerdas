@@ -16,7 +16,9 @@ import {
   Users,
   MapPin,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  UserPlus,
+  UserMinus
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -24,7 +26,8 @@ import { useAuthStore } from "../../store/useAuthStore";
 
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH"].includes(currentUser?.peran || "");
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
 
   const [activeTab, setActiveTab] = useState("kelompok");
 
@@ -41,6 +44,109 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "" });
   const [currentKelompokStudents, setCurrentKelompokStudents] = useState<any[]>([]);
   const [submittingKelompok, setSubmittingKelompok] = useState(false);
+
+  // DPL Leader Assignment State
+  const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
+  const [selectedLeaderKelompok, setSelectedLeaderKelompok] = useState<any>(null);
+  const [selectedLeaderStudentId, setSelectedLeaderStudentId] = useState<string>("");
+  const [submittingLeader, setSubmittingLeader] = useState(false);
+  // Members Management Modal State
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [selectedGroupForMembers, setSelectedGroupForMembers] = useState<any>(null);
+  const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
+  const [studentToAssignId, setStudentToAssignId] = useState("");
+  const [filterStudentQuery, setFilterStudentQuery] = useState("");
+  const [submittingMemberAction, setSubmittingMemberAction] = useState(false);
+
+  const handleOpenMembersModal = async (k: any) => {
+    setSelectedGroupForMembers(k);
+    setIsMembersModalOpen(true);
+    setFilterStudentQuery("");
+    setStudentToAssignId("");
+    fetchAvailableStudents();
+  };
+
+  const fetchAvailableStudents = async () => {
+    try {
+      const res = await api.get("/users?roleName=MAHASISWA_KKN&limit=0");
+      if (res.data?.success) {
+        // backend returns role as string: { role: "MAHASISWA_KKN" }
+        const students = (res.data.data || []).filter(
+          (u: any) => u.role === "MAHASISWA_KKN"
+        );
+        setAllStudentsList(students);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAddStudentToGroup = async (studentId: string, kelompokId: string) => {
+    setSubmittingMemberAction(true);
+    try {
+      await api.put(`/users/${studentId}`, { kelompokId });
+      toast.success("Mahasiswa berhasil dialokasikan ke kelompok ini!");
+      setStudentToAssignId("");
+      fetchKelompok();
+      fetchAvailableStudents();
+      const updatedKelompokRes = await api.get(`/kelompok/${kelompokId}`);
+      if (updatedKelompokRes.data?.data) {
+        setSelectedGroupForMembers(updatedKelompokRes.data.data);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal mengalokasikan mahasiswa");
+    } finally {
+      setSubmittingMemberAction(false);
+    }
+  };
+
+  const handleRemoveStudentFromGroup = async (studentId: string, kelompokId: string) => {
+    setSubmittingMemberAction(true);
+    try {
+      await api.put(`/users/${studentId}`, { kelompokId: null });
+      toast.success("Mahasiswa berhasil dilepas dari kelompok!");
+      fetchKelompok();
+      fetchAvailableStudents();
+      const updatedKelompokRes = await api.get(`/kelompok/${kelompokId}`);
+      if (updatedKelompokRes.data?.data) {
+        setSelectedGroupForMembers(updatedKelompokRes.data.data);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal melepas mahasiswa");
+    } finally {
+      setSubmittingMemberAction(false);
+    }
+  };
+
+  const handleOpenSetLeaderModal = (k: any) => {
+    setSelectedLeaderKelompok(k);
+    const currentKetua = k.students?.find((s: any) => s.isKetua);
+    setSelectedLeaderStudentId(currentKetua?.id || "");
+    setIsLeaderModalOpen(true);
+  };
+
+  const handleSaveLeader = async () => {
+    if (!selectedLeaderKelompok) return;
+    setSubmittingLeader(true);
+    try {
+      await api.put(`/kelompok/${selectedLeaderKelompok.id}/leader`, {
+        studentId: selectedLeaderStudentId || null,
+      });
+      toast.success(
+        selectedLeaderStudentId ? "Ketua Kelompok berhasil ditunjuk!" : "Ketua Kelompok berhasil dilepas!"
+      );
+      setIsLeaderModalOpen(false);
+      fetchKelompok();
+    } catch (err: any) {
+      console.error("[setLeader] error:", err.response?.data || err.message, {
+        kelompokId: selectedLeaderKelompok.id,
+        studentId: selectedLeaderStudentId,
+      });
+      toast.error(err.response?.data?.message || err.response?.data?.error || "Gagal memperbarui Ketua Kelompok");
+    } finally {
+      setSubmittingLeader(false);
+    }
+  };
 
   // DPL State
   const [dplList, setDplList] = useState<any[]>([]);
@@ -232,9 +338,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         toast.success("Kelompok berhasil dibuat!");
       } else {
         await api.put(`/kelompok/${selectedKelompokId}`, payload);
-        if (kelompokForm.ketuaStudentId) {
-          await api.put(`/kelompok/${selectedKelompokId}/leader`, { studentId: kelompokForm.ketuaStudentId });
-        }
+        await api.put(`/kelompok/${selectedKelompokId}/leader`, { studentId: kelompokForm.ketuaStudentId || null });
         toast.success("Kelompok berhasil diperbarui!");
       }
       setIsKelompokModalOpen(false);
@@ -320,11 +424,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {/* Tabs */}
       <div className="border-b border-slate-200">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {[
-            { id: "kelompok", label: `Kelompok KKN (${kelompokList.length})`, icon: GraduationCap },
-            { id: "dpl", label: `Dosen Pembimbing (${dplList.length})`, icon: User },
-            { id: "universitas", label: `Universitas Mitra (${uniList.length})`, icon: BookOpen }
-          ].map((tab) => {
+          {(isDpl
+            ? [{ id: "kelompok", label: `Kelompok Saya (${kelompokList.length})`, icon: GraduationCap }]
+            : [
+                { id: "kelompok", label: `Kelompok KKN (${kelompokList.length})`, icon: GraduationCap },
+                { id: "dpl", label: `Dosen Pembimbing (${dplList.length})`, icon: User },
+                { id: "universitas", label: `Universitas Mitra (${uniList.length})`, icon: BookOpen }
+              ]
+          ).map((tab) => {
             const Icon = tab.icon;
             return (
               <button
@@ -371,23 +478,25 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   )}
                 </div>
 
-                {/* Filter Kelurahan */}
-                <div className="flex items-center gap-2">
-                  <Filter size={16} className="text-slate-400 shrink-0" />
-                  <select
-                    value={filterKelurahan}
-                    onChange={(e) => setFilterKelurahan(e.target.value)}
-                    aria-label="Filter Kelurahan"
-                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
-                  >
-                    <option value="ALL">Semua Kelurahan</option>
-                    {kelurahanOptions.map((kel) => (
-                      <option key={kel} value={kel}>
-                        Kel. {kel}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Filter Kelurahan (Hanya untuk Admin / Taskforce / Pemimpin, disembunyikan untuk DPL) */}
+                {!isDpl && (
+                  <div className="flex items-center gap-2">
+                    <Filter size={16} className="text-slate-400 shrink-0" />
+                    <select
+                      value={filterKelurahan}
+                      onChange={(e) => setFilterKelurahan(e.target.value)}
+                      aria-label="Filter Kelurahan"
+                      className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                    >
+                      <option value="ALL">Semua Kelurahan</option>
+                      {kelurahanOptions.map((kel) => (
+                        <option key={kel} value={kel}>
+                          Kel. {kel}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons & Rows per page */}
@@ -442,7 +551,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Ketua Kelompok</th>
                         <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Dosen Pembimbing (DPL)</th>
                         <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Anggota</th>
-                        {!isReadOnly && (
+                        {(!isReadOnly || isDpl) && (
                           <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Aksi</th>
                         )}
                       </tr>
@@ -490,31 +599,48 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                               )}
                             </td>
                             <td className="p-4 text-center font-bold text-slate-700">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-full text-xs">
-                                <Users size={13} className="text-slate-500" />
-                                {k.students?.length || 0} Mahasiswa
-                              </span>
+                              <button
+                                onClick={() => handleOpenMembersModal(k)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200/80 hover:bg-teal-100 rounded-full text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                title="Klik untuk mengelola/menambah anggota mahasiswa di kelompok ini"
+                              >
+                                <Users size={13} className="text-teal-600" />
+                                {k.students?.length || 0} Mahasiswa (Kelola)
+                              </button>
                             </td>
-                            {!isReadOnly && (
-                              <td className="p-4 text-center">
-                                <div className="flex items-center justify-center gap-2">
+                            <td className="p-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                {(isDpl || !isReadOnly) && (
                                   <button
-                                    onClick={() => handleOpenEditKelompok(k)}
-                                    className="p-2 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
-                                    title="Edit Kelompok"
+                                    onClick={() => handleOpenSetLeaderModal(k)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                    title="Klik untuk menunjuk atau melepas ketua kelompok"
                                   >
-                                    <Pencil size={16} />
+                                    <Crown size={14} className="text-amber-600" />
+                                    {ketuaMhs ? "Ketua" : "Tunjuk Ketua"}
                                   </button>
-                                  <button
-                                    onClick={() => handleDeleteKelompok(k.id)}
-                                    className="p-2 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
-                                    title="Hapus Kelompok"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </div>
-                              </td>
-                            )}
+                                )}
+
+                                {!isReadOnly && (
+                                  <>
+                                    <button
+                                      onClick={() => handleOpenEditKelompok(k)}
+                                      className="p-2 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
+                                      title="Edit Kelompok & DPL"
+                                    >
+                                      <Pencil size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteKelompok(k.id)}
+                                      className="p-2 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+                                      title="Hapus Kelompok"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
                           </tr>
                         );
                       })}
@@ -824,7 +950,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     aria-label="Pilih Ketua Kelompok (Mahasiswa)"
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white cursor-pointer"
                   >
-                    <option value="">Pilih Ketua Kelompok</option>
+                    <option value="">-- Tanpa Ketua / Lepas Ketua --</option>
                     {currentKelompokStudents.map((st) => (
                       <option key={st.id} value={st.id}>
                         {st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`} {st.isKetua ? "(Ketua Saat Ini)" : ""}
@@ -944,6 +1070,250 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DPL Modal: Tunjuk Ketua Kelompok */}
+      {isLeaderModalOpen && selectedLeaderKelompok && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-up">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-amber-50/50">
+              <div className="flex items-center gap-2">
+                <Crown className="text-amber-600" size={20} />
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  Tunjuk Ketua {selectedLeaderKelompok.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsLeaderModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-500">
+                Pilih salah satu mahasiswa dari kelompok Anda untuk ditunjuk sebagai Ketua Kelompok:
+              </p>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                <label
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                    !selectedLeaderStudentId
+                      ? "border-red-500 bg-red-50/60 ring-1 ring-red-500 font-bold"
+                      : "border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="ketua"
+                      value=""
+                      checked={!selectedLeaderStudentId}
+                      onChange={() => setSelectedLeaderStudentId("")}
+                      className="text-red-600 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-slate-700 italic">-- Tanpa Ketua / Lepas Ketua --</span>
+                  </div>
+                  {!selectedLeaderKelompok?.students?.some((s: any) => s.isKetua) && (
+                    <span className="text-[10px] font-extrabold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md uppercase">
+                      Saat Ini Tanpa Ketua
+                    </span>
+                  )}
+                </label>
+
+                {(selectedLeaderKelompok.students || []).map((mhs: any) => (
+                  <label
+                    key={mhs.id}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                      selectedLeaderStudentId === mhs.id
+                        ? "border-amber-500 bg-amber-50/60 ring-1 ring-amber-500 font-bold"
+                        : "border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="ketua"
+                        value={mhs.id}
+                        checked={selectedLeaderStudentId === mhs.id}
+                        onChange={() => setSelectedLeaderStudentId(mhs.id)}
+                        className="text-amber-600 focus:ring-amber-500"
+                      />
+                      <span className="text-sm text-slate-800">{mhs.user?.name || "Mahasiswa"}</span>
+                    </div>
+                    {mhs.isKetua && (
+                      <span className="text-[10px] font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md uppercase">
+                        Ketua Saat Ini
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsLeaderModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveLeader}
+                  disabled={submittingLeader}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {submittingLeader && <Loader2 className="animate-spin" size={16} />}
+                  Simpan Ketua
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members Management Modal */}
+      {isMembersModalOpen && selectedGroupForMembers && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 max-h-[85vh] flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Users size={20} className="text-teal-600" />
+                  <span>Kelola Anggota - {selectedGroupForMembers.name}</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Kel. {selectedGroupForMembers.kelurahan || "Coblong"} | Total: {selectedGroupForMembers.students?.length || 0} Mahasiswa
+                </p>
+              </div>
+              <button onClick={() => setIsMembersModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              {/* Form Tambah Mahasiswa ke Kelompok */}
+              {!isReadOnly && (
+                <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-teal-900 uppercase tracking-wider">
+                      Alokasikan Mahasiswa ke Kelompok Ini
+                    </label>
+                    <span className="text-[11px] text-teal-700 font-semibold">
+                      {allStudentsList.filter((u) => u.studentProfile?.kelompokId !== selectedGroupForMembers.id).length} Mahasiswa Tersedia
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={filterStudentQuery}
+                        onChange={(e) => setFilterStudentQuery(e.target.value)}
+                        placeholder="Cari nama atau NIM mahasiswa..."
+                        className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <select
+                        value={studentToAssignId}
+                        onChange={(e) => setStudentToAssignId(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium bg-white focus:outline-none focus:border-teal-500"
+                      >
+                        <option value="">-- Pilih Mahasiswa untuk Dialokasikan --</option>
+                        {allStudentsList
+                          .filter((u) => {
+                            if (u.studentProfile?.kelompokId === selectedGroupForMembers.id) return false;
+                            if (!filterStudentQuery) return true;
+                            const q = filterStudentQuery.toLowerCase();
+                            const matchName = (u.name || "").toLowerCase().includes(q);
+                            const matchNim = (u.studentProfile?.nim || "").toLowerCase().includes(q);
+                            return matchName || matchNim;
+                          })
+                          .map((u) => {
+                            const kelName = u.studentProfile?.kelompok?.name || "Belum Ada Kelompok";
+                            return (
+                              <option key={u.id} value={u.id}>
+                                {u.name} (NIM: {u.studentProfile?.nim || "-"}) - [{kelName}]
+                              </option>
+                            );
+                          })}
+                      </select>
+
+                      <button
+                        type="button"
+                        disabled={!studentToAssignId || submittingMemberAction}
+                        onClick={() => handleAddStudentToGroup(studentToAssignId, selectedGroupForMembers.id)}
+                        className="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        {submittingMemberAction ? <Loader2 className="animate-spin" size={14} /> : <UserPlus size={14} />}
+                        <span>+ Tambah Mahasiswa</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Daftar Mahasiswa Saat Ini di Kelompok */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Daftar Anggota Mahasiswa Saat Ini ({selectedGroupForMembers.students?.length || 0})
+                </h4>
+
+                {(!selectedGroupForMembers.students || selectedGroupForMembers.students.length === 0) ? (
+                  <div className="text-center py-8 text-slate-400 font-semibold text-xs border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    Belum ada mahasiswa yang dialokasikan ke kelompok ini.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                    {selectedGroupForMembers.students.map((st: any) => (
+                      <div key={st.id} className="p-3 bg-white flex items-center justify-between hover:bg-slate-50/80 transition">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">{st.user?.name || `Mahasiswa ${st.id}`}</span>
+                            {st.isKetua && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
+                                <Crown size={11} className="text-amber-600" /> KETUA
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            NIM: {st.nim || "-"} | Jurusan: {st.jurusan || "-"} ({st.fakultas || "-"})
+                          </p>
+                        </div>
+
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            disabled={submittingMemberAction}
+                            onClick={() => handleRemoveStudentFromGroup(st.userId || st.user?.id, selectedGroupForMembers.id)}
+                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            title="Lepas mahasiswa dari kelompok ini"
+                          >
+                            <UserMinus size={13} />
+                            <span>Lepas</span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsMembersModalOpen(false)}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 transition cursor-pointer"
+              >
+                Selesai
+              </button>
+            </div>
           </div>
         </div>
       )}

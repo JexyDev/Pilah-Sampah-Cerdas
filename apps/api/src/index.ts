@@ -172,26 +172,28 @@ cronService.start();
     const { PrismaClient } = await import("@prisma/client");
     const prisma = new PrismaClient();
 
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "harus_ganti_password" BOOLEAN DEFAULT false;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "subtipe_warga" TEXT;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "nip" TEXT;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "institusi" TEXT;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jabatan" TEXT;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "program_studi" TEXT;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;
-      ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jumlah_anggota_keluarga" INTEGER;
+    const migrationQueries = [
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "harus_ganti_password" BOOLEAN DEFAULT false',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "subtipe_warga" TEXT',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "nip" TEXT',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "institusi" TEXT',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jabatan" TEXT',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "program_studi" TEXT',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jumlah_anggota_keluarga" INTEGER',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian_dpl" DECIMAL(5,2) DEFAULT 0.0',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT',
+    ];
 
-      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian_dpl" DECIMAL(5,2) DEFAULT 0.0;
-      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false;
-      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;
-      ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;
-
-      ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;
-      ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;
-    `);
+    for (const q of migrationQueries) {
+      await prisma.$executeRawUnsafe(q);
+    }
     console.log("[AutoMigration] Database columns checked and synced successfully.");
 
     const dummyUser = await prisma.user.findFirst({

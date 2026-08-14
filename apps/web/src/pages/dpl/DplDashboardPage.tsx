@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import api from "../../services/api";
 import {
   QrCode,
   CalendarCheck,
@@ -118,7 +119,7 @@ import {
   type ApprovalHistoryLog,
 } from "../../services/dplService";
 
-type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP";
+type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP" | "INOVASI";
 
 export const DplDashboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -128,7 +129,7 @@ export const DplDashboardPage: React.FC = () => {
   const activeTab: TabType = useMemo(() => {
     if (rawTab === "STUDENTS") return "MAHASISWA";
     if (rawTab === "APPROVALS") return "APPROVAL";
-    if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "MAP"].includes(rawTab)) {
+    if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "MAP", "INOVASI"].includes(rawTab)) {
       return rawTab as TabType;
     }
     return "OVERVIEW";
@@ -145,6 +146,8 @@ export const DplDashboardPage: React.FC = () => {
   const [approvalHistory, setApprovalHistory] = useState<ApprovalHistoryLog[]>([]);
   const [mapCoverage, setMapCoverage] = useState<MapCoverage | null>(null);
   const [selectedKelurahanMap, setSelectedKelurahanMap] = useState<string | null>(null);
+  const [ideList, setIdeList] = useState<any[]>([]);
+  const [ideLoading, setIdeLoading] = useState(false);
 
   const kelurahanCentroids = useMemo(
     () => [
@@ -207,13 +210,47 @@ export const DplDashboardPage: React.FC = () => {
   const [assistedCitizensData, setAssistedCitizensData] = useState<AssistedCitizensResponse | null>(null);
   const [loadingCitizens, setLoadingCitizens] = useState(false);
 
-  // Rejection Note Modal States
+  // Rejection & Escalation Modal States
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [escalatingRequestId, setEscalatingRequestId] = useState<string | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
+  const [escalationReasonInput, setEscalationReasonInput] = useState("");
+
+  // Student Assessment Modal States
+  const [selectedStudentForAssess, setSelectedStudentForAssess] = useState<StudentDetail | null>(null);
+  const [assessScoreInput, setAssessScoreInput] = useState<number>(80);
+  const [assessNoteInput, setAssessNoteInput] = useState<string>("");
+  const [submittingAssess, setSubmittingAssess] = useState<boolean>(false);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const fetchIdeKreatif = async () => {
+    setIdeLoading(true);
+    try {
+      const res = await api.get("/ide-daur-ulang?limit=200");
+      const raw: any[] = res.data?.data || res.data?.ideas || (Array.isArray(res.data) ? res.data : []);
+      const mhsIds = new Set(students.map((s: any) => s.userId || s.id));
+      const filtered = raw.filter((ide: any) =>
+        ide.submittedBy === "MAHASISWA_KKN" ||
+        ide.userRole === "MAHASISWA_KKN" ||
+        mhsIds.has(ide.userId) ||
+        mhsIds.has(ide.user?.id)
+      );
+      setIdeList(filtered.length > 0 ? filtered : raw);
+    } catch {
+      setIdeList([]);
+    } finally {
+      setIdeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "INOVASI" && ideList.length === 0 && !ideLoading) {
+      fetchIdeKreatif();
+    }
+  }, [activeTab, students]);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -252,12 +289,49 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
-  const handleDecideLeave = async (requestId: string, status: "APPROVED" | "REJECTED", note?: string) => {
+  const handleOpenAssessModal = (student: StudentDetail) => {
+    setSelectedStudentForAssess(student);
+    setAssessScoreInput(student.assessmentScore || 80);
+    setAssessNoteInput("");
+  };
+
+  const handleSubmitAssessment = async () => {
+    if (!selectedStudentForAssess) return;
+    setSubmittingAssess(true);
+    try {
+      await dplService.assessStudent(
+        selectedStudentForAssess.userId || selectedStudentForAssess.id,
+        assessScoreInput,
+        assessNoteInput
+      );
+      toast.success(`Skor penilaian ${selectedStudentForAssess.name} berhasil disimpan!`);
+      setSelectedStudentForAssess(null);
+      await loadDashboardData();
+    } catch (err: any) {
+      toast.error("Gagal menyimpan skor penilaian mahasiswa");
+    } finally {
+      setSubmittingAssess(false);
+    }
+  };
+
+  const handleDecideLeave = async (
+    requestId: string,
+    status: "APPROVED" | "REJECTED" | "ESCALATED",
+    note?: string
+  ) => {
     try {
       await dplService.decideLeaveRequest(requestId, status, note);
-      toast.success(status === "APPROVED" ? "Pengajuan berhasil disetujui" : "Pengajuan berhasil ditolak");
+      if (status === "APPROVED") {
+        toast.success("Pengajuan izin berhasil disetujui");
+      } else if (status === "ESCALATED") {
+        toast.success("Pengajuan izin berhasil dieskalasi ke Panitia Taskforce");
+      } else {
+        toast.success("Pengajuan izin berhasil ditolak");
+      }
       setRejectingRequestId(null);
+      setEscalatingRequestId(null);
       setRejectionReasonInput("");
+      setEscalationReasonInput("");
       const [updatedAlerts, updatedHistory] = await Promise.all([
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
@@ -359,6 +433,7 @@ export const DplDashboardPage: React.FC = () => {
             {activeTab === "MAHASISWA" && "Portofolio Mahasiswa"}
             {activeTab === "APPROVAL" && "Persetujuan Sakit / Izin"}
             {activeTab === "MAP" && "Peta Sebaran Bins & RW"}
+            {activeTab === "INOVASI" && "Ide Kreatif Mahasiswa"}
           </h1>
           <p className="text-slate-400 text-xs md:text-sm mt-1">
             Portal agregasi kegiatan mahasiswa KKN, rekam portofolio mandiri, dan validasi presensi.
@@ -383,6 +458,37 @@ export const DplDashboardPage: React.FC = () => {
             </button>
           )}
         </div>
+      </div>
+
+      {/* === Tab Navigation Bar === */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+        {(
+          [
+            { key: "OVERVIEW", label: "Ringkasan" },
+            { key: "KELOMPOK", label: "Kelompok" },
+            { key: "MAHASISWA", label: "Mahasiswa" },
+            { key: "APPROVAL", label: "Izin & Sakit", badge: alerts?.pendingApprovalsCount },
+            { key: "MAP", label: "Peta Wilayah" },
+            { key: "INOVASI", label: "Ide Kreatif" },
+          ] as { key: TabType; label: string; badge?: number }[]
+        ).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`relative shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === t.key
+                ? "bg-emerald-600 text-white shadow-sm"
+                : "bg-white text-slate-600 border border-slate-200 hover:border-emerald-400 hover:text-emerald-700"
+            }`}
+          >
+            {t.label}
+            {t.badge && t.badge > 0 ? (
+              <span className="bg-amber-400 text-slate-900 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                {t.badge}
+              </span>
+            ) : null}
+          </button>
+        ))}
       </div>
 
       {/* === Search & Filter Controls Bar === */}
@@ -472,12 +578,12 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* Card Group 2 (E.5): Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Metrik Kehadiran Wilayah */}
+        {/* Left: Metrik Kehadiran Kelompok Binaan */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4">
           <div>
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
-            <h3 className="text-base font-extrabold text-slate-900">Total Kehadiran KKN Wilayah</h3>
-            <p className="text-xs text-slate-500 mt-1">Agregasi persentase kehadiran mahasiswa di Kecamatan Coblong.</p>
+            <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa Binaan</h3>
+            <p className="text-xs text-slate-500 mt-1">Persentase rata-rata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
           </div>
 
           <div className="flex items-center gap-4 bg-emerald-50/70 border border-emerald-200/80 p-4 rounded-xl">
@@ -488,12 +594,12 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-2xl font-black text-emerald-900">
                 {groups.length > 0 ? avgOverallAttendance : 0}%
               </span>
-              <p className="text-[11px] text-emerald-700 font-bold">Rata-Rata Tingkat Wilayah</p>
+              <p className="text-[11px] text-emerald-700 font-bold">Rata-Rata Kehadiran Kelompok Binaan</p>
             </div>
           </div>
 
           <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center justify-between font-medium">
-            <span>Cakupan Pengawasan:</span>
+            <span>Cakupan Bimbingan:</span>
             <span className="font-bold text-slate-800">{groups.length} Kelompok KKN</span>
           </div>
         </div>
@@ -644,7 +750,7 @@ export const DplDashboardPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                     <div className="bg-white p-2 rounded-lg border border-slate-100">
                       <span className="text-slate-400 block text-[10px]">Mahasiswa</span>
-                      <span className="font-bold text-slate-800">{grp.studentCount || 6} Orang</span>
+                      <span className="font-bold text-slate-800">{grp.studentCount ?? 0} Orang</span>
 
                     </div>
                     <div className="bg-white p-2 rounded-lg border border-slate-100">
@@ -824,7 +930,8 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="p-3.5 text-center">Sakit (S)</th>
                     <th className="p-3.5 text-center">Izin (I)</th>
                     <th className="p-3.5 text-center">Alpha (A)</th>
-                    <th className="p-3.5 text-center">Portofolio</th>
+                    <th className="p-3.5 text-center">Skor DPL</th>
+                    <th className="p-3.5 text-center">Aksi / Portofolio</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -876,14 +983,26 @@ export const DplDashboardPage: React.FC = () => {
                           {st.alphaCount}
                         </span>
                       </td>
+                      <td className="p-3.5 text-center font-bold">
+                        <span className="text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs inline-block">
+                          {st.assessmentScore ?? 0}
+                        </span>
+                      </td>
                       <td className="p-3.5 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
+                            onClick={() => handleOpenAssessModal(st)}
+                            className="px-2.5 py-1.5 bg-blue-50 text-blue-700 font-semibold rounded-lg hover:bg-blue-100 transition flex items-center gap-1 text-[11px] border border-blue-200/60 cursor-pointer"
+                            title="Beri / Edit Skor Penilaian DPL"
+                          >
+                            <FileCheck size={13} /> Penilaian
+                          </button>
+                          <button
                             onClick={() => handleOpenCitizensDrilldown(st)}
-                            className="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition flex items-center gap-1 text-[11px] border border-emerald-200/60 cursor-pointer"
+                            className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition flex items-center gap-1 text-[11px] border border-emerald-200/60 cursor-pointer"
                             title="Detail Aktivitas Pendampingan Warga"
                           >
-                            <QrCode size={13} /> Lihat Portofolio
+                            <QrCode size={13} /> Portofolio
                           </button>
                         </div>
                       </td>
@@ -892,7 +1011,7 @@ export const DplDashboardPage: React.FC = () => {
 
                   {paginatedStudents.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-6 text-center text-slate-400 italic text-xs">
+                      <td colSpan={9} className="p-6 text-center text-slate-400 italic text-xs">
                         Tidak ada data mahasiswa bimbingan yang cocok.
                       </td>
                     </tr>
@@ -968,16 +1087,22 @@ export const DplDashboardPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       <button
                         onClick={() => setRejectingRequestId(req.id)}
-                        className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200"
+                        className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200 cursor-pointer"
                       >
                         <XCircle size={14} /> Tolak
                       </button>
                       <button
+                        onClick={() => setEscalatingRequestId(req.id)}
+                        className="px-3 py-1.5 bg-amber-50 text-amber-800 font-bold text-xs rounded-lg hover:bg-amber-100 transition flex items-center gap-1 border border-amber-200 cursor-pointer"
+                      >
+                        <AlertTriangle size={14} /> Eskalasi
+                      </button>
+                      <button
                         onClick={() => handleDecideLeave(req.id, "APPROVED")}
-                        className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs"
+                        className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs cursor-pointer"
                       >
                         <CheckCircle size={14} /> Setujui
                       </button>
@@ -1347,6 +1472,87 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* MODAL DRILL-DOWN WARGA DIBANTU */}
 
+      {/* VIEW 6: IDE KREATIF MAHASISWA */}
+      {activeTab === "INOVASI" && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles size={18} className="text-amber-500" />
+                  Ide Kreatif Mahasiswa KKN
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Usulan ide daur ulang yang diajukan mahasiswa bimbingan Anda.
+                </p>
+              </div>
+              <button
+                onClick={fetchIdeKreatif}
+                className="px-3 py-1.5 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw size={13} className={ideLoading ? "animate-spin" : ""} />
+                Muat Ulang
+              </button>
+            </div>
+
+            {ideLoading ? (
+              <div className="text-center py-12 text-slate-400 text-xs font-semibold">
+                <RefreshCw className="animate-spin mx-auto mb-2 text-amber-500" size={22} />
+                Memuat ide kreatif mahasiswa...
+              </div>
+            ) : ideList.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-xs font-semibold border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                Belum ada ide kreatif dari mahasiswa bimbingan Anda.
+                <p className="mt-1 text-[11px] text-slate-400">Klik &quot;Muat Ulang&quot; untuk mengambil data terbaru.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {ideList.map((ide: any) => {
+                  const statusColor =
+                    ide.status === "APPROVED" || ide.status === "DISETUJUI"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : ide.status === "REJECTED" || ide.status === "DITOLAK"
+                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200";
+                  const statusLabel =
+                    ide.status === "APPROVED" || ide.status === "DISETUJUI"
+                      ? "Disetujui"
+                      : ide.status === "REJECTED" || ide.status === "DITOLAK"
+                      ? "Ditolak"
+                      : "Menunggu";
+                  return (
+                    <div
+                      key={ide.id}
+                      className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5 hover:border-amber-300 hover:shadow-sm transition"
+                    >
+                      {ide.foto && (
+                        <img
+                          src={ide.foto}
+                          alt={ide.judul || "Ide"}
+                          className="w-full h-32 object-cover rounded-lg"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      )}
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-extrabold text-sm text-slate-900 leading-snug">{ide.judul || ide.title || "Tanpa Judul"}</h4>
+                        <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full border ${statusColor}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{ide.deskripsi || ide.description || "-"}</p>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold pt-1 border-t border-slate-100">
+                        <span>Oleh: <span className="text-slate-700 font-bold">{ide.user?.name || ide.userName || "Mahasiswa"}</span></span>
+                        <span>{ide.createdAt ? new Date(ide.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* MODAL 3: PENOLAKAN IZIN CATATAN */}
       {rejectingRequestId && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
@@ -1380,6 +1586,107 @@ export const DplDashboardPage: React.FC = () => {
                   className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
                 >
                   Konfirmasi Penolakan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: PENILAIAN SKOR DPL MAHASISWA */}
+      {selectedStudentForAssess && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                  <FileCheck size={18} className="text-emerald-600" /> Penilaian Mahasiswa KKN
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">{selectedStudentForAssess.name} ({selectedStudentForAssess.nim})</p>
+              </div>
+              <button onClick={() => setSelectedStudentForAssess(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Skor Evaluasi DPL (0 - 100):</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={assessScoreInput}
+                  onChange={(e) => setAssessScoreInput(Number(e.target.value))}
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-emerald-500 font-bold text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Catatan Penilaian DPL (Opsional):</label>
+                <textarea
+                  rows={3}
+                  value={assessNoteInput}
+                  onChange={(e) => setAssessNoteInput(e.target.value)}
+                  placeholder="Catatan keaktifan, kepemimpinan, dan integrasi pemilahan sampah warga..."
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setSelectedStudentForAssess(null)}
+                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  disabled={submittingAssess}
+                  onClick={handleSubmitAssessment}
+                  className="flex-1 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+                >
+                  {submittingAssess ? "Menyimpan..." : "Simpan Skor"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: ESKALASI IZIN KE TASKFORCE */}
+      {escalatingRequestId && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-amber-600 flex items-center gap-1.5">
+                <AlertTriangle size={18} /> Eskalasi Izin ke Panitia Taskforce
+              </h3>
+              <button onClick={() => setEscalatingRequestId(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-slate-600">
+                Pengajuan izin ini akan diteruskan ke Panitia Taskforce untuk evaluasi tingkat lanjut.
+              </p>
+              <label className="block font-semibold text-slate-700">Catatan / Alasan Eskalasi:</label>
+              <textarea
+                rows={3}
+                value={escalationReasonInput}
+                onChange={(e) => setEscalationReasonInput(e.target.value)}
+                placeholder="Contoh: Izin melebihi 3 hari berturut-turut, membutuhkan keputusan panitia pusat..."
+                className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-amber-500"
+              />
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setEscalatingRequestId(null)}
+                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleDecideLeave(escalatingRequestId, "ESCALATED", escalationReasonInput)}
+                  className="flex-1 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition"
+                >
+                  Kirim Eskalasi
                 </button>
               </div>
             </div>

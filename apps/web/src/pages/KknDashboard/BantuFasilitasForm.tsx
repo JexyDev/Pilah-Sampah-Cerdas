@@ -80,6 +80,8 @@ export const BantuFasilitasForm = ({ onSuccess }: { onSuccess: () => void }) => 
             <option value="LOSEDA">Loseda (Kompos Pipa)</option>
             <option value="RUMAH_MAGGOT">Rumah Maggot</option>
             <option value="BANK_SAMPAH">Bank Sampah</option>
+            <option value="TPS">Tempat Pengolahan Sementara (TPS)</option>
+            <option value="INCINERATOR">Incinerator</option>
             <option value="BUDIDAYA_TERNAK">Budidaya Ternak</option>
           </select>
         </div>

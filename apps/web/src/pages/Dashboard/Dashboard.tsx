@@ -22,6 +22,7 @@ import { IconRenderer } from "../../components/common/IconRenderer";
 import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
+import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
@@ -1768,6 +1769,11 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") return <DplDashboardPage />;
 
+  if (user?.peran === "PANITIA_TASKFORCE") {
+    return <TaskforceDashboardPage />;
+  }
+
+  // Scaling factors for Trend SVG
   const maxWeightTrend = Math.max(
     ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.residu || 0, d.weight || 0)),
     10

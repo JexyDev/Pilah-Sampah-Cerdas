@@ -176,7 +176,11 @@ export const dplService = {
     return res.data;
   },
 
-  decideLeaveRequest: async (requestId: string, status: "APPROVED" | "REJECTED", note?: string) => {
+  decideLeaveRequest: async (
+    requestId: string,
+    status: "APPROVED" | "REJECTED" | "ESCALATED",
+    note?: string
+  ) => {
     const res = await api.post(`/dpl/approvals/${requestId}/decide`, { status, note });
     return res.data;
   },

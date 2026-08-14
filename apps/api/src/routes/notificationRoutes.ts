@@ -111,6 +111,68 @@ router.get("/", authMiddleware, async (req, res) => {
 
     let formattedNotifications: any[] = [];
 
+    const isDplRole = role === "DPL" || role === "DOSEN_PEMBIMBING";
+
+    if (isDplRole && userId) {
+      // 1. Ambil seluruh mahasiswa di kelompok bimbingan DPL ini
+      const dplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: [{ dplId: userId }, { dpl: { id: userId } }] },
+        select: { students: { select: { userId: true, user: { select: { name: true } } } } },
+      });
+      const studentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
+
+      // 2. Ambil pengajuan izin (Leave Request) mahasiswa bimbingan DPL
+      let leaveNotifs: any[] = [];
+      if (studentUserIds.length > 0) {
+        const pendingLeave = await prisma.studentLeaveRequest.findMany({
+          where: { studentId: { in: studentUserIds }, status: "PENDING" },
+          include: { student: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+          take: 15,
+        });
+
+        leaveNotifs = pendingLeave.map((r) => {
+          const diffMs = Date.now() - new Date(r.createdAt).getTime();
+          const diffMins = Math.floor(diffMs / (1000 * 60));
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          let time = "Baru saja";
+          if (diffDays > 0) time = `${diffDays} hari lalu`;
+          else if (diffHours > 0) time = `${diffHours} jam lalu`;
+          else if (diffMins > 0) time = `${diffMins} menit lalu`;
+
+          return {
+            id: `leave-req-${r.id}`,
+            type: "PENGAJUAN_IZIN",
+            title: `Pengajuan ${r.type === "SAKIT" ? "Izin Sakit" : "Izin Meninggalkan Tempat"}`,
+            desc: `Mahasiswa ${r.student?.name || "Bimbingan"} mengajukan ${r.type}: "${r.reason}". Mohon review/persetujuan DPL.`,
+            isRead: false,
+            time,
+            icon: "event_note",
+            iconBg: "bg-amber-100",
+            iconColor: "text-amber-600",
+          };
+        });
+      }
+
+      // 3. Ambil notifikasi DB langsung untuk ID user DPL
+      const dbNotifs = await prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+
+      const userNotifs = dbNotifs.map(mapNotification);
+      const allDplNotifs = [...leaveNotifs, ...userNotifs];
+
+      res.status(200).json({
+        success: true,
+        data: allDplNotifs,
+        unreadCount: leaveNotifs.length + userNotifs.filter((n) => !n.isRead).length,
+      });
+      return;
+    }
+
     const isAdminOrPetugas = [
       "SUPER_USER",
       "ADMIN_DLH",

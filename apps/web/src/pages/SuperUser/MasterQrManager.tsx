@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { QrCode, AlertTriangle, PlayCircle, Printer, RefreshCw, Trash2, Plus, Search, Filter } from "lucide-react";
 
+import { useAuthStore } from "../../store/useAuthStore";
+
 interface BinQr {
   id: string;
   qrCode: string;
@@ -26,6 +28,8 @@ interface InactiveBin {
 }
 
 export const MasterQrManager: React.FC = () => {
+  const { user } = useAuthStore();
+  const isReadOnly = ["PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [qrs, setQrs] = useState<BinQr[]>([]);
   const [inactiveBins, setInactiveBins] = useState<InactiveBin[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -256,8 +260,8 @@ export const MasterQrManager: React.FC = () => {
   };
 
   const handleExportCsv = () => {
-    if (qrs.length === 0) {
-      toast.error("Tidak ada data QR untuk diexport");
+    if (!qrs || qrs.length === 0) {
+      toast.error("Tidak ada data Kode QR dalam tabel untuk diekspor.");
       return;
     }
     const headers = ["Kode QR", "Status", "Kategori", "Batch Asal", "Wilayah", "Pemegang Warga", "Email Pemegang", "Tanggal Dibuat"];
@@ -323,13 +327,15 @@ export const MasterQrManager: React.FC = () => {
             <Printer size={16} />
             Cetak Stiker QR
           </button>
-          <button
-            onClick={() => setShowGenerateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-          >
-            <Plus size={16} />
-            Generate Batch Baru
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setShowGenerateModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              <Plus size={16} />
+              Generate Batch Baru
+            </button>
+          )}
         </div>
       </div>
 
@@ -442,14 +448,14 @@ export const MasterQrManager: React.FC = () => {
                   <th className="px-6 py-3.5">Status & Kategori</th>
                   <th className="px-6 py-3.5">Batch / Wilayah</th>
                   <th className="px-6 py-3.5">Pemilik Warga</th>
-                  <th className="px-6 py-3.5 text-center">Ubah Status</th>
-                  <th className="px-6 py-3.5 text-right">Aksi Kelola</th>
+                  {!isReadOnly && <th className="px-6 py-3.5 text-center">Ubah Status</th>}
+                  {!isReadOnly && <th className="px-6 py-3.5 text-right">Aksi Kelola</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {qrs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={isReadOnly ? 4 : 6} className="px-6 py-12 text-center text-slate-400 font-medium">
                       Tidak ada QR Code ditemukan
                     </td>
                   </tr>
@@ -494,52 +500,56 @@ export const MasterQrManager: React.FC = () => {
                             <span className="text-xs text-slate-400 italic">Belum terikat Warga</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <select
-                            value={q.status}
-                            onChange={(e) => handleUpdateStatus(q.id, e.target.value)}
-                            className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
-                          >
-                            <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
-                            <option value="PRINTED">PRINTED</option>
-                            <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
-                            <option value="INACTIVE">INACTIVE</option>
-                            <option value="BROKEN">BROKEN</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {(isBroken || isInactive) && (
-                              <button
-                                onClick={() => handleReactivate(q.id)}
-                                title="Aktifkan Kembali"
-                                className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200 cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <PlayCircle size={14} />
-                                <span className="hidden sm:inline">Aktifkan</span>
-                              </button>
-                            )}
-
-                            {isBroken && (
-                              <button
-                                onClick={() => handleOpenReplaceModal(q)}
-                                title="Ganti QR Code Rusak"
-                                className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all border border-blue-200 cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <RefreshCw size={14} />
-                                <span className="hidden sm:inline">Ganti QR</span>
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleDeleteBin(q.id, q.qrCode)}
-                              title="Hapus QR Code"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                        {!isReadOnly && (
+                          <td className="px-6 py-4 text-center">
+                            <select
+                              value={q.status}
+                              onChange={(e) => handleUpdateStatus(q.id, e.target.value)}
+                              className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
                             >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </td>
+                              <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
+                              <option value="PRINTED">PRINTED</option>
+                              <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
+                              <option value="INACTIVE">INACTIVE</option>
+                              <option value="BROKEN">BROKEN</option>
+                            </select>
+                          </td>
+                        )}
+                        {!isReadOnly && (
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {(isBroken || isInactive) && (
+                                <button
+                                  onClick={() => handleReactivate(q.id)}
+                                  title="Aktifkan Kembali"
+                                  className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200 cursor-pointer inline-flex items-center gap-1"
+                                >
+                                  <PlayCircle size={14} />
+                                  <span className="hidden sm:inline">Aktifkan</span>
+                                </button>
+                              )}
+
+                              {isBroken && (
+                                <button
+                                  onClick={() => handleOpenReplaceModal(q)}
+                                  title="Ganti QR Code Rusak"
+                                  className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all border border-blue-200 cursor-pointer inline-flex items-center gap-1"
+                                >
+                                  <RefreshCw size={14} />
+                                  <span className="hidden sm:inline">Ganti QR</span>
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => handleDeleteBin(q.id, q.qrCode)}
+                                title="Hapus QR Code"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })

@@ -3,8 +3,12 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const kelompokService = {
-  getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "") => {
+  getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "", dplUserId = "") => {
     const whereClause: any = {};
+
+    if (dplUserId) {
+      whereClause.OR = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
+    }
 
     if (search) {
       whereClause.OR = [
@@ -26,23 +30,9 @@ export const kelompokService = {
       prisma.kelompokKkn.findMany({
         where: whereClause,
         include: {
-          dpl: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-            },
-          },
+          dpl: { select: { id: true, name: true, phone: true } },
           students: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  phone: true,
-                },
-              },
-            },
+            include: { user: { select: { id: true, name: true, phone: true } } },
           },
         },
         skip,
@@ -59,23 +49,9 @@ export const kelompokService = {
     return prisma.kelompokKkn.findUnique({
       where: { id },
       include: {
-        dpl: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-          },
-        },
+        dpl: { select: { id: true, name: true, phone: true } },
         students: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-              },
-            },
-          },
+          include: { user: { select: { id: true, name: true, phone: true } } },
         },
       },
     });
@@ -119,19 +95,17 @@ export const kelompokService = {
     if (studentCount > 0) {
       throw new Error("CANNOT_DELETE_KELOMPOK_WITH_STUDENTS");
     }
-    return prisma.kelompokKkn.delete({
-      where: { id },
-    });
+    return prisma.kelompokKkn.delete({ where: { id } });
   },
 
-  setLeader: async (kelompokId: string, studentId: string) => {
-    // Reset any previous leader in this kelompok
+  setLeader: async (kelompokId: string, studentId: string | null) => {
     await prisma.studentKkn.updateMany({
       where: { kelompokId },
       data: { isKetua: false },
     });
-
-    // Set the specified student as leader
+    if (!studentId || studentId === "NONE" || studentId === "") {
+      return { kelompokId, leader: null };
+    }
     return prisma.studentKkn.update({
       where: { id: studentId },
       data: { isKetua: true, kelompokId },
@@ -140,18 +114,89 @@ export const kelompokService = {
 
   getDplList: async () => {
     return prisma.user.findMany({
-      where: {
-        role: {
-          name: { in: ["DPL", "DOSEN_PEMBIMBING"] },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        nip: true,
-      },
+      where: { role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } },
+      select: { id: true, name: true, phone: true, nip: true },
       orderBy: { name: "asc" },
+    });
+  },
+
+  /**
+   * Assign (atau lepas) 1 DPL ke kelompok.
+   * @param kelompokId ID kelompok target
+   * @param dplId ID user DPL. Null untuk melepas DPL.
+   */
+  assignDpl: async (kelompokId: string, dplId: string | null) => {
+    if (dplId) {
+      const dplUser = await prisma.user.findFirst({
+        where: { id: dplId, role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } },
+        select: { id: true, name: true },
+      });
+      if (!dplUser) throw new Error("DPL_NOT_FOUND");
+    }
+
+    return prisma.kelompokKkn.update({
+      where: { id: kelompokId },
+      data: { dplId: dplId || null },
+      include: {
+        dpl: { select: { id: true, name: true, phone: true } },
+        students: { include: { user: { select: { id: true, name: true } } } },
+      },
+    });
+  },
+
+  /**
+   * Set cakupan RW kelompok (multi-RW sebagai JSON array integer).
+   * @param kelompokId ID kelompok
+   * @param rwIds Array ID RW (integer) yang dicakup kelompok ini
+   */
+  assignRw: async (kelompokId: string, rwIds: number[]) => {
+    if (!Array.isArray(rwIds)) throw new Error("RW_IDS_MUST_BE_ARRAY");
+
+    const existingRws = await prisma.rw.findMany({
+      where: { id: { in: rwIds } },
+      select: { id: true, name: true },
+    });
+
+    if (existingRws.length !== rwIds.length) {
+      const foundIds = existingRws.map((r) => r.id);
+      const missing = rwIds.filter((id) => !foundIds.includes(id));
+      throw new Error(`RW_NOT_FOUND:${missing.join(",")}`);
+    }
+
+    return prisma.kelompokKkn.update({
+      where: { id: kelompokId },
+      data: { cakupanRw: rwIds },
+      include: {
+        dpl: { select: { id: true, name: true } },
+        students: { include: { user: { select: { id: true, name: true } } } },
+      },
+    });
+  },
+
+  /**
+   * Pindah mahasiswa ke kelompok lain.
+   * @param studentKknId ID record StudentKkn (bukan userId)
+   * @param targetKelompokId ID kelompok tujuan
+   */
+  pindahMahasiswa: async (studentKknId: string, targetKelompokId: string) => {
+    const student = await prisma.studentKkn.findUnique({
+      where: { id: studentKknId },
+      include: { user: { select: { id: true, name: true } }, kelompok: true },
+    });
+    if (!student) throw new Error("STUDENT_KKN_NOT_FOUND");
+
+    const targetKelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: targetKelompokId },
+    });
+    if (!targetKelompok) throw new Error("TARGET_KELOMPOK_NOT_FOUND");
+
+    return prisma.studentKkn.update({
+      where: { id: studentKknId },
+      data: { kelompokId: targetKelompokId, isKetua: false },
+      include: {
+        user: { select: { id: true, name: true, phone: true } },
+        kelompok: true,
+      },
     });
   },
 };

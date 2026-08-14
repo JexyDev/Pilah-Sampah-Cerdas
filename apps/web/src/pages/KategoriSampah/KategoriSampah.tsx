@@ -17,7 +17,7 @@ interface KategoriSampahProps {
 
 const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) => {
   const { user } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
 
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

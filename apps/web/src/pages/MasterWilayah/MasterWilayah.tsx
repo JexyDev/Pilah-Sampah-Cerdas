@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
 import { useAuthStore } from "../../store/useAuthStore";
+import toast from "react-hot-toast";
 
 const TAB_LABEL_MAP: Record<string, string> = {
   kecamatan: "Kecamatan",
@@ -98,7 +99,29 @@ const MasterWilayah: React.FC = () => {
   };
 
   const handleExportCsv = () => {
-    alert("Fitur ekspor CSV sedang dalam pengembangan.");
+    if (!filteredData || filteredData.length === 0) {
+      toast.error("Tidak ada data wilayah dalam tabel untuk diekspor.");
+      return;
+    }
+
+    const headers = ["ID", "Nama Wilayah", "Kelurahan", "RW", "Keterangan"];
+    const rows = filteredData.map((item) => [
+      `"${item.id || ""}"`,
+      `"${item.name || ""}"`,
+      `"${item.kelurahan?.name || item.kelurahanNama || "-"}"`,
+      `"${item.rw?.name || item.rwNama || "-"}"`,
+      `"${activeTab.toUpperCase()}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `master_wilayah_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Berhasil mengekspor data ${activeTab}!`);
   };
 
   return (

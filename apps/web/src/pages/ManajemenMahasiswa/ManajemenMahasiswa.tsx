@@ -202,8 +202,8 @@ const ManajemenMahasiswa: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    if (filteredMahasiswas.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
+    if (!filteredMahasiswas || filteredMahasiswas.length === 0) {
+      toast.error("Tidak ada data mahasiswa dalam tabel untuk diekspor.");
       return;
     }
 

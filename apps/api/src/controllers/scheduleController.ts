@@ -11,7 +11,10 @@ import { scheduleService } from "../services/scheduleService.js";
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
     try {
-      const schedules = await scheduleService.getAllSchedules();
+      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(String(req.user?.role || "").toUpperCase());
+      const dplUserId = isDpl ? req.user!.userId : undefined;
+
+      const schedules = await scheduleService.getAllSchedules(dplUserId);
       res.status(200).json({
         success: true,
         data: schedules,
@@ -24,7 +27,7 @@ export const scheduleController = {
 
   createSchedule: async (req: Request, res: Response) => {
     try {
-      const { title, date, time, category, location, latitude, longitude, radius, polygon } =
+      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId } =
         req.body;
       if (!title || !date || !category) {
         res.status(400).json({
@@ -55,6 +58,7 @@ export const scheduleController = {
         longitude: longitude ? Number(longitude) : undefined,
         radius: radius ? Number(radius) : undefined,
         polygon: polygon ? polygon : undefined,
+        kelompokId: kelompokId || undefined,
       });
       res.status(201).json({
         success: true,
@@ -83,7 +87,7 @@ export const scheduleController = {
   updateSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, date, time, category, location, latitude, longitude, radius, polygon } =
+      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId } =
         req.body;
       let parsedDate;
       if (date) {
@@ -108,6 +112,7 @@ export const scheduleController = {
         longitude: longitude !== undefined ? Number(longitude) : undefined,
         radius: radius !== undefined ? Number(radius) : undefined,
         polygon: polygon !== undefined ? polygon : undefined,
+        kelompokId: kelompokId !== undefined ? kelompokId : undefined,
       });
 
       res.status(200).json({

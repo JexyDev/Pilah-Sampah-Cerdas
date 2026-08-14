@@ -124,10 +124,10 @@ export const dplController = {
       const requestId = req.params.requestId;
       const { status, note } = req.body;
 
-      if (!["APPROVED", "REJECTED"].includes(status)) {
+      if (!["APPROVED", "REJECTED", "ESCALATED"].includes(status)) {
         res
           .status(400)
-          .json({ error: "BAD_REQUEST", message: "Status harus APPROVED atau REJECTED" });
+          .json({ error: "BAD_REQUEST", message: "Status harus APPROVED, REJECTED, atau ESCALATED" });
         return;
       }
 

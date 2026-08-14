@@ -63,7 +63,7 @@ const MapFlyTo = ({ target }: { target: { center: [number, number]; zoom: number
 
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
 
   const getTabFromUrl = (): "kodefikasi" | "monitoring" | "kategori" => {
@@ -508,7 +508,32 @@ const ManajemenTempatSampah: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    toast.error("Fungsi ekspor CSV dinonaktifkan.");
+    if (!bins || bins.length === 0) {
+      toast.error("Tidak ada data tempat sampah dalam tabel untuk diekspor.");
+      return;
+    }
+    const headers = ["ID", "Kode QR", "Kategori", "Status", "Kapasitas (L)", "Pemilik / Warga", "Wilayah RW", "Kelurahan", "Tanggal Aktivasi"];
+    const rows = bins.map((b) => [
+      `"${b.id}"`,
+      `"${b.qrCode || b.kode || "-"}"`,
+      `"${b.category?.name || b.kategori || "-"}"`,
+      `"${b.status}"`,
+      b.kapasitasLiter || 50,
+      `"${b.user?.name || b.pemilik || "-"}"`,
+      `"${b.rw?.name || b.rwNama || "-"}"`,
+      `"${b.rw?.kelurahan?.name || b.kelurahanNama || "-"}"`,
+      `"${b.activatedAt ? new Date(b.activatedAt).toLocaleString("id-ID") : "-"}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Master_Tempat_Sampah_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Berhasil mengekspor ${bins.length} tempat sampah!`);
   };
 
   void handleApproveActivation;
@@ -1945,7 +1970,7 @@ const ManajemenTempatSampah: React.FC = () => {
                           Tandai Fisik Tempat Sampah Rusak atau dalam Perbaikan
                         </span>
                         <span className="text-[11px] text-slate-500 font-medium leading-normal block">
-                          Centang jika fisik tong sampah rusak atau sobek dan perlu penanganan petugas.
+                          Centang jika fisik tempat sampah rusak atau sobek dan perlu penanganan petugas.
                         </span>
                       </div>
                     </label>

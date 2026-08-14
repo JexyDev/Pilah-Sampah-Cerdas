@@ -29,6 +29,10 @@ apps/web/dist/
 vps_db_dump.sql
 vps_users_real.json
 fetch_users.js
+check_vps_details.js
+vps_backup/
+apps/api/scripts/query-vps-user.ts
+apps/api/scripts/sync-live-vps-db-to-local.ts
 *.csv
 
 # Python & Temporary scripts

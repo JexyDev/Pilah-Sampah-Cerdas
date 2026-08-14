@@ -198,6 +198,10 @@ export const ReviewDiscrepancy: React.FC = () => {
   };
 
   const handleExportCsv = () => {
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.error("Tidak ada data diskrepansi pada periode/filter yang dipilih untuk diekspor.");
+      return;
+    }
     const headers = ["ID", "Tanggal", "Warga", "Kelurahan", "Status", "AI Class", "AI Conf", "Petugas Class", "Berat (Kg)"];
     const rows = filteredLogs.map((l) => [
       l.id,
