@@ -559,7 +559,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                       context,
                                       AppRoutes.aktivasiWarga,
                                       arguments: {'warga': {
-                                        'id': warga.binId,
+                                        'id': warga.wargaId,
                                         'name': warga.wargaName,
                                       }},
                                     );

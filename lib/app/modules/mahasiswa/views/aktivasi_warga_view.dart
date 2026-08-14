@@ -22,6 +22,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   String _binOrganikId = '';
   String _binAnorganikId = '';
   bool _isProcessing = false;
+  int _scanAttempt = 0;
 
   Future<void> _handleQrDetected(String qrCode, String wargaId, String wargaName) async {
     if (_isProcessing) return;
@@ -89,6 +90,10 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           _binOrganikId = qrCode;
           _step = 2;
         });
+      } else if (mounted) {
+        setState(() {
+          _scanAttempt++;
+        });
       }
       _isProcessing = false;
     } else {
@@ -116,6 +121,11 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           ),
         );
         _isProcessing = false;
+        if (mounted) {
+          setState(() {
+            _scanAttempt++;
+          });
+        }
         return;
       }
 
@@ -169,6 +179,11 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
       if (processConfirm != true) {
         _isProcessing = false;
+        if (mounted) {
+          setState(() {
+            _scanAttempt++;
+          });
+        }
         return;
       }
 
@@ -222,8 +237,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         // Invalidate state agar Warga & Tempat Sampah langsung ter-update di Mahasiswa dan Warga
         ref.invalidate(mahasiswaControllerProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
-        ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-        ref.read(aktivasiWargaProvider.notifier).refresh();
+        await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+        await ref.read(aktivasiWargaProvider.notifier).refresh();
 
         // Tampilkan Full Dialog Modal Berhasil Aktivasi
         if (mounted) {
@@ -324,6 +339,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         );
         setState(() {
           _binAnorganikId = '';
+          _scanAttempt++;
         });
       }
       _isProcessing = false;
@@ -354,7 +370,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         children: [
           // ─── Full Camera Screen QR Scanner Widget ──────────────────────────
           QrScannerWidget(
-            key: ValueKey(_step),
+            key: ValueKey('$_step-$_scanAttempt'),
             isFullScreen: true,
             hint: _step == 1 ? 'Scan QR Tempat Sampah Organik' : 'Scan QR Tempat Sampah Anorganik',
             overlayColor: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),

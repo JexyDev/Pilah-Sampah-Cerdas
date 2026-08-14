@@ -574,14 +574,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.pie_chart_rounded,
-                title: 'Dampak RW',
-                subtitle: 'Statistik Real-Time',
-                gradientColors: const [AppColors.primaryGreen, Color(0xFF007A52)],
-                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringDampakKelurahan),
-              ),
+            const Expanded(
+              child: SizedBox(), // Menu Dampak RW di-hide sementara
             ),
             const SizedBox(width: 12),
             Expanded(
