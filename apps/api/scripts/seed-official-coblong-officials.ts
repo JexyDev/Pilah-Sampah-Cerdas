@@ -38,11 +38,18 @@ async function main() {
     }
   }
 
-  // Ensure Kecamatan Coblong & Kelurahans exist
+  // Ensure Kabupaten Kota Bandung & Kecamatan Coblong exist
+  let kabupaten = await prisma.kabupaten.findFirst({ where: { name: "Kota Bandung" } });
+  if (!kabupaten) {
+    kabupaten = await prisma.kabupaten.create({
+      data: { name: "Kota Bandung", code: "32.73" },
+    });
+  }
+
   let kecamatan = await prisma.kecamatan.findFirst({ where: { name: "Coblong" } });
   if (!kecamatan) {
     kecamatan = await prisma.kecamatan.create({
-      data: { name: "Coblong", code: "32.73.06" },
+      data: { name: "Coblong", code: "32.73.06", kabupatenId: kabupaten.id },
     });
   }
 
