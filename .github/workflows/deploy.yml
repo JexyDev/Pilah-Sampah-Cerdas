@@ -58,7 +58,7 @@ jobs:
             echo "=== 2. Updating Backend (apps/api) ==="
             cd apps/api
             npm install --silent
-            npx prisma migrate deploy
+            npx prisma db push --skip-generate
             npx prisma generate
             npm run build
 
