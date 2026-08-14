@@ -139,7 +139,7 @@ export default function RekapSetoran() {
   const totalPoints = useMemo(() => Math.round(filteredDeposits.reduce((acc, curr) => acc + (Number(curr.poin) || 0), 0)), [filteredDeposits]);
   const averageConfidence = useMemo(() => {
     if (filteredDeposits.length === 0) return 0;
-    const sum = filteredDeposits.reduce((acc, curr) => acc + (Number(curr.confidence) || 95), 0);
+    const sum = filteredDeposits.reduce((acc, curr) => acc + (Number(curr.confidence) || 0), 0);
     return Math.round(sum / filteredDeposits.length);
   }, [filteredDeposits]);
 
@@ -595,20 +595,23 @@ export default function RekapSetoran() {
                 {(() => {
                   const jenisUpper = (selectedDeposit.jenis || "").toUpperCase();
                   const isOrg = jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC");
-                  const org = isOrg ? 95 : 5;
-                  const inorg = 100 - org;
+                  const confidence = Number(selectedDeposit.confidence) || 0;
                   return (
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-black">
-                        <span className="text-emerald-700">🌱 Organik: {org}%</span>
-                        <span className="text-amber-700">📦 Anorganik: {inorg}%</span>
+                        <span className={isOrg ? "text-emerald-700" : "text-amber-700"}>
+                          {isOrg ? "🌱 Terklasifikasi: Organik" : "📦 Terklasifikasi: Anorganik"}
+                        </span>
+                        <span className="text-slate-600">Confidence AI: {confidence}%</span>
                       </div>
-                      <div className="w-full h-3 rounded-full bg-slate-200 flex overflow-hidden border border-slate-300/60">
-                        <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${org}%` }} />
-                        <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${inorg}%` }} />
+                      <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden border border-slate-300/60">
+                        <div
+                          className={`h-full transition-all duration-300 ${isOrg ? "bg-emerald-500" : "bg-amber-500"}`}
+                          style={{ width: `${confidence}%` }}
+                        />
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-1">
-                        <span>Akurasi Confidence: {selectedDeposit.confidence || 95}%</span>
+                        <span>Bukti Foto: {selectedDeposit.fotoUrl ? "Ada" : "Tidak tersedia"}</span>
                         <span>Estimasi Berat: {selectedDeposit.berat} Kg</span>
                       </div>
                     </div>
