@@ -82,6 +82,7 @@ class WasteLogEntry extends Equatable {
 /// ─────────────────────────────────────────────────────────────────────────────
 class WargaDampingan extends Equatable {
   const WargaDampingan({
+    required this.wargaId,
     required this.binId,
     required this.wargaName,
     required this.address,
@@ -98,6 +99,7 @@ class WargaDampingan extends Equatable {
     this.apiCorrectPercentage,
   });
 
+  final String wargaId;
   final String binId;
   final String wargaName;
   final String address;
@@ -195,21 +197,24 @@ class WargaDampingan extends Equatable {
     }
 
     final rawStatus = json['status']?.toString() ?? json['statusPendamping']?.toString() ?? json['status_pendamping']?.toString() ?? '';
+    final extractedWargaId = json['wargaId']?.toString() ?? json['id']?.toString() ?? '';
 
     return WargaDampingan(
+      wargaId: extractedWargaId,
       binId: extractedBinId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
-      address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
+      address: json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui',
       kecamatan: json['kecamatan']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       rw: json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '',
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
-      status: rawStatus,
+      status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
       recentLogs: logs,
       isActivated: (json['isActivated'] == true) ||
           (json['is_activated'] == true) ||
           (json['status']?.toString().toUpperCase() == 'ACTIVATED') ||
+          (json['status'] == 'ACTIVE_BOUND') ||
           (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
       role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
       totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
@@ -218,7 +223,7 @@ class WargaDampingan extends Equatable {
   }
 
   @override
-  List<Object?> get props => [binId, wargaName, totalPoints, mahasiswaId, pendampingName, status];
+  List<Object?> get props => [wargaId, binId, wargaName, totalPoints, mahasiswaId, pendampingName, status];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────

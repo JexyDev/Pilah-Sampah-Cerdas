@@ -141,7 +141,8 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         );
 
         const maxDistance = kDebugMode ? 500.0 : 10.0;
-        if (distance > maxDistance) {
+        // Jika userLat == 0.0, itu adalah fallback dari error GPS, jadi skip geofencing
+        if (userLat != 0.0 && distance > maxDistance) {
           throw BinException(
             'LOCATION_OUT_OF_RANGE',
             'Anda terlalu jauh dari tempat sampah (> ${maxDistance.toInt()}m).',

@@ -307,7 +307,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       // Gabungkan jenjang, universitas ke fakultas
       final univ = InputSanitizer.sanitize(_universitasController.text);
       final fak = InputSanitizer.sanitize(_fakultasController.text);
-      final jenjang = _selectedJenjang ?? '';
+      final jenjang = _selectedJenjang;
       data['fakultas'] = [jenjang, fak, univ].where((e) => e.isNotEmpty).join(' - ');
 
       // Gabungkan DPL ke jurusan

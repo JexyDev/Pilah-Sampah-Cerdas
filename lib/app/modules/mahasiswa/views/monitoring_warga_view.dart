@@ -116,6 +116,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         }
 
         return WargaDampingan(
+          wargaId: w.wargaId,
           binId: w.binId,
           wargaName: w.wargaName,
           address: formattedAddr,
@@ -158,7 +159,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                 ? w.address
                 : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKelDisplay, Kec. $userKec';
             return WargaDampingan(
-              binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rw: userRw, kecamatan: userKec, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
+              wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rw: userRw, kecamatan: userKec, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
             );
           }).toList();
 

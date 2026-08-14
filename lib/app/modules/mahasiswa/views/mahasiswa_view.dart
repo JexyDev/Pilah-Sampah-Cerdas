@@ -626,6 +626,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
           ? w.address
           : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKel';
       return WargaDampingan(
+        wargaId: w.wargaId,
         binId: w.binId,
         wargaName: w.wargaName,
         address: displayAddr,

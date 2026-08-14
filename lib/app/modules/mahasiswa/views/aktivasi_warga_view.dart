@@ -341,7 +341,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       wargaId = wargaMap['id']?.toString() ?? wargaMap['wargaId']?.toString() ?? wargaMap['binId']?.toString() ?? '';
       wargaName = wargaMap['name']?.toString() ?? wargaMap['wargaName']?.toString() ?? 'Warga';
     } else if (rawArgs is WargaDampingan) {
-      wargaId = rawArgs.binId.isNotEmpty ? rawArgs.binId : rawArgs.wargaName;
+      wargaId = rawArgs.wargaId.isNotEmpty ? rawArgs.wargaId : rawArgs.wargaName;
       wargaName = rawArgs.wargaName;
     } else if (rawArgs is String) {
       wargaId = rawArgs;

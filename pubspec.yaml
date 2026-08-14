@@ -17,7 +17,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
 
   # HTTP Client (dikunci per sdd.md §12 — sementara tidak dipakai, disiapkan untuk integrasi BE)
-  dio: ^5.8.0
+  dio: ^5.11.0
 
   # QR Scanner
   mobile_scanner: ^6.0.10
@@ -68,6 +68,8 @@ dependencies:
   path_provider: any
   path: any
   cached_network_image: ^3.4.1
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

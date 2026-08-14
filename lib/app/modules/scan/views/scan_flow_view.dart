@@ -76,35 +76,44 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       if (perm == LocationPermission.deniedForever ||
           perm == LocationPermission.denied) {
         // Izin ditolak — tetap lanjut tanpa GPS (backend skip geofencing)
-        if (mounted) setState(() => _gpsLoading = false);
+        if (mounted) {
+          setState(() {
+            _userLat = 0.0;
+            _userLng = 0.0;
+            _gpsLoading = false;
+          });
+        }
         return;
       }
 
-      // Ambil posisi dengan akurasi medium (lebih cepat dari high)
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 8),
-        ),
-      );
+      // Ambil posisi dengan akurasi medium
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
+      } catch (_) {
+        // Timeout/gagal, coba last known
+        pos = await Geolocator.getLastKnownPosition();
+      }
 
       if (mounted) {
         setState(() {
-          _userLat = pos.latitude;
-          _userLng = pos.longitude;
+          _userLat = pos?.latitude ?? 0.0;
+          _userLng = pos?.longitude ?? 0.0;
           _gpsLoading = false;
         });
       }
     } catch (e) {
-      // Tolak silent bypass, beritahu user bahwa GPS gagal
       if (mounted) {
-        setState(() => _gpsLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal mendapatkan lokasi GPS. Pastikan GPS aktif.'),
-            backgroundColor: AppColors.dangerRed,
-          ),
-        );
+        setState(() {
+          _userLat = 0.0;
+          _userLng = 0.0;
+          _gpsLoading = false;
+        });
       }
     }
   }
@@ -552,22 +561,12 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
                   
-                  if (_userLat == null || _userLng == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Lokasi GPS belum ditemukan. Harap tunggu atau aktifkan GPS.'),
-                        backgroundColor: AppColors.dangerRed,
-                      ),
-                    );
-                    return false;
-                  }
-
                   ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _userLat!,
-                        userLng: _userLng!,
+                        userLat: _userLat ?? 0.0,
+                        userLng: _userLng ?? 0.0,
                       );
                   return true;
                 },

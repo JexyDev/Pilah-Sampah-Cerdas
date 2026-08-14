@@ -21,6 +21,7 @@ import '../petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
 import '../petugas_pemilahan/views/petugas_pemilahan_poin_view.dart';
 import '../petugas_pemilahan/views/petugas_pemilahan_profil_view.dart';
 import '../../routes/app_routes.dart';
+import '../../core/utils/update_checker.dart';
 
 /// Shell utama â€” Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
@@ -33,6 +34,14 @@ class DashboardView extends ConsumerStatefulWidget {
 
 class _DashboardViewState extends ConsumerState<DashboardView> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateChecker.checkForUpdate(context);
+    });
+  }
 
   List<Widget> _getScreens(UserRole role) => [
     role == UserRole.mahasiswaKkn 

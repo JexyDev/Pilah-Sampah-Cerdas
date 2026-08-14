@@ -53,6 +53,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
           : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
       
       return WargaDampingan(
+        wargaId: w.wargaId,
         binId: w.binId,
         wargaName: w.wargaName,
         address: displayAddr,
