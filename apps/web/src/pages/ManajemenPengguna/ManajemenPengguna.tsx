@@ -223,8 +223,8 @@ const ManajemenPengguna: React.FC = () => {
   const formatPhone = (phone: string) => {
     if (!phone) return "-";
     let clean = phone.trim().replace(/[\s\-().]/g, "");
-    if (clean.includes(".") || clean.length < 7 || clean.startsWith("NIP") || clean.startsWith("4127")) {
-      return clean;
+    if (clean.startsWith("4127") || clean.startsWith("DPL_") || clean.startsWith("NIP") || clean.includes(".") || clean.length < 9) {
+      return "-";
     }
     if (clean.startsWith("0")) return "+62" + clean.slice(1);
     if (clean.startsWith("62")) return "+" + clean;
