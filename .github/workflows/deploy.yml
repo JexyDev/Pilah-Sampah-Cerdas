@@ -50,7 +50,8 @@ jobs:
             if ! command -v "$PM2_BIN" &> /dev/null; then PM2_BIN="pm2"; fi
             
             echo "=== 1. Pulling Latest Code from Git ==="
-            cd ~/Pilah-Sampah-Cerdas-new || cd ~/Pilah-Sampah-Cerdas || { echo "Directory not found"; exit 1; }
+            if [ -d ~/Pilah-Sampah-Cerdas-new ]; then REPO_DIR=~/Pilah-Sampah-Cerdas-new; else REPO_DIR=~/Pilah-Sampah-Cerdas; fi
+            cd "$REPO_DIR" || { echo "Directory not found"; exit 1; }
             git fetch origin main
             git reset --hard origin/main
 
@@ -61,7 +62,13 @@ jobs:
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
-            $PM2_BIN restart psc-backend || $PM2_BIN start dist/index.js --name psc-backend
+            # pm2 restart re-executes whatever script path the process was originally
+            # registered with, which silently keeps running stale code if that path
+            # ever pointed at a different checkout (e.g. before REPO_DIR moved to
+            # Pilah-Sampah-Cerdas-new). Delete + start unconditionally so the process
+            # is always re-registered against the checkout we just built in $REPO_DIR.
+            $PM2_BIN delete psc-backend 2>/dev/null || true
+            $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
             $PM2_BIN save || true
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
@@ -73,8 +80,8 @@ jobs:
 
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
-            mkdir -p ~/Pilah-Sampah-Cerdas/apps/web/dist 2>/dev/null || true
-            cp -r /tmp/frontend-dist/* ~/Pilah-Sampah-Cerdas/apps/web/dist/ 2>/dev/null || true
+            mkdir -p "$REPO_DIR/apps/web/dist" 2>/dev/null || true
+            cp -r /tmp/frontend-dist/* "$REPO_DIR/apps/web/dist/" 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S rm -rf /tmp/frontend-dist
 
             echo "=== 5. Fixing Permissions & Reloading Nginx ==="
