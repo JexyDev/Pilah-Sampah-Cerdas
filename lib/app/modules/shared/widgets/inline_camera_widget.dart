@@ -149,6 +149,11 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       final double sizeKB = (await photo.length()) / 1024;
 
       if (mounted) {
+        // Bebaskan hardware kamera (lensa) SECARA EKSPLISIT sebelum lanjut
+        // agar tidak terjadi race condition (tabrakan hardware) di step berikutnya
+        await _controller?.dispose();
+        _controller = null;
+
         setState(() {
           _capturedPath = photo.path;
           _capturedSizeKB = sizeKB;
@@ -182,6 +187,10 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
         maxHeight: 1080,
       );
       if (file != null && mounted) {
+        // Bebaskan hardware kamera (lensa) SECARA EKSPLISIT
+        await _controller?.dispose();
+        _controller = null;
+
         final double sizeKB = kIsWeb
             ? (await file.readAsBytes()).length / 1024
             : (await File(file.path).length()) / 1024;
@@ -209,6 +218,10 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       _capturedPath = null;
       _capturedSizeKB = 0;
     });
+    // Jika controller sudah ditutup saat capture, buka lagi
+    if (_controller == null) {
+      _initCamera(front: _isFrontCamera);
+    }
   }
 
   @override

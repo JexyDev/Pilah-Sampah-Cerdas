@@ -498,12 +498,18 @@ class ApiAuthRepository implements AuthRepository {
               key: AppConfig.householdIdKey,
               value: householdId,
             );
+            
+            final int? hhFamilySize = int.tryParse(hh['familySize']?.toString() ?? '') ?? 
+                                      int.tryParse(hh['jumlahAnggotaKeluarga']?.toString() ?? '') ??
+                                      int.tryParse(hh['jumlah_anggota_keluarga']?.toString() ?? '');
+
             return user.copyWith(
               householdId: householdId,
               rw: rw,
               kecamatan: user.kecamatan,
               kelurahan: kelurahan,
               pendampingName: pendampingName.isNotEmpty ? pendampingName : null,
+              familySize: hhFamilySize ?? user.familySize,
             );
           }
         }
@@ -853,7 +859,8 @@ class ApiAuthRepository implements AuthRepository {
       universitas: universitas,
       jenjangPendidikan: jenjang,
       pendampingName: userMap['pendampingName']?.toString() ?? userMap['mahasiswaPendamping']?.toString(),
-      familySize: int.tryParse(userMap['jumlahAnggotaKeluarga']?.toString() ?? '') ?? 
+      familySize: int.tryParse(userMap['familySize']?.toString() ?? '') ??
+                  int.tryParse(userMap['jumlahAnggotaKeluarga']?.toString() ?? '') ?? 
                   int.tryParse(userMap['jumlah_anggota_keluarga']?.toString() ?? '') ?? 1,
     );
   }

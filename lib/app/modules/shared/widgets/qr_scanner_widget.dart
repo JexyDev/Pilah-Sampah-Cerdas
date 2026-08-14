@@ -30,30 +30,21 @@ class QrScannerWidget extends StatefulWidget {
   State<QrScannerWidget> createState() => QrScannerWidgetState();
 }
 
-class QrScannerWidgetState extends State<QrScannerWidget>
-    with WidgetsBindingObserver {
+class QrScannerWidgetState extends State<QrScannerWidget> {
   MobileScannerController? _controller;
   bool _scanned = false;
   _QrState _state = _QrState.loading;
+  int _retryCount = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     if (PlatformUtils.supportsNativeQrScanner) {
       _requestPermissionAndStart();
     }
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_controller == null) return;
-    if (state == AppLifecycleState.paused) {
-      _controller?.stop();
-    } else if (state == AppLifecycleState.resumed && !_scanned) {
-      _controller?.start();
-    }
-  }
+  // Lifecycle dihandle secara native oleh mobile_scanner widget di versi 6+
 
   Future<void> _requestPermissionAndStart() async {
     if (kIsWeb) return;
@@ -64,8 +55,6 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     if (!mounted) return;
 
     if (status.isGranted) {
-      // Beri delay sedikit agar OS melepas hardware kamera sepenuhnya setelah izin diberikan pertama kali
-      await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
       _startScanner();
     } else if (status.isPermanentlyDenied) {
@@ -114,7 +103,6 @@ class QrScannerWidgetState extends State<QrScannerWidget>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }
