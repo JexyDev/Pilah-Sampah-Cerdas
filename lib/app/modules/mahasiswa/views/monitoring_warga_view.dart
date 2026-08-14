@@ -663,8 +663,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
+                  width: double.infinity,
                   height: 180,
                   child: CustomPaint(
+                    size: const Size(double.infinity, 180),
                     painter: _CustomXYChartPainter(chartData, maxY),
                   ),
                 ),
@@ -867,8 +869,12 @@ class _CustomXYChartPainter extends CustomPainter {
       }
 
       // Draw X label
+      String labelText = data[i].label;
+      if (labelText.length > 7) {
+        labelText = '${labelText.substring(0, 6)}..';
+      }
       final tp = TextPainter(
-        text: TextSpan(text: data[i].label, style: const TextStyle(fontSize: 8, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+        text: TextSpan(text: labelText, style: const TextStyle(fontSize: 8, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(x - (tp.width / 2), size.height - paddingBottom + 6));
