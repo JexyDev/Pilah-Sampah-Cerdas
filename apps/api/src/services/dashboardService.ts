@@ -329,16 +329,6 @@ export const dashboardService = {
       });
     }
 
-    // Konsep Sesi Login Aktif Real-time: Jika belum ada token terakumulasi, default sesi akun yang sedang aktif di sistem
-    if (activeAdmin === 0 && activeOperator === 0 && activeRw === 0 && activeDpl === 0 && activeResidu === 0 && activeKkn === 0) {
-      activeAdmin = 1;
-      activeOperator = 1;
-      activeRw = 0;
-      activeDpl = 1;
-      activeResidu = 1;
-      activeKkn = 0;
-    }
-
     const totalActiveSessions = activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn;
 
     // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Wadah vs Deteksi AI)
@@ -394,9 +384,23 @@ export const dashboardService = {
     });
 
     const totalCheck = setoranWithBin.length;
-    const sortingComplianceRate = totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(1)) : 88.5;
-    const organikComplianceRate = organikBinTotal > 0 ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(1)) : 91.2;
-    const anorganikComplianceRate = anorganikBinTotal > 0 ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(1)) : 85.7;
+    const sortingComplianceRate = totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(1)) : 0;
+    const organikComplianceRate = organikBinTotal > 0 ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(1)) : 0;
+    const anorganikComplianceRate = anorganikBinTotal > 0 ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(1)) : 0;
+
+    // Real count of bins by category in filtered area
+    const realOrganikBinCount = await prisma.bin.count({
+      where: {
+        ...binsWhere,
+        category: { name: { contains: "Organik", mode: "insensitive" } },
+      },
+    });
+    const realAnorganikBinCount = await prisma.bin.count({
+      where: {
+        ...binsWhere,
+        category: { name: { contains: "Anorganik", mode: "insensitive" } },
+      },
+    });
 
     return {
       totalWarga,
@@ -418,22 +422,22 @@ export const dashboardService = {
       jadwalSelesai,
       activeSessions: {
         total: totalActiveSessions,
-        admin: activeAdmin || 1,
-        operator: activeOperator || 1,
-        rw: activeRw || 0,
-        dpl: activeDpl || 1,
-        residu: activeResidu || 1,
-        kkn: activeKkn || 0,
+        admin: activeAdmin,
+        operator: activeOperator,
+        rw: activeRw,
+        dpl: activeDpl,
+        residu: activeResidu,
+        kkn: activeKkn,
       },
       kepatuhanPemilahan: {
         rate: sortingComplianceRate,
-        compliantCount: compliantCount || (totalCheck > 0 ? Math.round(totalCheck * 0.885) : 42),
-        nonCompliantCount: nonCompliantCount || (totalCheck > 0 ? totalCheck - Math.round(totalCheck * 0.885) : 6),
-        totalCount: totalCheck || 48,
+        compliantCount: compliantCount,
+        nonCompliantCount: nonCompliantCount,
+        totalCount: totalCheck,
         organikRate: organikComplianceRate,
         anorganikRate: anorganikComplianceRate,
-        organikBinTotal: organikBinTotal || 28,
-        anorganikBinTotal: anorganikBinTotal || 20,
+        organikBinTotal: realOrganikBinCount,
+        anorganikBinTotal: realAnorganikBinCount,
       },
     };
   },

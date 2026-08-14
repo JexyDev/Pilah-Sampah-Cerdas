@@ -1682,14 +1682,14 @@ const Dashboard: React.FC = () => {
           },
           activeSessions: kpi.activeSessions ?? null,
           kepatuhanPemilahan: kpi.kepatuhanPemilahan ?? {
-            rate: 88.5,
-            compliantCount: 42,
-            nonCompliantCount: 6,
-            totalCount: 48,
-            organikRate: 91.2,
-            anorganikRate: 85.7,
-            organikBinTotal: 28,
-            anorganikBinTotal: 20,
+            rate: 0,
+            compliantCount: 0,
+            nonCompliantCount: 0,
+            totalCount: 0,
+            organikRate: 0,
+            anorganikRate: 0,
+            organikBinTotal: 0,
+            anorganikBinTotal: 0,
           },
         });
 
@@ -2282,20 +2282,32 @@ const Dashboard: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <span className={`px-3 py-1.5 rounded-xl text-xs font-black border flex items-center gap-1.5 ${
-              (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80
+              (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
+                ? "bg-slate-100 text-slate-600 border-slate-200"
+                : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60
+                : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
                 ? "bg-amber-50 text-amber-700 border-amber-200"
                 : "bg-rose-50 text-rose-700 border-rose-200"
             }`}>
               <span className={`w-2 h-2 rounded-full ${
-                (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80
+                (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
+                  ? "bg-slate-400"
+                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
                   ? "bg-emerald-500 animate-pulse"
-                  : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60
+                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
                   ? "bg-amber-500"
                   : "bg-rose-500 animate-bounce"
               }`} />
-              Status Kepatuhan: {(stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80 ? "Sangat Baik" : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60 ? "Cukup Patuh" : "Perlu Perhatian"}
+              Status Kepatuhan: {
+                (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
+                  ? "Belum Ada Setoran"
+                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
+                  ? "Sangat Baik"
+                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
+                  ? "Cukup Patuh"
+                  : "Perlu Perhatian"
+              }
             </span>
           </div>
         </div>
@@ -2311,16 +2323,16 @@ const Dashboard: React.FC = () => {
                   cy="72"
                   r="54"
                   fill="transparent"
-                  stroke={(stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 80 ? "#10b981" : (stats?.kepatuhanPemilahan?.rate ?? 88.5) >= 60 ? "#f59e0b" : "#ef4444"}
+                  stroke={(stats?.kepatuhanPemilahan?.rate ?? 0) >= 80 ? "#10b981" : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60 ? "#f59e0b" : (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0 ? "#cbd5e1" : "#ef4444"}
                   strokeWidth="10"
-                  strokeDasharray={`${((stats?.kepatuhanPemilahan?.rate ?? 88.5) / 100) * (2 * Math.PI * 54)} ${2 * Math.PI * 54}`}
+                  strokeDasharray={`${(((stats?.kepatuhanPemilahan?.rate ?? 0)) / 100) * (2 * Math.PI * 54)} ${2 * Math.PI * 54}`}
                   strokeLinecap="round"
                   className="transition-all duration-700"
                 />
               </svg>
               <div className="absolute text-center flex flex-col items-center">
                 <span className="text-3xl font-black text-slate-800 leading-none">
-                  {stats?.kepatuhanPemilahan?.rate ?? 88.5}%
+                  {stats?.kepatuhanPemilahan?.rate ?? 0}%
                 </span>
                 <span className="text-[10px] text-slate-400 font-extrabold uppercase mt-1">
                   Skor Kepatuhan
@@ -2332,13 +2344,13 @@ const Dashboard: React.FC = () => {
               <div className="bg-white p-2 rounded-xl border border-emerald-100 shadow-2xs">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Patuh (Sesuai)</span>
                 <span className="text-sm font-black text-emerald-600">
-                  {stats?.kepatuhanPemilahan?.compliantCount ?? 42} <span className="text-[10px] font-normal text-slate-400">setoran</span>
+                  {stats?.kepatuhanPemilahan?.compliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
                 </span>
               </div>
               <div className="bg-white p-2 rounded-xl border border-rose-100 shadow-2xs">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Wadah</span>
                 <span className="text-sm font-black text-rose-600">
-                  {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 6} <span className="text-[10px] font-normal text-slate-400">setoran</span>
+                  {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
                 </span>
               </div>
             </div>
@@ -2359,17 +2371,17 @@ const Dashboard: React.FC = () => {
                   Wadah Tempat Sampah Organik
                 </span>
                 <span className="font-black text-emerald-700 font-mono">
-                  {stats?.kepatuhanPemilahan?.organikRate ?? 91.2}% Sesuai
+                  {stats?.kepatuhanPemilahan?.organikRate ?? 0}% Sesuai
                 </span>
               </div>
               <div className="h-2 w-full bg-emerald-200/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                  style={{ width: `${stats?.kepatuhanPemilahan?.organikRate ?? 91.2}%` }}
+                  style={{ width: `${stats?.kepatuhanPemilahan?.organikRate ?? 0}%` }}
                 />
               </div>
               <p className="text-[10px] text-emerald-700/80 font-medium leading-tight">
-                Kesesuaian hasil AI terdeteksi Organik pada wadah berkategori Organik.
+                Kesesuaian hasil AI terdeteksi Organik pada wadah berkategori Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} wadah terdata).
               </p>
             </div>
 
@@ -2381,17 +2393,17 @@ const Dashboard: React.FC = () => {
                   Wadah Tempat Sampah Anorganik
                 </span>
                 <span className="font-black text-amber-700 font-mono">
-                  {stats?.kepatuhanPemilahan?.anorganikRate ?? 85.7}% Sesuai
+                  {stats?.kepatuhanPemilahan?.anorganikRate ?? 0}% Sesuai
                 </span>
               </div>
               <div className="h-2 w-full bg-amber-200/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-500 rounded-full transition-all duration-500"
-                  style={{ width: `${stats?.kepatuhanPemilahan?.anorganikRate ?? 85.7}%` }}
+                  style={{ width: `${stats?.kepatuhanPemilahan?.anorganikRate ?? 0}%` }}
                 />
               </div>
               <p className="text-[10px] text-amber-700/80 font-medium leading-tight">
-                Kesesuaian hasil AI terdeteksi Anorganik pada wadah berkategori Anorganik.
+                Kesesuaian hasil AI terdeteksi Anorganik pada wadah berkategori Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} wadah terdata).
               </p>
             </div>
           </div>
