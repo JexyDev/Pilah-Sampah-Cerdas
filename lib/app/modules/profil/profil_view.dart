@@ -206,12 +206,29 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           bold: true,
                         ),
                         _divider(),
-                        _InfoTile(
-                          Icons.home_outlined,
-                          'Alamat Lengkap',
-                          user?.address != null && user!.address.isNotEmpty ? user.address : '-',
-                        ),
-                        _divider(),
+                        if (user?.role == UserRole.mahasiswaKkn) ...[
+                          _InfoTile(
+                            Icons.location_city_outlined,
+                            'Kelurahan',
+                            (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
+                                ? user.kelurahan.replaceAll(RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false), '').trim()
+                                : '-',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.map_outlined,
+                            'RW Dampingan',
+                            user?.rw != null && user!.rw.isNotEmpty && user.rw != '-' ? user.rw : '-',
+                          ),
+                          _divider(),
+                        ] else ...[
+                          _InfoTile(
+                            Icons.home_outlined,
+                            'Alamat Lengkap',
+                            user?.address != null && user!.address.isNotEmpty ? user.address : '-',
+                          ),
+                          _divider(),
+                        ],
                         if (user?.role == UserRole.mahasiswaKkn) ...[
                           _InfoTile(
                             Icons.school_outlined,
@@ -231,14 +248,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                                     ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
                                     : '-'),
                             bold: true,
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.location_on_outlined,
-                            'Wilayah / Posko KKN',
-                            (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
-                                ? user.kelurahan
-                                : '-',
                           ),
                           _divider(),
                         ] else ...[
