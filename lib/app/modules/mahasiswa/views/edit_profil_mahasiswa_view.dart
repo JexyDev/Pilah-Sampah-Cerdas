@@ -23,6 +23,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
+  late TextEditingController _jenjangController;
 
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -45,6 +46,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _addressController = TextEditingController(text: user?.address ?? '');
+    _jenjangController = TextEditingController(text: user?.jenjangPendidikan ?? '');
   }
 
   @override
@@ -52,6 +54,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _jenjangController.dispose();
     _oldPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -92,6 +95,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final name = InputSanitizer.sanitize(_nameController.text);
     final phone = InputSanitizer.sanitize(_phoneController.text);
     final address = InputSanitizer.sanitize(_addressController.text);
+    final jenjang = InputSanitizer.sanitize(_jenjangController.text);
 
     if (name.isEmpty || phone.isEmpty || address.isEmpty) {
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
@@ -109,6 +113,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
           name: name,
           phone: phone,
           address: address,
+          jenjangPendidikan: jenjang,
         );
 
     setState(() => _isSubmittingProfile = false);
@@ -177,10 +182,10 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final user = ref.watch(authProvider).user;
     final mhsData = ref.watch(mahasiswaControllerProvider).dashboard;
 
-    final userNim = user?.nim.isNotEmpty == true ? user!.nim : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '1301210042');
-    final userProdi = user?.prodi.isNotEmpty == true ? user!.prodi : (user?.jurusan.isNotEmpty == true ? user!.jurusan : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : 'S1 Teknik Informatika'));
-    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rw = user?.rw.isNotEmpty == true ? user!.rw : '01/02';
+    final userNim = user?.nim.isNotEmpty == true ? user!.nim : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '-');
+    final userProdi = user?.prodi.isNotEmpty == true ? user!.prodi : (user?.jurusan.isNotEmpty == true ? user!.jurusan : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : '-'));
+    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -246,7 +251,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    user?.name ?? 'Mahasiswa KKN',
+                    user?.name ?? '-',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                     if (userNim.isNotEmpty)
@@ -283,6 +288,9 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                   const SizedBox(height: 12),
                     _buildReadOnlyField('NIM', userNim.isNotEmpty ? userNim : '-'),
                     _buildReadOnlyField('Program Studi', userProdi.isNotEmpty ? userProdi : '-'),
+
+                  _buildReadOnlyField('Provinsi', user?.provinsi.isNotEmpty == true ? user!.provinsi : '-'),
+                  _buildReadOnlyField('Kota/Kabupaten', user?.kota.isNotEmpty == true ? user!.kota : '-'),
                   _buildReadOnlyField('Kelurahan Dampingan', kelurahan.isNotEmpty ? kelurahan : '-'),
                   _buildReadOnlyField('RW Dampingan', rw.isNotEmpty ? rw : '-'),
                   const SizedBox(height: 8),
@@ -364,6 +372,16 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                         hintText: 'Masukkan nomor WhatsApp',
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Nomor telepon wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('Jenjang Pendidikan (Contoh: S1 / D3)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _jenjangController,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.school_outlined, color: AppColors.primaryGreen),
+                        hintText: 'S1',
+                      ),
                     ),
 
                   ],

@@ -14,27 +14,26 @@ class KelompokKknView extends ConsumerWidget {
     final notifier = ref.read(kelompokKknProvider.notifier);
     final user = ref.watch(authProvider).user;
 
-    final kel = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rw = user?.rw.isNotEmpty == true ? user!.rw : '01/02';
+    final kel = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
+    final kelDisplay = kel.toLowerCase().startsWith('kel') ? kel : 'Kel. $kel';
 
     final KelompokKknData kelompokData = state.kelompok ?? KelompokKknData(
-      groupId: 'kkn-${user?.id ?? "1"}',
-      groupName: 'Kelompok KKN $kel RW $rw',
-      poskoLocation: 'Posko KKN RW $rw, Kel. $kel, Kec. Bojongsoang',
-      dosenPembimbing: 'Dr. Ir. Pembimbing, M.T.',
-      totalGroupPoints: 1250,
-      members: [
+      groupId: user?.id ?? '',
+      groupName: kel != '-' ? 'Kelompok KKN $kel RW $rw' : 'Kelompok KKN',
+      poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
+      dosenPembimbing: '-',
+      totalGroupPoints: 0,
+      members: user != null ? [
         KelompokMemberData(
-          userId: user?.id ?? '1',
-          nim: user?.id ?? '136467959797',
-          name: user?.name.isNotEmpty == true ? user!.name : 'Mahasiswa KKN',
-          jurusan: 'S1 Teknik Elektro',
-          individualPoints: 450,
+          userId: user.id,
+          nim: user.nim.isNotEmpty ? user.nim : '-',
+          name: user.name.isNotEmpty ? user.name : '-',
+          jurusan: user.prodi.isNotEmpty ? user.prodi : (user.jurusan.isNotEmpty ? user.jurusan : '-'),
+          individualPoints: 0,
           isLeader: true,
         ),
-        const KelompokMemberData(userId: '2', nim: '136467959798', name: 'Siti Rahma', jurusan: 'S1 Teknik Informatika', individualPoints: 380, isLeader: false),
-        const KelompokMemberData(userId: '3', nim: '136467959799', name: 'Andi Wijaya', jurusan: 'S1 Sistem Informasi', individualPoints: 420, isLeader: false),
-      ],
+      ] : [],
     );
 
     // Deduplicate members by name

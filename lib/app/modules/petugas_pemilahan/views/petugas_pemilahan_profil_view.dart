@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -89,7 +89,7 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
     }
 
     return CachedNetworkImage(
-      imageUrl: '${AppConfig.baseUrl}$fotoPath',
+      imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
       width: 80,
       height: 80,
@@ -234,38 +234,50 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                   _infoTile(
                     Icons.badge_outlined,
                     'ID Petugas',
-                    dashboard?.petugasId ?? user?.id.substring(0, 8).toUpperCase() ?? 'PTR-001',
+                    dashboard?.petugasId ?? (user != null && user.id.length >= 8 ? user.id.substring(0, 8).toUpperCase() : '-'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _infoTile(
+                    Icons.map_rounded,
+                    'Provinsi',
+                    user?.provinsi.isNotEmpty == true ? user!.provinsi : '-',
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _infoTile(
+                    Icons.location_city_rounded,
+                    'Kota/Kabupaten',
+                    user?.kota.isNotEmpty == true ? user!.kota : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_rounded,
                     'Kecamatan',
-                    user?.kecamatan.isNotEmpty == true ? 'Kec. ${user!.kecamatan}' : 'Kec. Coblong',
+                    user?.kecamatan.isNotEmpty == true ? user!.kecamatan : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_outlined,
                     'Kelurahan',
-                    user?.kelurahan.isNotEmpty == true ? 'Kel. ${user!.kelurahan}' : 'Kel. Bojongsoang',
+                    user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.location_city_rounded,
                     'RW Penugasan',
-                    user?.rw.isNotEmpty == true ? 'RW ${user!.rw}' : 'RW 02',
+                    user?.rw.isNotEmpty == true ? user!.rw : '-',
                     bold: true,
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  _infoTile(
-                    Icons.home_outlined,
-                    'RW Penugasan',
-                    user?.rw.isNotEmpty == true ? 'RW ${user!.rw}' : 'RW 01',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.phone_iphone_rounded,
                     'No. Telepon',
                     user?.phone.isNotEmpty == true ? user!.phone : '-',
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _infoTile(
+                    Icons.home_outlined,
+                    'Alamat Lengkap',
+                    user?.address.isNotEmpty == true ? user!.address : '-',
                   ),
                 ],
               ),
@@ -333,7 +345,7 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
 
             const Center(
               child: Text(
-                'Â© 2026 TrashCare â€¢ Modul Petugas Pemilahan',
+                '© 2026 Universitas Komputer Indonesia • Modul Petugas Pemilahan',
                 style: TextStyle(fontSize: 11, color: AppColors.textHint),
               ),
             ),

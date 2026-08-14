@@ -86,7 +86,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       }
     }
     return CachedNetworkImage(
-      imageUrl: '${AppConfig.baseUrl}$fotoPath',
+      imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
     );
@@ -150,9 +150,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    user != null 
-                        ? (user.role == UserRole.mahasiswaKkn ? user.name : 'Keluarga ${user.name}') 
-                        : 'Keluarga Warga',
+                    user != null ? user.name : 'Warga',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
@@ -180,7 +178,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       children: [
                         _InfoTile(
                           Icons.person_outline_rounded,
-                          user?.role == UserRole.mahasiswaKkn ? 'Nama Lengkap' : 'Kepala Keluarga',
+                          'Nama Lengkap',
                           user?.name ?? '-',
                           bold: true,
                         ),
@@ -197,21 +195,21 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.email_outlined,
                             'Email',
-                            user?.email != null && user!.email!.isNotEmpty ? user.email! : 'Belum diatur',
+                            user?.email != null && user!.email!.isNotEmpty ? user.email! : '-',
                           ),
                           _divider(),
                         ],
                         _InfoTile(
                           Icons.phone_iphone_rounded,
                           'No. Telepon',
-                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : 'Belum diatur',
+                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
                           bold: true,
                         ),
                         _divider(),
                         _InfoTile(
-                          Icons.assignment_ind_outlined,
-                          'Peran',
-                          user?.role.displayName ?? '-',
+                          Icons.home_outlined,
+                          'Alamat Lengkap',
+                          user?.address != null && user!.address.isNotEmpty ? user.address : '-',
                         ),
                         _divider(),
                         if (user?.role == UserRole.mahasiswaKkn) ...[
@@ -220,7 +218,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             'NIM',
                             (ref.watch(mahasiswaControllerProvider).dashboard?.nim.isNotEmpty == true)
                                 ? ref.watch(mahasiswaControllerProvider).dashboard!.nim
-                                : '136467959797',
+                                : (user?.nim.isNotEmpty == true ? user!.nim : '-'),
                             bold: true,
                           ),
                           _divider(),
@@ -239,33 +237,49 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             Icons.location_on_outlined,
                             'Wilayah / Posko KKN',
                             (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
-                                ? 'Zona KKN Kel. ${user.kelurahan}'
-                                : 'Belum Terdaftar / -',
+                                ? user.kelurahan
+                                : '-',
                           ),
                           _divider(),
                         ] else ...[
                           _InfoTile(
                             Icons.map_rounded,
+                            'Provinsi',
+                            user?.provinsi != null && user!.provinsi.isNotEmpty
+                                ? user.provinsi
+                                : '-',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.location_city_rounded,
+                            'Kota/Kabupaten',
+                            user?.kota != null && user!.kota.isNotEmpty
+                                ? user.kota
+                                : '-',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.map_rounded,
                             'Kecamatan',
                             user?.kecamatan != null && user!.kecamatan.isNotEmpty
-                                ? 'Kec. ${user.kecamatan}'
-                                : 'Kec. Coblong',
+                                ? user.kecamatan
+                                : '-',
                           ),
                           _divider(),
                           _InfoTile(
                             Icons.map_outlined,
                             'Kelurahan',
                             user?.kelurahan != null && user!.kelurahan.isNotEmpty
-                                ? 'Kel. ${user.kelurahan}'
-                                : 'Belum diatur',
+                                ? user.kelurahan
+                                : '-',
                           ),
                           _divider(),
                           _InfoTile(
                             Icons.location_city_rounded,
                             'RW',
                             user?.rw != null && user!.rw.isNotEmpty
-                                ? 'RW ${user.rw}'
-                                : 'Belum diatur',
+                                ? user.rw
+                                : '-',
                           ),
                           _divider(),
                           _InfoTile(
@@ -277,11 +291,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           _divider(),
                         ],
-                        _InfoTile(
-                          Icons.badge_outlined,
-                          'ID Akun',
-                          user != null && user.id.length >= 8 ? user.id.substring(0, 8).toUpperCase() : (user?.id ?? '-'),
-                        ),
                       ],
                     ),
                   ),
@@ -413,7 +422,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   const SizedBox(height: 12),
                   const Center(
                     child: Text(
-                      '© 2026 TrashCare',
+                      '© 2026 Universitas Komputer Indonesia',
                       style: TextStyle(fontSize: 11, color: AppColors.textHint),
                     ),
                   ),

@@ -20,7 +20,10 @@ class UserEntity extends Equatable {
     this.prodi = '',
     this.fakultas = '',
     this.universitas = '',
-    this.kecamatan = 'Coblong',
+    this.kecamatan = '',
+    this.provinsi = '',
+    this.kota = '',
+    this.jenjangPendidikan = '',
     this.pendampingName,
     this.familySize = 1,
   });
@@ -31,6 +34,8 @@ class UserEntity extends Equatable {
   final String address;
   final UserRole role;
   final String kecamatan;
+  final String provinsi;
+  final String kota;
   final String kelurahan;
   final String rw;
   final String? householdId; // diisi setelah GET /households/me
@@ -42,6 +47,7 @@ class UserEntity extends Equatable {
   final String prodi;
   final String fakultas;
   final String universitas;
+  final String jenjangPendidikan;
   final String? pendampingName;
   final int familySize;
 
@@ -54,6 +60,8 @@ class UserEntity extends Equatable {
     String? address,
     UserRole? role,
     String? kecamatan,
+    String? provinsi,
+    String? kota,
     String? kelurahan,
     String? rw,
     String? householdId,
@@ -65,7 +73,9 @@ class UserEntity extends Equatable {
     String? prodi,
     String? fakultas,
     String? universitas,
+    String? jenjangPendidikan,
     String? pendampingName,
+    int? familySize,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -74,6 +84,8 @@ class UserEntity extends Equatable {
       address: address ?? this.address,
       role: role ?? this.role,
       kecamatan: kecamatan ?? this.kecamatan,
+      provinsi: provinsi ?? this.provinsi,
+      kota: kota ?? this.kota,
       kelurahan: kelurahan ?? this.kelurahan,
       rw: rw ?? this.rw,
       householdId: householdId ?? this.householdId,
@@ -85,12 +97,14 @@ class UserEntity extends Equatable {
       prodi: prodi ?? this.prodi,
       fakultas: fakultas ?? this.fakultas,
       universitas: universitas ?? this.universitas,
+      jenjangPendidikan: jenjangPendidikan ?? this.jenjangPendidikan,
       pendampingName: pendampingName ?? this.pendampingName,
+      familySize: familySize ?? this.familySize,
     );
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kecamatan, kelurahan, rw, pendampingName];
+  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, jenjangPendidikan, kecamatan, kelurahan, rw, pendampingName];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
@@ -131,7 +145,7 @@ extension UserRoleExtension on UserRole {
       case UserRole.mahasiswaKkn:
         return 'MAHASISWA_KKN';
       case UserRole.petugasPemilahan:
-        return 'PETUGAS_PEMILAHAN';
+        return 'PETUGAS_RESIDU';
     }
   }
 

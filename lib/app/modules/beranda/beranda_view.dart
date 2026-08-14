@@ -386,7 +386,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       }
     }
     return CachedNetworkImage(
-      imageUrl: '${AppConfig.baseUrl}$fotoPath',
+      imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
     );

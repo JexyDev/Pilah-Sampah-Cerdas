@@ -483,10 +483,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                           ? () {
                               final binIds = _selectedBinIds.toList();
                               ref.read(resetBinProvider.notifier).submitReset(
-                                    binIds: binIds,
-                                    userId: userId,
-                                    evidencePhotoPath: _evidencePhotoPath!,
-                                  );
+                                      binIds: binIds,
+                                      userId: userId,
+                                      evidencePhotoPath: _evidencePhotoPath!,
+                                      wargaName: ref.read(authProvider).user?.name,
+                                    );
                             }
                           : null,
               style: ElevatedButton.styleFrom(

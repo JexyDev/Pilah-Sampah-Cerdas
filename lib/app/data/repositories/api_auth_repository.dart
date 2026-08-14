@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
 import '../../core/utils/image_compressor.dart';
 import '../../core/utils/phone_formatter.dart';
+import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/app_config.dart';
 import '../models/user_entity.dart';
 import 'auth_repository.dart';
@@ -42,23 +43,17 @@ class ApiAuthRepository implements AuthRepository {
           '/auth/login',
           data: {
             'phone': cleanPhone, 
-            'nim': cleanPhone, 
-            'identifier': cleanPhone,
-            'email': cleanPhone,
             'password': password
           },
         );
       } on DioException catch (e) {
         if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
           if (cleanPhone.startsWith('+62')) {
-            final altPhone = '0' + cleanPhone.substring(3);
+            final altPhone = '0${cleanPhone.substring(3)}';
             response = await apiClient.dio.post(
               '/auth/login',
               data: {
                 'phone': altPhone, 
-                'nim': altPhone, 
-                'identifier': altPhone,
-                'email': altPhone,
                 'password': password
               },
             );
@@ -176,7 +171,7 @@ class ApiAuthRepository implements AuthRepository {
       throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -192,7 +187,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       String endpoint = '/auth/register/warga'; // Default
       if (role == 'Mahasiswa') endpoint = '/auth/register/mahasiswa-kkn';
-      if (role == 'Petugas Pemilahan' || role == 'Petugas') endpoint = '/auth/register/petugas-pemilahan';
+      if (role == 'Petugas Pemilahan' || role == 'Petugas') endpoint = '/auth/register/petugas-residu';
       
       final response = await apiClient.dio.post(
         endpoint,
@@ -256,7 +251,7 @@ class ApiAuthRepository implements AuthRepository {
       throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -274,7 +269,7 @@ class ApiAuthRepository implements AuthRepository {
       throw AuthException('OTP_FAILED', message ?? 'Gagal meminta kode OTP');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -333,7 +328,7 @@ class ApiAuthRepository implements AuthRepository {
       throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -408,11 +403,11 @@ class ApiAuthRepository implements AuthRepository {
             kelurahan: cachedKel?.isNotEmpty == true ? cachedKel! : user.kelurahan,
             rw: cachedRt?.isNotEmpty == true ? cachedRt! : user.rw,
           );
-        } else if (user.kelurahan.isEmpty || user.rw.isEmpty) {
-          // Fallback ke API hanya jika lokal belum ada
-          user = await _fetchProfileMe(user);
         }
       }
+
+      // Fetch /auth/me untuk semua role agar kecamatan, provinsi, kota selalu terisi dari API
+      user = await _fetchProfileMe(user);
 
       return user;
     } catch (_) {
@@ -539,7 +534,7 @@ class ApiAuthRepository implements AuthRepository {
       } on DioException catch (e) {
         throw AuthException('FETCH_FAILED', e.message);
       } catch (e) {
-        throw AuthException('FETCH_FAILED', e.toString());
+        throw const AuthException('FETCH_FAILED', 'Gagal memuat profil. Terjadi kesalahan sistem.');
       }
       throw const AuthException('UNKNOWN', 'Gagal memuat profil');
     });
@@ -575,16 +570,16 @@ class ApiAuthRepository implements AuthRepository {
       }
       throw const AuthException('NETWORK_ERROR', 'Terjadi kesalahan jaringan');
     } catch (e) {
-      throw AuthException('UNKNOWN_ERROR', 'Gagal memproses gambar: $e');
+      throw const AuthException('UNKNOWN_ERROR', 'Gagal memproses gambar. Terjadi kesalahan sistem.');
     }
   }
 
   @override
-  Future<String?> forgotPassword({required String email}) async {
+  Future<String?> forgotPassword({required String phone}) async {
     try {
       final response = await apiClient.dio.post(
         '/auth/forgot-password',
-        data: {'email': email},
+        data: {'phone': phone},
       );
 
       if (response.statusCode == 200) {
@@ -601,23 +596,78 @@ class ApiAuthRepository implements AuthRepository {
       throw const AuthException('NETWORK_ERROR', 'Gagal terhubung ke server');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<bool> updateProfile({
+    required String name,
+    required String phone,
+    String? address,
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+    String? jenjangPendidikan,
+  }) async {
+    try {
+      final response = await apiClient.dio.put(
+        '/auth/profile',
+        data: {
+          'name': name,
+          'phone': PhoneFormatter.prepareLoginPhoneInput(phone),
+          if (address != null) 'address': address,
+          if (kecamatan != null) 'kecamatan': kecamatan,
+          if (kelurahan != null) 'kelurahan': kelurahan,
+          if (rw != null) 'rw': rw,
+          if (jenjangPendidikan != null) 'jenjangPendidikan': jenjangPendidikan,
+        },
+      );
+      if (response.statusCode == 200) {
+        // Data berhasil diupdate di server, update local storage cache:
+        final updatedData = response.data['data']['user'];
+        if (updatedData != null) {
+          final currentUserStr = await secureStorage.read(key: AppConfig.userDataKey);
+          if (currentUserStr != null) {
+            final currentUserMap = jsonDecode(currentUserStr) as Map<String, dynamic>;
+            currentUserMap['name'] = updatedData['name'] ?? name;
+            currentUserMap['phone'] = updatedData['phone'] ?? phone;
+            if (updatedData['address'] != null) {
+              currentUserMap['address'] = updatedData['address'];
+            }
+            await secureStorage.write(
+              key: AppConfig.userDataKey,
+              value: jsonEncode(currentUserMap),
+            );
+          }
+        }
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final message = e.response?.data?['message']?.toString();
+      if (status == 400) {
+        throw AuthException('VALIDATION_ERROR', message ?? 'Format data tidak valid');
+      }
+      throw AuthException('UPDATE_PROFILE_FAILED', message ?? 'Gagal memperbarui profil');
+    } catch (e) {
+      throw AuthException('UNKNOWN_ERROR', 'Terjadi kesalahan: $e');
     }
   }
 
   @override
   Future<void> resetPassword({
-    required String email,
+    required String phone,
     required String token,
     required String newPassword,
   }) async {
-    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(email);
+    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
     try {
       final response = await apiClient.dio.post(
         '/auth/reset-password',
         data: {
           'phone': cleanPhone,
-          'email': cleanPhone,
           'token': token,
           'otp': token,
           'newPassword': newPassword,
@@ -640,7 +690,7 @@ class ApiAuthRepository implements AuthRepository {
       throw AuthException('RESET_PASSWORD_FAILED', message ?? 'Gagal menyetel ulang kata sandi');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -670,7 +720,7 @@ class ApiAuthRepository implements AuthRepository {
       throw AuthException('CHANGE_PASSWORD_FAILED', message ?? 'Gagal mengubah kata sandi');
     } catch (e) {
       if (e is AuthException) rethrow;
-      throw AuthException('UNKNOWN_ERROR', e.toString());
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -734,6 +784,7 @@ class ApiAuthRepository implements AuthRepository {
     final String jurusan = userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? '';
     final String fakultas = userMap['fakultas']?.toString() ?? sp?['fakultas']?.toString() ?? userMap['profile']?['fakultas']?.toString() ?? '';
     final String universitas = userMap['universitas']?.toString() ?? sp?['universitas']?.toString() ?? userMap['profile']?['universitas']?.toString() ?? '';
+    final String jenjang = userMap['jenjangPendidikan']?.toString() ?? sp?['jenjangPendidikan']?.toString() ?? userMap['profile']?['jenjangPendidikan']?.toString() ?? userMap['strata']?.toString() ?? '';
 
     String extractRawRole() {
       final candidates = [
@@ -755,21 +806,55 @@ class ApiAuthRepository implements AuthRepository {
       return 'WARGA';
     }
 
+    // 6. Extract nested territories from rw object (if backend supports it)
+    // Backend returns 'kabupaten' or 'kota' for city-level territory
+    String provinsi = userMap['provinsi']?.toString() ?? '';
+    String kota = userMap['kota']?.toString() ?? userMap['kabupaten']?.toString() ?? '';
+    String fetchedKecamatan = userMap['kecamatan']?.toString() ?? '';
+
+    if (userMap['rw'] is Map) {
+      final rwObj = userMap['rw'] as Map<String, dynamic>;
+      if (rwObj['kelurahan'] is Map) {
+        final kelObj = rwObj['kelurahan'] as Map<String, dynamic>;
+        if (fetchedKecamatan.isEmpty && kelObj['kecamatan'] is Map) {
+          final kecObj = kelObj['kecamatan'] as Map<String, dynamic>;
+          fetchedKecamatan = kecObj['name']?.toString() ?? fetchedKecamatan;
+          
+          if (kota.isEmpty && kecObj['kota'] is Map) {
+             final kotaObj = kecObj['kota'] as Map<String, dynamic>;
+             kota = kotaObj['name']?.toString() ?? kota;
+
+             if (provinsi.isEmpty && kotaObj['provinsi'] is Map) {
+                final provObj = kotaObj['provinsi'] as Map<String, dynamic>;
+                provinsi = provObj['name']?.toString() ?? provinsi;
+             }
+          }
+        }
+      }
+    }
+
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       phone: userMap['phone']?.toString() ?? '',
+      address: userMap['address']?.toString() ?? '',
       email: userMap['email']?.toString(),
       role: UserRoleExtension.fromApi(extractRawRole()),
       fotoProfil: userMap['fotoProfil']?.toString(),
-      kecamatan: userMap['kecamatan']?.toString() ?? '',
-      kelurahan: userMap['kelurahan']?.toString() ?? '',
+      provinsi: provinsi,
+      kota: kota,
+      kecamatan: fetchedKecamatan,
+      kelurahan: kelurahan,
       rw: rw,
       nim: nim,
       jurusan: jurusan,
       prodi: prodi,
       fakultas: fakultas,
       universitas: universitas,
+      jenjangPendidikan: jenjang,
+      pendampingName: userMap['pendampingName']?.toString() ?? userMap['mahasiswaPendamping']?.toString(),
+      familySize: int.tryParse(userMap['jumlahAnggotaKeluarga']?.toString() ?? '') ?? 
+                  int.tryParse(userMap['jumlah_anggota_keluarga']?.toString() ?? '') ?? 1,
     );
   }
 
@@ -793,17 +878,25 @@ class ApiAuthRepository implements AuthRepository {
             userMap = d['user'] is Map ? d['user'] as Map<String, dynamic> : d;
           }
         }
-        debugPrint('[DEBUG /auth/me] userMap=$userMap');
         if (userMap.isNotEmpty) {
           final fetched = _mapUser(userMap);
           if (fetched.kelurahan.isNotEmpty && fetched.rw.isNotEmpty) {
             debugPrint('[DEBUG /auth/me] Got kelurahan=${fetched.kelurahan} rw=${fetched.rw}');
-            return user.copyWith(
-              kecamatan: userMap['kecamatan']?.toString() ?? '',
-              kelurahan: fetched.kelurahan,
-              rw: fetched.rw,
-            );
           }
+          return user.copyWith(
+            name: fetched.name,
+            phone: fetched.phone,
+            email: fetched.email,
+            fotoProfil: fetched.fotoProfil,
+            provinsi: fetched.provinsi,
+            kota: fetched.kota,
+            kecamatan: fetched.kecamatan.isNotEmpty ? fetched.kecamatan : (userMap['kecamatan']?.toString() ?? ''),
+            kelurahan: fetched.kelurahan,
+            rw: fetched.rw,
+            pendampingName: fetched.pendampingName,
+            familySize: fetched.familySize,
+            role: fetched.role,
+          );
         }
       }
     } catch (e) {
@@ -874,9 +967,50 @@ class ApiAuthRepository implements AuthRepository {
 
   @override
   Future<Map<String, dynamic>> fetchTerritories() async {
+    List<String> provinsis = [];
+    List<String> kotas = [];
+    List<String> kecamatans = [];
     List<String> kelurahans = [];
     List<String> rtRws = [];
     List<Map<String, dynamic>> rtRwListRaw = [];
+    List<Map<String, dynamic>> kelurahanListRaw = [];
+
+    try {
+      final provResp = await apiClient.dio.get('/wilayah/provinsi');
+      if (provResp.statusCode == 200 && provResp.data != null) {
+        final list = provResp.data is List ? provResp.data as List : (provResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          String clean = _cleanName(item);
+          if (clean.isNotEmpty && !clean.contains('{') && !provinsis.contains(clean)) provinsis.add(clean);
+        }
+      }
+    } catch (e) { debugPrint('Silenced error: $e'); }
+
+    try {
+      final kotaResp = await apiClient.dio.get('/wilayah/kabupaten');
+      if (kotaResp.statusCode == 200 && kotaResp.data != null) {
+        final list = kotaResp.data is List ? kotaResp.data as List : (kotaResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          String clean = _cleanName(item);
+          if (clean.isNotEmpty && !clean.contains('{') && !kotas.contains(clean)) kotas.add(clean);
+        }
+      }
+    } catch (e) { debugPrint('Silenced error: $e'); }
+
+    // 0. Coba endpoint /areas/kecamatan & /wilayah/kecamatan
+    try {
+      final kecResp = await apiClient.dio.get('/areas/kecamatan');
+      if (kecResp.statusCode == 200 && kecResp.data != null) {
+        final list = kecResp.data is List ? kecResp.data as List : (kecResp.data['data'] as List? ?? []);
+        for (final item in list) {
+          String clean = _cleanName(item);
+          clean = clean.replaceAll(RegExp(r'^Kecamatan\s+', caseSensitive: false), '').trim();
+          if (clean.isNotEmpty && !clean.contains('{') && !kecamatans.contains(clean)) {
+            kecamatans.add(clean);
+          }
+        }
+      }
+    } catch (e) { debugPrint('Silenced error: $e'); }
 
     // 1. Coba endpoint dedicated baru /wilayah/rw dan /wilayah/rt
     try {
@@ -911,6 +1045,9 @@ class ApiAuthRepository implements AuthRepository {
       if (kelResp.statusCode == 200 && kelResp.data != null) {
         final list = kelResp.data is List ? kelResp.data as List : (kelResp.data['data'] as List? ?? []);
         for (final item in list) {
+          if (item is Map<String, dynamic>) {
+            kelurahanListRaw.add(item);
+          }
           final clean = _cleanName(item);
           if (clean.isNotEmpty && !clean.contains('{') && !kelurahans.contains(clean)) {
             kelurahans.add(clean);
@@ -941,18 +1078,19 @@ class ApiAuthRepository implements AuthRepository {
       }
     } catch (e) { debugPrint('Silenced error: $e'); }
 
+    final validKecs = kecamatans.where((k) => k.isNotEmpty && !k.contains('{')).toList();
     final validKels = kelurahans.where((k) => k.isNotEmpty && !k.contains('{')).toList();
-    final validRts = rtRws.where((r) => r.isNotEmpty && !r.contains('{')).toList();
-
+    
     return {
-      'kelurahans': validKels.isNotEmpty
-          ? validKels
-          : ['Dago', 'Bojongsoang', 'Sukapura', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa', 'Lebak Gede', 'Cipaganti', 'Mengger', 'Dayeuhkolot'],
-      'rtRws': validRts.isNotEmpty
-          ? validRts
-          : ['01/01', '02/01', '01/02', '02/02', '03/02', '01/03', '02/03', '01/04', '02/04'],
+      'provinsis': provinsis,
+      'kotas': kotas,
+      'kecamatans': validKecs,
+      'kelurahans': validKels,
+      'rtRws': rtRws,
       'rawRtRw': rtRwListRaw,
+      'rawKelurahan': kelurahanListRaw,
     };
   }
 }
+
 

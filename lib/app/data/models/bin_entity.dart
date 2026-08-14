@@ -19,6 +19,7 @@ class BinEntity extends Equatable {
     this.isResetPending = false,
     this.createdAt,
     this.activatedAt,
+    this.backendStatus = '',
   });
 
   BinEntity copyWith({
@@ -35,6 +36,7 @@ class BinEntity extends Equatable {
     String? kelurahan,
     bool? isActive,
     bool? isResetPending,
+    String? backendStatus,
   }) {
     return BinEntity(
       id: id ?? this.id,
@@ -50,6 +52,7 @@ class BinEntity extends Equatable {
       kelurahan: kelurahan ?? this.kelurahan,
       isActive: isActive ?? this.isActive,
       isResetPending: isResetPending ?? this.isResetPending,
+      backendStatus: backendStatus ?? this.backendStatus,
     );
   }
 
@@ -68,6 +71,7 @@ class BinEntity extends Equatable {
   final bool isResetPending;
   final DateTime? createdAt;
   final DateTime? activatedAt;
+  final String backendStatus;
 
   /// Persentase kapasitas terisi (0.0 – 1.0).
   double get capacityPercent => currentVolumeL / maxCapacityL;

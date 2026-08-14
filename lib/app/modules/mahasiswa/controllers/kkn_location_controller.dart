@@ -146,7 +146,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     state = state.copyWith(isTracking: true, error: null, clearError: true);
 
-    _currentTargetScheduleId ??= 'SCH-TODAY';
+    if (_currentTargetScheduleId == null || _currentTargetScheduleId == 'SCH-TODAY') {
+      try {
+        final repo = ref.read(kknRepositoryProvider);
+        final activeZone = await repo.getActiveZone();
+        if (activeZone.isNotEmpty) {
+          _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+        }
+      } catch (_) {}
+    }
     await _fetchTargetLocation();
 
     // Initial check
@@ -230,7 +238,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         targetDurationMinutes: duration
       );
     } catch (e) {
-      state = state.copyWith(error: 'Gagal memuat target lokasi kegiatan.');
+      state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -305,6 +313,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             // RESET TIMER KETIKA WAKTU SELESAI
             _stopZoneTimer(resetCompletely: true);
             state = state.copyWith(inZoneDurationSeconds: 0, isEligibleForAttendance: false, zoneResetWarning: timeWindowWarning, clearWarning: false);
+            
+            // AUTO ALPA KETIKA WAKTU HABIS
+            if (!state.isSuccessAttendance && status != 'izin' && status != 'sakit' && status != 'hadir') {
+              _sendAutoAlpa();
+            }
+            
             return; // Stop processing further
           }
         }
@@ -353,6 +367,25 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           ? 'Anda keluar dari zona KKN. Waktu dihentikan sementara (freeze).'
           : null,
     );
+  }
+
+  Future<void> _sendAutoAlpa() async {
+    final user = ref.read(authProvider).user;
+    if (user == null || _currentTargetScheduleId == null) return;
+    
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      await repo.recordAttendance(
+        scheduleId: _currentTargetScheduleId!,
+        latitude: state.currentPosition?.latitude ?? 0.0,
+        longitude: state.currentPosition?.longitude ?? 0.0,
+        method: 'ALPA_AUTO',
+        nim: user.nim,
+        namaMahasiswa: user.name,
+      );
+    } catch (e) {
+      debugPrint('Gagal mengirim auto alpa: $e');
+    }
   }
 
   /// Fetch GPS and sync to backend
@@ -454,15 +487,20 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     
     final user = ref.read(authProvider).user;
     final nim = ref.read(mahasiswaControllerProvider).dashboard?.nim ?? user?.phone ?? '';
-    final namaMahasiswa = user?.name ?? 'Mahasiswa KKN';
-    final durationMinutes = 120; // Default or fetched
+    final namaMahasiswa = user?.name ?? '-';
+    const durationMinutes = 120; // Default or fetched
 
     try {
+      const LocationSettings locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      );
+      final pos = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
       final repo = ref.read(kknRepositoryProvider);
       final isSuccess = await repo.recordAttendance(
         scheduleId: _currentTargetScheduleId!,
-        latitude: -6.96772, // Dummy lat
-        longitude: 107.65906, // Dummy lng
+        latitude: pos.latitude,
+        longitude: pos.longitude,
         method: method,
         nim: nim,
         namaMahasiswa: namaMahasiswa,

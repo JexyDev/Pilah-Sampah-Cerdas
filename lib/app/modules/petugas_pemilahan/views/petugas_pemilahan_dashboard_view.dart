@@ -12,6 +12,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'petugas_notification_view.dart';
+import 'pengajuan_warga_view.dart';
 
 import '../../shared/controllers/connectivity_controller.dart';
 
@@ -56,6 +57,16 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     }
   }
 
+  String _kpiGradeLabel(double score) {
+    if (score >= 90) return 'Kinerja Sangat Baik';
+    if (score >= 75) return 'Kinerja Baik';
+    if (score >= 60) return 'Kinerja Cukup';
+    if (score >= 40) return 'Kinerja Kurang';
+    if (score == 0) return 'Belum Ada Data';
+    return 'Kinerja Buruk';
+  }
+
+
   Widget _buildHeaderAvatarImage(String? fotoPath) {
     if (fotoPath == null || fotoPath.isEmpty) {
       return const Center(
@@ -77,7 +88,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
       }
     }
     return CachedNetworkImage(
-      imageUrl: '${AppConfig.baseUrl}$fotoPath',
+      imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
     );
@@ -92,7 +103,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, UserEntity? user, int unreadCount) {
-    final name = user?.name ?? 'Petugas Pemilahan';
+    final name = user?.name ?? '-';
     const roleName = 'Petugas Pemilahan';
     final fotoUrl = user?.fotoProfil;
 
@@ -295,7 +306,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
-                child: const Text('Kinerja Sangat Baik', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: Text(
+                  _kpiGradeLabel(kpiScore),
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -403,24 +417,28 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   const SizedBox(height: 18),
 
                   // Kinerja KPI
-                  _buildKpiCard(dashboard?.kpiScore ?? 93.8),
+                  _buildKpiCard(dashboard?.kpiScore ?? 0),
                   const SizedBox(height: 18),
 
-                  // Matriks Statistik: Kg Hari Ini & Akumulasi Bin (2 Kolom Rapi)
+                  // Matriks Statistik: Kg Hari Ini & Akumulasi Bulanan (2 Kolom)
                   Row(
                     children: [
                       _buildStatCard(
                         title: 'Kg Hari Ini',
-                        value: '${dashboard?.totalWeightKg ?? 24.5}',
+                        value: dashboard == null
+                            ? '-'
+                            : dashboard.totalWeightKg.toStringAsFixed(1),
                         unit: 'Kg',
                         icon: Icons.scale_rounded,
                         color: AppColors.dangerRed,
                       ),
                       const SizedBox(width: 14),
                       _buildStatCard(
-                        title: 'Akumulasi Tempat Sampah',
-                        value: '540.2',
-                        unit: 'Kg Global',
+                        title: 'Bulanan',
+                        value: dashboard == null
+                            ? '-'
+                            : dashboard.monthlyWeightKg.toStringAsFixed(1),
+                        unit: 'Kg/Bulan',
                         icon: Icons.delete_sweep_rounded,
                         color: AppColors.warningOrange,
                       ),
@@ -428,91 +446,78 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   ),
                   const SizedBox(height: 18),
 
-                  // ── Requirement C item 5: Klaim / Terima Pengajuan Reset Warga ──
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                  // ── Menu Pengajuan Pengosongan Warga ────────────────────────
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const PengajuanWargaView()),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.warningOrange.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.delete_sweep_rounded, color: AppColors.warningOrange, size: 26),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.restore_rounded, color: AppColors.warningOrange, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Pengajuan Reset Tempat Sampah',
+                                const Text(
+                                  'Pengajuan Pengosongan Warga',
                                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  state.pengajuanList.isEmpty
+                                      ? 'Tidak ada antrean saat ini'
+                                      : '${state.pengajuanList.length} antrean menunggu diproses',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: state.pengajuanList.isEmpty
+                                        ? AppColors.textSecondary
+                                        : AppColors.warningOrange,
+                                    fontWeight: state.pengajuanList.isEmpty
+                                        ? FontWeight.normal
+                                        : FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
-                            Text(
-                              'Permintaan Warga',
-                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                          ),
+                          if (state.pengajuanList.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.warningOrange,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${state.pengajuanList.length}',
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.warningOrange.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 18,
-                                backgroundColor: Colors.white,
-                                child: Icon(Icons.person_outline_rounded, color: AppColors.warningOrange, size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Warga RT 02 / RW 05',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Pengajuan reset tempat sampah penuh',
-                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  final ok = await ref.read(petugasPemilahanControllerProvider.notifier).claimPengajuanReset('reset_req_01');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(ok ? 'Pengajuan reset berhasil diterima & diproses!' : 'Gagal memproses pengajuan reset.'),
-                                        backgroundColor: ok ? AppColors.primaryGreen : AppColors.dangerRed,
-                                      ),
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryGreen,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                child: const Text('Terima', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -597,6 +602,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (subtitle.isNotEmpty) ...[
                                   Text(

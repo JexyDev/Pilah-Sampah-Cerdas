@@ -17,7 +17,6 @@ abstract class KknRepository {
 
   /// Mendaftarkan warga baru melalui akun mahasiswa.
   /// Backend otomatis melakukan binding mahasiswa ↔ warga.
-  Future<void> registerWarga(RegisterWargaRequest request);
 
   Future<List<dynamic>?> getCachedActivityLog();
   Future<List<dynamic>> getActivityLog();

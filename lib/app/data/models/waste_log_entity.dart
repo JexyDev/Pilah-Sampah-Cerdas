@@ -45,7 +45,15 @@ class WasteLogEntity extends Equatable {
 
   DateTime get date => createdAt;
 
-  bool get isCorrect => discrepancyStatus.toUpperCase() == 'NONE';
+  bool get isCorrect {
+    if (discrepancyStatus.toUpperCase() != 'NONE') return false;
+    
+    // Jika backend tidak mengirim confidence (0.0), kita asumsikan benar (atau sesuai discrepancyStatus).
+    if (aiConfidence <= 0.0) return true;
+
+    final conf = aiConfidence > 1.0 ? aiConfidence : aiConfidence * 100;
+    return conf >= 80.0;
+  }
 
   @override
   List<Object?> get props => [id];

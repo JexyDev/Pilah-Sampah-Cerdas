@@ -8,6 +8,7 @@ import '../../../core/utils/phone_formatter.dart';
 import '../../../core/utils/input_sanitizer.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/otp_input_widget.dart';
+import '../../shared/widgets/password_strength_widget.dart';
 
 /// Layar Lupa Kata Sandi — 3-step berbasis OTP ke nomor telepon.
 ///
@@ -200,7 +201,7 @@ class _ForgotPasswordViewState
 
     // UI-only: Sementara kirim ke resetPassword dengan email = phone
     final bool ok = await ref.read(authProvider.notifier).resetPassword(
-          email: phone,
+          phone: phone,
           token: _otpValue,
           newPassword: newPassword,
         );
@@ -362,7 +363,7 @@ class _ForgotPasswordViewState
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 TrashCare. All rights reserved.',
+                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,
@@ -928,6 +929,13 @@ class _ForgotPasswordViewState
               if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
               if (v.length < 8) return 'Kata sandi minimal 8 karakter';
               return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _newPasswordController,
+            builder: (context, value, child) {
+              return PasswordStrengthWidget(password: value.text);
             },
           ),
           const SizedBox(height: 16),

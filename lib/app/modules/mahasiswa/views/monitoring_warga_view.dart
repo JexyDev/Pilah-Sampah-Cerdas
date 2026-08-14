@@ -45,8 +45,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     if (isAktivasiBinMode && !_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
-      final kelurahan = user?.kelurahan ?? 'Bojongsoang';
-      final rw = user?.rw ?? '01/02';
+      final kelurahan = user?.kelurahan ?? '';
+      final rw = user?.rw ?? '';
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
@@ -100,6 +100,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
         final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
         final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
+        final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
 
         String formattedAddr = w.address;
         if (formattedAddr.contains('RT ,') || formattedAddr.contains('Kel.') && (formattedAddr.endsWith('Kel.') || formattedAddr.contains('Kel.,') || formattedAddr.contains('Kel. '))) {
@@ -108,10 +109,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               .replaceAll(RegExp(r',?\s*Kel\.?\s*$'), '')
               .trim();
           if (cleaned.endsWith(',')) cleaned = cleaned.substring(0, cleaned.length - 1).trim();
-          formattedAddr = '$cleaned, RW $targetRw, Kel. $targetKel, Kec. $targetKec';
+          formattedAddr = '$cleaned, RW $targetRw, $kelDisplay, Kec. $targetKec';
         } else if (!formattedAddr.toLowerCase().contains('rw') && !formattedAddr.toLowerCase().contains('kel')) {
           final numStr = w.binId.length >= 2 ? w.binId.substring(w.binId.length - 2) : '04';
-          formattedAddr = '$formattedAddr No. $numStr, RW $targetRw, Kel. $targetKel, Kec. $targetKec';
+          formattedAddr = '$formattedAddr No. $numStr, RW $targetRw, $kelDisplay, Kec. $targetKec';
         }
 
         return WargaDampingan(
@@ -138,9 +139,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
-    final userKec = user?.kecamatan ?? 'Coblong';
-    final userKel = user?.kelurahan ?? 'Bojongsoang';
-    final userRw = user?.rw ?? '02';
+    final userKec = user?.kecamatan ?? '';
+    final userKel = user?.kelurahan ?? '';
+    final userRw = user?.rw ?? '';
 
     final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     
@@ -149,12 +150,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     final rawAktivasiList = aktivasiState?.wargaList ?? [];
 
+    final userKelDisplay = userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel';
     final allWargaList = isAktivasiBinMode 
         ? _getFilteredWargaAktivasi(rawAktivasiList, userKec, userKel, userRw)
         : state.wargaList.map((w) {
             final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
                 ? w.address
-                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, Kel. $userKel, Kec. $userKec';
+                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKelDisplay, Kec. $userKec';
             return WargaDampingan(
               binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rw: userRw, kecamatan: userKec, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
             );
@@ -198,10 +200,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: Text(isAktivasiBinMode ? 'Pilih Warga' : 'Monitoring Warga Dampingan', style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
-        backgroundColor: AppColors.primaryGreen,
+        title: Text(isAktivasiBinMode ? 'Pilih Warga' : 'Monitoring Warga Dampingan', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary, fontSize: 18)),
+        backgroundColor: Colors.white,
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -301,7 +306,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                 isDense: true,
                               ),
                               child: Text(
-                                userKel.isNotEmpty ? (userKel.startsWith('Kel.') ? userKel : 'Kel. $userKel') : 'Kel. Dago',
+                                userKel.isNotEmpty ? (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel') : '-',
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -426,13 +431,38 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
-                                child: Text(
-                                  warga.wargaName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: AppColors.textPrimary,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      warga.wargaName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: warga.mahasiswaId.isNotEmpty ? AppColors.primaryBlueLight : Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        warga.mahasiswaId.isNotEmpty
+                                            ? (warga.pendampingName.isNotEmpty
+                                                ? 'Dampingan: ${warga.pendampingName}'
+                                                : 'Dampingan Mahasiswa')
+                                            : 'Mandiri',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: warga.mahasiswaId.isNotEmpty ? AppColors.primaryBlueDark : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -471,7 +501,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           Builder(
                             builder: (_) {
                               final rtStr = warga.rw.isNotEmpty ? (warga.rw.startsWith('RW') ? warga.rw : 'RW ') : (userRw.startsWith('RW') ? userRw : 'RW $userRw');
-                              final kelStr = warga.kelurahan.isNotEmpty ? (warga.kelurahan.startsWith('Kel.') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') : (userKel.startsWith('Kel.') ? userKel : 'Kel. $userKel');
+                              final kelStr = warga.kelurahan.isNotEmpty ? (warga.kelurahan.toLowerCase().startsWith('kel') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') : (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel');
                               return Text(
                                 '$rtStr, $kelStr',
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),
@@ -585,15 +615,24 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   }
 
   Widget _buildChartCard(List<WargaDampingan> wargaList) {
-    // Ambil top 5 warga dampingan berdasarkan poin tertinggi untuk sinkron dengan list
+    // Ambil top 5 warga dampingan berdasarkan poin tertinggi
     final sortedWarga = List<WargaDampingan>.from(wargaList)
       ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
 
     final chartData = sortedWarga.take(5).map((e) {
       final String firstName = e.wargaName.split(' ').first;
-      final double score = e.correctPercentage;
+      final double score = e.totalPoints.toDouble(); // Pakai point asli, bukan percentage
       return _ChartDataPoint(firstName, score);
     }).toList();
+
+    // Hitung max value untuk skala Y (kelipatan 50 terdekat)
+    double maxY = 100.0;
+    if (chartData.isNotEmpty) {
+      final highest = chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+      if (highest > 0) {
+        maxY = ((highest / 50).ceil() * 50).toDouble();
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -608,7 +647,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Grafik Kepatuhan Pemilahan Sampah',
+            'Grafik Poin Warga (Top 5)',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
             textAlign: TextAlign.center,
           ),
@@ -622,18 +661,28 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Skor (%)', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
                 SizedBox(
                   height: 180,
                   child: CustomPaint(
-                    painter: _CustomXYChartPainter(chartData),
+                    painter: _CustomXYChartPainter(chartData, maxY),
                   ),
                 ),
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text('Nama Warga', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundCanvas,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Keterangan Sumbu (Matematis):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      SizedBox(height: 4),
+                      Text('• Sumbu X (Horizontal) mewakili Nama Warga Dampingan.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      Text('• Sumbu Y (Vertikal) mewakili Total Poin Warga.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                    ],
                   ),
                 ),
               ],
@@ -742,7 +791,9 @@ class _ChartDataPoint {
 
 class _CustomXYChartPainter extends CustomPainter {
   final List<_ChartDataPoint> data;
-  _CustomXYChartPainter(this.data);
+  final double maxY;
+  
+  _CustomXYChartPainter(this.data, this.maxY);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -763,29 +814,29 @@ class _CustomXYChartPainter extends CustomPainter {
       ..color = AppColors.primaryBlue
       ..style = PaintingStyle.fill;
 
-    // Define chart margin
-    const double paddingLeft = 32.0;
+    // Margin grafik
+    const double paddingLeft = 40.0;
     const double paddingBottom = 24.0;
-    const double paddingTop = 8.0;
+    const double paddingTop = 12.0;
     const double paddingRight = 16.0;
 
     final chartWidth = size.width - paddingLeft - paddingRight;
     final chartHeight = size.height - paddingTop - paddingBottom;
 
-    // Draw Y Axis Gridlines (0, 25, 50, 75, 100)
+    // Draw Y Axis Gridlines (0, 25%, 50%, 75%, 100% of maxY)
     for (int i = 0; i <= 4; i++) {
-      final yValue = i * 25.0;
-      final yPos = size.height - paddingBottom - (yValue / 100.0 * chartHeight);
+      final yValue = (i * maxY) / 4;
+      final yPos = size.height - paddingBottom - (yValue / maxY * chartHeight);
       
       // Draw gridline
       canvas.drawLine(Offset(paddingLeft, yPos), Offset(size.width - paddingRight, yPos), paintGrid);
 
       // Draw Y labels
       final tp = TextPainter(
-        text: TextSpan(text: yValue.toInt().toString(), style: const TextStyle(fontSize: 8, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+        text: TextSpan(text: yValue.toInt().toString(), style: const TextStyle(fontSize: 9, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(paddingLeft - tp.width - 6, yPos - (tp.height / 2)));
+      tp.paint(canvas, Offset(paddingLeft - tp.width - 8, yPos - (tp.height / 2)));
     }
 
     // Draw X and Y Axes
@@ -803,7 +854,8 @@ class _CustomXYChartPainter extends CustomPainter {
 
     for (int i = 0; i < data.length; i++) {
       final x = paddingLeft + (i * stepX);
-      final y = size.height - paddingBottom - (data[i].value / 100.0 * chartHeight);
+      final double safeMaxY = maxY > 0 ? maxY : 1;
+      final y = size.height - paddingBottom - (data[i].value / safeMaxY * chartHeight);
       final pt = Offset(x, y);
       points.add(pt);
 

@@ -197,6 +197,15 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
           Navigator.of(context).pop();
         }
       }
+    } else if (!success && mounted) {
+      final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage ?? 'Gagal menyimpan data timbangan.';
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: AppColors.dangerRed,
+        ),
+      );
     }
   }
 
@@ -424,6 +433,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Input Timbangan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.primaryGreen)),
         centerTitle: true,

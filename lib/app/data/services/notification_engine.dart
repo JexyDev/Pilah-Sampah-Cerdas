@@ -40,7 +40,6 @@ class NotificationEngine {
       _isInitialized = true;
 
       await _requestPermissions();
-      await _scheduleFixedNotifications();
     } catch (e) {
       debugPrint('[NotificationEngine] Init failed: $e');
     }
@@ -69,66 +68,62 @@ class NotificationEngine {
     }
   }
 
-  Future<void> _scheduleFixedNotifications() async {
+  Future<void> scheduleRoleBasedNotifications(String roleName) async {
     try {
       await _flutterLocalNotificationsPlugin.cancel(id: 1);
       await _flutterLocalNotificationsPlugin.cancel(id: 2);
+      await _flutterLocalNotificationsPlugin.cancel(id: 3); // For petugas
 
       final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
 
-      // 1. Pengingat Memilah Sampah Pagi (07:00 WIB / rentang 06:00-08:00 WIB)
-      tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 7, 0);
-      if (scheduledPagi.isBefore(now)) {
-        scheduledPagi = scheduledPagi.add(const Duration(days: 1));
+      if (roleName == 'WARGA' || roleName == 'ADMIN') {
+        // 1. Pengingat Memilah Sampah Pagi (07:00 WIB)
+        tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 7, 0);
+        if (scheduledPagi.isBefore(now)) scheduledPagi = scheduledPagi.add(const Duration(days: 1));
+
+        const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
+          'reminder_pagi_channel', 'Jadwal Buang Sampah Pagi',
+          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF0EA5E9),
+        );
+
+        await _flutterLocalNotificationsPlugin.zonedSchedule(
+          id: 1, title: 'Jadwal Buang Sampah Pagi! 🌅', body: 'Pengingat warga: Jangan lupa buang sampah pagi ini.',
+          scheduledDate: scheduledPagi, notificationDetails: const NotificationDetails(android: androidPagi),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
+        );
+
+        // 2. Pengingat Sore (17:00 WIB)
+        tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 17, 0);
+        if (scheduledSore.isBefore(now)) scheduledSore = scheduledSore.add(const Duration(days: 1));
+
+        const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
+          'reminder_sore_channel', 'Jadwal Buang Sampah Sore',
+          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF0EA5E9),
+        );
+
+        await _flutterLocalNotificationsPlugin.zonedSchedule(
+          id: 2, title: 'Jadwal Buang Sampah Sore! 🌇', body: 'Pengingat warga: Cek kembali tempat sampah Anda.',
+          scheduledDate: scheduledSore, notificationDetails: const NotificationDetails(android: androidSore),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
+        );
+      } else if (roleName == 'PETUGAS_PEMILAHAN' || roleName == 'PETUGAS_RESIDU') {
+        // 3. Pengingat Petugas Pemilah (06:00 WIB)
+        tz.TZDateTime scheduledPetugas = tz.TZDateTime(tz.local, now.year, now.month, now.day, 6, 0);
+        if (scheduledPetugas.isBefore(now)) scheduledPetugas = scheduledPetugas.add(const Duration(days: 1));
+
+        const AndroidNotificationDetails androidPetugas = AndroidNotificationDetails(
+          'reminder_petugas_channel', 'Jadwal Cek Antrean',
+          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF4CAF50),
+        );
+
+        await _flutterLocalNotificationsPlugin.zonedSchedule(
+          id: 3, title: 'Waktunya Cek Antrean Warga! 🚛', body: 'Pengingat Petugas: Silakan periksa antrean pengosongan sampah warga di wilayah RW Anda hari ini.',
+          scheduledDate: scheduledPetugas, notificationDetails: const NotificationDetails(android: androidPetugas),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
+        );
       }
 
-      const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
-        'reminder_pagi_channel',
-        'Jadwal Buang Sampah Pagi',
-        channelDescription: 'Notifikasi rutin jadwal buang sampah pagi untuk warga',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF0EA5E9),
-      );
-
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        id: 1,
-        title: 'Jadwal Buang Sampah Pagi! 🌅',
-        body: 'Pengingat warga: Jangan lupa buang sampah Organik & Anorganik pagi ini.',
-        scheduledDate: scheduledPagi,
-        notificationDetails: const NotificationDetails(android: androidPagi),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
-
-      // 2. Pengingat Memilah Sampah Sore (17:00 WIB / rentang 16:00-18:00 WIB)
-      tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 17, 0);
-      if (scheduledSore.isBefore(now)) {
-        scheduledSore = scheduledSore.add(const Duration(days: 1));
-      }
-
-      const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
-        'reminder_sore_channel',
-        'Jadwal Buang Sampah Sore',
-        channelDescription: 'Notifikasi rutin jadwal buang sampah sore untuk warga',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF0EA5E9),
-      );
-
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        id: 2,
-        title: 'Jadwal Buang Sampah Sore! 🌇',
-        body: 'Pengingat warga: Cek kembali tempat sampah Anda dan segera buang sore ini.',
-        scheduledDate: scheduledSore,
-        notificationDetails: const NotificationDetails(android: androidSore),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
-
-      debugPrint('[NotificationEngine] Fixed daily reminders (07:00 & 17:00 WIB) scheduled successfully in background.');
+      debugPrint('[NotificationEngine] Role-based daily reminders scheduled for role: $roleName');
     } catch (e) {
       debugPrint('[NotificationEngine] Schedule error: $e');
     }

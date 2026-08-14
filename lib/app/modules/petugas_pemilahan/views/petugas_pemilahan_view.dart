@@ -24,13 +24,14 @@ class PetugasPemilahanView extends ConsumerWidget {
         shadowColor: Colors.black12,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Halo, ${user?.name ?? "Petugas Pemilahan"} 👋',
+              'Halo, ${user?.name ?? "-"} 👋',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
             ),
             Text(
-              'Wilayah Tugas: ${user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : (dashboard?.assignedZone ?? "RW 02")}',
+              'Wilayah Tugas: ${user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : (dashboard?.assignedZone ?? "-")}',
               style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
@@ -60,7 +61,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // KPI Badge Card
-                    _buildKpiCard(dashboard?.kpiScore ?? 93.8),
+                    _buildKpiCard(dashboard?.kpiScore ?? 0.0),
                     const SizedBox(height: AppDimensions.md),
 
                     // Grid Stat Cards
@@ -68,7 +69,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                       children: [
                         _buildStatCard(
                           title: 'Siap Ditimbang',
-                          value: '${dashboard?.totalJadwal ?? 8}',
+                          value: '${dashboard?.totalJadwal ?? 0}',
                           unit: 'Lokasi',
                           icon: Icons.delete_outline_rounded,
                           color: AppColors.warningYellow,
@@ -76,7 +77,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                         const SizedBox(width: 12),
                         _buildStatCard(
                           title: 'Sudah Dicatat',
-                          value: '${dashboard?.sudahDiambil ?? 3}',
+                          value: '${dashboard?.sudahDiambil ?? 0}',
                           unit: 'Selesai',
                           icon: Icons.task_alt_rounded,
                           color: AppColors.primaryGreen,
@@ -88,7 +89,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                       children: [
                         _buildStatCard(
                           title: 'Total Pemilahan',
-                          value: '${dashboard?.totalWeightKg ?? 42.5}',
+                          value: '${dashboard?.totalWeightKg ?? 0.0}',
                           unit: 'Kg',
                           icon: Icons.scale_outlined,
                           color: AppColors.primaryBlue,
@@ -115,6 +116,98 @@ class PetugasPemilahanView extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: AppDimensions.xl),
+
+                    if (state.pengajuanList.isNotEmpty) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Daftar Pengajuan Warga',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.warningOrange,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${state.pengajuanList.length} Antrean',
+                              style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ...state.pengajuanList.map((pengajuan) {
+                        final wargaName = pengajuan['wargaName'] ?? 'Warga';
+                        final pengajuanId = pengajuan['id'] ?? '';
+                        final alasan = pengajuan['alasan'] ?? 'Pengajuan pengosongan bin penuh';
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: AppColors.backgroundCanvas,
+                                    child: Icon(Icons.person_outline_rounded, color: AppColors.warningOrange, size: 20),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          wargaName,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          alasan,
+                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      final ok = await ref.read(petugasPemilahanControllerProvider.notifier).claimPengajuanReset(pengajuanId);
+                                      if (context.mounted) {
+                                        final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage;
+                                        ScaffoldMessenger.of(context).clearSnackBars();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(ok ? 'Pengajuan berhasil diterima & diproses!' : (errorMsg ?? 'Gagal memproses pengajuan.')),
+                                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.dangerRed,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryGreen,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: const Text('Terima', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: AppDimensions.xl),
+                    ],
 
                     // Daftar Pemilahan RW Header
                     const Row(

@@ -26,6 +26,9 @@ abstract class PetugasPemilahanRepository {
   /// Ganti password khusus Petugas Pemilahan
   Future<bool> changePassword({required String oldPassword, required String newPassword});
 
+  /// Ambil daftar pengajuan reset dari warga
+  Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga();
+
   /// Terima / Klaim pengajuan reset tempat sampah dari Warga (PUT /petugas-pemilahan/pengajuan/{id}/terima)
   Future<bool> claimPengajuanReset(String pengajuanId);
 }

@@ -11,19 +11,26 @@ final dampakelurahanProvider = FutureProvider.autoDispose<DampakKelurahanData>((
   return await repo.getDampakKelurahan();
 });
 
-/// Halaman Read-Only Monitoring Dampak Kelurahan (Mahasiswa KKN)
+/// Halaman Read-Only Monitoring Dampak RW (Mahasiswa KKN)
 class MonitoringDampakKelurahanView extends ConsumerWidget {
   const MonitoringDampakKelurahanView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
-    final kelurahanName = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
+    final kelurahanName = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
+    final userRw = user?.rw.isNotEmpty == true ? user!.rw : '-';
     final dampakAsync = ref.watch(dampakelurahanProvider);
     final mhsState = ref.watch(mahasiswaControllerProvider);
     final totalWarga = mhsState.wargaList.length;
     final activeWarga = mhsState.wargaList.where((w) => w.isActivated).length;
-    final calcPercentage = totalWarga > 0 ? (activeWarga / totalWarga * 100) : 78.5;
+    final calcPercentage = totalWarga > 0 ? (activeWarga / totalWarga * 100) : 0.0;
+
+    final kelDisplay = kelurahanName.toLowerCase().startsWith('kel') ? kelurahanName : 'Kel. $kelurahanName';
+    final rwDisplay = userRw != '-' ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : '';
+    final areaTitle = rwDisplay.isNotEmpty 
+        ? (kelurahanName != '-' ? '$rwDisplay • $kelDisplay' : rwDisplay)
+        : (kelurahanName != '-' ? kelDisplay : 'Wilayah RW Dampingan');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -36,7 +43,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Monitoring Dampak Kelurahan',
+              'Monitoring Dampak RW',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -44,7 +51,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
               ),
             ),
             Text(
-              'Laporan Statistik Real-Time Wilayah KKN',
+              'Laporan Statistik Real-Time Wilayah RW KKN',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,
@@ -68,7 +75,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
               data: (dampak) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Banner Header Kelurahan ──────────────────────────────
+                  // ── Banner Header RW ──────────────────────────────
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -110,7 +117,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'WILAYAH DAMPINGAN KKN',
+                                    'WILAYAH DAMPINGAN RW KKN',
                                     style: TextStyle(
                                       color: Colors.white70,
                                       fontSize: 10,
@@ -119,7 +126,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                     ),
                                   ),
                                   Text(
-                                    'Kelurahan $kelurahanName',
+                                    areaTitle,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
@@ -179,7 +186,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                 Icon(Icons.pie_chart_rounded, color: AppColors.primaryGreen, size: 20),
                                 SizedBox(width: 8),
                                 Text(
-                                  'Tingkat Memilah Rumah Tangga',
+                                  'Tingkat Memilah Rumah Tangga RW',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -230,7 +237,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$activeWarga dari $totalWarga rumah tangga binaan telah aktif memilah dari rumah.',
+                          '$activeWarga dari $totalWarga rumah tangga binaan RW telah aktif memilah dari rumah.',
                           style: const TextStyle(fontSize: 11, color: AppColors.textHint),
                         ),
                       ],
@@ -263,7 +270,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                             Icon(Icons.scale_rounded, color: AppColors.primaryBlue, size: 20),
                             SizedBox(width: 8),
                             Text(
-                              'Total Volume Sampah Tercatat',
+                              'Total Volume Sampah Terpilah RW',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -399,7 +406,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Data dampak kelurahan dihitung otomatis oleh sistem secara real-time berdasarkan rekapitulasi setoran & aktivasi warga di wilayah ini.',
+                            'Data dampak RW dihitung otomatis oleh sistem secara real-time berdasarkan rekapitulasi setoran & aktivasi warga di RW dampingan ini.',
                             style: TextStyle(fontSize: 12, color: AppColors.primaryBlueDark, height: 1.4),
                           ),
                         ),
@@ -423,7 +430,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                       const Icon(Icons.error_outline_rounded, color: AppColors.dangerRed, size: 48),
                       const SizedBox(height: 12),
                       Text(
-                        'Gagal memuat statistik dampak kelurahan: $err',
+                        'Gagal memuat statistik dampak RW: $err',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),

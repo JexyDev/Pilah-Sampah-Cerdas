@@ -117,18 +117,16 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       double lng = 0.0;
       
       if (PlatformUtils.isMobile) {
-        try {
-          final pos = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.medium,
-              timeLimit: Duration(seconds: 10),
-            ),
-          );
-          lat = pos.latitude;
-          lng = pos.longitude;
-        } catch (_) {
-          // Fallback if GPS fails
-        }
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        lat = pos.latitude;
+        lng = pos.longitude;
+      } else {
+        throw Exception('Fitur aktivasi warga dengan GPS hanya tersedia di perangkat mobile.');
       }
 
       final repo = ref.read(kknRepositoryProvider);
@@ -160,18 +158,16 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       double lng = 0.0;
 
       if (PlatformUtils.isMobile) {
-        try {
-          final pos = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              timeLimit: Duration(seconds: 10),
-            ),
-          );
-          lat = pos.latitude;
-          lng = pos.longitude;
-        } catch (_) {
-          // Fallback if GPS fails
-        }
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        lat = pos.latitude;
+        lng = pos.longitude;
+      } else {
+        throw Exception('Fitur aktivasi tempat sampah dengan GPS hanya tersedia di perangkat mobile.');
       }
 
       final repo = ref.read(kknRepositoryProvider);

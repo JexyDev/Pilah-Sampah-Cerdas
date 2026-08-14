@@ -103,13 +103,7 @@ class ApiKknRepository implements KknRepository {
     return rawList.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  @override
-  Future<void> registerWarga(RegisterWargaRequest request) async {
-    await apiClient.dio.post(
-      ApiEndpoints.registerWarga,
-      data: request.toJson(),
-    );
-  }
+
 
   @override
   Future<List<dynamic>?> getCachedActivityLog() async {
@@ -159,7 +153,7 @@ class ApiKknRepository implements KknRepository {
     );
     if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
       final data = response.data['data'] as Map<String, dynamic>?;
-      return data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString() ?? 'Zona KKN Kel. Bojongsoang';
+      return data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
     }
     return null;
   }
@@ -385,27 +379,21 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<DampakKelurahanData> getDampakKelurahan() async {
     try {
-      final response = await apiClient.dio.get('/kkn/dampak-kelurahan');
-      if (response.statusCode == 200 && response.data != null) {
+      dynamic response;
+      try {
+        response = await apiClient.dio.get('/kkn/dampak-rw');
+      } catch (_) {
+        response = await apiClient.dio.get('/kkn/dampak-kelurahan');
+      }
+      if (response != null && response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> data = response.data is Map<String, dynamic>
             ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
             : {};
         return DampakKelurahanData.fromJson(data);
       }
+      throw Exception('Data statistik dampak RW tidak tersedia.');
     } catch (_) {
-      // Fallback: apabila backend belum menyediakan endpoint /kkn/dampak-kelurahan,
-      // kita hitung/baca dari dashboard & data warga yang ada secara safe.
+      throw Exception('Gagal memuat data statistik dampak RW.');
     }
-    
-    // Default safe fallback data
-    return const DampakKelurahanData(
-      kelurahanName: 'Kelurahan Dampingan',
-      activeHouseholdsPercentage: 78.5,
-      totalWasteVolumeKg: 1250.0,
-      organicVolumeKg: 720.0,
-      nonOrganicVolumeKg: 530.0,
-      totalHouseholdsRegistered: 45,
-      totalActiveBins: 90,
-    );
   }
 }

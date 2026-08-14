@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
+import '../../shared/widgets/password_strength_widget.dart';
 
 class GantiPasswordPetugasView extends ConsumerStatefulWidget {
   const GantiPasswordPetugasView({super.key});
@@ -156,6 +157,13 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
                           if (v == null || v.isEmpty) return 'Kata sandi baru wajib diisi';
                           if (v.length < 8) return 'Kata sandi minimal 8 karakter';
                           return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _newPasswordController,
+                        builder: (context, value, child) {
+                          return PasswordStrengthWidget(password: value.text);
                         },
                       ),
                       const SizedBox(height: 16),

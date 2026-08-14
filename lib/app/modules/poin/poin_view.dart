@@ -531,10 +531,19 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPunishment = item.points < 0 || item.description.toLowerCase().contains('penalti');
     final bool isOrganic = item.wasteType == WasteType.organic;
-    final Color color = isOrganic
-        ? AppColors.organicColor
-        : AppColors.nonOrganicColor;
+    final Color color = isPunishment
+        ? AppColors.dangerRed
+        : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor);
+    final IconData iconData = isPunishment ? Icons.warning_rounded : Icons.delete_rounded;
+
+    String title = isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik';
+    if (item.description.toLowerCase().contains('aktivasi')) {
+      title = 'Aktivasi Tempat Sampah Berhasil';
+    } else if (isPunishment) {
+      title = 'Punishment Pengurangan Poin';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -551,7 +560,7 @@ class _PoinHistoryItem extends StatelessWidget {
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.delete_rounded, color: color, size: 20),
+            child: Icon(iconData, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -559,9 +568,7 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.description.toLowerCase().contains('aktivasi')
-                      ? 'Aktivasi Tempat Sampah Berhasil'
-                      : (isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik'),
+                  title,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -587,11 +594,11 @@ class _PoinHistoryItem extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '+${item.points.abs()}',
-                    style: const TextStyle(
+                    isPunishment ? '-${item.points.abs()}' : '+${item.points.abs()}',
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryGreen,
+                      color: isPunishment ? AppColors.dangerRed : AppColors.primaryGreen,
                     ),
                   ),
                   const SizedBox(width: 2),

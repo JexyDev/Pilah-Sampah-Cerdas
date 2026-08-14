@@ -44,12 +44,13 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
       return matchesUser;
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
-      final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';
-      final targetRw = userRw.isNotEmpty ? userRw : '02';
-      final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : (userKecamatan.isNotEmpty ? userKecamatan : 'Coblong');
+      final targetKel = userKelurahan;
+      final targetRw = userRw;
+      final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKecamatan;
+      final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
       final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, Kel. $targetKel, Kec. $targetKec';
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
       
       return WargaDampingan(
         binId: w.binId,
@@ -79,9 +80,9 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
-    final userRw = user?.rw ?? '02';
-    final userKec = user?.kecamatan ?? 'Coblong';
-    final userKel = user?.kelurahan ?? 'Bojongsoang';
+    final userRw = user?.rw ?? '';
+    final userKec = user?.kecamatan ?? '';
+    final userKel = user?.kelurahan ?? '';
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
     

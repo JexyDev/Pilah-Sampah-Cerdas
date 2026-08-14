@@ -82,8 +82,12 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       }
 
       // Izin diberikan → reset flag
-      _permDenied = false;
-      _permPermanentlyDenied = false;
+      setState(() {
+        _permDenied = false;
+        _permPermanentlyDenied = false;
+      });
+      // Beri waktu sebentar bagi OS untuk me-release kamera ke aplikasi (mencegah layar gelap saat pertama kali diizinkan)
+      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     try {

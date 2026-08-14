@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/network_exception_helper.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../services/petugas_pemilahan_fcm_service.dart';
@@ -9,6 +10,7 @@ class PetugasPemilahanState {
     this.dashboard,
     this.jadwalList = const [],
     this.historyList = const [],
+    this.pengajuanList = const [],
     this.errorMessage,
     this.selectedDateRange = 'HARI_INI',
     this.selectedTypeFilter = 'SEMUA',
@@ -18,11 +20,12 @@ class PetugasPemilahanState {
   final PetugasPemilahanDashboard? dashboard;
   final List<PemilahanBinPickup> jadwalList;
   final List<Map<String, dynamic>> historyList;
+  final List<Map<String, dynamic>> pengajuanList;
   final String? errorMessage;
   final String selectedDateRange;
   final String selectedTypeFilter;
 
-  /// Window waktu penjemputan: 06:00â€“08:00 dan 16:00â€“18:00
+  /// Window waktu penjemputan: 06:00–08:00 dan 16:00–18:00
   bool get isPickupWindowActive {
     final now = DateTime.now();
     final hour = now.hour;
@@ -36,6 +39,7 @@ class PetugasPemilahanState {
     PetugasPemilahanDashboard? dashboard,
     List<PemilahanBinPickup>? jadwalList,
     List<Map<String, dynamic>>? historyList,
+    List<Map<String, dynamic>>? pengajuanList,
     String? errorMessage,
     String? selectedDateRange,
     String? selectedTypeFilter,
@@ -46,6 +50,7 @@ class PetugasPemilahanState {
       dashboard: dashboard ?? this.dashboard,
       jadwalList: jadwalList ?? this.jadwalList,
       historyList: historyList ?? this.historyList,
+      pengajuanList: pengajuanList ?? this.pengajuanList,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       selectedDateRange: selectedDateRange ?? this.selectedDateRange,
       selectedTypeFilter: selectedTypeFilter ?? this.selectedTypeFilter,
@@ -62,6 +67,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
   }
 
   final Ref _ref;
+
 
   Future<void> refreshAll() async {
     final repo = _ref.read(petugasPemilahanRepositoryProvider);
@@ -94,11 +100,23 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       if (mounted && cachedJadwal == null) state = state.copyWith(isLoading: false);
     });
 
-    repo.getHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter).then((history) {
-      if (mounted) state = state.copyWith(historyList: history, isLoading: false);
+    // Fetch Daftar Pengajuan Warga
+    repo.getDaftarPengajuanWarga().then((pengajuan) {
+      if (mounted) state = state.copyWith(pengajuanList: pengajuan, isLoading: false);
     }).catchError((_) {
-      if (mounted && cachedHistory == null) state = state.copyWith(isLoading: false);
+      if (mounted) state = state.copyWith(isLoading: false);
     });
+
+    _fetchHistoryFresh(repo);
+  }
+
+  Future<void> _fetchHistoryFresh(var repo) async {
+    try {
+      final history = await repo.getHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter);
+      if (mounted) state = state.copyWith(historyList: history, isLoading: false);
+    } catch (_) {
+      if (mounted && state.historyList.isEmpty) state = state.copyWith(isLoading: false);
+    }
   }
 
   Future<void> fetchJadwal({String? kelurahan, String? rw}) async {
@@ -107,7 +125,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       final list = await repo.getJadwalHarian(kelurahan: kelurahan, rw: rw);
       state = state.copyWith(jadwalList: list);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Gagal memuat jadwal penjemputan.');
+      state = state.copyWith(errorMessage: NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -138,11 +156,10 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengirim timbangan pemilahan.');
       return false;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Terjadi kesalahan saat submit log.');
+      state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
       return false;
     }
   }
-
 
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
     final newDateRange = dateRange ?? state.selectedDateRange;
@@ -171,7 +188,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       );
       state = state.copyWith(isLoading: false, historyList: list);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal memuat riwayat.');
+      state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -191,7 +208,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.',
+        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
       );
       return false;
     }
@@ -206,7 +223,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       state = state.copyWith(isLoading: false);
       return ok;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal menerima pengajuan reset.');
+      state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
       return false;
     }
   }

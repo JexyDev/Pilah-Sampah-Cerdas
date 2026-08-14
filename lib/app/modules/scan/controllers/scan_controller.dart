@@ -319,15 +319,17 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
     required List<String> binIds,
     required String userId,
     required String evidencePhotoPath,
+    String? wargaName,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
       BinResetEntity? lastResult;
-      for (final binId in binIds) {
+      for (final id in binIds) {
         lastResult = await _binRepository.submitResetRequest(
-          binId: binId,
+          binId: id,
           userId: userId,
           evidencePhotoPath: evidencePhotoPath,
+          wargaName: wargaName,
         );
       }
       state = ResetBinState(result: lastResult);

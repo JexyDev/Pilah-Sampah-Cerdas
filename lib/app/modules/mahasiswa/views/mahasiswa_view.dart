@@ -33,7 +33,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
       ref.read(locationPingControllerProvider.notifier).startTracking();
       final kknNotifier = ref.read(kknLocationProvider.notifier);
       kknNotifier.startTracking(context);
-      kknNotifier.setActiveSchedule('SCH-TODAY');
     });
   }
 
@@ -125,7 +124,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     }
 
     return CachedNetworkImage(
-      imageUrl: '${AppConfig.baseUrl}$fotoPath',
+      imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => Center(
         child: Text(
@@ -144,7 +143,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
     final name = (user?.name != null && user!.name.trim().isNotEmpty)
         ? user.name
-        : 'Mahasiswa KKN';
+        : '-';
     final nim = (user?.nim != null && user!.nim.trim().isNotEmpty)
         ? user.nim
         : (dashboard != null && dashboard.nim.isNotEmpty ? dashboard.nim : '-');
@@ -155,6 +154,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             : (dashboard != null && dashboard.jurusan.isNotEmpty ? dashboard.jurusan : '-'));
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
     final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
+    final jenjang = user?.jenjangPendidikan.isNotEmpty == true ? user!.jenjangPendidikan : 'S1';
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
@@ -308,7 +308,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '$nim • $jurusan',
+                                '$nim • $jenjang - $jurusan',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
@@ -339,7 +339,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Kel. $kelurahan • RW $rw',
+                            '$kelurahan • RW $rw',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -577,7 +577,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.pie_chart_rounded,
-                title: 'Dampak Kelurahan',
+                title: 'Dampak RW',
                 subtitle: 'Statistik Real-Time',
                 gradientColors: const [AppColors.primaryGreen, Color(0xFF007A52)],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringDampakKelurahan),
@@ -624,7 +624,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     }).map((w) {
       final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, Kel. $userKel';
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKel';
       return WargaDampingan(
         binId: w.binId,
         wargaName: w.wargaName,
@@ -1005,6 +1005,24 @@ class _WargaCard extends StatelessWidget {
                               ),
                             ),
                         ],
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlueLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          warga.pendampingName.isNotEmpty 
+                              ? 'Dampingan: ${warga.pendampingName}' 
+                              : 'Dampingan Anda',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryBlueDark,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(

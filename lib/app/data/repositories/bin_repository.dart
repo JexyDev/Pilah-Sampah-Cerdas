@@ -57,6 +57,7 @@ abstract class BinRepository {
     required String binId,
     required String userId,
     required String evidencePhotoPath,
+    String? wargaName,
   });
 
   /// Ambil active reset request dari local storage

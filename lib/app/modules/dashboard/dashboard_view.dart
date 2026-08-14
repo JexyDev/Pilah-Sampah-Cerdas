@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/values/app_assets.dart';
 import '../../core/values/app_colors.dart';
@@ -100,6 +100,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final bool showFab = role == UserRole.warga || role == UserRole.petugasPemilahan;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
 
@@ -251,6 +252,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final screens = _getScreens(role);
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
 

@@ -37,6 +37,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _fakultasController = TextEditingController();
   final _universitasController = TextEditingController();
   final _kecamatanController = TextEditingController();
+  final _provinsiController = TextEditingController();
+  final _kotaController = TextEditingController();
   final _dplNameController = TextEditingController();
   String _selectedJenjang = 'S1';
   String? _selectedKelurahan;
@@ -44,12 +46,13 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   DateTime? _tglMulaiKKN;
   DateTime? _tglSelesaiKKN;
   final Map<String, List<String>> _rwByKelurahan = {};
+  final Map<String, List<String>> _kelurahanByKecamatan = {};
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
   final List<String> _kelurahanList = [];
   final List<String> _kecamatanList = [];
-
-
+  final List<String> _provinsiList = [];
+  final List<String> _kotaList = [];
 
   List<String> get _availableRwList {
     if (_selectedKelurahan == null) return [];
@@ -62,7 +65,18 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       });
       return rws;
     }
-    return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
+    return [];
+  }
+
+  List<String> get _availableKelurahanList {
+    if (_kecamatanController.text.isEmpty) return [];
+    final kec = _kecamatanController.text;
+    if (_kelurahanByKecamatan.containsKey(kec) && _kelurahanByKecamatan[kec]!.isNotEmpty) {
+      final kels = _kelurahanByKecamatan[kec]!.toSet().toList();
+      kels.sort();
+      return kels;
+    }
+    return _kelurahanList;
   }
 
   String _selectedRole = 'Warga';
@@ -122,11 +136,23 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       final res = await repo.fetchTerritories();
       final kelsRaw = (res['kelurahans'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
       final kecsRaw = (res['kecamatans'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
+      final provsRaw = (res['provinsis'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
+      final kotasRaw = (res['kotas'] as List?)?.map((e) => _cleanTerritoryName(e)).where((e) => e.isNotEmpty && !e.contains('id:')).toList() ?? [];
 
       if (mounted) {
         setState(() {
-          _kecamatanList.clear();
-          _kecamatanList.addAll(kecsRaw);
+          if (provsRaw.isNotEmpty) {
+            _provinsiList.clear();
+            _provinsiList.addAll(provsRaw);
+          }
+          if (kotasRaw.isNotEmpty) {
+            _kotaList.clear();
+            _kotaList.addAll(kotasRaw);
+          }
+          if (kecsRaw.isNotEmpty) {
+            _kecamatanList.clear();
+            _kecamatanList.addAll(kecsRaw);
+          }
           _kelurahanList.clear();
           _kelurahanList.addAll(kelsRaw);
 
@@ -144,6 +170,24 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                      if (cleanRw.isEmpty) cleanRw = rwName;
                      if (!_rwByKelurahan[kelName]!.contains(cleanRw)) {
                          _rwByKelurahan[kelName]!.add(cleanRw);
+                     }
+                 }
+             }
+          }
+
+          _kelurahanByKecamatan.clear();
+          final rawKelurahan = res['rawKelurahan'] as List<dynamic>? ?? [];
+          for (final item in rawKelurahan) {
+             if (item is Map<String, dynamic>) {
+                 final kecObj = item['kecamatan'];
+                 final kecName = _cleanTerritoryName(kecObj != null ? kecObj['name'] : '');
+                 final kelName = _cleanTerritoryName(item['name']);
+                 if (kecName.isNotEmpty && kelName.isNotEmpty) {
+                     if (!_kelurahanByKecamatan.containsKey(kecName)) {
+                         _kelurahanByKecamatan[kecName] = [];
+                     }
+                     if (!_kelurahanByKecamatan[kecName]!.contains(kelName)) {
+                         _kelurahanByKecamatan[kecName]!.add(kelName);
                      }
                  }
              }
@@ -238,31 +282,40 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     }
 
     final normalizedPhone = _normalizePhone(phone);
-    
     Map<String, dynamic> data = {
       'nama': name,
       'name': name,
       'phone': normalizedPhone,
       'noWa': normalizedPhone,
       'password': password,
-
+      'provinsi': _provinsiController.text, // Disimpan ke User.provinsi
+      'kabupaten': _kotaController.text, // Disimpan ke User.kabupaten
     };
 
     if (_selectedRole == 'Warga') {
-      data['address'] = InputSanitizer.sanitize(_alamatController.text);
+      // Gabungkan kecamatan ke address agar tersimpan tanpa membuat backend crash
+      final baseAddress = InputSanitizer.sanitize(_alamatController.text);
+      final kec = InputSanitizer.sanitize(_kecamatanController.text);
+      data['address'] = kec.isNotEmpty ? '$baseAddress, Kec. $kec' : baseAddress;
+      
       data['rw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
-      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
-      data['familySize'] = int.tryParse(_familySizeController.text) ?? 1;
+      data['jumlahAnggotaKeluarga'] = int.tryParse(_familySizeController.text) ?? 1;
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = InputSanitizer.sanitize(_nimController.text);
-      data['fakultas'] = InputSanitizer.sanitize(_fakultasController.text);
-      data['prodi'] = InputSanitizer.sanitize(_jurusanController.text);
-      data['jurusan'] = InputSanitizer.sanitize(_jurusanController.text);
-      data['universitas'] = InputSanitizer.sanitize(_universitasController.text);
-      data['jenjang'] = _selectedJenjang;
-      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
-      data['dplName'] = InputSanitizer.sanitize(_dplNameController.text);
+      
+      // Gabungkan jenjang, universitas ke fakultas
+      final univ = InputSanitizer.sanitize(_universitasController.text);
+      final fak = InputSanitizer.sanitize(_fakultasController.text);
+      final jenjang = _selectedJenjang ?? '';
+      data['fakultas'] = [jenjang, fak, univ].where((e) => e.isNotEmpty).join(' - ');
+
+      // Gabungkan DPL ke jurusan
+      final jur = InputSanitizer.sanitize(_jurusanController.text);
+      final dpl = InputSanitizer.sanitize(_dplNameController.text);
+      data['jurusan'] = dpl.isNotEmpty ? '$jur (DPL: $dpl)' : jur;
+      data['prodi'] = data['jurusan'];
+
       data['rw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
@@ -270,8 +323,9 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     } else if (_selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
       data['rw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
-      data['kecamatan'] = InputSanitizer.sanitize(_kecamatanController.text);
-      data['assignedZone'] = _selectedKelurahan ?? '';
+      final kel = _selectedKelurahan ?? '';
+      final kec = InputSanitizer.sanitize(_kecamatanController.text);
+      data['assignedZone'] = kec.isNotEmpty ? '$kel, Kec. $kec' : kel;
     }
 
     ref.read(authProvider.notifier).clearError();
@@ -301,14 +355,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
             ],
           ),
         );
-      } else if (_selectedRole == 'Warga') {
-        final okOtp = await ref.read(authProvider.notifier).requestOtp(phone: normalizedPhone);
-        if (okOtp) {
-          _showOtpDialog(normalizedPhone);
-        } else {
-          _showToast('Gagal meminta OTP. Silakan coba login/request OTP kembali nanti.');
-          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
-        }
       } else {
         Navigator.of(context).pushNamedAndRemoveUntil(
           AppRoutes.main,
@@ -321,7 +367,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       if (authState.errorCode == 'CONFLICT') {
         errorText = 'Nomor telepon sudah terdaftar di sistem.';
       } else if (authState.errorCode == 'VALIDATION_ERROR') {
-        errorText = 'Format data pendaftaran tidak valid.';
+        errorText = authState.errorMessage ?? 'Format data pendaftaran tidak valid.';
       } else if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       }
@@ -329,66 +375,66 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     }
   }
 
-  void _showOtpDialog(String phone) {
-    String otpInput = '';
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setStateDialog) {
-          final authState = ref.watch(authProvider);
-          return AlertDialog(
-            title: const Text('Verifikasi OTP'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Masukkan kode OTP yang dikirim ke $phone'),
-                const SizedBox(height: 16),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  onChanged: (val) => otpInput = val,
-                  decoration: const InputDecoration(
-                    hintText: 'Kode OTP',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                if (authState.errorCode != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      'Error: ${authState.errorCode}',
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
-                    ),
-                  )
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: authState.isLoading ? null : () {
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: authState.isLoading ? null : () async {
-                  if (otpInput.length < 4) return;
-                  final ok = await ref.read(authProvider.notifier).verifyOtp(phone: phone, otp: otpInput);
-                  if (ok && mounted) {
-                    Navigator.pop(ctx);
-                    Navigator.of(this.context).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
-                  }
-                },
-                child: authState.isLoading 
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
-                  : const Text('Verifikasi'),
-              ),
-            ],
-          );
-        }
-      ),
-    );
-  }
+  // void _showOtpDialog(String phone) {
+  //   String otpInput = '';
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (ctx) => StatefulBuilder(
+  //       builder: (context, setStateDialog) {
+  //         final authState = ref.watch(authProvider);
+  //         return AlertDialog(
+  //           title: const Text('Verifikasi OTP'),
+  //           content: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Text('Masukkan kode OTP yang dikirim ke $phone'),
+  //               const SizedBox(height: 16),
+  //               TextField(
+  //                 keyboardType: TextInputType.number,
+  //                 maxLength: 6,
+  //                 onChanged: (val) => otpInput = val,
+  //                 decoration: const InputDecoration(
+  //                   hintText: 'Kode OTP',
+  //                   border: OutlineInputBorder(),
+  //                 ),
+  //               ),
+  //               if (authState.errorCode != null)
+  //                 Padding(
+  //                   padding: const EdgeInsets.only(top: 8.0),
+  //                   child: Text(
+  //                     'Error: ${authState.errorCode}',
+  //                     style: const TextStyle(color: Colors.red, fontSize: 12),
+  //                   ),
+  //                 )
+  //             ],
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: authState.isLoading ? null : () {
+  //                 Navigator.pop(ctx);
+  //               },
+  //               child: const Text('Batal'),
+  //             ),
+  //             ElevatedButton(
+  //               onPressed: authState.isLoading ? null : () async {
+  //                 if (otpInput.length < 4) return;
+  //                 final ok = await ref.read(authProvider.notifier).verifyOtp(phone: phone, otp: otpInput);
+  //                 if (ok && mounted) {
+  //                   Navigator.pop(ctx);
+  //                   Navigator.of(this.context).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
+  //                 }
+  //               },
+  //               child: authState.isLoading 
+  //                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
+  //                 : const Text('Verifikasi'),
+  //             ),
+  //           ],
+  //         );
+  //       }
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -646,6 +692,51 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               ],
 
                               if (_selectedRole == 'Warga' || _selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Mahasiswa') ...[
+
+                                _buildLabel('PROVINSI'),
+                                const SizedBox(height: 6),
+                                SearchableDropdownField<String>(
+                                  labelText: 'Provinsi',
+                                  hintText: 'Pilih Provinsi',
+                                  prefixIcon: Icons.map,
+                                  value: _provinsiController.text.isNotEmpty ? _provinsiController.text : null,
+                                  items: _provinsiList.map((p) => DropdownItem(value: p, label: p)).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _provinsiController.text = val;
+                                        // Reset below
+                                        _kotaController.clear();
+                                        _kecamatanController.clear();
+                                        _selectedKelurahan = null;
+                                        _selectedRw = null;
+                                      });
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                _buildLabel('KOTA/KABUPATEN'),
+                                const SizedBox(height: 6),
+                                SearchableDropdownField<String>(
+                                  labelText: 'Kota/Kabupaten',
+                                  hintText: _provinsiController.text.isEmpty ? 'Pilih Provinsi dulu' : 'Pilih Kota/Kab',
+                                  prefixIcon: Icons.location_city,
+                                  enabled: _provinsiController.text.isNotEmpty,
+                                  value: _kotaController.text.isNotEmpty ? _kotaController.text : null,
+                                  items: _kotaList.map((k) => DropdownItem(value: k, label: k)).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _kotaController.text = val;
+                                        // Reset below
+                                        _kecamatanController.clear();
+                                        _selectedKelurahan = null;
+                                        _selectedRw = null;
+                                      });
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 16),
                                 _buildLabel('KECAMATAN'),
                                 const SizedBox(height: 6),
                                 SearchableDropdownField<String>(
@@ -665,14 +756,16 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
+                                _buildLabel(_selectedRole == 'Mahasiswa' ? 'KELURAHAN DAMPINGAN' : 'KELURAHAN'),
+                                const SizedBox(height: 6),
                                 SearchableDropdownField<String>(
                                   labelText: _selectedRole == 'Mahasiswa' ? 'Kelurahan Dampingan' : 'Kelurahan',
                                   hintText: _kecamatanController.text.isEmpty ? 'Pilih Kecamatan dulu' : 'Pilih Kelurahan',
                                   prefixIcon: Icons.map_outlined,
                                   enabled: _kecamatanController.text.isNotEmpty,
                                   value: _selectedKelurahan,
-                                  items: _kelurahanList
-                                      .map((k) => DropdownItem(value: k, label: 'Kel. $k'))
+                                  items: _availableKelurahanList
+                                      .map((k) => DropdownItem(value: k, label: k.toLowerCase().startsWith('kel') ? k : 'Kel. $k'))
                                       .toList(),
                                   onChanged: (val) {
                                     if (val != null && val != _selectedKelurahan) {
@@ -684,6 +777,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   },
                                 ),
                                  const SizedBox(height: 16),
+                                 _buildLabel('RW'),
+                                 const SizedBox(height: 6),
                                   SearchableDropdownField<String>(
                                     labelText: 'RW',
                                     hintText: _selectedKelurahan == null ? 'Pilih Kelurahan dulu' : 'Pilih RW',
@@ -1075,7 +1170,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          'Â© 2026 TrashCare. All rights reserved.',
+                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,

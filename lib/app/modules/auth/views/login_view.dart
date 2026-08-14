@@ -459,7 +459,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 TrashCare. All rights reserved.',
+                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,

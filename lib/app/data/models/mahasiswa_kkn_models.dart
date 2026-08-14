@@ -364,6 +364,8 @@ class PemanfaatanSampahRequest {
     required this.satuan,
     required this.wilayahDampingan,
     required this.deskripsi,
+    this.rwTerkait,
+    this.dplId,
     this.fotoPath,
     this.timestamp,
   });
@@ -374,6 +376,8 @@ class PemanfaatanSampahRequest {
   final String satuan;
   final String wilayahDampingan;
   final String deskripsi;
+  final String? rwTerkait;
+  final String? dplId;
   final String? fotoPath;
   final String? timestamp;
 
@@ -385,6 +389,8 @@ class PemanfaatanSampahRequest {
       'satuan': satuan,
       'wilayahDampingan': wilayahDampingan,
       'deskripsi': deskripsi,
+      if (rwTerkait != null) 'rwTerkait': rwTerkait,
+      if (dplId != null) 'dplId': dplId,
       if (fotoPath != null) 'fotoPath': fotoPath,
       'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
     };
@@ -491,11 +497,11 @@ class KelompokKknData extends Equatable {
       dpl = json['dplObj']['name']?.toString() ?? json['dplObj']['nama']?.toString() ?? '';
     }
 
-    if (dpl.isEmpty) dpl = 'Belum Ditentukan';
+    if (dpl.isEmpty) dpl = '-';
 
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
-      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? 'Kelompok KKN',
+      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
       dosenPembimbing: dpl,
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
@@ -531,27 +537,27 @@ class DampakKelurahanData extends Equatable {
 
   factory DampakKelurahanData.fromJson(Map<String, dynamic> json) {
     return DampakKelurahanData(
-      kelurahanName: json['kelurahanName']?.toString() ?? json['kelurahan']?.toString() ?? 'Kelurahan Dampingan',
+      kelurahanName: json['kelurahanName']?.toString() ?? json['kelurahan']?.toString() ?? json['rw']?.toString() ?? '-',
       activeHouseholdsPercentage: (json['activeHouseholdsPercentage'] as num?)?.toDouble() ??
           (json['persentaseAktif'] as num?)?.toDouble() ??
           (json['activeSortingPercentage'] as num?)?.toDouble() ??
-          78.5,
+          0.0,
       totalWasteVolumeKg: (json['totalWasteVolumeKg'] as num?)?.toDouble() ??
           (json['totalVolumeKg'] as num?)?.toDouble() ??
           (json['totalVolume'] as num?)?.toDouble() ??
-          1250.0,
+          0.0,
       organicVolumeKg: (json['organicVolumeKg'] as num?)?.toDouble() ??
           (json['organicVolume'] as num?)?.toDouble() ??
-          720.0,
+          0.0,
       nonOrganicVolumeKg: (json['nonOrganicVolumeKg'] as num?)?.toDouble() ??
           (json['nonOrganicVolume'] as num?)?.toDouble() ??
-          530.0,
+          0.0,
       totalHouseholdsRegistered: (json['totalHouseholdsRegistered'] as num?)?.toInt() ??
           (json['totalWarga'] as num?)?.toInt() ??
-          45,
+          0,
       totalActiveBins: (json['totalActiveBins'] as num?)?.toInt() ??
           (json['totalBin'] as num?)?.toInt() ??
-          90,
+          0,
     );
   }
 

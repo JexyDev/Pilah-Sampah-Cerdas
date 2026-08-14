@@ -131,7 +131,7 @@ class ApiBinRepository implements BinRepository {
         }).toList();
       }
       if (e is BinException) rethrow;
-      throw BinException('UNKNOWN_ERROR', e.toString());
+      throw BinException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -440,7 +440,7 @@ class ApiBinRepository implements BinRepository {
         message ?? 'Gagal menghubungi server.',
       );
     } catch (e) {
-      throw BinException('UNKNOWN_ERROR', e.toString());
+      throw BinException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -490,7 +490,7 @@ class ApiBinRepository implements BinRepository {
       }
       throw BinException(errorCode ?? 'UNKNOWN_ERROR', message ?? 'Gagal menghubungi server.');
     } catch (e) {
-      throw BinException('UNKNOWN_ERROR', e.toString());
+      throw BinException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
     }
   }
 
@@ -504,6 +504,7 @@ class ApiBinRepository implements BinRepository {
     required String binId,
     required String userId,
     required String evidencePhotoPath,
+    String? wargaName,
   }) async {
     try {
       // Auto-compress evidence photo before upload (Target < 5MB, max 1920x1080)
@@ -516,6 +517,8 @@ class ApiBinRepository implements BinRepository {
 
       final formData = FormData.fromMap({
         'binId': binId,
+        'userId': userId,
+        if (wargaName != null && wargaName.isNotEmpty) 'wargaName': wargaName,
         'evidence': await MultipartFile.fromFile(
           compressedEvidencePath,
           filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -677,6 +680,7 @@ class ApiBinRepository implements BinRepository {
               json['status']?.toString().toUpperCase() != 'NON_AKTIF' &&
               json['status']?.toString().toUpperCase() != 'DISABLED' &&
               json['isDeactivated'] != true),
+      backendStatus: json['status']?.toString() ?? json['statusLabel']?.toString() ?? '',
     );
   }
 
@@ -708,3 +712,4 @@ class ApiBinRepository implements BinRepository {
     );
   }
 }
+

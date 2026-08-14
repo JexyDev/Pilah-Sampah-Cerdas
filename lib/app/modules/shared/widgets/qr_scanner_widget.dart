@@ -64,6 +64,9 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     if (!mounted) return;
 
     if (status.isGranted) {
+      // Beri delay sedikit agar OS melepas hardware kamera sepenuhnya setelah izin diberikan pertama kali
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
       _startScanner();
     } else if (status.isPermanentlyDenied) {
       setState(() => _state = _QrState.permDenied);
@@ -87,6 +90,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     final String? code = capture.barcodes.firstOrNull?.rawValue;
     if (code != null && code.isNotEmpty) {
       setState(() => _scanned = true);
+      _controller?.stop(); // Hentikan kamera segera agar tidak freeze/stuck
       
       // Feedback instan saat barcode terbaca
       HapticFeedback.vibrate();
@@ -95,11 +99,6 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       
       // Panggil callback
       await widget.onQrDetected(code);
-      
-      // Reset state agar siap menscan ulang jika parent belum berpindah/unmount
-      if (mounted) {
-        setState(() => _scanned = false);
-      }
     }
   }
   
@@ -110,7 +109,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       _scanned = false;
       _state = _QrState.ready;
     });
-    // Controller will automatically resume when MobileScanner is rebuilt
+    _controller?.start(); // Nyalakan kembali kamera
   }
 
   @override

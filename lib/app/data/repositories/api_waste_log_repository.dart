@@ -190,7 +190,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       createdAt: createdAt,
       kelurahan: binLocation,
       discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
-      aiConfidence: (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
+      aiConfidence: (json['confidence'] as num?)?.toDouble() ?? (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -236,4 +236,23 @@ class ApiWasteLogRepository implements WasteLogRepository {
     final year = int.tryParse(parts[2]) ?? DateTime.now().year;
     return DateTime(year, month, day);
   }
+
+  @override
+  Future<void> ajukanPengosonganBin(String binId) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/warga/pengajuan-pengosongan',
+        data: {'binId': binId},
+      );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Gagal mengajukan pengosongan.');
+      }
+    } catch (e) {
+      if (e is DioException) {
+        throw AppNetworkException(mapDioExceptionToMessage(e));
+      }
+      rethrow;
+    }
+  }
 }
+

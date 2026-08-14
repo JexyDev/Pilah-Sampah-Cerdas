@@ -22,6 +22,14 @@ class AppConfig {
 
   static const String appName = 'TrashCare';
 
+  /// Format URL gambar dari API agar selalu valid
+  static String getImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '$baseUrl/$cleanPath';
+  }
+
   // --- Geofencing (FR-02) ---
   static const int geofenceRadiusMeters = 10;
 

@@ -16,4 +16,7 @@ abstract class WasteLogRepository {
 
   /// Ambil peringkat (rank) user.
   Future<String> getUserLeaderboardRank(String userId);
+
+  /// Mengajukan pengosongan tempat sampah (Warga)
+  Future<void> ajukanPengosonganBin(String binId);
 }

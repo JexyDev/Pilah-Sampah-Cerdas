@@ -80,7 +80,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
   Widget _buildMiniBin(IconData icon, Color color, String label, String volume) {
     return Container(
       width: 80, height: 110,
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.5))),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.5))),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center, 
         children: [
@@ -138,7 +138,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), shape: BoxShape.circle),
             child: const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 64),
           ),
           const SizedBox(height: 16),
@@ -177,10 +177,10 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border)),
       child: Row(
         children: [
-          CircleAvatar(radius: 12, backgroundColor: AppColors.primaryGreen.withOpacity(0.2), child: const Icon(Icons.person, size: 14, color: AppColors.primaryGreen)),
+          CircleAvatar(radius: 12, backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.2), child: const Icon(Icons.person, size: 14, color: AppColors.primaryGreen)),
           const SizedBox(width: 8),
           Expanded(child: Text(name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: Text(status, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)), child: Text(status, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold))),
         ],
       ),
     );

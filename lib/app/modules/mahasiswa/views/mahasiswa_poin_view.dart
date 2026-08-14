@@ -5,7 +5,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
-import '../controllers/kelompok_kkn_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart';
 
 /// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
@@ -17,18 +16,15 @@ class MahasiswaPoinView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mhsState = ref.watch(mahasiswaControllerProvider);
-    final kelompokState = ref.watch(kelompokKknProvider);
     final user = ref.watch(authProvider).user;
     
     final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
-    final groupPoints = kelompokState.kelompok?.calculatedTotalPoints ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-          await ref.read(kelompokKknProvider.notifier).fetchKelompok();
           if (user != null) {
             ref.invalidate(pointHistoryProvider);
           }
@@ -38,7 +34,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           slivers: [
             // ── 1. Header Putih Bersih ──────────────────────────────
             SliverToBoxAdapter(
-              child: _buildHeader(context, user?.name ?? 'Mahasiswa KKN', personalPoints, groupPoints),
+              child: _buildHeader(context, user?.name ?? '-', personalPoints),
             ),
 
             SliverPadding(
@@ -73,7 +69,7 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String name, int personalPoints, int groupPoints) {
+  Widget _buildHeader(BuildContext context, String name, int personalPoints) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -108,91 +104,46 @@ class MahasiswaPoinView extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'POIN PERSONAL',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    const Text(
-                      'POIN PERSONAL',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        letterSpacing: 0.5,
-                        fontWeight: FontWeight.w600,
+                    Text(
+                      NumberFormat('#,###').format(personalPoints),
+                      style: const TextStyle(
+                        color: AppColors.primaryGreen,
+                        fontSize: 40,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          NumberFormat('#,###').format(personalPoints),
-                          style: const TextStyle(
-                            color: AppColors.primaryGreen,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 4),
-                          child: Text(
-                            'PTS',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 4),
+                    const Text(
+                      'PTS',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'POIN KELOMPOK',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        letterSpacing: 0.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          NumberFormat('#,###').format(groupPoints),
-                          style: const TextStyle(
-                            color: AppColors.primaryBlueDark,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 4),
-                          child: Text(
-                            'PTS',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

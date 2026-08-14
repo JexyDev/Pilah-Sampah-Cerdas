@@ -363,9 +363,17 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Upload Foto Bukti
-            const Text('Foto Bukti Surat / Resep Dokter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(
+              _selectedKategori == KategoriIzin.sakit ? 'Foto Bukti Surat Sakit / Resep Dokter' : 'Foto Dokumen Pendukung Izin', 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
+            ),
             const SizedBox(height: 4),
-            const Text('Wajib — surat izin, surat sakit, atau dokumen relevan lainnya.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text(
+              _selectedKategori == KategoriIzin.sakit 
+                ? 'Wajib — surat keterangan sakit dari dokter, resep obat, dsb.' 
+                : 'Wajib — surat izin instansi, surat pengantar, atau dokumen relevan lainnya.', 
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)
+            ),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickPhoto,
@@ -458,7 +466,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                       ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
           ],
         ),
       ),

@@ -106,30 +106,28 @@ class _SearchableDropdownFieldState<T>
               borderRadius: BorderRadius.circular(12),
               child: InputDecorator(
                 decoration: InputDecoration(
-                  labelText: widget.labelText,
                   hintText: widget.hintText,
                   errorText: state.errorText,
                   enabled: widget.enabled,
-                  isDense: true,
                   contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   prefixIconConstraints:
-                      const BoxConstraints(minWidth: 38, minHeight: 38),
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
                   suffixIconConstraints:
-                      const BoxConstraints(minWidth: 32, minHeight: 32),
+                      const BoxConstraints(minWidth: 40, minHeight: 40),
                   prefixIcon: Icon(
                     widget.prefixIcon,
                     color: widget.enabled
                         ? AppColors.textSecondary
                         : AppColors.textHint,
-                    size: 20,
+                    size: 22,
                   ),
                   suffixIcon: Icon(
                     Icons.arrow_drop_down_rounded,
                     color: widget.enabled
                         ? AppColors.textSecondary
                         : AppColors.textHint,
-                    size: 24,
+                    size: 26,
                   ),
                 ),
                 child: Text(

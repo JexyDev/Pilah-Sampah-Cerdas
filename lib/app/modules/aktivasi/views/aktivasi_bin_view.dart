@@ -350,6 +350,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
+                        key: ValueKey(_step),
                         hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
                         overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,

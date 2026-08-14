@@ -40,7 +40,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   @override
   Future<PetugasPemilahanDashboard> getDashboard() async {
     try {
-      final response = await apiClient.dio.get('/petugas-pemilahan/dashboard');
+      final response = await apiClient.dio.get('/petugas-residu/dashboard');
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is Map<String, dynamic> 
             ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
@@ -88,21 +88,28 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
     if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
 
-    final response = await apiClient.dio.get('/petugas-pemilahan/jadwal-harian', queryParameters: queryParams);
-    if (response.statusCode == 200 && response.data != null) {
-      final List<dynamic> list = response.data is Map<String, dynamic>
-          ? (response.data['data'] as List<dynamic>? ?? [])
-          : (response.data as List<dynamic>? ?? []);
-      
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
+    try {
+      final response = await apiClient.dio.get('/petugas-residu/jadwal-harian', queryParameters: queryParams);
+      if (response.statusCode == 200 && response.data != null) {
+        final List<dynamic> list = response.data is Map<String, dynamic>
+            ? (response.data['data'] as List<dynamic>? ?? [])
+            : (response.data as List<dynamic>? ?? []);
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
 
-      if (list.isNotEmpty) {
-        return list.map((e) => PemilahanBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+        if (list.isNotEmpty) {
+          return list.map((e) => PemilahanBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+        }
+        return [];
       }
-      return [];
+      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return [];
+      }
+      rethrow;
     }
-    throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
   }
 
   @override
@@ -137,9 +144,9 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       });
-      debugPrint('[ApiPetugasPemilahanRepository] Sending request to /petugas-pemilahan/submit-log...');
+      debugPrint('[ApiPetugasPemilahanRepository] Sending request to /petugas-residu/submit-log...');
 
-      final response = await apiClient.dio.post('/petugas-pemilahan/submit-log', data: formData);
+      final response = await apiClient.dio.post('/petugas-residu/submit-log', data: formData);
       debugPrint('[ApiPetugasPemilahanRepository] Response received: ${response.statusCode}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Tampilkan push notification & update status log timbangan
@@ -193,7 +200,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   @override
   Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type}) async {
     try {
-      final response = await apiClient.dio.get('/petugas-pemilahan/riwayat', queryParameters: {
+      final response = await apiClient.dio.get('/petugas-residu/riwayat', queryParameters: {
         if (dateRange != null) 'range': dateRange,
         if (type != null) 'type': type,
       });
@@ -212,6 +219,11 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         return [];
       }
       throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return [];
+      }
+      rethrow;
     } catch (e) {
       rethrow;
     }
@@ -237,19 +249,36 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga() async {
+    try {
+      final response = await apiClient.dio.get('/petugas-residu/pengajuan');
+      if (response.statusCode == 200 && response.data != null) {
+        final list = response.data['data'] as List<dynamic>? ?? (response.data as List<dynamic>);
+        return list.cast<Map<String, dynamic>>();
+      }
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return [];
+      }
+      debugPrint('[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e');
+      rethrow;
+    } catch (e) {
+      debugPrint('[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<bool> claimPengajuanReset(String pengajuanId) async {
     try {
       final response = await apiClient.dio.put(
-        '/petugas-pemilahan/pengajuan/$pengajuanId/terima',
+        '/petugas-residu/pengajuan/$pengajuanId/terima',
       );
       return response.statusCode == 200 || response.statusCode == 201;
-    } catch (_) {
-      try {
-        final fallbackRes = await apiClient.dio.put('/petugas-residu/pengajuan/$pengajuanId/terima');
-        return fallbackRes.statusCode == 200 || fallbackRes.statusCode == 201;
-      } catch (_) {
-        return true; // Fallback UI success if backend endpoint is offline
-      }
+    } catch (e) {
+      debugPrint('[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e');
+      rethrow;
     }
   }
 }

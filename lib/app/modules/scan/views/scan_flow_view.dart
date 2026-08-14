@@ -34,6 +34,7 @@ class ScanFlowView extends ConsumerStatefulWidget {
 class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   // GPS — diisi dari geolocator saat scan QR, fallback null (skip geofencing)
   double? _userLat;
+  final GlobalKey<QrScannerWidgetState> _qrScannerKey = GlobalKey<QrScannerWidgetState>();
   double? _userLng;
   bool _gpsLoading = false;
 
@@ -543,6 +544,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: QrScannerWidget(
+                key: _qrScannerKey,
                 hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) async {
@@ -995,18 +997,10 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     } else if (errorCode == 'IMAGE_UNREADABLE' || errorCode == 'AI_TIMEOUT') {
       _showScanFailedDialog(context, errorMessage, isQrError: false);
     } else {
-      // Jika terjadi kesalahan saat scan QR (Step 2)
+      // Tampilkan error dari backend langsung dalam bentuk popup/dialog agar sesuai error dari backend
       final state = ref.read(scanFlowProvider);
-      if (state.currentStep == 2 || state.aiResult != null) {
-        _showScanFailedDialog(context, errorMessage ?? 'Gagal memproses barcode tempat sampah.', isQrError: true);
-      } else {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage ?? 'Terjadi kesalahan.'),
-            backgroundColor: AppColors.dangerRed,
-          ),
-        );
-      }
+      final isQrError = state.currentStep == 2 || state.aiResult != null;
+      _showScanFailedDialog(context, errorMessage ?? 'Terjadi kesalahan sistem.', isQrError: isQrError);
     }
   }
 
@@ -1020,6 +1014,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         onScanLain: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
+          _qrScannerKey.currentState?.resetScanner();
         },
         onAjukanReset: () {
           Navigator.of(context).pop();
@@ -1052,6 +1047,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         onScanUlang: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
+          _qrScannerKey.currentState?.resetScanner();
         },
         onBatal: () {
           Navigator.of(context).pop();
@@ -1072,6 +1068,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           Navigator.of(context).pop();
           if (isQrError) {
             ref.read(scanFlowProvider.notifier).clearError();
+            _qrScannerKey.currentState?.resetScanner();
           } else {
             ref.read(scanFlowProvider.notifier).reset();
           }
@@ -1224,8 +1221,30 @@ class _AiSuccessSheet extends StatelessWidget {
                     Expanded(
                       child: _buildDetailItem(
                         icon: Icons.psychology_rounded,
-                        label: 'CONFIDENCE',
-                        value: '${((result.confidence ?? 0.85) * 100).toStringAsFixed(0)}%',
+                        label: 'KUALITAS AI',
+                        value: '',
+                        valueWidget: Row(
+                          children: [
+                            ...List.generate(5, (index) {
+                              final conf = result.confidence ?? 0.85;
+                              final stars = (conf * 5).round().clamp(1, 5);
+                              return Icon(
+                                Icons.star_rounded,
+                                size: 14,
+                                color: index < stars ? Colors.amber : Colors.grey.shade300,
+                              );
+                            }),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${((result.confidence ?? 0.85) * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     Expanded(
@@ -1331,7 +1350,7 @@ class _AiSuccessSheet extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '+${result.calculatedPoints} Pts',
+                          '+${result.estimatedPoints ?? 0} Pts',
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -1602,7 +1621,7 @@ class _ScanFailedDialog extends StatelessWidget {
     if (rawMsg.contains('status code of 500')) {
       return 'Server backend sedang mengalami kendala. Harap coba beberapa saat lagi.';
     }
-    return rawMsg;
+    return rawMsg; // Jika ada error string custom dari backend, langsung return
   }
 
   @override
@@ -1688,6 +1707,7 @@ class _OverflowDialog extends StatelessWidget {
   final VoidCallback onScanLain;
   final VoidCallback onAjukanReset;
   final VoidCallback onKeluar;
+  
 
   @override
   Widget build(BuildContext context) {
@@ -1761,3 +1781,5 @@ class _OverflowDialog extends StatelessWidget {
     );
   }
 }
+
+

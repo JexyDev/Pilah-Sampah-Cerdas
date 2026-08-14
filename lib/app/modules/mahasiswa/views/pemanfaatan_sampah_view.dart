@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -124,9 +124,12 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
     }
 
     final user = ref.read(authProvider).user;
-    final rwTarget = user?.rw.isNotEmpty == true ? 'RW ${user!.rw.split('/').last}' : 'RW 02';
+    final rwTarget = user?.rw.isNotEmpty == true ? 'RW ${user!.rw.split('/').last}' : '';
 
     late PemanfaatanSampahRequest request;
+
+    final kelompokData = ref.read(kelompokKknProvider).kelompok;
+    final dplTarget = kelompokData?.dosenPembimbing ?? '';
 
     if (isTab1) {
       request = PemanfaatanSampahRequest(
@@ -137,6 +140,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
         wilayahDampingan: '$rwTarget - ${_lokasiCtrl.text.trim()}',
         deskripsi: 'Hasil Produk: ${_hasilProdukCtrl.text.trim()} | Catatan: ${_deskripsiCtrl.text.trim()}',
         fotoPath: _selectedImage1?.path,
+        rwTerkait: rwTarget,
+        dplId: dplTarget,
       );
     } else {
       request = PemanfaatanSampahRequest(
@@ -147,6 +152,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
         wilayahDampingan: '$rwTarget - ${_lokasiKegiatanCtrl.text.trim()}',
         deskripsi: _deskripsiKegiatanCtrl.text.trim(),
         fotoPath: _selectedImage2?.path,
+        rwTerkait: rwTarget,
+        dplId: dplTarget,
       );
     }
 

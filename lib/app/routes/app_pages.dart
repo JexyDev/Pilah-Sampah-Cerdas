@@ -30,6 +30,7 @@ import 'app_routes.dart';
 
 import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
 import '../modules/petugas_pemilahan/views/petugas_notification_view.dart';
+import '../modules/petugas_pemilahan/views/pengajuan_warga_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 class AppPages {
@@ -102,6 +103,8 @@ class AppPages {
         return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
       case AppRoutes.petugasPemilahanGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
+      case AppRoutes.pengajuanWarga:
+        return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:
         return _buildRoute(const MonitoringDampakKelurahanView(), settings);
       default:
