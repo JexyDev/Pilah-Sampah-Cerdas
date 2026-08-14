@@ -178,6 +178,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         _qrAnorganik = detected;
         _bothBinsDetected = true; // Kedua tempat sampah berhasil di-scan
       }
+      if (!success) {
+        _scanAttempt++;
+      }
     });
     
     return true;
