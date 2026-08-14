@@ -39,6 +39,10 @@ const updateProfileSchema = z.object({
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   fotoProfil: z.string().optional().nullable(),
+  jumlahAnggotaKeluarga: z
+    .union([z.number().int(), z.string().transform((v) => parseInt(v, 10))])
+    .optional()
+    .nullable(),
 });
 
 const updatePasswordSchema = z.object({
@@ -65,8 +69,16 @@ const registerWargaSchema = z.object({
   rwId: z.number().int().optional(),
   rw: z.string().optional(), // string "01/02" from mobile
   kelurahan: z.string().optional(), // kelurahan name from mobile
+  kecamatan: z.string().optional().nullable(),
+  kota: z.string().optional().nullable(),
+  kabupaten: z.string().optional().nullable(),
+  provinsi: z.string().optional().nullable(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  jumlahAnggotaKeluarga: z
+    .union([z.number().int(), z.string().transform((v) => parseInt(v, 10))])
+    .optional()
+    .nullable(),
 });
 
 const registerKknSchema = registerStaffSchema.extend({
@@ -85,6 +97,10 @@ const registerKknSchema = registerStaffSchema.extend({
   assignedRwId: z.number().int().optional(),
   kelurahan: z.string().optional(),
   rw: z.string().optional(),
+  kecamatan: z.string().optional().nullable(),
+  kota: z.string().optional().nullable(),
+  kabupaten: z.string().optional().nullable(),
+  provinsi: z.string().optional().nullable(),
 });
 
 const registerPetugasSchema = registerStaffSchema.extend({
@@ -92,6 +108,10 @@ const registerPetugasSchema = registerStaffSchema.extend({
   assignedZone: z.string().optional(),
   rw: z.string().optional(),
   kelurahan: z.string().optional(),
+  kecamatan: z.string().optional().nullable(),
+  kota: z.string().optional().nullable(),
+  kabupaten: z.string().optional().nullable(),
+  provinsi: z.string().optional().nullable(),
 });
 
 export class AuthController {
@@ -279,14 +299,15 @@ export class AuthController {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { name, phone, address, fotoProfil } = parsed.data;
+      const { name, phone, address, fotoProfil, jumlahAnggotaKeluarga } = parsed.data;
 
       const updatedUser = await authService.updateProfile(
         req.user.userId,
         name,
         phone ?? undefined,
         address ?? undefined,
-        fotoProfil ?? undefined
+        fotoProfil ?? undefined,
+        jumlahAnggotaKeluarga ?? undefined
       );
 
       res.status(200).json({
@@ -298,6 +319,7 @@ export class AuthController {
             phone: updatedUser.phone,
             address: (updatedUser as any).address,
             fotoProfil: (updatedUser as any).fotoProfil,
+            jumlahAnggotaKeluarga: (updatedUser as any).jumlahAnggotaKeluarga,
           },
         },
       });

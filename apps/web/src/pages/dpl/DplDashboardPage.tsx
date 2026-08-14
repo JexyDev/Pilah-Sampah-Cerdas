@@ -537,7 +537,7 @@ export const DplDashboardPage: React.FC = () => {
       </div>
 
 
-      {/* Card Group 1 (E.4): Ringkasan Ekosistem KKN */}
+      {/* Ringkasan Ekosistem KKN */}
       <div>
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ringkasan Wilayah & Tim KKN</h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -576,7 +576,7 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Card Group 2 (E.5): Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
+      {/* Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Metrik Kehadiran Kelompok Binaan */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4">

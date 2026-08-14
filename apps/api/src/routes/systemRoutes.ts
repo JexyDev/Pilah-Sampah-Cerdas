@@ -18,7 +18,7 @@ const router = Router();
 router.post(
   "/backup",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
   async (req, res) => {
     try {
       const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -42,7 +42,7 @@ router.post(
 router.post(
   "/clear-cache",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
   async (req, res) => {
     try {
       res.status(200).json({
@@ -66,7 +66,7 @@ router.post(
 router.get(
   "/audit-trail",
   authMiddleware,
-  roleMiddleware(["SUPER_USER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
   systemController.getAuditTrails
 );
 

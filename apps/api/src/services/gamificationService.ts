@@ -386,28 +386,58 @@ export const gamificationService = {
 
     studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
 
-    const kelompokMap: Record<string, { id: string; name: string; scores: number[] }> = {};
-    studentLeaderboard.forEach((student) => {
-      if (student.kelompokId) {
-        if (!kelompokMap[student.kelompokId]) {
-          kelompokMap[student.kelompokId] = {
-            id: student.kelompokId,
-            name: student.kelompok,
-            scores: [],
-          };
-        }
-        kelompokMap[student.kelompokId].scores.push(student.finalScore);
-      }
+    const groups = await prisma.kelompokKkn.findMany({
+      include: {
+        dpl: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        students: {
+          include: {
+            user: {
+              include: {
+                attendances: true,
+                registeredBins: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    const kelompokLeaderboard = Object.values(kelompokMap).map((k) => {
-      const totalScore = k.scores.reduce((sum, s) => sum + s, 0);
-      const avgScore = k.scores.length ? totalScore / k.scores.length : 0;
+    const kelompokLeaderboard = groups.map((g: any) => {
+      let totalGroupScore = 0;
+      const studentCount = g.students.length;
+
+      g.students.forEach((s: any) => {
+        let totalHours = 0;
+        s.user?.attendances?.forEach((att: any) => {
+          if (att.checkOutAt && att.attendedAt) {
+            const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+            totalHours += diffMs / (1000 * 60 * 60);
+          }
+        });
+
+        const activeBinsCount = (s.user?.registeredBins || []).filter(
+          (b: any) => b.status === "ACTIVE_BOUND"
+        ).length;
+        const dplScore = Number(s.assessmentScore || 0);
+
+        const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
+        totalGroupScore += finalScore;
+      });
+
+      const avgScore = studentCount > 0 ? totalGroupScore / studentCount : 0;
+      const dplName = g.dpl?.name || g.dplNamaMentah || null;
+
       return {
-        id: k.id,
-        name: k.name,
+        id: g.id,
+        name: g.name,
+        dplName: dplName ? (dplName.toLowerCase().startsWith("dpl") ? dplName : `DPL: ${dplName}`) : "DPL: Belum Ditugaskan",
         avgScore: parseFloat(avgScore.toFixed(2)),
-        membersCount: k.scores.length,
+        membersCount: studentCount,
       };
     });
 

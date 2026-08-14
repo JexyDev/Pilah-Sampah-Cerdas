@@ -174,7 +174,11 @@ router.get("/", authMiddleware, async (req, res) => {
     }
 
     const isAdminOrPetugas = [
+      "DEVELOPER",
       "SUPER_USER",
+      "PEMIMPIN",
+      "PANITIA_TASKFORCE",
+      "DPL",
       "ADMIN_DLH",
       "CAMAT",
       "LURAH",
@@ -190,7 +194,17 @@ router.get("/", authMiddleware, async (req, res) => {
     if (userId) {
       dbUser = await prisma.user.findUnique({
         where: { id: userId },
-        include: { rw: true },
+        include: {
+          rw: {
+            include: {
+              kelurahan: {
+                include: {
+                  kecamatan: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (dbUser?.rwId) {
@@ -227,6 +241,8 @@ router.get("/", authMiddleware, async (req, res) => {
           }
         } else if (role === "LURAH" && dbUser?.rw?.kelurahanId) {
           reqWhere.bin = { rw: { kelurahanId: dbUser.rw.kelurahanId } };
+        } else if (role === "CAMAT" && dbUser?.rw?.kelurahan?.kecamatanId) {
+          reqWhere.bin = { rw: { kelurahan: { kecamatanId: dbUser.rw.kelurahan.kecamatanId } } };
         }
 
         const requests = await prisma.binResetRequest.findMany({
@@ -272,28 +288,11 @@ router.get("/", authMiddleware, async (req, res) => {
           };
         });
 
-        // 2. Active Shift Notification
-        const currentHour = (new Date().getUTCHours() + 7) % 24;
-        const isMorning = currentHour >= 6 && currentHour < 12;
-        const scheduleNotif = {
-          id: `sched-active-shift-${new Date().toISOString().slice(0, 10)}`,
-          type: "JADWAL_JEMPUT",
-          title: isMorning ? "Jadwal Jemput Pagi" : "Jadwal Jemput Sore",
-          desc: `Terdapat tempat sampah warga yang perlu diangkut pada shift ${
-            isMorning ? "Pagi (06:00 - 08:00 WIB)" : "Sore (16:00 - 18:00 WIB)"
-          }.`,
-          isRead: false,
-          time: "Shift Aktif Hari Ini",
-          icon: "local_shipping",
-          iconBg: "bg-emerald-100",
-          iconColor: "text-emerald-600",
-        };
-
-        // 3. Fetch real full bins (>90% volume capacity) scoped by area/role
+        // 2. Fetch real full bins (>90% volume capacity) scoped by area/role
         let criticalBinNotifs: any[] = [];
         try {
           let binWhere: any = {};
-          if (["RW", "RT", "PETUGAS_RESIDU"].includes(role)) {
+          if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
             if (areaIds.length > 0) {
               binWhere.rwId = { in: areaIds };
             } else {
@@ -301,6 +300,8 @@ router.get("/", authMiddleware, async (req, res) => {
             }
           } else if (role === "LURAH" && dbUser?.rw?.kelurahanId) {
             binWhere.rw = { kelurahanId: dbUser.rw.kelurahanId };
+          } else if (role === "CAMAT" && dbUser?.rw?.kelurahan?.kecamatanId) {
+            binWhere.rw = { kelurahan: { kecamatanId: dbUser.rw.kelurahan.kecamatanId } };
           }
 
           const fullBins = await prisma.bin.findMany({
@@ -333,7 +334,7 @@ router.get("/", authMiddleware, async (req, res) => {
           console.error("[NotificationRoute] Error fetching critical bins:", e);
         }
 
-        // 4. User direct DB notifications
+        // 3. User direct DB notifications
         let userNotifs: any[] = [];
         if (userId) {
           try {
@@ -358,7 +359,6 @@ router.get("/", authMiddleware, async (req, res) => {
         }
 
         formattedNotifications = [
-          scheduleNotif,
           ...criticalBinNotifs,
           ...reqNotifications,
           ...userNotifs,

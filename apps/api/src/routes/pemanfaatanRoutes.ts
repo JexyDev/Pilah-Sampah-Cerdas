@@ -11,6 +11,13 @@ import { readOnlyGuard } from "../middlewares/readOnlyGuard.js";
 
 const router = Router();
 
+// Feedback / Kritik & Saran routes (must be placed before generic /:id route)
+router.get("/feedback", authMiddleware, pemanfaatanController.getAllFeedback);
+router.post("/feedback", authMiddleware, pemanfaatanController.createFeedback);
+router.put("/feedback/:id/tanggapan", authMiddleware, pemanfaatanController.respondFeedback);
+router.delete("/feedback/:id", authMiddleware, readOnlyGuard, pemanfaatanController.deleteFeedback);
+
+// Pemanfaatan Program CRUD routes
 router.post("/", authMiddleware, readOnlyGuard, pemanfaatanController.create);
 router.get("/", authMiddleware, pemanfaatanController.getAll);
 router.get("/:id", authMiddleware, pemanfaatanController.getById);

@@ -80,7 +80,14 @@ export class BinService {
 
     if (filters) {
       if (filters.status) {
-        const validEnumValues = ["PRINTED", "ACTIVE", "ACTIVE_BOUND", "INACTIVE", "BROKEN", "PENDING_APPROVAL"];
+        const validEnumValues = [
+          "PRINTED",
+          "ACTIVE",
+          "ACTIVE_BOUND",
+          "INACTIVE",
+          "BROKEN",
+          "PENDING_APPROVAL",
+        ];
         if (validEnumValues.includes(filters.status)) {
           whereClause.status = filters.status;
         } else if (filters.status === "Rusak") {
@@ -783,10 +790,7 @@ export class BinService {
     let catId = data.categoryId;
     const cat = await prisma.wasteCategory.findFirst({
       where: {
-        OR: [
-          { id: catId },
-          { name: { contains: catId, mode: "insensitive" } },
-        ],
+        OR: [{ id: catId }, { name: { contains: catId, mode: "insensitive" } }],
       },
     });
     if (cat) {
@@ -896,7 +900,9 @@ export class BinService {
       const statusUpper = String(data.status).toUpperCase();
       if (statusUpper === "RUSAK" || statusUpper === "BROKEN") {
         updateData.status = "BROKEN";
-      } else if (["ACTIVE_BOUND", "ACTIVE", "PRINTED", "INACTIVE", "PENDING_APPROVAL"].includes(statusUpper)) {
+      } else if (
+        ["ACTIVE_BOUND", "ACTIVE", "PRINTED", "INACTIVE", "PENDING_APPROVAL"].includes(statusUpper)
+      ) {
         updateData.status = statusUpper;
       } else if (data.status === "Normal" || data.status === "Penuh" || data.status === "Sedang") {
         updateData.status = "ACTIVE_BOUND";
@@ -904,10 +910,12 @@ export class BinService {
     }
 
     if (data.latitude !== undefined) {
-      updateData.latitude = data.latitude !== null && data.latitude !== "" ? parseFloat(data.latitude) : null;
+      updateData.latitude =
+        data.latitude !== null && data.latitude !== "" ? parseFloat(data.latitude) : null;
     }
     if (data.longitude !== undefined) {
-      updateData.longitude = data.longitude !== null && data.longitude !== "" ? parseFloat(data.longitude) : null;
+      updateData.longitude =
+        data.longitude !== null && data.longitude !== "" ? parseFloat(data.longitude) : null;
     }
     if (data.userId !== undefined && data.userId !== "") {
       updateData.userId = data.userId || null;

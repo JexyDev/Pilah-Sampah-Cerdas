@@ -607,16 +607,16 @@ const KknDashboard: React.FC = () => {
               />
             </div>
 
-            {/* RT/RW Filter */}
+            {/* Rukun Warga Filter */}
             <select
               value={filterRtRw}
               onChange={(e) => {
                 setFilterRtRw(e.target.value);
                 setWargaPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-bold text-slate-700"
+              className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
-              <option value="">Semua RT/RW</option>
+              <option value="">Semua Rukun Warga</option>
               {rtRwAreas.map((loc) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.rw || loc.name}

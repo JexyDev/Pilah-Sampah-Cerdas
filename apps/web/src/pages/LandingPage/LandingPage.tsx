@@ -377,7 +377,7 @@ export const LandingPage: React.FC = () => {
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
               {isAuthenticated ? (
                 <button
-                  onClick={() => { setIsMobileMenuOpen(false); navigate("/dashboard"); }}
+                  onClick={() => { setIsMobileMenuOpen(false); navigate("/dasbor"); }}
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
                 >
                   <span className="material-symbols-outlined text-lg">dashboard</span>

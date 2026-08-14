@@ -137,7 +137,13 @@ export const userController = {
     } catch (error: any) {
       console.error("[UserController] updateUser error:", error);
 
-      if (error.message === "FORBIDDEN_ROLE_UPDATE") {
+      if (error.message === "CANNOT_DEACTIVATE_SELF") {
+        res.status(400).json({
+          success: false,
+          error: "BAD_REQUEST",
+          message: "Anda tidak dapat menonaktifkan akun Anda sendiri yang sedang terhubung ke sistem.",
+        });
+      } else if (error.message === "FORBIDDEN_ROLE_UPDATE") {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",

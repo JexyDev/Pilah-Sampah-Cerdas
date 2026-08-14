@@ -98,7 +98,9 @@ export class BinController {
           const hours = String(d.getHours()).padStart(2, "0");
           const minutes = String(d.getMinutes()).padStart(2, "0");
           const cat = (lastDeposit.hasilKlasifikasiAi || "").toLowerCase().includes("anorganik") ? "Anorganik" : "Organik";
-          const conf = lastDeposit.confidenceAi ? ` (${Math.round(lastDeposit.confidenceAi * 100)}% AI)` : "";
+          const rawConf = Number(lastDeposit.confidenceAi || 0);
+          const confVal = rawConf > 1 ? Math.round(rawConf) : Math.round(rawConf * 100);
+          const conf = confVal > 0 && confVal <= 100 ? ` (${confVal}% AI)` : "";
           lastActivityLog = `Setoran ${cat} ${lastDeposit.berat || 0} kg (${day}/${month}/${year}, ${hours}.${minutes})${conf}`;
         } else if (isActivated) {
           lastActivityLog = verifiedAtStr;

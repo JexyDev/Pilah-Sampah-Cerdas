@@ -388,7 +388,11 @@ export class SuperUserService {
     return prisma.auditTrail.findMany({
       where,
       include: {
-        user: true,
+        user: {
+          include: {
+            role: true,
+          },
+        },
       },
       orderBy: { timestamp: "desc" },
     });

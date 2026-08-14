@@ -524,6 +524,8 @@ export class ResiduService {
     return {
       logId: setoran.id,
       id: setoran.id,
+      userId: petugasUserId,
+      petugasUserId: petugasUserId,
       berat: weightKg,
       weightKg: Number(weightKg.toFixed(1)),
       classification: data.classification || "Residu",
@@ -543,6 +545,43 @@ export class ResiduService {
       status: "TERKIRIM",
       timestamp: setoran.createdAt.toISOString(),
     };
+  }
+
+  async getPengajuanResetBin() {
+    return prisma.binResetRequest.findMany({
+      where: { status: "PENDING" },
+      include: {
+        bin: { include: { category: true, rw: true } },
+        user: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async acceptPengajuanResetBin(id: string, petugasUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const request = await tx.binResetRequest.findUnique({
+        where: { id },
+      });
+
+      if (!request) {
+        throw new Error("PENGAJUAN_NOT_FOUND");
+      }
+
+      if (request.status !== "PENDING") {
+        throw new Error("PERMINTAAN_SUDAH_DIAMBIL");
+      }
+
+      const updated = await tx.binResetRequest.update({
+        where: { id },
+        data: {
+          status: "IN_PROGRESS",
+          reviewedById: petugasUserId,
+        },
+      });
+
+      return updated;
+    });
   }
 }
 

@@ -113,7 +113,8 @@ const MasterRw: React.FC = () => {
   });
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedRwToDelete, setSelectedRwToDelete] = useState<RwItem | null>(null);
+  const [selectedGroupToDelete, setSelectedGroupToDelete] = useState<GroupedRw | null>(null);
+  const [selectedRwIdsToDelete, setSelectedRwIdsToDelete] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch real data from backend API
@@ -251,6 +252,19 @@ const MasterRw: React.FC = () => {
     return filteredGroups.slice(start, start + itemsPerPage);
   }, [filteredGroups, currentPage, itemsPerPage]);
 
+  // Modal Cascaded Location Filters
+  const modalFilteredKabupaten = useMemo(() => {
+    return kabupatenList.filter((k) => k.provinsiId === formData.provinsiId);
+  }, [kabupatenList, formData.provinsiId]);
+
+  const modalFilteredKecamatan = useMemo(() => {
+    return kecamatanList.filter((kc) => kc.kabupatenId === formData.kabupatenId);
+  }, [kecamatanList, formData.kabupatenId]);
+
+  const modalFilteredKelurahan = useMemo(() => {
+    return kelurahanList.filter((kl) => Number(kl.kecamatanId) === Number(formData.kecamatanId));
+  }, [kelurahanList, formData.kecamatanId]);
+
   // Modal Open Handlers
   const handleOpenAddModal = (defaultKelId?: string) => {
     setModalType("add");
@@ -274,26 +288,30 @@ const MasterRw: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (rw: RwItem) => {
-    setModalType("edit");
-    setSelectedRwToEdit(rw);
 
-    const selectedKelObj = kelurahanList.find((k) => k.id === rw.kelurahanId);
-    const parentKecId = selectedKelObj?.kecamatanId || kecamatanList[0]?.id || 1;
-
-    setFormData({
-      provinsiId: provinsiList[0]?.id || 1,
-      kabupatenId: kabupatenList[0]?.id || 1,
-      kecamatanId: parentKecId,
-      kelurahanId: rw.kelurahanId,
-      rwName: rw.name,
-    });
-    setIsModalOpen(true);
+  const handleOpenDeleteModal = (group: GroupedRw, initialRwId?: number) => {
+    setSelectedGroupToDelete(group);
+    if (initialRwId) {
+      setSelectedRwIdsToDelete([initialRwId]);
+    } else {
+      setSelectedRwIdsToDelete(group.rws.map((r) => r.id));
+    }
+    setIsDeleteModalOpen(true);
   };
 
-  const handleOpenDeleteModal = (rw: RwItem) => {
-    setSelectedRwToDelete(rw);
-    setIsDeleteModalOpen(true);
+  const handleToggleRwSelect = (rwId: number) => {
+    setSelectedRwIdsToDelete((prev) =>
+      prev.includes(rwId) ? prev.filter((id) => id !== rwId) : [...prev, rwId]
+    );
+  };
+
+  const handleToggleSelectAllRw = () => {
+    if (!selectedGroupToDelete) return;
+    if (selectedRwIdsToDelete.length === selectedGroupToDelete.rws.length) {
+      setSelectedRwIdsToDelete([]);
+    } else {
+      setSelectedRwIdsToDelete(selectedGroupToDelete.rws.map((r) => r.id));
+    }
   };
 
   // Submit Add / Edit Form
@@ -332,18 +350,24 @@ const MasterRw: React.FC = () => {
     }
   };
 
-  // Confirm Delete RW
-  const confirmDelete = async () => {
-    if (!selectedRwToDelete) return;
+  // Confirm Delete Batch RW
+  const confirmDeleteBatch = async () => {
+    if (!selectedGroupToDelete || selectedRwIdsToDelete.length === 0) {
+      toast.error("Pilih minimal satu RW yang ingin dihapus!");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await api.delete(`/areas/rw/${selectedRwToDelete.id}`);
-      toast.success(`Rukun Warga "${selectedRwToDelete.name}" berhasil dihapus!`);
+      await Promise.all(
+        selectedRwIdsToDelete.map((id) => api.delete(`/areas/rw/${id}`))
+      );
+      toast.success(`${selectedRwIdsToDelete.length} Rukun Warga berhasil dihapus!`);
       setIsDeleteModalOpen(false);
-      setSelectedRwToDelete(null);
+      setSelectedGroupToDelete(null);
+      setSelectedRwIdsToDelete([]);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menghapus Rukun Warga");
+      toast.error(err.response?.data?.message || "Gagal menghapus Rukun Warga terpilih");
     } finally {
       setIsSubmitting(false);
     }
@@ -562,29 +586,10 @@ const MasterRw: React.FC = () => {
                             group.rws.map((rw) => (
                               <div
                                 key={rw.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-[#009966] border border-emerald-200/80 text-[11px] font-mono font-black shadow-2xs hover:bg-emerald-100 transition-all group/badge"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/80 text-[11px] font-mono font-black shadow-2xs hover:bg-blue-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
                               >
-                                <Tag size={11} className="text-[#009966]" />
+                                <Tag size={11} className="text-blue-600" />
                                 <span>{rw.name}</span>
-                                {!isReadOnly && (
-                                  <button
-                                    onClick={() =>
-                                      handleOpenEditModal({
-                                        id: rw.id,
-                                        name: rw.name,
-                                        kelurahanId: group.kelurahanId,
-                                        kelurahanNama: group.kelurahanNama,
-                                        kecamatanNama: group.kecamatanNama,
-                                        kabupatenNama: group.kabupatenNama,
-                                        provinsiNama: group.provinsiNama,
-                                      })
-                                    }
-                                    title="Edit RW ini"
-                                    className="ml-1 opacity-0 group-hover/badge:opacity-100 text-emerald-700 hover:text-emerald-950 transition-all cursor-pointer"
-                                  >
-                                    <Pencil size={11} />
-                                  </button>
-                                )}
                               </div>
                             ))
                           )}
@@ -617,39 +622,9 @@ const MasterRw: React.FC = () => {
                             {group.rws.length > 0 && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  handleOpenEditModal({
-                                    id: group.rws[0].id,
-                                    name: group.rws[0].name,
-                                    kelurahanId: group.kelurahanId,
-                                    kelurahanNama: group.kelurahanNama,
-                                    kecamatanNama: group.kecamatanNama,
-                                    kabupatenNama: group.kabupatenNama,
-                                    provinsiNama: group.provinsiNama,
-                                  })
-                                }
-                                className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all cursor-pointer"
-                                title="Edit RW Pertama"
-                              >
-                                <Pencil size={15} />
-                              </button>
-                            )}
-                            {group.rws.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleOpenDeleteModal({
-                                    id: group.rws[group.rws.length - 1].id,
-                                    name: group.rws[group.rws.length - 1].name,
-                                    kelurahanId: group.kelurahanId,
-                                    kelurahanNama: group.kelurahanNama,
-                                    kecamatanNama: group.kecamatanNama,
-                                    kabupatenNama: group.kabupatenNama,
-                                    provinsiNama: group.provinsiNama,
-                                  })
-                                }
+                                onClick={() => handleOpenDeleteModal(group)}
                                 className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
-                                title="Hapus RW Terakhir"
+                                title="Pilih & Hapus RW"
                               >
                                 <Trash2 size={15} />
                               </button>
@@ -740,11 +715,30 @@ const MasterRw: React.FC = () => {
             <form onSubmit={handleSubmitForm} className="p-6 space-y-4">
               {/* Provinsi */}
               <div>
-                <label className="text-xs font-extrabold text-slate-700 block mb-1">Provinsi *</label>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1">
+                  Provinsi <span className="text-rose-500">*</span>
+                </label>
                 <select
-                  disabled
+                  required
                   value={formData.provinsiId}
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-500 cursor-not-allowed"
+                  onChange={(e) => {
+                    const provId = Number(e.target.value);
+                    const kabs = kabupatenList.filter((k) => k.provinsiId === provId);
+                    const kabId = kabs[0]?.id || kabupatenList[0]?.id || 1;
+                    const kecs = kecamatanList.filter((kc) => kc.kabupatenId === kabId);
+                    const kecId = kecs[0]?.id || kecamatanList[0]?.id || 1;
+                    const kels = kelurahanList.filter((kl) => Number(kl.kecamatanId) === kecId);
+                    const kelId = kels[0]?.id || kelurahanList[0]?.id || "";
+
+                    setFormData({
+                      ...formData,
+                      provinsiId: provId,
+                      kabupatenId: kabId,
+                      kecamatanId: kecId,
+                      kelurahanId: kelId,
+                    });
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition-all cursor-pointer"
                 >
                   {provinsiList.map((p) => (
                     <option key={p.id} value={p.id}>{p.nama}</option>
@@ -754,13 +748,29 @@ const MasterRw: React.FC = () => {
 
               {/* Kota, Kabupaten */}
               <div>
-                <label className="text-xs font-extrabold text-slate-700 block mb-1">Kota, Kabupaten *</label>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1">
+                  Kota, Kabupaten <span className="text-rose-500">*</span>
+                </label>
                 <select
-                  disabled
+                  required
                   value={formData.kabupatenId}
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-500 cursor-not-allowed"
+                  onChange={(e) => {
+                    const kabId = Number(e.target.value);
+                    const kecs = kecamatanList.filter((kc) => kc.kabupatenId === kabId);
+                    const kecId = kecs[0]?.id || kecamatanList[0]?.id || 1;
+                    const kels = kelurahanList.filter((kl) => Number(kl.kecamatanId) === kecId);
+                    const kelId = kels[0]?.id || kelurahanList[0]?.id || "";
+
+                    setFormData({
+                      ...formData,
+                      kabupatenId: kabId,
+                      kecamatanId: kecId,
+                      kelurahanId: kelId,
+                    });
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition-all cursor-pointer"
                 >
-                  {kabupatenList.map((k) => (
+                  {modalFilteredKabupaten.map((k) => (
                     <option key={k.id} value={k.id}>{k.nama}</option>
                   ))}
                 </select>
@@ -768,19 +778,32 @@ const MasterRw: React.FC = () => {
 
               {/* Kecamatan */}
               <div>
-                <label className="text-xs font-extrabold text-slate-700 block mb-1">Kecamatan *</label>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1">
+                  Kecamatan <span className="text-rose-500">*</span>
+                </label>
                 <select
-                  disabled
+                  required
                   value={formData.kecamatanId}
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-500 cursor-not-allowed"
+                  onChange={(e) => {
+                    const kecId = Number(e.target.value);
+                    const kels = kelurahanList.filter((kl) => Number(kl.kecamatanId) === kecId);
+                    const kelId = kels[0]?.id || kelurahanList[0]?.id || "";
+
+                    setFormData({
+                      ...formData,
+                      kecamatanId: kecId,
+                      kelurahanId: kelId,
+                    });
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition-all cursor-pointer"
                 >
-                  {kecamatanList.map((kc) => (
+                  {modalFilteredKecamatan.map((kc) => (
                     <option key={kc.id} value={kc.id}>{kc.nama}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Kelurahan */}
+              {/* Kelurahan Penugasan */}
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">
                   Kelurahan Penugasan <span className="text-rose-500">*</span>
@@ -791,9 +814,13 @@ const MasterRw: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, kelurahanId: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition-all cursor-pointer"
                 >
-                  {kelurahanList.map((kl) => (
-                    <option key={kl.id} value={kl.id}>Kel. {kl.nama}</option>
-                  ))}
+                  {modalFilteredKelurahan.length === 0 ? (
+                    <option value="">Tidak ada kelurahan di kecamatan ini</option>
+                  ) : (
+                    modalFilteredKelurahan.map((kl) => (
+                      <option key={kl.id} value={kl.id}>Kel. {kl.nama}</option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -838,20 +865,98 @@ const MasterRw: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL HAPUS RW */}
-      {isDeleteModalOpen && selectedRwToDelete && (
+      {/* MODAL HAPUS RW DENGAN CHECKBOX MULTI-SELEKSI */}
+      {isDeleteModalOpen && selectedGroupToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden p-6 text-center space-y-4">
-            <div className="w-14 h-14 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-              <AlertTriangle size={28} />
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden">
+            {/* Header Modal */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">
+                    Hapus Data Rukun Warga
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    Kel. {selectedGroupToDelete.kelurahanNama} ({selectedGroupToDelete.kecamatanNama})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <div>
-              <h3 className="text-lg font-black text-slate-800">Hapus Data RW</h3>
-              <p className="text-xs font-semibold text-slate-500 mt-1">
-                Apakah Anda yakin ingin menghapus <strong className="text-rose-600">{selectedRwToDelete.name}</strong> dari <strong className="text-slate-800">Kel. {selectedRwToDelete.kelurahanNama}</strong>?
-              </p>
+
+            {/* Body Form Multi-Select */}
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-black text-slate-700">
+                  Pilih RW Yang Ingin Dihapus:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAllRw}
+                  className="text-[11px] font-black text-[#009966] hover:underline cursor-pointer"
+                >
+                  {selectedRwIdsToDelete.length === selectedGroupToDelete.rws.length
+                    ? "Batal Pilih Semua"
+                    : "Pilih Semua"}
+                </button>
+              </div>
+
+              {/* List RW items with Checkboxes */}
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                {selectedGroupToDelete.rws.map((rw) => {
+                  const isChecked = selectedRwIdsToDelete.includes(rw.id);
+                  return (
+                    <div
+                      key={rw.id}
+                      onClick={() => handleToggleRwSelect(rw.id)}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                        isChecked
+                          ? "bg-rose-50/70 border-rose-200 text-rose-900 font-extrabold"
+                          : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 font-bold"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}} // handled by parent div click
+                          className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
+                        />
+                        <span className="text-xs font-mono">{rw.name}</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase ${
+                          isChecked
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        {isChecked ? "Akan Dihapus" : "Tetap Simpan"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Counter Summary */}
+              <div className="text-center pt-2">
+                <p className="text-xs text-slate-500 font-semibold">
+                  Menandai <strong className="text-rose-600 font-black">{selectedRwIdsToDelete.length}</strong> dari{" "}
+                  <strong className="text-slate-800 font-black">{selectedGroupToDelete.rws.length}</strong> RW untuk dihapus.
+                </p>
+              </div>
             </div>
-            <div className="pt-2 flex items-center justify-center gap-3">
+
+            {/* Footer Buttons */}
+            <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
@@ -861,11 +966,16 @@ const MasterRw: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={confirmDelete}
-                disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                onClick={confirmDeleteBatch}
+                disabled={isSubmitting || selectedRwIdsToDelete.length === 0}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {isSubmitting ? "Menghapus..." : "Ya, Hapus RW"}
+                <Trash2 size={15} />
+                <span>
+                  {isSubmitting
+                    ? "Menghapus..."
+                    : `Hapus ${selectedRwIdsToDelete.length} RW Terpilih`}
+                </span>
               </button>
             </div>
           </div>

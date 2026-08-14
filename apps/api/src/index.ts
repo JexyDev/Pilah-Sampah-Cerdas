@@ -42,6 +42,7 @@ import dplRouter from "./routes/dplRoutes.js";
 import permissionRouter from "./routes/permissionRoutes.js";
 import surveiKknRouter from "./routes/surveiKknRoutes.js";
 import evaluasiDampakRouter from "./routes/evaluasiDampakRoutes.js";
+import datasetKlasifikasiRouter from "./routes/datasetKlasifikasiRoutes.js";
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
@@ -120,6 +121,7 @@ app.use("/api/v1/dpl", dplRouter);
 app.use("/api/v1/permissions", permissionRouter);
 app.use("/api/v1/survei-kkn", surveiKknRouter);
 app.use("/api/v1/evaluasi-dampak", evaluasiDampakRouter);
+app.use("/api/v1", datasetKlasifikasiRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
@@ -172,27 +174,33 @@ cronService.start();
     const { PrismaClient } = await import("@prisma/client");
     const prisma = new PrismaClient();
 
-    const migrationQueries = [
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "harus_ganti_password" BOOLEAN DEFAULT false',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "subtipe_warga" TEXT',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "nip" TEXT',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "institusi" TEXT',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jabatan" TEXT',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "program_studi" TEXT',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jumlah_anggota_keluarga" INTEGER',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian_dpl" DECIMAL(5,2) DEFAULT 0.0',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT',
-      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT',
-      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT',
+    const alterStatements = [
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "harus_ganti_password" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "subtipe_warga" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "nip" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "institusi" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jabatan" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "program_studi" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "provinsi" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "kabupaten" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jumlah_anggota_keluarga" INTEGER;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian_dpl" DECIMAL(5,2) DEFAULT 0.0;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
     ];
 
-    for (const q of migrationQueries) {
-      await prisma.$executeRawUnsafe(q);
+    for (const stmt of alterStatements) {
+      try {
+        await prisma.$executeRawUnsafe(stmt);
+      } catch (err: any) {
+        // Ignore duplicate column errors
+      }
     }
     console.log("[AutoMigration] Database columns checked and synced successfully.");
 

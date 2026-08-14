@@ -13,6 +13,18 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 const router = Router();
 
 router.get(
+  "/rule-engine",
+  authMiddleware,
+  configController.getRuleEngine
+);
+router.post(
+  "/rule-engine",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PEMIMPIN"]),
+  configController.updateRuleEngine
+);
+
+router.get(
   "/",
   authMiddleware,
   roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),

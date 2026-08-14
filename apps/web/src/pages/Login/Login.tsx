@@ -620,7 +620,7 @@ const Login: React.FC = () => {
       const displayName = user?.name || displayRole;
       
       showToast.success(`Selamat datang kembali, ${displayName}!`);
-      navigate("/dashboard");
+      navigate("/dasbor");
     } else {
       const storeErr = useAuthStore.getState().error;
       if (storeErr === "USER_NOT_FOUND") {

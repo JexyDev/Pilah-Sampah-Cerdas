@@ -68,4 +68,19 @@ router.get(
 
 router.get("/:id", authMiddleware, transactionController.getDepositDetails);
 
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  roleMiddleware([
+    "PETUGAS_RESIDU",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DEVELOPER",
+    "PANITIA_TASKFORCE",
+    "RW",
+    "RT",
+  ]),
+  transactionController.updateStatus
+);
+
 export default router;

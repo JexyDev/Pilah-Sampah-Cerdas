@@ -51,11 +51,55 @@ export class CronService {
   private async triggerScheduleNotifications(window: "MORNING" | "EVENING") {
     try {
       console.log(`[CronService] Triggering schedule notifications for ${window}...`);
-      // Get all bins > 70%
+
+      // 1. Check if Warga reminder notification is enabled in Rule Engine
+      const reminderConfig = await prisma.systemConfig.findUnique({
+        where: { key: "warga_reminder_notification_enabled" },
+      });
+      const isReminderEnabled = reminderConfig ? reminderConfig.value !== "false" : true;
+
+      // 2. Fetch window times from Rule Engine config
+      const morningStartConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } });
+      const morningEndConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } });
+      const eveningStartConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } });
+      const eveningEndConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } });
+
+      const morningStart = morningStartConfig?.value || "06:00";
+      const morningEnd = morningEndConfig?.value || "08:00";
+      const eveningStart = eveningStartConfig?.value || "16:00";
+      const eveningEnd = eveningEndConfig?.value || "18:00";
+
+      // 3. Send notifications to Warga if enabled
+      if (isReminderEnabled) {
+        const wargaList = await prisma.user.findMany({
+          where: { role: { name: "WARGA" }, status: "Aktif" },
+        });
+
+        const windowTimeLabel = window === "MORNING" ? `${morningStart} - ${morningEnd} WIB` : `${eveningStart} - ${eveningEnd} WIB`;
+        const title = `⏰ Saatnya Pemilahan Sampah (${window === "MORNING" ? "Pagi" : "Sore"})`;
+        const message = `Pengingat TrashCare: Jendela pemilahan sampah sesi ${window === "MORNING" ? "Pagi" : "Sore"} (${windowTimeLabel}) telah dibuka. Mari pilah dan setor sampah Organik & Anorganik Anda!`;
+
+        const notifications = wargaList.map((w) => ({
+          userId: w.id,
+          title,
+          message,
+        }));
+
+        if (notifications.length > 0) {
+          await prisma.notification.createMany({ data: notifications });
+        }
+
+        // Send FCM push notifications for users with tokens
+        for (const w of wargaList) {
+          if (w.fcmToken) {
+            await notificationIntegrationService.sendPushNotification(w.fcmToken, title, message);
+          }
+        }
+      }
+
+      // 4. Send notification to Petugas Residu for collection
       const fullBins = await prisma.bin.findMany({
-        where: {
-          status: "ACTIVE_BOUND",
-        },
+        where: { status: "ACTIVE_BOUND" },
       });
       const targetBins = fullBins.filter((b) => {
         const vol = Number(b.currentVolumeLiter);
@@ -64,20 +108,15 @@ export class CronService {
       });
 
       const petugas = await prisma.user.findMany({
-        where: {
-          role: {
-            name: "PETUGAS_RESIDU",
-          },
-        },
+        where: { role: { name: "PETUGAS_RESIDU" } },
       });
 
-      // Simple notification
       for (const p of petugas) {
         await prisma.notification.create({
           data: {
             userId: p.id,
-            title: `Jadwal Jemput ${window === "MORNING" ? "Pagi" : "Sore"}`,
-            message: `Terdapat ${targetBins.length} tempat sampah yang perlu diangkut.`,
+            title: `Jadwal Pengangkutan Sampah (${window === "MORNING" ? "Pagi" : "Sore"})`,
+            message: `Jendela ${window === "MORNING" ? "Pagi" : "Sore"} dibuka. Terdapat ${targetBins.length} tempat sampah yang perlu diangkut.`,
           },
         });
       }

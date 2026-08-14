@@ -10,7 +10,6 @@ import {
   MapPin,
   Search,
   Plus,
-  Pencil,
   Trash2,
   Loader2,
   X,
@@ -26,7 +25,7 @@ import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
 import { useAuthStore } from "../../store/useAuthStore";
 
-export interface KelurahanData {
+export interface KelurahanItem {
   id: string;
   nama: string;
   kecamatanId: number;
@@ -35,16 +34,27 @@ export interface KelurahanData {
   provinsiNama: string;
 }
 
+export interface GroupedKelurahan {
+  kecamatanId: number;
+  kecamatanNama: string;
+  kabupatenNama: string;
+  provinsiNama: string;
+  items: { id: string; nama: string }[];
+}
+
 export interface KecamatanData {
   id: number;
   nama: string;
   kabupatenId: number;
+  kabupatenNama: string;
+  provinsiNama: string;
 }
 
 export interface KabupatenData {
   id: number;
   nama: string;
   provinsiId: number;
+  provinsiNama: string;
 }
 
 export interface ProvinsiData {
@@ -52,11 +62,20 @@ export interface ProvinsiData {
   nama: string;
 }
 
+const formatKecName = (raw: string) => {
+  if (!raw) return "Kecamatan Coblong";
+  const trimmed = raw.trim();
+  if (/^kecamatan\s+/i.test(trimmed)) return trimmed;
+  if (trimmed.toLowerCase().includes("coblong")) return "Kecamatan Coblong";
+  const clean = trimmed.replace(/^kec\.?\s+/i, "").trim();
+  return `Kecamatan ${clean.charAt(0).toUpperCase()}${clean.slice(1)}`;
+};
+
 const MasterKelurahan: React.FC = () => {
   const { user } = useAuthStore();
   const isReadOnly = user?.peran === "PETUGAS_RESIDU" || user?.peran === "MAHASISWA_KKN";
 
-  const [kelurahanList, setKelurahanList] = useState<KelurahanData[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<KelurahanItem[]>([]);
   const [kecamatanList, setKecamatanList] = useState<KecamatanData[]>([]);
   const [kabupatenList, setKabupatenList] = useState<KabupatenData[]>([]);
   const [provinsiList, setProvinsiList] = useState<ProvinsiData[]>([]);
@@ -69,9 +88,6 @@ const MasterKelurahan: React.FC = () => {
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"add" | "edit">("add");
-  const [selectedKel, setSelectedKel] = useState<KelurahanData | null>(null);
-
   const [formData, setFormData] = useState({
     nama: "",
     provinsiId: 1,
@@ -80,7 +96,8 @@ const MasterKelurahan: React.FC = () => {
   });
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [kelToDelete, setKelToDelete] = useState<KelurahanData | null>(null);
+  const [selectedGroupToDelete, setSelectedGroupToDelete] = useState<GroupedKelurahan | null>(null);
+  const [selectedKelIdsToDelete, setSelectedKelIdsToDelete] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch real data from backend API
@@ -105,29 +122,23 @@ const MasterKelurahan: React.FC = () => {
         id: k.id,
         nama: k.name || k.nama || "Kota Bandung",
         provinsiId: k.provinsiId || k.provinsi?.id || 1,
+        provinsiNama: k.provinsi?.name || k.provinsi?.nama || "Jawa Barat",
       }));
-      setKabupatenList(kabs.length > 0 ? kabs : [{ id: 1, nama: "Kota Bandung", provinsiId: 1 }]);
-
-      const formatKecName = (raw: string) => {
-        if (!raw) return "Kecamatan Coblong";
-        const trimmed = raw.trim();
-        if (/^kecamatan\s+/i.test(trimmed)) return trimmed;
-        if (trimmed.toLowerCase().includes("coblong")) return "Kecamatan Coblong";
-        const clean = trimmed.replace(/^kec\.?\s+/i, "").trim();
-        return `Kecamatan ${clean.charAt(0).toUpperCase()}${clean.slice(1)}`;
-      };
+      setKabupatenList(kabs);
 
       const kecs: KecamatanData[] = (resKec.data?.data || []).map((kc: any) => ({
         id: kc.id,
         nama: formatKecName(kc.name || kc.nama || "Kecamatan Coblong"),
         kabupatenId: kc.kabupatenId || kc.kabupaten?.id || 1,
+        kabupatenNama: kc.kabupaten?.name || kc.kabupaten?.nama || "Kota Bandung",
+        provinsiNama: kc.kabupaten?.provinsi?.name || kc.kabupaten?.provinsi?.nama || "Jawa Barat",
       }));
-      setKecamatanList(kecs.length > 0 ? kecs : [{ id: 1, nama: "Kecamatan Coblong", kabupatenId: 1 }]);
+      setKecamatanList(kecs);
 
-      const kels: KelurahanData[] = (resKel.data?.data || []).map((kl: any) => ({
+      const kels: KelurahanItem[] = (resKel.data?.data || []).map((kl: any) => ({
         id: String(kl.id),
         nama: kl.name || kl.nama || "Dago",
-        kecamatanId: kl.kecamatanId || kl.kecamatan?.id || 1,
+        kecamatanId: Number(kl.kecamatanId || kl.kecamatan?.id || 1),
         kecamatanNama: formatKecName(kl.kecamatan?.name || kl.kecamatan?.nama || "Kecamatan Coblong"),
         kabupatenNama: kl.kecamatan?.kabupaten?.name || kl.kecamatan?.kabupaten?.nama || "Kota Bandung",
         provinsiNama: kl.kecamatan?.kabupaten?.provinsi?.name || kl.kecamatan?.kabupaten?.provinsi?.nama || "Jawa Barat",
@@ -146,63 +157,99 @@ const MasterKelurahan: React.FC = () => {
     fetchData();
   }, []);
 
-  // Filtered kabupaten based on selected provinsiId in modal
+  // Group Kelurahan by Kecamatan
+  const groupedData: GroupedKelurahan[] = useMemo(() => {
+    const map = new Map<number, GroupedKelurahan>();
+
+    kecamatanList.forEach((kec) => {
+      map.set(kec.id, {
+        kecamatanId: kec.id,
+        kecamatanNama: kec.nama,
+        kabupatenNama: kec.kabupatenNama || "Kota Bandung",
+        provinsiNama: kec.provinsiNama || "Jawa Barat",
+        items: [],
+      });
+    });
+
+    kelurahanList.forEach((kl) => {
+      let group = map.get(kl.kecamatanId);
+      if (!group) {
+        group = {
+          kecamatanId: kl.kecamatanId,
+          kecamatanNama: kl.kecamatanNama || "Kecamatan Coblong",
+          kabupatenNama: kl.kabupatenNama || "Kota Bandung",
+          provinsiNama: kl.provinsiNama || "Jawa Barat",
+          items: [],
+        };
+        map.set(kl.kecamatanId, group);
+      }
+      group.items.push({ id: kl.id, nama: kl.nama });
+    });
+
+    return Array.from(map.values());
+  }, [kelurahanList, kecamatanList]);
+
+  // Filtered & Paginated Table Data
+  const filteredGroups = useMemo(() => {
+    if (!searchTerm.trim()) return groupedData;
+    const term = searchTerm.toLowerCase();
+    return groupedData.filter(
+      (g) =>
+        g.kecamatanNama.toLowerCase().includes(term) ||
+        g.kabupatenNama.toLowerCase().includes(term) ||
+        g.provinsiNama.toLowerCase().includes(term) ||
+        g.items.some((item) => item.nama.toLowerCase().includes(term))
+    );
+  }, [groupedData, searchTerm]);
+
+  const totalPages = Math.ceil(filteredGroups.length / itemsPerPage) || 1;
+  const paginatedGroups = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredGroups.slice(start, start + itemsPerPage);
+  }, [filteredGroups, currentPage, itemsPerPage]);
+
+  // Modal filters
   const modalFilteredKabupaten = useMemo(() => {
     return kabupatenList.filter((k) => k.provinsiId === formData.provinsiId);
   }, [kabupatenList, formData.provinsiId]);
 
-  // Filtered kecamatan based on selected kabupatenId in modal
   const modalFilteredKecamatan = useMemo(() => {
     return kecamatanList.filter((kc) => kc.kabupatenId === formData.kabupatenId);
   }, [kecamatanList, formData.kabupatenId]);
 
-  // Filtered & Paginated Table Data
-  const filteredKelurahan = useMemo(() => {
-    return kelurahanList.filter(
-      (k) =>
-        k.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        k.kecamatanNama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        k.kabupatenNama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        k.provinsiNama.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [kelurahanList, searchTerm]);
-
-  const totalPages = Math.ceil(filteredKelurahan.length / itemsPerPage) || 1;
-  const paginatedKelurahan = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredKelurahan.slice(start, start + itemsPerPage);
-  }, [filteredKelurahan, currentPage, itemsPerPage]);
-
-  const handleOpenAddModal = () => {
-    setModalType("add");
-    setSelectedKel(null);
-    const defaultProvId = provinsiList[0]?.id || 1;
-    const availableKabs = kabupatenList.filter((k) => k.provinsiId === defaultProvId);
-    const defaultKabId = availableKabs[0]?.id || kabupatenList[0]?.id || 1;
-    const availableKecs = kecamatanList.filter((kc) => kc.kabupatenId === defaultKabId);
+  const handleOpenAddModal = (defaultKecId?: number) => {
+    const selectedKecObj = kecamatanList.find((kc) => kc.id === defaultKecId) || kecamatanList[0];
+    const parentKabObj = kabupatenList.find((kb) => kb.id === selectedKecObj?.kabupatenId) || kabupatenList[0];
+    const provId = parentKabObj?.provinsiId || provinsiList[0]?.id || 1;
 
     setFormData({
       nama: "",
-      provinsiId: defaultProvId,
-      kabupatenId: defaultKabId,
-      kecamatanId: availableKecs[0]?.id || kecamatanList[0]?.id || 1,
+      provinsiId: provId,
+      kabupatenId: parentKabObj?.id || 1,
+      kecamatanId: selectedKecObj?.id || 1,
     });
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (kel: KelurahanData) => {
-    setModalType("edit");
-    setSelectedKel(kel);
-    const parentKec = kecamatanList.find((kc) => kc.id === kel.kecamatanId);
-    const parentKab = kabupatenList.find((k) => k.id === parentKec?.kabupatenId);
+  const handleOpenDeleteModal = (group: GroupedKelurahan) => {
+    setSelectedGroupToDelete(group);
+    setSelectedKelIdsToDelete(group.items.map((item) => item.id));
+    setIsDeleteModalOpen(true);
+  };
 
-    setFormData({
-      nama: kel.nama,
-      provinsiId: parentKab?.provinsiId || provinsiList[0]?.id || 1,
-      kabupatenId: parentKab?.id || kabupatenList[0]?.id || 1,
-      kecamatanId: kel.kecamatanId || kecamatanList[0]?.id || 1,
-    });
-    setIsModalOpen(true);
+  const handleToggleKelSelect = (id: string) => {
+    setSelectedKelIdsToDelete((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (!selectedGroupToDelete) return;
+    if (selectedKelIdsToDelete.length === selectedGroupToDelete.items.length) {
+      setSelectedKelIdsToDelete([]);
+    } else {
+      setSelectedKelIdsToDelete(selectedGroupToDelete.items.map((i) => i.id));
+    }
   };
 
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -214,19 +261,11 @@ const MasterKelurahan: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      if (modalType === "add") {
-        await api.post("/areas/kelurahan", {
-          name: formData.nama.trim(),
-          kecamatanId: formData.kecamatanId,
-        });
-        toast.success(`Kelurahan "${formData.nama.trim()}" berhasil ditambahkan!`);
-      } else if (selectedKel) {
-        await api.put(`/areas/kelurahan/${selectedKel.id}`, {
-          name: formData.nama.trim(),
-          kecamatanId: formData.kecamatanId,
-        });
-        toast.success(`Kelurahan "${formData.nama.trim()}" berhasil diperbarui!`);
-      }
+      await api.post("/areas/kelurahan", {
+        name: formData.nama.trim(),
+        kecamatanId: formData.kecamatanId,
+      });
+      toast.success(`Kelurahan "${formData.nama.trim()}" berhasil ditambahkan!`);
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
@@ -236,17 +275,23 @@ const MasterKelurahan: React.FC = () => {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!kelToDelete) return;
+  const confirmDeleteBatch = async () => {
+    if (!selectedGroupToDelete || selectedKelIdsToDelete.length === 0) {
+      toast.error("Pilih minimal satu Kelurahan yang ingin dihapus!");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await api.delete(`/areas/kelurahan/${kelToDelete.id}`);
-      toast.success(`Kelurahan "${kelToDelete.nama}" berhasil dihapus!`);
+      await Promise.all(
+        selectedKelIdsToDelete.map((id) => api.delete(`/areas/kelurahan/${id}`))
+      );
+      toast.success(`${selectedKelIdsToDelete.length} Kelurahan berhasil dihapus!`);
       setIsDeleteModalOpen(false);
-      setKelToDelete(null);
+      setSelectedGroupToDelete(null);
+      setSelectedKelIdsToDelete([]);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menghapus kelurahan");
+      toast.error(err.response?.data?.message || "Gagal menghapus kelurahan terpilih");
     } finally {
       setIsSubmitting(false);
     }
@@ -273,7 +318,7 @@ const MasterKelurahan: React.FC = () => {
         {!isReadOnly && (
           <button
             type="button"
-            onClick={handleOpenAddModal}
+            onClick={() => handleOpenAddModal()}
             className="bg-[#009966] hover:bg-[#008055] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 active:scale-95"
           >
             <Plus size={16} />
@@ -348,11 +393,11 @@ const MasterKelurahan: React.FC = () => {
         </div>
 
         <div className="text-xs font-bold text-slate-400 self-end sm:self-auto">
-          Menampilkan <span className="text-slate-800">{filteredKelurahan.length}</span> Kelurahan
+          Menampilkan <span className="text-slate-800">{filteredGroups.length}</span> Kecamatan
         </div>
       </div>
 
-      {/* 4. Main Data Table: NO, PROVINSI, KOTA, KABUPATEN, KECAMATAN, KELURAHAN, AKSI */}
+      {/* 4. Main Data Table: Grouped by Kecamatan */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -393,14 +438,14 @@ const MasterKelurahan: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : paginatedKelurahan.length > 0 ? (
-                paginatedKelurahan.map((kel, index) => {
+              ) : paginatedGroups.length > 0 ? (
+                paginatedGroups.map((group, index) => {
                   const itemNumber = (currentPage - 1) * itemsPerPage + index + 1;
 
                   return (
                     <tr
-                      key={kel.id}
-                      className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 font-medium whitespace-nowrap"
+                      key={group.kecamatanId}
+                      className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 font-medium"
                     >
                       {/* NO */}
                       <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-500 whitespace-nowrap">
@@ -414,7 +459,7 @@ const MasterKelurahan: React.FC = () => {
                             <Globe2 size={15} />
                           </div>
                           <span className="font-extrabold text-slate-800 text-xs">
-                            {kel.provinsiNama}
+                            {group.provinsiNama}
                           </span>
                         </div>
                       </td>
@@ -426,7 +471,7 @@ const MasterKelurahan: React.FC = () => {
                             <Building2 size={15} />
                           </div>
                           <span className="font-extrabold text-slate-800 text-xs">
-                            {kel.kabupatenNama}
+                            {group.kabupatenNama}
                           </span>
                         </div>
                       </td>
@@ -438,20 +483,38 @@ const MasterKelurahan: React.FC = () => {
                             <Compass size={15} />
                           </div>
                           <span className="font-extrabold text-slate-800 text-xs">
-                            {kel.kecamatanNama}
+                            {group.kecamatanNama}
                           </span>
                         </div>
                       </td>
 
-                      {/* KELURAHAN */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#009966] border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                            <Home size={15} />
-                          </div>
-                          <span className="font-extrabold text-slate-900 text-xs">
-                            {kel.nama.startsWith("Kelurahan") || kel.nama.startsWith("Kel.") ? kel.nama : `Kel. ${kel.nama}`}
-                          </span>
+                      {/* KELURAHAN Badges */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-2xl">
+                          {group.items.length === 0 ? (
+                            <span className="text-slate-400 text-[11px] italic font-semibold">Belum ada kelurahan</span>
+                          ) : (
+                            group.items.map((kel) => (
+                              <div
+                                key={kel.id}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-mono font-black shadow-2xs hover:bg-emerald-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+                              >
+                                <Home size={12} className="text-[#009966]" />
+                                <span>{kel.nama.startsWith("Kel.") ? kel.nama : `Kel. ${kel.nama}`}</span>
+                              </div>
+                            ))
+                          )}
+
+                          {!isReadOnly && (
+                            <button
+                              onClick={() => handleOpenAddModal(group.kecamatanId)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-[#009966] text-slate-600 hover:text-white border border-slate-200 hover:border-[#009966] text-[11px] font-bold transition-all duration-200 cursor-pointer active:scale-95"
+                              title="Tambah Kelurahan baru di kecamatan ini"
+                            >
+                              <Plus size={12} />
+                              <span>Tambah Kelurahan</span>
+                            </button>
+                          )}
                         </div>
                       </td>
 
@@ -461,23 +524,22 @@ const MasterKelurahan: React.FC = () => {
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
-                              onClick={() => handleOpenEditModal(kel)}
-                              className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all cursor-pointer"
-                              title="Edit Kelurahan"
+                              onClick={() => handleOpenAddModal(group.kecamatanId)}
+                              className="p-2 rounded-xl text-emerald-600 hover:text-white hover:bg-[#009966] border border-emerald-100 hover:border-[#009966] transition-all duration-200 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                              title="Tambah Kelurahan Baru"
                             >
-                              <Pencil size={15} />
+                              <Plus size={15} />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setKelToDelete(kel);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="p-2 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
-                              title="Hapus Kelurahan"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {group.items.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDeleteModal(group)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
+                                title="Pilih & Hapus Kelurahan"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       )}
@@ -516,7 +578,7 @@ const MasterKelurahan: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <div className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-800">{filteredKelurahan.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredKelurahan.length)}</span> dari <span className="font-bold text-[#009966]">{filteredKelurahan.length} data</span>
+              Menampilkan <span className="font-bold text-slate-800">{filteredGroups.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredGroups.length)}</span> dari <span className="font-bold text-[#009966]">{filteredGroups.length} data</span>
             </div>
             <Pagination
               currentPage={currentPage}
@@ -527,7 +589,7 @@ const MasterKelurahan: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. Modal Tambah / Edit Kelurahan */}
+      {/* 5. Modal Tambah Kelurahan */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-150">
@@ -537,7 +599,7 @@ const MasterKelurahan: React.FC = () => {
                   <Home size={18} />
                 </div>
                 <h3 className="font-black text-slate-900 text-base">
-                  {modalType === "add" ? "Tambah Kelurahan Baru" : "Edit Data Kelurahan"}
+                  Tambah Kelurahan Baru
                 </h3>
               </div>
               <button
@@ -650,7 +712,7 @@ const MasterKelurahan: React.FC = () => {
                   className="flex-1 py-2.5 bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                  {modalType === "add" ? "Simpan Data" : "Update Data"}
+                  Simpan Data
                 </button>
               </div>
             </form>
@@ -658,33 +720,117 @@ const MasterKelurahan: React.FC = () => {
         </div>
       )}
 
-      {/* 6. Modal Hapus Kelurahan */}
-      {isDeleteModalOpen && kelToDelete && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto border border-rose-100">
-              <Trash2 size={24} />
-            </div>
-            <div>
-              <h3 className="font-black text-lg text-slate-900">Konfirmasi Hapus</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Apakah Anda yakin ingin menghapus kelurahan <span className="font-bold text-slate-800">"{kelToDelete.nama}"</span>?
-              </p>
-            </div>
-            <div className="flex gap-3 pt-2">
+      {/* 6. Modal Hapus Kelurahan dengan Checkbox Multi-Seleksi */}
+      {isDeleteModalOpen && selectedGroupToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden">
+            {/* Header Modal */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">
+                    Hapus Data Kelurahan
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    {selectedGroupToDelete.kecamatanNama} ({selectedGroupToDelete.kabupatenNama})
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body Form Multi-Select */}
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-black text-slate-700">
+                  Pilih Kelurahan Yang Ingin Dihapus:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAll}
+                  className="text-[11px] font-black text-[#009966] hover:underline cursor-pointer"
+                >
+                  {selectedKelIdsToDelete.length === selectedGroupToDelete.items.length
+                    ? "Batal Pilih Semua"
+                    : "Pilih Semua"}
+                </button>
+              </div>
+
+              {/* List items with Checkboxes */}
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                {selectedGroupToDelete.items.map((kel) => {
+                  const isChecked = selectedKelIdsToDelete.includes(kel.id);
+                  return (
+                    <div
+                      key={kel.id}
+                      onClick={() => handleToggleKelSelect(kel.id)}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                        isChecked
+                          ? "bg-rose-50/70 border-rose-200 text-rose-900 font-extrabold"
+                          : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 font-bold"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
+                        />
+                        <span className="text-xs font-mono">{kel.nama}</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase ${
+                          isChecked
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        {isChecked ? "Akan Dihapus" : "Tetap Simpan"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Counter Summary */}
+              <div className="text-center pt-2">
+                <p className="text-xs text-slate-500 font-semibold">
+                  Menandai <strong className="text-rose-600 font-black">{selectedKelIdsToDelete.length}</strong> dari{" "}
+                  <strong className="text-slate-800 font-black">{selectedGroupToDelete.items.length}</strong> Kelurahan untuk dihapus.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-xs hover:bg-slate-50 transition-all cursor-pointer"
               >
                 Batal
               </button>
               <button
-                onClick={confirmDelete}
-                disabled={isSubmitting}
-                className="flex-1 py-2.5 bg-rose-600 text-white font-extrabold text-xs rounded-xl hover:bg-rose-700 transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                type="button"
+                onClick={confirmDeleteBatch}
+                disabled={isSubmitting || selectedKelIdsToDelete.length === 0}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                Ya, Hapus
+                <Trash2 size={15} />
+                <span>
+                  {isSubmitting
+                    ? "Menghapus..."
+                    : `Hapus ${selectedKelIdsToDelete.length} Kelurahan Terpilih`}
+                </span>
               </button>
             </div>
           </div>

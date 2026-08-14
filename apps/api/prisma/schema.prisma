@@ -109,6 +109,7 @@ model Rw {
   facilities      Facility[]
   studentsKkn     StudentKkn[]
   pemanfaatan     Pemanfaatan[]
+  kritikSaran     KritikSaranPemanfaatan[]
   households      Household[]
   setoranManual   SetoranManual[]
   handovers       KknHandoverHistory[]
@@ -156,6 +157,8 @@ model User {
   jabatan               String?              @map("jabatan")
   programStudi          String?              @map("program_studi")
   jenjangPendidikan     String?              @map("jenjang_pendidikan")
+  provinsi              String?              @map("provinsi")
+  kabupaten             String?              @map("kabupaten")
   jumlahAnggotaKeluarga Int?                 @map("jumlah_anggota_keluarga")
   bankSampahLedger      BankSampahLedger?
   aiRequestLogs         AiRequestLog[]
@@ -192,6 +195,7 @@ model User {
   importLogs            ImportLog[]          @relation("UserImportLogs")
   validasiBaseline      SurveiKelurahan[]    @relation("DplBaselineValidasi")
   validasiEndline       EndlineSurveiKelurahan[] @relation("DplEndlineValidasi")
+  kritikSaran           KritikSaranPemanfaatan[] @relation("UserKritikSaran")
 
   @@map("pengguna")
 }
@@ -485,6 +489,11 @@ model SetoranOtomatis {
   poin               Decimal  @map("poin") @db.Decimal(10, 2)
   qrTempatSampahId   String   @map("qr_tempat_sampah_id")
   lokasiGps          String?  @map("lokasi_gps")
+  ratingWarga        Int?     @default(5) @map("rating_warga")
+  kategoriAktual     String?  @map("kategori_aktual")
+  statusDataset      String   @default("Siap Retrain") @map("status_dataset")
+  status             String   @default("PENDING") @map("status")
+  catatanPenolakan   String?  @map("catatan_penolakan")
   createdAt          DateTime @default(now()) @map("created_at")
   bin                Bin      @relation(fields: [qrTempatSampahId], references: [id], onDelete: Cascade)
   warga              User     @relation(fields: [wargaId], references: [id], onDelete: Cascade)
@@ -502,6 +511,8 @@ model SetoranManual {
   unit            String   @default("Kg") @map("unit")
   lokasiGps       String?  @map("lokasi_gps")
   kategori        String   @default("residu") @map("kategori")
+  status          String   @default("PENDING") @map("status")
+  catatanPenolakan String?  @map("catatan_penolakan")
   createdAt       DateTime @default(now()) @map("created_at")
   petugas         User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
   rw              Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
@@ -537,6 +548,28 @@ model Pemanfaatan {
   rw                      Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
 
   @@map("pemanfaatan_sampah")
+}
+
+model KritikSaranPemanfaatan {
+  id               String    @id @default(uuid())
+  userId           String    @map("id_pengguna")
+  wargaNama        String    @map("warga_nama")
+  kategori         String    @default("Pemanfaatan Sampah") @map("kategori")
+  judul            String    @map("judul")
+  isiKritikSaran   String    @map("isi_kritik_saran")
+  rating           Int       @default(5) @map("rating")
+  status           String    @default("MENUNGGU") @map("status")
+  tanggapan        String?   @map("tanggapan")
+  ditanggapiOleh   String?   @map("ditanggapi_oleh")
+  ditanggapiPada   DateTime? @map("ditanggapi_pada")
+  fotoBuktiUrl     String?   @map("foto_bukti_url")
+  rwId             Int?      @map("id_rw")
+  createdAt        DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt        DateTime  @updatedAt @map("diperbarui_pada")
+  user             User      @relation("UserKritikSaran", fields: [userId], references: [id], onDelete: Cascade)
+  rw               Rw?       @relation(fields: [rwId], references: [id])
+
+  @@map("kritik_saran_pemanfaatan")
 }
 
 // ─────────────────────────────────────────────

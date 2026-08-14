@@ -9,6 +9,22 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const kecInclude = {
+  include: {
+    kabupaten: {
+      include: {
+        provinsi: true,
+      },
+    },
+  },
+};
+
+const kelInclude = {
+  include: {
+    kecamatan: kecInclude,
+  },
+};
+
 export class UserRepository {
   async findMany(whereClause: any) {
     return prisma.user.findMany({
@@ -17,9 +33,7 @@ export class UserRepository {
         role: true,
         rw: {
           include: {
-            kelurahan: {
-              include: { kecamatan: true },
-            },
+            kelurahan: kelInclude,
             petugasResidu: {
               select: {
                 id: true,
@@ -34,27 +48,21 @@ export class UserRepository {
           include: {
             rw: {
               include: {
-                kelurahan: {
-                  include: { kecamatan: true },
-                },
+                kelurahan: kelInclude,
               },
             },
           },
         },
         rwOwned: {
           include: {
-            kelurahan: {
-              include: { kecamatan: true },
-            },
+            kelurahan: kelInclude,
           },
         },
         households: {
           include: {
             rw: {
               include: {
-                kelurahan: {
-                  include: { kecamatan: true },
-                },
+                kelurahan: kelInclude,
               },
             },
           },
@@ -69,9 +77,7 @@ export class UserRepository {
           include: {
             assignedRw: {
               include: {
-                kelurahan: {
-                  include: { kecamatan: true },
-                },
+                kelurahan: kelInclude,
               },
             },
             kelompok: {

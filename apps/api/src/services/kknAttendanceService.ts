@@ -255,9 +255,9 @@ export class KknAttendanceService {
   }
 
   /**
-   * Record attendance (either manual or automatic trigger).
+   * Record attendance (either manual, automatic trigger, or ALPA_AUTO).
    * Verifies coordinates and radius on backend.
-   * Awards +10 points to student.
+   * Forwards notification to DPL dashboard with nim, namaMahasiswa, and kodeZona.
    */
   async recordAttendance(params: {
     studentId: string;
@@ -265,8 +265,12 @@ export class KknAttendanceService {
     latitude: number;
     longitude: number;
     method: string;
+    nim?: string;
+    namaMahasiswa?: string;
+    kodeZona?: string;
   }) {
-    const { studentId, scheduleId, latitude, longitude, method } = params;
+    const { studentId, scheduleId, latitude, longitude, method, nim: inputNim, namaMahasiswa: inputNama, kodeZona: inputKodeZona } = params;
+    const isAutoAlpa = method?.toUpperCase() === "ALPA_AUTO" || method?.toUpperCase() === "ALPA";
 
     // 1. Get activity location configuration if exists
     let actLoc: any = null;
@@ -276,9 +280,9 @@ export class KknAttendanceService {
       actLoc = null;
     }
 
-    // 2. Validate radius on backend if configured
+    // 2. Validate radius on backend if configured (skip for ALPA_AUTO)
     let isInside = true;
-    if (actLoc && actLoc.isConfigured) {
+    if (!isAutoAlpa && actLoc && actLoc.isConfigured) {
       if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
         const polyPoints = (actLoc.polygon as any[]).map((p) => ({
           lat: Number(p[0]),
@@ -291,9 +295,28 @@ export class KknAttendanceService {
       }
     }
 
-    if (!isInside) {
+    if (!isAutoAlpa && !isInside) {
       throw new Error(`OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`);
     }
+
+    // Resolve student info for DPL notification
+    const studentUser = await prisma.user.findUnique({
+      where: { id: studentId },
+      include: {
+        studentProfile: {
+          include: {
+            kelompok: {
+              include: { dpl: true },
+            },
+          },
+        },
+      },
+    });
+
+    const finalNama = inputNama || studentUser?.name || "Mahasiswa KKN";
+    const finalNim = inputNim || studentUser?.studentProfile?.nim || "1301210000";
+    const finalKodeZona = inputKodeZona || actLoc?.title || scheduleId;
+    const statusText = isAutoAlpa ? "Alpa (Tanpa Keterangan)" : "Hadir (Dalam Radius)";
 
     // 3. Create or update attendance record
     const attendance = await prisma.$transaction(async (tx) => {
@@ -317,7 +340,7 @@ export class KknAttendanceService {
           where: { id: existing.id },
           data: {
             checkOutAt: new Date(),
-            status: "LEPAS_RADIUS",
+            status: isAutoAlpa ? "ALPA" : "LEPAS_RADIUS",
           },
         });
 
@@ -328,28 +351,49 @@ export class KknAttendanceService {
         data: {
           studentId,
           scheduleId,
-          method,
+          method: isAutoAlpa ? "ALPA_AUTO" : method,
           latitude,
           longitude,
-          status: "DALAM_RADIUS",
+          status: isAutoAlpa ? "ALPA" : "DALAM_RADIUS",
         },
       });
 
-      // Award +10 points to student on Check-In
-      await tx.pointHistory.create({
-        data: {
-          userId: studentId,
-          points: 10,
-          description: `Bonus kehadiran (Check-In) KKN: ${actLoc.title} (${method})`,
-          kategori: "PARTISIPASI_STREAK",
-          redeemable: false,
-        },
-      });
+      // Award +10 points to student on Check-In if NOT ALPA
+      if (!isAutoAlpa) {
+        await tx.pointHistory.create({
+          data: {
+            userId: studentId,
+            points: 10,
+            description: `Bonus kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
+            kategori: "PARTISIPASI_STREAK",
+            redeemable: false,
+          },
+        });
+      }
+
+      // Forward notification to DPL dashboard
+      const dplUser = studentUser?.studentProfile?.kelompok?.dpl;
+      if (dplUser) {
+        await tx.notification.create({
+          data: {
+            userId: dplUser.id,
+            title: `Laporan Presensi KKN (${finalNama})`,
+            message: `Mahasiswa ${finalNama} (${finalNim}) pada zona ${finalKodeZona} berstatus: ${statusText}.`,
+            isRead: false,
+          },
+        });
+      }
 
       return record;
     });
 
-    return attendance;
+    return {
+      ...attendance,
+      namaMahasiswa: finalNama,
+      nim: finalNim,
+      kodeZona: finalKodeZona,
+      statusDisplay: statusText,
+    };
   }
 
   /**

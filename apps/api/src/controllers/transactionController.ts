@@ -184,4 +184,38 @@ export const transactionController = {
       res.status(500).json({ success: false, message: "Gagal mengambil detail setoran" });
     }
   },
+
+  updateStatus: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { status, catatanPenolakan } = req.body;
+
+      if (!status || !["ACCEPTED", "REJECTED", "PENDING"].includes(status.toUpperCase())) {
+        res.status(400).json({
+          success: false,
+          message: "Status wajib diisi dan harus bernilai 'ACCEPTED', 'REJECTED', atau 'PENDING'",
+        });
+        return;
+      }
+
+      const result = await transactionService.updateTransactionStatus(
+        id,
+        status,
+        catatanPenolakan
+      );
+
+      res.status(200).json({
+        success: true,
+        message: `Status transaksi berhasil diperbarui menjadi ${status.toUpperCase()}`,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[TransactionController] updateStatus error:", error);
+      if (error.message === "TRANSACTION_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "Transaksi setoran tidak ditemukan" });
+        return;
+      }
+      res.status(500).json({ success: false, message: "Gagal memperbarui status transaksi setoran" });
+    }
+  },
 };

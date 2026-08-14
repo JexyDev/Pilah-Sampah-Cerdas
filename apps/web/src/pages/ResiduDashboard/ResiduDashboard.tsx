@@ -408,13 +408,13 @@ const ResiduDashboard: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
             <h3 className="font-extrabold text-lg flex items-center gap-1.5">
               <FileText className="text-indigo-600 w-5 h-5" />
-              Tabel Kepatuhan Wilayah RT/RW
+              Tabel Kepatuhan Rukun Warga
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-outline-variant pb-2">
-                    <th className="pb-2 font-bold">Wilayah RT/RW</th>
+                  <tr className="border-b border-outline-variant/30 text-on-surface-variant">
+                    <th className="pb-2 font-bold">Rukun Warga (RW)</th>
                     <th className="pb-2 font-bold">Tingkat Kepatuhan</th>
                     <th className="pb-2 font-bold">Total Pelanggaran</th>
                   </tr>

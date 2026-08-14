@@ -3,26 +3,235 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Component matching exact visual layout of:
- * - 2 Bar Charts: Kepatuhan Pemilahan per Kelurahan & Volume Sampah per Kelurahan
- * - Grup 1: Top 10 Warga, Petugas Residu, RW, & Kelurahan
- * - Grup 2: Top 10 Mahasiswa KKN, Kelompok KKN, & DPL
+ * Component: Rekapitulasi & Analitik Performa Wilayah
+ * - 2 Recharts Bar Charts: Kepatuhan Pemilahan per Kelurahan & Volume Sampah per Kelurahan
+ * - Tabel Terpisah ber-Pagination untuk setiap kategori (Warga, Petugas, Rukun Warga, Kelurahan, Mahasiswa, Kelompok, DPL)
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Users,
+  TrendingUp,
+  MapPin,
+  Building2,
+  GraduationCap,
+  Award,
+  Search,
+  ArrowUpDown,
+  FileText,
+  BarChart3,
+  Trash2,
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Cell,
+  CartesianGrid,
+} from "recharts";
 import api from "../../services/api";
+import { Pagination } from "../common/Pagination";
+
+interface TableItem {
+  rank: number;
+  name: string;
+  sub: string;
+  score: string | number;
+  pct?: number;
+}
+
+interface TableSectionProps {
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  iconBgColor: string;
+  iconTextColor: string;
+  data: TableItem[];
+  nameHeader?: string;
+  subHeader?: string;
+  scoreHeader?: string;
+}
+
+const TableSection: React.FC<TableSectionProps> = ({
+  title,
+  subtitle,
+  icon: Icon,
+  iconBgColor,
+  iconTextColor,
+  data,
+  nameHeader = "Nama",
+  subHeader = "Keterangan / Wilayah",
+  scoreHeader = "Poin",
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState<"rank" | "name" | "score">("rank");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, itemsPerPage]);
+
+  const filteredData = useMemo(() => {
+    let result = [...data];
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.sub.toLowerCase().includes(q)
+      );
+    }
+    result.sort((a, b) => {
+      let comp = 0;
+      if (sortBy === "rank") comp = a.rank - b.rank;
+      else if (sortBy === "name") comp = a.name.localeCompare(b.name);
+      else if (sortBy === "score") {
+        const numA = typeof a.score === "number" ? a.score : parseFloat(String(a.score).replace(/[^0-9.-]+/g, "")) || 0;
+        const numB = typeof b.score === "number" ? b.score : parseFloat(String(b.score).replace(/[^0-9.-]+/g, "")) || 0;
+        comp = numA - numB;
+      }
+      return sortOrder === "asc" ? comp : -comp;
+    });
+    return result;
+  }, [data, searchTerm, sortBy, sortOrder]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    return filteredData.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [filteredData, currentPage, itemsPerPage]);
+
+  const toggleSort = (field: "rank" | "name" | "score") => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between space-y-3">
+      {/* Header & Search */}
+      <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-2xl ${iconBgColor} ${iconTextColor} flex items-center justify-center border shrink-0 font-bold`}>
+            <Icon size={20} />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-base text-slate-800 tracking-tight">
+              {title}
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <input
+            type="text"
+            placeholder="Cari..."
+            className="w-full bg-slate-50/70 border border-slate-200 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-100 text-xs text-left">
+          <thead className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+            <tr>
+              <th
+                className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors w-20"
+                onClick={() => toggleSort("rank")}
+              >
+                <div className="flex items-center gap-1.5">Peringkat <ArrowUpDown size={12} /></div>
+              </th>
+              <th
+                className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                onClick={() => toggleSort("name")}
+              >
+                <div className="flex items-center gap-1.5">{nameHeader} <ArrowUpDown size={12} /></div>
+              </th>
+              <th className="py-3.5 px-4">{subHeader}</th>
+              <th
+                className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 transition-colors"
+                onClick={() => toggleSort("score")}
+              >
+                <div className="flex items-center justify-end gap-1.5"><ArrowUpDown size={12} /> {scoreHeader}</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+            {paginatedData.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-12 text-center text-slate-400 font-bold">
+                  Tidak ada data yang sesuai pencarian.
+                </td>
+              </tr>
+            ) : (
+              paginatedData.map((item) => (
+                <tr key={item.rank} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="py-3.5 px-4 font-black text-slate-700">
+                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black ${
+                      item.rank === 1 ? "bg-amber-100 text-amber-700 border border-amber-200" :
+                      item.rank === 2 ? "bg-slate-100 text-slate-600 border border-slate-200" :
+                      item.rank === 3 ? "bg-orange-100 text-orange-700 border border-orange-200" :
+                      "bg-slate-50 text-slate-500"
+                    }`}>
+                      {item.rank}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 font-bold text-slate-800">{item.name}</td>
+                  <td className="py-3.5 px-4 text-slate-500 font-semibold">{item.sub || "-"}</td>
+                  <td className="py-3.5 px-4 font-black text-[#009966] text-right text-sm">
+                    {item.score}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {filteredData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          itemsPerPageOptions={[10, 25, 50, 100]}
+        />
+      )}
+    </div>
+  );
+};
 
 export const AnalyticsOverviewBoard: React.FC = () => {
   // Dynamic API states
   const [kepatuhanData, setKepatuhanData] = useState<{ name: string; val: number }[]>([]);
   const [volumeData, setVolumeData] = useState<{ name: string; val: number }[]>([]);
-  const [topWarga, setTopWarga] = useState<any[]>([]);
-  const [topPetugas, setTopPetugas] = useState<any[]>([]);
-  const [topRw, setTopRw] = useState<any[]>([]);
-  const [topKelurahan, setTopKelurahan] = useState<any[]>([]);
-  const [topMahasiswa, setTopMahasiswa] = useState<any[]>([]);
-  const [topKelompok, setTopKelompok] = useState<any[]>([]);
-  const [topDpl, setTopDpl] = useState<any[]>([]);
+  const [topWarga, setTopWarga] = useState<TableItem[]>([]);
+  const [topPetugas, setTopPetugas] = useState<TableItem[]>([]);
+  const [topRw, setTopRw] = useState<TableItem[]>([]);
+  const [topKelurahan, setTopKelurahan] = useState<TableItem[]>([]);
+  const [topMahasiswa, setTopMahasiswa] = useState<TableItem[]>([]);
+  const [topKelompok, setTopKelompok] = useState<TableItem[]>([]);
+  const [topDpl, setTopDpl] = useState<TableItem[]>([]);
 
   useEffect(() => {
     fetchLiveLeaderboards();
@@ -95,7 +304,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
               return {
                 rank: i + 1,
                 name: `Kel. ${k.kelurahanName}`,
-                sub: "",
+                sub: "-",
                 score: val.toLocaleString("id-ID"),
                 pct: topVal > 0 ? Math.round((val / topVal) * 100) : 0,
               };
@@ -184,18 +393,55 @@ export const AnalyticsOverviewBoard: React.FC = () => {
     }
   };
 
+  const avgCompliance =
+    kepatuhanData.length > 0
+      ? Math.round(kepatuhanData.reduce((acc, d) => acc + d.val, 0) / kepatuhanData.length)
+      : 0;
+
+  const totalVolumeKg = volumeData.reduce((acc, d) => acc + d.val, 0);
+  const totalVolumeDisplay =
+    totalVolumeKg >= 1000
+      ? `${(totalVolumeKg / 1000).toFixed(1)} ton`
+      : `${totalVolumeKg.toFixed(1)} kg`;
+
+  const CustomComplianceTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-slate-900 text-white p-2.5 rounded-xl shadow-xl border border-slate-800 text-xs font-bold space-y-0.5">
+          <p className="text-emerald-400 font-extrabold">{data.name}</p>
+          <p className="text-[11px] text-slate-300">Kepatuhan Pemilahan: <strong className="text-white">{data.val}%</strong></p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomVolumeTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-slate-900 text-white p-2.5 rounded-xl shadow-xl border border-slate-800 text-xs font-bold space-y-0.5">
+          <p className="text-sky-400 font-extrabold">{data.name}</p>
+          <p className="text-[11px] text-slate-300">Volume Sampah: <strong className="text-white">{data.val} kg</strong></p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="w-full space-y-6 text-slate-800 font-sans">
       
-      {/* ----------------- TOP SECTION: 2 BAR CHARTS ROW ----------------- */}
+      {/* ----------------- TOP SECTION: 2 RECHARTS BAR CHARTS ROW ----------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* Chart 1: Kepatuhan Pemilahan per Kelurahan */}
         <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                <span className="material-symbols-outlined text-xl">bar_chart</span>
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0 font-bold">
+                <BarChart3 size={20} />
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 leading-snug">
@@ -209,395 +455,198 @@ export const AnalyticsOverviewBoard: React.FC = () => {
 
             <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-emerald-600 font-bold uppercase">Rata-rata</span>
-              <span className="text-emerald-700">81%</span>
+              <span className="text-emerald-700">{avgCompliance}%</span>
             </div>
           </div>
 
-          {/* Bar Chart Container */}
-          <div className="pt-4 flex gap-2 items-end">
-            {/* Y-Axis Labels */}
-            <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-44 text-right select-none shrink-0 pb-6">
-              <span>100%</span>
-              <span>80%</span>
-              <span>60%</span>
-              <span>40%</span>
-              <span>20%</span>
-              <span>0%</span>
-            </div>
-
-            {/* Bars Area */}
-            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-44 border-b border-slate-200 pb-1 relative">
-              {kepatuhanData.map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                  <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
-                    {d.val}%
-                  </span>
-                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                    <div
-                      className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 group-hover:from-emerald-600 group-hover:to-emerald-400 shadow-2xs"
-                      style={{ height: `${d.val}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* X-Axis Labels */}
-          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {kepatuhanData.map((d, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {d.name}
-              </span>
-            ))}
+          {/* Recharts Bar Chart */}
+          <div className="h-64 w-full pt-2">
+            {kepatuhanData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+                Memuat data kepatuhan kelurahan...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={kepatuhanData} margin={{ top: 15, right: 15, left: -15, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    interval={0}
+                    angle={-20}
+                    textAnchor="end"
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    axisLine={false}
+                    tickLine={false}
+                    unit="%"
+                  />
+                  <Tooltip content={<CustomComplianceTooltip />} />
+                  <Bar dataKey="val" fill="#009966" radius={[6, 6, 0, 0]} maxBarSize={36}>
+                    {kepatuhanData.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#009966" : "#10b981"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         {/* Chart 2: Volume Sampah per Kelurahan */}
         <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-xs">
-                <span className="material-symbols-outlined text-xl">delete</span>
+              <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200 shrink-0 font-bold">
+                <Trash2 size={20} />
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 leading-snug">
                   Grafik Volume Sampah per Kelurahan
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Total volume sampah terkumpul (ton)
+                  Total volume sampah terkumpul
                 </p>
               </div>
             </div>
 
             <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
-              <span className="text-sky-700">15.6 ton</span>
+              <span className="text-sky-700">{totalVolumeDisplay}</span>
             </div>
           </div>
 
-          {/* Bar Chart Container */}
-          <div className="pt-4 flex gap-2 items-end">
-            {/* Y-Axis Labels */}
-            <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-44 text-right select-none shrink-0 pb-6">
-              <span>5 ton</span>
-              <span>4</span>
-              <span>3</span>
-              <span>2</span>
-              <span>1</span>
-              <span>0</span>
-            </div>
-
-            {/* Bars Area */}
-            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-44 border-b border-slate-200 pb-1 relative">
-              {volumeData.map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                  <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
-                    {d.val} ton
-                  </span>
-                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                    <div
-                      className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 group-hover:from-sky-600 group-hover:to-sky-400 shadow-2xs"
-                      style={{ height: `${(d.val / 5) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* X-Axis Labels */}
-          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {volumeData.map((d, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {d.name}
-              </span>
-            ))}
+          {/* Recharts Bar Chart */}
+          <div className="h-64 w-full pt-2">
+            {volumeData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+                Memuat data volume sampah kelurahan...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={volumeData} margin={{ top: 15, right: 15, left: -15, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    interval={0}
+                    angle={-20}
+                    textAnchor="end"
+                  />
+                  <YAxis
+                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomVolumeTooltip />} />
+                  <Bar dataKey="val" fill="#0284c7" radius={[6, 6, 0, 0]} maxBarSize={36}>
+                    {volumeData.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#0284c7" : "#38bdf8"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
       </div>
 
-      {/* ----------------- MIDDLE SECTION: GRUP 1 (TOP 10 WARGA & WILAYAH) ----------------- */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-5">
-        
-        {/* Section Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-xl">star</span>
-            </div>
-            <div>
-              <h3 className="font-extrabold text-slate-900 text-lg leading-tight">
-                Grup 1 — Top 10 Warga &amp; Wilayah
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">
-                Ranking dan performa warga serta wilayah berdasarkan perolehan poin.
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* ----------------- CLEAN SEPARATE TABLES WITH STANDARDIZED PAGINATION ----------------- */}
+      <div className="space-y-6">
 
-        {/* 4 Columns Leaderboard Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 min-w-0">
-          
-          {/* Card 1: Top 10 Warga */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-emerald-600 text-lg">person</span>
-                Top 10 Warga
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
+        {/* 1. Tabel Peringkat Warga */}
+        <TableSection
+          title="Peringkat Warga"
+          subtitle="Tabel pemeringkatan warga berdasarkan akumulasi poin pemilahan sampah"
+          icon={Users}
+          iconBgColor="bg-emerald-50 border-emerald-200"
+          iconTextColor="text-[#009966]"
+          data={topWarga}
+          nameHeader="Nama Warga"
+          subHeader="Wilayah"
+          scoreHeader="Total Poin"
+        />
 
-            <div className="space-y-2">
-              {topWarga.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`w-4 text-center font-extrabold text-[10px] ${item.rank <= 3 ? "text-amber-500 font-black" : "text-slate-400"}`}>
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* 2. Tabel Peringkat Petugas Pemilah */}
+        <TableSection
+          title="Peringkat Petugas Pemilah"
+          subtitle="Tabel peringkat petugas berdasarkan kinerja &amp; kecepatan pengangkutan"
+          icon={TrendingUp}
+          iconBgColor="bg-[#e5f7ed] border-[#009966]/20"
+          iconTextColor="text-[#009966]"
+          data={topPetugas}
+          nameHeader="Nama Petugas"
+          subHeader="Wilayah Penugasan"
+          scoreHeader="Skor Komposit"
+        />
 
-          {/* Card 2: Top 10 Petugas Residu */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-rose-600 text-lg">delete</span>
-                Top 10 Petugas Residu
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
+        {/* 3. Tabel Peringkat Rukun Warga (RW) */}
+        <TableSection
+          title="Peringkat Rukun Warga"
+          subtitle="Tabel akumulasi poin kebersihan &amp; kepatuhan tingkat Rukun Warga"
+          icon={MapPin}
+          iconBgColor="bg-amber-50 border-amber-200"
+          iconTextColor="text-amber-600"
+          data={topRw}
+          nameHeader="Rukun Warga"
+          subHeader="Kelurahan"
+          scoreHeader="Total Poin"
+        />
 
-            <div className="space-y-2">
-              {topPetugas.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`w-4 text-center font-extrabold text-[10px] ${item.rank <= 3 ? "text-amber-500 font-black" : "text-slate-400"}`}>
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-rose-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* 4. Tabel Peringkat Kelurahan */}
+        <TableSection
+          title="Peringkat Kelurahan"
+          subtitle="Tabel akumulasi poin kebersihan lingkungan tingkat Kelurahan"
+          icon={Building2}
+          iconBgColor="bg-sky-50 border-sky-200"
+          iconTextColor="text-sky-600"
+          data={topKelurahan}
+          nameHeader="Kelurahan"
+          subHeader="Kecamatan"
+          scoreHeader="Total Poin"
+        />
 
-          {/* Card 3: Top 10 RW */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-emerald-600 text-lg">home</span>
-                Top 10 RW
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
+        {/* 5. Tabel Peringkat Mahasiswa KKN */}
+        <TableSection
+          title="Peringkat Mahasiswa KKN"
+          subtitle="Tabel skor akhir individual seluruh mahasiswa pendamping KKN"
+          icon={GraduationCap}
+          iconBgColor="bg-purple-50 border-purple-200"
+          iconTextColor="text-purple-600"
+          data={topMahasiswa}
+          nameHeader="Nama Mahasiswa"
+          subHeader="Kelompok KKN"
+          scoreHeader="Skor Akhir"
+        />
 
-            <div className="space-y-2">
-              {topRw.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="w-4 text-center font-extrabold text-[10px] text-slate-400">
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* 6. Tabel Peringkat Kelompok KKN */}
+        <TableSection
+          title="Peringkat Kelompok KKN"
+          subtitle="Tabel rata-rata skor akhir kelompok kerja KKN"
+          icon={Award}
+          iconBgColor="bg-indigo-50 border-indigo-200"
+          iconTextColor="text-indigo-600"
+          data={topKelompok}
+          nameHeader="Kelompok KKN"
+          subHeader="Keterangan"
+          scoreHeader="Rata-rata Skor"
+        />
 
-          {/* Card 4: Top 10 Kelurahan */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-sky-600 text-lg">apartment</span>
-                Top 10 Kelurahan
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
-
-            <div className="space-y-2">
-              {topKelurahan.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="w-4 text-center font-extrabold text-[10px] text-slate-400">
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-sky-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* ----------------- BOTTOM SECTION: GRUP 2 (TOP 10 AKADEMIK & PENDAMPINGAN) ----------------- */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-5">
-        
-        {/* Section Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-xl">star</span>
-            </div>
-            <div>
-              <h3 className="font-extrabold text-slate-900 text-lg leading-tight">
-                Grup 2 — Top 10 Akademik &amp; Pendampingan
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">
-                Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 3 Columns Leaderboard Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
-          
-          {/* Card 1: Top 10 Mahasiswa */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-emerald-600 text-lg">school</span>
-                Top 10 Mahasiswa
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
-
-            <div className="space-y-2">
-              {topMahasiswa.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`w-4 text-center font-extrabold text-[10px] ${item.rank <= 3 ? "text-amber-500 font-black" : "text-slate-400"}`}>
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Card 2: Top 10 Kelompok Mahasiswa */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-emerald-600 text-lg">groups</span>
-                Top 10 Kelompok Mahasiswa
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
-
-            <div className="space-y-2">
-              {topKelompok.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`w-4 text-center font-extrabold text-[10px] ${item.rank <= 3 ? "text-amber-500 font-black" : "text-slate-400"}`}>
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Card 3: Top 10 DPL */}
-          <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-emerald-600 text-lg">person</span>
-                Top 10 Dosen Pendamping Lapangan (DPL)
-              </div>
-              <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-            </div>
-
-            <div className="space-y-2">
-              {topDpl.map((item) => (
-                <div key={item.rank} className="flex items-center justify-between text-[11px] font-medium gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="w-4 text-center font-extrabold text-[10px] text-slate-400">
-                      {item.rank}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate leading-tight">{item.name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${item.pct}%` }}></div>
-                    </div>
-                    <span className="font-extrabold text-slate-800 text-[10px] w-10 text-right">{item.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
+        {/* 7. Tabel Peringkat Dosen Pembimbing (DPL) */}
+        <TableSection
+          title="Peringkat Dosen Pembimbing Lapangan (DPL)"
+          subtitle="Tabel pencapaian &amp; skor rata-rata binaan DPL"
+          icon={FileText}
+          iconBgColor="bg-[#009966]/10 border-[#009966]/20"
+          iconTextColor="text-[#009966]"
+          data={topDpl}
+          nameHeader="Nama DPL"
+          subHeader="Kelompok Binaan"
+          scoreHeader="Rata-rata Skor Binaan"
+        />
 
       </div>
 

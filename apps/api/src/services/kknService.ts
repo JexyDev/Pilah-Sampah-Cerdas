@@ -1086,6 +1086,8 @@ export class KknService {
       wilayahDampingan?: string;
       deskripsi?: string;
       timestamp?: string;
+      rwTerkait?: string;
+      dplId?: string;
     }
   ) {
     const {
@@ -1094,15 +1096,31 @@ export class KknService {
       jumlah = 10,
       satuan = "Kg",
       deskripsi = "",
+      rwTerkait,
+      dplId,
     } = payload;
 
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { user: true },
+      include: {
+        user: true,
+        kelompok: {
+          include: { dpl: true },
+        },
+      },
     });
 
-    const userRtRw = student?.user?.rwId;
-    let targetRwId = userRtRw;
+    let targetRwId = student?.user?.rwId;
+    if (rwTerkait) {
+      const rwDigits = String(rwTerkait).match(/\d+/);
+      if (rwDigits) {
+        const foundRw = await prisma.rw.findFirst({
+          where: { name: { contains: rwDigits[0] } },
+        });
+        if (foundRw) targetRwId = foundRw.id;
+      }
+    }
+
     if (!targetRwId) {
       const firstRw = await prisma.rw.findFirst();
       targetRwId = firstRw ? firstRw.id : 1;
@@ -1138,9 +1156,56 @@ export class KknService {
       },
     });
 
+    // Tembusan 2 Arah: Send Notifications to RW and DPL
+    const studentName = student?.user?.name || "Mahasiswa KKN";
+    const rwName = rwTerkait || `RW ${targetRwId}`;
+
+    // 1. Notify RW User
+    const rwUsers = await prisma.user.findMany({
+      where: {
+        rwId: targetRwId,
+        role: { name: "RW" },
+      },
+    });
+    for (const rwUser of rwUsers) {
+      await prisma.notification.create({
+        data: {
+          userId: rwUser.id,
+          title: `Laporan Pemanfaatan Sampah (${rwName})`,
+          message: `Mahasiswa KKN ${studentName} menginput laporan pemanfaatan ${jenisPemanfaatan} seberat ${jumlah} ${satuan}.`,
+          isRead: false,
+        },
+      });
+    }
+
+    // 2. Notify DPL User
+    let dplUser = student?.kelompok?.dpl;
+    if (dplId) {
+      const foundDpl = await prisma.user.findFirst({
+        where: {
+          OR: [{ id: dplId }, { name: { contains: dplId, mode: "insensitive" } }],
+          role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } },
+        },
+      });
+      if (foundDpl) dplUser = foundDpl as any;
+    }
+
+    if (dplUser) {
+      await prisma.notification.create({
+        data: {
+          userId: dplUser.id,
+          title: `Tembusan Laporan Pemanfaatan Sampah`,
+          message: `Mahasiswa bimbingan Anda (${studentName}) menginput laporan pemanfaatan sampah ${jenisPemanfaatan} (${jumlah} ${satuan}) untuk ${rwName}.`,
+          isRead: false,
+        },
+      });
+    }
+
     return {
       reportId: report.id,
       earnedPoints,
+      rwTerkait: rwName,
+      dplId: dplUser?.id || dplId || null,
     };
   }
 
@@ -1200,6 +1265,33 @@ export class KknService {
 
     const activeArea = student?.assignedRw || student?.user?.rw;
 
+    // Check student's leave request status (izin / sakit)
+    const activeLeave = await (prisma as any).studentLeaveRequest.findFirst({
+      where: {
+        studentId: userId,
+        status: { in: ["APPROVED", "PENDING"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Check student's attendance today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const attendanceToday = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: userId,
+        attendedAt: { gte: todayStart },
+      },
+    });
+
+    let attendanceStatus = "belum_absen";
+    if (activeLeave) {
+      const typeLower = (activeLeave.type || "").toLowerCase();
+      attendanceStatus = typeLower.includes("sakit") ? "sakit" : "izin";
+    } else if (attendanceToday) {
+      attendanceStatus = attendanceToday.status === "ALPA" ? "alpa" : "hadir";
+    }
+
     if (!activeArea) {
       return {
         hasActiveZone: false,
@@ -1209,6 +1301,10 @@ export class KknService {
         latitude: null,
         longitude: null,
         radiusMeter: 100,
+        targetDurationMinutes: 60,
+        attendanceStatus,
+        status: attendanceStatus,
+        kehadiran: attendanceStatus,
         polygonPoints: [],
       };
     }
@@ -1223,6 +1319,10 @@ export class KknService {
       latitude: lat,
       longitude: lng,
       radiusMeter: 100,
+      targetDurationMinutes: 60,
+      attendanceStatus,
+      status: attendanceStatus,
+      kehadiran: attendanceStatus,
       polygonPoints:
         lat && lng
           ? [

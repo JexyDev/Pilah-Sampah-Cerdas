@@ -179,7 +179,7 @@ export class AuthRepository {
    */
   async updateUser(
     id: string,
-    data: { name?: string; phone?: string; address?: string; fotoProfil?: string }
+    data: { name?: string; phone?: string; address?: string; fotoProfil?: string; jumlahAnggotaKeluarga?: number | null }
   ): Promise<User> {
     return prisma.user.update({
       where: { id },

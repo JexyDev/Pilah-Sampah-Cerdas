@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Shield, Save, RefreshCw, CheckSquare, Square, ChevronDown, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,9 @@ const ROLE_COLORS: Record<string, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const RolePermissionPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const isDev = user?.peran?.toUpperCase() === "DEVELOPER";
+
   const [roles, setRoles] = useState<RolePermissions[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
@@ -76,8 +80,18 @@ const RolePermissionPage: React.FC = () => {
   const [dirty, setDirty] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    loadPermissions();
-  }, []);
+    if (isDev) {
+      loadPermissions();
+    }
+  }, [isDev]);
+
+  if (!isDev) {
+    return (
+      <div className="p-8 text-center bg-rose-50 rounded-2xl border border-rose-200 text-rose-700 font-extrabold text-xs">
+        Akses Ditolak: Fitur Manajemen Hak Akses (RBAC) hanya dapat diakses oleh akun dengan peran Developer.
+      </div>
+    );
+  }
 
   const loadPermissions = async () => {
     setLoading(true);

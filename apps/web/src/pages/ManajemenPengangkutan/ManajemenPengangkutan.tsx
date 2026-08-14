@@ -2,12 +2,18 @@
  * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * 
+ * Component: Pengangkutan Residu (Operasional Hilir)
+ * - Scope Wilayah: Rukun Warga (Terstandarisasi dengan Master Data & Hasil Klasifikasi)
+ * - 100% End-to-End API Integration dengan Backend Express PostgreSQL (`/api/v1/pengangkutan`, `/api/v1/bins/reset-requests`)
+ * - Mobile REST API Compatible (Standard Payload Contracts)
+ * - Design Standar Industri: Executive Hero Banner, Squircle KPI Metrics, High-Contrast Filter Controls, Interactive Tables, & TrashCare Standardized Pagination.
  */
 
-import React, { useEffect, useState } from "react";
-import api from "../../utils/api";
+import React, { useEffect, useState, useMemo } from "react";
+import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import toast from "react-hot-toast";
+import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
 import { 
   Loader2, 
@@ -16,12 +22,16 @@ import {
   Plus, 
   Truck, 
   UserCheck, 
-  Calendar, 
-  CheckCircle,
+  CheckCircle2,
   ShieldAlert,
-  ImageOff,
   Search,
-  X
+  X,
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  RotateCcw,
 } from "lucide-react";
 
 interface DispatchTask {
@@ -100,6 +110,7 @@ export const ManajemenPengangkutan: React.FC = () => {
   const { user } = useAuthStore();
   const [tasks, setTasks] = useState<DispatchTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [areas, setAreas] = useState<AreaItem[]>([]);
   const [bins, setBins] = useState<BinItem[]>([]);
   const [petugasList, setPetugasList] = useState<PetugasItem[]>([]);
@@ -134,82 +145,95 @@ export const ManajemenPengangkutan: React.FC = () => {
   const isReadOnly = user?.peran === "ADMIN_DLH" || user?.peran === "CAMAT" || user?.peran === "LURAH";
   const isPetugas = user?.peran === "PETUGAS_RESIDU";
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
+      setRefreshing(true);
       const query = new URLSearchParams();
       if (statusFilter) query.append("status", statusFilter);
       if (rwFilter) query.append("rtRwId", rwFilter);
 
       const res = await api.get(`/pengangkutan?${query.toString()}`);
-      if (res.data && res.data.success) {
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
         setTasks(res.data.data);
+      } else {
+        setTasks([]);
       }
     } catch (err: any) {
-      toast.error("Gagal memuat tugas pengangkutan");
+      console.error("Gagal memuat tugas pengangkutan:", err);
+      showToast.error("Gagal memuat tugas pengangkutan residu");
+      setTasks([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (silent = false) => {
     try {
-      setLoadingRequests(true);
+      if (!silent) setLoadingRequests(true);
+      setRefreshing(true);
       const res = await api.get(`/bins/reset-requests`);
-      if (res.data && res.data.success) {
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
         setRequests(res.data.data);
+      } else {
+        setRequests([]);
       }
     } catch (err: any) {
-      toast.error("Gagal memuat pengajuan pengosongan");
+      console.error("Gagal memuat pengajuan pengosongan:", err);
+      showToast.error("Gagal memuat permintaan pengosongan");
+      setRequests([]);
     } finally {
       setLoadingRequests(false);
+      setRefreshing(false);
     }
   };
 
   const handleUpdateRequestStatus = async (id: string, status: "ON_PROGRESS" | "REJECTED") => {
     if (isReadOnly) {
-      toast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
+      showToast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
       return;
     }
     try {
       await api.put(`/bins/reset-request/${id}/review`, { status });
-      toast.success(status === "ON_PROGRESS" ? "Petugas ditugaskan!" : "Pengajuan ditolak.");
-      fetchRequests();
+      showToast.success(status === "ON_PROGRESS" ? "Petugas penjemput berhasil ditugaskan!" : "Pengajuan pengosongan ditolak.");
+      fetchRequests(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengubah status pengajuan");
+      showToast.error(err.response?.data?.message || "Gagal mengubah status pengajuan");
     }
   };
 
   const handleApproveRequest = async (id: string) => {
     if (isReadOnly) {
-      toast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
+      showToast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
       return;
     }
     try {
       await api.put(`/bins/reset/${id}/approve`);
-      toast.success("Pengosongan selesai! Kapasitas tempat sampah kembali ke 0%.");
-      fetchRequests();
+      showToast.success("Pengosongan selesai! Kapasitas tempat sampah kembali ke 0%.");
+      fetchRequests(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menyelesaikan pengosongan");
+      showToast.error(err.response?.data?.message || "Gagal menyelesaikan pengosongan");
     }
   };
 
   const fetchFiltersAndData = async () => {
     try {
       // 1. Fetch RW Areas
-      const areaRes = await api.get("/areas/rt-rw");
-      if (areaRes.data && areaRes.data.success) {
+      const areaRes = await api.get("/areas/rt-rw").catch(() => null);
+      if (areaRes?.data?.success && Array.isArray(areaRes.data.data)) {
         setAreas(areaRes.data.data);
       }
 
-      const binsRes = await api.get("/bins");
-      if (binsRes.data && binsRes.data.success) {
+      // 2. Fetch Bins
+      const binsRes = await api.get("/bins").catch(() => null);
+      if (binsRes?.data?.success && Array.isArray(binsRes.data.data)) {
         setBins(binsRes.data.data);
       }
 
       // 3. Fetch Petugas for dropdown
-      const usersRes = await api.get("/users");
-      if (usersRes.data && usersRes.data.success) {
+      const usersRes = await api.get("/users").catch(() => null);
+      if (usersRes?.data?.success && Array.isArray(usersRes.data.data)) {
         const officers = usersRes.data.data
           .filter((u: any) =>
             ["PETUGAS_RESIDU", "PENGANGKUT", "RW", "SUPER_USER"].includes(u.peran || u.roleName)
@@ -257,7 +281,7 @@ export const ManajemenPengangkutan: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isReadOnly) {
-      toast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
+      showToast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
       return;
     }
 
@@ -268,7 +292,7 @@ export const ManajemenPengangkutan: React.FC = () => {
           status: selectedStatus,
           claimedByUserId: selectedPetugasId || null,
         });
-        toast.success("Tugas pengangkutan berhasil diperbarui");
+        showToast.success("Tugas pengangkutan residu berhasil diperbarui");
       } else {
         // Create task
         await api.post("/pengangkutan", {
@@ -276,18 +300,18 @@ export const ManajemenPengangkutan: React.FC = () => {
           status: selectedStatus,
           claimedByUserId: selectedPetugasId || null,
         });
-        toast.success("Tugas pengangkutan berhasil dibuat");
+        showToast.success("Tugas pengangkutan residu berhasil dibuat");
       }
       setIsModalOpen(false);
-      fetchTasks();
+      fetchTasks(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menyimpan tugas");
+      showToast.error(err.response?.data?.message || "Gagal menyimpan tugas");
     }
   };
 
   const handleDelete = async (id: string) => {
     if (isReadOnly) {
-      toast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
+      showToast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
       return;
     }
 
@@ -295,145 +319,233 @@ export const ManajemenPengangkutan: React.FC = () => {
 
     try {
       await api.delete(`/pengangkutan/${id}`);
-      toast.success("Tugas pengangkutan berhasil dihapus");
-      fetchTasks();
+      showToast.success("Tugas pengangkutan berhasil dihapus");
+      fetchTasks(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menghapus tugas");
+      showToast.error(err.response?.data?.message || "Gagal menghapus tugas");
     }
   };
 
   const handleClaim = async (id: string) => {
     try {
       await api.post(`/bins/dispatch/${id}/claim`);
-      toast.success("Tugas pengangkutan berhasil Anda klaim");
-      fetchTasks();
+      showToast.success("Tugas pengangkutan residu berhasil Anda klaim");
+      fetchTasks(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengklaim tugas");
+      showToast.error(err.response?.data?.message || "Gagal mengklaim tugas");
     }
+  };
+
+  // Helper Formatter Rukun Warga
+  const formatRukunWarga = (rawRw?: string) => {
+    if (!rawRw) return "RW 01";
+    if (rawRw.includes("/")) {
+      const parts = rawRw.split("/");
+      const rwPart = parts.find((p) => p.toLowerCase().includes("rw")) || parts[parts.length - 1];
+      return rwPart.trim();
+    }
+    return rawRw;
   };
 
   const getStatusBadge = (status: DispatchTask["status"]) => {
     const configs = {
-      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-100", label: "Pending" },
-      CLAIMED: { bg: "bg-blue-50 text-blue-700 border-blue-100", label: "Diklaim" },
-      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Selesai" },
-      ESCALATED: { bg: "bg-rose-50 text-rose-700 border-rose-100", label: "Eskalasi" }
+      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-200", label: "Pending", icon: Clock },
+      CLAIMED: { bg: "bg-blue-50 text-blue-700 border-blue-200", label: "Diklaim", icon: Truck },
+      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Selesai", icon: CheckCircle2 },
+      ESCALATED: { bg: "bg-rose-50 text-rose-700 border-rose-200", label: "Eskalasi", icon: AlertCircle }
     };
     const c = configs[status] || configs.PENDING;
+    const IconComp = c.icon;
     return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${c.bg}`}>
-        {c.label}
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border ${c.bg}`}>
+        <IconComp size={13} /> {c.label}
       </span>
     );
   };
 
   const getRequestStatusBadge = (status: BinResetRequest["status"]) => {
     const configs = {
-      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-100", label: "Pending" },
-      ON_PROGRESS: { bg: "bg-blue-50 text-blue-700 border-blue-100", label: "Dalam Perjalanan" },
-      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Selesai" },
-      APPROVED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Disetujui" },
-      REJECTED: { bg: "bg-rose-50 text-rose-700 border-rose-100", label: "Ditolak" }
+      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-200", label: "Pending", icon: Clock },
+      ON_PROGRESS: { bg: "bg-blue-50 text-blue-700 border-blue-200", label: "Dalam Proses", icon: Truck },
+      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Selesai", icon: CheckCircle2 },
+      APPROVED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Disetujui", icon: CheckCircle },
+      REJECTED: { bg: "bg-rose-50 text-rose-700 border-rose-200", label: "Ditolak", icon: AlertCircle }
     };
-    const c = configs[status] || { bg: "bg-gray-50 text-gray-700 border-gray-100", label: status };
+    const c = configs[status] || { bg: "bg-slate-50 text-slate-700 border-slate-200", label: status, icon: Clock };
+    const IconComp = c.icon;
     return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${c.bg}`}>
-        {c.label}
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border ${c.bg}`}>
+        <IconComp size={13} /> {c.label}
       </span>
     );
   };
 
-  // Pending Requests count for notification badge
+  // Metric Calculation Stats
+  const totalTasksCount = tasks.length;
+  const pendingTasksCount = tasks.filter((t) => t.status === "PENDING").length;
+  const claimedTasksCount = tasks.filter((t) => t.status === "CLAIMED").length;
+  const completedTasksCount = tasks.filter((t) => t.status === "COMPLETED").length;
   const pendingRequestsCount = requests.filter((r) => r.status === "PENDING").length;
 
   // Filter Tasks by Search Query
-  const filteredTasks = tasks.filter((t) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    const idMatch = t.id.toLowerCase().includes(q);
-    const qrMatch = t.bin.qrCode.toLowerCase().includes(q);
-    const rwMatch = (t.bin.rtRw?.name || "").toLowerCase().includes(q);
-    const officerMatch = (t.claimedByUser?.name || "").toLowerCase().includes(q);
-    return idMatch || qrMatch || rwMatch || officerMatch;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const idMatch = t.id.toLowerCase().includes(q);
+      const qrMatch = t.bin.qrCode.toLowerCase().includes(q);
+      const rwMatch = (t.bin.rtRw?.name || "").toLowerCase().includes(q);
+      const officerMatch = (t.claimedByUser?.name || "").toLowerCase().includes(q);
+      return idMatch || qrMatch || rwMatch || officerMatch;
+    });
+  }, [tasks, searchQuery]);
 
   // Paginate Tasks
-  const totalTaskPages = Math.ceil(filteredTasks.length / itemsPerPage) || 1;
-  const paginatedTasks = filteredTasks.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalTaskPages = Math.max(1, Math.ceil(filteredTasks.length / itemsPerPage));
+  const paginatedTasks = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredTasks.slice(start, start + itemsPerPage);
+  }, [filteredTasks, currentPage, itemsPerPage]);
 
   // Filter Requests by Search Query
-  const filteredRequests = requests.filter((r) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    const userMatch = r.user.name.toLowerCase().includes(q) || r.user.email.toLowerCase().includes(q);
-    const qrMatch = r.bin.qrCode.toLowerCase().includes(q);
-    const areaMatch = (r.bin.rtRw?.name || "").toLowerCase().includes(q);
-    const statusMatch = r.status.toLowerCase().includes(q);
-    return userMatch || qrMatch || areaMatch || statusMatch;
-  });
+  const filteredRequests = useMemo(() => {
+    return requests.filter((r) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const userMatch = r.user.name.toLowerCase().includes(q) || r.user.email.toLowerCase().includes(q);
+      const qrMatch = r.bin.qrCode.toLowerCase().includes(q);
+      const areaMatch = (r.bin.rtRw?.name || "").toLowerCase().includes(q);
+      const statusMatch = r.status.toLowerCase().includes(q);
+      return userMatch || qrMatch || areaMatch || statusMatch;
+    });
+  }, [requests, searchQuery]);
 
   // Paginate Requests
-  const totalRequestPages = Math.ceil(filteredRequests.length / itemsPerPage) || 1;
-  const paginatedRequests = filteredRequests.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalRequestPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
+  const paginatedRequests = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRequests.slice(start, start + itemsPerPage);
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
+  const resetFilters = () => {
+    setStatusFilter("");
+    setRwFilter("");
+    setSearchQuery("");
+  };
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Pengangkutan Sampah</h1>
-            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <Truck size={13} /> Operasional Hilir
-            </span>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
+      {/* Executive Hero Banner */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold w-fit mb-2 border border-emerald-500/30">
+            <Truck size={14} className="text-emerald-400" /> Operasional Hilir &amp; Pengangkutan Residu
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Manajemen dan pemantauan penugasan pengangkutan sampah dari gawai warga ke pemrosesan hilir.
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Pengangkutan Residu
+          </h1>
+          <p className="text-slate-300 text-xs md:text-sm mt-1 max-w-2xl font-medium">
+            Manajemen dan pemantauan penugasan armada pengangkutan residu sampah terintegrasi dari wadah penampungan warga ke pemrosesan hilir.
           </p>
         </div>
 
-        {activeTab === "tasks" && !isReadOnly && !isPetugas && (
+        <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
           <button
-            onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
+            onClick={() => (activeTab === "tasks" ? fetchTasks(false) : fetchRequests(false))}
+            disabled={loading || loadingRequests}
+            title="Refresh Data Pengangkutan"
+            className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl border border-slate-700 transition cursor-pointer"
           >
-            <Plus size={15} /> Catat Tugas Baru
+            <RefreshCw size={15} className={refreshing ? "animate-spin text-[#009966]" : ""} />
           </button>
-        )}
+          {activeTab === "tasks" && !isReadOnly && !isPetugas && (
+            <button
+              onClick={openAddModal}
+              className="px-5 py-3 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-2xl transition flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Plus size={16} /> Catat Tugas Baru
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Tabs with Badge */}
-      <div className="flex gap-6 border-b border-gray-100 pb-px">
+      {/* KPI Metric Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        {/* Total Tasks Card */}
+        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-emerald-300 transition-all">
+          <div className="p-3 bg-emerald-50 text-[#009966] rounded-2xl shrink-0 border border-emerald-100 group-hover:scale-105 transition-transform">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Total Penugasan</p>
+            <p className="text-lg font-black text-slate-900 mt-0.5">{totalTasksCount} <span className="text-xs font-semibold text-slate-500">Tugas</span></p>
+          </div>
+        </div>
+
+        {/* Pending Card */}
+        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-amber-300 transition-all">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100 group-hover:scale-105 transition-transform">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Pending Penjemputan</p>
+            <p className="text-lg font-black text-amber-700 mt-0.5">{pendingTasksCount} <span className="text-xs font-semibold text-slate-500">Antrean</span></p>
+          </div>
+        </div>
+
+        {/* Claimed / On Progress Card */}
+        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-blue-300 transition-all">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shrink-0 border border-blue-100 group-hover:scale-105 transition-transform">
+            <UserCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Diklaim Petugas</p>
+            <p className="text-lg font-black text-blue-700 mt-0.5">{claimedTasksCount} <span className="text-xs font-semibold text-slate-500">Proses</span></p>
+          </div>
+        </div>
+
+        {/* Completed Card */}
+        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-purple-300 transition-all">
+          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100 group-hover:scale-105 transition-transform">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Pengangkutan Selesai</p>
+            <p className="text-lg font-black text-purple-700 mt-0.5">{completedTasksCount} <span className="text-xs font-semibold text-slate-500">Selesai</span></p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Control */}
+      <div className="flex gap-4 border-b border-slate-200 pb-px">
         <button
           onClick={() => {
             setActiveTab("tasks");
             setCurrentPage(1);
           }}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === "tasks" ? "border-primary text-primary" : "border-transparent text-gray-400 hover:text-gray-600"
+          className={`pb-3 text-xs sm:text-sm font-black border-b-2 transition-all cursor-pointer ${
+            activeTab === "tasks"
+              ? "border-[#009966] text-[#009966]"
+              : "border-transparent text-slate-400 hover:text-slate-600"
           }`}
         >
-          Tugas Pengangkutan
+          Tugas Pengangkutan Residu
         </button>
         <button
           onClick={() => {
             setActiveTab("requests");
             setCurrentPage(1);
           }}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === "requests" ? "border-primary text-primary font-bold" : "border-transparent text-gray-400 hover:text-gray-600"
+          className={`pb-3 text-xs sm:text-sm font-black border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === "requests"
+              ? "border-[#009966] text-[#009966]"
+              : "border-transparent text-slate-400 hover:text-slate-600"
           }`}
         >
           <span>Permintaan Pengosongan Sampah</span>
           {pendingRequestsCount > 0 && (
-            <span className="px-2 py-0.5 text-[11px] font-extrabold bg-rose-500 text-white rounded-full shadow-xs animate-pulse">
-              {pendingRequestsCount}
+            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-rose-500 text-white rounded-full shadow-2xs animate-pulse">
+              {pendingRequestsCount} New
             </span>
           )}
         </button>
@@ -442,337 +554,195 @@ export const ManajemenPengangkutan: React.FC = () => {
       {activeTab === "tasks" ? (
         <>
           {/* Filter & Search Bar Section */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                <Truck size={14} />
-                <span>Filter Status & Wilayah:</span>
-              </div>
+          <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+            {/* Search Bar */}
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder="Cari ID tugas, QR tempat sampah, Rukun Warga, petugas..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
+            {/* Filters Group */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status Filter */}
               <select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[150px]"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
               >
-                <option value="">Semua Status</option>
-                <option value="PENDING">Pending</option>
-                <option value="CLAIMED">Diklaim</option>
+                <option value="">Semua Status Pengangkutan</option>
+                <option value="PENDING">Pending (Antrean)</option>
+                <option value="CLAIMED">Diklaim Petugas</option>
                 <option value="COMPLETED">Selesai</option>
                 <option value="ESCALATED">Eskalasi</option>
               </select>
 
-              {!(user?.peran === "RW" || user?.peran === "RT") && (
-                <select
-                  value={rwFilter}
-                  onChange={(e) => {
-                    setRwFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="rounded-xl border border-gray-200 px-3.5 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors min-w-[200px]"
-                >
-                  <option value="">Semua RW</option>
-                  {areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} (Kel. {a.kelurahan?.name})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Search Input */}
-            <div className="relative min-w-[260px] flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Cari ID Tugas, Kode QR, RW, atau Petugas..."
-                value={searchQuery}
+              {/* Rukun Warga Area Filter */}
+              <select
+                value={rwFilter}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value);
+                  setRwFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full rounded-xl border border-gray-200 pl-9 pr-8 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
-              />
-              <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
-              {searchQuery && (
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
+              >
+                <option value="">Semua Rukun Warga</option>
+                {areas.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} (Kel. {a.kelurahan?.name})
+                  </option>
+                ))}
+              </select>
+
+              {/* Reset Button */}
+              {(statusFilter || rwFilter || searchQuery) && (
                 <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                  onClick={resetFilters}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                 >
-                  <X size={14} />
+                  <RotateCcw size={13} /> Reset
                 </button>
               )}
             </div>
           </div>
 
           {/* Table Section */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="mb-4 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-800">Daftar Penugasan Pengangkutan</h2>
-              <span className="text-xs font-semibold text-gray-400">
-                Total: {filteredTasks.length} penugasan
-              </span>
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
+                  <Truck size={18} className="text-[#009966]" /> Daftar Penugasan Pengangkutan Residu
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Menampilkan {filteredTasks.length === 0 ? 0 : `${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredTasks.length)}`} dari {filteredTasks.length} data penugasan
+                </p>
+              </div>
             </div>
 
             {loading ? (
-              <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-xs">Memuat tugas...</p>
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                <Loader2 className="animate-spin text-[#009966]" size={28} />
+                <p className="text-xs font-bold">Memuat tugas pengangkutan...</p>
               </div>
             ) : filteredTasks.length === 0 ? (
-              <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
-                <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm font-medium">
-                  {searchQuery ? "Tidak ada tugas yang sesuai pencarian." : "Belum ada tugas pengangkutan sampah."}
+              <div className="text-center py-16 text-slate-400 border border-dashed border-slate-200 rounded-3xl space-y-3">
+                <Truck size={36} className="mx-auto text-slate-300" />
+                <p className="text-xs font-bold text-slate-600">
+                  {searchQuery ? "Tidak ada tugas yang sesuai dengan pencarian." : "Belum ada tugas pengangkutan sampah residu."}
                 </p>
+                {(statusFilter || rwFilter || searchQuery) && (
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RotateCcw size={13} /> Reset Filter
+                  </button>
+                )}
               </div>
             ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
-                    <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                      <tr>
-                        <th className="px-6 py-3.5">ID Tugas</th>
-                        <th className="px-6 py-3.5">Tempat Sampah</th>
-                        <th className="px-6 py-3.5">Wilayah RW</th>
-                        <th className="px-6 py-3.5">Petugas Penjemput</th>
-                        <th className="px-6 py-3.5 text-center">Status</th>
-                        <th className="px-6 py-3.5">Tanggal Tugas</th>
-                        <th className="px-6 py-3.5 text-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {paginatedTasks.map((task) => (
-                        <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-gray-700 align-middle">
-                            {task.id.slice(0, 8).toUpperCase()}
-                          </td>
-                          <td className="px-6 py-4 align-middle">
-                            <div className="font-bold text-gray-800">{task.bin.qrCode}</div>
-                            <div className="text-[10px] text-gray-400 font-mono">ID: {task.binId}</div>
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 align-middle">
-                            {task.bin.rtRw?.name || "-"} (Kel. {task.bin.rtRw?.kelurahan?.name || "-"})
-                          </td>
-                          <td className="px-6 py-4 align-middle font-medium text-gray-700">
-                            {task.claimedByUser ? (
-                              <div className="flex items-center gap-1.5">
-                                <UserCheck className="w-4 h-4 text-primary" />
-                                <span>{task.claimedByUser.name}</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-400 font-bold italic">Belum Diklaim</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-center align-middle">
-                            {getStatusBadge(task.status)}
-                          </td>
-                          <td className="px-6 py-4 text-gray-500 align-middle whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              <Calendar size={13} />
-                              <span>
-                                {new Date(task.createdAt).toLocaleDateString("id-ID", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
-                            <div className="inline-flex gap-2 justify-center">
-                              {isPetugas && task.status === "PENDING" && (
-                                <button
-                                  onClick={() => handleClaim(task.id)}
-                                  className="bg-primary hover:bg-primary/95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1"
-                                >
-                                  <CheckCircle size={13} />
-                                  Klaim
-                                </button>
-                              )}
-
-                              {!isReadOnly && !isPetugas && (
-                                <>
-                                  <button
-                                    onClick={() => openEditModal(task)}
-                                    className="p-2 bg-slate-100 hover:bg-primary/20 text-primary rounded-lg transition-colors cursor-pointer"
-                                    title="Edit"
-                                  >
-                                    <Pencil size={15} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(task.id)}
-                                    className="p-2 bg-slate-100 hover:bg-error/20 text-error rounded-lg transition-colors cursor-pointer"
-                                    title="Hapus/Batalkan"
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
-                                </>
-                              )}
-
-                              {isReadOnly && (
-                                <span className="text-xs text-gray-400">-</span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination Controls */}
-                {filteredTasks.length > 0 && (
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalTaskPages}
-                    totalItems={filteredTasks.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={setCurrentPage}
-                    onItemsPerPageChange={setItemsPerPage}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        </>
-      ) : (
-        /* Requests Section */
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-gray-800">Daftar Permintaan Pengosongan Sampah</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Permintaan pengosongan yang dikirim langsung dari gawai warga.</p>
-            </div>
-
-            {/* Search Input for Requests */}
-            <div className="relative min-w-[240px] max-w-xs">
-              <input
-                type="text"
-                placeholder="Cari Warga, Kode QR, atau Status..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-xl border border-gray-200 pl-9 pr-8 py-2 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
-              />
-              <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {loadingRequests ? (
-            <div className="text-center py-12 text-gray-400 flex flex-col items-center gap-2">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <p className="text-xs">Memuat pengajuan...</p>
-            </div>
-          ) : filteredRequests.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 border border-dashed border-gray-200 rounded-xl">
-              <Truck className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-medium">
-                {searchQuery ? "Tidak ada pengajuan yang sesuai pencarian." : "Belum ada pengajuan pengosongan tempat sampah dari warga."}
-              </p>
-            </div>
-          ) : (
-            <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-100 text-sm text-left">
-                  <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-6 py-3.5">Nama Warga</th>
-                      <th className="px-6 py-3.5">Alamat / RT / RW</th>
-                      <th className="px-6 py-3.5">Tanggal Request</th>
-                      <th className="px-6 py-3.5 text-center">Status</th>
-                      <th className="px-6 py-3.5 text-center">Foto Bukti</th>
-                      <th className="px-6 py-3.5 text-center">Aksi</th>
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50/80">
+                      <th className="py-3.5 px-4 rounded-l-2xl">ID Tugas</th>
+                      <th className="py-3.5 px-4">Tempat Sampah</th>
+                      <th className="py-3.5 px-4">Rukun Warga</th>
+                      <th className="py-3.5 px-4">Petugas Penjemput</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
+                      <th className="py-3.5 px-4">Tanggal Penugasan</th>
+                      <th className="py-3.5 px-4 text-center rounded-r-2xl">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {paginatedRequests.map((req) => (
-                      <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4 align-middle">
-                          <div className="font-bold text-gray-800">{req.user.name}</div>
-                          <div className="text-[10px] text-gray-400">{req.user.email}</div>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                    {paginatedTasks.map((task) => (
+                      <tr key={task.id} className="hover:bg-slate-50/90 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-black text-slate-900 tracking-tight">
+                          {task.id.slice(0, 10).toUpperCase()}
                         </td>
-                        <td className="px-6 py-4 align-middle text-gray-600">
-                          {req.bin.rtRw?.name || "Wilayah Umum"} {req.bin.rtRw?.kelurahan?.name ? `(Kel. ${req.bin.rtRw.kelurahan.name})` : ""}
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{task.bin.qrCode}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">ID: {task.binId}</div>
                         </td>
-                        <td className="px-6 py-4 align-middle text-gray-500 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <Calendar size={13} />
-                            <span>
-                              {new Date(req.createdAt).toLocaleDateString("id-ID", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit"
-                              })}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe]">
+                            {formatRukunWarga(task.bin.rtRw?.name)}
+                          </span>
+                          {task.bin.rtRw?.kelurahan?.name && (
+                            <span className="block text-[10px] text-slate-400 font-semibold mt-0.5">
+                              Kel. {task.bin.rtRw.kelurahan.name}
                             </span>
-                          </div>
+                          )}
                         </td>
-                        <td className="px-6 py-4 text-center align-middle">
-                          {getRequestStatusBadge(req.status)}
+                        <td className="py-3.5 px-4 font-bold text-slate-800">
+                          {task.claimedByUser ? (
+                            <div className="flex items-center gap-1.5">
+                              <UserCheck size={14} className="text-[#009966]" />
+                              <span>{task.claimedByUser.name}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 font-bold italic">Belum Diklaim</span>
+                          )}
                         </td>
-                        <td className="px-6 py-4 text-center align-middle">
-                          <button
-                            onClick={() => setEvidenceModalUrl(req.evidencePhotoUrl)}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                          >
-                            Lihat Foto
-                          </button>
+                        <td className="py-3.5 px-4 text-center">
+                          {getStatusBadge(task.status)}
                         </td>
-                        <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
-                          <div className="inline-flex gap-2 justify-center items-center">
-                            <button
-                              onClick={() => setSelectedRequestForReview(req)}
-                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-                            >
-                              <ShieldAlert size={14} />
-                              {req.status === "PENDING" ? "Tinjau Pengajuan" : "Lihat Detail"}
-                            </button>
+                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap font-bold">
+                          {new Date(task.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <div className="inline-flex gap-1.5 justify-center items-center">
+                            {isPetugas && task.status === "PENDING" && (
+                              <button
+                                onClick={() => handleClaim(task.id)}
+                                className="bg-[#009966] hover:bg-[#008855] text-white px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              >
+                                <CheckCircle size={13} /> Klaim
+                              </button>
+                            )}
 
-                            {req.status === "PENDING" && (
+                            {!isReadOnly && !isPetugas && (
                               <>
                                 <button
-                                  onClick={() => handleUpdateRequestStatus(req.id, "ON_PROGRESS")}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                  onClick={() => openEditModal(task)}
+                                  className="p-2 bg-slate-100 hover:bg-emerald-50 text-emerald-700 rounded-xl transition cursor-pointer"
+                                  title="Edit Tugas"
                                 >
-                                  Tugaskan
+                                  <Pencil size={14} />
                                 </button>
                                 <button
-                                  onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
-                                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                  onClick={() => handleDelete(task.id)}
+                                  className="p-2 bg-slate-100 hover:bg-rose-50 text-rose-600 rounded-xl transition cursor-pointer"
+                                  title="Hapus/Batalkan"
                                 >
-                                  Tolak
+                                  <Trash2 size={14} />
                                 </button>
                               </>
                             )}
 
-                            {req.status === "ON_PROGRESS" && (
-                              <button
-                                onClick={() => handleApproveRequest(req.id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                              >
-                                Tandai Selesai
-                              </button>
-                            )}
+                            {isReadOnly && <span className="text-xs text-slate-400">-</span>}
                           </div>
                         </td>
                       </tr>
@@ -780,92 +750,232 @@ export const ManajemenPengangkutan: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            )}
 
-              {/* Requests Pagination Controls */}
-              {filteredRequests.length > 0 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalRequestPages}
-                  totalItems={filteredRequests.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                />
+            {/* TrashCare Standardized Pagination Controls */}
+            {!loading && filteredTasks.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalTaskPages}
+                totalItems={filteredTasks.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+                itemsPerPageOptions={[10, 25, 50, 100]}
+              />
+            )}
+          </div>
+        </>
+      ) : (
+        /* Requests Tab Section */
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                Daftar Permintaan Pengosongan Tempat Sampah
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Permintaan pengosongan yang dikirim langsung dari gawai warga melalui aplikasi mobile
+              </p>
+            </div>
+
+            {/* Search Input for Requests */}
+            <div className="relative min-w-[240px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+              <input
+                type="text"
+                placeholder="Cari warga, QR, Rukun Warga..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966] focus:bg-white transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={13} />
+                </button>
               )}
-            </>
+            </div>
+          </div>
+
+          {loadingRequests ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+              <Loader2 className="animate-spin text-[#009966]" size={28} />
+              <p className="text-xs font-bold">Memuat pengajuan pengosongan...</p>
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="text-center py-16 text-slate-400 border border-dashed border-slate-200 rounded-3xl space-y-2">
+              <Truck size={36} className="mx-auto text-slate-300" />
+              <p className="text-xs font-bold text-slate-600">
+                {searchQuery ? "Tidak ada pengajuan yang sesuai pencarian." : "Belum ada pengajuan pengosongan tempat sampah dari warga."}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50/80">
+                    <th className="py-3.5 px-4 rounded-l-2xl">Nama Warga</th>
+                    <th className="py-3.5 px-4">Rukun Warga</th>
+                    <th className="py-3.5 px-4">Tanggal Pengajuan</th>
+                    <th className="py-3.5 px-4 text-center">Status</th>
+                    <th className="py-3.5 px-4 text-center">Foto Bukti</th>
+                    <th className="py-3.5 px-4 text-center rounded-r-2xl">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  {paginatedRequests.map((req) => (
+                    <tr key={req.id} className="hover:bg-slate-50/90 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        {req.user.name}
+                        <span className="block text-[10px] text-slate-400 font-semibold">{req.user.email}</span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe]">
+                          {formatRukunWarga(req.bin.rtRw?.name)}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-700">
+                        {new Date(req.createdAt).toLocaleString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        {getRequestStatusBadge(req.status)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          onClick={() => setEvidenceModalUrl(req.evidencePhotoUrl)}
+                          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye size={13} /> Lihat Foto
+                        </button>
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div className="inline-flex gap-2 justify-center items-center">
+                          <button
+                            onClick={() => setSelectedRequestForReview(req)}
+                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                          >
+                            <ShieldAlert size={13} /> {req.status === "PENDING" ? "Tinjau Pengajuan" : "Lihat Detail"}
+                          </button>
+
+                          {req.status === "PENDING" && (
+                            <>
+                              <button
+                                onClick={() => handleUpdateRequestStatus(req.id, "ON_PROGRESS")}
+                                className="bg-[#009966] hover:bg-[#008855] text-white px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer shadow-2xs"
+                              >
+                                Tugaskan
+                              </button>
+                              <button
+                                onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
+                              >
+                                Tolak
+                              </button>
+                            </>
+                          )}
+
+                          {req.status === "ON_PROGRESS" && (
+                            <button
+                              onClick={() => handleApproveRequest(req.id)}
+                              className="bg-[#009966] hover:bg-[#008855] text-white px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer shadow-2xs"
+                            >
+                              Tandai Selesai
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Standardized Pagination Controls */}
+          {!loadingRequests && filteredRequests.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalRequestPages}
+              totalItems={filteredRequests.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemsPerPageOptions={[10, 25, 50, 100]}
+            />
           )}
         </div>
       )}
 
-      {/* Modal Dialog */}
+      {/* Modal Dialog Form Tambah/Edit Tugas */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-gray-800">
-                {editingTask ? "Edit Tugas Pengangkutan" : "Catat Tugas Baru"}
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Truck size={18} className="text-emerald-400" />
+                {editingTask ? "Edit Tugas Pengangkutan" : "Catat Tugas Pengangkutan"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold cursor-pointer text-sm"
+                className="text-slate-400 hover:text-white p-1 rounded-full transition cursor-pointer"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {!editingTask ? (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Tempat Sampah</label>
-                  <select
-                    value={selectedBinId}
-                    onChange={(e) => setSelectedBinId(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
-                    required
-                  >
-                    <option value="">Pilih Tempat Sampah Aktif</option>
-                    {bins.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.kode} ({b.rtRw || "Wilayah"})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Tempat Sampah (Terkunci)</label>
-                  <input
-                    type="text"
-                    value={editingTask.bin.qrCode}
-                    disabled
-                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
-                  />
-                </div>
-              )}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-700">
+              <div className="space-y-1.5">
+                <label className="block text-slate-800 font-extrabold">Pilih Tempat Sampah *</label>
+                <select
+                  required
+                  disabled={!!editingTask}
+                  value={selectedBinId}
+                  onChange={(e) => setSelectedBinId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966]"
+                >
+                  <option value="">-- Pilih Tempat Sampah --</option>
+                  {bins.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.kode || b.id} ({formatRukunWarga(b.rtRw)})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Status Pengangkutan</label>
+              <div className="space-y-1.5">
+                <label className="block text-slate-800 font-extrabold">Status Pengangkutan *</label>
                 <select
                   value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value as DispatchTask["status"])}
-                  className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
-                  required
+                  onChange={(e) => setSelectedStatus(e.target.value as any)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966]"
                 >
-                  <option value="PENDING">Pending</option>
-                  <option value="CLAIMED">Diklaim</option>
+                  <option value="PENDING">Pending (Antrean)</option>
+                  <option value="CLAIMED">Diklaim Petugas</option>
                   <option value="COMPLETED">Selesai</option>
                   <option value="ESCALATED">Eskalasi</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Petugas Penjemput (Klaim)</label>
+              <div className="space-y-1.5">
+                <label className="block text-slate-800 font-extrabold">Petugas Penjemput (Opsional)</label>
                 <select
                   value={selectedPetugasId}
                   onChange={(e) => setSelectedPetugasId(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-primary transition-colors"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966]"
                 >
-                  <option value="">Belum Diklaim / Kosong</option>
+                  <option value="">-- Tanpa Petugas (Bisa diklaim via Mobile) --</option>
                   {petugasList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -874,19 +984,19 @@ export const ManajemenPengangkutan: React.FC = () => {
                 </select>
               </div>
 
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 rounded-xl cursor-pointer"
+                  className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-primary hover:bg-primary/95 text-white rounded-xl text-sm font-bold shadow-md shadow-primary/10 cursor-pointer"
+                  className="px-5 py-2.5 bg-[#009966] text-white rounded-xl font-black hover:bg-[#008855] transition cursor-pointer shadow-md"
                 >
-                  {editingTask ? "Simpan Perubahan" : "Buat Tugas"}
+                  Simpan Tugas
                 </button>
               </div>
             </form>
@@ -894,152 +1004,87 @@ export const ManajemenPengangkutan: React.FC = () => {
         </div>
       )}
 
-      {/* Evidence Modal */}
-      {evidenceModalUrl && (
-        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">Foto Bukti Tempat Sampah Penuh</h3>
+      {/* Review Request Modal */}
+      {selectedRequestForReview && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <ShieldAlert size={18} className="text-amber-400" /> Detail Permintaan Pengosongan
+              </h3>
               <button
-                onClick={() => setEvidenceModalUrl(null)}
-                className="text-gray-400 hover:text-gray-600 font-bold cursor-pointer text-sm"
+                onClick={() => setSelectedRequestForReview(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-full transition cursor-pointer"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
-            <div className="p-6 flex justify-center bg-gray-50">
-              <img
-                src={evidenceModalUrl}
-                alt="Foto Bukti"
-                className="max-h-[400px] w-auto rounded-xl object-contain border border-gray-200 shadow-sm"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (!target.src.startsWith("http")) {
-                    target.src = api.defaults.baseURL + target.src;
-                  }
-                }}
-              />
+
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400">Pengirim Warga</span>
+                <p className="font-extrabold text-slate-900 text-sm">{selectedRequestForReview.user.name}</p>
+                <p className="text-slate-500 font-semibold">{selectedRequestForReview.user.email}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] font-black uppercase text-slate-400">Rukun Warga</span>
+                  <p className="font-extrabold text-slate-900">{formatRukunWarga(selectedRequestForReview.bin.rtRw?.name)}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] font-black uppercase text-slate-400">Kode Tempat Sampah</span>
+                  <p className="font-mono font-black text-[#009966]">{selectedRequestForReview.bin.qrCode}</p>
+                </div>
+              </div>
+
+              {selectedRequestForReview.evidencePhotoUrl && (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block">Foto Bukti Pengosongan</span>
+                  <div
+                    onClick={() => setEvidenceModalUrl(selectedRequestForReview.evidencePhotoUrl)}
+                    className="w-full h-44 rounded-2xl overflow-hidden border border-slate-200 relative group cursor-pointer"
+                  >
+                    <img
+                      src={selectedRequestForReview.evidencePhotoUrl}
+                      alt="Foto Bukti"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="p-5 border-t border-gray-100 flex justify-end">
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex justify-end">
               <button
-                onClick={() => setEvidenceModalUrl(null)}
-                className="bg-primary hover:bg-primary/95 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer"
+                onClick={() => setSelectedRequestForReview(null)}
+                className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-800 transition cursor-pointer"
               >
-                Tutup
+                Tutup Detail
               </button>
             </div>
           </div>
         </div>
       )}
-      {/* Review Request Detailed Modal */}
-      {selectedRequestForReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-5 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-gray-800 text-lg">Detail Notifikasi</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-blue-100 text-blue-700">
-                  Tampilan Petugas
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedRequestForReview(null)}
-                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition-colors cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-            </div>
 
-            <div className="p-6 overflow-y-auto max-h-[75vh]">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm">
-                  <Trash2 size={22} />
-                </div>
-                <div>
-                  <h4 className="text-[16px] font-bold text-gray-800 leading-tight mb-1">
-                    Pengajuan Pengosongan Baru
-                  </h4>
-                  <p className="text-xs text-gray-500 font-medium">
-                    {new Date(selectedRequestForReview.createdAt).toLocaleTimeString("id-ID", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}{" "}
-                    lalu
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tempat sampah{" "}
-                {selectedRequestForReview.bin.qrCode} di{" "}
-                {selectedRequestForReview.bin.rtRw?.name || "RT 01 / RW 04"}.
-              </p>
-
-              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex gap-3 mb-4">
-                <ShieldAlert className="text-orange-500 shrink-0 mt-0.5" size={20} />
-                <div className="text-xs text-orange-800">
-                  <p className="font-bold mb-0.5">Tindakan Review Diperlukan</p>
-                  <p className="leading-relaxed">
-                    Warga telah mengajukan pengosongan tempat sampah. Tinjau pengajuan ini dan tentukan tindakan Anda.
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden mb-5">
-                <div className="p-3.5 border-b border-gray-200 bg-white">
-                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">
-                    DETAIL PENGAJUAN
-                  </p>
-                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                    Warga ({selectedRequestForReview.user.name}) mengajukan pengosongan tempat sampah{" "}
-                    {selectedRequestForReview.bin.qrCode} di{" "}
-                    {selectedRequestForReview.bin.rtRw?.name || "RT 01 / RW 04"}.
-                  </p>
-                </div>
-                <div className="p-3.5 bg-gray-50 flex flex-col gap-2">
-                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">
-                    FOTO BUKTI DARI WARGA
-                  </p>
-                  {selectedRequestForReview.evidencePhotoUrl ? (
-                    <img
-                      src={
-                        selectedRequestForReview.evidencePhotoUrl.startsWith("/uploads")
-                          ? `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").replace("/api/v1", "")}${selectedRequestForReview.evidencePhotoUrl}`
-                          : selectedRequestForReview.evidencePhotoUrl
-                      }
-                      alt="Bukti tempat sampah penuh"
-                      className="w-full h-44 object-cover rounded-lg border border-gray-200"
-                    />
-                  ) : (
-                    <div className="w-full h-36 bg-gray-100 rounded-lg border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1.5">
-                      <ImageOff size={28} />
-                      <p className="text-xs text-gray-400">Foto bukti belum diunggah oleh warga</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    handleUpdateRequestStatus(selectedRequestForReview.id, "REJECTED");
-                    setSelectedRequestForReview(null);
-                  }}
-                  className="flex-1 py-3 rounded-xl text-xs font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
-                >
-                  ✕ Tolak Pengajuan
-                </button>
-                <button
-                  onClick={() => {
-                    handleApproveRequest(selectedRequestForReview.id);
-                    setSelectedRequestForReview(null);
-                  }}
-                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
-                >
-                  ✓ Setujui & Reset Tempat Sampah
-                </button>
-              </div>
-            </div>
+      {/* LIGHTBOX PREVIEW FOTO BUKTI */}
+      {evidenceModalUrl && (
+        <div
+          className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setEvidenceModalUrl(null)}
+        >
+          <div className="relative max-w-3xl w-full max-h-[90vh] flex items-center justify-center">
+            <img
+              src={evidenceModalUrl}
+              alt="Bukti Pengosongan"
+              className="max-w-full max-h-[85vh] rounded-3xl object-contain shadow-2xl border border-white/20"
+            />
+            <button
+              onClick={() => setEvidenceModalUrl(null)}
+              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white text-slate-900 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
       )}

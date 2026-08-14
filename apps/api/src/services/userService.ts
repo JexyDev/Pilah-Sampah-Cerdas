@@ -218,18 +218,34 @@ export class UserService {
       const rwObj =
         u.rw || u.rt?.rw || u.households?.[0]?.rw || u.studentProfile?.assignedRw || u.rwOwned;
       let kelurahanName = rwObj?.kelurahan?.name || "-";
-      let kecamatanName =
-        rwObj?.kelurahan?.kecamatan?.name || (kelurahanName !== "-" ? "Kec. Coblong" : "-");
+      let kecamatanName = rwObj?.kelurahan?.kecamatan?.name || "-";
+      let kabupatenName = u.kabupaten || (rwObj?.kelurahan?.kecamatan as any)?.kabupaten?.name || "Kota Bandung";
+      let provinsiName = u.provinsi || ((rwObj?.kelurahan?.kecamatan as any)?.kabupaten as any)?.provinsi?.name || "Jawa Barat";
+
+      if (u.address) {
+        const provMatch = u.address.match(/(?:Prov\.?|Provinsi)\s*([^,]+)/i);
+        if (provMatch && provMatch[1] && !u.provinsi) {
+          provinsiName = provMatch[1].trim();
+        }
+        const kabMatch = u.address.match(/(?:Kota|Kab\.?|Kabupaten)\s*([^,]+)/i);
+        if (kabMatch && kabMatch[1] && !u.kabupaten) {
+          kabupatenName = kabMatch[1].trim();
+        }
+        const kecMatch = u.address.match(/(?:Kecamatan|Kec\.?)\s*([^,]+)/i);
+        if (kecMatch && kecMatch[1] && kecamatanName === "-") {
+          const rawKec = kecMatch[1].trim().replace(/^amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
+          if (rawKec && rawKec !== "-") {
+            kecamatanName = `Kecamatan ${rawKec}`;
+          }
+        }
+      }
       let rwName = rwObj?.name || "-";
       let rtName = u.rt?.name || "-";
 
-      if (u.role?.name === "CAMAT") {
-        kecamatanName = "Kecamatan Coblong";
-        if (kelurahanName === "-")
-          kelurahanName = "Dago, Lebak Gede, Lebak Siliwangi, Sadang Serang, Sekeloa, Cipaganti";
-      } else if (u.role?.name === "ADMIN_DLH" || u.role?.name === "SUPER_USER") {
-        kecamatanName = "Kecamatan Coblong";
-        if (kelurahanName === "-") kelurahanName = "Kota Bandung";
+      if (u.role?.name === "CAMAT" && kecamatanName === "-") {
+        if (kabupatenName.toLowerCase().includes("bandung")) {
+          kecamatanName = "Kecamatan Coblong";
+        }
       }
 
       if (kelurahanName === "-" && u.address) {
@@ -244,7 +260,7 @@ export class UserService {
         for (const k of knownKels) {
           if (u.address.toLowerCase().includes(k.toLowerCase())) {
             kelurahanName = k;
-            kecamatanName = "Kecamatan Coblong";
+            if (kecamatanName === "-") kecamatanName = "Kecamatan Coblong";
             break;
           }
         }
@@ -254,13 +270,19 @@ export class UserService {
           );
           if (kelMatch && kelMatch[1]) {
             kelurahanName = kelMatch[1].trim();
-            kecamatanName = "Kecamatan Coblong";
           }
         }
       }
 
-      if (kecamatanName === "-" || kecamatanName === "Kec. Coblong") {
-        kecamatanName = "Kecamatan Coblong";
+      // Enforce strict relational consistency: Coblong & its 6 kelurahans ONLY exist in Kota Bandung!
+      if (!kabupatenName.toLowerCase().includes("bandung")) {
+        if (kecamatanName.toLowerCase().includes("coblong")) {
+          kecamatanName = "-";
+        }
+        const coblongKels = ["cipaganti", "dago", "lebak gede", "lebak siliwangi", "sadang serang", "sekeloa"];
+        if (coblongKels.some((k) => kelurahanName.toLowerCase().includes(k))) {
+          kelurahanName = "-";
+        }
       }
       if (rwName === "-" && u.address) {
         const rwMatch = u.address.match(/RW\s*(\d+)/i);
@@ -295,9 +317,9 @@ export class UserService {
 
       let userWilayah = "";
       if (u.role?.name === "ADMIN_DLH") {
-        userWilayah = "Kota Bandung";
+        userWilayah = kabupatenName;
       } else if (u.role?.name === "CAMAT") {
-        userWilayah = "Kecamatan Coblong";
+        userWilayah = kecamatanName !== "-" ? kecamatanName : kabupatenName;
       } else if (u.role?.name === "MAHASISWA_KKN") {
         const kel = u.studentProfile?.kelompok;
         if (!u.studentProfile?.kelompokId || !kel) {
@@ -351,10 +373,10 @@ export class UserService {
           const locationParts = [
             rwName !== "-" ? rwName : "",
             kelurahanName !== "-" ? kelurahanName : "",
-            "Kecamatan Coblong",
-            "Kota Bandung"
+            kecamatanName !== "-" ? kecamatanName : "",
+            kabupatenName !== "-" ? kabupatenName : ""
           ].filter(Boolean);
-          formattedAddress = locationParts.length > 0 ? `Sekretariat ${locationParts.join(", ")}` : "Kecamatan Coblong, Kota Bandung";
+          formattedAddress = locationParts.length > 0 ? `Sekretariat ${locationParts.join(", ")}` : (u.address || "-");
         } else {
           formattedAddress = u.address || "-";
         }
@@ -377,8 +399,8 @@ export class UserService {
         status: u.status,
         binStatus,
         activeBinsCount,
-        provinsi: "Jawa Barat",
-        kabupaten: "Kota Bandung",
+        provinsi: u.provinsi || provinsiName || "Jawa Barat",
+        kabupaten: u.kabupaten || kabupatenName || "Kota Bandung",
         kecamatan: kecamatanName,
         kelurahan: kelurahanName,
         rw: rwName,
@@ -507,6 +529,26 @@ export class UserService {
       }
     }
 
+    let finalKabupaten = data.kabupaten || null;
+    let finalProvinsi = data.provinsi || null;
+    if (finalKabupaten) {
+      const kabMatch = await prisma.kabupaten.findFirst({
+        where: { name: { equals: finalKabupaten.trim(), mode: "insensitive" } },
+        include: { provinsi: true },
+      });
+      if (kabMatch && kabMatch.provinsi) {
+        finalProvinsi = kabMatch.provinsi.name;
+      }
+    } else if (finalProvinsi) {
+      const provMatch = await prisma.provinsi.findFirst({
+        where: { name: { equals: finalProvinsi.trim(), mode: "insensitive" } },
+        include: { kabupatens: true },
+      });
+      if (provMatch && provMatch.kabupatens.length > 0) {
+        finalKabupaten = provMatch.kabupatens[0].name;
+      }
+    }
+
     const passwordHash = await hashPassword(password);
 
     const newUser = await prisma.$transaction(async (tx) => {
@@ -525,6 +567,8 @@ export class UserService {
           jabatan: data.jabatan || null,
           programStudi: programStudi || null,
           jenjangPendidikan: jenjangPendidikan || null,
+          provinsi: finalProvinsi,
+          kabupaten: finalKabupaten,
           jumlahAnggotaKeluarga:
             jumlahAnggotaKeluarga !== undefined && jumlahAnggotaKeluarga !== null
               ? Number(jumlahAnggotaKeluarga)
@@ -667,6 +711,10 @@ export class UserService {
       throw new Error("USER_NOT_FOUND");
     }
 
+    if (currentUser?.userId === id && status && ["Nonaktif", "INACTIVE", "NONAKTIF"].includes(status)) {
+      throw new Error("CANNOT_DEACTIVATE_SELF");
+    }
+
     // Check if target user has a restricted role or if trying to change to a restricted role
     const isRestrictedRole =
       ["ADMIN_DLH", "CAMAT", "LURAH"].includes(user.role.name) ||
@@ -707,7 +755,10 @@ export class UserService {
       }
     }
 
-    const updateData: any = { name, roleId };
+    const updateData: any = { name };
+    if (roleId && roleId !== user.roleId) {
+      updateData.role = { connect: { id: roleId } };
+    }
     if (phone) {
       const formattedPhone = formatPhoneNumber(phone);
       const existingUserWithPhone = await prisma.user.findFirst({
@@ -728,7 +779,11 @@ export class UserService {
       updateData.status = status;
     }
     if (targetRwId !== undefined) {
-      updateData.rwId = targetRwId ? parseInt(targetRwId) : null;
+      if (targetRwId) {
+        updateData.rw = { connect: { id: parseInt(targetRwId) } };
+      } else {
+        updateData.rw = { disconnect: true };
+      }
     }
     if (address !== undefined) {
       updateData.address = address || null;
@@ -742,6 +797,31 @@ export class UserService {
     if (data.jabatan !== undefined) updateData.jabatan = data.jabatan || null;
     if (programStudi !== undefined) updateData.programStudi = programStudi || null;
     if (jenjangPendidikan !== undefined) updateData.jenjangPendidikan = jenjangPendidikan || null;
+    let updateKab = data.kabupaten !== undefined ? data.kabupaten : user.kabupaten;
+    let updateProv = data.provinsi !== undefined ? data.provinsi : user.provinsi;
+
+    if (updateKab) {
+      const kabMatch = await prisma.kabupaten.findFirst({
+        where: { name: { equals: String(updateKab).trim(), mode: "insensitive" } },
+        include: { provinsi: true },
+      });
+      if (kabMatch && kabMatch.provinsi) {
+        updateProv = kabMatch.provinsi.name;
+      }
+    } else if (updateProv) {
+      const provMatch = await prisma.provinsi.findFirst({
+        where: { name: { equals: String(updateProv).trim(), mode: "insensitive" } },
+        include: { kabupatens: true },
+      });
+      if (provMatch && provMatch.kabupatens.length > 0) {
+        updateKab = provMatch.kabupatens[0].name;
+      }
+    }
+
+    if (data.provinsi !== undefined || data.kabupaten !== undefined) {
+      updateData.provinsi = updateProv || null;
+      updateData.kabupaten = updateKab || null;
+    }
     if (jumlahAnggotaKeluarga !== undefined)
       updateData.jumlahAnggotaKeluarga =
         jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null;
@@ -754,10 +834,11 @@ export class UserService {
         include: { role: { select: { name: true } } },
       });
 
-      if (updateData.address !== undefined || updateData.rwId !== undefined) {
+      const parsedRwId = targetRwId ? parseInt(targetRwId) : null;
+      if (updateData.address !== undefined || targetRwId !== undefined) {
         const householdData: any = {};
         if (updateData.address !== undefined) householdData.address = updateData.address || "";
-        if (updateData.rwId !== undefined && updateData.rwId !== null) householdData.rwId = updateData.rwId;
+        if (parsedRwId !== null) householdData.rwId = parsedRwId;
         if (Object.keys(householdData).length > 0) {
           await tx.household.updateMany({
             where: { userId: id },
@@ -831,7 +912,7 @@ export class UserService {
               : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
             assignedRwId: studentProfile?.assignedRwId
               ? parseInt(studentProfile.assignedRwId)
-              : updateData.rwId || u.rwId,
+              : (parsedRwId || u.rwId),
             kelompokId: targetKelompokId,
             whitelistStatus: "APPROVED",
           },
@@ -883,7 +964,7 @@ export class UserService {
 
       // Assign Petugas Residu to the RW area when editing an RW user
       if ((checkRoleName === "RW" || u.role.name === "RW") && petugasResiduId !== undefined) {
-        const rwAreaId = updateData.rwId || u.rwId;
+        const rwAreaId = parsedRwId || u.rwId;
         if (rwAreaId) {
           // Clear previous assignment for this petugas on other RWs
           if (petugasResiduId) {

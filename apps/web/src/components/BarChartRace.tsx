@@ -22,7 +22,7 @@ const DEFAULT_KELURAHANS: KelurahanMetrics[] = [
 
 export const BarChartRace: React.FC = () => {
   const [metricTab, setMetricTab] = useState<"TONASE" | "KEPATUHAN" | "POIN">("TONASE");
-  const [kelurahanData, setKelurahanData] = useState<KelurahanMetrics[]>(DEFAULT_KELURAHANS);
+  const [kelurahanData, setKelurahanData] = useState<KelurahanMetrics[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export const BarChartRace: React.FC = () => {
             color: DEFAULT_KELURAHANS[idx % DEFAULT_KELURAHANS.length].color,
             logo: DEFAULT_KELURAHANS[idx % DEFAULT_KELURAHANS.length].logo,
             tonaseKg: parseFloat(Number(r.totalWeightKg || r.totalWeight || (r.totalPoints ? r.totalPoints * 0.1 : 0)).toFixed(1)),
-            compliancePct: Math.min(100, Math.max(50, Math.round(Number(r.complianceRate || r.compliance || 85)))),
+            compliancePct: Math.min(100, Math.max(0, Math.round(Number(r.complianceRate ?? r.compliance ?? (r.totalPoints ? Math.min(100, r.totalPoints * 2) : 0))))),
             totalPoints: Math.round(Number(r.totalPoints || 0)),
           }));
           setKelurahanData(mapped);
@@ -129,6 +129,10 @@ export const BarChartRace: React.FC = () => {
       {loading ? (
         <div className="flex items-center justify-center py-12 text-slate-400 text-xs font-semibold">
           Memuat data real kelurahan...
+        </div>
+      ) : sortedData.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-slate-400 text-xs font-semibold">
+          Tidak ada data kelurahan ditemukan.
         </div>
       ) : (
         <div className="relative min-h-60 w-full space-y-3">

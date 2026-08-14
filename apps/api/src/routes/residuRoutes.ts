@@ -195,4 +195,20 @@ router.get(
   residuController.getRiwayat
 );
 
+router.get(
+  "/pengajuan",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getPengajuan
+);
+
+router.put(
+  "/pengajuan/:id/terima",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.acceptPengajuan
+);
+
 export default router;

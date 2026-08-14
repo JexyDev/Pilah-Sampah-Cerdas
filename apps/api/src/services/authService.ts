@@ -150,7 +150,8 @@ export class AuthService {
     name?: string,
     phone?: string,
     address?: string,
-    fotoProfil?: string
+    fotoProfil?: string,
+    jumlahAnggotaKeluarga?: number | null
   ) {
     const user = await authRepository.findUserById(userId);
     if (!user) {
@@ -162,6 +163,7 @@ export class AuthService {
       phone,
       address,
       fotoProfil,
+      jumlahAnggotaKeluarga,
     });
     return updatedUser;
   }

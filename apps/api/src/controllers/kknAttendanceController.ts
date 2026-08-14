@@ -95,7 +95,7 @@ export const kknAttendanceController = {
     try {
       const studentId = req.user!.userId;
       const { id: paramId } = req.params;
-      const { latitude, longitude, lat, lng, method, scheduleId: bodyScheduleId } = req.body;
+      const { latitude, longitude, lat, lng, method, scheduleId: bodyScheduleId, nim, namaMahasiswa, kodeZona } = req.body;
       const id = paramId || bodyScheduleId || req.body.id || "kkn-main-posko";
 
       const finalLat =
@@ -128,6 +128,9 @@ export const kknAttendanceController = {
         latitude: validLat,
         longitude: validLng,
         method: finalMethod,
+        nim,
+        namaMahasiswa,
+        kodeZona,
       });
 
       res.status(200).json({

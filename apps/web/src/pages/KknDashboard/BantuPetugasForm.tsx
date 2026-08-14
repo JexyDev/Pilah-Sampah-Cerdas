@@ -46,7 +46,7 @@ export const BantuPetugasForm: React.FC<BantuPetugasFormProps> = ({ onSuccess })
         className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98]"
       >
         <UserPlus className="w-5 h-5" />
-        Daftarkan Petugas Residu
+        Daftarkan Petugas Pemilah
       </button>
 
       {isOpen && (
@@ -55,7 +55,7 @@ export const BantuPetugasForm: React.FC<BantuPetugasFormProps> = ({ onSuccess })
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-extrabold text-lg text-slate-800 flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-indigo-600" />
-                Registrasi Petugas Residu
+                Registrasi Petugas Pemilah
               </h3>
               <button
                 onClick={() => setIsOpen(false)}

@@ -13,7 +13,7 @@ import styles from "./BottomNav.module.css";
 const BottomNav: React.FC = () => {
   const navItems = [
     { path: "/", label: "Beranda", icon: <LayoutDashboard size={24} /> },
-    { path: "/monitoring", label: "Monitor", icon: <Map size={24} /> },
+    { path: "/monitoring-wilayah", label: "Monitor", icon: <Map size={24} /> },
     { path: "/master-data", label: "Data", icon: <Database size={24} /> },
     { path: "/warga-tempat-sampah", label: "Warga", icon: <Users size={24} /> },
     { path: "/lainnya", label: "Lainnya", icon: <Menu size={24} /> },

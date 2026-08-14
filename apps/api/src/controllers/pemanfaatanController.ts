@@ -5,7 +5,10 @@
  */
 
 import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import { pemanfaatanService } from "../services/pemanfaatanService.js";
+
+const prisma = new PrismaClient();
 
 export class PemanfaatanController {
   async create(req: Request, res: Response): Promise<void> {
@@ -111,6 +114,111 @@ export class PemanfaatanController {
       const { id } = req.params;
       await pemanfaatanService.delete(id);
       res.status(200).json({ success: true, message: "Program pemanfaatan berhasil dihapus" });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // KRITIK & SARAN / FEEDBACK CONTROLLERS
+  // ─────────────────────────────────────────────
+
+  async getAllFeedback(req: Request, res: Response): Promise<void> {
+    try {
+      const { status, kategori, search } = req.query;
+      const result = await pemanfaatanService.getAllFeedback({
+        status: status as string,
+        kategori: kategori as string,
+        search: search as string,
+      });
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async createFeedback(req: Request, res: Response): Promise<void> {
+    try {
+      const user = (req as any).user;
+      const userId = user?.userId || user?.id;
+      const { judul, isiKritikSaran, kategori, rating, rwId, fotoBuktiUrl } = req.body;
+
+      if (!judul || !isiKritikSaran) {
+        res.status(400).json({ success: false, message: "Judul dan isi kritik/saran wajib diisi" });
+        return;
+      }
+
+      let wargaNama = user?.name;
+      let userRwId = user?.rwId || rwId;
+
+      if (userId) {
+        const dbU = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true, rwId: true },
+        });
+        if (dbU) {
+          if (!wargaNama) wargaNama = dbU.name;
+          if (!userRwId) userRwId = dbU.rwId;
+        }
+      }
+
+      const result = await pemanfaatanService.createFeedback({
+        userId,
+        wargaNama: wargaNama || "Warga TrashCare",
+        kategori: kategori || "Pemanfaatan Sampah",
+        judul,
+        isiKritikSaran,
+        rating: rating ? parseInt(rating, 10) : 5,
+        rwId: userRwId ? parseInt(userRwId, 10) : undefined,
+        fotoBuktiUrl,
+      });
+
+      res.status(201).json({ success: true, data: result, message: "Kritik & saran berhasil dikirim" });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async respondFeedback(req: Request, res: Response): Promise<void> {
+    try {
+      const user = (req as any).user;
+      const userId = user?.userId || user?.id;
+      const { id } = req.params;
+      const { tanggapan, status } = req.body;
+
+      if (!tanggapan) {
+        res.status(400).json({ success: false, message: "Tanggapan wajib diisi" });
+        return;
+      }
+
+      let responderName = user?.name;
+      if (!responderName && userId) {
+        const dbU = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true, role: { select: { name: true } } },
+        });
+        if (dbU) {
+          responderName = `${dbU.name} (${dbU.role?.name || "Pengelola"})`;
+        }
+      }
+
+      const result = await pemanfaatanService.respondFeedback(id, {
+        tanggapan,
+        ditanggapiOleh: responderName || "Pengelola TrashCare",
+        status: status || "SELESAI",
+      });
+
+      res.status(200).json({ success: true, data: result, message: "Tanggapan berhasil disimpan" });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async deleteFeedback(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      await pemanfaatanService.deleteFeedback(id);
+      res.status(200).json({ success: true, message: "Kritik & saran berhasil dihapus" });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
     }

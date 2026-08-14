@@ -26,7 +26,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   PEMIMPIN: "Pimpinan",
   PANITIA_TASKFORCE: "Task Force",
   DPL: "Dosen Pembimbing Lapangan",
-  PETUGAS_RESIDU: "Petugas Residu",
+  PETUGAS_RESIDU: "Petugas Pemilah",
   MAHASISWA_KKN: "Mahasiswa",
   WARGA: "Warga",
 };
@@ -79,25 +79,16 @@ const getCleanKelName = (raw: string | undefined | null) => {
 };
 
 const formatKecamatanName = (raw: string | undefined | null): string => {
-  if (!raw || raw === "-") return "Kecamatan Coblong";
-  const str = String(raw);
-  if (str.toLowerCase().includes("coblong")) return "Kecamatan Coblong";
-  const clean = str.trim();
-  if (clean.toLowerCase().startsWith("kecamatan")) return clean;
+  if (!raw || raw === "-" || raw.trim() === "") return "-";
+  let clean = String(raw).trim();
+  clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
+  if (!clean || clean === "-") return "-";
   return `Kecamatan ${clean}`;
 };
 
 const getCleanKabupatenName = (raw: string | undefined | null): string => {
-  if (!raw || raw === "-") return "Kota Bandung";
-  const str = String(raw);
-  if (str.toLowerCase().includes("bandung")) return "Kota Bandung";
-  if (str.toLowerCase().includes("jakarta")) return "DKI Jakarta";
-  if (str.toLowerCase().includes("bogor")) return "Kota Bogor";
-  if (str.toLowerCase().includes("cimahi")) return "Kota Cimahi";
-  if (str.toLowerCase().includes("bekasi")) return "Kota Bekasi";
-  if (str.toLowerCase().includes("depok")) return "Kota Depok";
-  if (!str.includes(",")) return str.trim();
-  return "Kota Bandung";
+  if (!raw || raw === "-" || raw.trim() === "") return "-";
+  return String(raw).trim();
 };
 
 const KELURAHAN_RW_MAP: Record<string, string[]> = {
@@ -163,11 +154,12 @@ const ManajemenPengguna: React.FC = () => {
   const [provinsiList, setProvinsiList] = useState<any[]>([]);
   const [kabupatenList, setKabupatenList] = useState<any[]>([]);
   const [kecamatanList, setKecamatanList] = useState<any[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [resK, resA, resP, resD, resProv, resKab, resKec] = await Promise.all([
+        const [resK, resA, resP, resD, resProv, resKab, resKec, resKel] = await Promise.all([
           api.get("/kelompok?limit=100"),
           api.get("/areas/rt-rw"),
           api.get("/users?roleName=PETUGAS_RESIDU"),
@@ -175,6 +167,7 @@ const ManajemenPengguna: React.FC = () => {
           api.get("/areas/provinsi"),
           api.get("/areas/kabupaten"),
           api.get("/areas/kecamatan"),
+          api.get("/areas/kelurahan"),
         ]);
         const listK = resK.data?.groups || resK.data?.data || [];
         setKelompokList(listK);
@@ -190,6 +183,8 @@ const ManajemenPengguna: React.FC = () => {
         setKabupatenList(listKab.length > 0 ? listKab : [{ id: 1, name: "Kota Bandung" }]);
         const listKec = resKec.data?.data || resKec.data || [];
         setKecamatanList(listKec.length > 0 ? listKec : [{ id: 1, name: "Kecamatan Coblong" }]);
+        const listKel = resKel.data?.data || resKel.data || [];
+        setKelurahanList(listKel);
       } catch (err) {
         console.error("Error fetching reference data:", err);
       }
@@ -311,13 +306,6 @@ const ManajemenPengguna: React.FC = () => {
       return areaKel.includes(targetClean) || targetClean.includes(areaKel);
     });
 
-    if (list.length === 0 && areasList.length > 0) {
-      list = areasList.filter((a: any) => {
-        const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
-        return areaKel.includes("cipaganti");
-      });
-    }
-
     // Deduplicate list by numeric RW identifier to prevent duplicate RW buttons in modal
     const seen = new Set<string>();
     const uniqueList: any[] = [];
@@ -335,6 +323,160 @@ const ManajemenPengguna: React.FC = () => {
       return numA - numB;
     });
   }, [areasList, modalKelurahan]);
+
+  // Dynamically filter Kota / Kabupaten by selected Provinsi
+  const filteredKabupatenList = useMemo(() => {
+    if (!formData.provinsi || provinsiList.length === 0) return [];
+    const selectedProv = provinsiList.find(
+      (p: any) => (p.name || p.nama || "").toLowerCase() === formData.provinsi.toLowerCase()
+    );
+    if (!selectedProv) return [];
+    return kabupatenList.filter((kb: any) => {
+      const pId = kb.provinsiId || kb.provinsi?.id;
+      const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
+      return pId === selectedProv.id || (pName && pName === formData.provinsi.toLowerCase());
+    });
+  }, [provinsiList, kabupatenList, formData.provinsi]);
+
+  // Dynamically filter Kecamatan by selected Kota / Kabupaten
+  const filteredKecamatanList = useMemo(() => {
+    if (!formData.kabupaten || kabupatenList.length === 0) return [];
+    const selectedKab = kabupatenList.find(
+      (kb: any) => (kb.name || kb.nama || "").toLowerCase() === formData.kabupaten.toLowerCase()
+    );
+    if (!selectedKab) return [];
+    return kecamatanList.filter((kc: any) => {
+      const kId = kc.kabupatenId || kc.kabupaten?.id;
+      const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
+      return kId === selectedKab.id || (kName && kName === formData.kabupaten.toLowerCase());
+    });
+  }, [kabupatenList, kecamatanList, formData.kabupaten]);
+
+  // Dynamically filter Kelurahan by selected Kecamatan
+  const filteredKelurahanList = useMemo(() => {
+    if (!formData.kecamatan || kelurahanList.length === 0) return [];
+    const selectedKec = kecamatanList.find(
+      (kc: any) => (kc.name || kc.nama || "").toLowerCase() === formData.kecamatan.toLowerCase()
+    );
+    if (!selectedKec) {
+      return kelurahanList.filter((kl: any) => {
+        const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
+        return kecName && kecName.includes(formData.kecamatan.toLowerCase());
+      });
+    }
+    return kelurahanList.filter((kl: any) => {
+      const kecId = kl.kecamatanId || kl.kecamatan?.id;
+      const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
+      return Number(kecId) === Number(selectedKec.id) || (kecName && kecName === formData.kecamatan.toLowerCase());
+    });
+  }, [kecamatanList, kelurahanList, formData.kecamatan]);
+
+  const handleProvinsiSelect = (newProv: string) => {
+    const selectedProvObj = provinsiList.find(
+      (p: any) => (p.name || p.nama || "").toLowerCase() === newProv.toLowerCase()
+    );
+    const kabsForProv = kabupatenList.filter((kb: any) => {
+      const pId = kb.provinsiId || kb.provinsi?.id;
+      const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
+      return (selectedProvObj && pId === selectedProvObj.id) || (pName && pName === newProv.toLowerCase());
+    });
+    const defaultKab = kabsForProv.length > 0 ? (kabsForProv[0].name || kabsForProv[0].nama) : "";
+
+    let defaultKec = "";
+    let defaultKel = "";
+    if (defaultKab) {
+      const selectedKabObj = kabupatenList.find(
+        (kb: any) => (kb.name || kb.nama || "").toLowerCase() === defaultKab.toLowerCase()
+      );
+      const kecsForKab = kecamatanList.filter((kc: any) => {
+        const kId = kc.kabupatenId || kc.kabupaten?.id;
+        const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
+        return (selectedKabObj && kId === selectedKabObj.id) || (kName && kName === defaultKab.toLowerCase());
+      });
+      defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "";
+
+      if (defaultKec) {
+        const selectedKecObj = kecamatanList.find(
+          (kc: any) => (kc.name || kc.nama || "").toLowerCase() === defaultKec.toLowerCase()
+        );
+        const kelsForKec = kelurahanList.filter((kl: any) => {
+          const kecId = kl.kecamatanId || kl.kecamatan?.id;
+          const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
+          return (selectedKecObj && Number(kecId) === Number(selectedKecObj.id)) || (kecName && kecName === defaultKec.toLowerCase());
+        });
+        defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+      }
+    }
+
+    if (defaultKel) {
+      setModalKelurahan(getCleanKelName(defaultKel));
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      provinsi: newProv,
+      kabupaten: defaultKab,
+      wilayah: defaultKab,
+      kecamatan: defaultKec,
+    }));
+  };
+
+  const handleKabupatenSelect = (newKab: string) => {
+    const selectedKabObj = kabupatenList.find(
+      (kb: any) => (kb.name || kb.nama || "").toLowerCase() === newKab.toLowerCase()
+    );
+    const kecsForKab = kecamatanList.filter((kc: any) => {
+      const kId = kc.kabupatenId || kc.kabupaten?.id;
+      const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
+      return (selectedKabObj && kId === selectedKabObj.id) || (kName && kName === newKab.toLowerCase());
+    });
+    const defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "";
+
+    let defaultKel = "";
+    if (defaultKec) {
+      const selectedKecObj = kecamatanList.find(
+        (kc: any) => (kc.name || kc.nama || "").toLowerCase() === defaultKec.toLowerCase()
+      );
+      const kelsForKec = kelurahanList.filter((kl: any) => {
+        const kecId = kl.kecamatanId || kl.kecamatan?.id;
+        const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
+        return (selectedKecObj && Number(kecId) === Number(selectedKecObj.id)) || (kecName && kecName === defaultKec.toLowerCase());
+      });
+      defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+    }
+
+    if (defaultKel) {
+      setModalKelurahan(getCleanKelName(defaultKel));
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      kabupaten: newKab,
+      wilayah: newKab,
+      kecamatan: defaultKec,
+    }));
+  };
+
+  const handleKecamatanSelect = (newKec: string) => {
+    const selectedKecObj = kecamatanList.find(
+      (kc: any) => (kc.name || kc.nama || "").toLowerCase() === newKec.toLowerCase()
+    );
+    const kelsForKec = kelurahanList.filter((kl: any) => {
+      const kecId = kl.kecamatanId || kl.kecamatan?.id;
+      const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
+      return (selectedKecObj && Number(kecId) === Number(selectedKecObj.id)) || (kecName && kecName === newKec.toLowerCase());
+    });
+    const defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+
+    if (defaultKel) {
+      setModalKelurahan(getCleanKelName(defaultKel));
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      kecamatan: newKec,
+    }));
+  };
 
   const getRwListForKelurahan = (rawKel?: string) => {
     if (!rawKel || rawKel === "-") return KELURAHAN_RW_MAP["Dago"];
@@ -390,8 +532,8 @@ const ManajemenPengguna: React.FC = () => {
       jumlahAnggotaKeluarga: "",
       programStudi: "",
       fotoProfil: "",
-      provinsi: "Jawa Barat",
-      kabupaten: "Kota Bandung",
+      provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat",
+      kabupaten: kabupatenList[0]?.name || "Kota Bandung",
       wilayah: defaultRole === "ADMIN_DLH" ? "Kota Bandung" : "",
       kecamatan: defaultRole === "CAMAT" ? "Kecamatan Coblong" : "",
       petugasResiduId: "",
@@ -462,8 +604,8 @@ const ManajemenPengguna: React.FC = () => {
       jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga?.toString() || "",
       programStudi: cleanedProdi,
       fotoProfil: u.fotoProfil || "",
-      provinsi: u.provinsi || "Jawa Barat",
-      kabupaten: u.kabupaten || u.wilayah || "Kota Bandung",
+      provinsi: u.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat"),
+      kabupaten: u.kabupaten || (kabupatenList[0]?.name || "Kota Bandung"),
       wilayah: u.wilayah || (u.role === "ADMIN_DLH" ? "Kota Bandung" : ""),
       kecamatan: u.kecamatan || (u.role === "CAMAT" ? "Kecamatan Coblong" : ""),
       petugasResiduId: u.petugasResidu?.id || "",
@@ -532,6 +674,8 @@ const ManajemenPengguna: React.FC = () => {
         status: formData.status,
         rtRwId: parsedAreaId,
         rwId: parsedAreaId,
+        provinsi: formData.provinsi,
+        kabupaten: formData.kabupaten,
       };
 
       if (formData.password) {
@@ -669,14 +813,18 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   // Helper function for cleaning redundant KKN Group names
-  const cleanKknDisplayName = (name?: string, kelurahan?: string) => {
+  const cleanKknDisplayName = (name?: string) => {
     if (!name || name === "-") return "-";
     let clean = name.trim();
-    clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing (Kelurahan) suffix
+    clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
     clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
     
-    if (kelurahan && !clean.toLowerCase().includes(kelurahan.toLowerCase())) {
-      return `${clean} (${kelurahan})`;
+    // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
+    const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
+    if (informalMatch) {
+      const place = informalMatch[1].replace(/^Kel\s*/i, "").trim();
+      const num = informalMatch[2];
+      return `Kelompok ${num} ${place}`;
     }
     return clean;
   };
@@ -1110,7 +1258,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KELURAHAN</th>
                     <th className="py-3 px-4">RUKUN WARGA</th>
-                    <th className="py-3 px-4">PETUGAS RESIDU</th>
+                    <th className="py-3 px-4">PETUGAS PEMILAH</th>
                     <th className="py-3 px-4">ALAMAT LENGKAP</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
@@ -1202,8 +1350,8 @@ const ManajemenPengguna: React.FC = () => {
                               {Array.from(
                                 new Map(
                                   u.dplKelompok.map((k: any) => {
-                                    const cleaned = cleanKknDisplayName(k.name, k.kelurahan);
-                                    return [cleaned, cleaned];
+                                    const cleaned = cleanKknDisplayName(k.name);
+                                    return [cleaned.toLowerCase(), cleaned];
                                   })
                                 ).values()
                               ).map((groupName: any, i: number) => (
@@ -1248,13 +1396,21 @@ const ManajemenPengguna: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">
-                          <div className="flex flex-wrap gap-1 max-w-md">
-                            {["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].map((kel, i) => (
-                              <span key={i} className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                                Kel. {kel}
-                              </span>
-                            ))}
-                          </div>
+                          {(() => {
+                            const isCoblongKec = (u.kecamatan || "").toLowerCase().includes("coblong");
+                            const kels = isCoblongKec ? ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"] : [];
+                            return kels.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-md">
+                                {kels.map((kel, i) => (
+                                  <span key={i} className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                                    Kel. {kel}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-medium text-xs">-</span>
+                            );
+                          })()}
                         </td>
                       </>
                     ) : selectedRole === "LURAH" ? (
@@ -1334,7 +1490,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">
                           {u.studentProfile?.kelompok?.name && u.studentProfile.kelompok.name !== "-" ? (
                             <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 font-bold whitespace-nowrap inline-block shadow-2xs">
-                              {cleanKknDisplayName(u.studentProfile.kelompok.name, u.studentProfile.kelompok.kelurahan)}
+                              {cleanKknDisplayName(u.studentProfile.kelompok.name)}
                             </span>
                           ) : (
                             <span className="text-slate-400 font-medium">-</span>
@@ -1384,20 +1540,35 @@ const ManajemenPengguna: React.FC = () => {
                     {!isReadOnly && (
                       <td className="py-3 px-4 text-center">
                         <div className="flex justify-center gap-1">
-                          <button
-                            onClick={() => handleOpenEditModal(u)}
-                            className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                            title="Edit"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(u)}
-                            className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                            title="Hapus"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          {selectedRole.toUpperCase() !== "RW" && u.roleName !== "RW" && u.role !== "RW" && u.role?.name !== "RW" && (
+                            <button
+                              onClick={() => handleOpenEditModal(u)}
+                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                          )}
+                          {(() => {
+                            const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
+                            return (
+                              <button
+                                disabled={isSelf}
+                                onClick={() => {
+                                  if (isSelf) return;
+                                  handleDeleteClick(u);
+                                }}
+                                className={`w-8 h-8 rounded-lg transition-colors flex items-center justify-center ${
+                                  isSelf
+                                    ? "bg-slate-100 text-slate-300 opacity-40 cursor-not-allowed"
+                                    : "bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white cursor-pointer"
+                                }`}
+                                title={isSelf ? "Akun Anda Sendiri - Tidak dapat dihapus" : "Hapus"}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
                     )}
@@ -1598,10 +1769,10 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              <option value="">-- Pilih Kelompok Bimbingan KKN --</option>
+                               <option value="">-- Pilih Kelompok Bimbingan KKN --</option>
                               {kelompokList.map((k: any) => (
                                 <option key={k.id} value={k.id}>
-                                  {k.name} {k.kelurahan ? `(${k.kelurahan})` : ""}
+                                  {cleanKknDisplayName(k.name)}
                                 </option>
                               ))}
                             </select>
@@ -1643,7 +1814,7 @@ const ManajemenPengguna: React.FC = () => {
                               <option value="">-- Tanpa Kelompok (Mandiri / Unassigned) --</option>
                               {kelompokList.map((k: any) => (
                                 <option key={k.id} value={k.id}>
-                                  {k.name} {k.kelurahan ? `(${k.kelurahan})` : ""} {k.dplName ? `- DPL: ${k.dplName}` : ""}
+                                  {cleanKknDisplayName(k.name)} {(k.dplName || k.dpl?.name) ? `- DPL: ${k.dplName || k.dpl?.name}` : ""}
                                 </option>
                               ))}
                             </select>
@@ -1725,7 +1896,7 @@ const ManajemenPengguna: React.FC = () => {
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
                             <select
                               value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
-                              onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                              onChange={(e) => handleProvinsiSelect(e.target.value)}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
                               {provinsiList.map((p: any) => (
@@ -1738,13 +1909,17 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
                             <select
-                              value={formData.kabupaten || (kabupatenList[0]?.name || "Kota Bandung")}
-                              onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
+                              value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                              onChange={(e) => handleKabupatenSelect(e.target.value)}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {kabupatenList.map((kb: any) => (
-                                <option key={kb.id} value={kb.name}>{kb.name}</option>
-                              ))}
+                              {filteredKabupatenList.length === 0 ? (
+                                <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
+                              ) : (
+                                filteredKabupatenList.map((kb: any) => (
+                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                ))
+                              )}
                             </select>
                           </div>
                         </div>
@@ -1758,7 +1933,7 @@ const ManajemenPengguna: React.FC = () => {
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
-                                onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                                onChange={(e) => handleProvinsiSelect(e.target.value)}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
                                 {provinsiList.map((p: any) => (
@@ -1771,38 +1946,58 @@ const ManajemenPengguna: React.FC = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
                               <select
-                                value={formData.kabupaten || (kabupatenList[0]?.name || "Kota Bandung")}
-                                onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
+                                value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                onChange={(e) => handleKabupatenSelect(e.target.value)}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
-                                {kabupatenList.map((kb: any) => (
-                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
-                                ))}
+                                {filteredKabupatenList.length === 0 ? (
+                                  <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
+                                ) : (
+                                  filteredKabupatenList.map((kb: any) => (
+                                    <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                  ))
+                                )}
                               </select>
                             </div>
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
                             <select
-                              value={formData.kecamatan || (kecamatanList[0]?.name || "Kecamatan Coblong")}
+                              value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
                               onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {kecamatanList.map((kc: any) => (
-                                <option key={kc.id} value={kc.name}>{kc.name}</option>
-                              ))}
+                              {filteredKecamatanList.length === 0 ? (
+                                <option value="">-- Belum ada Kecamatan di Master Data --</option>
+                              ) : (
+                                filteredKecamatanList.map((kc: any) => (
+                                  <option key={kc.id} value={kc.name}>{kc.name}</option>
+                                ))
+                              )}
                             </select>
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Cakupan Kelurahan Bawahan (Semua Kelurahan)</label>
-                            <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/80">
-                              {["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].map((kel) => (
-                                <span key={kel} className="bg-emerald-100/80 text-emerald-800 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-300/60 font-extrabold shadow-2xs">
-                                  Kel. {kel}
-                                </span>
-                              ))}
-                            </div>
-                            <p className="text-[10px] text-slate-400 mt-1">Camat secara otomatis membawahi dan mengawasi seluruh 6 Kelurahan di Kecamatan Coblong.</p>
+                            {(() => {
+                              const curKec = formData.kecamatan || (filteredKecamatanList[0]?.name || "");
+                              const kelsModal = filteredKelurahanList.map((kl: any) => getCleanKelName(kl.name || kl.nama));
+                              return kelsModal.length > 0 ? (
+                                <>
+                                  <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/80">
+                                    {kelsModal.map((kel: string) => (
+                                      <span key={kel} className="bg-emerald-100/80 text-emerald-800 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-300/60 font-extrabold shadow-2xs">
+                                        Kel. {kel}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 mt-1">Camat secara otomatis membawahi dan mengawasi seluruh {kelsModal.length} Kelurahan di {curKec}.</p>
+                                </>
+                              ) : (
+                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-400 text-xs italic font-medium">
+                                  Belum ada data Kelurahan terdaftar untuk {curKec || "kecamatan penugasan"} di Master Data.
+                                </div>
+                              );
+                            })()}
                           </div>
                         </>
                       )}
@@ -1815,7 +2010,7 @@ const ManajemenPengguna: React.FC = () => {
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
-                                onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                                onChange={(e) => handleProvinsiSelect(e.target.value)}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
                                 {provinsiList.map((p: any) => (
@@ -1828,13 +2023,17 @@ const ManajemenPengguna: React.FC = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
                               <select
-                                value={formData.kabupaten || (kabupatenList[0]?.name || "Kota Bandung")}
-                                onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value, wilayah: e.target.value })}
+                                value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                onChange={(e) => handleKabupatenSelect(e.target.value)}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                               >
-                                {kabupatenList.map((kb: any) => (
-                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
-                                ))}
+                                {filteredKabupatenList.length === 0 ? (
+                                  <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
+                                ) : (
+                                  filteredKabupatenList.map((kb: any) => (
+                                    <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                  ))
+                                )}
                               </select>
                             </div>
                           </div>
@@ -1843,13 +2042,17 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
                             <select
-                              value={formData.kecamatan || (kecamatanList[0]?.name || "Kecamatan Coblong")}
-                              onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
+                              value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
+                              onChange={(e) => handleKecamatanSelect(e.target.value)}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {kecamatanList.map((kc: any) => (
-                                <option key={kc.id} value={kc.name}>{kc.name}</option>
-                              ))}
+                              {filteredKecamatanList.length === 0 ? (
+                                <option value="">-- Belum ada Kecamatan di Master Data --</option>
+                              ) : (
+                                filteredKecamatanList.map((kc: any) => (
+                                  <option key={kc.id} value={kc.name}>{kc.name}</option>
+                                ))
+                              )}
                             </select>
                           </div>
 
@@ -1892,9 +2095,18 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].map((k) => (
-                                <option key={k} value={k}>Kel. {k}</option>
-                              ))}
+                              {filteredKelurahanList.length === 0 ? (
+                                <option value="">-- Belum ada Kelurahan di Master Data --</option>
+                              ) : (
+                                filteredKelurahanList.map((kl: any) => {
+                                  const kName = getCleanKelName(kl.name || kl.nama);
+                                  return (
+                                    <option key={kl.id} value={kName}>
+                                      Kel. {kName}
+                                    </option>
+                                  );
+                                })
+                              )}
                             </select>
                           </div>
 
@@ -1941,7 +2153,7 @@ const ManajemenPengguna: React.FC = () => {
                       {/* Petugas Residu Assignment for RW */}
                       {formData.roleName === "RW" && (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Petugas Residu</label>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Petugas Pemilah</label>
                           <select
                             value={formData.petugasResiduId || ""}
                             onChange={(e) => setFormData({ ...formData, petugasResiduId: e.target.value })}
@@ -2004,7 +2216,7 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelurahan Penugasan *</label>
                             <select
-                              value={getCleanKelName(modalKelurahan) || "Cipaganti"}
+                              value={getCleanKelName(modalKelurahan) || (filteredKelurahanList[0] ? getCleanKelName(filteredKelurahanList[0].name || filteredKelurahanList[0].nama) : "Cipaganti")}
                               onChange={(e) => {
                                 const selectedKel = e.target.value;
                                 setModalKelurahan(selectedKel);
@@ -2015,9 +2227,18 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].map((k) => (
-                                <option key={k} value={k}>Kel. {k}</option>
-                              ))}
+                              {filteredKelurahanList.length === 0 ? (
+                                <option value="">-- Belum ada Kelurahan di Master Data --</option>
+                              ) : (
+                                filteredKelurahanList.map((kl: any) => {
+                                  const kName = getCleanKelName(kl.name || kl.nama);
+                                  return (
+                                    <option key={kl.id} value={kName}>
+                                      Kel. {kName}
+                                    </option>
+                                  );
+                                })
+                              )}
                             </select>
                           </div>
 
@@ -2137,41 +2358,60 @@ const ManajemenPengguna: React.FC = () => {
                     {/* Status Akun Segmented Control */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Status Akun</label>
-                      <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80">
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, status: "Aktif" })}
-                          className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
-                              ? "bg-white text-emerald-700 shadow-sm border border-emerald-200 ring-2 ring-emerald-500/20"
-                              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                          }`}
-                        >
-                          <span className={`w-2.5 h-2.5 rounded-full ${
-                            formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
-                              ? "bg-emerald-500 animate-pulse"
-                              : "bg-slate-300"
-                          }`} />
-                          <span>Aktif</span>
-                        </button>
+                      {(() => {
+                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (selectedUser.id === user.id || (selectedUser.phone && user.phone && selectedUser.phone === user.phone));
+                        return (
+                          <>
+                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80">
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, status: "Aktif" })}
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                  formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
+                                    ? "bg-white text-emerald-700 shadow-sm border border-emerald-200 ring-2 ring-emerald-500/20"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                }`}
+                              >
+                                <span className={`w-2.5 h-2.5 rounded-full ${
+                                  formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
+                                    ? "bg-emerald-500 animate-pulse"
+                                    : "bg-slate-300"
+                                }`} />
+                                <span>Aktif</span>
+                              </button>
 
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, status: "Nonaktif" })}
-                          className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            formData.status === "Nonaktif"
-                              ? "bg-white text-rose-700 shadow-sm border border-rose-200 ring-2 ring-rose-500/20"
-                              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                          }`}
-                        >
-                          <span className={`w-2.5 h-2.5 rounded-full ${
-                            formData.status === "Nonaktif"
-                              ? "bg-rose-500 animate-pulse"
-                              : "bg-slate-300"
-                          }`} />
-                          <span>Nonaktif</span>
-                        </button>
-                      </div>
+                              <button
+                                type="button"
+                                disabled={isSelfAccountInModal}
+                                onClick={() => {
+                                  if (isSelfAccountInModal) return;
+                                  setFormData({ ...formData, status: "Nonaktif" });
+                                }}
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all ${
+                                  isSelfAccountInModal
+                                    ? "opacity-50 cursor-not-allowed bg-slate-200 text-slate-400"
+                                    : formData.status === "Nonaktif"
+                                      ? "bg-white text-rose-700 shadow-sm border border-rose-200 ring-2 ring-rose-500/20 cursor-pointer"
+                                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 cursor-pointer"
+                                }`}
+                              >
+                                <span className={`w-2.5 h-2.5 rounded-full ${
+                                  formData.status === "Nonaktif"
+                                    ? "bg-rose-500 animate-pulse"
+                                    : "bg-slate-300"
+                                }`} />
+                                <span>Nonaktif</span>
+                              </button>
+                            </div>
+                            {isSelfAccountInModal && (
+                              <p className="text-[10px] font-bold text-amber-700 bg-amber-50 p-2 rounded-xl border border-amber-200/80 flex items-center gap-1.5 mt-2">
+                                <AlertTriangle size={13} className="shrink-0 text-amber-500" />
+                                <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
