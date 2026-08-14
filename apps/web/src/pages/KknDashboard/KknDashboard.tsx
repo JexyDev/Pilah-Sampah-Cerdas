@@ -25,6 +25,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ChevronDown,
+  ChevronUp,
   Layers,
   Activity,
   CheckCircle2,
@@ -119,6 +121,7 @@ const KknDashboard: React.FC = () => {
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
   const [mapCenter, setMapCenter] = useState<[number, number]>(CoblongGeo.CENTER);
   const [mapZoom, setMapZoom] = useState<number>(CoblongGeo.DEFAULT_ZOOM);
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
 
   const isSuperOrAdmin =
     user?.peran === "SUPER_USER" ||
@@ -1010,55 +1013,76 @@ const KknDashboard: React.FC = () => {
           </MapContainer>
 
           {/* Map Legend Overlay */}
-          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 max-w-xs font-sans text-xs">
-            <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200/90 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
-                <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Dashboard KKN
-                </span>
-              </div>
+          <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 max-w-xs font-sans text-xs pointer-events-auto">
+            {!isLegendOpen ? (
+              <button
+                type="button"
+                onClick={() => setIsLegendOpen(true)}
+                className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 flex items-center gap-2 text-xs font-black text-slate-800 hover:bg-emerald-50 hover:text-[#009966] transition-all cursor-pointer group"
+                title="Tampilkan Legenda Peta"
+              >
+                <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
+                <span>Legenda Dashboard KKN</span>
+                <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+            ) : (
+              <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/90 shadow-xl max-w-[260px]">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
+                  <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Dashboard KKN
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsLegendOpen(false)}
+                    className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                    title="Sembunyikan Legenda"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
 
-              {/* Status Kepatuhan Dampingan Warga */}
-              <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
-                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                  Skor Kepatuhan Dampingan
-                </span>
-                <div className="grid grid-cols-2 gap-1 text-[10.5px]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
-                    <span className="font-bold text-slate-700">Tinggi (≥80%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white"></span>
-                    <span className="font-bold text-slate-700">Sedang (60-79%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span>
-                    <span className="font-bold text-slate-700">Rendah (&lt;60%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 border border-white"></span>
-                    <span className="font-bold text-slate-700">Belum Ada Data</span>
+                {/* Status Kepatuhan Dampingan Warga */}
+                <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
+                  <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                    Skor Kepatuhan Dampingan
+                  </span>
+                  <div className="grid grid-cols-2 gap-1 text-[10.5px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
+                      <span className="font-bold text-slate-700">Tinggi (≥80%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white"></span>
+                      <span className="font-bold text-slate-700">Sedang (60-79%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span>
+                      <span className="font-bold text-slate-700">Rendah (&lt;60%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-300 border border-white"></span>
+                      <span className="font-bold text-slate-700">Belum Ada Data</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Batas 6 Kelurahan Coblong */}
-              <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                Polygon 6 Kelurahan
-              </span>
-              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
-                {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                  <div key={kg.id} className="flex items-center gap-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10"
-                      style={{ backgroundColor: kg.color }}
-                    ></span>
-                    <span className="font-bold text-slate-700 truncate">{kg.name}</span>
-                  </div>
-                ))}
+                {/* Batas 6 Kelurahan Coblong */}
+                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  Polygon 6 Kelurahan
+                </span>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
+                  {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                    <div key={kg.id} className="flex items-center gap-1.5">
+                      <span
+                        className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10"
+                        style={{ backgroundColor: kg.color }}
+                      ></span>
+                      <span className="font-bold text-slate-700 truncate">{kg.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -92,6 +92,9 @@ export class PemanfaatanController {
   async getById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      if (id === "feedback" || id === "feedbacks" || id === "kritik-saran" || id === "ulasan") {
+        return await this.getAllFeedback(req, res);
+      }
       const result = await pemanfaatanService.getById(id);
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {

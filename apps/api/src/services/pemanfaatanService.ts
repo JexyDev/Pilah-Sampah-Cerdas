@@ -48,6 +48,9 @@ export class PemanfaatanService {
   }
 
   async getById(id: string) {
+    if (id === "feedback" || id === "feedbacks" || id === "kritik-saran" || id === "ulasan") {
+      return this.getAllFeedback();
+    }
     const item = await prisma.pemanfaatan.findUnique({
       where: { id },
       include: {

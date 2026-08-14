@@ -13,7 +13,11 @@ const router = Router();
 
 // Feedback / Kritik & Saran routes (must be placed before generic /:id route)
 router.get("/feedback", authMiddleware, pemanfaatanController.getAllFeedback);
+router.get("/feedbacks", authMiddleware, pemanfaatanController.getAllFeedback);
+router.get("/kritik-saran", authMiddleware, pemanfaatanController.getAllFeedback);
+router.get("/ulasan", authMiddleware, pemanfaatanController.getAllFeedback);
 router.post("/feedback", authMiddleware, pemanfaatanController.createFeedback);
+router.post("/kritik-saran", authMiddleware, pemanfaatanController.createFeedback);
 router.put("/feedback/:id/tanggapan", authMiddleware, pemanfaatanController.respondFeedback);
 router.delete("/feedback/:id", authMiddleware, readOnlyGuard, pemanfaatanController.deleteFeedback);
 

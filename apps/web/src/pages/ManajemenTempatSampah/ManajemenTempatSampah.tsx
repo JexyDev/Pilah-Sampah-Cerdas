@@ -1,4 +1,4 @@
-import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, Phone, ShieldCheck, Download, Maximize2, Minimize2, RefreshCw, Layers, User, Box } from "lucide-react";
+import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, RefreshCw, Layers, User, Box } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -111,6 +111,7 @@ const ManajemenTempatSampah: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const [mapSearchInput, setMapSearchInput] = useState<string>("");
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
 
   // REALTIME POLLING: Auto-sync map data every 10 seconds when Monitoring tab is active
   useEffect(() => {
@@ -948,64 +949,85 @@ const ManajemenTempatSampah: React.FC = () => {
               </div>
 
               {/* Map Overlay Legend Card (Legenda Peta) */}
-              <div className="absolute bottom-4 right-4 z-10 flex flex-col pointer-events-auto">
-                <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[210px]">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-[#009966]" />
-                      <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
-                        Legenda Sebaran Peta
-                      </p>
+              <div className="absolute bottom-4 right-4 z-10 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px]">
+                {!isLegendOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsLegendOpen(true)}
+                    className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 flex items-center gap-2 text-xs font-black text-slate-800 hover:bg-emerald-50 hover:text-[#009966] transition-all cursor-pointer group"
+                    title="Tampilkan Legenda Peta"
+                  >
+                    <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
+                    <span>Legenda Sebaran Peta</span>
+                    <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
+                ) : (
+                  <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-[#009966]" />
+                        <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                          Legenda Sebaran Peta
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsLegendOpen(false)}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="Sembunyikan Legenda"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
 
-                  {/* Legenda Kategori */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Kategori Tempat Sampah</span>
-                    <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
-                        <span>Organik</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
-                        <span>Anorganik</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
-                        <span>Residu</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Legenda Kapasitas */}
-                  <div className="space-y-1.5 border-t border-slate-100 pt-2">
-                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Volume & Okupansi</span>
-                    <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
-                        <span>Aman (&lt; 70% Terisi)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
-                        <span>Sedang (70% - 90%)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
-                        <span>Penuh (&gt; 90% Terisi)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
-                        <span>Tempat Sampah Rusak</span>
+                    {/* Legenda Kategori */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Kategori Tempat Sampah</span>
+                      <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
+                          <span>Organik</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
+                          <span>Anorganik</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
+                          <span>Residu</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
-                    <span>Diperbarui: {lastSyncTime.toLocaleTimeString()}</span>
-                    <span className="text-emerald-600 font-bold">Realtime</span>
+                    {/* Legenda Kapasitas */}
+                    <div className="space-y-1.5 border-t border-slate-100 pt-2">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Volume & Okupansi</span>
+                      <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
+                          <span>Aman (&lt; 70% Terisi)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
+                          <span>Sedang (70% - 90%)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
+                          <span>Penuh (&gt; 90% Terisi)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
+                          <span>Tempat Sampah Rusak</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                      <span>Diperbarui: {lastSyncTime.toLocaleTimeString()}</span>
+                      <span className="text-emerald-600 font-bold">Realtime</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Leaflet Map Renderer (attributionControl=false removes Leaflet watermark, zoomControl=false removes + / - box) */}

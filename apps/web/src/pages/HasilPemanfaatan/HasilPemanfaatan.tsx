@@ -98,10 +98,16 @@ export const HasilPemanfaatan: React.FC = () => {
       setLoading(true);
       const res = await api.get("/pemanfaatan/feedback");
       if (res.data && res.data.success) {
-        setItems(res.data.data);
+        setItems(Array.isArray(res.data.data) ? res.data.data : []);
+      } else if (Array.isArray(res.data)) {
+        setItems(res.data);
+      } else {
+        setItems([]);
       }
     } catch (e: any) {
-      showToast.error("Gagal memuat data kritik & saran pemanfaatan");
+      console.warn("[HasilPemanfaatan] Gagal memuat feedback:", e?.message || e);
+      setItems([]);
+      showToast.error(e?.response?.data?.message || "Gagal memuat data kritik & saran pemanfaatan");
     } finally {
       setLoading(false);
     }

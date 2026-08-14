@@ -24,6 +24,8 @@ import {
   Minimize2, 
   Layers, 
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import showToast from "../../utils/showToast";
 
@@ -80,6 +82,8 @@ const Monitoring: React.FC = () => {
   const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
   const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">("cartodb");
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
+  const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
 
   // Map Controls
   const [_mapZoom, setMapZoom] = useState<number>(14);
@@ -594,65 +598,180 @@ const Monitoring: React.FC = () => {
               </div>
             </div>
 
-            {/* Map Overlay Legend Card (Legenda Peta) */}
-            <div className="absolute bottom-4 right-4 z-10 flex flex-col pointer-events-auto">
-              <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[210px]">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#009966]" />
-                    <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
-                      Legenda Sebaran Peta
-                    </p>
+            {/* Map Overlay Unified Legend Card (Single Consolidated Source of Truth) */}
+            <div className="absolute bottom-4 right-4 z-20 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px]">
+              {!isLegendOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setIsLegendOpen(true)}
+                  className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 flex items-center gap-2 text-xs font-black text-slate-800 hover:bg-emerald-50 hover:text-[#009966] transition-all cursor-pointer group"
+                  title="Tampilkan Legenda Peta"
+                >
+                  <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
+                  <span>Legenda Monitoring</span>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              ) : (
+                <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[230px] max-w-[280px] sm:max-w-[300px]">
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                        Legenda Monitoring
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsLegendOpen(false)}
+                      className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Sembunyikan Legenda"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Tab Switcher */}
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200/60">
+                    <button
+                      type="button"
+                      onClick={() => setActiveLegendTab("sampah")}
+                      className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
+                        activeLegendTab === "sampah"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Tempat Sampah
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveLegendTab("fasilitas_wilayah")}
+                      className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
+                        activeLegendTab === "fasilitas_wilayah"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Fasilitas & Wilayah
+                    </button>
+                  </div>
+
+                  {/* Tab 1: Tempat Sampah & Okupansi */}
+                  {activeLegendTab === "sampah" ? (
+                    <div className="space-y-2">
+                      {/* Legenda Kategori */}
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Kategori Tempat Sampah
+                        </span>
+                        <div className="grid grid-cols-3 gap-1 text-[11px] font-bold text-slate-700">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
+                            <span>Organik</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
+                            <span>Anorganik</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
+                            <span>Residu</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Legenda Kapasitas & Status Volume */}
+                      <div className="space-y-1 border-t border-slate-100 pt-2">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Status Volume & Okupansi
+                        </span>
+                        <div className="grid grid-cols-1 gap-1 text-[11px] font-semibold text-slate-700">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
+                            <span>Aman (&lt; 70% Terisi)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
+                            <span>Sedang / Waspada (70% - 90%)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
+                            <span className="font-bold text-rose-600">Penuh (&gt; 90% Terisi)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
+                            <span>Tempat Sampah Rusak</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Tab 2: Fasilitas & Batas 6 Kelurahan */
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5 custom-scrollbar">
+                      {/* Fasilitas Pengolahan */}
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Fasilitas Pengolahan Sampah
+                        </span>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-green-600 shrink-0" />
+                            <span className="font-bold text-slate-700 truncate">Bata Terawang</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shrink-0" />
+                            <span className="font-bold text-slate-700 truncate">Loseda</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-amber-600 shrink-0" />
+                            <span className="font-bold text-slate-700 truncate">Rumah Maggot</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-blue-600 shrink-0" />
+                            <span className="font-bold text-slate-700 truncate">Bank Sampah</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-teal-600 shrink-0" />
+                            <span className="font-bold text-slate-700 truncate">TPS</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-orange-600 shrink-0" />
+                            <span className="font-bold text-slate-700 truncate">Incinerator</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Batas 6 Kelurahan */}
+                      <div className="space-y-1 border-t border-slate-100 pt-2">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Batas 6 Kelurahan Coblong
+                        </span>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
+                          {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                            <div key={kg.id} className="flex items-center gap-1.5">
+                              <span
+                                className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10 shadow-2xs"
+                                style={{ backgroundColor: kg.color }}
+                              />
+                              <span className="font-bold text-slate-700 truncate">{kg.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer Sync Indicator */}
+                  <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                    <span>Diperbarui: {lastSyncTime.toLocaleTimeString("id-ID")}</span>
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Realtime
+                    </span>
                   </div>
                 </div>
-
-                {/* Legenda Kategori */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Kategori Tempat Sampah</span>
-                  <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
-                      <span>Organik</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
-                      <span>Anorganik</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
-                      <span>Residu</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legenda Kapasitas */}
-                <div className="space-y-1.5 border-t border-slate-100 pt-2">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Volume &amp; Okupansi</span>
-                  <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
-                      <span>Aman (&lt; 70% Terisi)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
-                      <span>Sedang (70% - 90%)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
-                      <span>Penuh (&gt; 90% Terisi)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
-                      <span>Tempat Sampah Rusak</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
-                  <span>Diperbarui: {lastSyncTime.toLocaleTimeString("id-ID")}</span>
-                  <span className="text-emerald-600 font-bold">Realtime</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Leaflet Map Renderer */}
@@ -854,86 +973,7 @@ const Monitoring: React.FC = () => {
 
             </MapContainer>
 
-            {/* Map Legend Overlay for Monitoring Wilayah */}
-            <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 max-w-xs font-sans text-xs">
-              <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/90 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
-                  <span className="font-black text-[11px] uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Legenda Monitoring Wilayah
-                  </span>
-                </div>
 
-                {/* Status Tempat Sampah */}
-                <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
-                  <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                    Status Tempat Sampah
-                  </span>
-                  <div className="grid grid-cols-3 gap-1 text-[10.5px]">
-                    <div className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
-                      <span className="font-bold text-slate-700">Normal</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white"></span>
-                      <span className="font-bold text-slate-700">Waspada</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span>
-                      <span className="font-bold text-slate-700">Penuh</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fasilitas Pengolahan Sampah */}
-                <div className="space-y-1 mb-2 pb-2 border-b border-slate-100">
-                  <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                    Fasilitas Pengolahan Sampah
-                  </span>
-                  <div className="grid grid-cols-2 gap-y-1 text-[10.5px]">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-green-600"></span>
-                      <span className="font-bold text-slate-700">Bata Terawang</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600"></span>
-                      <span className="font-bold text-slate-700">Loseda</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-amber-600"></span>
-                      <span className="font-bold text-slate-700">Rumah Maggot</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-blue-600"></span>
-                      <span className="font-bold text-slate-700">Bank Sampah</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-teal-600"></span>
-                      <span className="font-bold text-slate-700">TPS</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-orange-600"></span>
-                      <span className="font-bold text-slate-700">Incinerator</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Warna 6 Kelurahan */}
-                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                  Batas 6 Kelurahan Coblong
-                </span>
-                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
-                  {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                    <div key={kg.id} className="flex items-center gap-1.5">
-                      <span
-                        className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10"
-                        style={{ backgroundColor: kg.color }}
-                      ></span>
-                      <span className="font-bold text-slate-700 truncate">{kg.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
