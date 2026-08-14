@@ -94,6 +94,7 @@ export class AiController {
       }
 
       const filePath = `/uploads/${req.file.filename}`;
+      const evidencePhotoUrl = `${req.protocol}://${req.get("host")}${filePath}`;
       const result = await aiService.detectWasteMock(userId, filePath);
       const quotaRemaining = await redisService.getRemainingQuota(userId);
 
@@ -115,6 +116,7 @@ export class AiController {
           isBlurry: (result as any).isBlurry || false,
           requestId: (result as any).requestId,
           quotaRemaining,
+          evidencePhotoUrl,
           ...result,
         },
       });

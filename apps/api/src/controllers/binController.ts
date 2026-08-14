@@ -70,11 +70,17 @@ export class BinController {
           verifiedAtStr = `${day}/${month}/${year}, ${hours}.${minutes}`;
         }
 
-        const hasGps = bin.latitude !== null && bin.longitude !== null && bin.latitude !== undefined && bin.longitude !== undefined;
+        const hasGps =
+          bin.latitude !== null &&
+          bin.longitude !== null &&
+          bin.latitude !== undefined &&
+          bin.longitude !== undefined;
         const latVal = hasGps ? Number(bin.latitude).toFixed(4) : null;
         const lngVal = hasGps ? Number(bin.longitude).toFixed(4) : null;
         const altVal = bin.height ? Math.round(Number(bin.height) * 10) + 700 : 768;
-        const gpsFormatted = hasGps ? `${latVal}, ${lngVal}, ${altVal} mdpl` : "Belum Terikat (GPS)";
+        const gpsFormatted = hasGps
+          ? `${latVal}, ${lngVal}, ${altVal} mdpl`
+          : "Belum Terikat (GPS)";
 
         const ensureTcFormat = (codeStr: string, catName?: string) => {
           if (!codeStr) return "TC-OGN-13082026-001";
@@ -84,7 +90,9 @@ export class BinController {
           if (upperCat.includes("ANORGANIK") || upperCat.includes("ANG")) tag = "ANG";
           else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
           const digits = codeStr.replace(/\D/g, "");
-          const seq = digits ? String(parseInt(digits.slice(0, 4) || "1", 10)).padStart(3, "0") : "001";
+          const seq = digits
+            ? String(parseInt(digits.slice(0, 4) || "1", 10)).padStart(3, "0")
+            : "001";
           return `TC-${tag}-13082026-${seq}`;
         };
 
@@ -97,7 +105,9 @@ export class BinController {
           const year = d.getFullYear();
           const hours = String(d.getHours()).padStart(2, "0");
           const minutes = String(d.getMinutes()).padStart(2, "0");
-          const cat = (lastDeposit.hasilKlasifikasiAi || "").toLowerCase().includes("anorganik") ? "Anorganik" : "Organik";
+          const cat = (lastDeposit.hasilKlasifikasiAi || "").toLowerCase().includes("anorganik")
+            ? "Anorganik"
+            : "Organik";
           const rawConf = Number(lastDeposit.confidenceAi || 0);
           const confVal = rawConf > 1 ? Math.round(rawConf) : Math.round(rawConf * 100);
           const conf = confVal > 0 && confVal <= 100 ? ` (${confVal}% AI)` : "";
@@ -146,11 +156,17 @@ export class BinController {
         mappedBins = mappedBins.filter((b: any) => {
           const st = (b.status || "").toLowerCase();
           const rst = (b.realStatus || "").toLowerCase();
-          if (targetStatus === "perbaikan" || targetStatus === "rusak" || targetStatus === "broken") {
+          if (
+            targetStatus === "perbaikan" ||
+            targetStatus === "rusak" ||
+            targetStatus === "broken"
+          ) {
             return st === "rusak" || rst === "broken" || st === "perbaikan";
           }
           if (targetStatus === "normal") {
-            return st === "normal" || rst === "active_bound" || rst === "active" || rst === "printed";
+            return (
+              st === "normal" || rst === "active_bound" || rst === "active" || rst === "printed"
+            );
           }
           return st === targetStatus || rst === targetStatus;
         });
@@ -332,6 +348,30 @@ export class BinController {
       }
 
       const finalConfidence = confidence ?? aiConfidence;
+
+      // Anti-dummy-data: tolak transaksi kalau bukti foto atau confidence AI
+      // asli tidak ada, alih-alih diam-diam mengisi foto stok/confidence palsu.
+      if (!evidencePhotoUrl) {
+        res.status(400).json({
+          status: "error",
+          error: "EVIDENCE_PHOTO_MISSING",
+          message: "Foto bukti sampah wajib disertakan. Silakan foto ulang dan kirim lagi.",
+        });
+        return;
+      }
+      const hasValidConfidence =
+        Array.isArray(detections) && detections.length > 0
+          ? detections.every((d: any) => typeof d.confidence === "number" && d.confidence > 0)
+          : typeof finalConfidence === "number" && finalConfidence > 0;
+      if (!hasValidConfidence) {
+        res.status(400).json({
+          status: "error",
+          error: "AI_CONFIDENCE_MISSING",
+          message:
+            "Hasil deteksi AI tidak valid atau gagal diproses. Silakan foto ulang dan kirim lagi.",
+        });
+        return;
+      }
 
       const result = await binService.processScan(
         qrCode,
@@ -549,9 +589,17 @@ export class BinController {
     } catch (error: any) {
       console.error("[BinController] deleteBin error:", error);
       if (error.message === "BIN_NOT_FOUND") {
-        res.status(404).json({ success: false, error: "RESOURCE_NOT_FOUND", message: "Tempat sampah tidak ditemukan" });
+        res.status(404).json({
+          success: false,
+          error: "RESOURCE_NOT_FOUND",
+          message: "Tempat sampah tidak ditemukan",
+        });
       } else {
-        res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: "Gagal menghapus tempat sampah" });
+        res.status(500).json({
+          success: false,
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal menghapus tempat sampah",
+        });
       }
     }
   }

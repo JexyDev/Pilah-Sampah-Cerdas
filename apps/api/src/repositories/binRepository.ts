@@ -219,11 +219,11 @@ export class BinRepository {
       const setoranOtomatis = await tx.setoranOtomatis.create({
         data: {
           wargaId: userId,
-          fotoSampahUrl: evidencePhotoUrl || "https://picsum.photos/400/300",
+          fotoSampahUrl: evidencePhotoUrl!,
           hasilKlasifikasiAi: categoryName.toLowerCase().includes("organik")
             ? "organik"
             : "anorganik",
-          confidenceAi: aiConfidence || 0.95,
+          confidenceAi: aiConfidence!,
           berat: weightKg,
           unit: "Kg",
           poin: pointsAwarded,

@@ -372,7 +372,7 @@ export class BinService {
           multiplier = multVal ? Number(multVal) : 1.0;
         }
 
-        const rawConf = det.confidence ?? aiConfidence ?? 1.0;
+        const rawConf = (det.confidence ?? aiConfidence)!;
         const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
         const rate = 100 * multiplier;
         const calculatedPoints = Math.max(1, Math.round(vol * rate * confScale));
@@ -525,7 +525,7 @@ export class BinService {
       multiplier = multVal ? Number(multVal) : 1.0;
     }
 
-    const rawConf = aiConfidence ?? 1.0;
+    const rawConf = aiConfidence!;
     const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
     const rate = 100 * multiplier;
     const calculatedPoints = Math.max(1, Math.round(estimatedVolume * rate * confScale));
