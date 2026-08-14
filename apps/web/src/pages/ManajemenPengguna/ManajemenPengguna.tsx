@@ -299,21 +299,35 @@ const ManajemenPengguna: React.FC = () => {
     handleSubmit(e);
   };
   const filteredRwsByKelurahan = useMemo(() => {
-    const targetClean = getCleanKelName(modalKelurahan).toLowerCase();
+    let targetClean = getCleanKelName(modalKelurahan).toLowerCase();
+    if (!targetClean || targetClean === "unassigned") {
+      targetClean = "cipaganti";
+    }
 
     let list = areasList.filter((a: any) => {
       const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
       return areaKel.includes(targetClean) || targetClean.includes(areaKel);
     });
 
+    if (list.length === 0 && areasList.length > 0) {
+      list = areasList.filter((a: any) => {
+        const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
+        return areaKel.includes("cipaganti");
+      });
+    }
+
     // Deduplicate list by numeric RW identifier to prevent duplicate RW buttons in modal
     const seen = new Set<string>();
     const uniqueList: any[] = [];
     for (const item of list) {
-      const rwNum = item.name.replace(/\D/g, "").padStart(2, "0");
+      const rawName = item.name.split("(")[0].trim();
+      const rwNum = rawName.replace(/\D/g, "").padStart(2, "0");
       if (rwNum && rwNum !== "00" && !seen.has(rwNum)) {
         seen.add(rwNum);
-        uniqueList.push(item);
+        uniqueList.push({
+          ...item,
+          cleanName: rawName.startsWith("RW") ? rawName : `RW ${rwNum}`
+        });
       }
     }
 
@@ -2107,18 +2121,21 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {filteredKelurahanList.length === 0 ? (
-                                <option value="">-- Belum ada Kelurahan di Master Data --</option>
-                              ) : (
-                                filteredKelurahanList.map((kl: any) => {
-                                  const kName = getCleanKelName(kl.name || kl.nama);
-                                  return (
-                                    <option key={kl.id} value={kName}>
-                                      Kel. {kName}
-                                    </option>
-                                  );
-                                })
-                              )}
+                              {(() => {
+                                const activeKelList = filteredKelurahanList.length > 0 ? filteredKelurahanList : kelurahanList;
+                                return activeKelList.length === 0 ? (
+                                  <option value="">-- Belum ada Kelurahan di Master Data --</option>
+                                ) : (
+                                  activeKelList.map((kl: any) => {
+                                    const kName = getCleanKelName(kl.name || kl.nama);
+                                    return (
+                                      <option key={kl.id} value={kName}>
+                                        Kel. {kName}
+                                      </option>
+                                    );
+                                  })
+                                );
+                              })()}
                             </select>
                           </div>
 
@@ -2239,33 +2256,40 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              {filteredKelurahanList.length === 0 ? (
-                                <option value="">-- Belum ada Kelurahan di Master Data --</option>
-                              ) : (
-                                filteredKelurahanList.map((kl: any) => {
-                                  const kName = getCleanKelName(kl.name || kl.nama);
-                                  return (
-                                    <option key={kl.id} value={kName}>
-                                      Kel. {kName}
-                                    </option>
-                                  );
-                                })
-                              )}
+                              {(() => {
+                                const activeKelList = filteredKelurahanList.length > 0 ? filteredKelurahanList : kelurahanList;
+                                return activeKelList.length === 0 ? (
+                                  <option value="">-- Belum ada Kelurahan di Master Data --</option>
+                                ) : (
+                                  activeKelList.map((kl: any) => {
+                                    const kName = getCleanKelName(kl.name || kl.nama);
+                                    return (
+                                      <option key={kl.id} value={kName}>
+                                        Kel. {kName}
+                                      </option>
+                                    );
+                                  })
+                                );
+                              })()}
                             </select>
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Wilayah Penugasan (RW)</label>
-                            <p className="text-[10px] text-slate-400 mb-2">Pilih satu atau beberapa RW pendampingan (Kel. {getCleanKelName(modalKelurahan) || "Cipaganti"}):</p>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="block text-[11px] font-bold text-slate-600">Wilayah Penugasan (RW)</label>
+                              <span className="text-[10px] font-extrabold text-[#009966] bg-[#009966]/10 px-2.5 py-0.5 rounded-full border border-[#009966]/20">
+                                Kel. {getCleanKelName(modalKelurahan) || "Cipaganti"}
+                              </span>
+                            </div>
                             <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 border border-slate-200 max-h-36 overflow-y-auto">
                               {filteredRwsByKelurahan.map((area: any) => {
                                 const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
-                                const rwName = area.name.startsWith("RW") ? area.name : `RW ${rwNum}`;
-                                const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwName);
+                                const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
+                                const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
                                 return (
                                   <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-2xs" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
                                     <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
-                                    {rwName}
+                                    {rwCleanName}
                                   </label>
                                 );
                               })}
