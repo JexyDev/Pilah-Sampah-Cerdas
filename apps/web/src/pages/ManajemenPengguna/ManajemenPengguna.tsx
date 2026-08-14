@@ -547,7 +547,7 @@ const ManajemenPengguna: React.FC = () => {
     setModalType("edit");
     setSelectedUser(u);
     let matchedAreaId = u.rtRwId ? String(u.rtRwId) : "";
-    let foundKelurahan = u.kelurahan || cleanKelurahanName(u.address) || "Cipaganti";
+    let foundKelurahan = u.kelurahan || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
     if (!matchedAreaId && u.rw && areasList.length > 0) {
       const found = areasList.find((a: any) => a.name.toLowerCase() === u.rw.toLowerCase() || a.name.replace(/\D/g, "") === u.rw.replace(/\D/g, ""));
       if (found) {
@@ -1784,41 +1784,49 @@ const ManajemenPengguna: React.FC = () => {
                       {/* Mahasiswa Fields */}
                       {formData.roleName === "MAHASISWA_KKN" && (
                         <>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">NIM (Nomor Induk Mahasiswa)</label>
-                            <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-mono font-semibold transition-all outline-none" />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelompok KKN</label>
-                            <select
-                              value={formData.dplKelompokIds?.[0] || ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                let autoDplId = formData.dplId;
-                                if (val) {
-                                  const foundKel = kelompokList.find((k: any) => k.id === val);
-                                  if (foundKel?.dplId || foundKel?.dpl?.id) {
-                                    autoDplId = foundKel.dplId || foundKel.dpl?.id;
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">NIM (Nomor Induk Mahasiswa)</label>
+                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-mono font-semibold transition-all outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelompok KKN</label>
+                              <select
+                                value={formData.dplKelompokIds?.[0] || ""}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  let autoDplId = formData.dplId;
+                                  let autoKelName = "";
+                                  if (val) {
+                                    const foundKel = kelompokList.find((k: any) => k.id === val);
+                                    if (foundKel?.dplId || foundKel?.dpl?.id) {
+                                      autoDplId = foundKel.dplId || foundKel.dpl?.id;
+                                    }
+                                    if (foundKel?.kelurahan || foundKel?.name) {
+                                      autoKelName = foundKel.kelurahan || cleanKelurahanName(foundKel.name);
+                                    }
+                                  } else {
+                                    autoDplId = "";
                                   }
-                                } else {
-                                  autoDplId = "";
-                                }
-                                setFormData({
-                                  ...formData,
-                                  dplKelompokIds: val ? [val] : [],
-                                  dplId: autoDplId,
-                                });
-                              }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
-                            >
-                              <option value="">-- Tanpa Kelompok (Mandiri / Unassigned) --</option>
-                              {kelompokList.map((k: any) => (
-                                <option key={k.id} value={k.id}>
-                                  {cleanKknDisplayName(k.name)} {(k.dplName || k.dpl?.name) ? `- DPL: ${k.dplName || k.dpl?.name}` : ""}
-                                </option>
-                              ))}
-                            </select>
+                                  if (autoKelName) setModalKelurahan(getCleanKelName(autoKelName));
+                                  setFormData({
+                                    ...formData,
+                                    dplKelompokIds: val ? [val] : [],
+                                    dplId: autoDplId,
+                                  });
+                                }}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              >
+                                <option value="">-- Tanpa Kelompok (Mandiri / Unassigned) --</option>
+                                {kelompokList.map((k: any) => (
+                                  <option key={k.id} value={k.id}>
+                                    {cleanKknDisplayName(k.name)} {(k.dplName || k.dpl?.name) ? `- DPL: ${k.dplName || k.dpl?.name}` : ""}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
+
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Dosen Pembimbing Lapangan (DPL)</label>
                             <select
@@ -1830,6 +1838,9 @@ const ManajemenPengguna: React.FC = () => {
                                   const matchedKel = kelompokList.find((k: any) => k.dplId === selectedDplId || k.dpl?.id === selectedDplId);
                                   if (matchedKel) {
                                     autoKelompokId = matchedKel.id;
+                                    if (matchedKel.kelurahan || matchedKel.name) {
+                                      setModalKelurahan(getCleanKelName(matchedKel.kelurahan || cleanKelurahanName(matchedKel.name)));
+                                    }
                                   }
                                 } else {
                                   autoKelompokId = "";
@@ -1850,6 +1861,7 @@ const ManajemenPengguna: React.FC = () => {
                               ))}
                             </select>
                           </div>
+
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Jenjang Pendidikan</label>
