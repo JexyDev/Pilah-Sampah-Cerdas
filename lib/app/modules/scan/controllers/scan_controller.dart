@@ -134,8 +134,10 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
       if (bin != null) {
         // Hitung jarak Haversine (client-side)
         final distance = Geolocator.distanceBetween(
-          userLat, userLng,
-          bin.lat, bin.lng,
+          userLat,
+          userLng,
+          bin.lat,
+          bin.lng,
         );
 
         const maxDistance = kDebugMode ? 500.0 : 10.0;
@@ -147,14 +149,18 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         }
 
         // Cek kapasitas
-        final double projectedVol = bin.currentVolumeL + state.aiResult!.volumeEstimate;
+        final double projectedVol =
+            bin.currentVolumeL + state.aiResult!.volumeEstimate;
         if (bin.currentVolumeL >= bin.maxCapacityL) {
           throw const BinException(
             'BIN_OVERFLOW',
             'Tempat sampah ini sudah penuh (100%)! Silakan ajukan pengosongan.',
           );
         } else if (projectedVol > bin.maxCapacityL) {
-          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(0.0, 999.0);
+          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(
+            0.0,
+            999.0,
+          );
           throw BinException(
             'BIN_OVERFLOW',
             'Kapasitas tempat sampah tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
@@ -168,6 +174,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         detectedType: state.aiResult!.detectedType,
         estimatedVolume: state.aiResult!.volumeEstimate,
         confidence: state.aiResult!.confidence,
+        evidencePhotoUrl: state.aiResult!.evidencePhotoUrl,
         householdId: _householdId,
         userLat: userLat,
         userLng: userLng,
@@ -268,17 +275,22 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
         latitude: latitude,
         longitude: longitude,
       );
-      
+
       // Panggil measureBin sesuai jenis QR Code secara berurutan
       for (final qr in qrSerials) {
-        final isOrganik = !qr.toUpperCase().contains('NON') && !qr.toUpperCase().contains('ANORG') && !qr.toUpperCase().startsWith('ANO');
+        final isOrganik =
+            !qr.toUpperCase().contains('NON') &&
+            !qr.toUpperCase().contains('ANORG') &&
+            !qr.toUpperCase().startsWith('ANO');
         await _binRepository.measureBin(
           qrCode: qr,
           binType: isOrganik ? WasteType.organic : WasteType.nonOrganic,
           maxCapacityLiter: isOrganik ? orgCapacity : anorgCapacity,
         );
       }
-      state = AktivasiBinState(result: results.isNotEmpty ? results.last : null);
+      state = AktivasiBinState(
+        result: results.isNotEmpty ? results.last : null,
+      );
     } on BinException catch (e) {
       state = AktivasiBinState(errorCode: e.code, errorMessage: e.message);
     }

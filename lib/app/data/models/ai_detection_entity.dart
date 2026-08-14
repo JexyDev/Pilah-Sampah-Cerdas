@@ -12,6 +12,7 @@ class AiDetectionEntity extends Equatable {
     this.organicPercentage,
     this.estimatedPoints,
     this.requestId,
+    this.evidencePhotoUrl,
   });
 
   final WasteType detectedType;
@@ -24,15 +25,19 @@ class AiDetectionEntity extends Equatable {
 
   /// Confidence score 0.0–1.0
   final double? confidence;
-  
+
   /// Persentase probabilitas sampah ini organik (0.0-1.0)
   final double? organicPercentage;
-  
+
   /// Estimasi poin yang akan didapat
   final int? estimatedPoints;
 
   final bool isBlurry;
   final String? requestId;
+
+  /// URL foto bukti sampah yang tersimpan di server (dari respons /detect).
+  /// Wajib dikirim ulang saat scanAndCommit agar backend tidak menolak transaksi.
+  final String? evidencePhotoUrl;
 
   /// Berat yang ditampilkan ke user (harus dari backend)
   double get displayWeightKg {

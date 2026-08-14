@@ -29,6 +29,7 @@ abstract class BinRepository {
     required WasteType detectedType,
     required double estimatedVolume,
     double? confidence,
+    String? evidencePhotoUrl,
     required String householdId,
     required double userLat,
     required double userLng,
@@ -91,5 +92,7 @@ class BinException implements Exception {
   final String? message;
 
   @override
-  String toString() => message != null && message!.isNotEmpty ? message! : 'Terjadi kendala pada data tempat sampah. Silakan coba beberapa saat lagi.';
+  String toString() => message != null && message!.isNotEmpty
+      ? message!
+      : 'Terjadi kendala pada data tempat sampah. Silakan coba beberapa saat lagi.';
 }
