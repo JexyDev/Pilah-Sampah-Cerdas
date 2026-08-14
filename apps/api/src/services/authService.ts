@@ -287,7 +287,6 @@ export class AuthService {
       user.rw?.kelurahan?.kecamatan?.name ||
       user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name ||
       "Coblong";
-    const rtRwStr = rtName && rwName ? `${rtName} / ${rwName}` : rwName || rtName || "";
 
     return {
       id: user.id,
@@ -296,6 +295,8 @@ export class AuthService {
       phone: user.phone,
       address: user.address,
       fotoProfil: user.fotoProfil,
+      familySize: user.jumlahAnggotaKeluarga || 1,
+      jumlahAnggotaKeluarga: user.jumlahAnggotaKeluarga || 1,
       qrCode: `USER:${user.id}`,
       provinsi: "Jawa Barat",
       kabupaten: "Kota Bandung",

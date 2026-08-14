@@ -81,7 +81,11 @@ router.post(
  *       200:
  *         description: Success
  */
+import { authController } from "../controllers/authController.js";
+
 router.get("/me", authMiddleware, householdController.getMyHouseholds);
+router.put("/me", authMiddleware, authController.updateCurrentUserProfile);
+router.patch("/me", authMiddleware, authController.updateCurrentUserProfile);
 router.get("/me/bins/summary", authMiddleware, householdController.getBinsSummary);
 router.get("/bins/summary", authMiddleware, householdController.getBinsSummary);
 

@@ -8,6 +8,7 @@
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { formatPhoneNumber } from "../utils/phoneUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -563,14 +564,43 @@ export class KknService {
     });
   }
 
+  private async resolveWargaUser(tx: any, inputWargaId: string) {
+    if (!inputWargaId) {
+      throw new Error("Field wargaId wajib diisi");
+    }
+    let targetUser = await tx.user.findUnique({ where: { id: inputWargaId } });
+    if (targetUser) return targetUser;
+
+    const hh = await tx.household.findUnique({ where: { id: inputWargaId } });
+    if (hh?.userId) {
+      targetUser = await tx.user.findUnique({ where: { id: hh.userId } });
+      if (targetUser) return targetUser;
+    }
+
+    targetUser = await tx.user.findFirst({
+      where: {
+        OR: [
+          { phone: inputWargaId },
+          { phone: formatPhoneNumber(inputWargaId) },
+        ],
+      },
+    });
+    if (targetUser) return targetUser;
+
+    throw new Error(`Pengguna Warga dengan ID/Nomor '${inputWargaId}' tidak ditemukan di sistem. Silakan pastikan Warga sudah terdaftar.`);
+  }
+
   async activateByScan(
-    wargaId: string,
+    wargaIdInput: string,
     qrCode: string,
     latitude?: number,
     longitude?: number,
     kknUserId?: string
   ) {
     return prisma.$transaction(async (tx) => {
+      const targetWarga = await this.resolveWargaUser(tx, wargaIdInput);
+      const wargaId = targetWarga.id;
+
       let bin = await tx.bin.findUnique({ where: { qrCode } });
 
       if (!bin) {
@@ -614,12 +644,11 @@ export class KknService {
 
       const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
       if (!existingHh) {
-        const wObj = await tx.user.findUnique({ where: { id: wargaId } });
         await tx.household.create({
           data: {
             userId: wargaId,
-            address: wObj?.address || "Bandung, Jawa Barat",
-            rwId: wObj?.rwId || 1,
+            address: targetWarga.address || "Bandung, Jawa Barat",
+            rwId: targetWarga.rwId || 1,
             latitude: latitude ?? -6.8903,
             longitude: longitude ?? 107.611,
           },
@@ -646,7 +675,7 @@ export class KknService {
   }
 
   async activateWargaBin(
-    wargaId: string,
+    wargaIdInput: string,
     binOrganikId: string,
     binAnorganikId: string,
     latitude?: number,
@@ -654,6 +683,9 @@ export class KknService {
     kknUserId?: string
   ) {
     return prisma.$transaction(async (tx) => {
+      const targetWarga = await this.resolveWargaUser(tx, wargaIdInput);
+      const wargaId = targetWarga.id;
+
       const bins = await tx.bin.findMany({
         where: {
           OR: [
@@ -712,12 +744,11 @@ export class KknService {
 
       const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
       if (!existingHh) {
-        const wObj = await tx.user.findUnique({ where: { id: wargaId } });
         await tx.household.create({
           data: {
             userId: wargaId,
-            address: wObj?.address || "Bandung, Jawa Barat",
-            rwId: wObj?.rwId || 1,
+            address: targetWarga.address || "Bandung, Jawa Barat",
+            rwId: targetWarga.rwId || 1,
             latitude: latitude ?? -6.8903,
             longitude: longitude ?? 107.611,
           },

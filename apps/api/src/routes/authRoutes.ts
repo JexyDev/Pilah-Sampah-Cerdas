@@ -212,6 +212,8 @@ router.post("/logout", authController.logout);
  *         description: Unauthorized
  */
 router.get("/me", authMiddleware, authController.getCurrentUser);
+router.put("/me", authMiddleware, authController.updateCurrentUserProfile);
+router.patch("/me", authMiddleware, authController.updateCurrentUserProfile);
 
 /**
  * @swagger

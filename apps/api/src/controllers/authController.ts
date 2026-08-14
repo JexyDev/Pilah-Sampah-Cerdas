@@ -285,6 +285,96 @@ export class AuthController {
     }
   }
   /**
+   * Handle Update Current User Profile (PUT / PATCH /api/v1/auth/me)
+   */
+  async updateCurrentUserProfile(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId || (req as any).user?.id;
+      if (!userId) {
+        res.status(401).json({ success: false, message: "Token otentikasi tidak valid atau tidak ditemukan." });
+        return;
+      }
+
+      // Accept aliases from body
+      const rawName = req.body.name ?? req.body.nama;
+      const rawPhone = req.body.phone ?? req.body.noWa ?? req.body.noTelepon;
+      const rawAddress = req.body.address ?? req.body.alamat;
+      const rawFoto = req.body.fotoProfil ?? req.body.foto;
+      const rawFamilySize = req.body.familySize ?? req.body.jumlahAnggotaKeluarga;
+
+      let familySizeNum: number | undefined = undefined;
+
+      if (rawFamilySize !== undefined && rawFamilySize !== null) {
+        if (typeof rawFamilySize === "number") {
+          if (isNaN(rawFamilySize) || rawFamilySize < 0) {
+            res.status(400).json({
+              success: false,
+              message: "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka positif.",
+            });
+            return;
+          }
+          familySizeNum = Math.floor(rawFamilySize);
+        } else if (typeof rawFamilySize === "string") {
+          const trimmed = rawFamilySize.trim();
+          const parsed = parseInt(trimmed, 10);
+          if (isNaN(parsed) || !/^\d+$/.test(trimmed)) {
+            res.status(400).json({
+              success: false,
+              message: "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka murni.",
+            });
+            return;
+          }
+          familySizeNum = parsed;
+        } else {
+          res.status(400).json({
+            success: false,
+            message: "Tipe data familySize tidak valid.",
+          });
+          return;
+        }
+      }
+
+      const updatedUser = await authService.updateProfile(
+        userId,
+        rawName ? String(rawName).trim() : undefined,
+        rawPhone ? normalizePhone(String(rawPhone)) : undefined,
+        rawAddress ? String(rawAddress).trim() : undefined,
+        rawFoto ? String(rawFoto) : undefined,
+        familySizeNum
+      );
+
+      const fSize = (updatedUser as any).jumlahAnggotaKeluarga ?? familySizeNum ?? 1;
+
+      res.status(200).json({
+        success: true,
+        message: "Profil berhasil diperbarui",
+        data: {
+          user: {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            phone: updatedUser.phone,
+            address: (updatedUser as any).address,
+            fotoProfil: (updatedUser as any).fotoProfil,
+            familySize: fSize,
+            jumlahAnggotaKeluarga: fSize,
+            role: (updatedUser as any).role?.name || "WARGA",
+          },
+        },
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "User tidak ditemukan" });
+      } else {
+        console.error("[updateCurrentUserProfile Error]", error);
+        res.status(500).json({
+          success: false,
+          message: error.message || "Terjadi kesalahan pada server saat memperbarui profil",
+        });
+      }
+    }
+  }
+
+  /**
    * Handle Update Profile
    */
   async updateProfile(req: Request, res: Response): Promise<void> {
