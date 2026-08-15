@@ -211,6 +211,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                             itemBuilder: (context, index) {
                               return _WargaListItem(
                                 warga: filtered[index],
+                                currentUserName: user?.name ?? '',
                                 onTap: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.detailWarga,
@@ -266,10 +267,15 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _WargaListItem extends StatelessWidget {
-  const _WargaListItem({required this.warga, required this.onTap});
+  const _WargaListItem({
+    required this.warga,
+    required this.onTap,
+    this.currentUserName = '',
+  });
 
   final WargaDampingan warga;
   final VoidCallback onTap;
+  final String currentUserName;
 
   @override
   Widget build(BuildContext context) {
@@ -340,24 +346,30 @@ class _WargaListItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (warga.pendampingName.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                      if (warga.isActivated) ...[
+                        const SizedBox(height: 5),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFA5D6A7)),
+                            color: const Color(0xFFEBF5FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF90CDF4)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.school, size: 12, color: AppColors.primaryGreen),
+                              const Icon(Icons.verified_rounded, size: 12, color: AppColors.primaryBlueDark),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  'Pendamping: ${warga.pendampingName}',
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),
+                                  warga.pendampingName.isNotEmpty
+                                      ? 'Diaktivasi oleh: ${warga.pendampingName}'
+                                      : (currentUserName.isNotEmpty ? 'Diaktivasi oleh: $currentUserName' : 'Diaktivasi Mahasiswa'),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryBlueDark,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),

@@ -62,23 +62,37 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false; // Hanya tampilkan role warga
 
-      if (_selectedKelurahan != 'Semua') {
-        final targetKel = _selectedKelurahan.toLowerCase();
-        final matches = w.kelurahan.toLowerCase().contains(targetKel) || 
-            w.address.toLowerCase().contains(targetKel);
-        if (!matches) return false;
-      }
-      
-      if (_selectedRtRw != 'Semua') {
-        final cleanSelected = _selectedRtRw.replaceAll(RegExp(r'[^\d]'), '');
-        final cleanWarga = w.rw.replaceAll(RegExp(r'[^\d]'), '');
-        final cleanAddr = w.address.replaceAll(RegExp(r'[^\d]'), '');
+      if (isAktivasiBinMode) {
+        final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+        final targetKelClean = userKel.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
 
-        final matches = (cleanWarga.isNotEmpty && cleanWarga.contains(cleanSelected)) ||
-            (cleanAddr.isNotEmpty && cleanAddr.contains(cleanSelected)) ||
-            w.rw.contains(_selectedRtRw) ||
-            w.address.contains(_selectedRtRw);
-        if (!matches) return false;
+        final wRwClean = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+        final wKelClean = w.kelurahan.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
+        final wAddr = w.address.toLowerCase();
+
+        final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
+        final kelMatches = targetKelClean.isEmpty || wKelClean.contains(targetKelClean) || targetKelClean.contains(wKelClean) || wAddr.contains(targetKelClean);
+
+        if (!rwMatches || !kelMatches) return false;
+      } else {
+        if (_selectedKelurahan != 'Semua') {
+          final targetKel = _selectedKelurahan.toLowerCase();
+          final matches = w.kelurahan.toLowerCase().contains(targetKel) || 
+              w.address.toLowerCase().contains(targetKel);
+          if (!matches) return false;
+        }
+        
+        if (_selectedRtRw != 'Semua') {
+          final cleanSelected = _selectedRtRw.replaceAll(RegExp(r'[^\d]'), '');
+          final cleanWarga = w.rw.replaceAll(RegExp(r'[^\d]'), '');
+          final cleanAddr = w.address.replaceAll(RegExp(r'[^\d]'), '');
+
+          final matches = (cleanWarga.isNotEmpty && cleanWarga.contains(cleanSelected)) ||
+              (cleanAddr.isNotEmpty && cleanAddr.contains(cleanSelected)) ||
+              w.rw.contains(_selectedRtRw) ||
+              w.address.contains(_selectedRtRw);
+          if (!matches) return false;
+        }
       }
 
       if (_searchController.text.isNotEmpty) {
@@ -226,6 +240,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   }
 
   Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
+    final currentUserName = ref.watch(authProvider).user?.name ?? '';
     final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
     final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
@@ -443,26 +458,37 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: warga.mahasiswaId.isNotEmpty ? AppColors.primaryBlueLight : Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        warga.mahasiswaId.isNotEmpty
-                                            ? (warga.pendampingName.isNotEmpty
-                                                ? 'Dampingan: ${warga.pendampingName}'
-                                                : 'Dampingan Mahasiswa')
-                                            : 'Mandiri',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: warga.mahasiswaId.isNotEmpty ? AppColors.primaryBlueDark : Colors.grey[600],
+                                    if (warga.isActivated) ...[
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEBF5FF),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: const Color(0xFF90CDF4)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.verified_rounded, size: 11, color: AppColors.primaryBlueDark),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                warga.pendampingName.isNotEmpty
+                                                    ? 'Diaktivasi oleh: ${warga.pendampingName}'
+                                                    : (currentUserName.isNotEmpty ? 'Diaktivasi oleh: $currentUserName' : 'Diaktivasi Mahasiswa'),
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.primaryBlueDark,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -501,8 +527,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           // ── Sub-info RT & Kelurahan ─────────────────────────
                           Builder(
                             builder: (_) {
-                              final rtStr = warga.rw.isNotEmpty ? (warga.rw.startsWith('RW') ? warga.rw : 'RW ') : (userRw.startsWith('RW') ? userRw : 'RW $userRw');
-                              final kelStr = warga.kelurahan.isNotEmpty ? (warga.kelurahan.toLowerCase().startsWith('kel') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') : (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel');
+                              final rtStr = warga.rw.isNotEmpty 
+                                  ? (warga.rw.startsWith('RW') ? warga.rw : 'RW ${warga.rw}') 
+                                  : (userRw.startsWith('RW') ? userRw : 'RW $userRw');
+                              final kelStr = warga.kelurahan.isNotEmpty 
+                                  ? (warga.kelurahan.toLowerCase().startsWith('kel') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') 
+                                  : (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel');
                               return Text(
                                 '$rtStr, $kelStr',
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),

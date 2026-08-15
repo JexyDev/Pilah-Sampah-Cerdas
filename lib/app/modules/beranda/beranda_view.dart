@@ -141,18 +141,18 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                 border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Row(
+                              child: const Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.warning_amber_rounded,
                                     color: AppColors.warningYellow,
                                     size: 28,
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: const [
+                                      children: [
                                         Text(
                                           'Belum Aktivasi Tempat Sampah',
                                           style: TextStyle(

@@ -24,9 +24,112 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   bool _isProcessing = false;
   int _scanAttempt = 0;
 
+  /// Memvalidasi format & kategori QR Code tempat sampah
+  String? _validateBinQr(String qr, int step) {
+    final lower = qr.toLowerCase().trim();
+
+    // 1. Tolak QR acak / URL / link web yang bukan format tempat sampah
+    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.')) {
+      return 'QR Code tidak valid!\n\nTerdeteksi sebagai tautan web. Pastikan Anda memindai stiker QR Code resmi fisik pada tempat sampah TrashCare.';
+    }
+
+    // 2. Minimal panjang kode QR tempat sampah yang wajar
+    if (qr.trim().length < 3) {
+      return 'Format QR Code terlalu pendek atau tidak valid. Harap pindai kode QR tempat sampah resmi Pilah Sampah Cerdas.';
+    }
+
+    // Pola Anorganik
+    final isAnorganicPattern = lower.contains('anorganik') ||
+        lower.contains('anorg') ||
+        lower.contains('non') ||
+        lower.contains('an-org') ||
+        lower.contains('non-org') ||
+        lower.contains('an_org') ||
+        lower.contains('plastik') ||
+        lower.contains('kertas') ||
+        lower.contains('logam');
+
+    // Pola Organik
+    final isOrganicPattern = !isAnorganicPattern &&
+        (lower.contains('organik') ||
+            lower.contains('organ') ||
+            lower.contains('org') ||
+            lower.contains('kompos') ||
+            lower.contains('basah'));
+
+    if (step == 1) {
+      // Step 1: Harus Organik
+      if (isAnorganicPattern) {
+        return 'QR Code yang Anda scan terdeteksi sebagai Tempat Sampah ANORGANIK.\n\nHarap scan barcode pada Tempat Sampah ORGANIK (Warna Hijau) untuk Tahap 1.';
+      }
+    } else if (step == 2) {
+      // Step 2: Harus Anorganik
+      if (isOrganicPattern) {
+        return 'QR Code yang Anda scan terdeteksi sebagai Tempat Sampah ORGANIK.\n\nHarap scan barcode pada Tempat Sampah ANORGANIK (Warna Kuning) untuk Tahap 2.';
+      }
+      if (qr.trim().toUpperCase() == _binOrganikId.trim().toUpperCase()) {
+        return 'QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik. Silakan scan tempat sampah Anorganik yang berbeda.';
+      }
+    }
+
+    return null; // Valid
+  }
+
   Future<void> _handleQrDetected(String qrCode, String wargaId, String wargaName) async {
     if (_isProcessing) return;
     _isProcessing = true;
+
+    final cleanQr = qrCode.trim();
+    if (cleanQr.isEmpty) {
+      _isProcessing = false;
+      return;
+    }
+
+    if (wargaId.trim().isEmpty) {
+      _isProcessing = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ID Warga tidak ditemukan. Silakan pilih ulang warga dari daftar.'),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Validasi kesesuaian kategori QR (Organik vs Anorganik vs Random)
+    final validationError = _validateBinQr(cleanQr, _step);
+    if (validationError != null) {
+      await showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
+              SizedBox(width: 10),
+              Expanded(child: Text('Kategori QR Tidak Sesuai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+            ],
+          ),
+          content: Text(validationError, style: const TextStyle(fontSize: 13, height: 1.4)),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Pindai Ulang', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      _isProcessing = false;
+      if (mounted) {
+        setState(() {
+          _scanAttempt++;
+        });
+      }
+      return;
+    }
 
     if (_step == 1) {
       // Step 1: Scan Organik QR
@@ -57,7 +160,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  qrCode,
+                  cleanQr,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryGreen),
                 ),
               ),
@@ -87,7 +190,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
       if (confirmed == true && mounted) {
         setState(() {
-          _binOrganikId = qrCode;
+          _binOrganikId = cleanQr;
           _step = 2;
         });
       } else if (mounted) {
@@ -98,36 +201,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       _isProcessing = false;
     } else {
       // Step 2: Scan Anorganik QR
-      if (qrCode == _binOrganikId) {
-        await showDialog(
-          context: context,
-          builder: (dialogCtx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Row(
-              children: [
-                Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
-                SizedBox(width: 10),
-                Expanded(child: Text('QR Code Sama!')),
-              ],
-            ),
-            content: const Text('QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik. Silakan scan QR Code yang berbeda.'),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-        _isProcessing = false;
-        if (mounted) {
-          setState(() {
-            _scanAttempt++;
-          });
-        }
-        return;
-      }
 
       // Show confirmation dialog before processing activation
       final processConfirm = await showDialog<bool>(
@@ -152,7 +225,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
               Text(_binOrganikId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.primaryGreen)),
               const SizedBox(height: 8),
               const Text('QR Anorganik:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-              Text(qrCode, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.nonOrganicColor)),
+              Text(cleanQr, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.nonOrganicColor)),
               const SizedBox(height: 14),
               const Text(
                 'Lokasi GPS saat ini akan direkam sebagai lokasi fisik tempat sampah Warga.',
@@ -188,7 +261,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       }
 
       setState(() {
-        _binAnorganikId = qrCode;
+        _binAnorganikId = cleanQr;
       });
 
       // Show loading indicator

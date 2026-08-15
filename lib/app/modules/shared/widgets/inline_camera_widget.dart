@@ -26,6 +26,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   CameraController? _controller;
   List<CameraDescription> _cameras = [];
   bool _isInitialized = false;
+  bool _isInitializing = false;
   bool _isCapturing = false;
   bool _isFrontCamera = false;
   bool _permDenied = false;
@@ -43,26 +44,39 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    if (state == AppLifecycleState.inactive) {
-      _controller?.dispose();
-      _controller = null;
-      if (mounted) setState(() => _isInitialized = false);
+    final CameraController? cameraController = _controller;
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      if (cameraController != null && cameraController.value.isInitialized) {
+        cameraController.dispose();
+        _controller = null;
+        if (mounted) setState(() => _isInitialized = false);
+      }
     } else if (state == AppLifecycleState.resumed) {
-      _initCamera();
+      if (_capturedPath == null && !_permDenied && !_permPermanentlyDenied && !_isInitializing) {
+        _initCamera(front: _isFrontCamera);
+      }
     }
   }
 
   Future<void> _initCamera({bool front = false}) async {
-    // Dispose controller lama dulu
-    await _controller?.dispose();
+    if (_isInitializing) return;
+    _isInitializing = true;
+
+    // Dispose controller lama dulu secara bersih
+    final oldController = _controller;
     _controller = null;
+    if (oldController != null) {
+      await oldController.dispose();
+    }
     if (mounted) setState(() => _isInitialized = false);
 
     // ── Cek izin kamera (hanya di mobile) ─────────────────────────────────
     if (!kIsWeb) {
       final status = await Permission.camera.request();
-      if (!mounted) return;
+      if (!mounted) {
+        _isInitializing = false;
+        return;
+      }
 
       if (status.isPermanentlyDenied) {
         setState(() {
@@ -70,6 +84,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
           _permDenied = false;
           _errorMessage = null;
         });
+        _isInitializing = false;
         return;
       }
       if (!status.isGranted) {
@@ -78,6 +93,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
           _permPermanentlyDenied = false;
           _errorMessage = null;
         });
+        _isInitializing = false;
         return;
       }
 
@@ -86,8 +102,13 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
         _permDenied = false;
         _permPermanentlyDenied = false;
       });
-      // Beri waktu sebentar bagi OS untuk me-release kamera ke aplikasi (mencegah layar gelap saat pertama kali diizinkan)
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Beri waktu sebentar bagi OS untuk me-release kamera ke aplikasi setelah permission dialog ditutup
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    if (!mounted) {
+      _isInitializing = false;
+      return;
     }
 
     try {
@@ -96,6 +117,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
         if (mounted) {
           setState(() => _errorMessage = 'Tidak ada kamera tersedia.');
         }
+        _isInitializing = false;
         return;
       }
 
@@ -109,14 +131,25 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
               orElse: () => _cameras.first,
             );
 
-      final ctrl = CameraController(
+      CameraController ctrl = CameraController(
         cam,
         ResolutionPreset.high,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
       );
 
-      await ctrl.initialize();
+      try {
+        await ctrl.initialize();
+      } catch (initErr) {
+        // Fallback jika ResolutionPreset.high gagal pada device tertentu
+        debugPrint('[InlineCameraWidget] High resolution preset failed ($initErr), trying medium preset...');
+        await ctrl.dispose();
+        ctrl = CameraController(
+          cam,
+          ResolutionPreset.medium,
+          enableAudio: false,
+        );
+        await ctrl.initialize();
+      }
 
       if (mounted) {
         setState(() {
@@ -125,14 +158,18 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
           _isFrontCamera = front;
           _errorMessage = null;
         });
+      } else {
+        await ctrl.dispose();
       }
     } catch (e) {
       if (mounted) {
         setState(
           () => _errorMessage =
-              'Kamera tidak dapat dibuka.\nPastikan izin kamera sudah diberikan.',
+              'Kamera tidak dapat dibuka.\nPastikan izin kamera sudah diberikan ($e).',
         );
       }
+    } finally {
+      _isInitializing = false;
     }
   }
 
@@ -245,22 +282,28 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   // ─── Live kamera ──────────────────────────────────────────────────────────
 
   Widget _buildLiveCamera() {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return _buildLoading();
+    }
+
     return Column(
       children: [
         // Preview kamera mengisi semua ruang yang tersedia tanpa gepeng
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return SizedBox(
-                width: constraints.maxWidth,
-                height: constraints.maxHeight,
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  clipBehavior: Clip.hardEdge,
-                  child: SizedBox(
-                    width: _controller!.value.previewSize?.height ?? 1,
-                    height: _controller!.value.previewSize?.width ?? 1,
-                    child: CameraPreview(_controller!),
+              final double aspectRatio = _controller!.value.aspectRatio;
+              return ClipRect(
+                child: SizedBox(
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      height: constraints.maxWidth / (aspectRatio > 0 ? aspectRatio : (9 / 16)),
+                      child: CameraPreview(_controller!),
+                    ),
                   ),
                 ),
               );

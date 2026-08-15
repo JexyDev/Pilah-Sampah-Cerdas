@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../controllers/detail_warga_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
 
 class DetailWargaView extends ConsumerStatefulWidget {
   const DetailWargaView({super.key});
@@ -19,10 +21,24 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final warga = ModalRoute.of(context)?.settings.arguments as WargaDampingan?;
-      if (warga != null) {
+      final rawArgs = ModalRoute.of(context)?.settings.arguments;
+      WargaDampingan? targetWarga;
+
+      if (rawArgs is WargaDampingan) {
+        targetWarga = rawArgs;
+      } else if (rawArgs is Map<String, dynamic>) {
+        try {
+          final wargaMap = rawArgs['warga'] as Map<String, dynamic>? ?? rawArgs;
+          targetWarga = WargaDampingan.fromJson(wargaMap);
+        } catch (_) {}
+      } else if (rawArgs is String && rawArgs.isNotEmpty) {
+        final all = ref.read(mahasiswaControllerProvider).wargaList;
+        targetWarga = all.where((w) => w.wargaId == rawArgs).firstOrNull;
+      }
+
+      if (targetWarga != null) {
         Future.microtask(() {
-          ref.read(detailWargaControllerProvider.notifier).setWarga(warga);
+          ref.read(detailWargaControllerProvider.notifier).setWarga(targetWarga!);
         });
       }
       _initialized = true;
@@ -48,13 +64,15 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
       );
     }
 
+    final currentUser = ref.watch(authProvider).user;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: CustomScrollView(
         slivers: [
           // ── App Bar + Header ────────────────────────────────
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 205,
             pinned: true,
             backgroundColor: AppColors.primaryGreen,
             foregroundColor: Colors.white,
@@ -153,6 +171,39 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                       ),
                                     ],
                                   ),
+                                  if (warga.isActivated) ...[
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: Colors.white38),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              warga.pendampingName.isNotEmpty
+                                                  ? 'Diaktivasi oleh: ${warga.pendampingName}'
+                                                  : (currentUser?.name != null && currentUser!.name.isNotEmpty
+                                                      ? 'Diaktivasi oleh: ${currentUser.name}'
+                                                      : 'Diaktivasi Mahasiswa'),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

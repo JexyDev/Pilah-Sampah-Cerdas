@@ -30,37 +30,57 @@ class QrScannerWidget extends StatefulWidget {
   State<QrScannerWidget> createState() => QrScannerWidgetState();
 }
 
-class QrScannerWidgetState extends State<QrScannerWidget> {
+class QrScannerWidgetState extends State<QrScannerWidget>
+    with WidgetsBindingObserver {
   MobileScannerController? _controller;
   bool _scanned = false;
   _QrState _state = _QrState.loading;
-  int _retryCount = 0;
+  bool _isRequestingPermission = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (PlatformUtils.supportsNativeQrScanner) {
       _requestPermissionAndStart();
     }
   }
 
-  // Lifecycle dihandle secara native oleh mobile_scanner widget di versi 6+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_controller == null) return;
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      _controller?.stop();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_state == _QrState.ready && !_scanned) {
+        _controller?.start();
+      }
+    }
+  }
 
   Future<void> _requestPermissionAndStart() async {
     if (kIsWeb) return;
+    if (_isRequestingPermission) return;
+    _isRequestingPermission = true;
 
-    // Request permission kamera runtime
-    final PermissionStatus status = await Permission.camera.request();
+    try {
+      // Request permission kamera runtime
+      final PermissionStatus status = await Permission.camera.request();
 
-    if (!mounted) return;
-
-    if (status.isGranted) {
       if (!mounted) return;
-      _startScanner();
-    } else if (status.isPermanentlyDenied) {
-      setState(() => _state = _QrState.permDenied);
-    } else {
-      setState(() => _state = _QrState.denied);
+
+      if (status.isGranted) {
+        // Beri waktu sejenak bagi OS melepaskan resource kamera ke aplikasi
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (!mounted) return;
+        _startScanner();
+      } else if (status.isPermanentlyDenied) {
+        setState(() => _state = _QrState.permDenied);
+      } else {
+        setState(() => _state = _QrState.denied);
+      }
+    } finally {
+      _isRequestingPermission = false;
     }
   }
 
@@ -103,6 +123,7 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }

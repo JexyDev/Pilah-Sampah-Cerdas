@@ -574,8 +574,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         const SizedBox(height: 12),
         Row(
           children: [
-            const Expanded(
-              child: SizedBox(), // Menu Dampak RW di-hide sementara
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.history_rounded,
+                title: 'Riwayat KKN',
+                subtitle: 'Log aktivitas & GPS',
+                gradientColors: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.riwayatKkn),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -686,6 +692,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         else
           ...list.take(5).map((w) => _WargaCard(
                 warga: w,
+                currentUserName: user?.name ?? '',
                 onTap: () => Navigator.pushNamed(
                   context,
                   AppRoutes.detailWarga,
@@ -918,10 +925,15 @@ class _MenuTileCard extends StatelessWidget {
 }
 
 class _WargaCard extends StatelessWidget {
-  const _WargaCard({required this.warga, required this.onTap});
+  const _WargaCard({
+    required this.warga,
+    required this.onTap,
+    this.currentUserName = '',
+  });
 
   final WargaDampingan warga;
   final VoidCallback onTap;
+  final String currentUserName;
 
   @override
   Widget build(BuildContext context) {
@@ -1001,24 +1013,37 @@ class _WargaCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBlueLight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          warga.pendampingName.isNotEmpty 
-                              ? 'Dampingan: ${warga.pendampingName}' 
-                              : 'Dampingan Anda',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryBlueDark,
+                      if (warga.isActivated) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEBF5FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF90CDF4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified_rounded, size: 11, color: AppColors.primaryBlueDark),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  warga.pendampingName.isNotEmpty 
+                                      ? 'Diaktivasi: ${warga.pendampingName}' 
+                                      : (currentUserName.isNotEmpty ? 'Diaktivasi: $currentUserName' : 'Diaktivasi Mahasiswa'),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryBlueDark,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 2),
                       Text(
                         warga.address,

@@ -67,21 +67,35 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
       state = state.copyWith(isLoading: true, errorMessage: null);
     }
     
+    KknDashboardData? newDashboard;
+    List<WargaDampingan>? newWargaList;
+    String? lastError;
+
     try {
       final results = await Future.wait([
-        repo.getDashboard(),
-        repo.getWargaDampingan(),
+        repo.getDashboard().catchError((e) {
+          lastError = NetworkExceptionHelper.getErrorMessage(e);
+          return cachedDashboard ?? state.dashboard ?? KknDashboardData.empty;
+        }),
+        repo.getWargaDampingan().catchError((e) {
+          lastError ??= NetworkExceptionHelper.getErrorMessage(e);
+          return cachedWarga ?? state.wargaList;
+        }),
       ]);
 
-      final rawWarga = results[1] as List<WargaDampingan>;
+      newDashboard = results[0] as KknDashboardData?;
+      newWargaList = results[1] as List<WargaDampingan>?;
 
       state = state.copyWith(
         isLoading: false,
-        dashboard: results[0] as KknDashboardData,
-        wargaList: rawWarga,
+        dashboard: newDashboard ?? state.dashboard,
+        wargaList: newWargaList ?? state.wargaList,
+        errorMessage: (newDashboard == null && newWargaList == null && cachedDashboard == null && cachedWarga == null)
+            ? lastError
+            : null,
       );
     } catch (e) {
-      if (cachedDashboard != null) {
+      if (cachedDashboard != null || cachedWarga != null) {
         state = state.copyWith(isLoading: false);
       } else {
         state = state.copyWith(

@@ -113,14 +113,64 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     return true;
   }
 
+  String? _validateBinQr(String qr, int step) {
+    final lower = qr.toLowerCase().trim();
+
+    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.')) {
+      return 'QR Code tidak valid! Terdeteksi sebagai tautan web. Pastikan Anda memindai stiker QR Code fisik tempat sampah.';
+    }
+
+    if (qr.trim().length < 3) {
+      return 'Format QR Code terlalu pendek atau tidak valid.';
+    }
+
+    final isAnorganicPattern = lower.contains('anorganik') ||
+        lower.contains('anorg') ||
+        lower.contains('non') ||
+        lower.contains('an-org') ||
+        lower.contains('non-org') ||
+        lower.contains('an_org') ||
+        lower.contains('plastik') ||
+        lower.contains('kertas') ||
+        lower.contains('logam');
+
+    final isOrganicPattern = !isAnorganicPattern &&
+        (lower.contains('organik') ||
+            lower.contains('organ') ||
+            lower.contains('org') ||
+            lower.contains('kompos') ||
+            lower.contains('basah'));
+
+    if (step == 1) {
+      if (isAnorganicPattern) {
+        return 'QR Code terdeteksi sebagai Tempat Sampah ANORGANIK. Harap scan tempat sampah ORGANIK (Hijau) terlebih dahulu.';
+      }
+    } else if (step == 2) {
+      if (isOrganicPattern) {
+        return 'QR Code terdeteksi sebagai Tempat Sampah ORGANIK. Harap scan tempat sampah ANORGANIK (Kuning).';
+      }
+      if (qr.trim().toUpperCase() == _qrOrganik.trim().toUpperCase()) {
+        return 'QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik!';
+      }
+    }
+
+    return null;
+  }
+
   Future<bool> _onQrDetected(String qr) async {
     if (_bothBinsDetected) return false;
 
-    bool success = true;
+    final detected = qr.trim();
+    final error = _validateBinQr(detected, _step);
+    if (error != null) {
+      _showErrorSnackBar(error);
+      setState(() {
+        _scanAttempt++;
+      });
+      return false;
+    }
 
     setState(() {
-      final detected = qr.trim();
-
       if (_step == 1) {
         _qrOrganik = detected;
         if (_hasAnorganic) {
@@ -129,20 +179,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           _step = 2; // Lanjut ke scan Anorganik
         }
       } else if (_step == 2) {
-        if (_qrOrganik.isNotEmpty && detected.toUpperCase() == _qrOrganik.toUpperCase()) {
-          _showErrorSnackBar('Harap scan barcode pada tempat sampah Anorganik!');
-          success = false;
-        } else {
-          _qrAnorganik = detected;
-          _bothBinsDetected = true; // Kedua/satu tempat sampah berhasil di-scan
-        }
-      }
-      if (!success) {
-        _scanAttempt++;
+        _qrAnorganik = detected;
+        _bothBinsDetected = true; // Kedua tempat sampah berhasil di-scan
       }
     });
     
-    return success;
+    return true;
   }
 
   void _showErrorSnackBar(String message) {
