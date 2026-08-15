@@ -603,7 +603,7 @@ class ApiBinRepository implements BinRepository {
       }
       throw const BinException(
         'RESET_FAILED',
-        'Gagal mengajukan pengosongan tong',
+        'Gagal mengajukan pengosongan Tempat Sampah',
       );
     } on DioException catch (e) {
       final errorCode = e.response?.data?['error']?.toString();
@@ -651,7 +651,7 @@ class ApiBinRepository implements BinRepository {
         key: 'active_reset_request_$userId',
       );
       if (cachedStr != null) {
-        // Cek apakah tong-tempat sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
+        // Cek apakah Tempat Sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
         try {
           final bins = await getBinsByHousehold(userId);
           final bool isAnyFull = bins.any(
@@ -698,7 +698,7 @@ class ApiBinRepository implements BinRepository {
     } on DioException catch (e) {
       throw BinException(
         'NETWORK_ERROR',
-        'Gagal mengatur kapasitas tong: ${e.message}',
+        'Gagal mengatur kapasitas Tempat Sampah: ${e.message}',
       );
     } catch (e) {
       throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');

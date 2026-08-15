@@ -1034,7 +1034,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
     // Tempat sampah yang salah = kebalikan dari yang terdeteksi
-    final String tongName = aiResult?.detectedType == WasteType.organic
+    final String tempatSampahName = aiResult?.detectedType == WasteType.organic
         ? 'Non-Organik'
         : 'Organik';
 
@@ -1042,7 +1042,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       context: context,
       builder: (_) => _MismatchDialog(
         sampahType: detectedName,
-        tongType: tongName,
+        tempatSampahType: tempatSampahName,
         onScanUlang: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
@@ -1427,13 +1427,13 @@ class _AiSuccessSheet extends StatelessWidget {
 class _MismatchDialog extends StatelessWidget {
   const _MismatchDialog({
     required this.sampahType,
-    required this.tongType,
+    required this.tempatSampahType,
     required this.onScanUlang,
     required this.onBatal,
   });
 
   final String sampahType;
-  final String tongType;
+  final String tempatSampahType;
   final VoidCallback onScanUlang;
   final VoidCallback onBatal;
 
@@ -1535,7 +1535,7 @@ class _MismatchDialog extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                tongType.toUpperCase(),
+                                tempatSampahType.toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,

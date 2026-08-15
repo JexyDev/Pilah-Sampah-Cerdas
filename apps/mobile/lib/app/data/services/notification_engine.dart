@@ -212,7 +212,7 @@ class NotificationEngine {
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'reset_channel',
         'Pengajuan Pengosongan',
-        channelDescription: 'Notifikasi status pengajuan pengosongan tong',
+        channelDescription: 'Notifikasi status pengajuan pengosongan Tempat Sampah',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
