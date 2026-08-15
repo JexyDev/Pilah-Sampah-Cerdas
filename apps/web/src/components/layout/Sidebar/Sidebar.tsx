@@ -311,7 +311,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
-        { to: "/dashboard-kkn", icon: LayoutDashboard, label: "Dasbor KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "CAMAT", "LURAH"] as UserRole[] },
+        {
+          to: userRole === "DPL" || userRole === "DOSEN_PEMBIMBING" ? "/dashboard-dpl" : "/dashboard-kkn",
+          icon: LayoutDashboard,
+          label: userRole === "DPL" || userRole === "DOSEN_PEMBIMBING" ? "Dasbor Bimbingan DPL" : "Dasbor KKN",
+          allowed: ["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "CAMAT", "LURAH"] as UserRole[],
+        },
         { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Dampingan KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "KOORDINATOR_KECAMATAN"] as UserRole[] },
         { to: "/superUser/data-survei-baseline", icon: FileText, label: "Data Survei Baseline", allowed: ["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
         { to: "/superUser/import-survei-kkn", icon: FileSpreadsheet, label: "Impor Survei KKN", allowed: ["SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
