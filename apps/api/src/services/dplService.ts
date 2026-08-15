@@ -2,8 +2,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-function getKelompokWhere(dplUserId: string, role?: string) {
-  const normalizedRole = String(role || "").toUpperCase();
+function getRoleString(role: any): string {
+  if (!role) return "";
+  if (typeof role === "object") return String(role.name || "").toUpperCase();
+  return String(role).toUpperCase();
+}
+
+function getKelompokWhere(dplUserId: string, role?: any) {
+  const normalizedRole = getRoleString(role);
   const isAdmin = [
     "DEVELOPER",
     "ADMIN_DLH",
@@ -443,8 +449,8 @@ export const dplService = {
   /**
    * 6. Riwayat Approval Log DPL (Hanya Riwayat Kelompok DPL)
    */
-  getApprovalHistory: async (dplUserId: string, role?: string) => {
-    const normalizedRole = String(role || "").toUpperCase();
+  getApprovalHistory: async (dplUserId: string, role?: any) => {
+    const normalizedRole = getRoleString(role);
     const isAdmin = [
       "DEVELOPER",
       "ADMIN_DLH",

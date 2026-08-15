@@ -319,7 +319,7 @@ async function main() {
       data: {
         userId: w.user.id,
         points: 10,
-        description: "Bonus Aktivasi Wadah Pertama Kali",
+        description: "Bonus Aktivasi Tempat Sampah Pertama Kali",
         kategori: "REDUKSI_TONASE"
       }
     });

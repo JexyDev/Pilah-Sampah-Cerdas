@@ -415,13 +415,13 @@ export class BinController {
           success: false,
           error: "LOCATION_TOO_FAR",
           code: "LOCATION_TOO_FAR",
-          message: `Posisi Anda terlalu jauh dari lokasi tong sampah (${error.distanceMeters ? error.distanceMeters + "m" : ">10m"}).`,
+          message: `Posisi Anda terlalu jauh dari lokasi Tempat Sampah (${error.distanceMeters ? error.distanceMeters + "m" : ">10m"}).`,
           distanceMeters: error.distanceMeters,
         });
       } else if (error.message === "BIN_TYPE_MISMATCH") {
         res.status(400).json({
           error: "BIN_TYPE_MISMATCH",
-          message: `Tong tidak sesuai! Anda memasukkan sampah ke tong khusus ${error.binType}.`,
+          message: `Tempat Sampah tidak sesuai! Anda memasukkan sampah ke Tempat Sampah khusus ${error.binType}.`,
         });
       } else if (error.message === "BIN_OVERFLOW" || error.message === "BIN_FULL") {
         res.status(400).json({
@@ -429,7 +429,7 @@ export class BinController {
           code: "BIN_FULL",
           error: "BIN_FULL",
           message:
-            "Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan. Silakan gunakan QR Tempat Sampah milik Anda yang lain atau ajukan Pengosongan Tempat Sampah.",
+            "Tempat Sampah ini sudah penuh! Transaksi tidak dapat dilakukan. Silakan gunakan QR Tempat Sampah milik Anda yang lain atau ajukan Pengosongan Tempat Sampah.",
         });
       } else {
         console.error("Bin Scan Error:", error);
@@ -457,7 +457,7 @@ export class BinController {
         res.status(400).json({
           success: false,
           error: "ONBOARDING_INCOMPLETE_WRONG_CATEGORY",
-          message: `Anda belum menyelesaikan aktivasi awal. Selesaikan aktivasi tong ${missingCat === "ORGANIC" ? "Non-Organik" : "Organik"} Anda terlebih dahulu.`,
+          message: `Anda belum menyelesaikan aktivasi awal. Selesaikan aktivasi Tempat Sampah ${missingCat === "ORGANIC" ? "Non-Organik" : "Organik"} Anda terlebih dahulu.`,
         });
         return;
       }
@@ -466,7 +466,7 @@ export class BinController {
         res.status(400).json({
           success: false,
           error: "BIN_CATEGORY_DUPLICATE",
-          message: `tempat sampah ${cat} sudah terdaftar untuk Anda.`,
+          message: `Tempat Sampah ${cat} sudah terdaftar untuk Anda.`,
         });
         return;
       }
@@ -474,7 +474,7 @@ export class BinController {
         res.status(400).json({
           success: false,
           error: "BIN_CATEGORY_DUPLICATE",
-          message: "Tidak boleh mengaktivasi dua tong dengan kategori yang sama sekaligus.",
+          message: "Tidak boleh mengaktivasi dua Tempat Sampah dengan kategori yang sama sekaligus.",
         });
         return;
       }
@@ -1064,10 +1064,10 @@ export class BinController {
       );
       res
         .status(200)
-        .json({ success: true, data: result, message: "Kapasitas tong berhasil diperbarui" });
+        .json({ success: true, data: result, message: "Kapasitas Tempat Sampah berhasil diperbarui" });
     } catch (error: any) {
       console.error("[BinController] updateCapacity error:", error);
-      res.status(500).json({ success: false, message: "Gagal memperbarui kapasitas tong" });
+      res.status(500).json({ success: false, message: "Gagal memperbarui kapasitas Tempat Sampah" });
     }
   }
 

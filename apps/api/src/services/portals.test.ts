@@ -153,7 +153,7 @@ describe("Portals A & B Service Integration Tests", () => {
         type: "RESIDU_MIXED_ORGANIC",
         severity: "MEDIUM",
         evidencePhotoUrl: "/uploads/violation_test.jpg",
-        notes: "Ditemukan plastik tercampur dalam tong organik",
+        notes: "Ditemukan plastik tercampur dalam Tempat Sampah Organik",
       });
 
       expect(violation).toHaveProperty("id");

@@ -52,13 +52,35 @@ export class AuthService {
       throw new Error("WRONG_PASSWORD");
     }
 
+    const anyUser = user as any;
     const userRoleName = user.role?.name || "WARGA";
+    const knownKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
+    let matchedKelurahan = "";
+    if (user.address || user.name) {
+      const combined = `${user.name || ""} ${user.address || ""}`.toLowerCase();
+      const found = knownKelurahans.find((k) => combined.includes(k.toLowerCase()));
+      if (found) matchedKelurahan = found;
+    }
+
+    let kelurahanName =
+      anyUser.rw?.kelurahan?.name ||
+      anyUser.studentProfile?.assignedRw?.kelurahan?.name ||
+      anyUser.studentProfile?.kelompok?.kelurahan ||
+      matchedKelurahan ||
+      "";
+
+    let rwName = anyUser.rw?.name || anyUser.studentProfile?.assignedRw?.name || "";
+    if (userRoleName === "LURAH") {
+      rwName = "Seluruh RW";
+      if (!kelurahanName) kelurahanName = "Cipaganti";
+    }
 
     // Prepare payload
     const payload = {
       userId: user.id,
       role: userRoleName,
       rwId: user.rwId ?? undefined,
+      kelurahan: kelurahanName || undefined,
     };
 
     // Generate tokens
@@ -82,6 +104,11 @@ export class AuthService {
         phone: user.phone,
         address: user.address,
         fotoProfil: user.fotoProfil,
+        kelurahan: kelurahanName,
+        rw: rwName,
+        provinsi: user.provinsi || "Jawa Barat",
+        kabupaten: user.kabupaten || "Kota Bandung",
+        kecamatan: "Coblong",
       },
     };
   }
@@ -276,13 +303,34 @@ export class AuthService {
       streakInfo = await this.getCitizenMotivation(userId);
     }
 
-    const rwName = user.rw?.name || user.studentProfile?.assignedRw?.name || "";
-    const rtName = user.rt?.name || "";
-    const kelurahanName =
+    const roleName = user.role.name;
+    const knownKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
+    let matchedKelurahan = "";
+    if (user.address || user.name) {
+      const combined = `${user.name || ""} ${user.address || ""}`.toLowerCase();
+      const found = knownKelurahans.find((k) => combined.includes(k.toLowerCase()));
+      if (found) matchedKelurahan = found;
+    }
+
+    let kelurahanName =
       user.rw?.kelurahan?.name ||
       user.studentProfile?.assignedRw?.kelurahan?.name ||
       user.studentProfile?.kelompok?.kelurahan ||
+      matchedKelurahan ||
       "";
+
+    let rwName = user.rw?.name || user.studentProfile?.assignedRw?.name || "";
+    if (roleName === "LURAH") {
+      rwName = "Seluruh RW";
+      if (!kelurahanName) kelurahanName = "Cipaganti";
+    } else if (roleName === "CAMAT") {
+      rwName = "Seluruh Kecamatan";
+      kelurahanName = "Seluruh Kelurahan";
+    } else if (["ADMIN_DLH", "SUPER_USER", "DEVELOPER"].includes(roleName)) {
+      rwName = "Seluruh Kota";
+      kelurahanName = "Kota Bandung";
+    }
+
     const kecamatanName =
       user.rw?.kelurahan?.kecamatan?.name ||
       user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name ||
@@ -298,8 +346,8 @@ export class AuthService {
       familySize: user.jumlahAnggotaKeluarga || 1,
       jumlahAnggotaKeluarga: user.jumlahAnggotaKeluarga || 1,
       qrCode: `USER:${user.id}`,
-      provinsi: "Jawa Barat",
-      kabupaten: "Kota Bandung",
+      provinsi: user.provinsi || "Jawa Barat",
+      kabupaten: user.kabupaten || "Kota Bandung",
       kecamatan: kecamatanName,
       kelurahan: kelurahanName,
       rw: rwName,

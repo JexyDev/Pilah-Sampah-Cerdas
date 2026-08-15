@@ -32,7 +32,7 @@ import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 
 export class AuthRepository {
-  async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
+  async findUserByPhone(phone: string): Promise<(User & { role: Role; rw?: any; studentProfile?: any }) | null> {
     try {
       const formatted = formatPhoneNumber(phone);
       const raw = phone.trim();
@@ -55,8 +55,34 @@ export class AuthRepository {
             { studentProfile: { nim: alt } },
           ],
         },
-        include: { role: true },
-      })) as (User & { role: Role }) | null;
+        include: {
+          role: true,
+          rw: {
+            include: {
+              kelurahan: {
+                include: {
+                  kecamatan: true,
+                },
+              },
+            },
+          },
+          rt: true,
+          studentProfile: {
+            include: {
+              assignedRw: {
+                include: {
+                  kelurahan: {
+                    include: {
+                      kecamatan: true,
+                    },
+                  },
+                },
+              },
+              kelompok: true,
+            },
+          },
+        },
+      })) as (User & { role: Role; rw?: any; studentProfile?: any }) | null;
 
       return user;
     } catch (error: any) {

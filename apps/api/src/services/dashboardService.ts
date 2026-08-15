@@ -182,7 +182,7 @@ export const dashboardService = {
     });
     const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
 
-    // 4. Peringatan Tong Penuh (volume > 90% of maxCapacity)
+    // 4. Peringatan Tempat Sampah Penuh (volume > 90% of maxCapacity)
     const binsWhere: any = {};
     if (isFiltered) binsWhere.rw = getRtRwMatch(wilayah);
     if (dateFilter) binsWhere.createdAt = dateFilter;
@@ -331,7 +331,7 @@ export const dashboardService = {
 
     const totalActiveSessions = activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn;
 
-    // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Wadah vs Deteksi AI)
+    // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Tempat Sampah vs Deteksi AI)
     const setoranWithBin = await prisma.setoranOtomatis.findMany({
       where: catWhere,
       select: {
@@ -409,6 +409,7 @@ export const dashboardService = {
       totalSampahKg,
       averageAiAccuracy,
       alertTongPenuh: fullBinsCount,
+      alertTempatSampahPenuh: fullBinsCount,
       tempatSampahAktif,
       lokasiTerdaftar,
       setoranHariIniKg,

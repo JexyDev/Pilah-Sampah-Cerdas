@@ -26,7 +26,7 @@ export class KknController {
       if (existingBin && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
         res
           .status(400)
-          .json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada tong lain." });
+          .json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada Tempat Sampah lain." });
         return;
       }
 

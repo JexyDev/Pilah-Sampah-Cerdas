@@ -273,13 +273,13 @@ router.get("/", authMiddleware, async (req, res) => {
 
           const binCategory = r.bin?.category?.name || "Organik";
           const binQr = r.bin?.qrCode || "BIN";
-          const area = r.bin?.rw?.name || "RT 01 / RW 04";
+          const area = r.bin?.rw?.name || "RW 04";
 
           return {
             id: `req-${r.id}`,
             type: "PENGAJUAN_PENGOSONGAN",
             title: "Pengajuan Pengosongan Baru",
-            desc: `Warga (${r.user?.name || "Warga"}) mengajukan pengosongan tong ${binCategory} (${binQr}) di ${area}. [REQ-${r.id}]`,
+            desc: `Warga (${r.user?.name || "Warga"}) mengajukan pengosongan Tempat Sampah ${binCategory} (${binQr}) di ${area}. [REQ-${r.id}]`,
             isRead: r.status !== "PENDING",
             time,
             icon: "delete_sweep",
@@ -292,7 +292,7 @@ router.get("/", authMiddleware, async (req, res) => {
         let criticalBinNotifs: any[] = [];
         try {
           let binWhere: any = {};
-          if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
+          if (["RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
             if (areaIds.length > 0) {
               binWhere.rwId = { in: areaIds };
             } else {
@@ -321,8 +321,8 @@ router.get("/", authMiddleware, async (req, res) => {
             return {
               id: `crit-bin-${b.id}`,
               type: "TONG_PENUH",
-              title: "Kapasitas Tong Kritis",
-              desc: `Tempat sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rw?.name || "Wilayah"} telah mencapai ${pct}%!`,
+              title: "Kapasitas Tempat Sampah Kritis",
+              desc: `Tempat Sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rw?.name || "Wilayah"} telah mencapai ${pct}%!`,
               isRead: false,
               time: "Status Real-time",
               icon: "warning",

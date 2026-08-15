@@ -770,7 +770,7 @@ export class KknService {
         });
       }
       await tx.pointHistory.create({
-        data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tong Sampah" },
+        data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tempat Sampah" },
       });
     });
   }
