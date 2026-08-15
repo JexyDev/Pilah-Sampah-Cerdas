@@ -342,7 +342,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: GraduationCap,
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
           children: [
-            { to: "/dashboard-kkn", label: "Dasbor KKN", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/dashboard-dpl", label: "Dasbor DPL", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"] as UserRole[] },
+            { to: "/dashboard-kkn", label: "Dasbor KKN Taskforce", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"] as UserRole[] },
             { to: "/manajemen-ekosistem-kkn", label: "Ekosistem Dampingan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
             { to: "/monitoring-absen", label: "Presensi Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
           ],

@@ -35,6 +35,9 @@ import {
   TrendingUp,
   Sparkles,
   Eye,
+  AlertTriangle,
+  Check,
+  XCircle,
 } from "lucide-react";
 import {
   MapContainer,
@@ -142,6 +145,9 @@ const KknDashboard: React.FC = () => {
     user?.peran === "PEMIMPIN" ||
     user?.peran === "PANITIA_TASKFORCE";
 
+  const [escalatedLeaves, setEscalatedLeaves] = useState<any[]>([]);
+  const [isProcessingLeave, setIsProcessingLeave] = useState<string | null>(null);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -153,11 +159,16 @@ const KknDashboard: React.FC = () => {
         api.get("/kkn/dashboard"),
         api.get("/kkn/warga"),
         api.get("/bins/locations"),
+        api.get("/dpl/alerts"),
       ]);
 
       if (results[0].status === "fulfilled") setStats(results[0].value.data?.data);
       if (results[1].status === "fulfilled") setWargaList(results[1].value.data?.data || []);
       if (results[2].status === "fulfilled") setRtRwAreas(results[2].value.data?.data || []);
+      if (results[3].status === "fulfilled") {
+        const alertData = results[3].value.data?.data;
+        setEscalatedLeaves(alertData?.pendingApprovals || []);
+      }
 
       results.forEach((r, i) => {
         if (r.status === "rejected") console.warn(`KKN fetch[${i}] failed:`, r.reason?.message);
@@ -167,6 +178,24 @@ const KknDashboard: React.FC = () => {
       toast.error(err.response?.data?.message || "Gagal memuat data portal KKN");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDecideLeave = async (requestId: string, status: "APPROVED" | "REJECTED") => {
+    try {
+      setIsProcessingLeave(requestId);
+      const res = await api.post(`/dpl/approvals/${requestId}/decide`, {
+        status,
+        rejectionReason: status === "APPROVED" ? "Disetujui oleh Satgas Taskforce KKN" : "Ditolak oleh Satgas Taskforce KKN",
+      });
+      if (res.data?.success) {
+        toast.success(`Pengajuan izin mahasiswa berhasil di-${status === "APPROVED" ? "setujui" : "tolak"}`);
+        setEscalatedLeaves((prev) => prev.filter((item) => item.id !== requestId));
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal memproses izin mahasiswa");
+    } finally {
+      setIsProcessingLeave(null);
     }
   };
 
@@ -483,6 +512,98 @@ const KknDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ---------------- 2.5. PANEL ESKALASI IZIN MAHASISWA (TASKFORCE & SUPER ADMIN) ---------------- */}
+      {isSuperOrAdmin && escalatedLeaves.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 p-6 rounded-3xl border border-amber-300/80 shadow-xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/60 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs">
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-base text-slate-900 tracking-tight">
+                    Eskalasi Izin &amp; Cuti Mahasiswa KKN
+                  </h3>
+                  <span className="px-2.5 py-0.5 bg-amber-500 text-white rounded-full text-[10px] font-black animate-pulse">
+                    {escalatedLeaves.length} Butuh Persetujuan
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 font-medium">
+                  Permohonan izin mahasiswa KKN yang dieskalasi atau belum diproses DPL untuk diputuskan langsung oleh Satgas Taskforce / Super Admin.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {escalatedLeaves.map((leave) => {
+              const isEscalated = leave.status === "ESCALATED";
+              const isSakit = (leave.type || "").toUpperCase().includes("SAKIT");
+              return (
+                <div
+                  key={leave.id}
+                  className="bg-white p-4 rounded-2xl border border-amber-200/90 shadow-2xs flex flex-col justify-between space-y-3 hover:shadow-md transition"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                          isSakit
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : "bg-blue-100 text-blue-700 border border-blue-200"
+                        }`}
+                      >
+                        {leave.type || "IZIN"}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {leave.startDate ? new Date(leave.startDate).toLocaleDateString("id-ID") : "-"}
+                      </span>
+                    </div>
+
+                    <h4 className="font-extrabold text-sm text-slate-900 leading-tight">
+                      {leave.student?.name || leave.studentName || "Mahasiswa KKN"}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      NIM: {leave.student?.studentProfile?.nim || "-"} • Kelompok: {leave.student?.studentProfile?.kelompok?.name || "KKN Coblong"}
+                    </p>
+                    <p className="text-xs text-slate-700 font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100 italic">
+                      "{leave.reason || "Tidak ada keterangan tambahan"}"
+                    </p>
+                    {isEscalated && leave.rejectionReason && (
+                      <p className="text-[10px] text-amber-800 font-bold bg-amber-50 p-2 rounded-lg border border-amber-200">
+                        ⚠️ Catatan Eskalasi: {leave.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      disabled={isProcessingLeave === leave.id}
+                      onClick={() => handleDecideLeave(leave.id, "REJECTED")}
+                      className="flex-1 py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-xs transition border border-rose-200 flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <XCircle size={13} />
+                      Tolak
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isProcessingLeave === leave.id}
+                      onClick={() => handleDecideLeave(leave.id, "APPROVED")}
+                      className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-2xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <Check size={13} />
+                      Setujui
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ---------------- 3. ANALITIK & GRAFIK PENDAMPINGAN ---------------- */}
       <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
