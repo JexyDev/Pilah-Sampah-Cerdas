@@ -30,9 +30,9 @@ Data dasar telah berhasil disiapkan dan dimasukkan ke dalam database. Data ini m
 
 *Catatan: Semua password default untuk pengujian adalah `password123`.*
 
-## 4. Fasilitas & Tong Sampah (Warga Asep Sunandar)
-- **Tong Organik**: QR-ORG-DAGO-001 (Kapasitas 25L, Status: ACTIVE_BOUND)
-- **Tong Anorganik**: QR-ANORG-DAGO-001 (Kapasitas 25L, Status: ACTIVE_BOUND)
+## 4. Fasilitas & Tempat Sampah (Warga Asep Sunandar)
+- **Tempat Sampah Organik**: QR-ORG-DAGO-001 (Kapasitas 25L, Status: ACTIVE_BOUND)
+- **Tempat Sampah Anorganik**: QR-ANORG-DAGO-001 (Kapasitas 25L, Status: ACTIVE_BOUND)
 - **Titik Koordinat**: Digenerate berdasarkan polygon Dago.
 
 ## 5. Simulasi Transaksi (End-to-End)

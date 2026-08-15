@@ -17,7 +17,7 @@
 
 | Role | Skenario | Status | Catatan |
 | :--- | :--- | :--- | :--- |
-| **Warga** | Registrasi, Aktivasi Tong, Klasifikasi AI, Setoran Otomatis (Scan QR), Perhitungan Poin Otomatis | ✅ Lulus | Poin dikalkulasi valid menggunakan *confidence rate AI*. Setoran otomatis ter-record dengan baik. |
+| **Warga** | Registrasi, Aktivasi Tempat Sampah, Klasifikasi AI, Setoran Otomatis (Scan QR), Perhitungan Poin Otomatis | ✅ Lulus | Poin dikalkulasi valid menggunakan *confidence rate AI*. Setoran otomatis ter-record dengan baik. |
 | **RT** | Registrasi & Akses | ✅ Lulus | Bisa login dan data wilayah RT sesuai relasi. |
 | **RW** | Registrasi, Input Hasil Pemanfaatan | ✅ Lulus | Data Buruan Sae berhasil di-generate. Flow CRUD berjalan lancar. |
 | **Petugas Residu** | Registrasi, Setoran Manual | ✅ Lulus | Residu 5Kg tercatat tanpa confidence rate AI, dan titik koordinat GPS TPS valid. |
