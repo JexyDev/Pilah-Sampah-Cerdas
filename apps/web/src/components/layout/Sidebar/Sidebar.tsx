@@ -135,6 +135,12 @@ const NavGroup: React.FC<{
     (item) => currentPath === item.to || (["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(item.to) && ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) && !location.search)
   );
 
+  React.useEffect(() => {
+    if (isAnySubActive) {
+      setIsOpen(true);
+    }
+  }, [isAnySubActive]);
+
   return (
     <div className="space-y-0.5">
       <button
@@ -387,7 +393,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "ANALITIK PERILAKU",
       items: [
-        { to: "/peringkat", icon: Trophy, label: "Peringkat Warga", allowed: ALL_ROLES },
+        {
+          to: "/peringkat",
+          icon: Trophy,
+          label: "Peringkat Warga",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "MAHASISWA_KKN",
+            "PANITIA_TASKFORCE",
+            "PEMIMPIN",
+            "WARGA",
+          ] as UserRole[],
+        },
       ],
     },
     {
@@ -404,7 +427,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         { to: "/master-data/rule-engine", icon: Sliders, label: "Rule Engine & Bobot", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
         { to: "/notifikasi", icon: Bell, label: "Notifikasi", allowed: ALL_ROLES },
-        { to: "/pengaturan", icon: Settings, label: "Pengaturan Umum", allowed: ALL_ROLES },
+        { to: "/pengaturan", icon: Settings, label: "Pengaturan", allowed: ALL_ROLES },
         { to: "/informasi", icon: Info, label: "Panduan & Informasi", allowed: ALL_ROLES },
       ],
     },

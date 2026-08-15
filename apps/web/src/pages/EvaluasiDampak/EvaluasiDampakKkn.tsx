@@ -16,6 +16,9 @@ import {
   Loader2,
   Edit3,
   Sprout,
+  Download,
+  Calendar,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -36,6 +39,12 @@ export const EvaluasiDampakKkn: React.FC = () => {
   const [baselineList, setBaselineList] = useState<BaselineData[]>([]);
   const [endlineList, setEndlineList] = useState<EndlineData[]>([]);
   const [komparasiList, setKomparasiList] = useState<KomparasiData[]>([]);
+
+  // Export Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState<"SEMUA" | "BULAN_INI" | "30_HARI" | "CUSTOM">("SEMUA");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Validation modal state
   const [validatingItem, setValidatingItem] = useState<{ id: number; type: "BASELINE" | "ENDLINE" } | null>(null);
@@ -72,6 +81,127 @@ export const EvaluasiDampakKkn: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [activeTab]);
+
+  const handleExportData = () => {
+    let sourceData: any[] = [];
+    if (activeTab === "BASELINE") sourceData = baselineList;
+    else if (activeTab === "ENDLINE") sourceData = endlineList;
+    else sourceData = komparasiList;
+
+    if (!sourceData || sourceData.length === 0) {
+      toast.error("Tidak ada data evaluasi dampak untuk diekspor!");
+      return;
+    }
+
+    // Filter by period if date exists
+    let filtered = [...sourceData];
+    const now = new Date();
+
+    if (exportPeriod === "BULAN_INI") {
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      filtered = filtered.filter((item) => {
+        if (!item.tanggalSurvei) return true;
+        const d = new Date(item.tanggalSurvei);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+    } else if (exportPeriod === "30_HARI") {
+      const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter((item) => {
+        if (!item.tanggalSurvei) return true;
+        const d = new Date(item.tanggalSurvei);
+        return d >= past30 && d <= now;
+      });
+    } else if (exportPeriod === "CUSTOM") {
+      if (!startDate || !endDate) {
+        toast.error("Harap tentukan tanggal mulai dan tanggal selesai!");
+        return;
+      }
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((item) => {
+        if (!item.tanggalSurvei) return true;
+        const d = new Date(item.tanggalSurvei);
+        return d >= s && d <= e;
+      });
+    }
+
+    if (filtered.length === 0) {
+      toast.error("Data tidak ditemukan pada periode waktu yang dipilih!");
+      return;
+    }
+
+    let csvContent = "";
+    if (activeTab === "BASELINE" || activeTab === "ENDLINE") {
+      const headers = [
+        "No",
+        "Kelurahan",
+        "Kecamatan",
+        "Tanggal Survei",
+        "Enumerator",
+        "Rumah Memilah",
+        "Total Rumah",
+        "Tingkat Pemilahan (%)",
+        "Volume Organik (kg/hari)",
+        "Volume Anorganik (kg/hari)",
+        "Volume Residu (kg/hari)",
+        "Total Volume (kg/hari)",
+        "Status Validasi",
+      ];
+      const rows = filtered.map((item, idx) => [
+        idx + 1,
+        `"${item.namaKelurahan || "-"}"`,
+        `"${item.kecamatan || "-"}"`,
+        `"${item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-"}"`,
+        `"${item.enumerator || "-"}"`,
+        item.pemilahanSampah?.jumlahRumahMemilah ?? 0,
+        item.pemilahanSampah?.totalJumlahRumahDiRw ?? 0,
+        item.pemilahanSampah?.persentasePemilahan ?? 0,
+        item.volumeSampah?.organikKgPerHari ?? 0,
+        item.volumeSampah?.anorganikKgPerHari ?? 0,
+        item.volumeSampah?.residuKgPerHari ?? 0,
+        item.volumeSampah?.totalVolumeKgPerHari ?? 0,
+        `"${item.statusValidasi || "-"}"`,
+      ]);
+      csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    } else {
+      const headers = [
+        "No",
+        "Kelurahan",
+        "Baseline Pemilahan (%)",
+        "Endline Pemilahan (%)",
+        "Delta Pemilahan (%)",
+        "Baseline Vol (kg/hari)",
+        "Endline Vol (kg/hari)",
+        "Reduksi Residu (kg/hari)",
+        "Status Dampak",
+      ];
+      const rows = filtered.map((item, idx) => [
+        idx + 1,
+        `"${item.namaKelurahan || "-"}"`,
+        item.baseline?.persentasePemilahan ?? 0,
+        item.endline?.persentasePemilahan ?? 0,
+        item.delta?.persentasePemilahan ?? 0,
+        item.baseline?.totalVolumeKgPerHari ?? 0,
+        item.endline?.totalVolumeKgPerHari ?? 0,
+        item.delta?.residuKgPerHari ?? 0,
+        `"${item.statusEvaluasi || "TERVERIFIKASI"}"`,
+      ]);
+      csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setIsExportModalOpen(false);
+    toast.success(`Data ${activeTab.toLowerCase()} berhasil diekspor!`);
+  };
 
   const handleValidate = async (status: "VALID" | "REVISI") => {
     if (!validatingItem) return;
@@ -120,22 +250,31 @@ export const EvaluasiDampakKkn: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-indigo-100">
-            <BarChart3 size={14} /> Evaluasi & Dampak KKN
+            <BarChart3 size={14} /> Evaluasi Dampak KKN
           </div>
           <h1 className="text-2xl font-extrabold text-slate-800">
-            Pemantauan Progres Program KKN
+            Evaluasi Dampak Program KKN
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Validasi data survei kelurahan (Baseline vs Endline) dan lihat perbandingan capaian dampak.
+            Validasi data survei kelurahan (Baseline vs Endline) dan pantau perbandingan capaian dampak lingkungan.
           </p>
         </div>
-        <button
-          onClick={loadData}
-          className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition border border-slate-200 flex items-center gap-2 text-xs font-bold"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-xs flex items-center gap-2 text-xs font-bold"
+          >
+            <Download size={14} />
+            Ekspor Data
+          </button>
+          <button
+            onClick={loadData}
+            className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition border border-slate-200 flex items-center gap-2 text-xs font-bold"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Tabs & Search */}
@@ -566,6 +705,101 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </button>
                 </div>
              </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal with Period & Custom Date Range */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
+              <div className="flex items-center gap-2.5">
+                <Download size={18} className="text-emerald-400" />
+                <h3 className="font-black text-white text-base">Ekspor Data Evaluasi Dampak</h3>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80 text-xs text-emerald-900 font-semibold">
+                Data yang akan diekspor: <strong className="text-emerald-950 uppercase">{activeTab} ({activeTab === "KOMPARASI" ? komparasiList.length : activeTab === "BASELINE" ? baselineList.length : endlineList.length} baris data)</strong>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-2 flex items-center gap-1.5">
+                  <Calendar size={14} className="text-slate-500" /> Pilih Filter Periode Waktu:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "SEMUA", label: "Semua Data" },
+                    { id: "BULAN_INI", label: "Bulan Berjalan" },
+                    { id: "30_HARI", label: "30 Hari Terakhir" },
+                    { id: "CUSTOM", label: "Tanggal Kustom" },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setExportPeriod(p.id as any)}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between ${
+                        exportPeriod === p.id
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{p.label}</span>
+                      {exportPeriod === p.id && <CheckCircle size={14} className="text-white" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {exportPeriod === "CUSTOM" && (
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 animate-in fade-in duration-200">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Mulai:</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Selesai:</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportData}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2"
+                >
+                  <Download size={14} />
+                  Download CSV
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
